@@ -1,4 +1,5 @@
 import type { OmiBlock, OmiManuscriptState, OmiSection } from '../types/omi';
+import { walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 export type OmiNamedAnchorTargetKind = 'section' | 'block';
 
@@ -92,14 +93,17 @@ export function collectNamedAnchorTargets(
   sections: readonly OmiSection[],
 ): OmiNamedAnchorTarget[] {
   const targets: OmiNamedAnchorTarget[] = [];
-  for (const section of sections) {
-    targets.push({
-      id: section.id,
-      kind: 'section',
-      sectionId: section.id,
-      label: section.title.trim() || section.id,
-    });
-    for (const block of section.blocks) {
+  for (const occurrence of walkManuscriptStructure(sections)) {
+    if (occurrence.kind === 'section') {
+      const section = occurrence.section;
+      targets.push({
+        id: section.id,
+        kind: 'section',
+        sectionId: section.id,
+        label: section.title.trim() || section.id,
+      });
+    } else {
+      const { section, block } = occurrence;
       targets.push({
         id: block.id,
         kind: 'block',
@@ -108,6 +112,7 @@ export function collectNamedAnchorTargets(
       });
     }
   }
+
   return targets;
 }
 

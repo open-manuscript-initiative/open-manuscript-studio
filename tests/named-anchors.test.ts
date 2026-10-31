@@ -5,6 +5,7 @@ import {
   collectNamedAnchorTargets,
   createNamedAnchor,
   renameNamedAnchor,
+  resolveNamedAnchorTarget,
   toPortableBookmarkName,
   validateNamedAnchors,
 } from '../src/model/namedAnchors.ts';
@@ -57,4 +58,38 @@ test('validation detects duplicate names and missing targets', () => {
   assert.ok(issues.some((issue) => issue.anchorId === 'a1' && issue.type === 'duplicate-name'));
   assert.ok(issues.some((issue) => issue.anchorId === 'a2' && issue.type === 'duplicate-name'));
   assert.ok(issues.some((issue) => issue.anchorId === 'a2' && issue.type === 'missing-target'));
+});
+
+
+test('nested section and nested block bookmarks remain resolvable without flattening', () => {
+  const nested = [{
+    id: 'root', title: 'Root', blocks: [{
+      id: 'parent-block', type: 'paragraph', content: 'Root text',
+      children: [{ id: 'child-block', type: 'paragraph', content: 'Deep original text' }],
+    }],
+    children: [{
+      id: 'child-section', title: 'Child section', blocks: [{
+        id: 'grandchild-block', type: 'paragraph', content: 'Grandchild text',
+      }],
+    }],
+  }];
+  const anchors = [
+    createNamedAnchor({ id: 'nested-section-anchor', name: 'Nested section', targetKind: 'section', targetId: 'child-section' }),
+    createNamedAnchor({ id: 'nested-block-anchor', name: 'Nested text', targetKind: 'block', targetId: 'child-block' }),
+  ];
+  const original = structuredClone(nested);
+  const targets = collectNamedAnchorTargets(nested as never);
+  assert.deepEqual(targets.map((target) => [target.kind, target.id, target.sectionId]), [
+    ['section', 'root', 'root'],
+    ['block', 'parent-block', 'root'],
+    ['block', 'child-block', 'root'],
+    ['section', 'child-section', 'child-section'],
+    ['block', 'grandchild-block', 'child-section'],
+  ]);
+  assert.deepEqual(validateNamedAnchors({ sections: nested as never, namedAnchors: anchors }), []);
+  assert.equal(resolveNamedAnchorTarget({ sections: nested as never }, anchors[1]!)?.id, 'child-block');
+  assert.deepEqual(nested, original);
+  const missing = [{ ...nested[0]!, blocks: [{ ...nested[0]!.blocks[0]!, children: [] }] }];
+  assert.deepEqual(validateNamedAnchors({ sections: missing as never, namedAnchors: [anchors[1]!] })
+    .map((issue) => issue.type), ['missing-target']);
 });

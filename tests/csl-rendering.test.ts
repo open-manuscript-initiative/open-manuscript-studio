@@ -297,3 +297,28 @@ test('synchronizes a cluster marker to the selected citation style', () => {
 
   assert.equal(marker.attrs.label, '(Smith, 2020; Jones, 2023)');
 });
+
+
+test('embedded citation clusters survive collection and targeted removal', () => {
+  const citation = (ids: string[]) => JSON.stringify({
+    type: 'doc', content: [{ type: 'paragraph', content: [{
+      type: 'omiCitation',
+      attrs: { citationId: ids[0], citationIds: ids, anchorId: 'deep-anchor', clusterId: 'deep-cluster', label: '?' },
+    }] }],
+  });
+  const sections: OmiSection[] = [{
+    id: 'root', title: 'Root', blocks: [{
+      id: 'root-block', type: 'paragraph', content: 'Unchanged author text',
+      children: [{ id: 'embedded', type: 'paragraph', content: citation(['first', 'second']) }],
+    }],
+  }];
+  const original = structuredClone(sections);
+  assert.deepEqual(collectCitationAnchors(sections).map((item) => item.citationId), ['first', 'second']);
+  const removedFirst = removeCitationFromSections(sections, 'first');
+  const remaining = collectCitationAnchors(removedFirst);
+  assert.deepEqual(remaining.map((item) => item.citationId), ['second']);
+  assert.equal(remaining[0]?.targetBlockId, 'embedded');
+  assert.equal(removedFirst[0]?.blocks[0]?.content, 'Unchanged author text');
+  assert.equal(removedFirst[0]?.blocks[0]?.children?.[0]?.id, 'embedded');
+  assert.deepEqual(sections, original);
+});
