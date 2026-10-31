@@ -106,6 +106,9 @@ jobs:
         working-directory: server
         run: npm run typecheck
 
+      - name: Test isolated PDF worker socket and global admission
+        run: npm --prefix server run test:isolated-pdf-worker
+
       - name: Test OMI-SPEC-300 and OMI-SPEC-310 integration manifest boundary
         run: npm --prefix server run test:extension-manifest
 
