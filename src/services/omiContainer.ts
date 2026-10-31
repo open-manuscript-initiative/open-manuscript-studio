@@ -389,6 +389,7 @@ function validatePackageEntries(
 ): OmiContainerDiagnostic[] {
   const diagnostics: OmiContainerDiagnostic[] = [];
   const paths = new Set<string>();
+  const portablePaths = new Set<string>();
   for (const entry of entries) {
     if (!isSafeContainerPath(entry.path)) {
       diagnostics.push({
@@ -405,6 +406,15 @@ function validatePackageEntries(
       });
     }
     paths.add(entry.path);
+    const portablePath = entry.path.normalize('NFC').toLowerCase();
+    if (portablePaths.has(portablePath)) {
+      diagnostics.push({
+        code: 'ambiguous-container-path',
+        severity: 'error',
+        message: `Case- or Unicode-ambiguous container path: ${entry.path}`,
+      });
+    }
+    portablePaths.add(portablePath);
   }
 
   for (const required of [
@@ -440,7 +450,8 @@ export function isSafeContainerPath(path: string): boolean {
   return Boolean(
     path &&
     !path.startsWith('/') &&
-    !path.includes('\\') &&
+    !/^[A-Za-z]:/.test(path) &&
+    !/[\\\\\\u0000-\\u001F\\u007F]/u.test(path) &&
     !path.split('/').some((part) => part === '..' || part === '.' || part === ''),
   );
 }
