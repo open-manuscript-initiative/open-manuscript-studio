@@ -357,6 +357,11 @@ export function CloudStorageSettings({ view = 'connections' }: { view?: 'connect
     try {
       checkpoint('manual');
       const current = useStudioStore.getState().manuscript;
+      const unavailable = await inspectMissingManuscriptAssets(current);
+      if (unavailable.length > 0) {
+        setMissingAssets(unavailable);
+        throw new Error(`Cloud save blocked: ${unavailable.length} referenced media asset(s) are missing or corrupt. Restore the indicated assets before saving.`);
+      }
       const packaged = await buildOmiContainer(current);
       if (!packaged.validForExport) {
         const detail = packaged.diagnostics
@@ -388,8 +393,11 @@ export function CloudStorageSettings({ view = 'connections' }: { view?: 'connect
     try {
       const bytes = await downloadCloudBackup(backup.id);
       const plan = await inspectOmiContainer(bytes);
-      if (!plan.validForImport || !plan.manuscript) throw new Error(copy.invalidPackage);
+      if (!plan.validForImport || !plan.manuscript || plan.manuscript.id !== backup.manuscriptId) throw new Error(copy.invalidPackage);
       await applyOmiContainerImportPlan(plan);
+      const restored = useStudioStore.getState().manuscript;
+      const missing = await inspectMissingManuscriptAssets(restored);
+      if (missing.length > 0) throw new Error(`Restored document has ${missing.length} unavailable media asset(s).`);
       setMessage(copy.restored);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));

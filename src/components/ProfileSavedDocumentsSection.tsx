@@ -11,6 +11,8 @@ import {
   type ProfileSavedDocument,
 } from '../services/cloudStorageApi';
 import { inspectOmiContainer } from '../services/omiContainerImport';
+import { inspectMissingManuscriptAssets } from '../services/assetRecovery';
+import { useStudioStore } from '../app/useStudioStore';
 
 function formatBytes(value: string): string {
   const bytes = Number(value);
@@ -47,8 +49,10 @@ export function ProfileSavedDocumentsSection({ confirmOpen = true }: { confirmOp
     try {
       const bytes = await downloadCloudBackup(document.id);
       const plan = await inspectOmiContainer(bytes);
-      if (!plan.validForImport || !plan.manuscript) throw new Error(copy.invalidPackage);
+      if (!plan.validForImport || !plan.manuscript || plan.manuscript.id !== document.manuscriptId) throw new Error(copy.invalidPackage);
       await applyOmiContainerImportPlan(plan);
+      const missing = await inspectMissingManuscriptAssets(useStudioStore.getState().manuscript);
+      if (missing.length > 0) throw new Error(`Restored document has ${missing.length} unavailable media asset(s).`);
       setMessage(copy.restored);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
