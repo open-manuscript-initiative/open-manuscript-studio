@@ -139,5 +139,8 @@
     "typescript": "latest",
     "typescript-eslint": "latest",
     "vite": "^8.3.5"
+  },
+  "overrides": {
+    "minimatch": "11.0.2"
   }
 }
