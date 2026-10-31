@@ -1,4 +1,5 @@
 import { getStudioPlatform } from '../mobile/platform/platform';
+import { downloadBlobInBrowser } from './browserBlobDownload';
 import { isNativeStudio } from './nativeManuscriptFile';
 
 export interface ExportDeliveryResult {
@@ -163,13 +164,3 @@ function extensionForFileName(fileName: string): string {
   return '*';
 }
 
-function downloadBlobInBrowser(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
