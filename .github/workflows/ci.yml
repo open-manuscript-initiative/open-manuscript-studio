@@ -58,6 +58,9 @@ jobs:
       - name: Verify beta release version identity
         run: node --test tests/release-version-coherence.test.mjs
 
+      - name: Verify safe browser export delivery (CodeQL #74)
+        run: node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/browser-blob-download.test.ts
+
       - name: Run tests
         run: npm test
 
