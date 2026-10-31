@@ -23,6 +23,7 @@ import '../styles/mobile.css';
 
 interface MobileLayoutProps {
   children: ReactNode;
+  documentTabs?: ReactNode;
   onOpenMenu: () => void;
   onHome: () => void;
 }
@@ -44,7 +45,7 @@ const navLabels: Record<
   de: { account: 'Konto' },
 };
 
-export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps) {
+export function MobileLayout({ children, documentTabs, onOpenMenu, onHome }: MobileLayoutProps) {
   const { t, locale } = useTranslation();
   const menuCopy = getStudioMenuSupplementalCopy(locale);
   const logout = useAuthStore((state) => state.logout);
@@ -61,7 +62,7 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
 
 
   return (
-    <div className="mobile-shell">
+    <div className={`mobile-shell${documentTabs && view === 'editor' ? ' mobile-shell--document-tabs' : ''}`}>
       <header className="mobile-header">
         <button
           type="button"
@@ -139,6 +140,10 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
           <strong>{nav.account}</strong>
         </div>
       )}
+
+      {documentTabs && view === 'editor' ? (
+        <div className="mobile-document-tab-strip">{documentTabs}</div>
+      ) : null}
 
       <main className="mobile-workspace">
         {view === 'account' ? <AccountPanel /> : children}
