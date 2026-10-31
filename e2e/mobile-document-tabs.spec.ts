@@ -6,14 +6,21 @@ test('mobile workspace keeps multiple manuscripts open and switches without repl
   await installMockStudioApi(page);
   await signInToStudio(page);
 
-  const ids = await page.evaluate(async () => {
+  const firstId = await page.evaluate(async () => {
     const { createAndOpenBlankOmiDocument } = await import('/src/app/newDocumentActions.ts');
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-    const first = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'en' });
+    const manuscript = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'en' });
     useStudioStore.getState().setTitle('First mobile manuscript');
-    const second = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'en' });
+    return manuscript.id;
+  });
+  await expect(page.getByRole('tab', { name: /First mobile manuscript/ })).toBeVisible();
+
+  const secondId = await page.evaluate(async () => {
+    const { createAndOpenBlankOmiDocument } = await import('/src/app/newDocumentActions.ts');
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const manuscript = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'en' });
     useStudioStore.getState().setTitle('Second mobile manuscript');
-    return [first.id, second.id];
+    return manuscript.id;
   });
 
   const tabs = page.getByRole('tab');
@@ -26,11 +33,11 @@ test('mobile workspace keeps multiple manuscripts open and switches without repl
   await expect.poll(() => page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     return useStudioStore.getState().manuscript.id;
-  })).toBe(ids[0]);
+  })).toBe(firstId);
 
   await page.getByRole('tab', { name: /Second mobile manuscript/ }).click();
   await expect.poll(() => page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     return useStudioStore.getState().manuscript.id;
-  })).toBe(ids[1]);
+  })).toBe(secondId);
 });
