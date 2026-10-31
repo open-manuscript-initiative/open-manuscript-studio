@@ -187,7 +187,19 @@ export async function buildOmiContainer(
       stableJson({
         versioningModelVersion: manuscript.versioningModelVersion,
         headRevisionId: manuscript.headRevisionId,
-        revisionHistory: manuscript.revisionHistory,
+        revisionHistory: {
+          ...manuscript.revisionHistory,
+          revisions: manuscript.revisionHistory.revisions.map((revision) => ({
+            ...revision,
+            // Authoring previews are not scholarly content or history evidence.
+            // Keep original committed snapshots intact in memory while omitting
+            // redundant base64 payloads from the portable history representation.
+            snapshot: {
+              ...revision.snapshot,
+              state: stripAuthoringAssetPreviews(revision.snapshot.state),
+            },
+          })),
+        },
       }),
       'application/json',
       'manuscript-history',
