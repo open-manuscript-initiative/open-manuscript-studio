@@ -2,7 +2,7 @@ import type { OmiManuscript } from '../types/omi';
 import { calculateManuscriptStateDigestValue, canonicalizeManuscriptState, sha256HexSync } from './stateDigest';
 import { extractManuscriptState } from './versioning';
 
-/** Local implementation profile. OMI-SPEC-180 is Reserved, not a published standard. */
+/** Experimental Studio implementation of OMI-SPEC-180 Draft 0.1.0; no conformance claim. */
 export const VALIDATION_REPORT_FORMAT = 'omi-studio-validation-report' as const;
 export const VALIDATION_REPORT_VERSION = '0.1.0' as const;
 export const VALIDATION_RULESET = 'studio-validation-0.1' as const;
@@ -13,6 +13,8 @@ export type ValidationCheckStatus = 'pass' | 'fail' | 'skipped' | 'error';
 export type ValidationProfile = 'authoring' | 'exchange' | 'publication-preflight';
 export type ValidationOutcome = 'valid' | 'invalid' | 'indeterminate';
 
+/** These check versions identify Studio adapter behavior, not versions of
+ * the normative specifications named in the corresponding entries. */
 export const VALIDATION_CHECKS = {
   identifiers: { specification: 'OMI-SPEC-120', version: '0.1.0' },
   references: { specification: 'OMI-SPEC-120', version: '0.1.0' },
@@ -144,7 +146,9 @@ export async function executeValidationChecks(
 ): Promise<ValidationReport> {
   const required = VALIDATION_PROFILES[profile];
   if (!required) throw new Error('Unknown validation profile.');
-  const snapshot = structuredClone(source);
+  // Validation adapters receive one point-in-time immutable observation.
+  // A faulty adapter cannot change later checks or falsify the source digest.
+  const snapshot = freezeValidationSnapshot(structuredClone(source));
   const subject = fingerprintValidationSubject(snapshot);
   const checks: ValidationCheckResult[] = [];
   const diagnostics: ValidationDiagnostic[] = [];
@@ -183,4 +187,19 @@ export async function executeValidationChecks(
     summary: summarizeValidation(checks, diagnostics),
     exclusions: [...VALIDATION_EXCLUSIONS],
   };
+}
+
+
+/**
+ * Prevent accidental cross-check mutation without cloning an entire long
+ * manuscript separately for every adapter. Arrays and JSON records are frozen
+ * recursively; opaque typed byte payloads (loaded separately) are not.
+ */
+function freezeValidationSnapshot<T>(value: T, visited = new WeakSet<object>()): T {
+  if (value === null || typeof value !== 'object' || visited.has(value)) return value;
+  if (ArrayBuffer.isView(value) || value instanceof ArrayBuffer) return value;
+  visited.add(value);
+  for (const child of Object.values(value)) freezeValidationSnapshot(child, visited);
+  Object.freeze(value);
+  return value;
 }
