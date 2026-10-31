@@ -121,7 +121,7 @@ export function collectCrossReferenceTargets(
     targets.push({
       id: block.id, kind, sectionId: section.id,
       number: numbering === 'section'
-        ? sectionNumbers.get(section.id) + '.' + ordinal
+        ? (sectionNumbers.get(section.id) ?? '1') + '.' + ordinal
         : String(ordinal),
       title: targetTitle(block.visual),
     });
