@@ -55,6 +55,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Verify beta release version identity
+        run: node --test tests/release-version-coherence.test.mjs
+
       - name: Run tests
         run: npm test
 
