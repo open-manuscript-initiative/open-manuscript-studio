@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { inspectMissingManuscriptAssets, restoreMissingAssetsFromVerifiedPackage } from '../src/services/assetRecovery.ts';
 import { applyOmiContainerImportPlan } from '../src/app/omiContainerImportActions.ts';
 import { useStudioStore } from '../src/app/useStudioStore.ts';
 import {
@@ -385,4 +386,34 @@ test('PDF export embeds intact image bytes as data URL', async () => {
   const html = await buildPdfArtifactDocument(manuscript);
   assert.ok(html.includes('data:image/png;base64,'));
   assert.ok(!html.includes(`media/images/${asset.id}-`));
+});
+
+test('asset recovery reports missing bytes and recovers without changing manuscript revisions', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const packaged = await buildOmiContainer(manuscript);
+  assert.equal(packaged.validForExport, true);
+  await putAssetPayload(manuscript.id, asset.id, new Uint8Array([1, 2, 3]));
+  const missing = await inspectMissingManuscriptAssets(manuscript);
+  assert.equal(missing.length, 1);
+  assert.equal(missing[0]?.reason, 'corrupt');
+  const originalState = JSON.stringify(manuscript);
+  assert.equal(await restoreMissingAssetsFromVerifiedPackage(manuscript, packaged.bytes), 1);
+  assert.deepEqual(await getAssetPayload(manuscript.id, asset.id), bytes);
+  assert.equal(JSON.stringify(manuscript), originalState);
+  assert.equal((await inspectMissingManuscriptAssets(manuscript)).length, 0);
+});
+
+test('asset recovery refuses an unrelated manuscript package', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const packaged = await buildOmiContainer(manuscript);
+  const other = { ...manuscript, id: 'different-manuscript' };
+  await assert.rejects(
+    restoreMissingAssetsFromVerifiedPackage(other, packaged.bytes),
+    /another manuscript/,
+  );
+  assert.equal(await getAssetPayload(manuscript.id, asset.id) !== undefined, true);
 });
