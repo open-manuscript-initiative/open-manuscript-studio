@@ -14,6 +14,7 @@ import type {
   OmiCitationStyleId,
   OmiSection,
 } from '../types/omi.ts';
+import { mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 export interface CitationClusterItemInput {
   target: string;
@@ -81,32 +82,19 @@ export function collectCitationAnchors(
 ): CitationAnchorReference[] {
   const anchors: CitationAnchorReference[] = [];
 
-  for (const section of sections) {
-    for (const block of section.blocks) {
-      walkStructuredContent(block.content, (node) => {
-        if (node.type !== 'omiCitation' || !isRecord(node.attrs)) {
-          return;
-        }
-
-        const citationIds = citationIdsFromAttributes(node.attrs);
-        const anchorId = stringValue(node.attrs.anchorId);
-        const clusterId = stringValue(node.attrs.clusterId);
-
-        if (citationIds.length === 0 || !anchorId) {
-          return;
-        }
-
-        for (const citationId of citationIds) {
-          anchors.push({
-            citationId,
-            citationIds,
-            clusterId,
-            anchorId,
-            targetBlockId: block.id,
-          });
-        }
-      });
-    }
+  for (const occurrence of walkManuscriptStructure(sections)) {
+    if (occurrence.kind !== 'block') continue;
+    const { block } = occurrence;
+    walkStructuredContent(block.content, (node) => {
+      if (node.type !== 'omiCitation' || !isRecord(node.attrs)) return;
+      const citationIds = citationIdsFromAttributes(node.attrs);
+      const anchorId = stringValue(node.attrs.anchorId);
+      const clusterId = stringValue(node.attrs.clusterId);
+      if (citationIds.length === 0 || !anchorId) return;
+      for (const citationId of citationIds) {
+        anchors.push({ citationId, citationIds, clusterId, anchorId, targetBlockId: block.id });
+      }
+    });
   }
 
   return anchors;
@@ -122,61 +110,34 @@ export function removeCitationFromSections(
   sections: readonly OmiSection[],
   citationId: string,
 ): OmiSection[] {
-  return sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => ({
-      ...block,
-      content: transformStructuredContent(block.content, (node) => {
-        if (node.type !== 'omiCitation' || !isRecord(node.attrs)) {
-          return node;
-        }
-
-        const citationIds = citationIdsFromAttributes(node.attrs);
-
-        if (!citationIds.includes(citationId)) {
-          return node;
-        }
-
-        const remaining = citationIds.filter((candidate) => candidate !== citationId);
-
-        if (remaining.length === 0) {
-          return null;
-        }
-
-        return {
-          ...node,
-          attrs: {
-            ...node.attrs,
-            citationId: remaining[0],
-            citationIds: remaining,
-          },
-        };
-      }),
-    })),
-  }));
+  return mapManuscriptBlocks(sections, (block) => {
+    const content = transformStructuredContent(block.content, (node) => {
+      if (node.type !== 'omiCitation' || !isRecord(node.attrs)) return node;
+      const citationIds = citationIdsFromAttributes(node.attrs);
+      if (!citationIds.includes(citationId)) return node;
+      const remaining = citationIds.filter((candidate) => candidate !== citationId);
+      if (remaining.length === 0) return null;
+      return {
+        ...node,
+        attrs: { ...node.attrs, citationId: remaining[0], citationIds: remaining },
+      };
+    });
+    return content === block.content ? block : { ...block, content };
+  });
 }
 
 export function removeCitationClusterFromSections(
   sections: readonly OmiSection[],
   clusterId: string,
 ): OmiSection[] {
-  return sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => ({
-      ...block,
-      content: transformStructuredContent(block.content, (node) => {
-        if (
-          node.type === 'omiCitation' &&
-          isRecord(node.attrs) &&
-          stringValue(node.attrs.clusterId) === clusterId
-        ) {
-          return null;
-        }
-
-        return node;
-      }),
-    })),
-  }));
+  return mapManuscriptBlocks(sections, (block) => {
+    const content = transformStructuredContent(block.content, (node) => {
+      if (node.type === 'omiCitation' && isRecord(node.attrs) &&
+          stringValue(node.attrs.clusterId) === clusterId) return null;
+      return node;
+    });
+    return content === block.content ? block : { ...block, content };
+  });
 }
 
 /**
@@ -194,11 +155,8 @@ export function synchronizeCitationLabels(
   const citationMap = new Map(citations.map((citation) => [citation.id, citation]));
   const clusterMap = new Map(clusters.map((cluster) => [cluster.id, cluster]));
 
-  return sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => ({
-      ...block,
-      content: transformStructuredContent(block.content, (node) => {
+  return mapManuscriptBlocks(sections, (block) => {
+    const content = transformStructuredContent(block.content, (node) => {
         if (node.type !== 'omiCitation' || !isRecord(node.attrs)) {
           return node;
         }
@@ -236,9 +194,9 @@ export function synchronizeCitationLabels(
             ),
           },
         };
-      }),
-    })),
-  }));
+      });
+    return content === block.content ? block : { ...block, content };
+  });
 }
 
 export function citationIdsFromAttributes(
