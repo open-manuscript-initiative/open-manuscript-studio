@@ -24,6 +24,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
+      # Reachable from the internal web container; never bind to loopback here.
+      API_BIND_HOST: 0.0.0.0
       DATABASE_URL: postgresql://omi_studio:${POSTGRES_PASSWORD}@postgres:5432/omi_studio?schema=public
       IDENTITY_DATABASE_URL: postgresql://omi_studio:${POSTGRES_PASSWORD}@postgres:5432/omi_identity?schema=public
       FRONTEND_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN in deployment/.env}
