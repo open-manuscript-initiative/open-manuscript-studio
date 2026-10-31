@@ -1,0 +1,11 @@
+.omi-validation-panel { min-width: 0; }
+.omi-validation-controls { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin-block: 1rem; }
+.omi-validation-panel label { display: grid; gap: .4rem; max-width: 100%; }
+.omi-validation-panel select { max-width: 100%; min-height: 2.75rem; }
+.omi-validation-summary { display: flex; flex-wrap: wrap; gap: .65rem 1.5rem; padding: 1rem; background: var(--panel-bg, #f6f3ed); border: 1px solid var(--border-color, #d6d0c6); border-radius: .5rem; }
+.omi-validation-stale { border-inline-start: .25rem solid #9a6700; padding-inline-start: 1rem; }
+.omi-validation-findings { padding-inline-start: 1.5rem; }
+.omi-validation-findings li { border-bottom: 1px solid var(--border-color, #d6d0c6); padding: 1rem .5rem; overflow-wrap: anywhere; }
+.omi-validation-findings code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.omi-validation-panel summary { cursor: pointer; padding-block: .5rem; }
+@media (max-width: 40rem) { .omi-validation-controls { align-items: stretch; } .omi-validation-controls > * { width: 100%; } }

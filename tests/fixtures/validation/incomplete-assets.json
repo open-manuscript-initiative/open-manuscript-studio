@@ -1,0 +1,99 @@
+{
+  "$schema": "urn:omi:studio:validation-report:0.1",
+  "format": "omi-studio-validation-report",
+  "version": "0.1.0",
+  "ruleset": "studio-validation-0.1",
+  "relatedSpecification": "OMI-SPEC-180",
+  "experimental": true,
+  "id": "report-incomplete-assets",
+  "createdAt": "2026-10-31T08:00:00.000Z",
+  "profile": "exchange",
+  "subject": {
+    "manuscriptId": "b514a476-df31-4a2f-8fe4-7e80132f5600",
+    "headRevisionId": "d2096594-6764-4e5d-b0a7-7c61e2413558",
+    "stateDigest": "33e38bc7bcfad70becff673b516cb5210d4c0fe3b60c30e47d8e8590a3c7577a",
+    "evidenceDigest": "dd30a3f4827fa8ca23ccc2f18cac8b08a96362b960da1e468f611754e6f92da0"
+  },
+  "checks": [
+    {
+      "id": "identifiers",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "references",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "anchors",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "history",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "translations",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "portability",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "assets",
+      "version": "0.1.0",
+      "status": "skipped",
+      "diagnosticIds": [
+        "assets:1"
+      ],
+      "truncated": false,
+      "complete": false
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "asset-check-unavailable",
+      "severity": "warning",
+      "path": "/assets",
+      "checkId": "assets",
+      "id": "assets:1"
+    }
+  ],
+  "summary": {
+    "outcome": "indeterminate",
+    "complete": false,
+    "errors": 0,
+    "warnings": 1,
+    "information": 0
+  },
+  "exclusions": [
+    "external-link-availability",
+    "scholarly-accuracy",
+    "artifact-rendering-and-dtd",
+    "signature-and-publisher-authentication"
+  ]
+}

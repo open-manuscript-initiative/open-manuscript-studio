@@ -386,6 +386,7 @@ Repository documents include:
 
 - [`docs/omi-file-format.md`](docs/omi-file-format.md) — canonical OMI schema/version boundary and validation policy;
 - [`docs/omi-spec-170-translation-model.md`](docs/omi-spec-170-translation-model.md) — experimental portable translation profile, author workflow, freshness/review rules and implementation limits;
+- [`docs/omi-spec-180-validation-model.md`](docs/omi-spec-180-validation-model.md) — experimental validation profiles, source-bound reports, check coverage, JSON schema and fixtures;
 - `SECURITY.md` — vulnerability reporting and release security;
 - `CONTRIBUTING.md` — contribution guidelines;
 - `CODE_OF_CONDUCT.md` — community standards;

@@ -1,0 +1,73 @@
+{
+  "$schema": "urn:omi:studio:validation-report:0.1",
+  "format": "omi-studio-validation-report",
+  "version": "0.1.0",
+  "ruleset": "studio-validation-0.1",
+  "relatedSpecification": "OMI-SPEC-180",
+  "experimental": true,
+  "id": "report-valid-authoring",
+  "createdAt": "2026-10-31T08:00:00.000Z",
+  "profile": "authoring",
+  "subject": {
+    "manuscriptId": "b514a476-df31-4a2f-8fe4-7e80132f5600",
+    "headRevisionId": "d2096594-6764-4e5d-b0a7-7c61e2413558",
+    "stateDigest": "f23c4be10da513a766cf8fd28a3fc0917312883bd79f44f31b1b9aaf38823b02",
+    "evidenceDigest": "11924af48cc19f0f7e2e398b64e7bb0f13efa8d330a78b160dfef6dd655d51aa"
+  },
+  "checks": [
+    {
+      "id": "identifiers",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "references",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "anchors",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "history",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "translations",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    }
+  ],
+  "diagnostics": [],
+  "summary": {
+    "outcome": "valid",
+    "complete": true,
+    "errors": 0,
+    "warnings": 0,
+    "information": 0
+  },
+  "exclusions": [
+    "external-link-availability",
+    "scholarly-accuracy",
+    "artifact-rendering-and-dtd",
+    "signature-and-publisher-authentication"
+  ]
+}
