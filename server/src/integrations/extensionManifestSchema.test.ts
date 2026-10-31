@@ -4,7 +4,7 @@ import {
   extensionManifestSchema,
   INTEGRATION_EXTENSION_API_CAPABILITIES,
   INTEGRATION_EXTENSION_PERMISSIONS,
-} from './extensionManifestSchema.ts';
+} from './extensionManifestSchema.js';
 
 const valid = () => ({
   model: 'omi-integration-extension' as const,
