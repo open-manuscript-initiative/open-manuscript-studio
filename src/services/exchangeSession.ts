@@ -32,6 +32,18 @@ export async function prepareOfficeImport(
   const buffer = await file.arrayBuffer();
   const report = createExchangeReport(exchangeProfile('import', format), new Uint8Array(), true);
   report.source = { digest: await digestBuffer(buffer), bytes: buffer.byteLength, retained: true };
+  // File extension is not evidence of the actual format: retain the original
+  // and refuse a committable candidate when its package envelope is invalid.
+  if (buffer.byteLength > 200 * 1024 * 1024 || !hasExpectedExchangeArtifactEnvelope(format, new Uint8Array(buffer))) {
+    throw new OfficeImportPreparationError({
+      ...report, status: 'failed', events: [...report.events, {
+        code: buffer.byteLength > 200 * 1024 * 1024 ? 'RESOURCE_LIMIT' : 'INVALID_SOURCE_ENVELOPE',
+        severity: 'error', disposition: 'unverifiable', sourceLocator: '/',
+        feature: 'source-preflight',
+        consequence: 'The source package is invalid or exceeds the import size limit. No candidate was committed.',
+      }],
+    }, file);
+  }
   const buffered = { name: file.name, type: file.type, size: file.size, lastModified: file.lastModified,
     arrayBuffer: async () => buffer } as File;
   let plan: DocxManuscriptImportPlan;
@@ -41,6 +53,18 @@ export async function prepareOfficeImport(
       code: 'IMPORT_EXECUTION_FAILED', severity: 'error', disposition: 'unverifiable', sourceLocator: '/',
       feature: 'source-parser', consequence: 'Parsing failed; the original file is unchanged. No candidate was committed.',
     }] }, file);
+  }
+  // A successful parser call is not proof that it returned an editable
+  // manuscript candidate. Reject invalid adapter contracts before UI commit.
+  if (!plan || typeof plan.title !== 'string' ||
+    !Array.isArray(plan.sections) || !Array.isArray(plan.warnings)) {
+    throw new OfficeImportPreparationError({
+      ...report, status: 'failed', events: [...report.events, {
+        code: 'INVALID_IMPORT_CANDIDATE', severity: 'error',
+        disposition: 'unverifiable', sourceLocator: '/', feature: 'source-mapping',
+        consequence: 'The adapter returned no valid editable manuscript candidate. The source is unchanged.',
+      }],
+    }, file);
   }
   // Keep diagnostics independent of hidden text/provenance and editable blocks.
   report.events.push(...plan.warnings.map((warning) => ({ code: warning.code, severity: warning.severity,
