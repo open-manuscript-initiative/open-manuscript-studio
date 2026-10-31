@@ -193,13 +193,20 @@ export function editTranslationAlignment(
 
 /** Explicit rebase keeps target text and missing objects; all changed mappings need review. */
 export function synchronizeTranslation(manuscript: OmiManuscript, variant: ManuscriptTranslation): ManuscriptTranslation {
+  if (variant.sourceManuscriptId !== manuscript.id ||
+    (variant.scope.kind === 'manuscript' && variant.scope.id !== manuscript.id)) {
+    throw new Error('Translation synchronization must target the original source manuscript.');
+  }
   if (variant.sourceLanguage !== requireLanguage(manuscript.locale)) throw new Error('The source language changed; create a new language relationship.');
   const units = currentUnits(manuscript, variant);
   const now = new Date().toISOString();
   const alignments = variant.alignments.map((item) => {
     const unit = units.get(item.sourceAnchor);
     units.delete(item.sourceAnchor);
-    if (!unit || unit.fingerprint === item.sourceFingerprint) return item;
+    // Fingerprints alone cannot re-establish review provenance: require the
+    // same scholarly object and source text as well as the same digest.
+    if (!unit || (unit.fingerprint === item.sourceFingerprint &&
+      unit.objectId === item.sourceObjectId && unit.text === item.sourceText)) return item;
     const rebased = { ...item, sourceText: unit.text, sourceFingerprint: unit.fingerprint, sourceObjectId: unit.objectId,
       status: 'draft' as const, equivalence: 'unassessed' as const, modifiedAt: now };
     delete rebased.reviewedAt; delete rebased.reviewedByAgentId;

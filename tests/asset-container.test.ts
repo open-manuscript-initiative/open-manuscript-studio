@@ -87,6 +87,9 @@ test('rejects archive traversal and ambiguous container paths', () => {
   assert.equal(isSafeContainerPath('/absolute/path'), false);
   assert.equal(isSafeContainerPath('media\\figure.png'), false);
   assert.equal(isSafeContainerPath('media//figure.png'), false);
+  assert.equal(isSafeContainerPath('C:/media/figure.png'), false);
+  assert.equal(isSafeContainerPath('media/figure\\u0000.png'), false);
+  assert.equal(isSafeContainerPath('media/figure\\u000A.png'), false);
 });
 
 test('builds a portable OMI ZIP with external asset payload and clean document JSON', async () => {
@@ -273,3 +276,79 @@ function findStoreEntryDataOffset(bytes: Uint8Array, target: string): number {
   }
   return -1;
 }
+
+
+test('embedded-section image is collected, preview stripped and verified across full OMI container round trip', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const original = JSON.stringify(manuscript);
+  const state = extractManuscriptState(manuscript);
+  const imageBlock = state.sections[0]!.blocks.find((block) => block.visual?.kind === 'image');
+  assert.ok(imageBlock?.visual?.kind === 'image');
+  const nestedSection = {
+    id: 'section-embedded-image',
+    title: 'Nested illustration',
+    blocks: [{
+      ...imageBlock,
+      visual: { ...imageBlock.visual, src: 'data:image/png;base64,ZmFrZS1wbmctcGF5bG9hZA==' },
+    }],
+  };
+  const nestedState: OmiManuscriptState = {
+    ...state,
+    sections: [{
+      ...state.sections[0]!,
+      blocks: state.sections[0]!.blocks.filter((block) => block.id !== imageBlock.id),
+      children: [nestedSection],
+    }],
+  };
+  const nested = commitManuscriptRevision(manuscript, nestedState, {
+    summary: 'Move figure to a nested section',
+    events: [{ operation: 'manuscript.structure.set', targetId: manuscript.id }],
+  });
+  const exported = await buildOmiContainer(nested);
+  assert.equal(exported.validForExport, true, JSON.stringify(exported.diagnostics));
+  assert.equal(exported.diagnostics.some((issue) => issue.code === 'unreferenced-asset-retained'), false);
+  const entries = readStoreZipEntries(exported.bytes);
+  assert.ok(entries.has('media/images/asset-figure-1-figure.png'));
+  const document = JSON.parse(new TextDecoder().decode(entries.get('manuscript/document.json')));
+  const historyJson = new TextDecoder().decode(entries.get('manuscript/history.json'));
+  assert.equal(historyJson.includes('data:image/png;base64'), false);
+  const originalHistoricVisual = nested.revisionHistory.revisions.at(-1)?.snapshot.state.sections[0]?.children?.[0]?.blocks?.[0]?.visual;
+  assert.equal(originalHistoricVisual?.kind, 'image');
+  if (originalHistoricVisual?.kind === 'image') assert.ok(originalHistoricVisual.src.startsWith('data:'));
+  const embeddedImage = document.sections[0].children[0].blocks[0];
+  assert.equal(embeddedImage.visual.src, '');
+  assert.equal(embeddedImage.visual.assetId, asset.id);
+  const reopened = await inspectOmiContainer(exported.bytes);
+  assert.equal(reopened.validForImport, true, JSON.stringify(reopened.diagnostics));
+  assert.equal(reopened.summary.assetCount, 1);
+  assert.equal(reopened.manuscript?.sections[0]?.children?.[0]?.blocks?.[0]?.visual?.kind, 'image');
+  const reopenedVisual = reopened.manuscript?.sections[0]?.children?.[0]?.blocks?.[0]?.visual;
+  if (reopenedVisual?.kind === 'image') assert.equal(reopenedVisual.src, '');
+  assert.equal(JSON.stringify(manuscript), original);
+});
+
+test('missing or corrupted unreferenced asset payload blocks a purportedly complete OMI package', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset } = await createCommittedAssetManuscript();
+  const noImageReferenceState: OmiManuscriptState = {
+    ...extractManuscriptState(manuscript),
+    sections: manuscript.sections.map((section) => ({
+      ...section,
+      blocks: section.blocks.filter((block) => block.visual?.kind !== 'image'),
+    })),
+  };
+  const preservationState = commitManuscriptRevision(manuscript, noImageReferenceState, {
+    summary: 'Retain an uncited image asset for archival preservation',
+    events: [{ operation: 'manuscript.structure.set', targetId: manuscript.id }],
+  });
+  const missing = await buildOmiContainer(preservationState);
+  assert.equal(missing.validForExport, false);
+  assert.ok(missing.diagnostics.some((issue) => issue.code === 'asset-payload-missing' && issue.targetId === asset.id));
+
+  await putAssetPayload(manuscript.id, asset.id, new TextEncoder().encode('corrupted payload'));
+  const tampered = await buildOmiContainer(preservationState);
+  assert.equal(tampered.validForExport, false);
+  assert.ok(tampered.diagnostics.some((issue) => issue.code === 'asset-integrity-mismatch' && issue.targetId === asset.id));
+});

@@ -244,3 +244,40 @@ test('OMP reviewer access is bound to the assigned study instead of its parent m
   assert.match(ompReviewRouteSource, /setReviewManuscriptFromOjs\(assignment\.id, componentId, snapshot\)/);
 });
 
+
+
+test('an author or reviewer never receives feedback attached to another assignment or round', () => {
+  const review = createPeerReviewAssignment({
+    workspaceId: 'w-one', manuscriptId: 'm-one', reviewerUserId: 'reviewer-secret',
+    assignedByUserId: 'editor-secret', reviewerAlias: 'Reviewer 1', reviewRound: 2,
+  }, 'assignment-current');
+  review.feedback = [
+    createPeerReviewFeedback({
+      assignmentId: review.id, visibility: 'author_and_editor',
+      body: 'Current-round feedback',
+    }, 'current-feedback'),
+    createPeerReviewFeedback({
+      assignmentId: 'assignment-older', visibility: 'author_and_editor',
+      body: 'Other-round confidential content',
+    }, 'cross-round-feedback'),
+    createPeerReviewFeedback({
+      assignmentId: review.id, visibility: 'editor_only',
+      body: 'Editor-only confidential content',
+    }, 'editor-feedback'),
+  ];
+  const original = JSON.stringify(review);
+  const author = toAuthorVisibleReview(review);
+  const reviewer = toReviewerVisibleReview(review);
+  assert.deepEqual(author.feedback.map((f) => f.id), ['current-feedback']);
+  assert.deepEqual(reviewer.feedback.map((f) => f.id), ['current-feedback', 'editor-feedback']);
+  assert.equal(JSON.stringify(author).includes('Other-round confidential'), false);
+  assert.equal(JSON.stringify(author).includes('Editor-only confidential'), false);
+  assert.equal(JSON.stringify(reviewer).includes('Other-round confidential'), false);
+
+  author.feedback[0]!.body = 'Modified projection';
+  reviewer.feedback[1]!.body = 'Modified reviewer projection';
+  const editor = toEditorVisibleReview(review);
+  editor.feedback[0]!.body = 'Modified editor projection';
+  assert.equal(JSON.stringify(review), original);
+  assert.equal(review.feedback[0]!.body, 'Current-round feedback');
+});

@@ -15,7 +15,7 @@ mock.module(new URL('../server/dist/config/env.js', import.meta.url).href, { nam
   MANUSCRIPT_COLLABORATION_ENABLED: true, FRONTEND_ORIGIN: 'https://studio.example', COLLABORATION_WS_HOST: '127.0.0.1', COLLABORATION_WS_PORT: 1234,
 } } });
 mock.module(new URL('../server/dist/services/collaborationTicketService.js', import.meta.url).href, { namedExports: {
-  authorizeCollaborationConnectionTicket: async () => ({ userId: 'user', documentId: 'A', role: 'AUTHOR', expiresAt: Date.now() + 10_000 }),
+  authorizeCollaborationConnectionTicket: async () => ({ userId: 'user', documentId: 'A', role: 'AUTHOR', expiresAt: Date.now() + 10_000, readOnly: true }),
   reauthorizeCollaborationSession: async (context, documentId) => { rechecked.push({ context, documentId }); if (unavailable) throw new Error('offline'); return access; },
 } });
 mock.module(new URL('../server/dist/collaboration/collaborationStateStore.js', import.meta.url).href, { namedExports: {
@@ -31,6 +31,11 @@ test('live message boundary rechecks membership and downgrades or closes stale s
   try {
     const configuration = {};
     await assert.rejects(hooks.onAuthenticate({ token: 'ticket', documentName: 'A', requestHeaders: new Headers({ origin: 'https://untrusted.example' }), connectionConfig: configuration }), /origin/);
+    // The server must enforce the ticket's effective write capability even if
+    // its display role is AUTHOR; the role name is not write authority.
+    await hooks.onAuthenticate({ token: 'ticket', documentName: 'A',
+      requestHeaders: new Headers({ origin: 'https://studio.example' }), connectionConfig: configuration });
+    assert.equal(configuration.readOnly, true);
     await hooks.beforeHandleMessage({ connection, documentName: 'A' });
     assert.equal(connection.readOnly, false);
     access = { readOnly: true };
