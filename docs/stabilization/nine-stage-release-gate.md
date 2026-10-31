@@ -14,7 +14,7 @@ release lock. The normative register still governs standards maturity.
 | 6 | 190, 170, 200 | Collaboration, translation, review: [#792](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/792), merged with green CI | Independent review / release-level evidence still required |
 | 7 | 240, 230 | Rendering and publication: [#793](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/793), merged with green CI | Independent review / release-level evidence still required |
 | 8 | 340 | Import and export: [#794](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/794), [phase 8 evidence](spec-340-phase8.md) | Merged with green CI; independent interoperability and release acceptance still required |
-| 9 | 350, then 300, 310 | Capability/conformance, plugins and API: [#795](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/795), [phase 9 evidence](spec-350-300-310-phase9.md) | Draft PR; CI and independent review/acceptance pending |
+| 9 | 350, then 300, 310 | Capability/conformance, plugins and API: [#795](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/795), [phase 9 evidence](spec-350-300-310-phase9.md), merged with green PR CI | Release-level independent verification and manual acceptance still required |
 
 ## Explicit version hold
 
@@ -35,6 +35,8 @@ version-pinned positive and negative fixtures → verify Studio implementation
 → public and independent review → lifecycle or capability-claim decision.
 A green Studio CI run is necessary but not sufficient for conformance
 or standards maturity; Draft stays Draft absent separate approval.
+
+All nine development-stage PRs were merged on 2026-10-31. This completes the planned implementation work but **does not approve publication or certify conformance**. Follow the separate [beta.13 release Go/No-Go checklist](../release/0.3.0-beta.13.md).
 
 This document must be updated as each phase closes. An open PR is not
 completion evidence. No background or autonomous version bump is implied.
