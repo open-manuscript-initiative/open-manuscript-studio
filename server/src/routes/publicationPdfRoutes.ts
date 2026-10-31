@@ -39,7 +39,10 @@ publicationPdfRouter.post(
     }
 
     try {
-      const artifact = await renderVivliostylePdf(parsed.data.html);
+      // The shared Unix-socket worker enforces per-user admission across API
+      // replicas; never allow a caller to choose the queue identity.
+      const userId = (request as typeof request & { authUserId?: string }).authUserId;
+      const artifact = await renderVivliostylePdf(parsed.data.html, userId ?? 'authenticated');
       const fileName = safePdfFileName(parsed.data.fileName);
 
       response.status(200);
