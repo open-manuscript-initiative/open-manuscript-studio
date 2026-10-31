@@ -55,3 +55,31 @@ test('bulk reference import preserves DOI-distinct works and uncertain provenanc
     useStudioStore.setState(previous);
   }
 });
+
+
+test('adding a similar bibliography work never silently retargets an existing source derivation claim', () => {
+  const previous = useStudioStore.getState();
+  try {
+    const manuscript = createVersionedTestManuscript();
+    const existing = setBibliographicIdentifier(
+      createBibliographicRecord({ title: 'Edited archival collection', issued: '2026' }), 'doi', '10.2000/edition-a',
+    );
+    const incoming = setBibliographicIdentifier(
+      createBibliographicRecord({ title: 'Edited archival collection', issued: '2026' }), 'doi', '10.2000/edition-b',
+    );
+    manuscript.bibliographicRecords = [existing];
+    manuscript.sourceAttributions = [{
+      id: 'source-link', sourceObjectId: manuscript.sections[0]!.blocks[0]!.id,
+      targetBibliographicRecordId: existing.id, predicate: 'prov:wasDerivedFrom',
+      assertionStatus: 'author-declared',
+    }];
+    useStudioStore.setState({ manuscript, pendingChangeSet: null });
+    const citationsBefore = JSON.stringify(manuscript.citations);
+    assert.equal(stageAddBibliographicRecords([incoming]).added, 1);
+    const updated = useStudioStore.getState().manuscript;
+    assert.deepEqual(updated.sourceAttributions, manuscript.sourceAttributions);
+    assert.ok(updated.bibliographicRecords?.some((r) => r.id === incoming.id));
+    assert.equal(JSON.stringify(updated.citations), citationsBefore);
+    assert.equal(updated.sections[0]!.blocks[0]!.content, manuscript.sections[0]!.blocks[0]!.content);
+  } finally { useStudioStore.setState(previous); }
+});
