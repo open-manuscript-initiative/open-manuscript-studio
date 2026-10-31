@@ -1,4 +1,5 @@
-import { collectReferencedAssetIds, sha256Hex } from '../model/assets';
+import { collectReferencedAssetIdsInSections, sha256Hex } from '../model/assets';
+import { mapManuscriptBlocks } from '../model/manuscriptTreeTraversal';
 import { isValidLinearRevisionHistory } from '../model/versioning';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import {
@@ -11,7 +12,6 @@ import {
 import { parsePortableOmiState } from './omiPortableFormat';
 import type { OmiAsset } from '../types/assets';
 import type {
-  OmiBlock,
   OmiManuscript,
   OmiManuscriptState,
 } from '../types/omi';
@@ -586,9 +586,7 @@ async function collectImportedAssets(
 ): Promise<OmiContainerImportedAsset[]> {
   const assets = manuscript.assets ?? [];
   const assetMap = new Map(assets.map((asset) => [asset.id, asset]));
-  const referenced = collectReferencedAssetIds(
-    manuscript.sections.flatMap((section) => section.blocks),
-  );
+  const referenced = collectReferencedAssetIdsInSections(manuscript.sections);
   const result: OmiContainerImportedAsset[] = [];
 
   for (const assetId of referenced) {
@@ -671,22 +669,11 @@ function normalizeAssetPreviewFields(state: OmiManuscriptState): OmiManuscriptSt
     ...state,
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     sourceAttributions: state.sourceAttributions ?? [],
-    sections: state.sections.map((section) => ({
-      ...section,
-      blocks: normalizeBlockPreviews(section.blocks),
-    })),
-  };
-}
-
-function normalizeBlockPreviews(blocks: readonly OmiBlock[]): OmiBlock[] {
-  return blocks.map((block) => ({
-    ...block,
-    visual:
+    sections: mapManuscriptBlocks(state.sections, (block) =>
       block.visual?.kind === 'image' && block.visual.assetId
-        ? { ...block.visual, src: '' }
-        : block.visual,
-    children: block.children ? normalizeBlockPreviews(block.children) : block.children,
-  }));
+        ? { ...block, visual: { ...block.visual, src: '' } }
+        : block),
+  };
 }
 
 function sortJson(value: unknown): unknown {
