@@ -19,6 +19,9 @@ UMask=0077
 NoNewPrivileges=yes
 PrivateNetwork=yes
 IPAddressDeny=any
+# Browser rendering may require localhost inside its own empty namespace;
+# this is not the host's loopback or an external network path.
+IPAddressAllow=localhost
 ProtectSystem=strict
 ProtectHome=yes
 PrivateDevices=yes
