@@ -1,5 +1,6 @@
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 import { createExchangeReport, digestBytes, exchangeProfile, finishExchangeReceipt, type ExchangeFormat, type ExchangeReport } from '../model/exchange';
+import { hasExpectedExchangeArtifactEnvelope } from './exchangeArtifactInspection';
 
 async function digestBuffer(buffer: ArrayBuffer): Promise<string> {
   if (!globalThis.crypto?.subtle) return digestBytes(new Uint8Array(buffer));
@@ -51,10 +52,7 @@ export async function prepareOfficeImport(
 export async function reportExportArtifact(report: ExchangeReport, artifact: Blob): Promise<ExchangeReport> {
   const buffer = await artifact.arrayBuffer();
   const bytes = new Uint8Array(buffer);
-  const target = report.mapping.target;
-  const zip = ['omi', 'docx', 'odt', 'idml', 'html', 'epub'].includes(target);
-  const validEnvelope = (!zip || bytes[0] === 0x50 && bytes[1] === 0x4b)
-    && (target !== 'pdf' || new TextDecoder().decode(bytes.slice(0, 5)) === '%PDF-');
+  const validEnvelope = hasExpectedExchangeArtifactEnvelope(report.mapping.target as ExchangeFormat, bytes);
   return finishExchangeReceipt(report, { digest: await digestBuffer(buffer), bytes: bytes.byteLength }, validEnvelope ? [] : [{ code: 'INVALID_ARTIFACT_ENVELOPE',
     severity: 'error', disposition: 'unverifiable', sourceLocator: '/', feature: 'output', consequence: 'The generated artifact does not match its declared file type.' }]);
 }
