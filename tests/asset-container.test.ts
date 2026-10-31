@@ -18,6 +18,7 @@ import {
   getAssetPayload,
   putAssetPayload,
 } from '../src/services/assetRepository.ts';
+import { buildPdfArtifactDocument } from '../src/services/exportPdf.ts';
 import {
   buildOmiContainer,
   isSafeContainerPath,
@@ -351,4 +352,37 @@ test('missing or corrupted unreferenced asset payload blocks a purportedly compl
   const tampered = await buildOmiContainer(preservationState);
   assert.equal(tampered.validForExport, false);
   assert.ok(tampered.diagnostics.some((issue) => issue.code === 'asset-integrity-mismatch' && issue.targetId === asset.id));
+});
+
+test('PDF export diagnoses missing image payload before contacting the renderer', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset } = await createCommittedAssetManuscript();
+  await assert.rejects(
+    buildPdfArtifactDocument(manuscript),
+    (error: unknown) => error instanceof Error &&
+      error.message.includes(asset.fileName) &&
+      error.message.includes(asset.id) &&
+      error.message.includes('missing from local storage'),
+  );
+});
+
+test('PDF export rejects corrupt stored image bytes instead of producing invalid PDF input', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, new TextEncoder().encode('modified-bytes'));
+  await assert.rejects(
+    buildPdfArtifactDocument(manuscript),
+    (error: unknown) => error instanceof Error &&
+      error.message.includes(asset.id) &&
+      error.message.includes('integrity check'),
+  );
+});
+
+test('PDF export embeds intact image bytes as data URL', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const html = await buildPdfArtifactDocument(manuscript);
+  assert.ok(html.includes('data:image/png;base64,'));
+  assert.ok(!html.includes(`media/images/${asset.id}-`));
 });
