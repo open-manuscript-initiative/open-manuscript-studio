@@ -54,6 +54,7 @@ import {
   OMI_CONTAINER_VERSION,
 } from '../services/omiContainer';
 import { inspectOmiContainer } from '../services/omiContainerImport';
+import { inspectMissingManuscriptAssets, restoreMissingAssetsFromVerifiedPackage, type MissingManuscriptAsset } from '../services/assetRecovery';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 
 function formatBytes(value: string): string {
@@ -117,6 +118,7 @@ export function CloudStorageSettings({ view = 'connections' }: { view?: 'connect
   const [rootPath, setRootPath] = useState('OMI');
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [missingAssets, setMissingAssets] = useState<MissingManuscriptAsset[]>([]);
 
   useEffect(() => {
     setDeviceMode(getDeviceStorageMode(userId));
@@ -321,6 +323,33 @@ export function CloudStorageSettings({ view = 'connections' }: { view?: 'connect
     }
   }
 
+  async function inspectAssets(): Promise<void> {
+    setBusy('inspect-assets');
+    try {
+      const missing = await inspectMissingManuscriptAssets(useStudioStore.getState().manuscript);
+      setMissingAssets(missing);
+      setMessage(missing.length ? `${missing.length} referenced media asset(s) need recovery.` : 'All referenced media assets are available and verified.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function recoverAssets(file: File): Promise<void> {
+    setBusy('recover-assets');
+    try {
+      const current = useStudioStore.getState().manuscript;
+      const count = await restoreMissingAssetsFromVerifiedPackage(current, new Uint8Array(await file.arrayBuffer()));
+      setMissingAssets(await inspectMissingManuscriptAssets(current));
+      setMessage(`Restored ${count} verified media asset(s). The manuscript and its revisions were not modified.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function saveBackup(): Promise<void> {
     if (!selectedConnectionId) return;
     setBusy('backup');
@@ -393,7 +422,25 @@ export function CloudStorageSettings({ view = 'connections' }: { view?: 'connect
 
   return (
     <section className="studio-settings-card" aria-labelledby="studio-cloud-storage-title">
-      <div className="studio-settings-card-header">
+            <div className="studio-settings-hint" data-manuscript-asset-recovery="true">
+        <strong>Manuscript media integrity and recovery</strong>
+        <p>Inspect referenced images before saving. Restore missing bytes only from a verified .omi package belonging to this manuscript. Existing text and revisions are preserved.</p>
+        <button type="button" className="studio-menu-secondary-action" disabled={busy !== null} onClick={() => void inspectAssets()}>
+          Inspect manuscript media
+        </button>
+        {missingAssets.length > 0 ? (
+          <ul>{missingAssets.map((asset) => <li key={asset.id}>{asset.fileName} — {asset.reason} ({asset.id})</li>)}</ul>
+        ) : null}
+        <label>
+          Restore assets from an OMI package
+          <input type="file" accept=".omi,.zip,application/zip" disabled={busy !== null} onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            if (file) void recoverAssets(file);
+            event.currentTarget.value = '';
+          }} />
+        </label>
+      </div>
+<div className="studio-settings-card-header">
         <div>
           <h4 id="studio-cloud-storage-title"><Cloud size={18} aria-hidden="true" /> {view === 'documents' ? copy.backupTitle : copy.title}</h4>
           <p>{view === 'documents' ? copy.backupDescription : copy.description}</p>
