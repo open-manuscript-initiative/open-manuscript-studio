@@ -4,8 +4,8 @@ Status: **experimental implementation proposal**, 2026-10-31.
 Ruleset: **studio-validation-0.1**. Report version: **0.1.0**.
 Schema: `src/schemas/studio-validation-report-0.1.schema.json`.
 
-The upstream registry reserves OMI-SPEC-180 (Validation Model); it does not yet
-publish a normative specification or version. This implementation defines a local,
+OMI-SPEC-180 is Draft upstream; it has no frozen canonical report schema.
+This implementation defines a local,
 executable validation/report contract. Its check versions identify Studio adapters,
 not versions of the related specifications. It does not add a fictitious 180 version
 to `omi.specifications`, modify OMI-SPEC-320, or claim formal conformance.

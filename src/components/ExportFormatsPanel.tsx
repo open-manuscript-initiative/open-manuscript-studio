@@ -45,7 +45,7 @@ import { savePublicationArtifactWithBuildSidecar } from '../services/publication
 import { CustomExportPanel } from './CustomExportPanel';
 import { LongTaskStatus } from './LongTaskStatus';
 import { ExchangeReportView } from './ExchangeReportView';
-import { beginExportReport, reportExportArtifact } from '../services/exchangeSession';
+import { ExportExchangeSession } from '../services/exchangeSession';
 import type { ExchangeReport } from '../model/exchange';
 
 type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'odt' | 'custom' | 'idml' | 'xtg' | 'mif' | 'sla' | 'latex' | 'epub' | 'pdf';
@@ -115,23 +115,16 @@ export function ExportFormatsPanel() {
     setNotice('');
     setBusy(id);
     setExchangeReport(null);
-    let job: ExchangeReport | null = null;
+    let job: ExportExchangeSession | null = null;
     const recordAdapterDiagnostics = (result: unknown) => {
-      if (!job || !result || typeof result !== 'object') return;
-      if ('warnings' in result && Array.isArray(result.warnings)) {
-        job = { ...job, events: [...job.events, ...result.warnings.filter((item): item is string => typeof item === 'string').map((message) => ({
-          code: 'ADAPTER_WARNING', severity: 'warning' as const, disposition: 'unknown' as const,
-          sourceLocator: '/', feature: `${id}-mapping`, consequence: message,
-        }))] };
-      }
+      job?.recordAdapterDiagnostics(result);
     };
     const inspectArtifact = async (blob: Blob) => {
       if (!job) throw new Error('MAPPING_UNAVAILABLE');
-      job = await reportExportArtifact(job, blob);
-      if (job.status === 'failed') throw new Error('OUTPUT_INVALID');
+      await job.inspectArtifact(blob);
     };
     const reportDelivery = (delivery: ExportDeliveryResult): void => {
-      if (job) { job = { ...job, status: delivery.saved ? job.status : 'cancelled' }; setExchangeReport(job); }
+      if (job) setExchangeReport(job.finishDelivery(delivery.saved));
       setNotice(!delivery.saved ? copy.cancelled : delivery.path ? `${copy.saved} ${delivery.path}` : copy.saved);
     };
     const deliverBlob = async (blob: Blob, fileName: string) => {
@@ -145,7 +138,7 @@ export function ExportFormatsPanel() {
     try {
       checkpoint('export');
       const manuscript = useStudioStore.getState().manuscript;
-      job = await beginExportReport(id, JSON.stringify(manuscript));
+      job = await ExportExchangeSession.begin(id, JSON.stringify(manuscript));
       switch (id) {
         case 'omi': {
           await externalizeActiveManuscriptAssets();
@@ -155,7 +148,7 @@ export function ExportFormatsPanel() {
           if (enriched !== current) useStudioStore.setState({ manuscript: enriched });
           const result = await buildOmiContainer(enriched);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
-          job = await beginExportReport(id, JSON.stringify(enriched));
+          job = await ExportExchangeSession.begin(id, JSON.stringify(enriched));
           reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
@@ -290,10 +283,7 @@ export function ExportFormatsPanel() {
         }
       }
     } catch (cause) {
-      if (job) setExchangeReport({ ...job, status: 'failed', events: [...job.events, {
-        code: 'EXPORT_EXECUTION_FAILED', severity: 'error', disposition: 'unverifiable',
-        sourceLocator: '/', feature: 'output', consequence: 'Artifact generation or delivery failed; the source remains available.',
-      }] });
+      if (job) setExchangeReport(job.fail());
       setError(cause instanceof Error && cause.message ? cause.message : copy.failed);
     } finally {
       setBusy(null);

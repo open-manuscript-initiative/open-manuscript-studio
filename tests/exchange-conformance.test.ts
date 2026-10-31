@@ -2,11 +2,34 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { digestBytes, createExchangeReport, exchangeProfile, finishExchangeReport, compareRoundTripInvariants } from '../src/model/exchange.ts';
 import { assessmentOutcome, capabilityStatement, isAssessmentCurrent, MODEL_SUITE, runModelAssessment } from '../src/model/conformance.ts';
-import { beginExportReport, OfficeImportPreparationError, prepareOfficeImport, reportExportArtifact } from '../src/services/exchangeSession.ts';
+import { beginExportReport, ExportExchangeSession, OfficeImportPreparationError, prepareOfficeImport, reportExportArtifact } from '../src/services/exchangeSession.ts';
 import type { DocxManuscriptImportPlan } from '../src/services/docxManuscriptImport.ts';
 
 const implementation = { name: 'Studio test', version: 'test', build: 'test', revision: 'test-sha', dependencies: 'test-deps' };
 const bytes = new TextEncoder().encode('árvíztűrő 中文 العربية');
+
+test('export application session binds inspected bytes and separates delivery, cancellation and failure', async () => {
+  const job = await ExportExchangeSession.begin('pdf', 'synthetic source');
+  assert.throws(() => job.finishDelivery(true), /OUTPUT_NOT_INSPECTED/);
+  job.recordAdapterDiagnostics({ warnings: ['Known limitation', 42] });
+  await job.inspectArtifact(new Blob(['%PDF-1.7 synthetic']));
+  const cancelled = job.finishDelivery(false);
+  assert.equal(cancelled.status, 'cancelled');
+  assert.equal(cancelled.lossless, false);
+  assert.ok(cancelled.events.some((item) => item.code === 'ADAPTER_WARNING'));
+  const invalid = await ExportExchangeSession.begin('pdf', 'synthetic source');
+  await assert.rejects(invalid.inspectArtifact(new Blob(['not a PDF'])), /OUTPUT_INVALID/);
+  assert.throws(() => invalid.finishDelivery(true), /OUTPUT_NOT_INSPECTED/);
+  assert.ok(invalid.fail().events.some((item) => item.code === 'INVALID_ARTIFACT_ENVELOPE'));
+  const valid = await ExportExchangeSession.begin('omi-json', 'exact source');
+  const artifact = new Blob(['{"synthetic":true}']);
+  await valid.inspectArtifact(artifact);
+  const saved = valid.finishDelivery(true);
+  assert.equal(saved.status, 'completed-with-loss');
+  assert.equal(saved.output?.digest, digestBytes(new Uint8Array(await artifact.arrayBuffer())));
+  saved.events.length = 0;
+  assert.ok(valid.fail().events.some((item) => item.code === 'INSPECTION_INCOMPLETE'), 'Returned reports cannot mutate application session state');
+});
 
 test('versioned mappings separate direction and publication from semantic exchange', () => {
   assert.equal(exchangeProfile('import', 'docx').source, 'docx');
