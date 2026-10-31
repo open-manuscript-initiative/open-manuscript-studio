@@ -218,3 +218,32 @@ test('published report fixtures distinguish invalid documents from malformed rep
   }
   assert.throws(() => parseValidationReport(readFileSync(new URL('./fixtures/validation/rejected-missing-check.json', import.meta.url), 'utf8')));
 });
+
+
+test('a failing validation adapter cannot change later checks or the inspected source', async () => {
+  const manuscript = source();
+  const before = structuredClone(manuscript);
+  const checks = Object.fromEntries(
+    (Object.keys(VALIDATION_CHECKS) as ValidationCheckId[])
+      .map((id) => [id, () => ({ findings: [] })]),
+  ) as Record<ValidationCheckId, (snapshot: OmiManuscript) => ValidationCheckOutput>;
+  checks.identifiers = (snapshot) => {
+    snapshot.sections[0]!.title = 'Illicit mutation';
+    return { findings: [] };
+  };
+  checks.references = (snapshot) => ({
+    findings: snapshot.sections[0]?.title === before.sections[0]?.title
+      ? []
+      : [{ code: 'mutated-between-checks', severity: 'error', path: '/sections/0/title' }],
+  });
+
+  const report = await executeValidationChecks(manuscript, 'authoring', checks, time);
+  assert.equal(report.checks[0]?.status, 'error');
+  assert.equal(report.checks[0]?.complete, false);
+  assert.equal(report.checks[1]?.status, 'pass');
+  assert.equal(report.summary.outcome, 'indeterminate');
+  assert.ok(report.diagnostics.some((item) => item.code === 'check-unavailable'));
+  assert.equal(report.diagnostics.some((item) => item.code === 'mutated-between-checks'), false);
+  assert.deepEqual(manuscript, before);
+  assert.equal(isValidationReportCurrent(manuscript, report), true);
+});
