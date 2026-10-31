@@ -12,7 +12,9 @@ ExecStart=/opt/plesk/node/24/bin/node /opt/omi-pdf-worker/workers/pdfWorkerServe
 Environment=NODE_ENV=production
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 Environment=VIVLIOSTYLE_BIN=/usr/local/bin/vivliostyle
-Environment=VIVLIOSTYLE_EXECUTABLE_BROWSER=/usr/bin/chromium
+# Use the native Google Chrome Stable .deb executable; the Ubuntu 24.04
+# chromium name typically resolves to the Snap launcher instead.
+Environment=VIVLIOSTYLE_EXECUTABLE_BROWSER=/usr/bin/google-chrome-stable
 Environment=HOME=/tmp
 Environment=XDG_CACHE_HOME=/tmp/.cache
 UMask=0077

@@ -12,7 +12,7 @@ The example units enforce PrivateNetwork=yes, IPAddressDeny=any and IPAddressAll
 
 - Take a tested IONOS VPS snapshot and record the deployed Studio SHA.
 - Determine the exact API account using systemctl show omi-studio-api.service -p User -p WorkingDirectory. Do not share the API .env.
-- Verify the Node binary (/opt/plesk/node/24/bin/node), Poppler (pdftotext), Vivliostyle (/usr/local/bin/vivliostyle), Chromium (/usr/bin/chromium), and required fonts.
+- Verify the Node binary (/opt/plesk/node/24/bin/node), Poppler (pdftotext), Vivliostyle (/usr/local/bin/vivliostyle), **Google Chrome Stable** (/usr/bin/google-chrome-stable resolving to /opt/google/chrome/chrome on this Plesk host), and required fonts. The packaged default unit uses Google Chrome, not /usr/bin/chromium. Confirm the Chrome executable works under the isolated non-root service identity before switching the API.
 - Check that the API's 127.0.0.1:3001 and collaboration's 127.0.0.1:3022 listeners work, and the external HTTPS /api/health returns 200.
 
 ## 2. Install on a test instance or maintenance window
@@ -20,10 +20,16 @@ The example units enforce PrivateNetwork=yes, IPAddressDeny=any and IPAddressAll
 Build from the **merged and reviewed** Studio code. Commands below are a starting example and must be adapted to the actual repository path and Unix identities.
 
 ~~~bash
-sudo groupadd --system omi-pdf-clients
-sudo useradd --system --no-create-home --shell /usr/sbin/nologin omi-pdf-worker
-# Replace the placeholder with the actual service User, NOT root:
-sudo usermod -aG omi-pdf-clients '<STUDIO_API_SERVICE_USER>'
+# Run as root. Make the primary worker group explicit: do not rely on
+# distribution-dependent default behavior of useradd --system.
+getent group omi-pdf-worker >/dev/null || groupadd --system omi-pdf-worker
+getent group omi-pdf-clients >/dev/null || groupadd --system omi-pdf-clients
+id -u omi-pdf-worker >/dev/null 2>&1 || \
+  useradd --system --gid omi-pdf-worker --no-create-home --shell /usr/sbin/nologin omi-pdf-worker
+# Actual Studio API User= verified on this server; grant socket access only.
+usermod -aG omi-pdf-clients 'openmanuscript.org-obh8w31oiz'
+getent passwd omi-pdf-worker
+id 'openmanuscript.org-obh8w31oiz'
 
 cd /var/www/vhosts/openmanuscript.org/studio/repository
 npm --prefix server run build
@@ -46,7 +52,7 @@ sudo systemctl enable --now omi-pdf-worker.socket
 sudo systemctl start omi-pdf-worker.service
 ~~~
 
-If any account/group already exists, verify it instead of recreating. Do not use chmod 666 on the socket, grant membership to arbitrary Plesk sites, mount API secrets into the worker, or disable network isolation to get Chromium running. For Chromium/font failures, correct only the specifically verified need.
+If any account/group already exists, verify its primary group and access rights instead of recreating it. Do not use chmod 666 on the socket, grant membership to arbitrary Plesk sites, mount API secrets into the worker, or disable network isolation or the Chrome sandbox merely to get rendering running. For Chrome/font failures, inspect the worker logs and correct only the specifically verified need. Chrome must work with its native sandbox under the dedicated worker account.
 
 ## 3. Verify sandbox and functionality before switching the API
 
@@ -84,3 +90,9 @@ Restart only omi-studio-api.service so its process acquires the socket group mem
 - The API outbound policy against DNS rebinding at connection time for WebDAV/Nextcloud is **not implemented by this worker**. The #765 acceptance still requires host/proxy egress controls and actual IPv4/IPv6 tests.
 - Docker/Compose still needs a separate isolated worker networking variant; this systemd unit is for the actual Ubuntu/Plesk host only.
 - This does not automatically promote Draft specifications or approve the beta.13 public release.
+
+## Host-specific finding (2026-10-31)
+
+The Ubuntu 24.04 IONOS/Plesk administrator verified Google Chrome Stable 156.0.8078.79 from Google's native amd64 .deb package. `google-chrome-stable` resolves through `/usr/bin/google-chrome-stable` to `/opt/google/chrome/chrome`; no `chromium` executable was found in the standard locations. The Chrome installation was performed as root, and package post-install scripts indicated a **pending kernel reboot**; defer that to a separate maintenance window. An APT warning about an invalidly suffixed MariaDB source-list filename is a separate packaging hygiene issue, not evidence that Chrome failed to install. Neither message is an instruction to run a global upgrade as part of this worker rollout.
+
+Before the worker's first start, recheck the actual executable and test a small PDF render under the isolated systemd identity. A green GitHub CI run does not validate Chromium in this host's PrivateNetwork/ProtectSystem/PrivateDevices sandbox. Do not set `PDF_WORKER_REQUIRED=true` until the independent worker smoke test passes.
