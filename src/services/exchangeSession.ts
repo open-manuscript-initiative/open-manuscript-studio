@@ -1,5 +1,6 @@
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 import { createExchangeReport, digestBytes, exchangeProfile, finishExchangeReceipt, type ExchangeFormat, type ExchangeReport } from '../model/exchange';
+import { hasExpectedExchangeArtifactEnvelope } from './exchangeArtifactInspection';
 
 async function digestBuffer(buffer: ArrayBuffer): Promise<string> {
   if (!globalThis.crypto?.subtle) return digestBytes(new Uint8Array(buffer));
@@ -31,6 +32,18 @@ export async function prepareOfficeImport(
   const buffer = await file.arrayBuffer();
   const report = createExchangeReport(exchangeProfile('import', format), new Uint8Array(), true);
   report.source = { digest: await digestBuffer(buffer), bytes: buffer.byteLength, retained: true };
+  // File extension is not evidence of the actual format: retain the original
+  // and refuse a committable candidate when its package envelope is invalid.
+  if (buffer.byteLength > 200 * 1024 * 1024 || !hasExpectedExchangeArtifactEnvelope(format, new Uint8Array(buffer))) {
+    throw new OfficeImportPreparationError({
+      ...report, status: 'failed', events: [...report.events, {
+        code: buffer.byteLength > 200 * 1024 * 1024 ? 'RESOURCE_LIMIT' : 'INVALID_SOURCE_ENVELOPE',
+        severity: 'error', disposition: 'unverifiable', sourceLocator: '/',
+        feature: 'source-preflight',
+        consequence: 'The source package is invalid or exceeds the import size limit. No candidate was committed.',
+      }],
+    }, file);
+  }
   const buffered = { name: file.name, type: file.type, size: file.size, lastModified: file.lastModified,
     arrayBuffer: async () => buffer } as File;
   let plan: DocxManuscriptImportPlan;
@@ -40,6 +53,18 @@ export async function prepareOfficeImport(
       code: 'IMPORT_EXECUTION_FAILED', severity: 'error', disposition: 'unverifiable', sourceLocator: '/',
       feature: 'source-parser', consequence: 'Parsing failed; the original file is unchanged. No candidate was committed.',
     }] }, file);
+  }
+  // A successful parser call is not proof that it returned an editable
+  // manuscript candidate. Reject invalid adapter contracts before UI commit.
+  if (!plan || typeof plan.title !== 'string' ||
+    !Array.isArray(plan.sections) || !Array.isArray(plan.warnings)) {
+    throw new OfficeImportPreparationError({
+      ...report, status: 'failed', events: [...report.events, {
+        code: 'INVALID_IMPORT_CANDIDATE', severity: 'error',
+        disposition: 'unverifiable', sourceLocator: '/', feature: 'source-mapping',
+        consequence: 'The adapter returned no valid editable manuscript candidate. The source is unchanged.',
+      }],
+    }, file);
   }
   // Keep diagnostics independent of hidden text/provenance and editable blocks.
   report.events.push(...plan.warnings.map((warning) => ({ code: warning.code, severity: warning.severity,
@@ -51,10 +76,7 @@ export async function prepareOfficeImport(
 export async function reportExportArtifact(report: ExchangeReport, artifact: Blob): Promise<ExchangeReport> {
   const buffer = await artifact.arrayBuffer();
   const bytes = new Uint8Array(buffer);
-  const target = report.mapping.target;
-  const zip = ['omi', 'docx', 'odt', 'idml', 'html', 'epub'].includes(target);
-  const validEnvelope = (!zip || bytes[0] === 0x50 && bytes[1] === 0x4b)
-    && (target !== 'pdf' || new TextDecoder().decode(bytes.slice(0, 5)) === '%PDF-');
+  const validEnvelope = hasExpectedExchangeArtifactEnvelope(report.mapping.target as ExchangeFormat, bytes);
   return finishExchangeReceipt(report, { digest: await digestBuffer(buffer), bytes: bytes.byteLength }, validEnvelope ? [] : [{ code: 'INVALID_ARTIFACT_ENVELOPE',
     severity: 'error', disposition: 'unverifiable', sourceLocator: '/', feature: 'output', consequence: 'The generated artifact does not match its declared file type.' }]);
 }
