@@ -28,10 +28,10 @@ test('isolated Unix socket bounds inputs and enforces owner quotas across concur
     await pending;
     return Buffer.from('<html>layout</html>');
   });
-  await new Promise<void>((resolve) => server.listen(socket, resolve));
+  await new Promise<void>((resolve) => { server.listen(socket, resolve); });
   t.after(async () => {
     complete();
-    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await new Promise<void>((resolve) => { server.close(() => resolve()); });
     await rm(directory, { recursive: true, force: true });
   });
   const first = dispatchPdfWorkerTask('import', Buffer.from('%PDF-fixture'), 'owner-1', socket, 3_000);
@@ -53,9 +53,9 @@ test('socket transport refuses malformed PDF requests and worker rejects wrong l
   const directory = await mkdtemp(join(tmpdir(), 'omi-worker-safety-'));
   const socket = join(directory, 'worker.sock');
   const server = createPdfWorkerServer(async () => Buffer.from('%PDF-fixture'));
-  await new Promise<void>((resolve) => server.listen(socket, resolve));
+  await new Promise<void>((resolve) => { server.listen(socket, resolve); });
   t.after(async () => {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await new Promise<void>((resolve) => { server.close(() => resolve()); });
     await rm(directory, { recursive: true, force: true });
   });
   await assert.rejects(
