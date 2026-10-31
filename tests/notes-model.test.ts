@@ -135,3 +135,62 @@ test('orphan note annotations are removed only when explicitly requested', () =>
   );
   assert.equal(cleaned.removedAnnotations[0]?.id, 'note-b');
 });
+
+
+test('nested sections and child blocks contribute note anchors in document order', () => {
+  const state = createState();
+  const childSection = {
+    id: 'nested-section', title: 'Nested', blocks: [{
+      id: 'nested-parent', type: 'paragraph' as const, content: noteDocument('note-c'),
+      children: [{ id: 'nested-child', type: 'paragraph' as const, content: noteDocument('note-d') }],
+    }],
+  };
+  state.sections[0]!.children = [childSection];
+  state.annotations.push(
+    createNoteAnnotation({ id: 'note-c', anchorId: 'anchor-note-c', targetBlockId: 'nested-parent' }),
+    createNoteAnnotation({ id: 'note-d', anchorId: 'anchor-note-d', targetBlockId: 'nested-child' }),
+  );
+  const original = structuredClone(state);
+  assert.deepEqual(collectNoteAnchors(state).map((anchor) => [
+    anchor.noteId, anchor.sectionId, anchor.blockId,
+  ]), [
+    ['note-a', 'section-1', 'block-1'],
+    ['note-b', 'section-1', 'block-1'],
+    ['note-c', 'nested-section', 'nested-parent'],
+    ['note-d', 'nested-section', 'nested-child'],
+  ]);
+  assert.equal(getNoteNumber(state, 'note-c'), 3);
+  assert.equal(getNoteNumber(state, 'note-d'), 4);
+
+  const reconciled = reconcileNoteState(state);
+  assert.equal(reconciled.state.annotations.find((note) => note.id === 'note-d')?.targetBlockId, 'nested-child');
+  assert.equal(reconciled.blockChanges.some((change) => change.blockId === 'nested-child'), true);
+  assert.ok(reconciled.state.sections[0]!.children![0]!.blocks[0]!.children![0]!.content.includes('"label":"4"'));
+  assert.deepEqual(state, original, 'reading and reconciliation must not mutate author state');
+});
+
+test('removing a nested note keeps sibling text and unrelated note anchors intact', () => {
+  const state = createState();
+  const nested = {
+    id: 'nested-section', title: 'Nested', blocks: [{
+      id: 'nested-parent', type: 'paragraph' as const, content: noteDocument('note-c'),
+      children: [{ id: 'nested-child', type: 'paragraph' as const, content: noteDocument('note-d') }],
+    }],
+  };
+  state.sections[0]!.children = [nested];
+  state.annotations.push(
+    createNoteAnnotation({ id: 'note-c', anchorId: 'anchor-note-c', targetBlockId: 'nested-parent' }),
+    createNoteAnnotation({ id: 'note-d', anchorId: 'anchor-note-d', targetBlockId: 'nested-child' }),
+  );
+  const original = structuredClone(state);
+  const result = removeNoteFromState(state, 'note-c');
+  assert.deepEqual(collectNoteAnchors(result.state).map((anchor) => anchor.noteId), [
+    'note-a', 'note-b', 'note-d',
+  ]);
+  assert.deepEqual(result.blockChanges.map((item) => item.blockId).sort(), [
+    'block-1', 'nested-child', 'nested-parent',
+  ]);
+  assert.equal(result.removedAnnotations[0]?.id, 'note-c');
+  assert.equal(result.state.annotations.find((item) => item.id === 'note-d')?.targetBlockId, 'nested-child');
+  assert.deepEqual(state, original, 'deleting a note must not mutate the original state');
+});

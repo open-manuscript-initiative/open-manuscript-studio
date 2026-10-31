@@ -11,6 +11,8 @@ import {
   type OmiNamedAnchor,
 } from './namedAnchors.ts';
 import { getSectionNumberToken } from './sectionNumbering.ts';
+import { getParentSectionId, withParentSectionId } from './sectionStructure';
+import { mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 export interface OmiCrossReferenceTarget {
   id: string;
@@ -91,41 +93,38 @@ export function collectCrossReferenceTargets(
   const targets: OmiCrossReferenceTarget[] = [];
   const documentCounters = createCounters();
 
-  for (const section of manuscript.sections) {
-    const sectionNumber =
-      getSectionNumberToken(manuscript.sections, section.id, 'decimal') || '1';
+  const numberedSections = flattenNestedSectionsForNumbering(manuscript.sections);
+  const sectionNumbers = new Map<string, string>();
+  const countersBySection = new Map<string, ReturnType<typeof createCounters>>();
 
-    targets.push({
-      id: section.id,
-      kind: 'section',
-      sectionId: section.id,
-      number: sectionNumber,
-      title: section.title.trim(),
-    });
-
-    const sectionCounters = createCounters();
-
-    for (const block of section.blocks) {
-      const kind = targetKindForBlock(block.visual?.kind);
-      if (!kind) continue;
-
-      const counters =
-        numbering === 'section' ? sectionCounters : documentCounters;
-      counters[kind] += 1;
-      const ordinal = counters[kind];
-      const number =
-        numbering === 'section'
-          ? `${sectionNumber}.${ordinal}`
-          : String(ordinal);
-
+  for (const occurrence of walkManuscriptStructure(manuscript.sections)) {
+    const { section } = occurrence;
+    if (occurrence.kind === 'section') {
+      const number = getSectionNumberToken(numberedSections, section.id, 'decimal') || '1';
+      sectionNumbers.set(section.id, number);
+      countersBySection.set(section.id, createCounters());
       targets.push({
-        id: block.id,
-        kind,
-        sectionId: section.id,
-        number,
-        title: targetTitle(block.visual),
+        id: section.id, kind: 'section', sectionId: section.id,
+        number, title: section.title.trim(),
       });
+      continue;
     }
+
+    const { block } = occurrence;
+    const kind = targetKindForBlock(block.visual?.kind);
+    if (!kind) continue;
+    const counters = numbering === 'section'
+      ? countersBySection.get(section.id)!
+      : documentCounters;
+    counters[kind] += 1;
+    const ordinal = counters[kind];
+    targets.push({
+      id: block.id, kind, sectionId: section.id,
+      number: numbering === 'section'
+        ? (sectionNumbers.get(section.id) ?? '1') + '.' + ordinal
+        : String(ordinal),
+      title: targetTitle(block.visual),
+    });
   }
 
   for (const anchor of manuscript.namedAnchors ?? []) {
@@ -144,6 +143,26 @@ export function collectCrossReferenceTargets(
   }
 
   return targets;
+}
+
+
+/** Embedded children use their actual parent during numbering; flat sections
+ * keep their established parentSectionId relations. The source stays unchanged. */
+function flattenNestedSectionsForNumbering(sections: readonly OmiSection[]): OmiSection[] {
+  const result: OmiSection[] = [];
+  const active = new Set<object>();
+  const visit = (section: OmiSection, parentId?: string) => {
+    if (active.has(section)) return;
+    active.add(section);
+    const numbered = parentId && !getParentSectionId(section)
+      ? withParentSectionId(section, parentId)
+      : section;
+    result.push(numbered);
+    for (const child of section.children ?? []) visit(child, section.id);
+    active.delete(section);
+  };
+  for (const section of sections) visit(section);
+  return result;
 }
 
 export function resolveCrossReferenceTarget(
@@ -248,10 +267,8 @@ export function synchronizeCrossReferenceLabels(
     crossReferences.map((reference) => [reference.id, reference]),
   );
 
-  return sections.map((section) => {
-    let sectionChanged = false;
-    const blocks = section.blocks.map((block) => {
-      const content = transformStructuredContent(block.content, (node) => {
+  return mapManuscriptBlocks(sections, (block) => {
+    const content = transformStructuredContent(block.content, (node) => {
         if (
           node.type !== 'omiCrossReference' ||
           !isRecord(node.attrs)
@@ -284,13 +301,7 @@ export function synchronizeCrossReferenceLabels(
           },
         };
       });
-
-      if (content === block.content) return block;
-      sectionChanged = true;
-      return { ...block, content };
-    });
-
-    return sectionChanged ? { ...section, blocks } : section;
+    return content === block.content ? block : { ...block, content };
   });
 }
 
@@ -299,29 +310,16 @@ export function collectCrossReferenceAnchors(
 ): OmiCrossReferenceAnchor[] {
   const anchors: OmiCrossReferenceAnchor[] = [];
 
-  for (const section of sections) {
-    for (const block of section.blocks) {
-      walkStructuredContent(block.content, (node) => {
-        if (
-          node.type !== 'omiCrossReference' ||
-          !isRecord(node.attrs)
-        ) {
-          return;
-        }
-
-        const crossReferenceId = stringValue(
-          node.attrs.crossReferenceId,
-        );
-        const anchorId = stringValue(node.attrs.anchorId);
-        if (!crossReferenceId || !anchorId) return;
-
-        anchors.push({
-          crossReferenceId,
-          anchorId,
-          sourceBlockId: block.id,
-        });
-      });
-    }
+  for (const occurrence of walkManuscriptStructure(sections)) {
+    if (occurrence.kind !== 'block') continue;
+    const { block } = occurrence;
+    walkStructuredContent(block.content, (node) => {
+      if (node.type !== 'omiCrossReference' || !isRecord(node.attrs)) return;
+      const crossReferenceId = stringValue(node.attrs.crossReferenceId);
+      const anchorId = stringValue(node.attrs.anchorId);
+      if (!crossReferenceId || !anchorId) return;
+      anchors.push({ crossReferenceId, anchorId, sourceBlockId: block.id });
+    });
   }
 
   return anchors;
@@ -331,23 +329,14 @@ export function removeCrossReferenceAnchorFromSections(
   sections: readonly OmiSection[],
   crossReferenceId: string,
 ): OmiSection[] {
-  return sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => ({
-      ...block,
-      content: transformStructuredContent(block.content, (node) => {
-        if (
-          node.type === 'omiCrossReference' &&
-          isRecord(node.attrs) &&
-          stringValue(node.attrs.crossReferenceId) === crossReferenceId
-        ) {
-          return null;
-        }
-
-        return node;
-      }),
-    })),
-  }));
+  return mapManuscriptBlocks(sections, (block) => {
+    const content = transformStructuredContent(block.content, (node) => {
+      if (node.type === 'omiCrossReference' && isRecord(node.attrs) &&
+          stringValue(node.attrs.crossReferenceId) === crossReferenceId) return null;
+      return node;
+    });
+    return content === block.content ? block : { ...block, content };
+  });
 }
 
 export function validateCrossReferences(

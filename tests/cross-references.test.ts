@@ -304,3 +304,32 @@ test('collects and removes stable inline cross-reference anchors', () => {
     0,
   );
 });
+
+
+test('nested sections, figures and cross-reference anchors remain addressable and removable', () => {
+  const root: OmiSection = {
+    id: 'outer', title: 'Outer', blocks: [{
+      id: 'outer-text', type: 'paragraph', content: 'Author text',
+      children: [paragraphWithReference('nested-text', 'nested-ref', 'nested-anchor')],
+    }],
+    children: [{
+      id: 'inner', title: 'Inner', blocks: [
+        visualBlock('nested-figure', 'image', 'Nested figure'),
+      ],
+    }],
+  };
+  const original = structuredClone(root);
+  const targets = collectCrossReferenceTargets({
+    sections: [root], crossReferenceNumbering: 'section',
+  });
+  assert.equal(targets.find((target) => target.id === 'inner')?.number, '1.1');
+  assert.equal(targets.find((target) => target.id === 'nested-figure')?.number, '1.1.1');
+  assert.deepEqual(collectCrossReferenceAnchors([root]), [{
+    crossReferenceId: 'nested-ref', anchorId: 'nested-anchor', sourceBlockId: 'nested-text',
+  }]);
+  const removed = removeCrossReferenceAnchorFromSections([root], 'nested-ref');
+  assert.deepEqual(collectCrossReferenceAnchors(removed), []);
+  assert.equal(removed[0]?.blocks[0]?.content, 'Author text');
+  assert.equal(removed[0]?.children?.[0]?.blocks[0]?.id, 'nested-figure');
+  assert.deepEqual(root, original);
+});

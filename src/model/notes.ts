@@ -1,10 +1,10 @@
 import type {
   OmiAnnotation,
   OmiManuscriptState,
-  OmiSection,
 } from '../types/omi';
 import { getDocumentStructureProfile } from './documentProfile';
 import { getStudyRootSectionId } from './sectionStructure';
+import { mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 export type OmiNoteKind =
   | 'footnote'
@@ -99,9 +99,13 @@ export function collectNoteAnchors(
 ): NoteAnchorOccurrence[] {
   const result: NoteAnchorOccurrence[] = [];
 
-  for (const section of state.sections) {
-    for (const block of section.blocks) {
-      result.push(...collectNoteAnchorsInBlock(block.content, section.id, block.id));
+  for (const occurrence of walkManuscriptStructure(state.sections)) {
+    if (occurrence.kind === 'block') {
+      result.push(...collectNoteAnchorsInBlock(
+        occurrence.block.content,
+        occurrence.section.id,
+        occurrence.block.id,
+      ));
     }
   }
 
@@ -212,38 +216,19 @@ export function reconcileNoteState(
   }
 
   const blockChanges: NoteReconciliationResult['blockChanges'] = [];
-  const nextSections: OmiSection[] = state.sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => {
-      const parsed = parseStructuredContent(block.content);
+  const nextSections = mapManuscriptBlocks(state.sections, (block) => {
+    const parsed = parseStructuredContent(block.content);
+    if (!parsed) return block;
+    const nextContent = JSON.stringify(normalizeNoteNodes(parsed, numberByNoteId, annotationById));
+    if (nextContent === block.content) return block;
 
-      if (!parsed) {
-        return block;
-      }
-
-      const transformed = normalizeNoteNodes(
-        parsed,
-        numberByNoteId,
-        annotationById,
-      );
-      const nextContent = JSON.stringify(transformed);
-
-      if (nextContent === block.content) {
-        return block;
-      }
-
-      blockChanges.push({
-        blockId: block.id,
-        previousContent: block.content,
-        nextContent,
-      });
-
-      return {
-        ...block,
-        content: nextContent,
-      };
-    }),
-  }));
+    blockChanges.push({
+      blockId: block.id,
+      previousContent: block.content,
+      nextContent,
+    });
+    return { ...block, content: nextContent };
+  });
 
   return {
     state: {
@@ -264,23 +249,13 @@ export function removeNoteFromState(
   const removedAnnotation = state.annotations.find(
     (annotation) => annotation.id === noteId && isNoteAnnotation(annotation),
   );
-  const sectionsWithoutAnchor = state.sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => {
-      const parsed = parseStructuredContent(block.content);
+  const sectionsWithoutAnchor = mapManuscriptBlocks(state.sections, (block) => {
+    const parsed = parseStructuredContent(block.content);
+    if (!parsed) return block;
+    const nextContent = JSON.stringify(removeNoteNodes(parsed, noteId));
+    return nextContent === block.content ? block : { ...block, content: nextContent };
+  });
 
-      if (!parsed) {
-        return block;
-      }
-
-      const nextDocument = removeNoteNodes(parsed, noteId);
-      const nextContent = JSON.stringify(nextDocument);
-
-      return nextContent === block.content
-        ? block
-        : { ...block, content: nextContent };
-    }),
-  }));
   const stateWithoutAnnotation: OmiManuscriptState = {
     ...state,
     sections: sectionsWithoutAnchor,
@@ -292,24 +267,17 @@ export function removeNoteFromState(
     removeOrphanAnnotations: false,
   });
   const originalBlockContents = new Map(
-    state.sections.flatMap((section) =>
-      section.blocks.map((block) => [block.id, block.content] as const),
-    ),
+    [...walkManuscriptStructure(state.sections)]
+      .filter((item) => item.kind === 'block')
+      .map(({ block }) => [block.id, block.content] as const),
   );
-  const finalBlockChanges = reconciled.state.sections
-    .flatMap((section) => section.blocks)
-    .flatMap((block) => {
+  const finalBlockChanges = [...walkManuscriptStructure(reconciled.state.sections)]
+    .filter((item) => item.kind === 'block')
+    .flatMap(({ block }) => {
       const previousContent = originalBlockContents.get(block.id);
-
-      if (previousContent === undefined || previousContent === block.content) {
-        return [];
-      }
-
-      return [{
-        blockId: block.id,
-        previousContent,
-        nextContent: block.content,
-      }];
+      return previousContent === undefined || previousContent === block.content
+        ? []
+        : [{ blockId: block.id, previousContent, nextContent: block.content }];
     });
 
   return {
