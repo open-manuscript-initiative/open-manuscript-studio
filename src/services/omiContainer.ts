@@ -1,4 +1,5 @@
-import { assetPath, collectReferencedAssetIds, sha256Hex } from '../model/assets';
+import { assetPath, collectReferencedAssetIdsInSections, sha256Hex } from '../model/assets';
+import { mapManuscriptBlocks } from '../model/manuscriptTreeTraversal';
 import { OMI_FILE_FORMAT_SPECIFICATION } from '../model/omiFormatConstants';
 import { extractManuscriptState } from '../model/versioning';
 import { resolvePublicationProfile } from '../model/publicationProfile';
@@ -7,7 +8,7 @@ import { renderJatsArticle } from './exportJats';
 import { getAssetPayload } from './assetRepository';
 import { toPortableOmiState } from './omiPortableFormat';
 import type { OmiAsset } from '../types/assets';
-import type { OmiBlock, OmiManuscript, OmiManuscriptState } from '../types/omi';
+import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 
 export const OMI_CONTAINER_VERSION = '0.1.0-alpha.1' as const;
 export const OMI_CONTAINER_MEDIA_TYPE = 'application/vnd.openmanuscript.omi+zip' as const;
@@ -66,9 +67,7 @@ export async function buildOmiContainer(
   const diagnostics: OmiContainerDiagnostic[] = [];
   const profile = resolvePublicationProfile(manuscript);
   const assetMap = new Map((manuscript.assets ?? []).map((asset) => [asset.id, asset]));
-  const referencedAssetIds = collectReferencedAssetIds(
-    manuscript.sections.flatMap((section) => section.blocks),
-  );
+  const referencedAssetIds = collectReferencedAssetIdsInSections(manuscript.sections);
 
   const assetEntries: PackageEntry[] = [];
   for (const assetId of referencedAssetIds) {
@@ -123,7 +122,24 @@ export async function buildOmiContainer(
         targetId: asset.id,
       });
       const bytes = await getAssetPayload(manuscript.id, asset.id);
-      if (bytes && !assetEntries.some((entry) => entry.assetId === asset.id)) {
+      if (!bytes) {
+        diagnostics.push({
+          code: 'asset-payload-missing', severity: 'error',
+          message: `Binary payload is unavailable for retained asset ${asset.id}.`,
+          targetId: asset.id,
+        });
+        continue;
+      }
+      const digest = await sha256Hex(bytes);
+      if (digest.toLowerCase() !== asset.checksum.value.toLowerCase() || bytes.byteLength !== asset.size) {
+        diagnostics.push({
+          code: 'asset-integrity-mismatch', severity: 'error',
+          message: `Retained asset ${asset.id} does not match its SHA-256 digest or size.`,
+          targetId: asset.id,
+        });
+        continue;
+      }
+      if (!assetEntries.some((entry) => entry.assetId === asset.id)) {
         assetEntries.push({
           path: assetPath(asset),
           mediaType: asset.mediaType,
@@ -318,22 +334,11 @@ export function omiContainerFileName(manuscript: Pick<OmiManuscript, 'title' | '
 function stripAuthoringAssetPreviews(state: OmiManuscriptState): OmiManuscriptState {
   return {
     ...state,
-    sections: state.sections.map((section) => ({
-      ...section,
-      blocks: stripBlockPreviews(section.blocks),
-    })),
-  };
-}
-
-function stripBlockPreviews(blocks: readonly OmiBlock[]): OmiBlock[] {
-  return blocks.map((block) => ({
-    ...block,
-    visual:
+    sections: mapManuscriptBlocks(state.sections, (block) =>
       block.visual?.kind === 'image' && block.visual.assetId
-        ? { ...block.visual, src: '' }
-        : block.visual,
-    children: block.children ? stripBlockPreviews(block.children) : block.children,
-  }));
+        ? { ...block, visual: { ...block.visual, src: '' } }
+        : block),
+  };
 }
 
 function rewriteAssetSourcesForPublication(
@@ -342,29 +347,14 @@ function rewriteAssetSourcesForPublication(
 ): OmiManuscript {
   return {
     ...manuscript,
-    sections: manuscript.sections.map((section) => ({
-      ...section,
-      blocks: rewriteBlockSources(section.blocks, assetMap),
-    })),
+    sections: mapManuscriptBlocks(manuscript.sections, (block) => {
+      const asset = block.visual?.kind === 'image' && block.visual.assetId
+        ? assetMap.get(block.visual.assetId) : undefined;
+      return asset && block.visual?.kind === 'image'
+        ? { ...block, visual: { ...block.visual, src: assetPath(asset) } }
+        : block;
+    }),
   };
-}
-
-function rewriteBlockSources(
-  blocks: readonly OmiBlock[],
-  assetMap: ReadonlyMap<string, OmiAsset>,
-): OmiBlock[] {
-  return blocks.map((block) => {
-    const asset = block.visual?.kind === 'image' && block.visual.assetId
-      ? assetMap.get(block.visual.assetId)
-      : undefined;
-    return {
-      ...block,
-      visual: asset && block.visual?.kind === 'image'
-        ? { ...block.visual, src: assetPath(asset) }
-        : block.visual,
-      children: block.children ? rewriteBlockSources(block.children, assetMap) : block.children,
-    };
-  });
 }
 
 function textEntry(
