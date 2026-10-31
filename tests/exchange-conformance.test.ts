@@ -144,3 +144,44 @@ test('evidence becomes stale for changed builds, dependencies, environment or ta
   report.evidence.results[0].status = 'fail';
   assert.equal(isAssessmentCurrent(report, implementation, 'web'), false);
 });
+
+
+test('SPEC-350 capability disclosure includes explicitly limited Draft plugin and API scopes', () => {
+  const declaration = capabilityStatement(implementation, 'web');
+  const plugin = declaration.capabilities.find((item) => item.specification === 'OMI-SPEC-300');
+  const api = declaration.capabilities.find((item) => item.specification === 'OMI-SPEC-310');
+  assert.equal(plugin?.status, 'partial');
+  assert.equal(api?.status, 'conditional');
+  assert.ok(plugin?.limitations.some((x) => x.includes('does not execute plugin code')));
+  assert.ok(api?.limitations.some((x) => x.includes('does not authorize')));
+  assert.equal(declaration.verification, 'not-independent');
+  assert.equal(declaration.outcome, 'indeterminate');
+});
+
+test('SPEC-350 rejects rewritten, incomplete or overclaimed self-assessments even with a recomputed digest', () => {
+  const original = runModelAssessment(implementation, 'web');
+  assert.equal(isAssessmentCurrent(original, implementation, 'web'), true);
+
+  function rehash(evidence: typeof original.evidence): string {
+    return digestBytes(new TextEncoder().encode(JSON.stringify(evidence)));
+  }
+  const changes: Array<(report: typeof original) => void> = [
+    (r) => { r.evidence.coverage.pop(); },
+    (r) => { r.evidence.results.pop(); },
+    (r) => { r.evidence.results[0]!.status = 'skip'; },
+    (r) => { r.evidence.results[0]!.fixtureDigest = 'sha256:' + '0'.repeat(64); },
+    (r) => { r.evidence.coverage[0]!.status = 'not-run'; },
+    (r) => { Object.assign(r.evidence, { verification: 'independent' }); },
+    (r) => { Object.assign(r.evidence, { complete: true, outcome: 'conformant' }); },
+    (r) => { Object.assign(r.evidence.suite, { approved: true }); },
+    (r) => { Object.assign(r.evidence, { waivers: ['unapproved-bypass'] }); },
+  ];
+  for (const tamper of changes) {
+    const altered = structuredClone(original);
+    tamper(altered);
+    altered.evidenceDigest = rehash(altered.evidence);
+    assert.equal(isAssessmentCurrent(altered, implementation, 'web'), false);
+  }
+  assert.equal(isAssessmentCurrent(original, implementation, 'web'), true,
+    'Validation must not mutate the original report');
+});
