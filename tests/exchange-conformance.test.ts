@@ -193,7 +193,7 @@ test('exchange inspection requires canonical OMI JSON and a JATS article envelop
   const jats = await beginExportReport('jats', 'source');
   assert.equal((await reportExportArtifact(jats, new Blob(['<p>arbitrary content</p>']))).status, 'failed');
   const article = await reportExportArtifact(jats,
-    new Blob(['<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE article SYSTEM "local.dtd"><article/>']));
+    new Blob(['<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE article SYSTEM "local.dtd"><article dtd-version="1.4"><front/><body/></article>']));
   assert.equal(article.status, 'completed-with-loss');
   assert.equal(article.validation.status, 'not-run', 'DTD validation remains a separate mandatory release gate');
 });
