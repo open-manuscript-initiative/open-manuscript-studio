@@ -238,3 +238,45 @@ test('derived inline labels follow bibliographic and locator changes', () => {
   assert.match(synchronized[0]!.blocks[0]!.content, /Smith 2025, 9/);
   assert.doesNotMatch(synchronized[0]!.blocks[0]!.content, /stale/);
 });
+
+
+test('same title and contributor do not override two distinct explicit DOI identities', () => {
+  const bibliographic = {
+    title: 'Treatise on scholarly methods',
+    type: 'journal-article' as const,
+    issued: '2026',
+    contributors: [{ id: 'author', role: 'author' as const, givenName: 'Ada', familyName: 'Example' }],
+  };
+  const first = setBibliographicIdentifier(createBibliographicRecord(bibliographic), 'doi', '10.1000/first');
+  const different = setBibliographicIdentifier(createBibliographicRecord(bibliographic), 'doi', '10.1000/second');
+  assert.equal(findLikelyDuplicateRecord([first], different), undefined);
+  assert.equal(findLikelyDuplicateRecord([first], setBibliographicIdentifier(different, 'doi', '10.1000/first'))?.id, first.id);
+});
+
+test('legacy inline citation helpers operate inside embedded sections and blocks without rewriting author text', () => {
+  const original = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+    { type: 'text', text: 'Author passage: ' },
+    { type: 'omiCitation', attrs: { citationId: 'cit-1', anchorId: 'anchor-1', label: 'Original' } },
+    { type: 'text', text: ' remains editable.' },
+  ] }] });
+  const sections: OmiSection[] = [{
+    id: 'parent', title: 'Root', blocks: [{ id: 'parent-block', type: 'paragraph', content: 'Unchanged parent',
+      children: [{ id: 'nested-block', type: 'paragraph', content: original }] }],
+    children: [{ id: 'nested-section', title: 'Nested', blocks: [{ id: 'section-block', type: 'paragraph', content: original }] }],
+  }];
+  const before = JSON.stringify(sections);
+  assert.deepEqual(collectCitationAnchors(sections).map((a) => a.targetBlockId), ['nested-block', 'section-block']);
+  const record = createBibliographicRecord({ title: 'Book of evidence', issued: '2026' });
+  const citation = createCitationOccurrence({ id: 'cit-1', anchorId: 'anchor-1', target: record.id, targetBlockId: 'nested-block' });
+  const updated = synchronizeCitationLabels(sections, [citation], [record]);
+  assert.equal(collectCitationAnchors(updated).length, 2);
+  assert.match(updated[0]!.blocks[0]!.children![0]!.content, /Author passage:/);
+  assert.match(updated[0]!.children![0]!.blocks[0]!.content, /remains editable/);
+  const removed = removeCitationAnchorFromSections(updated, 'cit-1');
+  assert.deepEqual(collectCitationAnchors(removed), []);
+  for (const content of [removed[0]!.blocks[0]!.children![0]!.content, removed[0]!.children![0]!.blocks[0]!.content]) {
+    assert.match(content, /Author passage:/);
+    assert.match(content, /remains editable/);
+  }
+  assert.equal(JSON.stringify(sections), before);
+});
