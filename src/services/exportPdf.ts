@@ -1,4 +1,4 @@
-import { assetPath } from '../model/assets';
+import { assetPath, sha256Hex } from '../model/assets';
 import { combinedPublisherPrintCss } from '../model/publisherExportStyle';
 import {
   profileSupportsOutput,
@@ -82,10 +82,26 @@ export async function buildPdfArtifactDocument(
     const path = assetPath(asset);
     if (!html.includes(path)) continue;
 
-    const bytes = await getAssetPayload(manuscript.id, asset.id);
+    let bytes: Uint8Array | undefined;
+    try {
+      bytes = await getAssetPayload(manuscript.id, asset.id);
+    } catch (cause) {
+      throw new Error(
+        `Cannot read PDF image "${asset.originalFileName || asset.fileName}" (${asset.id}) from local storage. ` +
+        'Restore the image from the original document or a verified .omi package before exporting.',
+        { cause },
+      );
+    }
     if (!bytes) {
       throw new Error(
-        `PDF source references unavailable asset payload ${asset.id}.`,
+        `PDF image "${asset.originalFileName || asset.fileName}" (${asset.id}) is missing from local storage. ` +
+        'Restore it from the original document or a verified .omi package before exporting.',
+      );
+    }
+    if (bytes.byteLength !== asset.size || (await sha256Hex(bytes)).toLowerCase() !== asset.checksum.value.toLowerCase()) {
+      throw new Error(
+        `PDF image "${asset.originalFileName || asset.fileName}" (${asset.id}) failed its size or SHA-256 integrity check. ` +
+        'Restore an unmodified source asset before exporting.',
       );
     }
 
@@ -94,6 +110,16 @@ export async function buildPdfArtifactDocument(
     html = html.replace(
       new RegExp(`(["'])${escapedPath}\\1`, 'g'),
       (_match, quote: string) => `${quote}${dataUrl}${quote}`,
+    );
+  }
+
+  // Do not send unresolved package-local media references to the isolated renderer.
+  // Its offline policy correctly rejects them; report the offending asset in the UI first.
+  const unresolved = html.match(/(?:src|href)\s*=\s*["'](media\/[^"']+)["']/i);
+  if (unresolved) {
+    throw new Error(
+      `PDF references a media file that was not embedded: ${unresolved[1]}. ` +
+      'Restore the corresponding manuscript asset before exporting.',
     );
   }
 
