@@ -447,11 +447,14 @@ function validatePackageEntries(
 }
 
 export function isSafeContainerPath(path: string): boolean {
+  // Avoid character-class escaping ambiguities: reject Windows separators,
+  // C0 controls and DEL by their actual code points.
   return Boolean(
     path &&
     !path.startsWith('/') &&
     !/^[A-Za-z]:/.test(path) &&
-    !/[\\\\\\u0000-\\u001F\\u007F]/u.test(path) &&
+    !Array.from(path).some((char) => char.charCodeAt(0) === 0x5c ||
+      char.charCodeAt(0) < 0x20 || char.charCodeAt(0) === 0x7f) &&
     !path.split('/').some((part) => part === '..' || part === '.' || part === ''),
   );
 }
