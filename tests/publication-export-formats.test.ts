@@ -308,3 +308,37 @@ test('public exports omit private annotation bodies and anchors without changing
   }
   assert.equal(JSON.stringify(manuscript), before);
 });
+
+
+test('nested publication projection removes all private note anchors without editing manuscript state', () => {
+  const manuscript = createVersionedTestManuscript();
+  const nestedBlock = {
+    id: 'nested-private-block',
+    type: 'paragraph' as const,
+    content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+      { type: 'text', text: 'PUBLISHABLE_NESTED_TEXT' },
+      { type: 'omiNote', attrs: { noteId: 'nested-public', anchorId: 'public-anchor' } },
+      { type: 'omiNote', attrs: { noteId: 'nested-private', anchorId: 'private-anchor', label: 'PRIVATE_INLINE_MARKER' } },
+    ] }] }),
+  };
+  manuscript.sections[0]!.children = [{
+    id: 'nested-section', title: 'Nested', blocks: [{
+      id: 'nested-parent', type: 'paragraph', content: 'Visible parent',
+      children: [nestedBlock],
+    }],
+  }];
+  manuscript.annotations.push(
+    { id: 'nested-public', type: 'note', targetBlockId: nestedBlock.id, body: 'PUBLIC_NESTED_NOTE', renderingHint: 'footnote' },
+    { id: 'nested-private', type: 'note', targetBlockId: nestedBlock.id, body: 'PRIVATE_NESTED_BODY', renderingHint: 'hidden' },
+  );
+  const original = JSON.stringify(manuscript);
+  const projection = publicPublicationManuscript(manuscript);
+  const projected = projection.sections[0]!.children![0]!.blocks[0]!.children![0]!.content;
+  assert.match(projected, /PUBLISHABLE_NESTED_TEXT/);
+  assert.match(projected, /nested-public/);
+  assert.doesNotMatch(projected, /nested-private|PRIVATE_INLINE_MARKER|private-anchor/);
+  assert.deepEqual(projection.annotations.filter((note) => note.id.startsWith('nested-'))
+    .map((note) => note.id), ['nested-public']);
+  assert.doesNotMatch(JSON.stringify(projection), /PRIVATE_NESTED_BODY/);
+  assert.equal(JSON.stringify(manuscript), original);
+});
