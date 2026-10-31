@@ -506,3 +506,62 @@ test('exports revision history and tombstones while omitting legacy authors', ()
   assert.equal(exported.tombstones.length, 2);
   assert.equal('authors' in exported, false);
 });
+
+
+test('does not append an event to a stale envelope head', () => {
+  const manuscript = createManuscript();
+  const before = JSON.stringify(manuscript);
+  const stale = { ...manuscript, headRevisionId: 'stale-head' };
+  assert.throws(() => commitManuscriptRevision(
+    stale,
+    { ...extractManuscriptState(stale), title: 'New title' },
+    {
+      summary: 'Invalid stale commit',
+      events: [{ operation: 'manuscript.title.set', targetId: stale.id, nextValue: 'New title' }],
+    },
+  ), /head revision does not match/);
+  assert.equal(JSON.stringify(manuscript), before);
+});
+
+test('revert traces nested section and block deletions and reserves their stable identifiers', () => {
+  const initial = createManuscript();
+  const newState = {
+    ...extractManuscriptState(initial),
+    sections: [{
+      id: 'outer-section',
+      title: 'Editable outer section',
+      blocks: [],
+      children: [{
+        id: 'nested-section',
+        title: 'Nested text',
+        blocks: [{ id: 'nested-block', type: 'paragraph' as const, content: 'Author content' }],
+      }],
+    }],
+  };
+  const committed = commitManuscriptRevision(initial, newState, {
+    summary: 'Add nested content',
+    events: [{ operation: 'section.create', targetId: 'outer-section' }],
+  });
+  const before = JSON.stringify(committed);
+  const reverted = revertManuscriptToRevision(committed, initial.headRevisionId, {
+    summary: 'Return to empty initial manuscript',
+  });
+  assert.deepEqual(reverted.sections, []);
+  const deleted = new Set(reverted.tombstones.filter((item) => !item.restoredByRevisionId).map((item) => item.objectId));
+  for (const id of ['outer-section', 'nested-section', 'nested-block']) {
+    assert.ok(deleted.has(id), 'Missing nested deletion evidence for ' + id);
+  }
+  assert.equal(reverted.revisionHistory.revisions.length, 3);
+  assert.equal(JSON.stringify(committed), before);
+
+  const undeclaredReintroduction = {
+    ...extractManuscriptState(reverted),
+    sections: [{ id: 'fresh-section', title: 'New title', blocks: [], children: [
+      { id: 'nested-section', title: 'Reused ID', blocks: [] },
+    ] }],
+  };
+  assert.throws(() => commitManuscriptRevision(reverted, undeclaredReintroduction, {
+    summary: 'Attempt to reintroduce deleted section without restoration',
+    events: [{ operation: 'manuscript.title.set', targetId: reverted.id }],
+  }), /reserved by an active tombstone/);
+});
