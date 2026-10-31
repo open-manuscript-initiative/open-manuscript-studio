@@ -1,7 +1,6 @@
 import type {
   OmiAnnotation,
   OmiManuscriptState,
-  OmiSection,
 } from '../types/omi';
 import { getDocumentStructureProfile } from './documentProfile';
 import { getStudyRootSectionId } from './sectionStructure';
