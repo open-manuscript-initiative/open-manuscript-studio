@@ -20,6 +20,8 @@ export function ModelSupportPanel() {
     'studio.exchange.office-import': copy.importLabel,
     'studio.exchange.export-reports': copy.exportLabel,
     'studio.capabilities.disclosure': copy.capabilityLabel,
+    'studio.extensions.manifest-registry': 'OMI-SPEC-300 — Extension registry',
+    'studio.api.integration-extensions': 'OMI-SPEC-310 — Integration API',
   };
   async function save(value: unknown, name: string) {
     try { setError(''); await saveExportText(JSON.stringify(value, null, 2), name, 'application/json;charset=utf-8'); }
@@ -28,7 +30,7 @@ export function ModelSupportPanel() {
   return <section className="panel omi-model-support" aria-labelledby="omi-capabilities-title">
     <h3 id="omi-capabilities-title">{copy.capabilities}</h3><p>{copy.disclosure}</p>
     <ul>{statement.capabilities.map((item) => <li key={item.id}>
-      <strong>{item.specification}</strong> · {labels[item.id]} · {copy[item.status]}<p><code>{item.id}</code></p>
+      <strong>{item.specification}</strong> · {labels[item.id] ?? item.id} · {copy[item.status]}<p><code>{item.id}</code></p>
       <details><summary>{copy.limitation}</summary><ul>{[...item.prerequisites, ...item.limitations].map((text) => <li key={text}>{text}</li>)}</ul></details>
     </li>)}</ul>
     <p>{copy.scope}</p>
