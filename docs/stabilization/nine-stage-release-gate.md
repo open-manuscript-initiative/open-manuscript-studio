@@ -10,11 +10,11 @@ release lock. The normative register still governs standards maturity.
 | 2 | 150, 110, 130 | Nested anchors, notes, citations: [#788](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/788) merged, CI succeeded | Review gates still apply |
 | 3 | 160, 180 | History and validation isolation: [#789](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/789), merged with CI success | Independent review / wider evidence still required |
 | 4 | 220, 210, 221, 225 | Bibliographic identity, citations, reference library and sources: [#790](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/790), merged with CI success | Independent review / wider evidence still required |
-| 5 | 320, 330 | Portable file format and container: [#791](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/791) | Draft PR; manual/CI acceptance pending |
-| 6 | 190, 170, 200 | Collaboration, translation, review: [#792](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/792) | Draft PR; sequential acceptance pending |
-| 7 | 240, 230 | Rendering and publication: [#793](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/793) | Draft PR; sequential acceptance pending |
-| 8 | 340 | Import and export | Not started |
-| 9 | 350, then 300, 310 | Capability/conformance, plugins and API | Not started |
+| 5 | 320, 330 | Portable file format and container: [#791](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/791), merged with green CI | Wider independent evidence still required |
+| 6 | 190, 170, 200 | Collaboration, translation, review: [#792](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/792), merged with green CI | Wider independent evidence still required |
+| 7 | 240, 230 | Rendering and publication: [#793](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/793), merged with green CI | Wider independent evidence still required |
+| 8 | 340 | Import and export: [#794](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/794) | Green CI, Draft PR; review/merge and manual cross-format verification pending |
+| 9 | 350, then 300, 310 | Capability/conformance, plugins and API: [phase 9 evidence](spec-350-300-310-phase9.md) | Draft work; CI, review and acceptance pending |
 
 ## Explicit version hold
 
