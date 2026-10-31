@@ -4,9 +4,9 @@ The Validation view includes experimental OMI-SPEC-350 capability disclosures an
 
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
-> **Current status:** `0.3.0-beta.12` · cross-platform quality beta.
+> **Release candidate line:** `0.3.0-beta.13` · cross-platform quality beta; distribution still requires owner approval.
 >
-> This release packages native TLS and Tokio security updates, native plugin fixes and more reliable macOS DMG creation. The portable manuscript format remains `OMI-SPEC-320@0.3.0`. See [the release notes](docs/release/0.3.0-beta.12.md) for packaging identities and deployment steps.
+> This candidate consolidates nine merged OMI-SPEC Studio stabilization stages while keeping specifications Draft and the portable format at `OMI-SPEC-320@0.3.0`. See [the beta.13 release notes](docs/release/0.3.0-beta.13.md) for security, validation and distribution gates.
 
 - Web Studio: https://studio.openmanuscript.org
 - Project website and specifications: https://openmanuscript.org
