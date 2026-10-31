@@ -535,13 +535,15 @@ function StudioApplication() {
         <MobileLayout
           onOpenMenu={() => setMenuOpen(true)}
           onHome={navigateHome}
+          documentTabs={
+            <DesktopDocumentTabs
+              tabs={desktopTabs}
+              activeTabId={activeDesktopTabId}
+              onActivate={activateDesktopTab}
+              onClose={closeDesktopTab}
+            />
+          }
         >
-          <DesktopDocumentTabs
-            tabs={desktopTabs}
-            activeTabId={activeDesktopTabId}
-            onActivate={activateDesktopTab}
-            onClose={closeDesktopTab}
-          />
           <div className="focus-workspace">
             <EditorPane ojsContributors={ojsContributors} />
           </div>
