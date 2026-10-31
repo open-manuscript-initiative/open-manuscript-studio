@@ -202,3 +202,39 @@ test('unsupported future translation profiles roundtrip opaquely while damaged k
   m.extensions = { [TRANSLATION_EXTENSION]: { profile: TRANSLATION_PROFILE, variants: 'damaged' } };
   assert.throws(() => toPortableOmiManuscript(m));
 });
+
+
+test('source rebase rejects a foreign manuscript even when the text and locale match', () => {
+  const original = source();
+  const variant = reviewed(original);
+  const foreign = source();
+  foreign.id = 'foreign-manuscript';
+  foreign.title = original.title;
+  const before = JSON.stringify(variant);
+  assert.throws(() => synchronizeTranslation(foreign, variant), /original source manuscript/);
+  assert.equal(JSON.stringify(variant), before);
+  assert.equal(translationProgress(foreign, variant).ready, false);
+});
+
+test('source rebase invalidates a reviewed record whose text and fingerprint evidence disagree', () => {
+  const manuscript = source();
+  const variant = reviewed(manuscript);
+  const item = variant.alignments.find((alignment) => alignment.sourceObjectId === 'block:one')!;
+  const inconsistent = structuredClone(variant);
+  const stale = inconsistent.alignments.find((alignment) => alignment.id === item.id)!;
+  stale.sourceText = 'Unexpected source text';
+  stale.notes = 'Keep private translator notes';
+  // The digest intentionally remains unchanged to model a corrupted or
+  // partially migrated source baseline. It must not certify a review.
+  const before = JSON.stringify(inconsistent);
+  const rebased = synchronizeTranslation(manuscript, inconsistent);
+  const fixed = rebased.alignments.find((alignment) => alignment.id === item.id)!;
+  assert.equal(fixed.sourceText, 'Eredeti szöveg');
+  assert.equal(fixed.targetText, item.targetText);
+  assert.equal(fixed.notes, 'Keep private translator notes');
+  assert.equal(fixed.status, 'draft');
+  assert.equal(fixed.equivalence, 'unassessed');
+  assert.equal(fixed.reviewedByAgentId, undefined);
+  assert.equal(fixed.reviewedAt, undefined);
+  assert.equal(JSON.stringify(inconsistent), before);
+});
