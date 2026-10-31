@@ -170,7 +170,7 @@ test('SPEC-350 rejects rewritten, incomplete or overclaimed self-assessments eve
     (r) => { r.evidence.results.pop(); },
     (r) => { r.evidence.results[0]!.status = 'skip'; },
     (r) => { r.evidence.results[0]!.fixtureDigest = 'sha256:' + '0'.repeat(64); },
-    (r) => { r.evidence.coverage[0]!.status = 'not-run'; },
+    (r) => { r.evidence.coverage[0]!.status = r.evidence.coverage[0]!.status === 'not-run' ? 'partially-evidenced' : 'not-run'; },
     (r) => { Object.assign(r.evidence, { verification: 'independent' }); },
     (r) => { Object.assign(r.evidence, { complete: true, outcome: 'conformant' }); },
     (r) => { Object.assign(r.evidence.suite, { approved: true }); },
