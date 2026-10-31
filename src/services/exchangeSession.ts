@@ -64,3 +64,36 @@ export async function beginExportReport(format: ExchangeFormat, source: string):
   report.source = { digest: await digestBuffer(bytes.buffer), bytes: bytes.byteLength, retained: true };
   return report;
 }
+
+/** Application-owned report lifecycle; UI adapters own notices and file delivery. */
+export class ExportExchangeSession {
+  private report: ExchangeReport;
+  private constructor(report: ExchangeReport) { this.report = report; }
+  static async begin(format: ExchangeFormat, source: string): Promise<ExportExchangeSession> {
+    return new ExportExchangeSession(await beginExportReport(format, source));
+  }
+  recordAdapterDiagnostics(result: unknown): void {
+    if (!result || typeof result !== 'object' || !('warnings' in result) || !Array.isArray(result.warnings)) return;
+    this.report = { ...this.report, events: [...this.report.events, ...result.warnings
+      .filter((item): item is string => typeof item === 'string').map((message) => ({
+        code: 'ADAPTER_WARNING', severity: 'warning' as const, disposition: 'unknown' as const,
+        sourceLocator: '/', feature: `${this.report.mapping.target}-mapping`, consequence: message,
+      }))] };
+  }
+  async inspectArtifact(blob: Blob): Promise<void> {
+    this.report = await reportExportArtifact(this.report, blob);
+    if (this.report.status === 'failed') throw new Error('OUTPUT_INVALID');
+  }
+  finishDelivery(saved: boolean): ExchangeReport {
+    if (this.report.status !== 'completed-with-loss') throw new Error('OUTPUT_NOT_INSPECTED');
+    this.report = { ...this.report, status: saved ? this.report.status : 'cancelled' };
+    return structuredClone(this.report);
+  }
+  fail(): ExchangeReport {
+    this.report = { ...this.report, status: 'failed', events: [...this.report.events, {
+      code: 'EXPORT_EXECUTION_FAILED', severity: 'error', disposition: 'unverifiable',
+      sourceLocator: '/', feature: 'output', consequence: 'Artifact generation or delivery failed; the source remains available.',
+    }] };
+    return structuredClone(this.report);
+  }
+}

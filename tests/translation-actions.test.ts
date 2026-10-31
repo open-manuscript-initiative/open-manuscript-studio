@@ -5,6 +5,7 @@ import { addManuscriptTranslation, saveTranslationAlignment, removeManuscriptTra
 import { createBlankManuscript } from '../src/document/createBlankManuscript.ts';
 import { getTranslationModel, translationProgress } from '../src/model/translation.ts';
 import { parseOmiJson, toPortableOmiManuscript } from '../src/services/omiPortableFormat.ts';
+import { createTranslationCommands, type TranslationWorkingState } from '../src/services/translationCommands.ts';
 
 test('translation actions share checkpoints, survive reopen, and can be reverted', () => {
   const m = createBlankManuscript({ kind: 'study', locale: 'hu', title: 'Original' });
@@ -40,4 +41,24 @@ test('machine previews cannot write into a different active document', () => {
   assert.throws(() => addManuscriptTranslation({ kind: 'manuscript', id: original.id }, 'en', [], original));
   assert.equal(getTranslationModel(useStudioStore.getState().manuscript).variants.length, 0);
   assert.equal(useStudioStore.getState().pendingChangeSet, null);
+});
+
+test('translation commands work through a plain synchronous session without store or account state', () => {
+  let state: TranslationWorkingState = { manuscript: createBlankManuscript({ kind: 'study', locale: 'en', title: 'Source' }), pendingChangeSet: null };
+  let checkpoints = 0;
+  const commands = createTranslationCommands({
+    update: (transform) => { state = transform(state); },
+    checkpoint: () => { checkpoints++; },
+    actorAgentId: () => 'not-a-manuscript-agent',
+  });
+  const id = commands.addManuscriptTranslation({ kind: 'manuscript', id: state.manuscript.id }, 'hu');
+  const alignment = getTranslationModel(state.manuscript).variants[0]!.alignments[0]!;
+  commands.saveTranslationAlignment(id, alignment.id, { targetText: 'Target', equivalence: 'equivalent' });
+  assert.equal(state.pendingChangeSet!.events.at(-1)!.operation, 'translation.model.set');
+  assert.equal(state.pendingChangeSet!.actorAgentId, undefined);
+  assert.equal(getTranslationModel(state.manuscript).variants[0]!.alignments[0]!.targetText, 'Target');
+  assert.equal(checkpoints, 3);
+  const before = state;
+  assert.throws(() => commands.saveTranslationAlignment('unknown', alignment.id, {}));
+  assert.equal(state, before, 'Rejected commands cannot commit a partial transform');
 });

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import './translation-public-export.test.ts';
 import { createBlankManuscript } from '../src/document/createBlankManuscript.ts';
 import { applyStructuredTranslations, buildStructuredTranslationPlan } from '../src/integrations/structuredExternalContent.ts';
 import { archiveMissingTranslation, collectTranslationUnits, createManuscriptTranslation, currentUnits, editTranslationAlignment, getTranslationModel, synchronizeTranslation, translationFreshness, translationProgress, validateTranslationModel, withTranslationModel, TRANSLATION_EXTENSION, TRANSLATION_PROFILE, type ManuscriptTranslation } from '../src/model/translation.ts';

@@ -4,7 +4,7 @@ import type { OmiBlock, OmiManuscript, OmiSection } from '../types/omi';
 import { normalizeManuscriptLanguageTag } from './manuscriptLanguage.ts';
 import { sha256HexSync } from './stateDigest.ts';
 
-/** Experimental Studio profile; OMI-SPEC-170 is still Reserved upstream. */
+/** Experimental Studio profile; OMI-SPEC-170 is Draft, not a frozen wire contract. */
 export const TRANSLATION_EXTENSION = 'urn:omi:studio:translation:1' as const;
 export const TRANSLATION_PROFILE = 'studio-translation-0.1' as const;
 export type TranslationScope = { kind: 'manuscript' | 'section' | 'block'; id: string };

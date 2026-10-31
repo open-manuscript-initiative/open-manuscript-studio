@@ -94,7 +94,7 @@ namespaces remain untouched.
 
 ## Export and completion
 
-Both **Parallel text HTML** and **Target text HTML** require all active supported source
+Both **Parallel text HTML** and **Target text HTML** require all active supported public source
 segments to have current, nonempty, explicitly assessed and reviewed translations. New
 or missing segments block release until synchronized or explicitly archived as applicable.
 The aligned proof follows current source order and emits escaped plain text, BCP 47 `lang`
@@ -105,6 +105,14 @@ These exports are aligned **text proofs**, not new canonical manuscripts or full
 scholarly publications. They do not change source manuscript identity, mint publication
 identifiers, copy untranslated source content into a supposedly translated manuscript,
 or claim that separate language editions have been published.
+
+Only public publication notes are exported. Hidden, workflow-visible and non-note
+annotation bodies, their translated text and anchors are excluded in both modes.
+Private workspace notes remain editable and preserved but do not gate public proof
+readiness; the UI and renderer use the same gate. A later visibility change is
+checked on every export. This is not an anonymous-review export or peer-review
+certificate. See [ADR-029](architecture/adr-029-translation-export-and-application-boundaries.md)
+for application ownership and the transitional editor-path contract.
 
 ## Supported surfaces and open work
 

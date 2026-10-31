@@ -5,7 +5,7 @@ import { translateCatalog, useTranslation } from '../i18n';
 import { getManuscriptLanguageOptions } from '../model/manuscriptLanguage';
 import { currentUnits, getTranslationModel, translationFreshness, translationProgress, type ManuscriptTranslation, type TranslationAlignment, type TranslationEquivalence } from '../model/translation';
 import { saveExportText } from '../services/exportFileDelivery';
-import { renderTranslationHtml } from '../services/translationExport';
+import { isPublicTranslationProofReady, renderTranslationHtml } from '../services/translationExport';
 import './TranslationPanel.css';
 
 export function TranslationPanel() {
@@ -27,6 +27,7 @@ export function TranslationPanel() {
   }, [manuscript, locale]);
   const variant = result.model?.variants.find((item) => item.id === selectedId) ?? result.model?.variants[0];
   const progress = variant ? translationProgress(manuscript, variant) : null;
+  const proofReady = variant ? isPublicTranslationProofReady(manuscript, variant.id) : false;
   const units = useMemo(() => variant ? currentUnits(manuscript, variant) : new Map(), [manuscript, variant]);
   const languageOptions = getManuscriptLanguageOptions(locale).filter((item) => item.source === 'iso-639-1' && item.tag !== manuscript.locale);
 
@@ -65,8 +66,8 @@ export function TranslationPanel() {
       <p>{copy('reviewed')}: {progress?.reviewed}/{progress?.total} · {copy('stale')}: {progress?.stale} · {copy('added')}: {progress?.added}</p>
       <div className="omi-translation-controls">
         <button type="button" className="studio-menu-secondary-action" onClick={() => run(() => synchronizeManuscriptTranslation(variant.id))}>{copy('synchronize')}</button>
-        <button type="button" className="studio-menu-secondary-action" disabled={!progress?.ready} onClick={() => void exportHtml('parallel')}>{copy('parallelExport')}</button>
-        <button type="button" className="studio-menu-secondary-action" disabled={!progress?.ready} onClick={() => void exportHtml('target')}>{copy('targetExport')}</button>
+        <button type="button" className="studio-menu-secondary-action" disabled={!proofReady} onClick={() => void exportHtml('parallel')}>{copy('parallelExport')}</button>
+        <button type="button" className="studio-menu-secondary-action" disabled={!proofReady} onClick={() => void exportHtml('target')}>{copy('targetExport')}</button>
         <button type="button" className="studio-menu-secondary-action" onClick={() => { if (window.confirm(copy('removeConfirm'))) run(() => removeManuscriptTranslation(variant.id)); }}>{copy('remove')}</button>
       </div>
       <p>{copy('syncHint')}</p>
