@@ -22,6 +22,9 @@ test('mobile workspace keeps multiple manuscripts open and switches without repl
     return manuscript.id;
   });
   await expect(page.getByRole('tab', { name: /First mobile manuscript/ })).toBeVisible();
+  // A signed-in workspace can already contain a restored or sample manuscript.
+  // Verify the additional tab rather than assuming the session started empty.
+  const tabCountAfterFirst = await page.getByRole('tab').count();
 
   const secondId = await page.evaluate(async () => {
     const { createAndOpenBlankOmiDocument } = await import('/src/app/newDocumentActions.ts');
@@ -40,7 +43,7 @@ test('mobile workspace keeps multiple manuscripts open and switches without repl
     return Boolean(strip && workspace && strip.bottom <= workspace.top + 1 &&
       document.documentElement.scrollWidth <= window.innerWidth);
   })).toBe(true);
-  await expect(tabs).toHaveCount(2);
+  await expect(tabs).toHaveCount(tabCountAfterFirst + 1);
   await expect(page.getByRole('tab', { name: /First mobile manuscript/ })).toBeVisible();
   await expect(page.getByRole('tab', { name: /Second mobile manuscript/ })).toHaveAttribute('aria-selected', 'true');
 
