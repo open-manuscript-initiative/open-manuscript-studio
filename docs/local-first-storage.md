@@ -69,3 +69,11 @@ Features that depend on remote services, such as OJS integration, online bibliog
 ## Portability
 
 Application versioning and OMI document-schema versioning remain separate. A manuscript file is intended to remain portable across Studio releases and, ultimately, across independent OMI-compatible implementations.
+
+## Verified cross-device cloud workflow (2026-11-01)
+
+A manual acceptance check confirmed that an existing manuscript saved to the user's cloud location could be opened on a second device without visible content errors. This demonstrates **cloud package portability**, not automatic background synchronization of arbitrary IndexedDB-only assets.
+
+Cloud save now checks referenced media availability and integrity before building the OMI archive, and sends its SHA-256 digest for server verification. The client also checks the returned backup record's checksum, size, and manuscript ID before announcing success. Cloud downloads are verified against the server's digest header, and opening a package verifies the OMI container and the restored referenced media. A failed check is surfaced to the user instead of silently discarding missing images.
+
+This is an explicit **save/open** workflow. The server already validates cloud package checksums and scopes access to the authenticated owner. Binary assets that have never been packaged and uploaded remain local; background upload, automatic hydration, offline conflict resolution, quota/retry handling and multi-user ACL coverage are still tracked in issue #803. Do not interpret this change as fully automatic cross-device synchronization.

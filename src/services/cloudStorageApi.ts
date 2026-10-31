@@ -1,3 +1,4 @@
+import { sha256Hex } from '../model/assets';
 import { getStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
@@ -48,6 +49,7 @@ export interface ProfileSavedDocument {
   providerPath: string;
   locationUrl: string | null;
   packageVersion: string;
+  checksum?: string;
   sizeBytes: string;
   createdAt: string;
 }
@@ -230,6 +232,7 @@ export async function uploadCloudBackup(input: {
   const payload = new Uint8Array(input.bytes.byteLength);
   payload.set(input.bytes);
 
+  const expectedChecksum = await sha256Hex(payload);
   const response = await cloudFetch(
     `/api/manuscripts/${encodeURIComponent(input.manuscriptId)}/backups?connectionId=${encodeURIComponent(input.connectionId)}`,
     {
@@ -238,12 +241,18 @@ export async function uploadCloudBackup(input: {
         'Content-Type': 'application/vnd.openmanuscript.package+zip',
         Accept: 'application/json',
         'X-OMI-Package-Version': input.packageVersion,
+        'X-OMI-SHA256': expectedChecksum,
         'X-OMI-Document-Title': encodeURIComponent(input.title),
       },
       body: payload.buffer,
     },
   );
   const data = await readJson<{ backup: CloudBackup }>(response);
+  if (data.backup.checksum.toLowerCase() !== expectedChecksum ||
+      Number(data.backup.sizeBytes) !== payload.byteLength ||
+      data.backup.manuscriptId !== input.manuscriptId) {
+    throw new Error('Cloud backup integrity acknowledgement does not match the uploaded OMI package. Verify the remote backup before treating this save as complete.');
+  }
   return data.backup;
 }
 
@@ -279,7 +288,12 @@ export async function downloadCloudBackup(backupId: string): Promise<Uint8Array>
     { headers: { Accept: 'application/vnd.openmanuscript.package+zip' } },
   );
   await ensureSuccess(response);
-  return new Uint8Array(await response.arrayBuffer());
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  const expectedChecksum = response.headers.get('X-OMI-SHA256');
+  if (expectedChecksum && (await sha256Hex(bytes)).toLowerCase() !== expectedChecksum.toLowerCase()) {
+    throw new Error('Downloaded cloud backup failed SHA-256 integrity verification.');
+  }
+  return bytes;
 }
 
 export async function deleteCloudBackup(backupId: string): Promise<void> {
