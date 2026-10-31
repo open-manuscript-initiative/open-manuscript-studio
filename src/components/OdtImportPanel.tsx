@@ -6,6 +6,11 @@ import { useTranslation } from '../i18n';
 import type { DocxManuscriptImportPlan } from '../services/docxManuscriptImport';
 import { parseOdtForStudio } from '../services/odtImport';
 import { ExternalDocumentSourceReview } from './ExternalDocumentSourceReview';
+import { ExchangeReportView } from './ExchangeReportView';
+import { OfficeImportPreparationError, prepareOfficeImport, type OfficeImportReceipt } from '../services/exchangeSession';
+import { finishExchangeReport } from '../model/exchange';
+import { useStudioStore } from '../app/useStudioStore';
+import { exchangeCopy } from '../i18n/exchange';
 
 export function OdtImportPanel({ onImported }: { onImported?: () => void }) {
   const { locale } = useTranslation();
@@ -25,6 +30,9 @@ export function OdtImportPanel({ onImported }: { onImported?: () => void }) {
   const [plan, setPlan] = useState<DocxManuscriptImportPlan | null>(null);
   const [source, setSource] = useState('');
   const [selfAuthored, setSelfAuthored] = useState(false);
+  const [receipt, setReceipt] = useState<OfficeImportReceipt | null>(null);
+  const base = useRef(useStudioStore.getState().manuscript);
+  const [failedReceipt, setFailedReceipt] = useState<OfficeImportPreparationError | null>(null);
   const outline = plan ? hu
     ? `${plan.stats.sections} szakasz · ${plan.stats.paragraphs} bekezdés · ${plan.stats.lists} lista · ${plan.stats.tables} táblázat · ${plan.stats.images} kép · ${plan.stats.notes} jegyzet`
     : de
@@ -34,15 +42,19 @@ export function OdtImportPanel({ onImported }: { onImported?: () => void }) {
 
   async function selectFile(file?: File): Promise<void> {
     if (!file || busy) return;
-    setBusy(true); setError(''); setPlan(null);
-    try { const parsed = await parseOdtForStudio(file); setPlan(parsed); setSource(parsed.fileName); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : copy.failure); }
+    setBusy(true); setError(''); setPlan(null); setReceipt(null); setFailedReceipt(null); setSelfAuthored(false);
+    base.current = useStudioStore.getState().manuscript;
+    try { const prepared = await prepareOfficeImport(file, 'odt', parseOdtForStudio); setReceipt(prepared); setPlan(prepared.plan); setSource(prepared.plan.fileName); }
+    catch (cause) { if (cause instanceof OfficeImportPreparationError) setFailedReceipt(cause); setError(cause instanceof OfficeImportPreparationError ? copy.failure : cause instanceof Error ? cause.message : copy.failure); }
     finally { setBusy(false); if (inputRef.current) inputRef.current.value = ''; }
   }
   function confirm(): void {
     if (!plan || (!selfAuthored && !source.trim())) return;
     try {
+      if (base.current !== useStudioStore.getState().manuscript) throw new Error(exchangeCopy(locale).changed);
       applyDocxImportPlan(plan, { importDetectedAuthors: plan.authors.length > 0, source, selfAuthoredExternal: selfAuthored });
+      if (receipt) setReceipt({ ...receipt, report: finishExchangeReport(receipt.report,
+        new TextEncoder().encode(JSON.stringify(useStudioStore.getState().manuscript))) });
       setPlan(null); clearDocumentClosedState(); onImported?.();
     } catch (cause) { setError(cause instanceof Error ? cause.message : copy.failure); }
   }
@@ -58,12 +70,14 @@ export function OdtImportPanel({ onImported }: { onImported?: () => void }) {
       {busy ? <p className="docx-import-hint" role="status" aria-live="polite">{copy.parsing}</p> : null}
       {error ? <div className="docx-import-error" role="alert"><AlertTriangle size={16} aria-hidden="true" /><span>{error}</span></div> : null}
     </section>
+    {failedReceipt ? <ExchangeReportView report={failedReceipt.report} original={failedReceipt.original} /> : null}
+      {receipt ? <ExchangeReportView report={receipt.report} original={receipt.original} /> : null}
     {plan ? <>
       <section className="studio-settings-hint" aria-label={copy.title}>
         <strong>{plan.title}</strong><p>{outline}</p>
         {plan.warnings.length ? <><strong>{copy.warnings}</strong><ul>{plan.warnings.map((item) => <li key={`${item.code}:${item.message}`}>{item.message}</li>)}</ul></> : null}
       </section>
-      <ExternalDocumentSourceReview key={plan.fileName} locale={locale} summary={plan.title} source={source} selfAuthoredExternal={selfAuthored} onSelfAuthoredExternalChange={setSelfAuthored} onSourceChange={setSource} onConfirm={confirm} onCancel={() => { setPlan(null); setSource(''); }} />
+      <ExternalDocumentSourceReview key={plan.fileName} locale={locale} summary={plan.title} source={source} selfAuthoredExternal={selfAuthored} onSelfAuthoredExternalChange={setSelfAuthored} onSourceChange={setSource} onConfirm={confirm} onCancel={() => { setPlan(null); setSource(''); if (receipt) setReceipt({ ...receipt, report: { ...receipt.report, status: 'cancelled' } }); }} />
     </> : null}
   </>;
 }

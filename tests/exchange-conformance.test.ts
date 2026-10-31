@@ -1,0 +1,123 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { digestBytes, createExchangeReport, exchangeProfile, finishExchangeReport, compareRoundTripInvariants } from '../src/model/exchange.ts';
+import { assessmentOutcome, capabilityStatement, isAssessmentCurrent, MODEL_SUITE, runModelAssessment } from '../src/model/conformance.ts';
+import { beginExportReport, OfficeImportPreparationError, prepareOfficeImport, reportExportArtifact } from '../src/services/exchangeSession.ts';
+import type { DocxManuscriptImportPlan } from '../src/services/docxManuscriptImport.ts';
+
+const implementation = { name: 'Studio test', version: 'test', build: 'test', revision: 'test-sha', dependencies: 'test-deps' };
+const bytes = new TextEncoder().encode('árvíztűrő 中文 العربية');
+
+test('versioned mappings separate direction and publication from semantic exchange', () => {
+  assert.equal(exchangeProfile('import', 'docx').source, 'docx');
+  assert.equal(exchangeProfile('export', 'docx').target, 'docx');
+  assert.equal(exchangeProfile('export', 'pdf').projection, 'publication');
+  assert.throws(() => exchangeProfile('import', 'pdf'), /MAPPING_UNAVAILABLE/);
+});
+
+test('reports bind actual bytes without mutating input or asserting zero loss', () => {
+  const source = createExchangeReport(exchangeProfile('export', 'omi'), bytes, true);
+  const before = structuredClone(source);
+  const result = finishExchangeReport(source, bytes);
+  assert.deepEqual(source, before);
+  assert.equal(result.status, 'completed-with-loss');
+  assert.equal(result.output?.digest, digestBytes(bytes));
+  assert.equal(result.source.digest, result.output?.digest);
+  assert.equal(result.coverage, 'incomplete');
+  assert.equal(result.lossless, false);
+  assert.equal(result.roundTrip, 'not-assessed');
+  assert.ok(!JSON.stringify(result).includes('árvíztűrő'));
+});
+
+test('empty output and mandatory errors never yield completed output', () => {
+  const report = createExchangeReport(exchangeProfile('export', 'docx'), bytes, true);
+  assert.equal(finishExchangeReport(report, new Uint8Array()).status, 'failed');
+  assert.equal(finishExchangeReport(report, bytes, [{ code: 'BROKEN_REFERENCE', severity: 'error', disposition: 'unverifiable', feature: 'note', sourceLocator: '/notes/1', consequence: 'Required note target missing' }]).status, 'failed');
+});
+
+test('round-trip evidence must exist and compare exact declared invariants', () => {
+  assert.deepEqual(compareRoundTripInvariants(['text', 'language', 'notes'], { text: 'a', language: 'hu' }, { text: 'a', language: 'de' }), [
+    { invariant: 'text', outcome: 'pass' }, { invariant: 'language', outcome: 'fail' }, { invariant: 'notes', outcome: 'indeterminate' },
+  ]);
+  assert.equal(compareRoundTripInvariants(['toString'], {}, {})[0].outcome, 'indeterminate');
+});
+
+test('office receipt retains the immutable source independently from editable candidate', async () => {
+  const original = new File(['source'], 'test.docx');
+  const plan = { title: 'Editable', warnings: [{ code: 'text-boxes-flattened', severity: 'warning', message: 'Flattened' }] } as DocxManuscriptImportPlan;
+  const receipt = await prepareOfficeImport(original, 'docx', async (file) => {
+    assert.equal(await file.arrayBuffer().then((buffer) => new TextDecoder().decode(buffer)), 'source');
+    return plan;
+  });
+  plan.title = 'Changed';
+  assert.equal(await receipt.original.text(), 'source');
+  assert.equal(receipt.report.status, 'prepared');
+  assert.equal(receipt.report.events[1].code, 'text-boxes-flattened');
+  await assert.rejects(prepareOfficeImport(original, 'odt', async () => plan), /INVALID_SOURCE/);
+  await assert.rejects(prepareOfficeImport({ size: 201 * 1024 * 1024 } as File, 'docx', async () => plan), /RESOURCE_LIMIT/);
+});
+
+test('failed parsing never returns a committable receipt or modifies the original', async () => {
+  const original = new File(['unchanged'], 'bad.odt');
+  await assert.rejects(prepareOfficeImport(original, 'odt', async () => { throw new Error('invalid XML'); }), (error) => {
+    assert.ok(error instanceof OfficeImportPreparationError);
+    assert.equal(error.report.status, 'failed');
+    assert.equal(error.original, original);
+    return true;
+  });
+  assert.equal(await original.text(), 'unchanged');
+});
+
+test('asynchronous artifact receipts hash actual bytes and reject wrong output envelopes', async () => {
+  const source = 'private manuscript text';
+  const report = await beginExportReport('docx', source);
+  assert.equal(report.source.digest, digestBytes(new TextEncoder().encode(source)));
+  const invalid = await reportExportArtifact(report, new Blob(['not a zip']));
+  assert.equal(invalid.status, 'failed');
+  assert.ok(invalid.events.some((item) => item.code === 'INVALID_ARTIFACT_ENVELOPE'));
+  const zip = new Uint8Array([0x50, 0x4b, 3, 4]);
+  const valid = await reportExportArtifact(report, new Blob([zip]));
+  assert.equal(valid.status, 'completed-with-loss');
+  assert.equal(valid.output?.digest, digestBytes(zip));
+  assert.equal(valid.validation.status, 'not-run');
+  assert.equal(valid.coverage, 'incomplete');
+});
+
+test('disclosures are build-bound and never fabricate support for undeclared features', () => {
+  const statement = capabilityStatement(implementation, 'web');
+  assert.equal(statement.assertionLevel, 'disclosure');
+  assert.equal(statement.verification, 'not-independent');
+  assert.equal(statement.outcome, 'indeterminate');
+  const collaboration = statement.capabilities.find((item) => item.specification === 'OMI-SPEC-190');
+  assert.equal(collaboration?.status, 'conditional');
+  assert.ok(collaboration?.prerequisites.length);
+});
+
+test('suite accounts for all 72 Draft requirements, without promoting partial evidence', () => {
+  const report = runModelAssessment(implementation, 'test');
+  assert.equal(report.evidence.coverage.length, 72);
+  assert.equal(new Set(report.evidence.coverage.map((item) => item.requirement)).size, 72);
+  assert.ok(report.evidence.results.every((item) => item.status === 'pass'));
+  assert.ok(report.evidence.coverage.some((item) => item.status === 'not-run'));
+  assert.equal(report.evidence.outcome, 'indeterminate');
+  assert.equal(report.evidence.complete, false);
+  assert.equal(MODEL_SUITE.approved, false);
+});
+
+test('mandatory failure dominates missing evidence and unapproved suites cannot pass', () => {
+  assert.equal(assessmentOutcome(['pass', 'fail', 'not-run'], false, false, false), 'nonconformant');
+  for (const status of ['skip', 'error', 'not-run'] as const) assert.equal(assessmentOutcome(['pass', status], true, true, true), 'indeterminate');
+  assert.equal(assessmentOutcome([], true, true, true), 'indeterminate');
+  assert.equal(assessmentOutcome(['pass'], true, false, true), 'indeterminate');
+  assert.equal(assessmentOutcome(['pass'], true, true, true), 'conformant');
+});
+
+test('evidence becomes stale for changed builds, dependencies, environment or tampered results', () => {
+  const report = runModelAssessment(implementation, 'web');
+  assert.equal(isAssessmentCurrent(report, implementation, 'web'), true);
+  assert.equal(isAssessmentCurrent(report, { ...implementation, revision: 'new' }, 'web'), false);
+  assert.equal(isAssessmentCurrent(report, { ...implementation, dependencies: 'new' }, 'web'), false);
+  assert.equal(isAssessmentCurrent(report, implementation, 'android'), false);
+  report.evidence.results[0].status = 'fail';
+  assert.equal(isAssessmentCurrent(report, implementation, 'web'), false);
+});

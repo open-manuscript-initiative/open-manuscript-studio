@@ -4,7 +4,7 @@ import { mock, test } from 'node:test';
 
 const documentId = 'manuscript-123';
 const userId = '10000000-0000-4000-8000-000000000001';
-let member = { role: 'AUTHOR', revokedAt: null };
+let member = { role: 'AUTHOR', revokedAt: null, user: { status: 'ACTIVE' } };
 let ticketRow = null;
 let revokedWhere = null;
 const tickets = {
@@ -30,21 +30,21 @@ test('ticket issuance requires active membership and stores only a SHA-256 diges
   const expiry = Date.parse(issued.expiresAt);
   assert.ok(expiry >= before + 299_000 && expiry <= Date.now() + 301_000);
 
-  member = { role: 'VIEWER', revokedAt: null };
+  member = { role: 'VIEWER', revokedAt: null, user: { status: 'ACTIVE' } };
   assert.equal((await service.issueCollaborationConnectionTicket(userId, documentId)).role, 'VIEWER');
-  member = { role: 'AUTHOR', revokedAt: new Date() };
+  member = { role: 'AUTHOR', revokedAt: new Date(), user: { status: 'ACTIVE' } };
   await assert.rejects(service.issueCollaborationConnectionTicket(userId, documentId), { code: 'FORBIDDEN' });
 });
 
 test('ticket authorization checks document, expiry, revocation, and current membership', async () => {
-  member = { role: 'AUTHOR', revokedAt: null };
+  member = { role: 'AUTHOR', revokedAt: null, user: { status: 'ACTIVE' } };
   const raw = 'x'.repeat(43);
   ticketRow = { id: 'ticket-id', tokenHash: createHash('sha256').update(raw).digest('hex'), documentId, userId, expiresAt: new Date(Date.now() + 60_000), revokedAt: null };
-  assert.deepEqual(await service.authorizeCollaborationConnectionTicket(raw, documentId), { userId, role: 'AUTHOR' });
+  assert.deepEqual(await service.authorizeCollaborationConnectionTicket(raw, documentId), { userId, role: 'AUTHOR', documentId, expiresAt: ticketRow.expiresAt.getTime() });
   assert.equal(await service.authorizeCollaborationConnectionTicket(raw, 'another-document'), null);
-  member = { role: 'AUTHOR', revokedAt: new Date() };
+  member = { role: 'AUTHOR', revokedAt: new Date(), user: { status: 'ACTIVE' } };
   assert.equal(await service.authorizeCollaborationConnectionTicket(raw, documentId), null);
-  member = { role: 'AUTHOR', revokedAt: null };
+  member = { role: 'AUTHOR', revokedAt: null, user: { status: 'ACTIVE' } };
   ticketRow.expiresAt = new Date(Date.now() - 1);
   assert.equal(await service.authorizeCollaborationConnectionTicket(raw, documentId), null);
   ticketRow.expiresAt = new Date(Date.now() + 60_000);
@@ -57,4 +57,24 @@ test('ticket revocation is scoped to one manuscript member', async () => {
   await service.revokeCollaborationConnectionTickets(documentId, userId);
   assert.deepEqual(revokedWhere, { documentId, userId, revokedAt: null });
   assert.ok(ticketRow.revokedAt instanceof Date);
+});
+
+
+test('live sessions recheck scoped membership, role, expiry and unavailable evidence', async () => {
+  const context = { userId, documentId, expiresAt: Date.now() + 60_000 };
+  member = { role: 'AUTHOR', revokedAt: null, user: { status: 'ACTIVE' } };
+  assert.deepEqual(await service.reauthorizeCollaborationSession(context, documentId), { readOnly: false });
+  member = { role: 'VIEWER', revokedAt: null, user: { status: 'ACTIVE' } };
+  assert.deepEqual(await service.reauthorizeCollaborationSession(context, documentId), { readOnly: true });
+  member = { role: 'AUTHOR', revokedAt: new Date(), user: { status: 'ACTIVE' } };
+  assert.equal(await service.reauthorizeCollaborationSession(context, documentId), null);
+  member = { role: 'AUTHOR', revokedAt: null, user: { status: 'ACTIVE' } };
+  assert.equal(await service.reauthorizeCollaborationSession(context, 'another-document'), null);
+  assert.equal(await service.reauthorizeCollaborationSession({ ...context, expiresAt: Date.now() - 1 }, documentId), null);
+  member = { role: 'ADMIN', revokedAt: null, user: { status: 'ACTIVE' } };
+  assert.equal(await service.reauthorizeCollaborationSession(context, documentId), null);
+  member = { role: 'AUTHOR', revokedAt: null, user: { status: 'SUSPENDED' } };
+  assert.equal(await service.reauthorizeCollaborationSession(context, documentId), null);
+  member = null;
+  assert.equal(await service.reauthorizeCollaborationSession(context, documentId), null);
 });
