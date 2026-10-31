@@ -18,6 +18,11 @@ test('Document menu owns Save, Save As and existing portable backup action', () 
   assert.match(document, /savePortableManuscriptCopy\(current\)/);
   assert.match(document, /savePortableBackup\(\)/);
   assert.match(document, /<CloudStorageSettings view="documents" \/>/);
+  assert.match(document, /cloudBackupsExpanded \? <CloudStorageSettings view="documents" \/> : null/);
+  assert.match(document, /aria-expanded=\{cloudBackupsExpanded\}/);
+  assert.match(document, /onClick=\{\(\) => setCloudBackupsExpanded/);
+  assert.match(menu, /useState\(false\)/);
+
   assert.doesNotMatch(tools, /saveLocalManuscript|savePortableManuscriptCopy|savePortableBackup|nativeSaveCard/);
 });
 
