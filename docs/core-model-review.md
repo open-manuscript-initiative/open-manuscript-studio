@@ -6,6 +6,8 @@ The Validation view has a separate Core model review panel. Authoring mode permi
 
 `src/model/coreSnapshotValidator.mjs` is shared code from the specification repository; `tests/fixtures/core-review/provenance.json` pins its SHA-256. The 22 fixtures and their manifest are vendored exactly. This is not independent implementation evidence. The corpus accounts for 66 requirements, of which 20 have partial evidence and 46 are untested. Complete conformance, external review and Stable promotion remain open.
 
+The repository's `.gitattributes` pins LF line endings for the shared validator and core-review fixtures, including on Windows with `core.autocrlf=true`. Digest checks hash the unmodified file bytes; line-ending conversion would break the pinned provenance. Keep these rules when updating the vendored source or corpus.
+
 Default limits are 100,000 JSON nodes, depth 64 and 200 diagnostics. Unknown block semantics and exhausted limits yield incomplete inspection; observed errors retain invalid outcome. Full relationship semantics, specialized inline content, revision correctness, permission/anonymity, rendering and accessibility are excluded. Existing Studio validation continues to check its own declared areas separately.
 
 Validation: `npm run test:core-review`, `npm run test:validation-model`, existing full tests/build/lint and `e2e/core-model-review.spec.ts`. This PR is stacked on the Draft model integration PR #785 so the existing capability panel is preserved.
