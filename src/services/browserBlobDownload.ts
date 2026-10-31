@@ -16,11 +16,20 @@ export function downloadBlobInBrowser(blob: Blob, fileName: string): void {
   // HTML in the Studio DOM or insert it via innerHTML.
   const downloadBlob = blob.slice(0, blob.size, 'application/octet-stream');
   const objectUrl = URL.createObjectURL(downloadBlob);
+  // The href is not authored document text: it must be an opaque URL minted
+  // by the browser for this exact binary Blob. Reject any unexpected scheme,
+  // and percent-encode HTML metacharacters at the URL/DOM boundary.
+  // encodeURI preserves the standard blob:<origin>/<uuid> syntax.
+  const safeDownloadUrl = encodeURI(objectUrl);
+  if (!safeDownloadUrl.startsWith('blob:') || /[<>"'\s]/.test(safeDownloadUrl)) {
+    URL.revokeObjectURL(objectUrl);
+    throw new Error('Browser refused an unsafe export object URL');
+  }
 
   let link: HTMLAnchorElement | undefined;
   try {
     link = document.createElement('a');
-    link.href = objectUrl;
+    link.href = safeDownloadUrl;
     link.download = fileName;
     link.rel = 'noopener noreferrer';
     document.body.appendChild(link);
