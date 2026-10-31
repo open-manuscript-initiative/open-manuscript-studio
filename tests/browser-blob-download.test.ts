@@ -17,7 +17,7 @@ interface BrowserHarness {
 }
 
 /** Minimal, side-effect-free mock of the browser download DOM. */
-function mockBrowser(throwOnClick = false): BrowserHarness {
+function mockBrowser(throwOnClick = false, generatedUrl = 'blob:https://studio.example.test/secure-download'): BrowserHarness {
   const originalDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
   const originalTimeout = globalThis.setTimeout;
   const originalCreate = Object.getOwnPropertyDescriptor(URL, 'createObjectURL');
@@ -63,7 +63,7 @@ function mockBrowser(throwOnClick = false): BrowserHarness {
     configurable: true,
     value: (value: Blob) => {
       state.observedBlob = value;
-      return 'blob:https://studio.example.test/secure-download';
+      return generatedUrl;
     },
   });
   Object.defineProperty(URL, 'revokeObjectURL', {
@@ -137,6 +137,34 @@ test('binary OMI package exports remain byte-for-byte identical', async () => {
     assert.deepEqual(new Uint8Array(await browser.observedBlob!.arrayBuffer()), bytes);
     assert.equal(browser.observedBlob?.type, 'application/octet-stream');
     assert.equal(browser.filename, 'manuscript.omi');
+  } finally {
+    browser.restore();
+  }
+});
+
+test('rejects any non-blob URL even if a browser API unexpectedly returns it', () => {
+  const browser = mockBrowser(false, 'javascript:alert(1)');
+  try {
+    assert.throws(
+      () => downloadBlobInBrowser(new Blob(['safe'], { type: 'text/html' }), 'paper.html'),
+      /unsafe export object URL/,
+    );
+    assert.equal(browser.appended, 0);
+    assert.equal(browser.clicked, 0);
+    assert.deepEqual(browser.revoked, ['javascript:alert(1)']);
+  } finally {
+    browser.restore();
+  }
+});
+
+test('HTML metacharacters cannot cross the generated URL/DOM boundary', () => {
+  const browser = mockBrowser(false, 'blob:https://studio.example.test/x<svg onload=alert(1)>');
+  try {
+    downloadBlobInBrowser(new Blob(['plain'], { type: 'text/plain' }), 'paper.txt');
+    assert.ok(!browser.href.includes('<'));
+    assert.ok(!browser.href.includes('>'));
+    assert.ok(!browser.href.includes(' '));
+    assert.match(browser.href, /^blob:https:\/\/studio\.example\.test\//);
   } finally {
     browser.restore();
   }
