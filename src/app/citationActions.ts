@@ -7,7 +7,7 @@ import {
   type CitationClusterCreation,
 } from '../model/citationClusters.ts';
 import {
-  findLikelyDuplicateRecord,
+  findConfirmedDuplicateRecord,
   normalizeBibliographicRecord,
 } from '../model/citations';
 import {
@@ -15,6 +15,7 @@ import {
 } from '../model/cslRendering.ts';
 import { getExternalIdentifierValue } from '../model/identity';
 import { extractManuscriptState } from '../model/versioning';
+import { collectCitationBlockContentChanges } from '../model/citationChangeHistory';
 import { stagePendingChanges } from '../model/workingState';
 import {
   getCurrentUser,
@@ -117,7 +118,7 @@ export function stageAddBibliographicRecords(
         !normalized.title ||
         existing.some((candidate) => candidate.id === normalized.id) ||
         accepted.some((candidate) => candidate.id === normalized.id) ||
-        findLikelyDuplicateRecord([...existing, ...accepted], normalized)
+        findConfirmedDuplicateRecord([...existing, ...accepted], normalized)
       ) {
         continue;
       }
@@ -204,7 +205,7 @@ export function stageUpdateBibliographicRecord(
       nextRecords,
       state.manuscript.citationClusters ?? [],
     );
-    const blockEvents = collectBlockContentChanges(
+    const blockEvents = collectCitationBlockContentChanges(
       state.manuscript.sections,
       synchronizedSections,
     );
@@ -311,7 +312,7 @@ export function stageCreateCitationCluster(
       records,
       nextClusters,
     );
-    const blockEvents = collectBlockContentChanges(
+    const blockEvents = collectCitationBlockContentChanges(
       state.manuscript.sections,
       synchronizedSections,
     );
@@ -431,7 +432,7 @@ export function stageSetCitationStyle(style: OmiCitationStyleId): boolean {
       style,
       state.manuscript.locale,
     );
-    const blockEvents = collectBlockContentChanges(
+    const blockEvents = collectCitationBlockContentChanges(
       state.manuscript.sections,
       nextSections,
     );
@@ -507,7 +508,7 @@ export function stageUpdateCitation(
       records,
       state.manuscript.citationClusters ?? [],
     );
-    const blockEvents = collectBlockContentChanges(
+    const blockEvents = collectCitationBlockContentChanges(
       state.manuscript.sections,
       synchronizedSections,
     );
@@ -584,7 +585,7 @@ export function stageReorderCitationCluster(
       state.manuscript.bibliographicRecords ?? [],
       nextClusters,
     );
-    const blockEvents = collectBlockContentChanges(
+    const blockEvents = collectCitationBlockContentChanges(
       state.manuscript.sections,
       synchronizedSections,
     );
@@ -688,7 +689,7 @@ export function stageRemoveCitation(citationId: string): boolean {
       state.manuscript.citationStyle ?? DEFAULT_CITATION_STYLE,
       state.manuscript.locale,
     );
-    const blockEvents = collectBlockContentChanges(
+    const blockEvents = collectCitationBlockContentChanges(
       state.manuscript.sections,
       nextSections,
     );
@@ -757,7 +758,7 @@ export function stageRemoveCitationCluster(clusterId: string): boolean {
       state.manuscript.citationStyle ?? DEFAULT_CITATION_STYLE,
       state.manuscript.locale,
     );
-    const blockEvents = collectBlockContentChanges(
+    const blockEvents = collectCitationBlockContentChanges(
       state.manuscript.sections,
       nextSections,
     );
@@ -876,7 +877,7 @@ export function reconcileCitationsAfterBlockEdit(): void {
       state.manuscript.bibliographicRecords ?? [],
       nextClusters,
     );
-    const blockEvents = collectBlockContentChanges(
+    const blockEvents = collectCitationBlockContentChanges(
       state.manuscript.sections,
       synchronizedSections,
     );
@@ -958,31 +959,6 @@ function synchronizeForManuscript(
   );
 }
 
-function collectBlockContentChanges(
-  previousSections: readonly OmiSection[],
-  nextSections: readonly OmiSection[],
-) {
-  const previousBlocks = new Map(
-    previousSections.flatMap((section) => section.blocks).map((block) => [block.id, block]),
-  );
-
-  return nextSections
-    .flatMap((section) => section.blocks)
-    .flatMap((block) => {
-      const previous = previousBlocks.get(block.id);
-      if (!previous || previous.content === block.content) return [];
-
-      return [
-        {
-          operation: 'block.content.set' as const,
-          targetId: block.id,
-          path: `/blocks/${block.id}/content`,
-          previousValue: previous.content,
-          nextValue: block.content,
-        },
-      ];
-    });
-}
 
 function scheduleCitationCheckpoint(): void {
   if (citationCheckpointTimer !== null) {
