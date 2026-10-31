@@ -131,6 +131,17 @@ Authenticated Studio users can manage extension manifests through:
 
 Registration is per Studio user in the current alpha implementation. Institutional policy and administrator-managed allow-lists can be layered on top of this registry in a later API version without changing the v1 manifest semantics.
 
+
+## Draft OMI-SPEC-300 / OMI-SPEC-310 compatibility and discovery (phase 9)
+
+The Studio registry implements only a subset of the **Draft** OMI-SPEC-300@0.1.0 and OMI-SPEC-310@0.1.0 models. It is **not** a general plugin runtime or certified Platform API.
+
+Authenticated clients may inspect `GET /api/integrations/extensions/capabilities`, which advertises the exact API version (`1`), supported manifest permission vocabulary, registration scope and false-valued code-execution, manuscript-authorization and publishing flags. The discovery response grants **no permission**.
+
+API-v1 manifests must use a semantic implementation version (for example `1.2.0`), a declared known permission from `document.read`, `document.suggest`, `document.write`, `metadata.read`, `metadata.write`, `references.read`, `references.write`, `review.read`, `files.read` or `files.write`, and HTTPS domain endpoints without embedded credentials. Unknown fields and duplicate declarations are rejected rather than interpreted with future privilege semantics. `none` authentication cannot be combined with credentialed modes; local/loopback/IP-literal endpoints are not accepted for remote registry records. An institutional deployment requiring local services must use a separately audited server-side adapter instead of bypassing manifest validation.
+
+**Registering an extension remains a declaration, not activation or access approval.** Plugin dependency resolution, executable extensions, sandboxing, event subscriptions, general scholarly object APIs and independent conformance verification remain future work. Refer to [phase 9 stabilization evidence](stabilization/spec-350-300-310-phase9.md) for test and release boundaries.
+
 ## Compatibility principle
 
 Extensions must declare the API version they target. Studio rejects unknown manifest API versions. This is deliberate: an extension must never gain broader permissions because a future Studio version interpreted an older manifest differently.

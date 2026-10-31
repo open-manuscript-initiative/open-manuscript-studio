@@ -8,7 +8,7 @@ export const REQUIREMENT_INVENTORY = {
 } as const;
 export interface ImplementationIdentity { name: string; version: string; build: string; revision: string; dependencies: string }
 export interface Capability {
-  id: string; specification: 'OMI-SPEC-190' | 'OMI-SPEC-340' | 'OMI-SPEC-350'; specVersion: '0.1.0';
+  id: string; specification: 'OMI-SPEC-190' | 'OMI-SPEC-300' | 'OMI-SPEC-310' | 'OMI-SPEC-340' | 'OMI-SPEC-350'; specVersion: '0.1.0';
   status: 'supported' | 'partial' | 'unsupported' | 'unknown' | 'conditional';
   component: string; limitations: string[]; prerequisites: string[];
 }
@@ -21,6 +21,12 @@ export function capabilityStatement(implementation: ImplementationIdentity, plat
       limitations: ['DOCX and ODT candidate/receipt reports only; other import paths are not instrumented.', 'Incomplete feature inspection, no zero-loss or round-trip assertion.', 'Original receipt and report live in the import panel; save them before leaving.'] },
     { id: 'studio.exchange.export-reports', specification: 'OMI-SPEC-340', specVersion: '0.1.0', status: 'partial', component: 'client', prerequisites: [],
       limitations: ['Standard export panel only; custom templates and integration exports have separate flows.', 'Minimum output availability and digest binding, not full target semantic validation.', 'No audience-safe anonymous-review projection claim.'] },
+    { id: 'studio.extensions.manifest-registry', specification: 'OMI-SPEC-300', specVersion: '0.1.0', status: 'partial', component: 'server',
+      prerequisites: ['Authenticated Studio account', 'Active integration registry and compatible API v1 manifest'],
+      limitations: ['Registration is declarative and does not execute plugin code or grant manuscript permissions.', 'Plugin lifecycle, dependency graph, distributed event API and independent isolation are not implemented.'] },
+    { id: 'studio.api.integration-extensions', specification: 'OMI-SPEC-310', specVersion: '0.1.0', status: 'conditional', component: 'server',
+      prerequisites: ['Authenticated server session', 'Explicit API-version agreement', 'User-scoped integration extension registry'],
+      limitations: ['Only the integration-extension API subset is covered; there is no general OMI object API.', 'Discovery does not authorize execution, writes, publishing or review access.'] },
     { id: 'studio.capabilities.disclosure', specification: 'OMI-SPEC-350', specVersion: '0.1.0', status: 'partial', component: 'client', prerequisites: [],
       limitations: ['Studio-owned vocabulary, not an approved OMI schema or suite.', 'Model self-assessment only; deployed API/WebSocket, format interoperability and independent verification are not assessed.'] },
   ];
@@ -86,8 +92,48 @@ export function runModelAssessment(implementation: ImplementationIdentity, envir
   return { format: 'omi-studio-conformance-report', version: '0.1.0', relatedSpecification: 'OMI-SPEC-350', specVersion: '0.1.0',
     experimental: true, evidence, evidenceDigest: digestBytes(new TextEncoder().encode(JSON.stringify(evidence))) };
 }
+/**
+ * Local consistency validation for an untrusted Draft self-assessment.
+ * This does not authenticate the issuer: the digest is not a signature, and
+ * even a consistent report cannot claim independent verification or approval.
+ */
 export function isAssessmentCurrent(report: ReturnType<typeof runModelAssessment>, implementation: ImplementationIdentity, environment: string): boolean {
-  return report.evidence.suite.digest === suiteDigest() && report.evidence.environment === environment
-    && JSON.stringify(report.evidence.implementation) === JSON.stringify(implementation)
-    && report.evidenceDigest === digestBytes(new TextEncoder().encode(JSON.stringify(report.evidence)));
+  if (!report || report.format !== 'omi-studio-conformance-report' || report.specVersion !== '0.1.0'
+    || report.relatedSpecification !== 'OMI-SPEC-350' || report.experimental !== true) return false;
+  const evidence = report.evidence;
+  if (!evidence || evidence.assertionLevel !== 'self-assessment' || evidence.verification !== 'not-independent'
+    || evidence.complete !== false || evidence.outcome !== 'indeterminate'
+    || evidence.runnerVersion !== '0.1.0' || !Array.isArray(evidence.deviations) || !Array.isArray(evidence.waivers)
+    || evidence.waivers.length > 0 || evidence.deviations.length > 0) return false;
+  if (evidence.suite.id !== MODEL_SUITE.id || evidence.suite.version !== MODEL_SUITE.version
+    || evidence.suite.approved !== false || evidence.suite.digest !== suiteDigest()
+    || evidence.environment !== environment
+    || JSON.stringify(evidence.implementation) !== JSON.stringify(implementation)) return false;
+
+  // Require EXACT per-case fixture identities and known results. Missing or
+  // added test cases must never be interpreted as full conformance coverage.
+  if (!Array.isArray(evidence.results) || evidence.results.length !== MODEL_CASES.length) return false;
+  for (let i = 0; i < MODEL_CASES.length; i += 1) {
+    const actual = evidence.results[i];
+    const expected = MODEL_SUITE.cases[i];
+    if (!actual || !expected || actual.id !== expected.id || actual.fixtureDigest !== expected.fixtureDigest) return false;
+    const definition = MODEL_CASES[i];
+    if (!definition) return false;
+    let observed: string;
+    try { observed = executeModelCase(definition); }
+    catch { return false; }
+    if (actual.status !== (observed === expected.expected ? 'pass' : 'fail')) return false;
+  }
+
+  const required = Object.values(REQUIREMENT_INVENTORY).flat();
+  if (!Array.isArray(evidence.coverage) || evidence.coverage.length !== required.length) return false;
+  for (let i = 0; i < required.length; i += 1) {
+    const entry = evidence.coverage[i];
+    const requirement = required[i];
+    if (!requirement) return false;
+    const expectedCases = MODEL_CASES.filter((item) => item.requirements.includes(requirement)).map((item) => item.id);
+    if (!entry || entry.requirement !== requirement || JSON.stringify(entry.cases) !== JSON.stringify(expectedCases)
+      || entry.status !== (expectedCases.length ? 'partially-evidenced' : 'not-run')) return false;
+  }
+  return report.evidenceDigest === digestBytes(new TextEncoder().encode(JSON.stringify(evidence)));
 }

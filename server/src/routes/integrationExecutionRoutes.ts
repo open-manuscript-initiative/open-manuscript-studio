@@ -9,6 +9,7 @@ import {
   translateWithDeepL,
 } from '../integrations/integrationExecution.js';
 import { prisma } from '../lib/prisma.js';
+import { extensionManifestSchema, INTEGRATION_EXTENSION_API_CAPABILITIES } from '../integrations/extensionManifestSchema.js';
 import {
   requireSession,
   type AuthenticatedRequest,
@@ -43,39 +44,6 @@ const agentSchema = z.object({
   requestedPermissions: z.array(z.string().trim().min(1).max(128)).max(16).optional(),
   allowReviewConfidential: z.boolean().optional(),
   allowDirectWrite: z.boolean().optional(),
-});
-
-const extensionManifestSchema = z.object({
-  model: z.literal('omi-integration-extension'),
-  apiVersion: z.literal('1'),
-  id: z.string().trim().regex(/^[a-z0-9][a-z0-9._-]{1,126}[a-z0-9]$/),
-  name: z.string().trim().min(1).max(200),
-  version: z.string().trim().min(1).max(64),
-  kind: z.enum(['translation', 'ai', 'agent', 'storage', 'publishing', 'identity', 'scholarly-service']),
-  description: z.string().trim().max(2000).optional(),
-  authenticationModes: z.array(z.enum(['none', 'server_secret', 'user_api_key', 'oauth2', 'oidc', 'integration_token'])).min(1).max(6),
-  permissions: z.array(z.string().trim().min(1).max(128)).max(32),
-  capabilities: z.array(z.string().trim().min(1).max(128)).max(32),
-  endpoints: z.record(z.string(), z.string().url().max(2048)).optional(),
-}).superRefine((manifest, context) => {
-  for (const [name, endpoint] of Object.entries(manifest.endpoints ?? {})) {
-    try {
-      const url = new URL(endpoint);
-      if (url.protocol !== 'https:' || url.username || url.password) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['endpoints', name],
-          message: 'Extension endpoints must be credential-free HTTPS URLs.',
-        });
-      }
-    } catch {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['endpoints', name],
-        message: 'Invalid extension endpoint URL.',
-      });
-    }
-  }
 });
 
 const translationVariantSchema = z.object({
@@ -172,6 +140,16 @@ integrationExecutionRouter.get(
         createdAt: event.created_at.toISOString(),
       })),
     });
+  },
+);
+
+// Explicit, versioned capability discovery. Registration is not execution or
+// authorization to access a manuscript, review, secret or publication action.
+integrationExecutionRouter.get(
+  '/integrations/extensions/capabilities',
+  requireSession,
+  (_request: AuthenticatedRequest, response) => {
+    response.status(200).json(INTEGRATION_EXTENSION_API_CAPABILITIES);
   },
 );
 
