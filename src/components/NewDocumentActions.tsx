@@ -35,7 +35,6 @@ export function NewDocumentActions({
   };
 
   const createVolume = (volumeKind: OmiVolumeKind) => {
-    if (!confirmSingleDocumentReplacement()) return;
     createAndOpenBlankOmiDocument({ kind: 'volume', volumeKind, locale });
     onCreated?.();
   };
