@@ -566,7 +566,7 @@ function ReferencesView() {
 }
 
 function ToolsView() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
