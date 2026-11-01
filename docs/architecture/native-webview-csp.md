@@ -1,6 +1,6 @@
 # Tauri main-WebView CSP and EuroOffice isolation
 
-Status: **staged security hardening / native acceptance required** (issue #770). The CSP is active in the proposed Tauri source, but completion of #770 requires verified Windows and Android behavior. Do not mark the issue resolved based on static tests alone.
+Status: **staged security hardening / beta acceptance required** (issue #770). As the hosted Studio currently serves a limited tester cohort, the native changes may be accepted through a controlled beta deployment **after CI and rollback verification**, without provisioning a separate test server. The CSP is active in the proposed Tauri source, but completion of #770 still requires verified Windows and Android behavior. Do not mark the issue resolved based on static tests alone.
 
 ## Threat and trust boundaries
 
@@ -23,7 +23,22 @@ The normal browser Studio continues its existing integrated EuroOffice API loadi
 3. Build Windows and Android native packages from the PR commit; inspect the effective Tauri CSP in the application WebView console and verify script injection, malicious onerror handlers and `javascript:` payloads do not execute in Studio.
 4. Open a real DOCX in EuroOffice using a centrally hosted and an institutional Studio server. Verify editing, nested iframe bounds on Android, Save/force-save/final-close callbacks, reopening and crash snapshot recovery.
 5. Test ORCID/OIDC return, separate bibliography windows, native open/save scopes, editor rendering, KaTeX/MathML/SVG, PDF/IDML export and cloud provider APIs. Verify iframe origin is different from native main origin and that remote Office content cannot invoke native IPC or filesystem APIs.
-6. Verify iOS simulator build and smoke test. Sign-off by the maintainer on physical Android and Windows is required before merging this security-sensitive implementation.
+6. Verify iOS simulator build and smoke test. For the tester-only rollout, complete the CI rollback test and confirm the Plesk snapshot before merging. After deployment, perform physical Android and Windows acceptance and revert promptly on failures; keep #770 open until both are verified.
+
+## Tester-only deployment and executable rollback
+
+The production deployment workflow now takes a **pre-change local snapshot** on the existing Plesk VPS, under `$HOME/.omi-studio-rollbacks/<run-id>-<commit>/`. The snapshot contains the previously served `studio/httpdocs`, compiled `server/dist`, live `server/node_modules`, and prior Git commit ID. The snapshot directory is private (mode 0700). The GitHub CI runs a synthetic snapshot/restore round-trip test before any deployment can proceed.
+
+A failed deploy automatically restores the previous checkout, exact web assets and compiled API plus runtime dependencies and restarts `omi-studio-api.service`. A manual restore is available on the server with:
+
+```bash
+bash "$HOME/.omi-studio-rollbacks/<run-id>-<commit>/rollback.sh" restore \
+  "$HOME/.omi-studio-rollbacks/<run-id>-<commit>"
+```
+
+Replace `<run-id>-<commit>` with the directory name printed by the deployment log. **Do not execute a manual restore while a deployment is still running.** The script verifies the snapshot marker and exact prior commit. It does **not** restore or delete PostgreSQL, manuscript edits, external cloud packages, login data, application configuration or TLS certificates. If the new release changes either Prisma migration directory, code-only automatic rollback is disabled and the deployment fails before writing new application assets; a separately reviewed full database backup is then mandatory.
+
+The existing Plesk deployment is sufficient for beta testing once the snapshot passes; it is not necessary to maintain a second VPS. Restore the previous signed **Windows** client if required. Android applications distributed by Google Play cannot normally be downgraded in place: a rollback of an installed Play version requires a new **signed hotfix build with a higher versionCode** built from the previous verified code. Authors should save portable OMI packages to cloud or removable storage before installing a native beta.
 
 ## Failure/rollback policy
 
