@@ -1,6 +1,7 @@
 import { getStudioIntegrationApiBaseUrl } from './studioServer';
 
 const API_BASE_URL = getStudioIntegrationApiBaseUrl();
+const EXTENSION_API_BASE_URL = `${API_BASE_URL.replace(/\/v1$/u, "")}/v1`;
 
 export type ExternalDocumentScopeKind =
   | 'selection'
@@ -121,7 +122,7 @@ export interface IntegrationExtensionApiCapabilities {
 }
 
 export async function getIntegrationExtensionApiCapabilities(): Promise<IntegrationExtensionApiCapabilities> {
-  const response = await fetch(`${API_BASE_URL}/integrations/extensions/capabilities`, {
+  const response = await fetch(`${EXTENSION_API_BASE_URL}/integrations/extensions/capabilities`, {
     credentials: 'include', headers: { Accept: 'application/json' },
   });
   if (!response.ok) {
@@ -213,7 +214,7 @@ export async function getIntegrationAuditEvents(limit = 50): Promise<Integration
 }
 
 export async function getIntegrationExtensions(): Promise<RegisteredIntegrationExtension[]> {
-  const response = await fetch(`${API_BASE_URL}/integrations/extensions`, {
+  const response = await fetch(`${EXTENSION_API_BASE_URL}/integrations/extensions`, {
     credentials: 'include',
     headers: { Accept: 'application/json' },
   });
@@ -227,7 +228,7 @@ export async function getIntegrationExtensions(): Promise<RegisteredIntegrationE
 export async function saveIntegrationExtension(
   manifest: IntegrationExtensionManifest,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/integrations/extensions`, {
+  const response = await fetch(`${EXTENSION_API_BASE_URL}/integrations/extensions`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -243,7 +244,7 @@ export async function saveIntegrationExtension(
 
 export async function deleteIntegrationExtension(extensionId: string): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/integrations/extensions/${encodeURIComponent(extensionId)}`,
+    `${EXTENSION_API_BASE_URL}/integrations/extensions/${encodeURIComponent(extensionId)}`,
     {
       method: 'DELETE',
       credentials: 'include',
