@@ -6,6 +6,10 @@ on:
     paths:
       - 'scripts/egress/**'
       - 'tests/api-egress-policy.test.mjs'
+      - 'tests/api-egress-shared-uid.test.ts'
+      - 'deployment/systemd/omi-studio-api-egress-shared-uid.conf'
+      - 'server/src/cloud/security/connectionPinnedHttp.ts'
+      - 'server/src/cloud/providers/webdav/WebDavProvider.ts'
       - 'deployment/egress/**'
       - '.github/workflows/api-egress-policy.yml'
   push:
@@ -13,6 +17,10 @@ on:
     paths:
       - 'scripts/egress/**'
       - 'tests/api-egress-policy.test.mjs'
+      - 'tests/api-egress-shared-uid.test.ts'
+      - 'deployment/systemd/omi-studio-api-egress-shared-uid.conf'
+      - 'server/src/cloud/security/connectionPinnedHttp.ts'
+      - 'server/src/cloud/providers/webdav/WebDavProvider.ts'
       - 'deployment/egress/**'
       - '.github/workflows/api-egress-policy.yml'
 
@@ -31,6 +39,23 @@ jobs:
           node-version: 24
       - name: Regression-test strict private/metadata and UID boundaries
         run: node --test tests/api-egress-policy.test.mjs
+      - name: Test service-scoped shared-UID policy and connection-time DNS guard
+        run: node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/api-egress-shared-uid.test.ts
+      - name: Offline systemd service-cgroup drop-in syntax validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Feed only the staged IP directives to a synthetic oneshot unit.
+          # systemd-analyze checks syntax without installing or activating it.
+          cat > "$RUNNER_TEMP/omi-api-egress-smoke.service" <<'UNIT'
+          [Unit]
+          Description=OMI API egress syntax smoke
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/bin/true
+          UNIT
+          grep '^IPAddress' deployment/systemd/omi-studio-api-egress-shared-uid.conf >> "$RUNNER_TEMP/omi-api-egress-smoke.service"
+          systemd-analyze verify "$RUNNER_TEMP/omi-api-egress-smoke.service"
       - name: Offline nftables syntax validation (never apply)
         shell: bash
         run: |

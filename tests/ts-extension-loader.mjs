@@ -11,6 +11,21 @@ export async function resolve(specifier, context, nextResolve) {
   try {
     return await nextResolve(specifier, context);
   } catch (error) {
+    // Server NodeNext source uses emitted .js specifiers even in .ts files.
+    // In source-only tests, fall back to the corresponding .ts module. Keep
+    // this restricted to imports made by server/src to avoid masking missing
+    // production JavaScript or changing test fixture resolution elsewhere.
+    if (
+      context.parentURL?.includes('/server/src/') &&
+      RELATIVE_SPECIFIER.test(specifier) &&
+      specifier.endsWith('.js')
+    ) {
+      try {
+        return await nextResolve(specifier.slice(0, -3) + '.ts', context);
+      } catch {
+        // Preserve original error below.
+      }
+    }
     if (
       RELATIVE_SPECIFIER.test(specifier) &&
       !EXPLICIT_EXTENSION.test(specifier)

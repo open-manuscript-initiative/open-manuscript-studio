@@ -10,6 +10,12 @@ The HTML validation and CSP are complementary, not interchangeable. PDF workers 
 
 The cloud connection form accepts a user-supplied HTTPS WebDAV endpoint. The server rejects private or special-purpose DNS results, including loopback, RFC 1918, link-local/metadata, carrier-grade NAT, IPv4-mapped IPv6 and IPv6 transition prefixes, and refuses redirects. Do not loosen this filtering to support an internal Nextcloud host on a public multi-tenant Studio.
 
+The direct WebDAV/Nextcloud transport now uses a fresh, checked A/AAAA answer
+**at socket connection time**: it does not perform a separate unrestricted
+DNS lookup after validation. It preserves TLS hostname verification and
+does not follow redirects. This protects that one connector, not all API
+outbound request paths.
+
 **DNS rebinding remains a separate deployment concern**: an address can resolve differently between validation and the actual outbound connection. Production must enforce an egress firewall or equivalent network policy that prevents the Studio API/worker from reaching loopback, RFC 1918 and link-local ranges, cloud metadata endpoints and other internal services, even if DNS changes.
 
 For intentionally self-hosted internal Nextcloud systems, use a dedicated private Studio installation and a separately reviewed network policy rather than a global exception to the URL safety checks.
