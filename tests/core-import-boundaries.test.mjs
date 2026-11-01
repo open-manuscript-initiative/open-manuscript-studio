@@ -11,6 +11,8 @@ test('core model accepts pure domain imports and safe type-only integration inte
   const results = verdict(`
     import { OmiManuscript } from '../types/omi';
     import type { TranslationSegment } from '../services/integrationExecutionApi';
+    import { type NativeApi, type ClientResult } from '../services/integrationExecutionApi';
+    export { type NativeType } from '../platform/nativeServerSelection';
     export type { ClientResult } from '../services/integrationExecutionApi';
     import { sha256HexSync } from './stateDigest';
   `);
