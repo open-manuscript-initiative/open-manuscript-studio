@@ -26,7 +26,8 @@
     "test:isolated-pdf-worker": "node --import tsx --test src/workers/pdfWorkerServer.test.ts src/security/pdfSubprocess.test.ts",
     "test:extension-manifest": "node --import tsx --test src/integrations/extensionManifestSchema.test.ts",
     "test:profile-saved-documents": "npm run prisma:generate && tsc -p tsconfig.json && node --test --experimental-test-module-mocks ../tests/profile-saved-documents-routes.test.mjs",
-    "server:register": "node dist/cli/registerServer.js"
+    "server:register": "node dist/cli/registerServer.js",
+    "test:oidc-ssrf": "node --import tsx --test src/integrations/security/oidcMetadataHttp.test.ts"
   },
   "dependencies": {
     "@hocuspocus/server": "4.7.0",
