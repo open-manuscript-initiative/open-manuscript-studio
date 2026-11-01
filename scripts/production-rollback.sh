@@ -30,7 +30,10 @@ if [[ "$action" == snapshot ]]; then
   previous="${STUDIO_PREVIOUS_SHA:-}"
   [[ "$previous" =~ ^[0-9a-f]{40}$ ]] || { echo 'Missing verified previous commit SHA' >&2; exit 1; }
   git -C "$repo" cat-file -e "$previous^{commit}"
-  current="$(git -C "$repo" rev-parse HEAD)"
+  # The deployment workflow can stream this helper from a not-yet-checked-out
+  # commit, so it can snapshot before touching the working tree.
+  current="${STUDIO_TARGET_SHA:-$(git -C "$repo" rev-parse HEAD)}"
+  git -C "$repo" cat-file -e "$current^{commit}"
 
   # Automatic rollback cannot undo a database migration. For any future PR
   # modifying migrations require an explicit database backup/manual rollout.
