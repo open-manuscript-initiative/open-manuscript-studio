@@ -83,7 +83,7 @@ PDF_WORKER_REQUIRED=true
 
 Restart only omi-studio-api.service so its process acquires the socket group membership. Verify the local and public HTTPS health endpoints (200), PDF import, PDF render, OJS integration, login and collaboration. Disconnect the socket in a test environment: the API must fail closed and NOT fall back to spawning the old parser.
 
-**Rollback:** remove/restore PDF_WORKER_SOCKET and PDF_WORKER_REQUIRED from the API configuration and restart only omi-studio-api.service. This temporarily restores the *unisolated* legacy path, so log the decision and reopen the security gate; do not claim #774 solved after rollback. Do not change nginx, firewall, PostgreSQL, MariaDB or unrelated Plesk applications.
+**Rollback:** retain the isolated worker or temporarily disable PDF processing while restoring the previous reviewed API/worker configuration. In production, removing PDF_WORKER_SOCKET or setting PDF_WORKER_REQUIRED=false does not enable local processing. Never restore unisolated parsing as a service-availability workaround; keep #774 open until real acceptance. Do not change nginx, firewall, PostgreSQL, MariaDB or unrelated Plesk applications.
 
 ## Explicit remaining gaps
 
@@ -97,4 +97,4 @@ Restart only omi-studio-api.service so its process acquires the socket group mem
 
 The Ubuntu 24.04 IONOS/Plesk administrator verified Google Chrome Stable 156.0.8078.79 from Google's native amd64 .deb package. `google-chrome-stable` resolves through `/usr/bin/google-chrome-stable` to `/opt/google/chrome/chrome`; no `chromium` executable was found in the standard locations. The Chrome installation was performed as root, and package post-install scripts indicated a **pending kernel reboot**; defer that to a separate maintenance window. An APT warning about an invalidly suffixed MariaDB source-list filename is a separate packaging hygiene issue, not evidence that Chrome failed to install. Neither message is an instruction to run a global upgrade as part of this worker rollout.
 
-Before the worker's first start, recheck the actual executable and test a small PDF render under the isolated systemd identity. A green GitHub CI run does not validate Chromium in this host's PrivateNetwork/ProtectSystem/PrivateDevices sandbox. Do not set `PDF_WORKER_REQUIRED=true` until the independent worker smoke test passes.
+Before the worker's first start, recheck the actual executable and test a small PDF render under the isolated systemd identity. A green GitHub CI run does not validate Chromium in this host's PrivateNetwork/ProtectSystem/PrivateDevices sandbox. Do not deploy the new production API for PDF use until the independent worker smoke test passes; production requires the socket independently of the optional flag.
