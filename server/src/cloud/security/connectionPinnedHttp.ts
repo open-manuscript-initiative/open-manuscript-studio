@@ -1,9 +1,9 @@
 import { lookup as dnsLookup } from 'node:dns/promises';
-import type { LookupAddress, LookupOptions } from 'node:dns';
+import type { LookupAddress, LookupOptions, LookupFunction } from 'node:dns';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { Readable } from 'node:stream';
-import { isIP, type LookupFunction } from 'node:net';
+import { isIP } from 'node:net';
 import { isPublicRoutableAddress } from './publicAddress.js';
 
 type ResolveAll = (hostname: string, options: { all: true; verbatim: true }) => Promise<LookupAddress[]>;
@@ -107,10 +107,8 @@ export async function requestPinnedPublicUrl(
       timeout: 120_000,
     }, (response) => {
       const status = response.statusCode ?? 0;
-      if (status < 200 || status > 299) {
-        // Keep non-success WebDAV status codes (401, 403, 404, 405, 207 etc.)
-        // observable by the caller, but never follow a 3xx Location header.
-      }
+      // Keep non-success WebDAV status codes observable, including 3xx;
+      // redirects are never followed by this transport.
       if (status < 200 || status > 599) {
         response.destroy();
         reject(new Error('Invalid outbound HTTP status.'));
