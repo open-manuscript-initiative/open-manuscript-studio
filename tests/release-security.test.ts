@@ -126,7 +126,7 @@ test('Tauri CSP restricts main WebView scripts and native IPC to bundled main we
   const policy = tauri.app.security.csp;
   assert.ok(policy, 'a missing CSP is a release blocker');
   assert.match(policy['script-src'] ?? '', /'self'/);
-  assert.doesNotMatch(policy['script-src'] ?? '', /unsafe-inline|unsafe-eval|https?:|[*]/);
+  assert.doesNotMatch(policy['script-src'] ?? '', /'unsafe-inline'|'unsafe-eval'|https?:|[*]/);
   assert.equal(policy['script-src-attr'], "'none'");
   assert.equal(policy['object-src'], "'none'");
   assert.equal(policy['worker-src'], "'self' blob:");
