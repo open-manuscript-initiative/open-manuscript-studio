@@ -31,7 +31,7 @@ export function extractDenyCounters(ruleset) {
     const matching = rules.filter(entry => entry.rule?.comment === comment);
     if (matching.length !== 1) throw new Error('Missing or duplicate nft rejection rule: ' + comment);
     const expr = matching[0].rule.expr;
-    if (!Array.isArray(expr) || !expr.some(x => x.reject)) {
+    if (!Array.isArray(expr) || !expr.some(x => Object.hasOwn(x, 'reject'))) {
       throw new Error('Rule has no reject action: ' + comment);
     }
     const counter = expr.find(x => x.counter)?.counter;
