@@ -57,7 +57,12 @@ mock.module(new URL('../server/dist/middleware/requireSession.js', import.meta.u
   requireSession: (req, res, next) => { const id = req.headers['x-test-user']; if (!id) { res.sendStatus(401); return; } req.authUserId = id; next(); },
 } });
 mock.module(new URL('../server/dist/integrations/security/trustedRemoteUrl.js', import.meta.url).href, { namedExports: { assertTrustedIntegrationUrl: async (url) => new URL(url) } });
-const { directSubmissionRouter } = await import('../server/dist/routes/directSubmissionRoutes.js');
+// Keep the route/service fixture transport mock at the pinned HTTP boundary.
+ // Actual DNS and socket pinning are exercised in ssrf-outbound-transport.test.ts.
+ mock.module(new URL('../server/dist/cloud/security/connectionPinnedHttp.js', import.meta.url).href, {
+   namedExports: { fetchPinnedPublicUrl: (...args) => globalThis.fetch(...args) },
+ });
+ const { directSubmissionRouter } = await import('../server/dist/routes/directSubmissionRoutes.js');
 const app = express(); app.use(express.json({ limit: '25mb' })); app.use(directSubmissionRouter);
 const server = await new Promise((resolve) => { const listener = app.listen(0, '127.0.0.1', () => resolve(listener)); });
 const localFetch = globalThis.fetch;
