@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { applyDirectFormattingHeadingInference } from '../ojs/docxDirectHeading.js';
 import { applyInlineSemantics } from '../ojs/docxInlineSemantics.js';
 import { applyStyleInheritedLists } from '../ojs/docxListInheritance.js';
@@ -134,7 +135,7 @@ async function fetchWithSameOriginRedirects(
     if (visited.has(currentKey)) throw new Error('OMP request entered a redirect loop.');
     visited.add(currentKey);
 
-    const response = await fetch(currentUrl, {
+    const response = await fetchPinnedPublicUrl(currentUrl, {
       method: 'GET',
       headers: { Accept: accept, Authorization: authorization },
       redirect: 'manual',

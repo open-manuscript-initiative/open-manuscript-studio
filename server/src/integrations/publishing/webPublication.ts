@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import {
   createHash,
   randomBytes,
@@ -1137,7 +1138,7 @@ async function deliverToGenericEndpoint(
   });
   let response: Response;
   try {
-    response = await fetch(trustedEndpoint, {
+    response = await fetchPinnedPublicUrl(trustedEndpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -1348,7 +1349,7 @@ async function wordpressRequest(
   );
   headers.set('Accept', 'application/json');
   try {
-    return await fetch(trustedUrl, {
+    return await fetchPinnedPublicUrl(trustedUrl, {
       ...init,
       headers,
       redirect: 'error',

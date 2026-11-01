@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../cloud/security/connectionPinnedHttp.js';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -563,7 +564,7 @@ async function readVerifiedRemoteVenueName(
     baseUrl.replace(/\/+$/u, '') + '/api/v1/omi-integration/submission-options',
     baseUrl,
   );
-  const remoteResponse = await fetch(remoteUrl, {
+  const remoteResponse = await fetchPinnedPublicUrl(remoteUrl, {
     method: 'GET',
     headers: { Accept: 'application/json' },
     redirect: 'error',

@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { applyDirectFormattingHeadingInference } from './docxDirectHeading.js';
 import { applyInlineSemantics } from './docxInlineSemantics.js';
 import { applyStyleInheritedLists } from './docxListInheritance.js';
@@ -128,7 +129,7 @@ async function fetchWithExplicitRedirects(
 
     let response: Response;
     try {
-      response = await fetch(currentUrl, {
+      response = await fetchPinnedPublicUrl(currentUrl, {
         method: 'GET',
         headers: { Accept: accept, Authorization: authorization },
         redirect: 'manual',

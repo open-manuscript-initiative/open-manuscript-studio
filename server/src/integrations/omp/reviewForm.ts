@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 import {
   getOjsReviewFormContext,
@@ -32,7 +33,7 @@ export async function loadOmpReviewForm(
     throw new Error('The OMP review form URL is not trusted.');
   }
 
-  const response = await fetch(target, {
+  const response = await fetchPinnedPublicUrl(target, {
     method: 'GET',
     headers: {
       Accept: 'application/json',

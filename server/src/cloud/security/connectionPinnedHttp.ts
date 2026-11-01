@@ -138,3 +138,94 @@ export async function requestPinnedPublicUrl(
     else request.end();
   });
 }
+
+
+/**
+ * Fetch-compatible transport for user-configurable public HTTP integrations.
+ * Unlike preflight DNS validation + global fetch(), this uses one checked DNS
+ * answer for the actual socket. It never automatically follows redirects.
+ *
+ * Request constructs multipart/form-data boundaries and URLSearchParams
+ * encodings; bodies are streamed rather than materialized into memory.
+ * All authentication headers stay scoped to the original HTTPS origin.
+ */
+export async function fetchPinnedPublicUrl(
+  input: string | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  const target = input instanceof URL ? input : new URL(input);
+  const local = isDevelopmentLoopback(target) || isExplicitIntegrationTestHost(target);
+  if (target.username || target.password ||
+      (target.protocol !== 'https:' && !(local && target.protocol === 'http:'))) {
+    throw new Error('Outbound endpoint must use HTTPS without embedded credentials.');
+  }
+  const host = target.hostname.startsWith('[') ? target.hostname.slice(1, -1) : target.hostname;
+  if (isIP(host) && !local && !isPublicRoutableAddress(host)) {
+    throw new Error('Outbound endpoint uses a private or reserved IP address.');
+  }
+  if (init.redirect === 'follow') {
+    throw new Error('Automatic redirects are prohibited for authenticated integrations.');
+  }
+
+  const prepared = new Request(target, {
+    ...init,
+    redirect: 'manual',
+  });
+  const headers: Record<string, string> = {};
+  prepared.headers.forEach((value, key) => { headers[key] = value; });
+
+  return new Promise<Response>((resolve, reject) => {
+    const request = (target.protocol === 'https:' ? httpsRequest : httpRequest)(target, {
+      method: prepared.method,
+      headers,
+      lookup: connectionTimePublicLookup(target),
+      agent: false,
+      signal: init.signal || undefined,
+      timeout: 120_000,
+    }, (message) => {
+      const status = message.statusCode ?? 0;
+      if (status < 200 || status > 599) {
+        message.destroy();
+        reject(new Error('Invalid outbound HTTP status.'));
+        return;
+      }
+      if (status >= 300 && status < 400 && init.redirect !== 'manual') {
+        message.destroy();
+        reject(new Error('Remote HTTP redirects are not permitted.'));
+        return;
+      }
+      const responseHeaders = new Headers();
+      for (const [key, value] of Object.entries(message.headers)) {
+        if (Array.isArray(value)) {
+          for (const item of value) responseHeaders.append(key, item);
+        } else if (value !== undefined) {
+          responseHeaders.set(key, value);
+        }
+      }
+      // Manual redirect callers need only Location/status. Abandon any
+      // redirect body immediately so an adversarial endpoint cannot keep
+      // a response stream/socket alive between validated redirect hops.
+      const isRedirect = status >= 300 && status < 400;
+      const body = isRedirect || status === 204 || status === 205
+        ? null
+        : (Readable.toWeb(message) as unknown as ReadableStream);
+      const response = new Response(body, { status, headers: responseHeaders });
+      if (isRedirect) message.destroy();
+      // Native fetch supplies the final URL; OJS relies on this field while
+      // walking same-origin redirects. The pinned transport never redirects.
+      Object.defineProperty(response, 'url', { value: target.toString() });
+      resolve(response);
+    });
+    request.on('error', reject);
+    request.on('timeout', () => request.destroy(new Error('Outbound request timed out.')));
+    if (prepared.body) {
+      const stream = Readable.fromWeb(
+        prepared.body as Parameters<typeof Readable.fromWeb>[0],
+      );
+      stream.on('error', (error) => request.destroy(error));
+      stream.pipe(request);
+    } else {
+      request.end();
+    }
+  });
+}

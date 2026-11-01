@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { prisma } from '../../lib/prisma.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 import type { LaunchClaims } from './launchVerifier.js';
@@ -82,7 +83,7 @@ export async function loadOjsReviewForm(
     throw new Error('The OJS review form URL is not trusted.');
   }
 
-  const response = await fetch(target, {
+  const response = await fetchPinnedPublicUrl(target, {
     method: 'GET',
     headers: {
       Accept: 'application/json',

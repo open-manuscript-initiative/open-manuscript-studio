@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../cloud/security/connectionPinnedHttp.js';
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
@@ -43,7 +44,7 @@ function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
     };
     if (body instanceof FormData) init.body = body;
     else if (body) { headers.set('Content-Type', 'application/json'); init.body = JSON.stringify(body); }
-    const response = await fetch(url, init);
+    const response = await fetchPinnedPublicUrl(url, init);
     const text = await response.text();
     if (text.length > 4000000) throw new Error('The publishing response is too large.');
     let result: unknown;
