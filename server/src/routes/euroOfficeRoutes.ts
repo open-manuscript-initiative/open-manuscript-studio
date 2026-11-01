@@ -1,8 +1,9 @@
 import { Router, type Response } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env.js';
+import { buildEuroOfficeEmbedHost } from '../security/euroOfficeEmbedHost.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
-import { createEuroOfficeSession, createPlainDocument, listPlainDocuments, euroOfficeContent, saveEuroOfficeCallback, listEuroOfficeSaves, downloadEuroOfficeSave, EuroOfficeError } from '../services/euroOfficeService.js';
+import { createEuroOfficeSession, createPlainDocument, listPlainDocuments, euroOfficeContent, saveEuroOfficeCallback, listEuroOfficeSaves, downloadEuroOfficeSave, EuroOfficeError, requireEuroOffice } from '../services/euroOfficeService.js';
 export const euroOfficeRouter = Router();
 const id = z.string().uuid();
 const token = z.string().min(1).max(128);
@@ -17,6 +18,26 @@ function content(response: Response) {
   response.setHeader('X-Content-Type-Options', 'nosniff');
 }
 euroOfficeRouter.use(['/eurooffice', '/integrations/eurooffice'], (_request, response, next) => { response.setHeader('Cache-Control', 'private, no-store'); next(); });
+// No user token or DOCX data is embedded here. This document is served from
+// the selected institutional Studio API origin, not from the privileged Tauri
+// WebView. A verified postMessage handshake supplies the private launch later.
+euroOfficeRouter.get('/eurooffice/embed-host', (_request, response) => {
+  try {
+    requireEuroOffice();
+    const { html, csp } = buildEuroOfficeEmbedHost(env.EUROOFFICE_URL!, env.FRONTEND_ORIGIN);
+    // Helmet's default frameguard and CORP headers would reject a cross-origin
+    // Tauri iframe even though frame-ancestors has a deliberately narrow list.
+    response.removeHeader('X-Frame-Options');
+    response.removeHeader('Cross-Origin-Resource-Policy');
+    response.setHeader('Content-Security-Policy', csp);
+    response.setHeader('Referrer-Policy', 'no-referrer');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader('Cache-Control', 'no-store');
+    response.type('html').send(html);
+  } catch (error) {
+    failure(response, error);
+  }
+});
 euroOfficeRouter.get('/eurooffice/status', requireSession, (_request, response) => { response.json({ enabled: env.EUROOFFICE_ENABLED }); });
 euroOfficeRouter.get('/eurooffice/documents', requireSession, async (request: AuthenticatedRequest, response) => {
   try { response.json(await listPlainDocuments(request.authUserId!)); } catch(error) { failure(response, error); }
