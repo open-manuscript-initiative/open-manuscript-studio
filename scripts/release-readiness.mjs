@@ -125,6 +125,34 @@ export function summarizeGitHubIssues(issues, redGateLabels) {
   };
 }
 
+/**
+ * A green beta CI run is necessary but insufficient for 1.0 release approval.
+ * Strict RC checks include GitHub's release-blocker labels and require that
+ * GitHub evidence was actually available, rather than treating its absence as
+ * success. Physical-device/owner sign-off remains a separate manual gate.
+ */
+export function evaluateStrictRcGate(readiness) {
+  const reasons = [];
+  if (!readiness.local?.passed) {
+    reasons.push('Local Route A readiness checks are not all passing.');
+  }
+  if (!readiness.github?.available) {
+    reasons.push('GitHub release issue evidence is unavailable; cannot certify a release candidate.');
+  } else {
+    if (readiness.github.missingLabels?.length) {
+      reasons.push('Required release labels are missing: ' + readiness.github.missingLabels.join(', '));
+    }
+    if (readiness.github.blockers?.length) {
+      reasons.push('Open release-blocker issues: ' +
+        readiness.github.blockers.map(issue => '#' + issue.number).join(', '));
+    }
+    if (!readiness.github.passed && reasons.length === 0) {
+      reasons.push('GitHub issue readiness check failed.');
+    }
+  }
+  return { passed: reasons.length === 0, reasons, manualSignoffRequired: true };
+}
+
 async function fetchGitHubEvidence(config) {
   const token = process.env.GITHUB_TOKEN;
   const repository = process.env.GITHUB_REPOSITORY;
@@ -196,6 +224,7 @@ function readArguments(arguments_) {
     config: DEFAULT_CONFIG,
     github: false,
     strictLocal: false,
+    strictRelease: false,
     jsonOutput: '',
     markdownOutput: '',
   };
@@ -207,6 +236,11 @@ function readArguments(arguments_) {
     }
     if (argument === '--strict-local') {
       options.strictLocal = true;
+      continue;
+    }
+    if (argument === '--strict-release') {
+      options.strictRelease = true;
+      options.github = true;
       continue;
     }
     const value = arguments_[index + 1];
@@ -234,6 +268,7 @@ function markdownReport(result) {
         `- Open pull requests: ${result.github.openPullRequests}`,
         `- Red blockers: ${result.github.blockers.length}`,
         `- Missing readiness labels: ${result.github.missingLabels.join(', ') || 'none'}`,
+        ...(result.github.blockers ?? []).map(item => `- Release blocker: #${item.number} — ${item.title}`),
       ]
     : result.github
       ? ['', '## GitHub state', '', `Unavailable: ${result.github.reason}`]
@@ -249,6 +284,17 @@ function markdownReport(result) {
     '| --- | --- | --- |',
     ...rows,
     ...githubRows,
+    ...(result.strictRelease
+      ? [
+          '',
+          '## Strict RC gate (GitHub and local evidence only)',
+          '',
+          `Result: ${result.strictRelease.passed ? 'PASS' : 'FAIL'}`,
+          ...result.strictRelease.reasons.map(reason => '- ' + reason),
+          '',
+          '**Physical-device and owner Go/No-Go sign-off remain mandatory separately.**',
+        ]
+      : []),
     '',
   ].join('\n');
 }
@@ -266,6 +312,7 @@ async function main() {
   );
   const result = await evaluateLocalReadiness(options.root, config);
   if (options.github) result.github = await fetchGitHubEvidence(config);
+  if (options.strictRelease) result.strictRelease = evaluateStrictRcGate(result);
 
   const json = `${JSON.stringify(result, null, 2)}\n`;
   if (options.jsonOutput) await writeOutput(options.jsonOutput, json);
@@ -275,6 +322,7 @@ async function main() {
   process.stdout.write(json);
 
   if (options.strictLocal && !result.local.passed) process.exitCode = 1;
+  if (options.strictRelease && !result.strictRelease.passed) process.exitCode = 1;
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : '';
