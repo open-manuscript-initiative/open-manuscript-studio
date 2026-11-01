@@ -1,0 +1,57 @@
+name: Studio API egress-policy contracts (#765)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/egress/**'
+      - 'tests/api-egress-policy.test.mjs'
+      - 'deployment/egress/**'
+      - '.github/workflows/api-egress-policy.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/egress/**'
+      - 'tests/api-egress-policy.test.mjs'
+      - 'deployment/egress/**'
+      - '.github/workflows/api-egress-policy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate API egress policy without installing it
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Regression-test strict private/metadata and UID boundaries
+        run: node --test tests/api-egress-policy.test.mjs
+      - name: Offline nftables syntax validation (never apply)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nftables
+          node --input-type=module <<'EOF' > "$RUNNER_TEMP/omi-api-egress-candidate.nft"
+          import { renderPolicy } from './scripts/egress/generate-policy.mjs';
+          process.stdout.write(renderPolicy({
+            schemaVersion: 1, service: 'omi-studio-api.service', uid: 1500,
+            localExceptions: [
+              {address: '127.0.0.1', protocol: 'tcp', port: 5432},
+              {address: '127.0.0.53', protocol: 'udp', port: 53},
+              {address: '::1', protocol: 'tcp', port: 5432},
+            ],
+            outbound: [
+              {cidr: '1.1.1.1/32', protocol: 'tcp', port: 443},
+              {cidr: '2606:4700:4700::1111/128', protocol: 'tcp', port: 443},
+            ],
+          }));
+          EOF
+          # --check validates syntax; it never installs the rules into the runner.
+          sudo nft --check --file "$RUNNER_TEMP/omi-api-egress-candidate.nft"
+          echo "Offline nft syntax valid. Host firewall remains unchanged."
