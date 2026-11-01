@@ -372,7 +372,34 @@ jobs:
               exit 1
             fi
 
+            # Capture the last deployed commit before checking out the new release.
+            # This is a Plesk beta used by testers, but the API, web assets
+            # and user data must be recoverable if an upgrade fails.
+            PREVIOUS_SHA="$(git rev-parse HEAD)"
             git reset --hard "$COMMIT_SHA"
+
+            ROLLBACK_ROOT="/var/www/vhosts/openmanuscript.org/studio/.omi-deploy-rollbacks"
+            ROLLBACK_DIR="$ROLLBACK_ROOT/${{ github.run_id }}-${COMMIT_SHA:0:12}"
+            mkdir -p "$ROLLBACK_ROOT"
+            chmod 700 "$ROLLBACK_ROOT"
+            # Fail closed if database migrations have changed; a code-only
+            # rollback cannot undo a schema migration safely.
+            STUDIO_PREVIOUS_SHA="$PREVIOUS_SHA" \
+              bash scripts/production-rollback.sh snapshot "$ROLLBACK_DIR"
+
+            restore_on_failure() {
+              original_status="$?"
+              trap - ERR
+              set +e
+              echo "Studio deployment failed; restoring the pre-deploy snapshot."
+              bash "$ROLLBACK_DIR/rollback.sh" restore "$ROLLBACK_DIR"
+              restore_status="$?"
+              if [[ "$restore_status" -ne 0 ]]; then
+                echo "AUTOMATIC ROLLBACK FAILED; manual recovery: bash $ROLLBACK_DIR/rollback.sh restore $ROLLBACK_DIR" >&2
+              fi
+              exit "$original_status"
+            }
+            trap restore_on_failure ERR
 
             APP_VERSION="$(node -p "require('./package.json').version")"
             BUILD_NUMBER="${{ github.run_number }}"
@@ -529,6 +556,10 @@ jobs:
               echo 'The deployed Android fallback still uses the unreliable Chrome intent URL.' >&2
               exit 1
             fi
+
+            # Disarm rollback only when all deployment acceptance checks pass.
+            trap - ERR
+            echo "Studio deployment succeeded. Previous working code/assets: $ROLLBACK_DIR"
 
   integration-state-postgres:
     name: Integration state PostgreSQL gate
