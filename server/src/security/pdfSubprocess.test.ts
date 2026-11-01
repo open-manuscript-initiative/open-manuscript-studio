@@ -90,7 +90,7 @@ test('normal CLI exit also cleans up a background Linux grandchild', async (t) =
   const script = [
     "const {spawn}=require('node:child_process');",
     "const {writeFileSync}=require('node:fs');",
-    "const grandchild=spawn(process.execPath,['-e','setInterval(()=>{},10000)'],{stdio:'ignore'});",
+    "const grandchild=spawn(process.execPath,['-e','setInterval(()=>{},10000)'],{stdio:'inherit'});",
     "grandchild.unref();writeFileSync(process.argv[1],String(grandchild.pid));",
   ].join('');
 
