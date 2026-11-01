@@ -1,8 +1,9 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { isIP } from 'node:net';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { TABLE_NAME, validatePolicy } from './generate-policy.mjs';
+import { TABLE_NAME, validatePolicy, isStrictPublicCidr } from './generate-policy.mjs';
 
 const SERVICE = 'omi-studio-api.service';
 const NEGATIVE_TARGETS = Object.freeze([
@@ -77,9 +78,18 @@ function main(args) {
   const profile = validatePolicy(JSON.parse(readFileSync(resolve(args[1]), 'utf8')));
   const urlIndex = args.indexOf('--approved-url');
   const approvedUrl = urlIndex === -1 ? null : args[urlIndex + 1];
-  if (approvedUrl && (!/^https:\/\//.test(approvedUrl) || new URL(approvedUrl).username ||
-     new URL(approvedUrl).password || new URL(approvedUrl).hash)) {
-    throw new Error('Positive probe must be an HTTPS URL without credentials or fragment');
+  if (approvedUrl) {
+    const target = new URL(approvedUrl);
+    const version = isIP(target.hostname.replace(/^\[|\]$/g, ''));
+    if (target.protocol !== 'https:' || target.username || target.password ||
+        target.hash || (target.port && target.port !== '443') ||
+        target.hostname === 'localhost' || target.hostname.endsWith('.localhost') ||
+        target.hostname.endsWith('.local') ||
+        (version > 0 && !isStrictPublicCidr(
+          target.hostname.replace(/^\[|\]$/g, ''), version,
+        ))) {
+      throw new Error('Positive probe must be an approved public HTTPS origin on port 443 without credentials');
+    }
   }
   if (process.getuid?.() !== 0) throw new Error('Requires root for read-only nft counters and isolated runuser probes');
   const effectiveUser = command('systemctl', ['show', SERVICE, '-p', 'User', '--value']);
