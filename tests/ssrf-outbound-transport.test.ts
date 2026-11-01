@@ -53,7 +53,7 @@ test('connection-pinned fetch preserves multipart bodies and never follows redir
     res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"ok":true}');
   });
   try {
-    await new Promise<void>((resolve) => http.listen(0, '127.0.0.1', resolve));
+    await new Promise<void>((resolve) => { http.listen(0, '127.0.0.1', resolve); });
     const address = http.address();
     assert.ok(address && typeof address !== 'string');
     const base = `http://127.0.0.1:${address.port}`;
@@ -81,7 +81,7 @@ test('connection-pinned fetch preserves multipart bodies and never follows redir
     assert.equal(manual.headers.get('location'), '/private');
     assert.equal(seen.length, 1, 'redirect must not be automatically followed');
   } finally {
-    await new Promise<void>((resolve, reject) => http.close((err) => err ? reject(err) : resolve()));
+    await new Promise<void>((resolve, reject) => { http.close((err) => { if (err) reject(err); else resolve(); }); });
     if (previous === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previous;
   }
