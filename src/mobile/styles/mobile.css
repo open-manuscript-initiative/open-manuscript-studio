@@ -358,3 +358,67 @@
     margin: 0 auto;
   }
 }
+
+/* Documents occupy a dedicated grid row: the tab strip stays accessible while
+   the manuscript scrolls independently. No overlay or lost editor height. */
+.mobile-shell--document-tabs {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+
+.mobile-document-tab-strip {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-color, #d7dbe2);
+  background: var(--surface-muted, #f4f6f8);
+  z-index: 18;
+}
+
+.mobile-document-tab-strip .desktop-document-tabs {
+  display: block;
+  position: static;
+  width: 100%;
+  border-bottom: 0;
+}
+
+.mobile-document-tab-strip .desktop-document-tabs__track {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-document-tab-strip .desktop-document-tab {
+  flex: 0 0 auto;
+  width: clamp(142px, 54vw, 230px);
+  min-width: 0;
+  max-width: none;
+}
+
+.mobile-document-tab-strip .desktop-document-tab__main {
+  min-height: 44px;
+  padding: 0.5rem 0.4rem 0.5rem 0.6rem;
+  font-size: 0.82rem;
+}
+
+.mobile-document-tab-strip .desktop-document-tab__main span {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-document-tab-strip .desktop-document-tab__close {
+  min-height: 44px;
+  min-width: 44px;
+  width: 44px;
+  flex-basis: 44px;
+}
+
+.mobile-document-tab-strip .desktop-document-tab__main:focus-visible,
+.mobile-document-tab-strip .desktop-document-tab__close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}

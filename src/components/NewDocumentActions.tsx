@@ -2,9 +2,7 @@ import { BookOpen, FilePlus2, FileText, LibraryBig } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { createAndOpenBlankOmiDocument } from '../app/newDocumentActions';
-import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
-import { isMobileStudio } from '../mobile/platform/platform';
 import type { OmiVolumeKind } from '../model/documentProfile';
 import { euroOfficeEnabled, requestPlainDocumentWorkspace } from '../services/euroOfficeApi';
 
@@ -31,19 +29,12 @@ export function NewDocumentActions({
     return () => { cancelled = true; };
   }, []);
 
-  const confirmSingleDocumentReplacement = () => {
-    if (!useStudioStore.getState().hasOpenDocument || !isMobileStudio()) return true;
-    return window.confirm(copy.replaceConfirm);
-  };
-
   const createStudy = () => {
-    if (!confirmSingleDocumentReplacement()) return;
     createAndOpenBlankOmiDocument({ kind: 'study', locale });
     onCreated?.();
   };
 
   const createVolume = (volumeKind: OmiVolumeKind) => {
-    if (!confirmSingleDocumentReplacement()) return;
     createAndOpenBlankOmiDocument({ kind: 'volume', volumeKind, locale });
     onCreated?.();
   };
@@ -92,7 +83,6 @@ function getCopy(locale: string) {
     monographDescription: 'Egyszerzős kötet fejezetekkel és közös apparátussal.',
     editedVolume: 'Új OMI tanulmánykötet',
     editedVolumeDescription: 'Több szerző külön szerkeszthető tanulmányaiból.',
-    replaceConfirm: 'Az új dokumentum felváltja a mobil munkatérben megnyitott dokumentumot. Folytatja?',
     plainDocuments: 'Hétköznapi DOCX-dokumentumok',
     plainDocumentsDescription: 'Natív Word-fájlok írása EuroOffice-szal, a Stúdión belül.',
   };
@@ -105,7 +95,6 @@ function getCopy(locale: string) {
     monographDescription: 'Ein einbändiges Werk mit Kapiteln und gemeinsamem Apparat.',
     editedVolume: 'Neuer OMI-Sammelband',
     editedVolumeDescription: 'Getrennt bearbeitbare Beiträge mehrerer Autorinnen und Autoren.',
-    replaceConfirm: 'Das neue Dokument ersetzt das aktuell geöffnete Dokument im mobilen Arbeitsbereich. Fortfahren?',
     plainDocuments: 'Allgemeine DOCX-Dokumente',
     plainDocumentsDescription: 'Word-Dateien nativ mit EuroOffice in Studio bearbeiten.',
   };
@@ -118,7 +107,6 @@ function getCopy(locale: string) {
     monographDescription: 'A single-author volume with chapters and shared scholarly apparatus.',
     editedVolume: 'New OMI edited volume',
     editedVolumeDescription: 'Separately editable studies by multiple authors.',
-    replaceConfirm: 'The new document will replace the document open in the mobile workspace. Continue?',
     plainDocuments: 'Everyday DOCX documents',
     plainDocumentsDescription: 'Write native Word files with EuroOffice inside Studio.',
   };
