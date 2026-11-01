@@ -1,0 +1,75 @@
+name: 1.0 RC exact-commit evidence (E02)
+
+# Deliberately manual: ordinary beta CI/Android publishing must not wait for
+# external PKP and native acceptance. This is an RC evidence inventory, not a
+# release approval and not a tag publishing action.
+on:
+  workflow_dispatch:
+    inputs:
+      reviewed_sha:
+        description: 'Exact 40-character main commit SHA reviewed for the RC (not a PR merge ref)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  aggregate:
+    name: Aggregate same-SHA release evidence
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact event commit
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Verify manually selected main source and full reviewed SHA
+        shell: bash
+        env:
+          REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || {
+            echo "::error::RC evidence may only be collected from the main branch." >&2
+            exit 1
+          }
+          [[ "$REVIEWED_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::Enter an exact reviewed 40-character lowercase Git SHA." >&2
+            exit 1
+          }
+          actual="$(git rev-parse HEAD)"
+          if [[ "$actual" != "$REVIEWED_SHA" || "$actual" != "$GITHUB_SHA" ]]; then
+            echo "::error::The reviewed SHA is not the checked-out main commit; choose the exact reviewed main commit instead." >&2
+            exit 1
+          fi
+          mkdir -p benchmark-results/rc-e02
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Verify deterministic E02 fail-closed regression fixtures
+        run: node --test tests/rc-evidence-aggregator.test.mjs
+
+      - name: Gather exact-SHA release workflow runs, jobs and digests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+        run: |
+          node scripts/aggregate-rc-evidence.mjs \
+            --sha "$REVIEWED_SHA" \
+            --json benchmark-results/rc-e02/evidence.json \
+            --markdown benchmark-results/rc-e02/evidence.md
+
+      - name: Upload content-neutral RC evidence even when gates fail
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: omi-rc-e02-${{ github.sha }}-${{ github.run_attempt }}
+          path: benchmark-results/rc-e02/
+          if-no-files-found: warn
+          retention-days: 30

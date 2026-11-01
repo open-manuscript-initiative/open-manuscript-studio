@@ -1,0 +1,32 @@
+name: RC E02 evidence contract tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/aggregate-rc-evidence.mjs'
+      - 'tests/rc-evidence-aggregator.test.mjs'
+      - '.github/workflows/rc-e02-evidence.yml'
+      - '.github/workflows/rc-e02-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/aggregate-rc-evidence.mjs'
+      - 'tests/rc-evidence-aggregator.test.mjs'
+      - '.github/workflows/rc-e02-evidence.yml'
+      - '.github/workflows/rc-e02-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-tests:
+    name: E02 fail-closed report fixtures
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Verify strict run/job/artifact contract
+        run: node --test tests/rc-evidence-aggregator.test.mjs
