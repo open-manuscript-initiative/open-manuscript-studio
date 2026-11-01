@@ -1,9 +1,9 @@
-import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { buildPdfWorkerEnvironment } from '../security/pdfWorkerEnvironment.js';
+import { PdfSubprocessTimeoutError, runPdfSubprocess } from '../security/pdfSubprocess.js';
 import { configuredPdfWorkerSocket, dispatchPdfWorkerTask } from '../security/pdfWorkerTransport.js';
 
 export const VIVLIOSTYLE_PDF_RENDERER = 'vivliostyle-cli' as const;
@@ -261,87 +261,31 @@ function isEmbeddedResource(value: string): boolean {
   return normalized.startsWith('data:') || normalized.startsWith('#');
 }
 
-interface CommandResult {
-  exitCode: number;
-  stdout: string;
-  stderr: string;
-}
-
-function runCommand(
+async function runCommand(
   command: string,
   args: readonly string[],
   timeoutMs: number,
   cwd: string,
-): Promise<CommandResult> {
-  return new Promise((resolve, reject) => {
-    let stdout = '';
-    let stderr = '';
-    let settled = false;
-
-    const child = spawn(command, [...args], {
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  try {
+    return await runPdfSubprocess(command, args, {
       cwd,
-      shell: false,
-      windowsHide: true,
+      timeoutMs,
+      maxOutputChars: MAX_PROCESS_OUTPUT_CHARS,
       env: buildPdfWorkerEnvironment('vivliostyle'),
-      stdio: ['ignore', 'pipe', 'pipe'],
     });
-
-    const timer = setTimeout(() => {
-      child.kill('SIGKILL');
-      if (!settled) {
-        settled = true;
-        reject(
-          new VivliostylePdfError(
-            'PDF_RENDER_FAILED',
-            'Vivliostyle PDF rendering timed out.',
-          ),
-        );
-      }
-    }, timeoutMs);
-    timer.unref();
-
-    child.stdout.on('data', (chunk: Buffer) => {
-      stdout = appendBounded(stdout, chunk.toString('utf8'));
-    });
-    child.stderr.on('data', (chunk: Buffer) => {
-      stderr = appendBounded(stderr, chunk.toString('utf8'));
-    });
-
-    child.on('error', (error: NodeJS.ErrnoException) => {
-      clearTimeout(timer);
-      if (settled) return;
-      settled = true;
-      const code = error.code === 'ENOENT'
-        ? 'PDF_RENDERER_UNAVAILABLE'
-        : 'PDF_RENDER_FAILED';
-      reject(
-        new VivliostylePdfError(
-          code,
-          error.code === 'ENOENT'
-            ? `Vivliostyle executable was not found: ${command}.`
-            : boundedMessage(error.message),
-        ),
-      );
-    });
-
-    child.on('close', (exitCode) => {
-      clearTimeout(timer);
-      if (settled) return;
-      settled = true;
-      resolve({
-        exitCode: exitCode ?? 1,
-        stdout,
-        stderr,
-      });
-    });
-  });
-}
-
-function appendBounded(current: string, next: string): string {
-  const combined = current + next;
-  return combined.length <= MAX_PROCESS_OUTPUT_CHARS
-    ? combined
-    : combined.slice(combined.length - MAX_PROCESS_OUTPUT_CHARS);
+  } catch (error) {
+    if (error instanceof PdfSubprocessTimeoutError) {
+      throw new VivliostylePdfError('PDF_RENDER_FAILED', 'Vivliostyle PDF rendering timed out.');
+    }
+    const failure = error as NodeJS.ErrnoException;
+    throw new VivliostylePdfError(
+      failure.code === 'ENOENT' ? 'PDF_RENDERER_UNAVAILABLE' : 'PDF_RENDER_FAILED',
+      failure.code === 'ENOENT'
+        ? `Vivliostyle executable was not found: ${command}.`
+        : boundedMessage(failure.message ?? 'Vivliostyle subprocess failed.'),
+    );
+  }
 }
 
 function boundedMessage(value: string): string {

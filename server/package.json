@@ -23,7 +23,7 @@
     "test:jats-validation": "node --import tsx --test ../tests/jats-schema-validation.test.ts",
     "test:collaboration-availability": "node --import tsx --test src/config/collaborationAvailability.test.ts",
     "test:api-bind-host": "node --import tsx --test src/config/apiBindHost.test.ts",
-    "test:isolated-pdf-worker": "node --import tsx --test src/workers/pdfWorkerServer.test.ts",
+    "test:isolated-pdf-worker": "node --import tsx --test src/workers/pdfWorkerServer.test.ts src/security/pdfSubprocess.test.ts",
     "test:extension-manifest": "node --import tsx --test src/integrations/extensionManifestSchema.test.ts",
     "test:profile-saved-documents": "npm run prisma:generate && tsc -p tsconfig.json && node --test --experimental-test-module-mocks ../tests/profile-saved-documents-routes.test.mjs",
     "server:register": "node dist/cli/registerServer.js"

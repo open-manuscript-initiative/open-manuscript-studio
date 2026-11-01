@@ -2,7 +2,7 @@
 
 > 2026-11-01: Production API calls now require the isolated socket even if `PDF_WORKER_REQUIRED=false`. Missing socket fails PDF processing closed; other editing stays available. The dedicated worker uses the local executor directly and must not set its own dispatch socket. Deploy/test the systemd units and ACL before enabling PDF use; source tests are not host acceptance.
 
-**Status: implementation merged; actual VPS installation and sandbox acceptance remain separately required.** Do not close #774 or #765 based on a green CI run; both require deployment-specific evidence.
+**Status (2026-11-01):** the production VPS worker/socket are active; actual PDF export, render/import, group quotas, restricted namespace and bounded two-job render tests have passed. Forced-timeout process-tree acceptance and complete host security review remain pending. Do not close #774 or #765 based only on a green CI run.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ The Studio API submits bounded PDF-import and HTML-to-PDF-render requests over a
 
 The worker and its Node-based CLI children both use Plesk Node 24: the unit pins both `ExecStart` and the leading `PATH` entry. An absolute Node 24 `ExecStart` alone does not control Vivliostyle’s `/usr/bin/env node` launcher; leaving `/usr/bin` first can still select the host’s Node 18.
 
-The example units enforce PrivateNetwork=yes, IPAddressDeny=any and IPAddressAllow=localhost (loopback only **inside** the worker's empty network namespace, for Chromium's internal resources), ProtectHome=yes, ProtectSystem=strict, inaccessible /var/www/vhosts, a 1 GiB temporary filesystem, cgroup memory limit 3 GiB, CPU limit 200%, task limit 128, and no elevated Linux capabilities. One shared worker limits tasks to two total and one per authenticated user across all API replicas on the **same host using this socket**. Input and output lengths and subprocess timeouts are bounded.
+The example units enforce PrivateNetwork=yes, IPAddressDeny=any and IPAddressAllow=localhost (loopback only **inside** the worker's empty network namespace, for Chromium's internal resources), ProtectHome=yes, ProtectSystem=strict, inaccessible /var/www/vhosts, a 1 GiB temporary filesystem, cgroup memory limit 3 GiB, CPU limit 200%, task limit 512, and no elevated Linux capabilities. One shared worker limits tasks to two total and one per authenticated user across all API replicas on the **same host using this socket**. Input and output lengths and subprocess timeouts are bounded.
 
 ## 1. Prerequisites
 
@@ -61,7 +61,8 @@ runuser -u "$omi_api_user" -- env \
 
 # Do not copy a stale or partial dist after a failed build.
 for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js \
-  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js; do
+  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js \
+  security/pdfSubprocess.js; do
   test -s "server/dist/$file"
 done
 
@@ -78,7 +79,8 @@ install -d -o root -g root -m 0755 /opt/omi-pdf-worker/{workers,services,securit
 printf '{"type":"module"}\n' > /opt/omi-pdf-worker/package.json
 chmod 0644 /opt/omi-pdf-worker/package.json
 for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js \
-  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js; do
+  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js \
+  security/pdfSubprocess.js; do
   install -o root -g root -m 0644 \
     "server/dist/$file" "/opt/omi-pdf-worker/$file"
 done
@@ -153,6 +155,36 @@ curl --silent --show-error --unix-socket /run/omi-pdf-worker.sock \
 ~~~
 
 The HTTP 404 response for an unsupported GET only proves the socket service is responding, **not** that its isolation works. Independently test network denial within the worker's network namespace, IPv4/IPv6 loopback/private/link-local/metadata destinations, malformed PDFs, forbidden external resource references, timeout and child-process cleanup, oversized input, available memory, publisher links, Unicode fonts and PDF rendering.
+
+### Process-tree termination and regression coverage
+
+The PDF worker runs Poppler and Vivliostyle in dedicated POSIX sessions/process
+groups using `spawn(..., detached: true)` (not shell execution). On timeout,
+the executor sends `SIGKILL` to the **negative process-group ID**, not only the
+direct child PID. It also cleans the group on direct-child `exit`, **before**
+Node's `close` event, because a Chromium grandchild can keep an inherited
+stdout/stderr pipe open after the CLI exits. A 5-second bounded post-kill wait
+prevents an escaped descendant from hanging the worker request indefinitely.
+Output capture remains bounded. File input/output and offline PDF policy stay
+unchanged.
+
+The regression suite under `server/src/security/pdfSubprocess.test.ts` covers
+normal output/exit, missing executable, a deliberately hung subprocess and its
+grandchild, successful subsequent execution, and a background child holding
+inherited output pipes. These tests run on ephemeral synthetic processes in CI:
+
+~~~bash
+npm --prefix server run test:isolated-pdf-worker
+~~~
+
+The Linux process-group guarantee does not cover an adversarial descendant that
+creates a new session, and it does not replace `KillMode=control-group`,
+`TasksMax`, `MemoryMax`, the worker's no-network sandbox, or the other #774
+host checks. For direct local Windows execution, Node does not support negative
+PID group signals; the helper uses a **direct-child fallback only**. Do not
+represent it as equivalent Windows process-tree isolation. Verify the real
+live-host timeout behavior in a controlled staging or maintenance environment,
+not by intentionally hanging the production worker.
 
 ## 4. Enable isolated mode on the existing Studio API
 
