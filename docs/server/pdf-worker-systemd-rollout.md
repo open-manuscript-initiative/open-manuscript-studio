@@ -61,7 +61,8 @@ runuser -u "$omi_api_user" -- env \
 
 # Do not copy a stale or partial dist after a failed build.
 for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js \
-  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js; do
+  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js \
+  security/pdfSubprocess.js; do
   test -s "server/dist/$file"
 done
 
@@ -78,7 +79,8 @@ install -d -o root -g root -m 0755 /opt/omi-pdf-worker/{workers,services,securit
 printf '{"type":"module"}\n' > /opt/omi-pdf-worker/package.json
 chmod 0644 /opt/omi-pdf-worker/package.json
 for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js \
-  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js; do
+  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js \
+  security/pdfSubprocess.js; do
   install -o root -g root -m 0644 \
     "server/dist/$file" "/opt/omi-pdf-worker/$file"
 done
