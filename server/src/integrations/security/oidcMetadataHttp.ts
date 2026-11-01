@@ -78,6 +78,13 @@ async function readBoundedText(response: Response, maxBytes: number): Promise<st
   return Buffer.concat(chunks.map((part) => Buffer.from(part))).toString('utf8');
 }
 
+export async function readOidcText(
+  response: Response,
+  maxBytes = 128 * 1024,
+): Promise<string> {
+  return readBoundedText(response, maxBytes);
+}
+
 export async function readOidcJson<T>(
   response: Response,
   maxBytes = DISCOVERY_LIMIT,
