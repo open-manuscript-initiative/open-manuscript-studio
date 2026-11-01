@@ -11,6 +11,7 @@ import {
   fetchOidcDiscovery,
   fetchOidcUserInfo,
   readOidcJson,
+  readOidcText,
 } from './security/oidcMetadataHttp.js';
 
 export type OidcProviderKey = 'omi' | 'google' | 'microsoft' | 'oidc';
@@ -170,7 +171,7 @@ export async function exchangeOidcCode(input: {
     signal: AbortSignal.timeout(20_000),
   });
   if (!response.ok) {
-    const preview = (await response.text()).slice(0, 300);
+    const preview = (await readOidcText(response, 4 * 1024)).slice(0, 300);
     throw new Error(`OIDC token exchange failed with HTTP ${response.status}${preview ? `: ${preview}` : ''}`);
   }
   return readOidcJson<OidcTokenResponse>(response, 128 * 1024);
