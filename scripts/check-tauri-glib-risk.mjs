@@ -1,4 +1,6 @@
 import { appendFileSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 /**
  * RUSTSEC-2024-0429 is an upstream GTK3/gtk-rs dependency constraint in Tauri
@@ -24,10 +26,12 @@ export function lockedPackages(lockfile) {
 }
 
 export function glibVersionAffected(version) {
-  const match = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(version);
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(version);
   if (!match) return null;
   const major = Number(match[1]);
   const minor = Number(match[2]);
+  // Do not certify an unreleased 0.20.0 prerelease as security-fixed.
+  if (major === 0 && minor === 20 && Number(match[3]) === 0 && match[4]) return null;
   // Advisory: introduced at glib 0.15.0; fixed in glib 0.20.0.
   // All 0.15/0.16/0.17/0.18/0.19 releases are affected.
   return major === 0 && minor >= 15 && minor < 20;
@@ -117,6 +121,6 @@ export function runGlibRiskCli(args = process.argv.slice(2), env = process.env) 
   return 0;
 }
 
-if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   process.exitCode = runGlibRiskCli();
 }
