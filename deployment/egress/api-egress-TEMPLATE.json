@@ -1,0 +1,25 @@
+{
+  "_warning": "TEMPLATE ONLY — DO NOT APPLY. Replace uid and both destination lists using actual Plesk service and audited network inventory, then keep the completed profile outside Git.",
+  "schemaVersion": 1,
+  "service": "omi-studio-api.service",
+  "uid": 0,
+  "localExceptions": [
+    {
+      "address": "127.0.0.1",
+      "protocol": "tcp",
+      "port": 5432
+    },
+    {
+      "address": "127.0.0.53",
+      "protocol": "udp",
+      "port": 53
+    }
+  ],
+  "outbound": [
+    {
+      "cidr": "1.1.1.1/32",
+      "protocol": "tcp",
+      "port": 443
+    }
+  ]
+}
