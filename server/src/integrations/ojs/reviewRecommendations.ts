@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 import type { LaunchClaims } from './launchVerifier.js';
 import {
@@ -39,7 +40,7 @@ export async function loadOjsReviewRecommendations(
     throw new Error('The OJS reviewer recommendation URL is not trusted.');
   }
 
-  const response = await fetch(target, {
+  const response = await fetchPinnedPublicUrl(target, {
     method: 'GET',
     headers: {
       Accept: 'application/json',
