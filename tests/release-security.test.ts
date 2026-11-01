@@ -9,6 +9,7 @@ import './pdf-worker-environment-security.test.ts';
 // Keep the OJS/OMP address checks in the existing release-security gate.
 import './integration-ip-security.test.ts';
 import './api-egress-shared-uid.test.ts';
+import './ssrf-outbound-transport.test.ts';
 
 import { assertPortableOmiManuscript, toPortableOmiManuscript } from '../src/services/omiPortableFormat.ts';
 import { createReferenceManuscript } from './referenceManuscriptFixture.ts';
