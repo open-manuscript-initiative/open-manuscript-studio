@@ -1,3 +1,4 @@
+import { DocumentFileLocations } from './documentFileLocations';
 import { getStudioPlatform } from '../mobile/platform/platform';
 import type { OmiManuscript } from '../types/omi';
 import { serializeOmiJson } from './exportOmi';
@@ -17,7 +18,7 @@ const ANDROID_OMI_FILTERS = [
   },
 ];
 
-let currentFilePath: string | null = null;
+const fileLocations = new DocumentFileLocations();
 
 export function isNativeStudio(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -36,12 +37,12 @@ export function isAndroidDocumentUri(value: string | null | undefined): boolean 
 
 
 
-export function getCurrentManuscriptFilePath(): string | null {
-  return currentFilePath;
+export function getCurrentManuscriptFilePath(manuscriptId: string): string | null {
+  return fileLocations.get(manuscriptId);
 }
 
 export function clearCurrentManuscriptFilePath(): void {
-  currentFilePath = null;
+  fileLocations.clear();
 }
 
 export async function openLocalManuscript(): Promise<{
@@ -95,7 +96,7 @@ async function openManuscriptWithPicker(
 
   const raw = await readTextFile(selected);
   const manuscript = parseOmiJson(raw);
-  currentFilePath = rememberPath ? selected : null;
+  fileLocations.set(manuscript.id, rememberPath ? selected : null);
 
   return { manuscript, path: selected };
 }
@@ -107,6 +108,7 @@ export async function saveLocalManuscript(
     return null;
   }
 
+  const currentFilePath = fileLocations.get(manuscript.id);
   if (!currentFilePath) {
     return saveLocalManuscriptAs(manuscript);
   }
@@ -161,7 +163,7 @@ async function saveManuscriptWithPicker(
   }
 
   await writeTextFile(selected, serializeOmiJson(manuscript));
-  currentFilePath = rememberPath ? selected : null;
+  fileLocations.set(manuscript.id, rememberPath ? selected : null);
   return selected;
 }
 

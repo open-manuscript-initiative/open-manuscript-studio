@@ -315,7 +315,9 @@ function DocumentMenuView({
   const { t, locale } = useTranslation();
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const checkpoint = useStudioStore((state) => state.checkpoint);
-  const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
+  const manuscriptId = useStudioStore(state => state.manuscript.id);
+  const [localPath, setLocalPath] = useState(() => getCurrentManuscriptFilePath(manuscriptId));
+  useEffect(() => setLocalPath(getCurrentManuscriptFilePath(manuscriptId)), [manuscriptId]);
   const [fileMessage, setFileMessage] = useState('');
   const [fileBusy, setFileBusy] = useState<'save' | 'backup' | 'portable' | null>(null);
   const [cloudBackupsExpanded, setCloudBackupsExpanded] = useState(false);
@@ -377,8 +379,10 @@ function DocumentMenuView({
         setFileMessage(labels.cancelled);
         return;
       }
-      setLocalPath(path);
-      setFileMessage(labels.saved);
+      if (useStudioStore.getState().manuscript.id === current.id) {
+        setLocalPath(path);
+        setFileMessage(labels.saved);
+      }
     } catch (error) {
       setFileMessage(error instanceof Error ? error.message : String(error));
     } finally {

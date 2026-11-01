@@ -1,3 +1,4 @@
+import { workingSession, restoredWorkingSession, type DocumentWorkingSession } from '../services/documentSessionManager';
 import { isDocumentClosedState } from './documentCloseState';
 import { useStudioStore } from './useStudioStore';
 import type { OmiManuscript } from '../types/omi';
@@ -8,7 +9,7 @@ const STORE_NAME = 'session';
 const SESSION_KEY = 'last-session';
 const SAVE_DELAY_MS = 250;
 
-export interface PersistedDesktopTabSession {
+export interface PersistedDesktopTabSession extends Partial<Omit<DocumentWorkingSession, 'manuscript'>> {
   id: string;
   manuscriptId: string;
   title: string;
@@ -68,7 +69,9 @@ export async function initializeLastSessionPersistence(): Promise<void> {
     const manuscript = activeDesktopManuscript ?? restored.manuscript;
 
     const store = useStudioStore.getState();
-    store.loadManuscript(manuscript);
+    const activeSession = desktopSession?.tabs.find(tab => tab.id === desktopSession.activeTabId);
+    if (activeSession) store.resumeDocumentSession(restoredWorkingSession(manuscript, activeSession));
+    else store.loadManuscript(manuscript);
 
     if (
       restored.selectedSectionId &&
@@ -87,7 +90,8 @@ export async function initializeLastSessionPersistence(): Promise<void> {
   useStudioStore.subscribe((state, previousState) => {
     if (
       state.manuscript === previousState.manuscript &&
-      state.selectedSectionId === previousState.selectedSectionId
+      state.selectedSectionId === previousState.selectedSectionId &&
+      state.pendingChangeSet === previousState.pendingChangeSet
     ) {
       return;
     }
@@ -99,12 +103,12 @@ export async function initializeLastSessionPersistence(): Promise<void> {
       currentDesktopSession = {
         ...currentDesktopSession,
         tabs: currentDesktopSession.tabs.map((tab) =>
-          tab.id === currentDesktopSession?.activeTabId
+          tab.id === currentDesktopSession?.activeTabId && tab.manuscriptId === state.manuscript.id
             ? {
                 ...tab,
                 manuscriptId: state.manuscript.id,
                 title: state.manuscript.title?.trim() || 'Untitled manuscript',
-                manuscript: state.manuscript,
+                ...workingSession(state),
               }
             : tab,
         ),

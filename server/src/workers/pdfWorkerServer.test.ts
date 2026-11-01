@@ -8,6 +8,8 @@ import { configuredPdfWorkerSocket, dispatchPdfWorkerTask } from '../security/pd
 
 test('isolated worker socket configuration is opt-in and fails closed when required', () => {
   assert.equal(configuredPdfWorkerSocket({}), null);
+  assert.throws(() => configuredPdfWorkerSocket({ NODE_ENV: 'production' }), /required.*missing/);
+  assert.throws(() => configuredPdfWorkerSocket({ NODE_ENV: 'production', PDF_WORKER_REQUIRED: 'false' }), /required.*missing/);
   assert.throws(() => configuredPdfWorkerSocket({ PDF_WORKER_REQUIRED: 'true' }), /missing/);
   assert.throws(() => configuredPdfWorkerSocket({ PDF_WORKER_SOCKET: 'worker.sock' }), /absolute/);
   assert.equal(configuredPdfWorkerSocket({ PDF_WORKER_SOCKET: '/run/omi-pdf-worker.sock' }), '/run/omi-pdf-worker.sock');
