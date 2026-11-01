@@ -1,3 +1,4 @@
+import { collectRcWorkflowEvidence, assessRcEvidence, REQUIRED_WORKFLOWS } from './aggregate-rc-evidence.mjs';
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -8,10 +9,7 @@ export const RC_MANUAL_GATES = [
   'windows-device', 'linux-device', 'android-device', 'ojs-3.5.0-4', 'ojs-3.5.0-5',
   'security-review', 'accessibility', 'performance', 'recovery', 'owner-go-no-go',
 ];
-export const RC_WORKFLOWS = [
-  '.github/workflows/ci.yml', '.github/workflows/codeql.yml',
-  '.github/workflows/pkp-integration-environment.yml', '.github/workflows/1.0-readiness.yml',
-];
+export const RC_WORKFLOWS = REQUIRED_WORKFLOWS.filter(item => item.id !== 'tauri-desktop.yml').map(item => '.github/workflows/' + item.id);
 const BUILD_WORKFLOW = '.github/workflows/tauri-desktop.yml';
 const sha = /^[a-f0-9]{40}$/;
 const hash = /^[a-f0-9]{64}$/;
@@ -84,15 +82,18 @@ export async function verifyRcEvidence(evidence, expectedSha, artifactDirectory)
   }
   validateRcEvidence(evidence, expectedSha, digests);
   await verifyBuild(evidence.buildRunId, expectedSha);
+  const current = process.env.GITHUB_RUN_ID;
+  const options = current ? { publishingRunId: Number(current) } : {};
+  const workflows = await collectRcWorkflowEvidence(process.env.GITHUB_REPOSITORY, expectedSha, process.env.GITHUB_TOKEN, options);
+  const report = assessRcEvidence({ sha: expectedSha, repository: process.env.GITHUB_REPOSITORY, workflows });
+  if (report.status !== 'ready-for-manual-review') {
+    throw new Error('RC_E02_EVIDENCE_BLOCKED: ' + report.failures.map(item => item.code + '/' + item.workflow).join(', '));
+  }
+  const selectedBuild = report.workflows.find(item => item.workflow === 'tauri-desktop.yml');
+  if (selectedBuild?.runId !== evidence.buildRunId) throw new Error('RC_APPROVED_BUILD_IS_NOT_NEWEST_CANDIDATE');
   for (const item of evidence.workflows) {
-    const run = await api(`actions/runs/${item.runId}`);
-    if (run.head_sha !== expectedSha || run.head_repository?.full_name !== process.env.GITHUB_REPOSITORY ||
-      run.path !== item.path || run.head_branch !== 'main' || run.status !== 'completed' || run.conclusion !== 'success' ||
-      !['push', 'workflow_dispatch'].includes(run.event)) throw new Error('RC_WORKFLOW_SUBJECT_OR_RESULT_MISMATCH: ' + item.path);
-    // Workflows with skipped mandatory jobs are not complete evidence.
-    const jobs = await jobsFor(item.runId);
-    if (!jobs.length || jobs.some(job => job.conclusion !== 'success' && !job.name.startsWith('Deploy '))) {
-      throw new Error('RC_WORKFLOW_JOBS_INCOMPLETE: ' + item.path);
+    if (!report.workflows.some(actual => '.github/workflows/' + actual.workflow === item.path && actual.runId === item.runId)) {
+      throw new Error('RC_RECEIPT_WORKFLOW_RUN_MISMATCH: ' + item.path);
     }
   }
 }

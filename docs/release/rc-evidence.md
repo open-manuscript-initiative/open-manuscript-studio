@@ -2,11 +2,11 @@
 
 The 1.0 publish guard supplements the existing strict issue/local gate. A green beta workflow or closed issue does not approve RC. No current candidate is approved by this document.
 
-1. Build the exact proposed main SHA with `Tauri Builds and Releases`. Its 1.0 publish step may fail for absent approval while the build jobs succeed. Keep the immutable build run/artifacts.
-2. Run Studio CI, CodeQL, PKP integration and 1.0 Readiness for that exact main SHA; dispatch the path-filtered workflows explicitly when necessary. Finish all actual device, host, privacy, accessibility, recovery and performance acceptance on those artifacts. Record only redacted pass/fail references.
+1. Build the exact proposed main SHA with `Tauri Builds and Releases`. Dispatch with `candidate_only=true` so the complete candidate run succeeds without tag/publication; this supplies the existing E02 aggregator with a successful build run. Keep the immutable build run/artifacts.
+2. Run Studio CI, CodeQL, OMI-SPEC-320 conformance, PKP integration and 1.0 Readiness for that exact main SHA; dispatch the path-filtered workflows explicitly when necessary. Finish all actual device, host, privacy, accessibility, recovery and performance acceptance on those artifacts. Record only redacted pass/fail references.
 3. Prepare the `omi-studio-rc-evidence` JSON below. `artifacts` must name and hash **every file** produced by the publish job's stable-name preparation, excluding `SHA256SUMS.txt`. Download/relabel the candidate artifacts using the same names before reviewing. Do not include private manuscript data. This is an explicit owner attestation, not an independent signature or automatic test of physical devices.
-4. Dispatch the same exact main SHA with `release_tag`, `release_reviewed_sha`, approval phrase `APPROVE_1_0_RELEASE`, `release_build_run_id` and `release_evidence_json`. The job validates the prior build's source/repository/path/jobs and downloads those exact artifacts. It checks receipt hashes against actual bytes and verifies all workflow run subjects/results through GitHub before the strict issue gate and tag creation.
-5. Missing, skipped mandatory, unavailable or mismatched evidence fails closed. Failed deploy jobs alone may be skipped in the CI evidence; other skipped jobs are incomplete evidence. No automated date/score override exists. Keep the receipt with owner-controlled release records and the Actions run; final release SHA256/SBOM/signature rules still apply.
+4. Dispatch the same exact main SHA with `release_tag`, `release_reviewed_sha`, approval phrase `APPROVE_1_0_RELEASE`, `release_build_run_id` and `release_evidence_json`. The job validates the prior build's source/repository/path/jobs and downloads those exact artifacts. It checks receipt hashes against actual bytes and invokes the existing E02 collector/assessor (latest-attempt, freshness, mandatory jobs and artifact archive digest rules). Only the current publication orchestration is excluded from Tauri candidate selection; no older red candidate is hidden. The selected candidate and other workflow IDs must match the receipt before the strict issue gate and tag creation.
+5. Missing, skipped mandatory, unavailable or mismatched evidence fails closed. E02 retains its existing mandatory-job matrix; skipped mandatory jobs are incomplete evidence. No automated date/score override exists. Keep the receipt with owner-controlled release records and the Actions run; final release SHA256/SBOM/signature rules still apply.
 
 Receipt shape (`buildRunId`, `sourceSha`, hashes, dates and references below are placeholders; never paste them as real evidence):
 
@@ -20,7 +20,8 @@ Receipt shape (`buildRunId`, `sourceSha`, hashes, dates and references below are
     { "path": ".github/workflows/ci.yml", "runId": 124 },
     { "path": ".github/workflows/codeql.yml", "runId": 125 },
     { "path": ".github/workflows/pkp-integration-environment.yml", "runId": 126 },
-    { "path": ".github/workflows/1.0-readiness.yml", "runId": 127 }
+    { "path": ".github/workflows/1.0-readiness.yml", "runId": 127 },
+    { "path": ".github/workflows/omi-spec-320-conformance.yml", "runId": 128 }
   ],
   "gates": [
     { "id": "host-egress", "status": "pass", "sourceSha": "<same SHA>",
