@@ -1,5 +1,5 @@
 import { lookup as dnsLookup } from 'node:dns/promises';
-import type { LookupAddress, LookupOptions, LookupFunction } from 'node:dns';
+import type { LookupAddress, LookupOptions } from 'node:dns';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { Readable } from 'node:stream';
@@ -7,6 +7,11 @@ import { isIP } from 'node:net';
 import { isPublicRoutableAddress } from './publicAddress.js';
 
 type ResolveAll = (hostname: string, options: { all: true; verbatim: true }) => Promise<LookupAddress[]>;
+type PinnedLookup = (
+  hostname: string,
+  options: LookupOptions,
+  callback: (error: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void,
+) => void;
 
 const defaultResolve: ResolveAll = (hostname, options) => dnsLookup(hostname, options);
 
@@ -34,7 +39,7 @@ function isExplicitIntegrationTestHost(url: URL): boolean {
 export function connectionTimePublicLookup(
   url: URL,
   resolveAll: ResolveAll = defaultResolve,
-): LookupFunction {
+): PinnedLookup {
   const allowLocal = isDevelopmentLoopback(url) || isExplicitIntegrationTestHost(url);
   return ((
     hostname: string,
@@ -69,7 +74,7 @@ export function connectionTimePublicLookup(
     }).catch((error: unknown) => {
       callback(error instanceof Error ? error : new Error('DNS lookup failed.'), '', 0);
     });
-  }) as LookupFunction;
+  }) as PinnedLookup;
 }
 
 export interface PinnedRemoteRequest {
