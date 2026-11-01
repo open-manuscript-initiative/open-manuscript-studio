@@ -387,19 +387,21 @@ jobs:
             STUDIO_PREVIOUS_SHA="$PREVIOUS_SHA" \
               bash scripts/production-rollback.sh snapshot "$ROLLBACK_DIR"
 
-            restore_on_failure() {
+            restore_on_exit() {
               original_status="$?"
-              trap - ERR
+              trap - EXIT
               set +e
-              echo "Studio deployment failed; restoring the pre-deploy snapshot."
+              if [[ "$original_status" -ne 0 ]]; then
+                echo "Studio deployment failed; restoring the pre-deploy snapshot."
               bash "$ROLLBACK_DIR/rollback.sh" restore "$ROLLBACK_DIR"
               restore_status="$?"
               if [[ "$restore_status" -ne 0 ]]; then
                 echo "AUTOMATIC ROLLBACK FAILED; manual recovery: bash $ROLLBACK_DIR/rollback.sh restore $ROLLBACK_DIR" >&2
               fi
+              fi
               exit "$original_status"
             }
-            trap restore_on_failure ERR
+            trap restore_on_exit EXIT
 
             APP_VERSION="$(node -p "require('./package.json').version")"
             BUILD_NUMBER="${{ github.run_number }}"
@@ -558,7 +560,7 @@ jobs:
             fi
 
             # Disarm rollback only when all deployment acceptance checks pass.
-            trap - ERR
+            trap - EXIT
             echo "Studio deployment succeeded. Previous working code/assets: $ROLLBACK_DIR"
 
   integration-state-postgres:
