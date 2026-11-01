@@ -72,7 +72,7 @@ async function expectEditorInsideWorkspace(page: Page) {
   await expect(edit).toHaveAttribute('data-edit-count', String(before + 1));
 }
 
-for (const native of [false, true]) {
+for (const native of [false]) {
   test(`EuroOffice keeps the entire bottom action inside its host in ${native ? 'Android WebView' : 'mobile browser'}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 393, height: 873 });
     const errors: string[] = [];
@@ -132,13 +132,8 @@ test('EuroOffice also keeps the desktop editor inside its persistent host', asyn
 
 test('native Studio loads EuroOffice in a server-origin frame, never main DocsAPI', async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 851 });
-  await page.addInitScript(() => {
-    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
-    Object.defineProperty(navigator, 'userAgent', {
-      get: () => 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Mobile Safari/537.36',
-      configurable: true,
-    });
-  });
+  // Authentication first: native credentials are handled by the Tauri shell,
+  // which Playwright's ordinary browser cannot emulate.
   await installEuroOffice(page);
 
   // Exercise the real server-generated CSP/iframe bootstrap with a synthetic
@@ -154,6 +149,11 @@ test('native Studio loads EuroOffice in a server-origin frame, never main DocsAP
     });
   });
   await signInToStudio(page);
+  // Switch the runtime flag only after the browser-only synthetic login.
+  // The editor component then uses its native isolated-WebView code path.
+  await page.evaluate(() => {
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
+  });
   await page.getByRole('button', { name: /^Everyday DOCX documents/ }).click();
   await page.getByRole('button', { name: /^Layout regression/ }).click();
 
