@@ -61,3 +61,44 @@ test('mobile workspace keeps multiple manuscripts open and switches without repl
     return useStudioStore.getState().manuscript.id;
   })).toBe(secondId);
 });
+
+test('mobile document tabs survive batched open and rename operations', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  await page.addInitScript(() => {
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
+    Object.defineProperty(navigator, 'userAgent', {
+      get: () => 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Mobile Safari/537.36',
+      configurable: true,
+    });
+  });
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+
+  // All store updates happen in a single browser task before React commits.
+  const ids = await page.evaluate(async () => {
+    const { createAndOpenBlankOmiDocument } = await import('/src/app/newDocumentActions.ts');
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const first = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'en' });
+    useStudioStore.getState().setTitle('Batch first');
+    const second = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'en' });
+    useStudioStore.getState().setTitle('Batch second');
+    return [first.id, second.id];
+  });
+
+  const strip = page.locator('.mobile-document-tab-strip');
+  const firstTab = strip.getByRole('tab', { name: 'Batch first' });
+  const secondTab = strip.getByRole('tab', { name: 'Batch second' });
+  await expect(firstTab).toBeVisible();
+  await expect(secondTab).toBeVisible();
+  await expect(secondTab).toHaveAttribute('aria-selected', 'true');
+  await firstTab.click();
+  await expect.poll(() => page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    return useStudioStore.getState().manuscript.id;
+  })).toBe(ids[0]);
+  await secondTab.click();
+  await expect.poll(() => page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    return useStudioStore.getState().manuscript.id;
+  })).toBe(ids[1]);
+});
