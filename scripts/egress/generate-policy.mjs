@@ -131,7 +131,7 @@ export function isStrictPublicCidr(cidr, family) {
       const [base, length] = net.split('/');
       const n = Number(length);
       const networkMask = (0xffffffff << (32 - n)) >>> 0;
-      const lower = parseV4(base) & networkMask;
+      const lower = (parseV4(base) & networkMask) >>> 0;
       const upper = (lower | (~networkMask >>> 0)) >>> 0;
       return end < lower || start > upper;
     });
