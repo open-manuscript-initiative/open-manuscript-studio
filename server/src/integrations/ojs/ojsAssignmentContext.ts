@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import type { LaunchClaims } from './launchVerifier.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 
@@ -90,7 +91,7 @@ async function readJson(url: URL, authorization: string): Promise<Record<string,
     }
     visited.add(currentKey);
 
-    response = await fetch(currentUrl, {
+    response = await fetchPinnedPublicUrl(currentUrl, {
       method: 'GET',
       headers: { Accept: 'application/json', Authorization: authorization },
       redirect: 'manual',
