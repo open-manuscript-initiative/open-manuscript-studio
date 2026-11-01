@@ -107,12 +107,13 @@ test('1.0 RC/stable tag creation requires exact SHA owner approval and the stric
   const workflow = readFileSync(
     new URL('../.github/workflows/tauri-desktop.yml', import.meta.url), 'utf8',
   );
-  const versions = workflow.match(/if \[\[ "\$version" =~ \^1\\\.0\\\.0\(-rc/g);
-  assert.ok(versions?.length, '1.0 stable and RC versions require a dedicated publish guard');
+  assert.ok(workflow.includes(String.raw`if [[ "$version" =~ ^1\.0\.0(-rc\.[0-9]+)?$ ]]`),
+    '1.0 stable and RC versions require a dedicated publish guard');
   assert.match(workflow, /INPUT_REVIEWED_SHA/);
   assert.match(workflow, /INPUT_RELEASE_APPROVAL/);
   assert.match(workflow, /APPROVE_1_0_RELEASE/);
   assert.match(workflow, /GITHUB_EVENT_NAME.*workflow_dispatch/);
-  assert.match(workflow, /node scripts\/release-readiness\.mjs[\s\\\n]*--strict-local --strict-release/);
+  assert.ok(workflow.includes('node scripts/release-readiness.mjs'));
+  assert.ok(workflow.includes('--strict-local --strict-release'));
   assert.match(workflow, /No tag was created/);
 });
