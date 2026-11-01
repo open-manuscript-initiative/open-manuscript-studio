@@ -174,9 +174,19 @@ export function assessRcEvidence({
           continue;
         }
         const item = matchingArtifacts[0];
+        const artifactTime = Date.parse(item.created_at || '');
+        const attemptStart = Date.parse(run.run_started_at || '');
+        const actualAttempt = Number(run.run_attempt) > 1;
+        // GitHub may retain archives from earlier attempts of the same run.
+        // Do not let a successful rerun borrow an old artifact if a build job
+        // was skipped or failed to upload in the latest attempt.
+        const wrongAttempt = actualAttempt &&
+          (!Number.isFinite(artifactTime) || !Number.isFinite(attemptStart) ||
+           artifactTime < attemptStart - 2 * 60 * 1000);
         if (item.expired === true || !DIGEST.test(item.digest || '') ||
-            !Number.isSafeInteger(item.size_in_bytes) || item.size_in_bytes <= 0) {
-          fail('INVALID_ARTIFACT', 'Archive must be non-expired, nonempty and SHA-256-addressed: ' + name);
+            !Number.isSafeInteger(item.size_in_bytes) || item.size_in_bytes <= 0 ||
+            wrongAttempt) {
+          fail('INVALID_ARTIFACT', 'Archive must be current-attempt, non-expired, nonempty and SHA-256-addressed: ' + name);
           continue;
         }
         record.artifacts.push({
