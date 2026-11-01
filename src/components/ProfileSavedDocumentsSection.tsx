@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { useTranslation } from '../i18n';
-import { getCloudStorageCopy } from '../i18n/cloudStorageTranslations';
+import { getCloudStorageCopy, getSavedDocumentOpenConfirmation } from '../i18n/cloudStorageTranslations';
 import {
   downloadCloudBackup,
   listProfileSavedDocuments,
@@ -41,7 +41,7 @@ export function ProfileSavedDocumentsSection({ confirmOpen = true }: { confirmOp
 
   async function openSavedDocument(document: ProfileSavedDocument): Promise<void> {
     if (confirmOpen) {
-      const confirmation = (copy.confirmOpenSavedDocument ?? copy.confirmRestore).replace('{title}', document.title);
+      const confirmation = getSavedDocumentOpenConfirmation(locale, document.title);
       if (!window.confirm(confirmation)) return;
     }
     setBusy(`open:${document.id}`);
