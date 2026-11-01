@@ -34,6 +34,8 @@ Build a private inventory of actually used external destinations and internal po
 The repository's example profile contains `uid: 0` and is **deliberately invalid**. Copy and edit it outside Git, replace the illustrative endpoints, and protect the actual profile.
 
 ~~~bash
+# Use a Bash shell; fail if the generator fails before tee writes the candidate.
+set -euo pipefail
 sudo install -d -m 0700 /root/omi-egress
 sudo install -m 0600 deployment/egress/api-egress-TEMPLATE.json /root/omi-egress/profile.json
 sudoedit /root/omi-egress/profile.json
@@ -42,6 +44,7 @@ sudo /opt/plesk/node/24/bin/node scripts/egress/generate-policy.mjs \
   --profile /root/omi-egress/profile.json \
   | sudo tee /root/omi-egress/candidate.nft >/dev/null
 sudo chmod 0600 /root/omi-egress/candidate.nft
+sudo test -s /root/omi-egress/candidate.nft
 sudo nft --check --file /root/omi-egress/candidate.nft
 /opt/plesk/node/24/bin/node --test tests/api-egress-policy.test.mjs
 ~~~
