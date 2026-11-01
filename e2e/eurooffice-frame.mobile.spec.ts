@@ -162,7 +162,7 @@ test('native Studio loads EuroOffice in a server-origin frame, never main DocsAP
 
   const frame = page.locator('.plain-document-isolated-frame');
   await expect(frame).toBeVisible();
-  await expect(frame).toHaveAttribute('sandbox', /allow-scripts/);
+  await expect(frame).toHaveAttribute('sandbox', 'allow-scripts allow-downloads');
   await expect(frame).toHaveAttribute('src', /^https:\/\/studio\.openmanuscript\.org\/api\/v1\/eurooffice\/embed-host\?channel=/);
   const nestedEditor = page.frameLocator('.plain-document-isolated-frame')
     .frameLocator('iframe[name="frameEditor"]')
@@ -171,6 +171,16 @@ test('native Studio loads EuroOffice in a server-origin frame, never main DocsAP
   const clicks = Number(await nestedEditor.getAttribute('data-edit-count'));
   await nestedEditor.click();
   await expect(nestedEditor).toHaveAttribute('data-edit-count', String(clicks + 1));
+  const isolatedHost = page.frames().find(child => child.url().includes('/eurooffice/embed-host'));
+  expect(isolatedHost).toBeDefined();
+  const isolation = await isolatedHost!.evaluate(async () => {
+    let parentDenied = false, storageDenied = false, apiDenied = false;
+    try { void parent.document.body; } catch { parentDenied = true; }
+    try { localStorage.setItem('synthetic-no-access', '1'); } catch { storageDenied = true; }
+    try { await fetch('/api/auth/me', { credentials: 'include' }); } catch { apiDenied = true; }
+    return { parentDenied, storageDenied, apiDenied };
+  });
+  expect(isolation).toEqual({ parentDenied: true, storageDenied: true, apiDenied: true });
   await expect(page.locator('script[data-eurooffice-api="true"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Document actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Close', exact: true }).click();

@@ -68,7 +68,9 @@ export async function renderVivliostylePdf(
     throw new VivliostylePdfError('PDF_INPUT_UNSAFE', inputError);
   }
 
-  const workerSocket = configuredPdfWorkerSocket();
+  let workerSocket: string | null;
+  try { workerSocket = configuredPdfWorkerSocket(); }
+  catch { throw new VivliostylePdfError('PDF_RENDERER_UNAVAILABLE', 'Isolated PDF worker is required but not configured.'); }
   if (workerSocket) {
     try {
       const bytes = await dispatchPdfWorkerTask('render', Buffer.from(html, 'utf8'), ownerUserId, workerSocket, pdfRendererTimeoutMs() + 15_000);
@@ -78,6 +80,13 @@ export async function renderVivliostylePdf(
       throw new VivliostylePdfError('PDF_RENDER_FAILED', error instanceof Error ? error.message : 'PDF worker unavailable.');
     }
   }
+  return renderVivliostylePdfLocally(html);
+}
+
+/** Dedicated sandbox worker execution. Never called as an API fallback in production. */
+export async function renderVivliostylePdfLocally(html: string): Promise<VivliostylePdfArtifact> {
+  const inputError = validateVivliostyleHtmlInput(html);
+  if (inputError) throw new VivliostylePdfError('PDF_INPUT_UNSAFE', inputError);
   const rendererVersion = await resolveRendererVersion();
   const directory = await mkdtemp(join(tmpdir(), 'omi-vivliostyle-'));
   const inputPath = join(directory, 'article.html');

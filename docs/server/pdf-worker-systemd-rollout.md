@@ -1,5 +1,7 @@
 # PDF isolation on Plesk / Ubuntu 24.04: controlled rollout
 
+> 2026-11-01: Production API calls now require the isolated socket even if `PDF_WORKER_REQUIRED=false`. Missing socket fails PDF processing closed; other editing stays available. The dedicated worker uses the local executor directly and must not set its own dispatch socket. Deploy/test the systemd units and ACL before enabling PDF use; source tests are not host acceptance.
+
 **Status: implementation staged, not installed or verified on the live VPS.** Do not close #774 based on a green CI run. #765 is already closed in GitHub, but separate API egress host-policy evidence is still necessary.
 
 ## Architecture
