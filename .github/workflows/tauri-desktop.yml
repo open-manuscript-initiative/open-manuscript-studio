@@ -110,10 +110,10 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/check-tauri-glib-risk.mjs
-          # Cargo.lock is cross-platform, but this target-specific reverse
-          # dependency tree proves that the GTK3 glib crate is on Linux.
-          if grep -q '^name = "glib"
+          cargo tree --manifest-path src-tauri/Cargo.toml --locked --target x86_64-unknown-linux-gnu --invert glib
 
+      - name: Generate Tauri application icons
+        run: npm run icons:generate
       - name: Run frontend tests
         run: npm test
 
