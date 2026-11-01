@@ -43,17 +43,27 @@ if [[ "$action" == snapshot ]]; then
     echo "$migrations" >&2
     exit 1
   fi
-  [[ -d "$web" && -d "$repo/server/dist" ]] || {
-    echo 'Cannot snapshot a live deployment: missing webroot or compiled API' >&2
+  [[ -d "$web" && -d "$repo/server/dist" && -d "$repo/server/node_modules" ]] || {
+    echo 'Cannot snapshot: missing live webroot, compiled API, or runtime dependencies' >&2
     exit 1
   }
+  # Never start the deploy without room for an exact pre-change runtime copy.
+  # The previous node_modules are essential if npm packages change and a
+  # network-independent rollback must restore the last working API.
+  required="$(du -sb "$web" "$repo/server/dist" "$repo/server/node_modules" | awk '{sum += $1} END {print sum}')"
+  available="$(df -B1 "$repo" | awk 'NR==2 {print $4}')"
+  if [[ ! "$available" =~ ^[0-9]+$ || "$available" -lt "$((required + 104857600))" ]]; then
+    echo 'Insufficient free disk space for a complete Studio runtime rollback copy' >&2
+    exit 1
+  fi
   [[ ! -e "$snapshot" ]] || { echo 'Snapshot directory already exists' >&2; exit 1; }
-  (umask 077; mkdir -p "$snapshot/web" "$snapshot/server-dist")
+  (umask 077; mkdir -p "$snapshot/web" "$snapshot/server-dist" "$snapshot/server-modules")
   chmod 700 "$snapshot"
   printf '%s\n' "$previous" > "$snapshot/previous-sha"
   printf '%s\n' "$current" > "$snapshot/new-sha"
   rsync -a "$web/" "$snapshot/web/"
   rsync -a "$repo/server/dist/" "$snapshot/server-dist/"
+  rsync -a "$repo/server/node_modules/" "$snapshot/server-modules/"
   # Keep the restore script even when git reset removes it from the checkout.
   cp "${BASH_SOURCE[0]}" "$snapshot/rollback.sh"
   chmod 700 "$snapshot/rollback.sh"
@@ -64,7 +74,8 @@ fi
 
 # Fail closed: never restore from a partial or tampered snapshot.
 [[ -f "$snapshot/snapshot-complete" && -f "$snapshot/previous-sha" &&
-   -d "$snapshot/web" && -d "$snapshot/server-dist" ]] || {
+   -d "$snapshot/web" && -d "$snapshot/server-dist" &&
+   -d "$snapshot/server-modules" ]] || {
   echo "Incomplete rollback snapshot: $snapshot" >&2
   exit 1
 }
@@ -75,13 +86,11 @@ echo "Restoring Studio production code and web/API assets to $previous."
 # Preserve PostgreSQL, identity records, stored manuscripts, uploaded images,
 # runtime .env files and certificates. No destructive database down-migration.
 git -C "$repo" reset --hard "$previous"
-export PATH="/opt/plesk/node/24/bin:/var/www/vhosts/openmanuscript.org/.nodenv/shims:$PATH"
-if [[ "${STUDIO_ROLLBACK_SKIP_NPM:-0}" != 1 ]]; then
-  (cd "$repo" && npm ci --include=dev)
-  (cd "$repo/server" && npm ci --include=dev && npm run prisma:generate:all)
-fi
+# Restore the actual previous runtime bytes, not an npm ci approximation:
+# a CDN outage or a changed npm registry cannot prevent this rollback.
 rsync -a --delete "$snapshot/web/" "$web/"
 rsync -a --delete "$snapshot/server-dist/" "$repo/server/dist/"
+rsync -a --delete "$snapshot/server-modules/" "$repo/server/node_modules/"
 if [[ "${STUDIO_ROLLBACK_SKIP_RESTART:-0}" != 1 ]]; then
   restart_api
   curl --fail --silent --show-error --max-time 15 http://127.0.0.1:3001/api/health >/dev/null
