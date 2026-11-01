@@ -11,6 +11,7 @@ import { buildDocxExport } from '../services/exportDocx';
 import { buildOdtExport } from '../services/exportOdt';
 import { buildEpubExport } from '../services/exportEpub';
 import { saveExportBlob, type ExportDeliveryResult } from '../services/exportFileDelivery';
+import { isNativeStudio } from '../services/nativeManuscriptFile';
 import {
   buildHtmlPackage,
   OMI_HTML_PACKAGE_VERSION,
@@ -41,7 +42,12 @@ import { renderPdfArtifact } from '../services/vivliostylePdfApi';
 import { buildSlaExport } from '../services/exportSla';
 import { buildXtgExport } from '../services/exportXtg';
 import { buildOmiContainer } from '../services/omiContainer';
-import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
+import {
+  preparePublicationArtifactWithBuildSidecar,
+  savePublicationArtifactWithBuildSidecar,
+  type PublicationArtifactSidecarInput,
+} from '../services/publicationBuildSidecar';
+import { WebPublicationDownloads, type WebPublicationDownload } from './WebPublicationDownloads';
 import { CustomExportPanel } from './CustomExportPanel';
 import { LongTaskStatus } from './LongTaskStatus';
 import { ExchangeReportView } from './ExchangeReportView';
@@ -76,6 +82,7 @@ export function ExportFormatsPanel() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [exchangeReport, setExchangeReport] = useState<ExchangeReport | null>(null);
+  const [webDownload, setWebDownload] = useState<WebPublicationDownload | null>(null);
   const customCopy = locale === 'hu'
     ? { label: 'Sablonalapú export', description: 'Egyéni blokksorrenddel, tipográfiával és saját fej-/lábléccel készített DOCX, PDF vagy HTML. Nem azonos a teljes kézirat DOCX-szel, a szemantikus HTML5-csomaggal vagy az alap PDF-exporttal.' }
     : locale === 'de'
@@ -115,6 +122,7 @@ export function ExportFormatsPanel() {
     setNotice('');
     setBusy(id);
     setExchangeReport(null);
+    setWebDownload(null);
     let job: ExportExchangeSession | null = null;
     const recordAdapterDiagnostics = (result: unknown) => {
       job?.recordAdapterDiagnostics(result);
@@ -132,6 +140,20 @@ export function ExportFormatsPanel() {
       return saveExportBlob(blob, fileName);
     };
     const deliverText = async (value: string, fileName: string, mediaType: string) => deliverBlob(new Blob([value], { type: mediaType }), fileName);
+    const deliverPublication = async (input: PublicationArtifactSidecarInput): Promise<void> => {
+      if (!isNativeStudio()) {
+        const prepared = await preparePublicationArtifactWithBuildSidecar(input);
+        setWebDownload({
+          artifact: input.artifact,
+          fileName: input.fileName,
+          sidecarText: prepared.sidecarText,
+          sidecarFileName: prepared.sidecarFileName,
+        });
+        return;
+      }
+      const saved = await savePublicationArtifactWithBuildSidecar(input);
+      reportDelivery(saved.delivery);
+    };
     await new Promise<void>((resolve) => {
       window.setTimeout(resolve, 0);
     });
@@ -171,7 +193,7 @@ export function ExportFormatsPanel() {
           }
           const fileName = jatsFileName(manuscript);
           await inspectArtifact(new Blob([result.xml]));
-          const saved = await savePublicationArtifactWithBuildSidecar({
+          await deliverPublication({
             manuscript,
             profile,
             artifact: new Blob([result.xml], {
@@ -183,7 +205,6 @@ export function ExportFormatsPanel() {
             renderer: 'open-manuscript-studio-jats',
             rendererVersion: OMI_JATS_RENDERER_VERSION,
           });
-          reportDelivery(saved.delivery);
           break;
         }
         case 'html': {
@@ -191,7 +212,7 @@ export function ExportFormatsPanel() {
           const result = await buildHtmlPackage(manuscript, profile);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           await inspectArtifact(result.blob);
-          const saved = await savePublicationArtifactWithBuildSidecar({
+          await deliverPublication({
             manuscript,
             profile,
             artifact: result.blob,
@@ -201,7 +222,6 @@ export function ExportFormatsPanel() {
             renderer: 'open-manuscript-studio-html-package',
             rendererVersion: OMI_HTML_PACKAGE_VERSION,
           });
-          reportDelivery(saved.delivery);
           break;
         }
         case 'docx': {
@@ -264,7 +284,7 @@ export function ExportFormatsPanel() {
           );
           const artifact = await renderPdfArtifact(html, fileName);
           await inspectArtifact(artifact.blob);
-          const saved = await savePublicationArtifactWithBuildSidecar({
+          await deliverPublication({
             manuscript,
             profile,
             artifact: artifact.blob,
@@ -278,7 +298,6 @@ export function ExportFormatsPanel() {
               mediaType: 'text/html;charset=utf-8',
             },
           });
-          reportDelivery(saved.delivery);
           break;
         }
       }
@@ -294,7 +313,7 @@ export function ExportFormatsPanel() {
     <section className="studio-export-formats" aria-labelledby="studio-export-formats-title" aria-busy={busy !== null}>
       <div className="studio-settings-card-header"><div><h4 id="studio-export-formats-title">{copy.title}</h4><p>{copy.description}</p></div></div>
       <div className="studio-manuscript-fields">
-        <label><span>{copy.format}</span><select value={selectedId} disabled={busy !== null} onChange={(event) => { setSelectedId(event.target.value as ExportId | ''); setError(''); setNotice(''); }}>
+        <label><span>{copy.format}</span><select value={selectedId} disabled={busy !== null} onChange={(event) => { setSelectedId(event.target.value as ExportId | ''); setError(''); setNotice(''); setWebDownload(null); }}>
           <option value="">{copy.chooseFormat}</option>
           <optgroup label={copy.portable}>{visibleFormats.filter((format) => format.group === 'portable').map((format) => <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>)}</optgroup>
           <optgroup label={copy.publication}>{visibleFormats.filter((format) => format.group === 'publication').map((format) => <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>)}</optgroup>
@@ -311,6 +330,7 @@ export function ExportFormatsPanel() {
       {busy ? <LongTaskStatus message={busyFormat ? `${busyFormat.label} — ${copy.preparing}` : copy.preparing} /> : null}
       {notice ? <p className="studio-settings-hint" role="status">{notice}</p> : null}
       {error ? <div className="studio-export-error" role="alert">{error}</div> : null}
+      {webDownload ? <WebPublicationDownloads download={webDownload} /> : null}
       {exchangeReport ? <ExchangeReportView report={exchangeReport} /> : null}
     </section>
   );
