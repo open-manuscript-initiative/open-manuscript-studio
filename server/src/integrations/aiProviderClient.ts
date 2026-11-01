@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../cloud/security/connectionPinnedHttp.js';
 export type AiProviderPreset = 'openai' | 'mistral' | 'groq' | 'openrouter' | 'custom';
 
 export interface AiProviderConfig {
@@ -35,7 +36,7 @@ export function usesResponsesApi(providerPreset: string | undefined, endpoint: s
 
 export async function requestAiText(input: AiTextRequest): Promise<string> {
   const responsesApi = usesResponsesApi(input.providerPreset, input.endpoint);
-  const response = await fetch(input.endpoint, {
+  const response = await fetchPinnedPublicUrl(input.endpoint, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${input.apiKey}`,
