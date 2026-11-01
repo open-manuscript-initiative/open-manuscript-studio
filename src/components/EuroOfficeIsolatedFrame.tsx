@@ -31,13 +31,15 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
 
   useEffect(() => {
     let started = false;
+    let launchSent = false;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== target.origin ||
           event.source !== ref.current?.contentWindow ||
           !event.data || event.data.scope !== SCOPE ||
           event.data.channel !== target.channel) return;
 
-      if (event.data.action === 'ready') {
+      if (event.data.action === 'ready' && !launchSent) {
+        launchSent = true;
         ref.current?.contentWindow?.postMessage({
           scope: SCOPE,
           channel: target.channel,
@@ -63,6 +65,9 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
   return (
     <iframe
       ref={ref}
+      onLoad={() => ref.current?.contentWindow?.postMessage({
+        scope: SCOPE, channel: target.channel, action: 'hello',
+      }, target.origin)}
       title={title}
       className="plain-document-isolated-frame"
       src={target.url}
