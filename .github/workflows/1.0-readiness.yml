@@ -2,6 +2,12 @@ name: 1.0 Readiness
 
 on:
   workflow_dispatch:
+    inputs:
+      strict_release:
+        description: 'Enforce RC-specific GitHub release-blocker gate (requires separate manual hardware/owner approval)'
+        required: false
+        default: false
+        type: boolean
   pull_request:
     branches:
       - main
@@ -125,6 +131,7 @@ jobs:
           npm run release:readiness --
           --strict-local
           --github
+          ${{ inputs.strict_release && '--strict-release' || '' }}
           --json benchmark-results/readiness.json
           --markdown benchmark-results/readiness.md
           > /dev/null
@@ -140,6 +147,7 @@ jobs:
             > benchmark-results/SHA256SUMS.txt
 
       - name: Upload 1.0 evidence
+        if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
           name: omi-1.0-readiness-${{ github.run_attempt }}
