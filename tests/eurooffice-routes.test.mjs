@@ -88,6 +88,18 @@ mock.module(new URL('../server/dist/middleware/requireSession.js', import.meta.u
   },
 });
 
+// Route fixtures keep their synthetic Office response while the real
+// pinned transport is independently tested for connection-time DNS safety.
+const officeDownloads = [];
+mock.module(new URL('../server/dist/cloud/security/connectionPinnedHttp.js', import.meta.url).href, {
+  namedExports: {
+    fetchPinnedPublicUrl: async (url, init) => {
+      officeDownloads.push({ url: String(url), method: init.method, redirect: init.redirect });
+      return globalThis.fetch(url, init);
+    },
+  },
+});
+
 const { euroOfficeRouter } = await import('../server/dist/routes/euroOfficeRoutes.js');
 const app = express();
 app.use(express.json());
@@ -170,6 +182,13 @@ test('ordinary DOCX stays native and uses an owner-scoped, short-lived EuroOffic
   assert.equal(blockedCallback.status, 400);
   assert.equal(docs[0].revision, 1);
 
+  const fragmentCallback = await request(`/api/integrations/eurooffice/${documentId}/callback?token=${capability}`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 2, key: launch.config.document.key, url: 'https://office.example.org/cache/docx#fragment' }),
+  }, null);
+  assert.equal(fragmentCallback.status, 400);
+  assert.equal(officeDownloads.length, 0, 'invalid callback must not open an outbound socket');
+
   const { createBlankDocx } = await import('../server/dist/integrations/eurooffice/blankDocx.js');
   const updatedPackage = createBlankDocx('Synthetic updated document');
   globalThis.fetch = async () => new Response(updatedPackage, { status: 200 });
@@ -193,6 +212,11 @@ test('ordinary DOCX stays native and uses an owner-scoped, short-lived EuroOffic
     }, null);
     assert.equal(duplicate.status, 200);
     assert.equal(docs[0].revision, 2);
+    assert.ok(officeDownloads.length >= 2, 'valid callback must use pinned transport');
+    assert.ok(officeDownloads.every((entry) =>
+      entry.method === 'GET' && entry.redirect === 'error' &&
+      entry.url.startsWith('https://office.example.org/cache/')
+    ));
     const staleFinal = await request(`/api/integrations/eurooffice/${documentId}/callback?token=${capability}`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ status: 2, key: launch.config.document.key, url: 'https://office.example.org/cache/stale-final' }),
