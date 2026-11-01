@@ -75,7 +75,12 @@ mock.module(new URL('../server/dist/routes/authRoutes.js', import.meta.url).href
   },
 });
 
-const { directSubmissionRouter } = await import(
+// Keep the route/service fixture transport mock at the pinned HTTP boundary.
+ // Actual DNS and socket pinning are exercised in ssrf-outbound-transport.test.ts.
+ mock.module(new URL('../server/dist/cloud/security/connectionPinnedHttp.js', import.meta.url).href, {
+   namedExports: { fetchPinnedPublicUrl: (...args) => globalThis.fetch(...args) },
+ });
+ const { directSubmissionRouter } = await import(
   '../server/dist/routes/directSubmissionRoutes.js'
 );
 const app = express();
