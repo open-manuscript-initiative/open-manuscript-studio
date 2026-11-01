@@ -55,6 +55,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Track inherited Linux glib advisory (issue 271)
+        run: |
+          node --test tests/tauri-glib-risk.test.mjs
+          node scripts/check-tauri-glib-risk.mjs
+
       - name: Verify beta release version identity
         run: node --test tests/release-version-coherence.test.mjs
 
