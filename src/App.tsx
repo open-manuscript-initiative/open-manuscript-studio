@@ -207,7 +207,6 @@ function StudioApplication() {
   );
   const desktopTabsRef = useRef(desktopTabs);
   const activeDesktopTabIdRef = useRef(activeDesktopTabId);
-  const switchingDesktopTabRef = useRef(false);
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
 
   useEffect(() => {
@@ -243,63 +242,49 @@ function StudioApplication() {
     if (reviewMode) return;
 
     return useStudioStore.subscribe((state, previousState) => {
-      if (state.manuscript === previousState.manuscript) return;
+      if (state.manuscript === previousState.manuscript || !state.hasOpenDocument) return;
 
-      setDesktopTabs((tabs) => {
-        const activeId = activeDesktopTabIdRef.current;
-        const activeIndex = tabs.findIndex((tab) => tab.id === activeId);
-        if (activeIndex < 0) {
-          if (!state.hasOpenDocument) return tabs;
-          const nextTab = createDesktopTabSession(crypto.randomUUID(), state.manuscript);
-          const nextTabs = [nextTab];
-          desktopTabsRef.current = nextTabs;
-          activeDesktopTabIdRef.current = nextTab.id;
-          setActiveDesktopTabId(nextTab.id);
-          return nextTabs;
+      // Zustand can publish several manuscript mutations before React flushes
+      // its state updates (e.g. open + rename + open another manuscript).
+      // Reconcile against the synchronous ref, never a queued React updater:
+      // otherwise an older updater can overwrite a newly opened tab.
+      const tabs = desktopTabsRef.current;
+      const activeId = activeDesktopTabIdRef.current;
+      const activeTab = tabs.find((tab) => tab.id === activeId);
+      const manuscript = state.manuscript;
+      let nextActiveId = activeId;
+      let nextTabs: DesktopTabSession[];
+
+      if (!activeTab) {
+        const nextTab = createDesktopTabSession(crypto.randomUUID(), manuscript);
+        nextTabs = [...tabs, nextTab];
+        nextActiveId = nextTab.id;
+      } else if (manuscript.id !== activeTab.manuscriptId) {
+        const existing = tabs.find((tab) => tab.manuscriptId === manuscript.id);
+        if (existing) {
+          nextActiveId = existing.id;
+          nextTabs = tabs.map((tab) => tab.id === existing.id
+            ? createDesktopTabSession(tab.id, manuscript)
+            : tab);
+        } else {
+          const nextTab = createDesktopTabSession(crypto.randomUUID(), manuscript);
+          nextTabs = [...tabs, nextTab];
+          nextActiveId = nextTab.id;
         }
+      } else {
+        nextTabs = tabs.map((tab) => tab.id === activeId
+          ? createDesktopTabSession(tab.id, manuscript)
+          : tab);
+      }
 
-        const activeTab = tabs[activeIndex];
-        if (!activeTab) return tabs;
-
-        if (
-          !switchingDesktopTabRef.current &&
-          state.manuscript.id !== activeTab.manuscriptId
-        ) {
-          const existing = tabs.find(
-            (tab) => tab.manuscriptId === state.manuscript.id,
-          );
-
-          if (existing) {
-            const nextTabs = tabs.map((tab) =>
-              tab.id === existing.id
-                ? createDesktopTabSession(existing.id, state.manuscript)
-                : tab,
-            );
-            desktopTabsRef.current = nextTabs;
-            activeDesktopTabIdRef.current = existing.id;
-            setActiveDesktopTabId(existing.id);
-            return nextTabs;
-          }
-
-          const nextTab = createDesktopTabSession(
-            crypto.randomUUID(),
-            state.manuscript,
-          );
-          const nextTabs = [...tabs, nextTab];
-          desktopTabsRef.current = nextTabs;
-          activeDesktopTabIdRef.current = nextTab.id;
-          setActiveDesktopTabId(nextTab.id);
-          return nextTabs;
-        }
-
-        const nextTabs = tabs.map((tab) =>
-          tab.id === activeId
-            ? createDesktopTabSession(tab.id, state.manuscript)
-            : tab,
-        );
-        desktopTabsRef.current = nextTabs;
-        return nextTabs;
-      });
+      // Update refs before scheduling React rendering, so a subsequent
+      // synchronous store event always sees every prior opened manuscript.
+      desktopTabsRef.current = nextTabs;
+      setDesktopTabs(nextTabs);
+      if (nextActiveId !== activeId) {
+        activeDesktopTabIdRef.current = nextActiveId;
+        setActiveDesktopTabId(nextActiveId);
+      }
     });
   }, [reviewMode]);
 
@@ -312,9 +297,7 @@ function StudioApplication() {
 
     activeDesktopTabIdRef.current = tabId;
     setActiveDesktopTabId(tabId);
-    switchingDesktopTabRef.current = true;
     useStudioStore.getState().loadManuscript(target.manuscript);
-    switchingDesktopTabRef.current = false;
   }, []);
 
   const closeDesktopTab = useCallback((tabId: DesktopDocumentTabId) => {
