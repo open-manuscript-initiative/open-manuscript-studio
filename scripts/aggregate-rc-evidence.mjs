@@ -256,7 +256,13 @@ async function getJson(repository, path, token) {
   return response.json();
 }
 
-export async function collectRcWorkflowEvidence(repository, sha, token) {
+export async function collectRcWorkflowEvidence(repository, sha, token, { publishingRunId } = {}) {
+  // Only the publication caller may omit its own currently running Tauri
+  // orchestration. Candidate build evidence is still the newest other run;
+  // CLI dry-runs omit nothing and no earlier red candidate can be hidden.
+  if (publishingRunId !== undefined && (!Number.isSafeInteger(publishingRunId) || publishingRunId < 1)) {
+    throw new Error('Invalid current publication run ID.');
+  }
   const results = {};
   for (const spec of REQUIRED_WORKFLOWS) {
     const path = 'actions/workflows/' + encodeURIComponent(spec.id) +
@@ -265,12 +271,14 @@ export async function collectRcWorkflowEvidence(repository, sha, token) {
     if (!Array.isArray(data.workflow_runs) || (data.total_count ?? 0) > 100) {
       throw new Error('Incomplete GitHub workflow pagination for ' + spec.id);
     }
-    const matching = data.workflow_runs.filter(run =>
+    const eligible = data.workflow_runs.filter(run =>
+      !(spec.id === 'tauri-desktop.yml' && run.id === publishingRunId));
+    const matching = eligible.filter(run =>
       run.head_sha === sha && run.head_branch === 'main' &&
       ['push', 'workflow_dispatch'].includes(run.event));
     const selected = sortedRuns(matching)[0];
     if (!selected) {
-      results[spec.id] = { runs: data.workflow_runs, jobs: [], artifacts: [] };
+      results[spec.id] = { runs: eligible, jobs: [], artifacts: [] };
       continue;
     }
     const id = selected.id;
@@ -282,7 +290,7 @@ export async function collectRcWorkflowEvidence(repository, sha, token) {
         (jobs.total_count ?? 0) > 100 || (artifacts.total_count ?? 0) > 100) {
       throw new Error('Incomplete GitHub job/artifact pagination for ' + spec.id);
     }
-    results[spec.id] = { runs: data.workflow_runs, jobs: jobs.jobs, artifacts: artifacts.artifacts };
+    results[spec.id] = { runs: eligible, jobs: jobs.jobs, artifacts: artifacts.artifacts };
   }
   return results;
 }

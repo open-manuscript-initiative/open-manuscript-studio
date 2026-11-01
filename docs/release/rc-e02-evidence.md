@@ -1,5 +1,7 @@
 # Studio 1.0 RC E02 — exact-commit cross-workflow evidence
 
+> Proposed publication coupling: [exact-candidate owner evidence](rc-evidence.md) reuses this collector/assessor, adds a successful candidate-only native build step, actual per-file hashes and human acceptance before tagging. CLI dry-runs retain the behavior below. This does not create a real release approval.
+
 **Status:** first executable E02 evidence aggregator; no RC tag, Stable claim or owner Go/No-Go.
 
 The main Studio 1.0 Readiness job collects local tests, publication evidence, SBOMs and SHA-256 sums. It **does not** by itself prove that the external PKP, CodeQL, Android, desktop and conformance workflows succeeded for precisely the reviewed source commit. The manually dispatched `1.0 RC exact-commit evidence (E02)` workflow fills this gap without changing the established beta CI or automatically publishing releases.
