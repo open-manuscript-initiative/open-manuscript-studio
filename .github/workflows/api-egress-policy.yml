@@ -41,6 +41,18 @@ jobs:
         run: node --test tests/api-egress-policy.test.mjs
       - name: Test service-scoped shared-UID policy and connection-time DNS guard
         run: node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/api-egress-shared-uid.test.ts
+      - name: Offline systemd service-cgroup drop-in syntax validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Feed only the staged IP directives to a synthetic oneshot unit.
+          # systemd-analyze checks syntax without installing or activating it.
+          {
+            printf '[Unit]\\nDescription=OMI API egress syntax smoke\\n'
+            printf '[Service]\\nType=oneshot\\nExecStart=/usr/bin/true\\n'
+            grep '^IPAddress' deployment/systemd/omi-studio-api-egress-shared-uid.conf
+          } > "$RUNNER_TEMP/omi-api-egress-smoke.service"
+          systemd-analyze verify "$RUNNER_TEMP/omi-api-egress-smoke.service"
       - name: Offline nftables syntax validation (never apply)
         shell: bash
         run: |
