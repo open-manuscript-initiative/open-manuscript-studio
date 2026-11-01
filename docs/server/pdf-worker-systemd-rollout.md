@@ -130,6 +130,16 @@ then measure peak tasks under two concurrent synthetic jobs and verify the
 `pids.events` max counter does not increase. The value is provisional until
 that host capacity test passes; never use unlimited tasks to pass acceptance.
 
+**Observed host smoke result (2026-11-01):** after applying private tmpfs
+`mode=1777` and `TasksMax=512`, the administrator ran a synthetic HTML render
+through the actual `/run/omi-pdf-worker.sock` `/v1/render` endpoint, verified the
+returned `%PDF-` signature, then submitted those bytes to `/v1/import` and
+verified that the returned layout contained the synthetic `OMI` text. Both
+checks reported OK. This confirms sequential socket render/import functionality
+under the worker service, not full #774 security acceptance, concurrent-job
+capacity, real-document fidelity, or Studio API/UI integration. Those remaining
+checks must retain their own evidence before closing the deployment blocker.
+
 ~~~bash
 systemctl is-active omi-pdf-worker.socket omi-pdf-worker.service
 systemctl show omi-pdf-worker.service \
