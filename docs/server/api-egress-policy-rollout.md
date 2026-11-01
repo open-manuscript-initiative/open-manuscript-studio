@@ -1,5 +1,11 @@
 # Plesk / Ubuntu 24.04 — Studio API outbound firewall (#765)
 
+> **IMPORTANT — shared Plesk UID:** Production currently uses one UID for the
+> Studio API and multiple Studio PHP-FPM pools. **Do not install this UID-based
+> nftables policy on that host.** Use the staged per-systemd-service plan in
+> [api-egress-shared-uid-rollout.md](api-egress-shared-uid-rollout.md).
+> Neither approach has been activated or accepted on the production VPS.
+
 **Status: source and tests prepared; no policy has been installed or verified on the live IONOS VPS.** Keep [#765](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues/765) open as a release blocker until actual host acceptance is recorded. The generated rules are inert unless an authorized administrator deliberately installs them.
 
 This procedure applies only to a dedicated non-root host-systemd `omi-studio-api.service` UID. It does not alter nginx, Apache, Plesk INPUT or SSH rules or the separate PDF worker. The PDF worker must retain its existing private network namespace, Unix socket and resource limits; see [PDF worker rollout](pdf-worker-systemd-rollout.md).
