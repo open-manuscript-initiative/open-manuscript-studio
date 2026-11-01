@@ -1,13 +1,11 @@
-import { execFile } from 'node:child_process';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 import { buildPdfWorkerEnvironment } from '../security/pdfWorkerEnvironment.js';
+import { runPdfSubprocess } from '../security/pdfSubprocess.js';
 import { renderVivliostylePdfLocally } from '../services/vivliostylePdfRenderer.js';
 
-const execAsync = promisify(execFile);
 const MAX_IMPORT_BYTES = 100 * 1024 * 1024;
 const MAX_RENDER_BYTES = 48 * 1024 * 1024;
 const MAX_LAYOUT_BYTES = 128 * 1024 * 1024;
@@ -34,11 +32,15 @@ export async function executePdfWorkerJob(kind: PdfWorkerOperation, bytes: Buffe
     const input = join(directory, 'input.pdf');
     const output = join(directory, 'layout.html');
     await writeFile(input, bytes, { mode: 0o600, flag: 'wx' });
-    await execAsync('pdftotext', ['-bbox-layout', '-enc', 'UTF-8', input, output], {
-      timeout: 120_000,
-      maxBuffer: 4 * 1024 * 1024,
+    // Poppler also runs in a private POSIX process group. The same bounded
+    // executor cleans up descendants if a parser times out or exits early.
+    const poppler = await runPdfSubprocess('pdftotext', ['-bbox-layout', '-enc', 'UTF-8', input, output], {
+      cwd: directory,
+      timeoutMs: 120_000,
+      maxOutputChars: 64 * 1024,
       env: buildPdfWorkerEnvironment('poppler'),
     });
+    if (poppler.exitCode !== 0) throw new Error('PDF parser failed.');
     const result = await readFile(output);
     if (!result.length || result.length > MAX_LAYOUT_BYTES) throw new Error('PDF layout output is missing or too large.');
     return result;
