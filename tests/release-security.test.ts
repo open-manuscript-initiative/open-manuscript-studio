@@ -117,3 +117,38 @@ test('native Tokio lock excludes unsafe AsyncFd constructor releases', () => {
     ))
   ), 'RUSTSEC-2026-0386');
 });
+
+
+test('Tauri CSP restricts main WebView scripts and native IPC to bundled main webview', () => {
+  const tauri = JSON.parse(readFileSync(
+    new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8',
+  )) as { app: { security: { csp: Record<string, string> } } };
+  const policy = tauri.app.security.csp;
+  assert.ok(policy, 'a missing CSP is a release blocker');
+  assert.match(policy['script-src'] ?? '', /'self'/);
+  assert.doesNotMatch(policy['script-src'] ?? '', /'unsafe-inline'|'unsafe-eval'|https?:|[*]/);
+  assert.equal(policy['script-src-attr'], "'none'");
+  assert.equal(policy['object-src'], "'none'");
+  assert.equal(policy['worker-src'], "'self' blob:");
+  assert.ok(policy['connect-src']?.includes('ipc:'), 'Tauri IPC must still work');
+  assert.ok(policy['frame-src']?.includes('https:'), 'selected institutional Studio APIs must be frameable');
+
+  const capabilities = JSON.parse(readFileSync(
+    new URL('../src-tauri/capabilities/default.json', import.meta.url), 'utf8',
+  )) as { windows?: string[]; webviews?: string[]; remote?: unknown };
+  assert.deepEqual(capabilities.webviews, ['main']);
+  assert.equal(capabilities.windows, undefined, 'a main-window grant leaks to all native sub-WebViews');
+  assert.equal(capabilities.remote, undefined, 'external provider pages must never have native capabilities');
+
+  const mainSource = readFileSync(
+    new URL('../src/components/PlainDocumentWorkspace.tsx', import.meta.url), 'utf8',
+  );
+  assert.match(mainSource, /if \(!nativeStudio\) await loadApiScript/);
+  assert.match(mainSource, /EuroOfficeIsolatedFrame/);
+  const isolatedSource = readFileSync(
+    new URL('../src/components/EuroOfficeIsolatedFrame.tsx', import.meta.url), 'utf8',
+  );
+  assert.match(isolatedSource, /event\.origin !== target\.origin/);
+  assert.match(isolatedSource, /event\.source !== ref\.current\?\.contentWindow/);
+  assert.match(isolatedSource, /sandbox="allow-scripts allow-same-origin/);
+});

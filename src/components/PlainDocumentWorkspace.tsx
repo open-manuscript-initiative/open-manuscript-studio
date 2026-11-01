@@ -1,5 +1,5 @@
 import { EuroOfficeRecovery } from './EuroOfficeRecovery';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, FilePlus2, FileText, LoaderCircle, MoreHorizontal, X } from 'lucide-react';
 import {
   createEuroOfficeSession,
@@ -9,6 +9,8 @@ import {
   type EuroOfficeLaunch,
 } from '../services/euroOfficeApi';
 import { useTranslation } from '../i18n';
+import { isNativeStudioRuntime } from '../platform/nativeServerSelection';
+import { EuroOfficeIsolatedFrame } from './EuroOfficeIsolatedFrame';
 import './PlainDocumentWorkspace.css';
 
 declare global {
@@ -68,6 +70,8 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const [error, setError] = useState('');
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [editorHost, setEditorHost] = useState<HTMLDivElement | null>(null);
+  const nativeStudio = isNativeStudioRuntime();
+  const handleIsolatedFailure = useCallback((message: string) => setError(message), []);
 
   useEffect(() => {
     if (documentId) return;
@@ -88,12 +92,15 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
     let cancelled = false;
     setBusy(true);
     setError('');
+    setLaunch(null);
     const editorType = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767px)').matches
       ? 'mobile'
       : 'desktop';
     createEuroOfficeSession(documentId, editorType)
       .then(async (session) => {
-        await loadApiScript(session.apiScriptUrl);
+        // Native Studio isolates external DocsAPI in a separate origin. Remote
+        // JavaScript must never execute in the main privileged Tauri WebView.
+        if (!nativeStudio) await loadApiScript(session.apiScriptUrl);
         if (!cancelled) {
           const documentConfig = session.config.document as { title?: string } | undefined;
           setEditorTitle((documentConfig?.title ?? fallbackDocumentTitle).replace(/\.docx$/i, ''));
@@ -105,10 +112,10 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
       })
       .finally(() => { if (!cancelled) setBusy(false); });
     return () => { cancelled = true; };
-  }, [documentId, fallbackDocumentTitle]);
+  }, [documentId, fallbackDocumentTitle, nativeStudio]);
 
   useEffect(() => {
-    if (!launch || !editorHost || !window.DocsAPI) return;
+    if (nativeStudio || !launch || !editorHost || !window.DocsAPI) return;
     // DocsAPI replaces its placeholder with an iframe. Keep that DOM mutation
     // inside a persistent host whose dimensions are controlled by Studio.
     const placeholder = document.createElement('div');
@@ -119,7 +126,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
       editor.destroyEditor?.();
       editorHost.replaceChildren();
     };
-  }, [editorHost, launch]);
+  }, [editorHost, launch, nativeStudio]);
 
   async function createDocument(): Promise<void> {
     setBusy(true);
@@ -174,7 +181,16 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
       {error ? <div className="plain-document-error" role="alert">{error}</div> : null}
       {documentId ? (
         <div className="plain-document-editor">
-          <div className="plain-document-editor-host" ref={setEditorHost} />
+          <div className="plain-document-editor-host" ref={nativeStudio ? undefined : setEditorHost}>
+            {nativeStudio && launch ? (
+              <EuroOfficeIsolatedFrame
+                key={documentId + ':' + launch.expiresAt}
+                launch={launch}
+                title={editorTitle || copy.document}
+                onFailure={handleIsolatedFailure}
+              />
+            ) : null}
+          </div>
           {busy ? <div className="plain-document-loading"><LoaderCircle size={22} className="plain-document-spinner" />{copy.loading}</div> : null}
           {!busy && error ? <div className="plain-document-editor-error">{copy.editorUnavailable}</div> : null}
           <span className="sr-only">{launch ? copy.autosave : ''}</span>

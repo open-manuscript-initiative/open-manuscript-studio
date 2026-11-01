@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
+import { buildEuroOfficeEmbedHost } from '../server/src/security/euroOfficeEmbedHost';
 
 // Reproduce DocsAPI's DOM contract: replace the placeholder, use a fixed mobile
 // iframe, and restore a fresh placeholder when the editor is destroyed.
@@ -71,7 +72,7 @@ async function expectEditorInsideWorkspace(page: Page) {
   await expect(edit).toHaveAttribute('data-edit-count', String(before + 1));
 }
 
-for (const native of [false, true]) {
+for (const native of [false]) {
   test(`EuroOffice keeps the entire bottom action inside its host in ${native ? 'Android WebView' : 'mobile browser'}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 393, height: 873 });
     const errors: string[] = [];
@@ -126,4 +127,52 @@ test('EuroOffice also keeps the desktop editor inside its persistent host', asyn
   await page.getByRole('button', { name: 'Document actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Close', exact: true }).click();
   await expect(page.locator('iframe[name="frameEditor"]')).toHaveCount(0);
+});
+
+
+test('native Studio loads EuroOffice in a server-origin frame, never main DocsAPI', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  // Authentication first: native credentials are handled by the Tauri shell,
+  // which Playwright's ordinary browser cannot emulate.
+  await installEuroOffice(page);
+
+  // Exercise the real server-generated CSP/iframe bootstrap with a synthetic
+  // office API and document, not a weaker home-grown handshake fixture.
+  const { html, csp } = buildEuroOfficeEmbedHost(
+    'https://eurooffice.example.test', 'http://localhost:5173',
+  );
+  await page.route('https://studio.openmanuscript.org/api/v1/eurooffice/embed-host**', async route => {
+    await route.fulfill({
+      contentType: 'text/html',
+      headers: { 'Content-Security-Policy': csp, 'X-Content-Type-Options': 'nosniff' },
+      body: html,
+    });
+  });
+  await signInToStudio(page);
+  // Switch the runtime flag only after the browser-only synthetic login.
+  // The editor component then uses its native isolated-WebView code path.
+  await page.evaluate(() => {
+    // @tauri-apps/api/core isTauri() checks the isTauri sentinel, while
+    // __TAURI_INTERNALS__ alone is not sufficient to switch runtime mode.
+    Object.defineProperty(window, 'isTauri', { value: true, configurable: true });
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
+  });
+  await page.getByRole('button', { name: /^Everyday DOCX documents/ }).click();
+  await page.getByRole('button', { name: /^Layout regression/ }).click();
+
+  const frame = page.locator('.plain-document-isolated-frame');
+  await expect(frame).toBeVisible();
+  await expect(frame).toHaveAttribute('sandbox', /allow-scripts/);
+  await expect(frame).toHaveAttribute('src', /^https:\/\/studio\.openmanuscript\.org\/api\/v1\/eurooffice\/embed-host\?channel=/);
+  const nestedEditor = page.frameLocator('.plain-document-isolated-frame')
+    .frameLocator('iframe[name="frameEditor"]')
+    .getByRole('button', { name: 'Edit document' });
+  await expect(nestedEditor).toBeVisible();
+  const clicks = Number(await nestedEditor.getAttribute('data-edit-count'));
+  await nestedEditor.click();
+  await expect(nestedEditor).toHaveAttribute('data-edit-count', String(clicks + 1));
+  await expect(page.locator('script[data-eurooffice-api="true"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Document actions', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Close', exact: true }).click();
+  await expect(frame).toHaveCount(0);
 });

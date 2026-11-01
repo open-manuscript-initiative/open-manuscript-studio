@@ -74,6 +74,11 @@ jobs:
           path: test-results/draft-model-assessment.json
           retention-days: 14
 
+      - name: Verify production rollback snapshot and migration safety
+        run: |
+          bash -n scripts/production-rollback.sh
+          node --test tests/production-rollback.test.mjs
+
       - name: Run release hardening unit gates
         run: npm run test:release-hardening
 
@@ -372,7 +377,40 @@ jobs:
               exit 1
             fi
 
+            # Capture the last deployed commit before checking out the new release.
+            # This is a Plesk beta used by testers, but the API, web assets
+            # and user data must be recoverable if an upgrade fails.
+            PREVIOUS_SHA="$(git rev-parse HEAD)"
             git reset --hard "$COMMIT_SHA"
+
+            ROLLBACK_ROOT="$HOME/.omi-studio-rollbacks"
+            ROLLBACK_DIR="$ROLLBACK_ROOT/${{ github.run_id }}-${COMMIT_SHA:0:12}"
+            mkdir -p "$ROLLBACK_ROOT"
+            chmod 700 "$ROLLBACK_ROOT"
+            # Fail closed if database migrations have changed; a code-only
+            # rollback cannot undo a schema migration safely.
+            if ! STUDIO_PREVIOUS_SHA="$PREVIOUS_SHA" \
+              bash scripts/production-rollback.sh snapshot "$ROLLBACK_DIR"; then
+              echo "Pre-deployment snapshot failed. Returning the checkout to the previous commit." >&2
+              git reset --hard "$PREVIOUS_SHA"
+              exit 1
+            fi
+
+            restore_on_exit() {
+              original_status="$?"
+              trap - EXIT
+              set +e
+              if [[ "$original_status" -ne 0 ]]; then
+                echo "Studio deployment failed; restoring the pre-deploy snapshot."
+                bash "$ROLLBACK_DIR/rollback.sh" restore "$ROLLBACK_DIR"
+                restore_status="$?"
+                if [[ "$restore_status" -ne 0 ]]; then
+                  echo "AUTOMATIC ROLLBACK FAILED; manual recovery: bash $ROLLBACK_DIR/rollback.sh restore $ROLLBACK_DIR" >&2
+                fi
+              fi
+              exit "$original_status"
+            }
+            trap restore_on_exit EXIT
 
             APP_VERSION="$(node -p "require('./package.json').version")"
             BUILD_NUMBER="${{ github.run_number }}"
@@ -529,6 +567,10 @@ jobs:
               echo 'The deployed Android fallback still uses the unreliable Chrome intent URL.' >&2
               exit 1
             fi
+
+            # Disarm rollback only when all deployment acceptance checks pass.
+            trap - EXIT
+            echo "Studio deployment succeeded. Previous working code/assets: $ROLLBACK_DIR"
 
   integration-state-postgres:
     name: Integration state PostgreSQL gate

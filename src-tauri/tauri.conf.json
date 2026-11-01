@@ -24,7 +24,21 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self' 'wasm-unsafe-eval'",
+        "script-src-attr": "'none'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data: blob: asset: http://asset.localhost https:",
+        "font-src": "'self' data:",
+        "media-src": "'self' data: blob: https:",
+        "connect-src": "'self' ipc: http://ipc.localhost https: wss: ws: http://localhost:* http://127.0.0.1:*",
+        "frame-src": "'self' https: blob: data: http://localhost:* http://127.0.0.1:*",
+        "worker-src": "'self' blob:",
+        "object-src": "'none'",
+        "base-uri": "'self'",
+        "form-action": "'self' https:"
+      }
     }
   },
   "plugins": {
