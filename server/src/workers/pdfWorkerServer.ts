@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { buildPdfWorkerEnvironment } from '../security/pdfWorkerEnvironment.js';
-import { renderVivliostylePdf } from '../services/vivliostylePdfRenderer.js';
+import { renderVivliostylePdfLocally } from '../services/vivliostylePdfRenderer.js';
 
 const execAsync = promisify(execFile);
 const MAX_IMPORT_BYTES = 100 * 1024 * 1024;
@@ -19,7 +19,7 @@ export type PdfJobExecutor = (kind: PdfWorkerOperation, bytes: Buffer) => Promis
 
 export async function executePdfWorkerJob(kind: PdfWorkerOperation, bytes: Buffer): Promise<Buffer> {
   if (kind === 'render') {
-    const artifact = await renderVivliostylePdf(bytes.toString('utf8'));
+    const artifact = await renderVivliostylePdfLocally(bytes.toString('utf8'));
     const output = Buffer.from(artifact.bytes);
     if (output.length > MAX_RENDER_PDF_BYTES || output.subarray(0, 5).toString('ascii') !== '%PDF-') {
       throw new Error('PDF renderer produced an invalid or oversized artifact.');

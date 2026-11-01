@@ -123,7 +123,10 @@ jobs:
         run: npm --prefix server run test:isolated-pdf-worker
 
       - name: Test OMI-SPEC-300 and OMI-SPEC-310 integration manifest boundary
-        run: npm --prefix server run test:extension-manifest
+        run: |
+          npm --prefix server run test:extension-manifest
+          npx tsc -p server/tsconfig.json
+          node --test --experimental-test-module-mocks tests/extension-registry-routes.test.mjs
 
       - name: Test passkey authentication routes
         run: npm run test:passkey-auth

@@ -16,7 +16,9 @@ interface IsolatedFrameProps {
  * whose CSP pins DocsAPI scripts to its configured EuroOffice origin.
  *
  * The iframe is always cross-origin to the native app's tauri:// origin; the
- * ready/launch channel uses both source-window and exact-origin validation.
+ * ready/launch channel checks the opaque origin, exact source window and
+ * random channel. The sandbox
+ * never grants same-origin privileges, forms or popups.
  */
 export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
@@ -35,7 +37,7 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
     let started = false;
     let launchSent = false;
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== target.origin ||
+      if (event.origin !== 'null' ||
           event.source !== ref.current?.contentWindow ||
           !event.data || event.data.scope !== SCOPE ||
           event.data.channel !== target.channel) return;
@@ -47,7 +49,7 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
           channel: target.channel,
           action: 'launch',
           config: launch.config,
-        }, target.origin);
+        }, '*');
       } else if (event.data.action === 'started') {
         started = true;
       } else if (event.data.action === 'failed') {
@@ -69,11 +71,11 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
       ref={ref}
       onLoad={() => ref.current?.contentWindow?.postMessage({
         scope: SCOPE, channel: target.channel, action: 'hello',
-      }, target.origin)}
+      }, '*')}
       title={title}
       className="plain-document-isolated-frame"
       src={target.url}
-      sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-popups"
+      sandbox="allow-scripts allow-downloads"
       referrerPolicy="no-referrer"
       onError={() => onFailure('The isolated EuroOffice editor could not be loaded.')}
     />

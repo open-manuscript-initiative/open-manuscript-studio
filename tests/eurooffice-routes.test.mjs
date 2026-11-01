@@ -126,6 +126,8 @@ test('ordinary DOCX stays native and uses an owner-scoped, short-lived EuroOffic
   assert.match(embedCsp, /frame-src https:\/\/office\.example\.org/);
   assert.match(embedCsp, /frame-ancestors [^;]*tauri:\/\/localhost/);
   assert.doesNotMatch(embedCsp, /unsafe-eval|script-src https:|frame-src https:(?:;|$)/);
+  assert.match(embedCsp, /(?:^|;) ?sandbox allow-scripts allow-downloads(?:;|$)/);
+  assert.doesNotMatch(embedCsp, /allow-same-origin|connect-src 'self'/);
   const embedHtml = await embed.text();
   assert.match(embedHtml, /\/web-apps\/apps\/api\/documents\/api\.js/);
   assert.doesNotMatch(embedHtml, /synthetic-config-token|Bearer |"token":/);
