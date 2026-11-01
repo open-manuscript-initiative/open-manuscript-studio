@@ -1,6 +1,7 @@
 import type { CloudStorageProvider } from '../../CloudStorageProvider.js';
 import { CloudStorageError } from '../../errors/CloudStorageError.js';
 import { assertSafeRemoteUrl } from '../../security/remoteUrl.js';
+import { requestPinnedPublicUrl } from '../../security/connectionPinnedHttp.js';
 import type {
   CloudConnectionStatus,
   CloudListRequest,
@@ -141,9 +142,8 @@ export class WebDavProvider implements CloudStorageProvider {
 
     let response: Response;
     try {
-      response = await fetch(target, {
+      response = await requestPinnedPublicUrl(target, {
         method,
-        redirect: 'manual',
         headers: {
           Authorization: `Basic ${authorization}`,
           ...options.headers,
