@@ -118,6 +118,18 @@ private mount. Restart the worker after updating its unit, then repeat both the
 socket render and PDF-import smoke tests; this permission fix alone is not host
 acceptance.
 
+The subsequent host socket test timed out with `TasksCurrent=124`,
+`TasksMax=128`, and `pids.events` reporting `max 5`, while memory usage was
+approximately 312 MB against a 3 GiB limit. A direct CLI render in the worker's
+mount/network namespaces succeeded, but that diagnostic process did not belong
+to the worker's resource cgroup. These results identify task-limit exhaustion,
+not proof of a renderer or network failure. Use the bounded `TasksMax=512`
+setting in the unit; retain the two-job/one-per-owner admission limits and the
+memory/CPU limits. Restart and repeat the actual socket render/import tests,
+then measure peak tasks under two concurrent synthetic jobs and verify the
+`pids.events` max counter does not increase. The value is provisional until
+that host capacity test passes; never use unlimited tasks to pass acceptance.
+
 ~~~bash
 systemctl is-active omi-pdf-worker.socket omi-pdf-worker.service
 systemctl show omi-pdf-worker.service \

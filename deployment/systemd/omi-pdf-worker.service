@@ -43,7 +43,9 @@ InaccessiblePaths=-/var/www/vhosts
 TemporaryFileSystem=/tmp:rw,nosuid,nodev,size=1024M,mode=1777
 MemoryMax=3G
 CPUQuota=200%
-TasksMax=128
+# Counts threads too: 128 blocked Chromium startup in the actual host smoke test.
+# Bounded headroom for two admitted jobs; retain memory/CPU and admission limits.
+TasksMax=512
 LimitNOFILE=1024
 TimeoutStopSec=30
 KillMode=control-group
