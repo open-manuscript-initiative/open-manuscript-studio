@@ -27,21 +27,23 @@ export interface PublicationArtifactSidecarInput {
   };
 }
 
-export interface PublicationArtifactSidecarResult {
+export interface PreparedPublicationArtifactSidecar {
   buildId: string;
   sidecarFileName: string;
   sidecarText: string;
+}
+
+export interface PublicationArtifactSidecarResult extends PreparedPublicationArtifactSidecar {
   delivery: ExportWithSidecarDeliveryResult;
 }
 
 /**
- * Creates provenance from the exact artifact bytes that are subsequently saved,
- * then delivers the artifact and its .omi-build.json sidecar as one export
- * operation.
+ * Prepare provenance from the exact artifact bytes without starting a download.
+ * This lets web clients initiate each browser download from a separate click.
  */
-export async function savePublicationArtifactWithBuildSidecar(
+export async function preparePublicationArtifactWithBuildSidecar(
   input: PublicationArtifactSidecarInput,
-): Promise<PublicationArtifactSidecarResult> {
+): Promise<PreparedPublicationArtifactSidecar> {
   const bytes = new Uint8Array(await input.artifact.arrayBuffer());
   const build = createPublicationBuildManifest({
     manuscript: input.manuscript,
@@ -63,19 +65,29 @@ export async function savePublicationArtifactWithBuildSidecar(
   });
   const sidecarText = serializePublicationBuildManifest(build);
   const sidecarFileName = publicationBuildManifestFileName(input.fileName);
-  const delivery = await saveExportBlobWithSidecar(
-    input.artifact,
-    input.fileName,
-    sidecarText,
-    sidecarFileName,
-  );
-
   return {
     buildId: build.id,
     sidecarFileName,
     sidecarText,
-    delivery,
   };
+}
+
+/**
+ * Native exports still save through a platform dialog. Web callers should
+ * prepare the artifact first and offer explicit download buttons, since
+ * browsers may suppress multiple programmatic downloads after an async render.
+ */
+export async function savePublicationArtifactWithBuildSidecar(
+  input: PublicationArtifactSidecarInput,
+): Promise<PublicationArtifactSidecarResult> {
+  const prepared = await preparePublicationArtifactWithBuildSidecar(input);
+  const delivery = await saveExportBlobWithSidecar(
+    input.artifact,
+    input.fileName,
+    prepared.sidecarText,
+    prepared.sidecarFileName,
+  );
+  return { ...prepared, delivery };
 }
 
 function optionalBuildValue(

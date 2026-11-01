@@ -88,6 +88,19 @@ Print/archive mode strips active hyperlinks. Interactive mode keeps scholarly
 links such as citations, note targets, ORCID/ROR identifiers and normal web
 links.
 
+## Browser download reliability
+
+The web UI prepares the PDF and the matching `.pdf.omi-build.json` sidecar
+after the server render and provenance check, then displays **two explicit
+download buttons**. Each click invokes a single browser download in a new user
+gesture. This avoids silent suppression of two automatic downloads after an
+asynchronous render, especially on Android browsers.
+
+The document button must be used to save the PDF; the JSON is provenance
+metadata and is **not** a substitute for the PDF. A browser click only requests
+a download—it cannot prove the file reached disk. Native Studio builds retain
+the platform save-dialog flow. No API, worker sandbox or output bytes change.
+
 ## Provenance sidecar
 
 Every PDF artifact exported through the standard or live-publication workflow
