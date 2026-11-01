@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   evaluateLocalReadiness,
   summarizeGitHubIssues,
+  evaluateStrictRcGate,
 } from '../scripts/release-readiness.mjs';
 
 test('the committed Route A release-readiness files pass local structural gates', async () => {
@@ -59,4 +60,44 @@ test('GitHub evidence counts red blockers but ignores pull requests', () => {
   assert.equal(result.openIssues, 2);
   assert.equal(result.openPullRequests, 1);
   assert.deepEqual(result.blockers.map((issue) => issue.number), [10]);
+});
+
+test('strict RC gate denies open release-blockers even if all automated local tests pass', () => {
+  const decision = evaluateStrictRcGate({
+    local: { passed: true },
+    github: {
+      available: true, passed: false, missingLabels: [],
+      blockers: [
+        { number: 765, title: 'Production egress not verified' },
+        { number: 774, title: 'PDF worker deployment not verified' },
+      ],
+    },
+  });
+  assert.equal(decision.passed, false);
+  assert.match(decision.reasons.join('; '), /#765, #774/);
+  assert.equal(decision.manualSignoffRequired, true);
+});
+
+test('strict RC gate refuses unavailable GitHub evidence rather than passing open-blocker check', () => {
+  const result = evaluateStrictRcGate({ local: { passed: true }, github: { available: false } });
+  assert.equal(result.passed, false);
+  assert.match(result.reasons.join(' '), /GitHub release issue evidence is unavailable/);
+});
+
+test('strict RC gate refuses missing labels or local failures', () => {
+  const result = evaluateStrictRcGate({
+    local: { passed: false },
+    github: { available: true, passed: false, blockers: [], missingLabels: ['release-blocker'] },
+  });
+  assert.equal(result.passed, false);
+  assert.equal(result.reasons.length, 2);
+});
+
+test('strict RC can pass documented automated criteria but still needs owner and real devices', () => {
+  const result = evaluateStrictRcGate({
+    local: { passed: true },
+    github: { available: true, passed: true, blockers: [], missingLabels: [] },
+  });
+  assert.equal(result.passed, true);
+  assert.equal(result.manualSignoffRequired, true);
 });
