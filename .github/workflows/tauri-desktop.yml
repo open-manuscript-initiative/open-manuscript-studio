@@ -7,6 +7,14 @@ on:
         description: 'Optional new release tag, e.g. v0.1.0-beta.4. Must match package.json; existing releases are immutable.'
         required: false
         type: string
+      release_reviewed_sha:
+        description: 'For 1.0 RC/stable only: exact 40-char reviewed main commit SHA'
+        required: false
+        type: string
+      release_approval:
+        description: 'For 1.0 RC/stable only: enter APPROVE_1_0_RELEASE after final manual Go/No-Go'
+        required: false
+        type: string
   pull_request:
     branches:
       - main
@@ -439,6 +447,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+      issues: read
 
     steps:
       - name: Checkout exact release source
@@ -491,6 +500,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           INPUT_TAG: ${{ inputs.release_tag }}
+          INPUT_RELEASE_APPROVAL: ${{ inputs.release_approval }}
+          INPUT_REVIEWED_SHA: ${{ inputs.release_reviewed_sha }}
         run: |
           set -euo pipefail
 
@@ -520,6 +531,21 @@ jobs:
           if [[ "$tag" != "$expected_tag" ]]; then
             echo "Release tag $tag does not match package.json version $version ($expected_tag)." >&2
             exit 1
+          fi
+
+          # The normal beta channel can publish automatically, but Route A
+          # 1.0 RC/stable must not publish from a main push or tag alone.
+          # The owner must explicitly approve the exact SHA and the GitHub
+          # issue/local strict release gate must pass before any tag is created.
+          if [[ "$version" =~ ^1\.0\.0(-rc\.[0-9]+)?$ ]]; then
+            if [[ "$GITHUB_EVENT_NAME" != "workflow_dispatch" || \
+                  "${INPUT_RELEASE_APPROVAL:-}" != "APPROVE_1_0_RELEASE" || \
+                  "${INPUT_REVIEWED_SHA:-}" != "$GITHUB_SHA" ]]; then
+              echo "::error::1.0 RC/stable release requires manual Go/No-Go, reviewed SHA and explicit dispatch. No tag was created." >&2
+              exit 1
+            fi
+            GITHUB_TOKEN="$GH_TOKEN" node scripts/release-readiness.mjs \
+              --strict-local --strict-release
           fi
 
           prerelease=false
