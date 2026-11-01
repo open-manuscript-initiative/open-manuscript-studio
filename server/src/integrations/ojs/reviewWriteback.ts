@@ -1,3 +1,4 @@
+import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { createHash, createHmac } from 'node:crypto';
 
 import { ExternalPlatform } from '../../generated/prisma/client.js';
@@ -105,7 +106,7 @@ export async function writeBackSubmittedExternalReview(
       .update(canonical)
       .digest('base64url');
 
-    const response = await fetch(target, {
+    const response = await fetchPinnedPublicUrl(target, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
