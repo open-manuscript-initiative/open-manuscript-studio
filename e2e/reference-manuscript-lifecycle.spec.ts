@@ -278,11 +278,33 @@ async function exportFromUi(
     await exportFormats.getByLabel('PDF variant').selectOption(pdf.mode);
   }
 
-  const downloadPromise = page.waitForEvent('download');
-  await exportFormats.getByRole('button', { name: 'Export', exact: true }).click();
-  const download = await downloadPromise;
+  const publicationWithSidecar = format === 'pdf' || format === 'html';
+  let download: Download;
+  if (publicationWithSidecar) {
+    // PDF/HTML rendering is asynchronous; the browser can suppress synthetic
+    // downloads after the original click. Use the new explicit user gesture.
+    await exportFormats.getByRole('button', { name: 'Export', exact: true }).click();
+    await expect(
+      exportFormats.getByRole('status').filter({ hasText: 'The export is ready.' }),
+    ).toBeVisible();
+    const documentButton = exportFormats.getByRole('button', { name: /^Download document/ });
+    await expect(documentButton).toBeVisible();
+    const downloadPromise = page.waitForEvent('download');
+    await documentButton.click();
+    download = await downloadPromise;
+    // The provenance sidecar is still available independently to the reader.
+    await expect(
+      exportFormats.getByRole('button', { name: 'Download verification JSON' }),
+    ).toBeVisible();
+  } else {
+    const downloadPromise = page.waitForEvent('download');
+    await exportFormats.getByRole('button', { name: 'Export', exact: true }).click();
+    download = await downloadPromise;
+    await expect(
+      exportFormats.getByRole('status').filter({ hasText: 'Export completed.' }),
+    ).toBeVisible();
+  }
 
-  await expect(exportFormats.getByRole('status').filter({ hasText: 'Export completed.' })).toBeVisible();
   expect(download.suggestedFilename()).toMatch(fileName);
   return download;
 }
