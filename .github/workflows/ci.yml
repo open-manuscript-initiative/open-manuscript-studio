@@ -384,8 +384,12 @@ jobs:
             chmod 700 "$ROLLBACK_ROOT"
             # Fail closed if database migrations have changed; a code-only
             # rollback cannot undo a schema migration safely.
-            STUDIO_PREVIOUS_SHA="$PREVIOUS_SHA" \
-              bash scripts/production-rollback.sh snapshot "$ROLLBACK_DIR"
+            if ! STUDIO_PREVIOUS_SHA="$PREVIOUS_SHA" \
+              bash scripts/production-rollback.sh snapshot "$ROLLBACK_DIR"; then
+              echo "Pre-deployment snapshot failed. Returning the checkout to the previous commit." >&2
+              git reset --hard "$PREVIOUS_SHA"
+              exit 1
+            fi
 
             restore_on_exit() {
               original_status="$?"
@@ -393,11 +397,11 @@ jobs:
               set +e
               if [[ "$original_status" -ne 0 ]]; then
                 echo "Studio deployment failed; restoring the pre-deploy snapshot."
-              bash "$ROLLBACK_DIR/rollback.sh" restore "$ROLLBACK_DIR"
-              restore_status="$?"
-              if [[ "$restore_status" -ne 0 ]]; then
-                echo "AUTOMATIC ROLLBACK FAILED; manual recovery: bash $ROLLBACK_DIR/rollback.sh restore $ROLLBACK_DIR" >&2
-              fi
+                bash "$ROLLBACK_DIR/rollback.sh" restore "$ROLLBACK_DIR"
+                restore_status="$?"
+                if [[ "$restore_status" -ne 0 ]]; then
+                  echo "AUTOMATIC ROLLBACK FAILED; manual recovery: bash $ROLLBACK_DIR/rollback.sh restore $ROLLBACK_DIR" >&2
+                fi
               fi
               exit "$original_status"
             }
