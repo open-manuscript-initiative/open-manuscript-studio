@@ -1,3 +1,4 @@
+import { workingSession, type DocumentWorkingSession } from '../services/documentSessionManager';
 import { clearDocumentClosedState } from './documentCloseState';
 import { create } from 'zustand';
 
@@ -118,6 +119,7 @@ interface StudioState {
   discardWorkingChanges: () => void;
   revertRevision: (revisionId: RevisionId) => void;
   loadManuscript: (manuscript: LegacyOmiManuscript) => void;
+  resumeDocumentSession: (session: DocumentWorkingSession) => void;
   resetSample: () => void;
 }
 
@@ -889,6 +891,13 @@ export const useStudioStore = create<StudioState>((set) => ({
           : manuscript.sections[0]?.id ?? null,
       };
     }),
+
+  resumeDocumentSession: (session) => {
+    cancelAutomaticCheckpoint();
+    clearDocumentClosedState();
+    set({ hasOpenDocument: true, ...workingSession(session) });
+    if (session.pendingChangeSet) scheduleAutomaticCheckpoint();
+  },
 
   loadManuscript: (manuscript) => {
     cancelAutomaticCheckpoint();
