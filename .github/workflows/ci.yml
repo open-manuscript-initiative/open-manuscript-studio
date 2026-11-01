@@ -119,6 +119,10 @@ jobs:
         working-directory: server
         run: npm run typecheck
 
+      - name: Verify OIDC, ORCID and JWKS SSRF protections
+        working-directory: server
+        run: npm run test:oidc-ssrf
+
       - name: Test isolated PDF worker socket and global admission
         run: npm --prefix server run test:isolated-pdf-worker
 
