@@ -71,7 +71,9 @@ export function validatePolicy(profile) {
     (item.family === 4 && (item.address.startsWith('127.') ||
       item.address.startsWith('10.') ||
       item.address.startsWith('192.168.') ||
-      item.address.startsWith('172.') ||
+      (item.address.startsWith('172.') &&
+       Number(item.address.split('.')[1]) >= 16 &&
+       Number(item.address.split('.')[1]) <= 31) ||
       item.address.startsWith('169.254.'))) ||
     (item.family === 6 && (item.address === '::1' || /^f[cd]/i.test(item.address)))
   ))) {
@@ -122,13 +124,8 @@ export function isStrictPublicCidr(cidr, family) {
     const mask = shift === 32 ? 0 : (0xffffffff << shift) >>> 0;
     const start = (ip & mask) >>> 0;
     const end = (start | (~mask >>> 0)) >>> 0;
-    const reserved = [
-      [0, 0], [10, 8], [100, 6, 64, 127], [127, 8],
-      [169, 16, 254], [172, 12, 16, 31], [192, 8, 0], [198, 7, 18, 19],
-      [203, 24, 113], [224, 3],
-    ];
-    // Use the exact standards-focused blocked networks as the final test;
-    // the coarse list above is not used to avoid rejecting public 192.x.
+    // Require no overlap with reserved/private ranges, even when the
+    // operator mistakenly enters a prefix broader than one public host.
     const parseV4 = str => str.split('.').reduce((n, part) => ((n << 8) | Number(part)) >>> 0, 0);
     return RESERVED_V4.every(net => {
       const [base, length] = net.split('/');
