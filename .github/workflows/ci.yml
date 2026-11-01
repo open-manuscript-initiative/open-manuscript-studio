@@ -66,6 +66,9 @@ jobs:
       - name: Verify safe browser export delivery (CodeQL #74)
         run: node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/browser-blob-download.test.ts
 
+      - name: Verify semantic core import boundaries (A10 incremental)
+        run: npm run check:core-boundaries
+
       - name: Run tests
         run: npm test
 
