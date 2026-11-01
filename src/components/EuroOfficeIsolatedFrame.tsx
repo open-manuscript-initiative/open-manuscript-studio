@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EuroOfficeLaunch } from '../services/euroOfficeApi';
-import { getStudioApiBaseUrl } from '../services/studioServer';
+import { DEFAULT_STUDIO_API_ORIGIN, getStudioApiBaseUrl } from '../services/studioServer';
 
 const SCOPE = 'omi-eurooffice';
 
@@ -21,8 +21,10 @@ interface IsolatedFrameProps {
 export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [target] = useState(() => {
-    const base = getStudioApiBaseUrl();
-    if (!base) throw new Error('The selected Studio server is unavailable for EuroOffice.');
+    // Native dev shells may use Vite's relative API proxy without a configured
+    // base URL. The isolated editor needs an absolute HTTP(S) origin; use the
+    // same documented public default as installed Studio when no override exists.
+    const base = getStudioApiBaseUrl() || DEFAULT_STUDIO_API_ORIGIN;
     const url = new URL('/api/v1/eurooffice/embed-host', base);
     const channel = crypto.randomUUID().replaceAll('-', '');
     url.searchParams.set('channel', channel);
