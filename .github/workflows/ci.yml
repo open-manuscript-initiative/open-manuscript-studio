@@ -74,6 +74,11 @@ jobs:
           path: test-results/draft-model-assessment.json
           retention-days: 14
 
+      - name: Verify production rollback snapshot and migration safety
+        run: |
+          bash -n scripts/production-rollback.sh
+          node --test tests/production-rollback.test.mjs
+
       - name: Run release hardening unit gates
         run: npm run test:release-hardening
 
@@ -378,7 +383,7 @@ jobs:
             PREVIOUS_SHA="$(git rev-parse HEAD)"
             git reset --hard "$COMMIT_SHA"
 
-            ROLLBACK_ROOT="/var/www/vhosts/openmanuscript.org/studio/.omi-deploy-rollbacks"
+            ROLLBACK_ROOT="$HOME/.omi-studio-rollbacks"
             ROLLBACK_DIR="$ROLLBACK_ROOT/${{ github.run_id }}-${COMMIT_SHA:0:12}"
             mkdir -p "$ROLLBACK_ROOT"
             chmod 700 "$ROLLBACK_ROOT"
