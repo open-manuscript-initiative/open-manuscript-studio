@@ -36,6 +36,7 @@ test('glib advisory introduced at 0.15 and fixed starting 0.20', () => {
     assert.equal(glibVersionAffected(version), false);
   }
   assert.equal(glibVersionAffected('not-a-semver'), null);
+  assert.equal(glibVersionAffected('0.20.0-rc.1'), null, 'unreleased 0.20 prerelease is not a verified fix');
 });
 
 test('both glib 0.18 and 0.20 must remain affected until the old copy is gone', () => {
