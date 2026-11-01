@@ -1,5 +1,7 @@
+import { createStudioDocumentSessions } from './app/documentSessions';
 import {
   useCallback,
+  useSyncExternalStore,
   useEffect,
   useRef,
   useState,
@@ -13,7 +15,6 @@ import { CollaborationInbox } from './components/CollaborationInbox';
 
 import {
   getRestoredDesktopSession,
-  updateDesktopSessionPersistence,
 } from './app/lastSessionPersistence';
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
@@ -21,8 +22,6 @@ import { ClosedDocumentScreen } from './components/ClosedDocumentScreen';
 import { ProofreadingController } from './components/ProofreadingController';
 import {
   DesktopDocumentTabs,
-  type DesktopDocumentTabId,
-  type DesktopDocumentTabItem,
 } from './components/DesktopDocumentTabs';
 import { StudioUpdatePrompt } from './components/DesktopUpdatePrompt';
 import { EditorPane } from './components/EditorPane';
@@ -52,7 +51,6 @@ import {
   saveLocalManuscript,
   saveLocalManuscriptAs,
 } from './services/nativeManuscriptFile';
-import type { OmiManuscript } from './types/omi';
 
 import './styles/auth.css';
 import './styles/history.css';
@@ -68,10 +66,6 @@ type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
 type AssignmentAwareLaunch = OjsLaunchPayload & {
   actorMode?: 'editor' | 'author' | string | null;
   assignmentContext?: OjsAssignmentLaunchContext | null;
-};
-
-type DesktopTabSession = DesktopDocumentTabItem & {
-  manuscript: OmiManuscript;
 };
 
 const LEGACY_OJS_LAUNCH_STORAGE_KEY = 'omi:ojs-launch';
@@ -156,11 +150,7 @@ function StudioApplication() {
   const hasOpenDocument = useStudioStore((state) => state.hasOpenDocument);
   const activeManuscriptId = useStudioStore((state) => state.manuscript.id);
   const restoredDesktopSession = useRef(
-    !mobileStudio && !reviewMode ? getRestoredDesktopSession() : null,
-  );
-  const initialDesktopManuscript = useRef(useStudioStore.getState().manuscript);
-  const initialDesktopTabId = useRef<DesktopDocumentTabId>(
-    restoredDesktopSession.current?.activeTabId ?? crypto.randomUUID(),
+    !reviewMode ? getRestoredDesktopSession() : null,
   );
   const [menuOpen, setMenuOpen] = useState(false);
   const [plainDocumentWorkspace, setPlainDocumentWorkspace] = useState<{
@@ -182,31 +172,12 @@ function StudioApplication() {
     manuscriptId: string;
     context: OmpNativeAuthorContext;
   } | null>(null);
-  const [desktopTabs, setDesktopTabs] = useState<DesktopTabSession[]>(() => {
-    const restored = restoredDesktopSession.current;
-    if (restored?.tabs.length) {
-      return restored.tabs.map((tab) => ({
-        id: tab.id,
-        manuscriptId: tab.manuscriptId,
-        title: tab.title,
-        manuscript: tab.manuscript,
-      }));
-    }
-
-    if (!useStudioStore.getState().hasOpenDocument) return [];
-
-    return [{
-      id: initialDesktopTabId.current,
-      manuscriptId: initialDesktopManuscript.current.id,
-      title: getDocumentTabTitle(initialDesktopManuscript.current),
-      manuscript: initialDesktopManuscript.current,
-    }];
-  });
-  const [activeDesktopTabId, setActiveDesktopTabId] = useState<DesktopDocumentTabId>(
-    restoredDesktopSession.current?.activeTabId ?? initialDesktopTabId.current,
-  );
-  const desktopTabsRef = useRef(desktopTabs);
-  const activeDesktopTabIdRef = useRef(activeDesktopTabId);
+  const [documentSessions] = useState(() => createStudioDocumentSessions(restoredDesktopSession.current));
+  const sessionSnapshot = useSyncExternalStore(documentSessions.subscribe, documentSessions.getSnapshot);
+  const { tabs: desktopTabs, activeTabId: activeDesktopTabId } = sessionSnapshot;
+  useEffect(() => reviewMode ? undefined : documentSessions.connect(), [documentSessions, reviewMode]);
+  const activateDesktopTab = documentSessions.activate;
+  const closeDesktopTab = documentSessions.close;
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
 
   useEffect(() => {
@@ -223,108 +194,6 @@ function StudioApplication() {
   // Effect cleanup must not discard a redeemed one-time token. Reuse the
   // request when React replays the effect while its first fetch is pending.
   const ojsHandoffRequests = useRef(new Map<string, Promise<AssignmentAwareLaunch | null>>());
-
-  useEffect(() => {
-    if (reviewMode || mobileStudio) return;
-
-    updateDesktopSessionPersistence({
-      tabs: desktopTabs.map((tab) => ({
-        id: tab.id,
-        manuscriptId: tab.manuscriptId,
-        title: tab.title,
-        manuscript: tab.manuscript,
-      })),
-      activeTabId: activeDesktopTabId,
-    });
-  }, [activeDesktopTabId, desktopTabs, mobileStudio, reviewMode]);
-
-  useEffect(() => {
-    if (reviewMode) return;
-
-    return useStudioStore.subscribe((state, previousState) => {
-      if (state.manuscript === previousState.manuscript || !state.hasOpenDocument) return;
-
-      // Zustand can publish several manuscript mutations before React flushes
-      // its state updates (e.g. open + rename + open another manuscript).
-      // Reconcile against the synchronous ref, never a queued React updater:
-      // otherwise an older updater can overwrite a newly opened tab.
-      const tabs = desktopTabsRef.current;
-      const activeId = activeDesktopTabIdRef.current;
-      const activeTab = tabs.find((tab) => tab.id === activeId);
-      const manuscript = state.manuscript;
-      let nextActiveId = activeId;
-      let nextTabs: DesktopTabSession[];
-
-      if (!activeTab) {
-        const nextTab = createDesktopTabSession(crypto.randomUUID(), manuscript);
-        nextTabs = [...tabs, nextTab];
-        nextActiveId = nextTab.id;
-      } else if (manuscript.id !== activeTab.manuscriptId) {
-        const existing = tabs.find((tab) => tab.manuscriptId === manuscript.id);
-        if (existing) {
-          nextActiveId = existing.id;
-          nextTabs = tabs.map((tab) => tab.id === existing.id
-            ? createDesktopTabSession(tab.id, manuscript)
-            : tab);
-        } else {
-          const nextTab = createDesktopTabSession(crypto.randomUUID(), manuscript);
-          nextTabs = [...tabs, nextTab];
-          nextActiveId = nextTab.id;
-        }
-      } else {
-        nextTabs = tabs.map((tab) => tab.id === activeId
-          ? createDesktopTabSession(tab.id, manuscript)
-          : tab);
-      }
-
-      // Update refs before scheduling React rendering, so a subsequent
-      // synchronous store event always sees every prior opened manuscript.
-      desktopTabsRef.current = nextTabs;
-      setDesktopTabs(nextTabs);
-      if (nextActiveId !== activeId) {
-        activeDesktopTabIdRef.current = nextActiveId;
-        setActiveDesktopTabId(nextActiveId);
-      }
-    });
-  }, [reviewMode]);
-
-  const activateDesktopTab = useCallback((tabId: DesktopDocumentTabId) => {
-    if (tabId === activeDesktopTabIdRef.current) return;
-
-    useStudioStore.getState().checkpoint('manual');
-    const target = desktopTabsRef.current.find((tab) => tab.id === tabId);
-    if (!target) return;
-
-    activeDesktopTabIdRef.current = tabId;
-    setActiveDesktopTabId(tabId);
-    useStudioStore.getState().loadManuscript(target.manuscript);
-  }, []);
-
-  const closeDesktopTab = useCallback((tabId: DesktopDocumentTabId) => {
-    const tabs = desktopTabsRef.current;
-    if (tabs.length <= 1) return;
-
-    const closingIndex = tabs.findIndex((tab) => tab.id === tabId);
-    if (closingIndex < 0) return;
-
-    if (tabId !== activeDesktopTabIdRef.current) {
-      const nextTabs = tabs.filter((tab) => tab.id !== tabId);
-      desktopTabsRef.current = nextTabs;
-      setDesktopTabs(nextTabs);
-      return;
-    }
-
-    useStudioStore.getState().checkpoint('manual');
-    const nextTabs = tabs.filter((tab) => tab.id !== tabId);
-    const nextActive = nextTabs[Math.min(closingIndex, nextTabs.length - 1)];
-    if (!nextActive) return;
-
-    desktopTabsRef.current = nextTabs;
-    setDesktopTabs(nextTabs);
-    activeDesktopTabIdRef.current = nextActive.id;
-    setActiveDesktopTabId(nextActive.id);
-    useStudioStore.getState().loadManuscript(nextActive.manuscript);
-  }, []);
 
   useEffect(() => {
     if (reviewMode) {
@@ -570,21 +439,4 @@ function StudioApplication() {
       />
     </AppLayout>
   );
-}
-
-function createDesktopTabSession(
-  id: DesktopDocumentTabId,
-  manuscript: OmiManuscript,
-): DesktopTabSession {
-  return {
-    id,
-    manuscriptId: manuscript.id,
-    title: getDocumentTabTitle(manuscript),
-    manuscript,
-  };
-}
-
-function getDocumentTabTitle(manuscript: OmiManuscript): string {
-  const title = manuscript.title?.trim();
-  return title || 'Untitled manuscript';
 }

@@ -1,3 +1,4 @@
+import { extensionRegistryRouter } from './routes/extensionRegistryRoutes.js';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -170,7 +171,8 @@ app.use('/api', transkribusRouter); // Legacy compatibility facade.
 app.use('/api', personalReferenceLibraryRouter);
 app.use('/api', directSubmissionRouter);
 app.use('/api', agentReviewRouter);
-app.use('/api', integrationExecutionRouter);
+app.use(['/api/v1', '/api'], extensionRegistryRouter); // Shared extension contract and legacy facade.
+app.use('/api', integrationExecutionRouter); // Extension compatibility facade; shared handlers.
 app.use('/api/native-editorial', nativeEditorialWorkflowRouter);
 app.use('/api', proofreadingRouter);
 app.use('/api', publishingConnectionRouter);

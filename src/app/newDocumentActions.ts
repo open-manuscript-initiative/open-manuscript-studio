@@ -3,7 +3,6 @@ import { useStudioStore } from './useStudioStore';
 import { createBlankManuscript } from '../document/createBlankManuscript';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import type { OmiDocumentKind, OmiVolumeKind } from '../model/documentProfile';
-import { clearCurrentManuscriptFilePath } from '../services/nativeManuscriptFile';
 import type { OmiManuscript } from '../types/omi';
 
 export function createAndOpenBlankOmiDocument(input: {
@@ -36,7 +35,6 @@ export function createAndOpenBlankOmiDocument(input: {
         : undefined,
     } : undefined,
   });
-  clearCurrentManuscriptFilePath();
   clearDocumentClosedState();
   useStudioStore.getState().loadManuscript(manuscript);
   return manuscript;

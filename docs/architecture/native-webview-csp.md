@@ -1,5 +1,7 @@
 # Tauri main-WebView CSP and EuroOffice isolation
 
+> 2026-11-01 repair: [ADR-030](adr-030-session-integration-and-release-boundaries.md) supersedes the same-origin handshake below. The new iframe and HTTP CSP omit `allow-same-origin` and use an opaque origin. Parent verifies `event.origin === 'null'`, exact `event.source` and the random channel; the launch targets that exact iframe with `postMessage('*')`, required for opaque origins. Host `connect-src` excludes API self. Deploy matching API/native versions together in the controlled tester window. Real Office/native acceptance remains required.
+
 Status: **staged security hardening / beta acceptance required** (issue #770). As the hosted Studio currently serves a limited tester cohort, the native changes may be accepted through a controlled beta deployment **after CI and rollback verification**, without provisioning a separate test server. The CSP is active in the proposed Tauri source, but completion of #770 still requires verified Windows and Android behavior. Do not mark the issue resolved based on static tests alone.
 
 ## Threat and trust boundaries

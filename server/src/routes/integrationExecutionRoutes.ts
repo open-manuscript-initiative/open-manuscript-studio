@@ -9,7 +9,6 @@ import {
   translateWithDeepL,
 } from '../integrations/integrationExecution.js';
 import { prisma } from '../lib/prisma.js';
-import { extensionManifestSchema, INTEGRATION_EXTENSION_API_CAPABILITIES } from '../integrations/extensionManifestSchema.js';
 import {
   requireSession,
   type AuthenticatedRequest,
@@ -140,98 +139,6 @@ integrationExecutionRouter.get(
         createdAt: event.created_at.toISOString(),
       })),
     });
-  },
-);
-
-// Explicit, versioned capability discovery. Registration is not execution or
-// authorization to access a manuscript, review, secret or publication action.
-integrationExecutionRouter.get(
-  '/integrations/extensions/capabilities',
-  requireSession,
-  (_request: AuthenticatedRequest, response) => {
-    response.status(200).json(INTEGRATION_EXTENSION_API_CAPABILITIES);
-  },
-);
-
-integrationExecutionRouter.get(
-  '/integrations/extensions',
-  requireSession,
-  async (request: AuthenticatedRequest, response) => {
-    const rows = await prisma.$queryRaw<Array<{
-      id: string;
-      extension_id: string;
-      manifest: unknown;
-      enabled: boolean;
-      created_at: Date;
-      updated_at: Date;
-    }>>`
-      SELECT id, extension_id, manifest, enabled, created_at, updated_at
-      FROM integration_extension_manifests
-      WHERE user_id = ${request.authUserId!}::uuid
-      ORDER BY extension_id ASC
-    `;
-    response.status(200).json({
-      extensions: rows.map((row) => ({
-        id: row.id,
-        extensionId: row.extension_id,
-        manifest: row.manifest,
-        enabled: row.enabled,
-        createdAt: row.created_at.toISOString(),
-        updatedAt: row.updated_at.toISOString(),
-      })),
-    });
-  },
-);
-
-integrationExecutionRouter.post(
-  '/integrations/extensions',
-  requireSession,
-  async (request: AuthenticatedRequest, response) => {
-    const input = extensionManifestSchema.safeParse(request.body);
-    if (!input.success) {
-      response.status(400).json({
-        error: {
-          code: 'INVALID_EXTENSION_MANIFEST',
-          message: 'The OMI integration extension manifest is invalid.',
-          fields: input.error.flatten().fieldErrors,
-        },
-      });
-      return;
-    }
-
-    const manifest = JSON.stringify(input.data);
-    const rows = await prisma.$queryRaw<Array<{ id: string; created: boolean }>>`
-      INSERT INTO integration_extension_manifests
-        (id, user_id, extension_id, manifest, enabled)
-      VALUES
-        (${randomUUID()}::uuid, ${request.authUserId!}::uuid, ${input.data.id}, ${manifest}::jsonb, TRUE)
-      ON CONFLICT (user_id, extension_id)
-      DO UPDATE SET manifest = EXCLUDED.manifest, enabled = TRUE, updated_at = CURRENT_TIMESTAMP
-      RETURNING id, (created_at = updated_at) AS created
-    `;
-    response.status(rows[0]?.created ? 201 : 200).json({
-      id: rows[0]?.id,
-      manifest: input.data,
-      enabled: true,
-    });
-  },
-);
-
-integrationExecutionRouter.delete(
-  '/integrations/extensions/:extensionId',
-  requireSession,
-  async (request: AuthenticatedRequest, response) => {
-    const extensionId = z.string().trim().min(1).max(128).safeParse(request.params.extensionId);
-    if (!extensionId.success) {
-      response.status(400).json({ error: { code: 'INVALID_EXTENSION_ID', message: 'Invalid extension id.' } });
-      return;
-    }
-    await prisma.$executeRaw`
-      DELETE FROM integration_extension_manifests
-      WHERE user_id = ${request.authUserId!}::uuid
-        AND extension_id = ${extensionId.data}
-    `;
-    response.status(204).end();
   },
 );
 

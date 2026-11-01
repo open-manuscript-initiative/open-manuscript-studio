@@ -5,6 +5,7 @@ import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import {
   OMI_CONTAINER_MEDIA_TYPE,
   OMI_CONTAINER_VERSION,
+  OMI_CONTAINER_SERIALIZATION_PROFILE,
   isSafeContainerPath,
   type OmiContainerDiagnostic,
   type OmiContainerManifest,
@@ -412,6 +413,11 @@ function validateManifest(
   diagnostics: OmiContainerDiagnostic[],
 ): void {
   if (!manifest) return;
+  if (manifest.serializationProfile !== undefined &&
+      manifest.serializationProfile !== OMI_CONTAINER_SERIALIZATION_PROFILE) {
+    diagnostics.push(errorDiagnostic('unsupported-container-profile',
+      'The declared container serialization profile is not supported. The package must not be overwritten.'));
+  }
   if (
     manifest.format !== 'OMI' ||
     manifest.mediaType !== OMI_CONTAINER_MEDIA_TYPE ||

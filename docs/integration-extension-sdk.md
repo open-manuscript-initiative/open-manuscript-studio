@@ -142,6 +142,8 @@ API-v1 manifests must use a semantic implementation version (for example `1.2.0`
 
 **Registering an extension remains a declaration, not activation or access approval.** Plugin dependency resolution, executable extensions, sandboxing, event subscriptions, general scholarly object APIs and independent conformance verification remain future work. Refer to [phase 9 stabilization evidence](stabilization/spec-350-300-310-phase9.md) for test and release boundaries.
 
+The unversioned `/api/integrations/extensions` surface remains a compatibility facade over the same router, application service and owner-scoped repository. Registry declarations still grant no manuscript access.
+
 ## Compatibility principle
 
 Extensions must declare the API version they target. Studio rejects unknown manifest API versions. This is deliberate: an extension must never gain broader permissions because a future Studio version interpreted an older manifest differently.
