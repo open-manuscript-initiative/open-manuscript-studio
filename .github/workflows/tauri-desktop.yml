@@ -20,6 +20,8 @@ on:
       - 'src-tauri/icons/icon.svg'
       - 'src-tauri/Cargo.toml'
       - 'src-tauri/Cargo.lock'
+      - 'scripts/check-tauri-glib-risk.mjs'
+      - 'tests/tauri-glib-risk.test.mjs'
       - 'src-tauri/tauri.conf.json'
       - 'src-tauri/tauri.android.conf.json'
       - 'scripts/configure-android-modern-ui.mjs'
@@ -102,6 +104,13 @@ jobs:
       - name: Fetch locked Rust dependencies
         run: cargo fetch --manifest-path src-tauri/Cargo.toml --locked
 
+      - name: Trace inherited Linux GTK/glib advisory (issue 271)
+        if: matrix.artifact == 'linux-x86_64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-tauri-glib-risk.mjs
+          cargo tree --manifest-path src-tauri/Cargo.toml --locked --target x86_64-unknown-linux-gnu --invert glib
       - name: Generate Tauri application icons
         run: npm run icons:generate
 
