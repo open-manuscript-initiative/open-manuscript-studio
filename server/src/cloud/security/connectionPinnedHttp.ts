@@ -202,10 +202,15 @@ export async function fetchPinnedPublicUrl(
           responseHeaders.set(key, value);
         }
       }
-      const body = status === 204 || status === 205 || status === 304
+      // Manual redirect callers need only Location/status. Abandon any
+      // redirect body immediately so an adversarial endpoint cannot keep
+      // a response stream/socket alive between validated redirect hops.
+      const isRedirect = status >= 300 && status < 400;
+      const body = isRedirect || status === 204 || status === 205
         ? null
         : (Readable.toWeb(message) as unknown as ReadableStream);
       const response = new Response(body, { status, headers: responseHeaders });
+      if (isRedirect) message.destroy();
       // Native fetch supplies the final URL; OJS relies on this field while
       // walking same-origin redirects. The pinned transport never redirects.
       Object.defineProperty(response, 'url', { value: target.toString() });
