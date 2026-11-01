@@ -102,6 +102,11 @@ export function runPdfSubprocess(
       terminatePdfProcessTree(child);
       finish(error);
     });
+    child.once('exit', () => {
+      // 'close' waits for stdout/stderr: an orphaned browser may still hold
+      // inherited pipe descriptors. Kill descendants at parent exit first.
+      if (process.platform !== 'win32') terminatePdfProcessTree(child);
+    });
     child.once('close', (exitCode) => {
       // A CLI may exit 0 while leaving a background Chrome descendant.
       if (process.platform !== 'win32') terminatePdfProcessTree(child);
