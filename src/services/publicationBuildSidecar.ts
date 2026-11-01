@@ -38,9 +38,8 @@ export interface PublicationArtifactSidecarResult extends PreparedPublicationArt
 }
 
 /**
- * Creates provenance from the exact artifact bytes that are subsequently saved,
- * then delivers the artifact and its .omi-build.json sidecar as one export
- * operation.
+ * Prepare provenance from the exact artifact bytes without starting a download.
+ * This lets web clients initiate each browser download from a separate click.
  */
 export async function preparePublicationArtifactWithBuildSidecar(
   input: PublicationArtifactSidecarInput,
