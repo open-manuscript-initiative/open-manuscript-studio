@@ -47,11 +47,14 @@ jobs:
           set -euo pipefail
           # Feed only the staged IP directives to a synthetic oneshot unit.
           # systemd-analyze checks syntax without installing or activating it.
-          {
-            printf '[Unit]\\nDescription=OMI API egress syntax smoke\\n'
-            printf '[Service]\\nType=oneshot\\nExecStart=/usr/bin/true\\n'
-            grep '^IPAddress' deployment/systemd/omi-studio-api-egress-shared-uid.conf
-          } > "$RUNNER_TEMP/omi-api-egress-smoke.service"
+          cat > "$RUNNER_TEMP/omi-api-egress-smoke.service" <<'UNIT'
+          [Unit]
+          Description=OMI API egress syntax smoke
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/bin/true
+          UNIT
+          grep '^IPAddress' deployment/systemd/omi-studio-api-egress-shared-uid.conf >> "$RUNNER_TEMP/omi-api-egress-smoke.service"
           systemd-analyze verify "$RUNNER_TEMP/omi-api-egress-smoke.service"
       - name: Offline nftables syntax validation (never apply)
         shell: bash
