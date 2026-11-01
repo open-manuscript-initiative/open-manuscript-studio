@@ -29,6 +29,8 @@ Before this review, the workflow ran `release:readiness --strict-local --github`
 
 The accompanying fix introduces an **opt-in** `--strict-release` mode, exposed by the manual `1.0 Readiness` workflow dispatch `strict_release` boolean. It fails closed when GitHub evidence cannot be fetched or required labels are missing, and it fails while any open `release-blocker` exists. Ordinary PR/beta CI keeps `--strict-local` and may pass with warnings; the strict RC check must be run separately before owner approval. **Even a successful strict RC run does not satisfy physical-device, host-security or Go/No-Go manual gates.**
 
+The GitHub Release workflow also contained an automatic publication path for every new version tag on `main`. For the `1.0.0-rc.N` and `1.0.0` versions this could bypass the owner Go/No-Go. The accompanying change keeps automatic publishing for ordinary beta versions but requires **manual workflow dispatch**, the explicit `APPROVE_1_0_RELEASE` approval phrase, exact `release_reviewed_sha` equal to the build commit, and a passing strict readiness check **before the tag is created**. This is an operational safeguard, not a replacement for genuine owner/device sign-off.
+
 The #765 and #774 tickets carry `release-blocker` + `manual-test` labels. #271 carries `external-dependency`. #390 carries `rc-required` + `manual-test`. The two production security issues must **not** be closed by CI alone; attach redacted, dated, commit-associated evidence from the real Plesk server.
 
 ## 4. Proposed sequence and dates
