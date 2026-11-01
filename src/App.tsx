@@ -323,9 +323,7 @@ function StudioApplication() {
     setDesktopTabs(nextTabs);
     activeDesktopTabIdRef.current = nextActive.id;
     setActiveDesktopTabId(nextActive.id);
-    switchingDesktopTabRef.current = true;
     useStudioStore.getState().loadManuscript(nextActive.manuscript);
-    switchingDesktopTabRef.current = false;
   }, []);
 
   useEffect(() => {
