@@ -1,8 +1,17 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import { createRemoteJWKSet, decodeJwt, jwtVerify, type JWTPayload } from 'jose';
+import { decodeJwt, jwtVerify, type JWTPayload } from 'jose';
 
 import { env } from '../config/env.js';
+import { fetchPinnedPublicUrl } from '../cloud/security/connectionPinnedHttp.js';
+import {
+  assertOidcIssuerBinding,
+  assertOidcRemoteUrl,
+  createPinnedRemoteJWKSet,
+  fetchOidcDiscovery,
+  fetchOidcUserInfo,
+  readOidcJson,
+} from './security/oidcMetadataHttp.js';
 
 export type OidcProviderKey = 'omi' | 'google' | 'microsoft' | 'oidc';
 
@@ -116,7 +125,7 @@ export async function buildOidcAuthorization(input: {
   codeVerifier: string;
 }): Promise<string> {
   const discovery = await getDiscovery(input.provider.issuer);
-  const authorizeUrl = new URL(discovery.authorization_endpoint);
+  const authorizeUrl = assertOidcRemoteUrl(discovery.authorization_endpoint, 'OIDC authorization endpoint');
   authorizeUrl.searchParams.set('client_id', input.provider.clientId);
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('scope', input.provider.key === 'omi' ? 'openid profile email orcid' : 'openid profile email');
@@ -153,17 +162,18 @@ export async function exchangeOidcCode(input: {
     body.set('client_secret', input.provider.clientSecret);
   }
 
-  const response = await fetch(discovery.token_endpoint, {
+  const response = await fetchPinnedPublicUrl(assertOidcRemoteUrl(discovery.token_endpoint, 'OIDC token endpoint'), {
     method: 'POST',
     headers,
     body,
+    redirect: 'error',
     signal: AbortSignal.timeout(20_000),
   });
   if (!response.ok) {
     const preview = (await response.text()).slice(0, 300);
     throw new Error(`OIDC token exchange failed with HTTP ${response.status}${preview ? `: ${preview}` : ''}`);
   }
-  return await response.json() as OidcTokenResponse;
+  return readOidcJson<OidcTokenResponse>(response, 128 * 1024);
 }
 
 export async function validateOidcToken(input: {
@@ -190,7 +200,7 @@ export async function validateOidcToken(input: {
     verificationDiscovery = await getDiscovery(concreteIssuer);
   }
 
-  const jwks = createRemoteJWKSet(new URL(verificationDiscovery.jwks_uri));
+  const jwks = createPinnedRemoteJWKSet(verificationDiscovery.jwks_uri);
   const { payload } = await jwtVerify(input.token.id_token, jwks, {
     issuer: verificationDiscovery.issuer,
     audience: input.provider.clientId,
@@ -249,51 +259,54 @@ async function getDiscovery(issuer: string): Promise<DiscoveryDocument> {
   const normalized = issuer.replace(/\/$/, '');
   let cached = discoveryCache.get(normalized);
   if (!cached) {
-    cached = fetchDiscovery(normalized);
+    cached = fetchDiscovery(normalized).catch((error: unknown) => {
+      discoveryCache.delete(normalized);
+      throw error;
+    });
     discoveryCache.set(normalized, cached);
   }
   return cached;
 }
 
 async function fetchDiscovery(issuer: string): Promise<DiscoveryDocument> {
-  const response = await fetch(`${issuer}/.well-known/openid-configuration`, {
-    headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!response.ok) throw new Error(`OpenID discovery failed with HTTP ${response.status}.`);
+  const payload = await fetchOidcDiscovery(issuer);
+  const discoveredIssuer = payload.issuer;
+  const authorization = payload.authorization_endpoint;
+  const token = payload.token_endpoint;
+  const jwks = payload.jwks_uri;
 
-  const payload = await response.json() as Partial<DiscoveryDocument>;
   if (
-    typeof payload.issuer !== 'string' || !payload.issuer ||
-    typeof payload.authorization_endpoint !== 'string' || !payload.authorization_endpoint ||
-    typeof payload.token_endpoint !== 'string' || !payload.token_endpoint ||
-    typeof payload.jwks_uri !== 'string' || !payload.jwks_uri
+    typeof discoveredIssuer !== 'string' || !discoveredIssuer ||
+    typeof authorization !== 'string' || !authorization ||
+    typeof token !== 'string' || !token ||
+    typeof jwks !== 'string' || !jwks
   ) {
     throw new Error('OpenID discovery response is incomplete.');
   }
+  assertOidcIssuerBinding(issuer, discoveredIssuer);
+  assertOidcRemoteUrl(authorization, 'OIDC authorization endpoint');
+  assertOidcRemoteUrl(token, 'OIDC token endpoint');
+  assertOidcRemoteUrl(jwks, 'OIDC JWKS endpoint');
+
+  const userinfo = typeof payload.userinfo_endpoint === 'string'
+    ? payload.userinfo_endpoint
+    : undefined;
+  if (userinfo) assertOidcRemoteUrl(userinfo, 'OIDC UserInfo endpoint');
 
   return {
-    issuer: payload.issuer,
-    authorization_endpoint: payload.authorization_endpoint,
-    token_endpoint: payload.token_endpoint,
-    jwks_uri: payload.jwks_uri,
-    ...(typeof payload.userinfo_endpoint === 'string' ? { userinfo_endpoint: payload.userinfo_endpoint } : {}),
+    issuer: discoveredIssuer,
+    authorization_endpoint: authorization,
+    token_endpoint: token,
+    jwks_uri: jwks,
+    ...(userinfo ? { userinfo_endpoint: userinfo } : {}),
     ...(Array.isArray(payload.token_endpoint_auth_methods_supported)
-      ? { token_endpoint_auth_methods_supported: payload.token_endpoint_auth_methods_supported }
+      ? { token_endpoint_auth_methods_supported: payload.token_endpoint_auth_methods_supported.filter((value): value is string => typeof value === 'string') }
       : {}),
   };
 }
 
 async function fetchUserInfo(endpoint: string, accessToken: string): Promise<JWTPayload> {
-  const response = await fetch(endpoint, {
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!response.ok) throw new Error(`OpenID UserInfo request failed with HTTP ${response.status}.`);
-  return await response.json() as JWTPayload;
+  return await fetchOidcUserInfo(endpoint, accessToken) as JWTPayload;
 }
 
 function claimString(value: unknown): string | undefined {
