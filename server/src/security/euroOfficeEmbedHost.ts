@@ -51,8 +51,14 @@ function isolatedBootstrap(
       scope?: string; channel?: string; action?: string;
       config?: Record<string, unknown> & { token?: string }
     } | null;
-    if (!message || message.scope !== scope || message.channel !== channel ||
-        message.action !== 'launch' || !ready ||
+    if (!message || message.scope !== scope || message.channel !== channel) return;
+    // Parent and child can load in either order. A second READY response to
+    // an explicit HELLO avoids dropping the session on fast cached loads.
+    if (message.action === 'hello') {
+      if (ready) report('ready');
+      return;
+    }
+    if (message.action !== 'launch' || !ready ||
         !message.config || typeof message.config !== 'object' ||
         typeof message.config.token !== 'string') return;
     try {
