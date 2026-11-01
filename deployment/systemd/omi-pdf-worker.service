@@ -10,7 +10,8 @@ Group=omi-pdf-worker
 WorkingDirectory=/opt/omi-pdf-worker
 ExecStart=/opt/plesk/node/24/bin/node /opt/omi-pdf-worker/workers/pdfWorkerServer.js
 Environment=NODE_ENV=production
-Environment=PATH=/usr/local/bin:/usr/bin:/bin
+# Vivliostyle uses an env-node launcher; pin child processes to Plesk Node 24 too.
+Environment=PATH=/opt/plesk/node/24/bin:/usr/local/bin:/usr/bin:/bin
 Environment=VIVLIOSTYLE_BIN=/usr/local/bin/vivliostyle
 # Use the native Google Chrome Stable .deb executable; the Ubuntu 24.04
 # chromium name typically resolves to the Snap launcher instead.

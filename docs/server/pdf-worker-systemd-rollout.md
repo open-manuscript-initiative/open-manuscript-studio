@@ -8,6 +8,8 @@
 
 The Studio API submits bounded PDF-import and HTML-to-PDF-render requests over an AF_UNIX socket owned by systemd. No TCP worker port is opened. A separately owned non-root systemd service runs Poppler and Vivliostyle/Chromium. The API secrets and databases are not passed to this worker. Worker modules are installed under /opt/omi-pdf-worker, outside Plesk vhosts.
 
+The worker and its Node-based CLI children both use Plesk Node 24: the unit pins both `ExecStart` and the leading `PATH` entry. An absolute Node 24 `ExecStart` alone does not control Vivliostyle’s `/usr/bin/env node` launcher; leaving `/usr/bin` first can still select the host’s Node 18.
+
 The example units enforce PrivateNetwork=yes, IPAddressDeny=any and IPAddressAllow=localhost (loopback only **inside** the worker's empty network namespace, for Chromium's internal resources), ProtectHome=yes, ProtectSystem=strict, inaccessible /var/www/vhosts, a 1 GiB temporary filesystem, cgroup memory limit 3 GiB, CPU limit 200%, task limit 128, and no elevated Linux capabilities. One shared worker limits tasks to two total and one per authenticated user across all API replicas on the **same host using this socket**. Input and output lengths and subprocess timeouts are bounded.
 
 ## 1. Prerequisites
