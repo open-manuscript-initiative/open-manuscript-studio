@@ -44,10 +44,21 @@ export function scanCoreSource(file, source) {
   };
   function visit(node) {
     if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
-      if (!node.importClause?.isTypeOnly) check(node.moduleSpecifier.text, node);
+      const clause = node.importClause;
+      // TS permits `import { type Foo }` in addition to `import type { Foo }`.
+      // Both are erased from emitted JavaScript and must not be treated as
+      // runtime dependency violations.
+      const allNamedBindingsTypeOnly = clause?.namedBindings &&
+        ts.isNamedImports(clause.namedBindings) &&
+        clause.namedBindings.elements.every(item => item.isTypeOnly);
+      const isTypeOnly = clause?.isTypeOnly || (allNamedBindingsTypeOnly && !clause.name);
+      if (!isTypeOnly) check(node.moduleSpecifier.text, node);
     } else if (ts.isExportDeclaration(node) && node.moduleSpecifier &&
                ts.isStringLiteral(node.moduleSpecifier)) {
-      if (!node.isTypeOnly) check(node.moduleSpecifier.text, node);
+      const allNamesTypeOnly = node.exportClause &&
+        ts.isNamedExports(node.exportClause) &&
+        node.exportClause.elements.every(item => item.isTypeOnly);
+      if (!node.isTypeOnly && !allNamesTypeOnly) check(node.moduleSpecifier.text, node);
     } else if (ts.isImportEqualsDeclaration(node) &&
                ts.isExternalModuleReference(node.moduleReference) &&
                node.moduleReference.expression &&
