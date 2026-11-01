@@ -2,7 +2,7 @@
 
 > 2026-11-01: Production API calls now require the isolated socket even if `PDF_WORKER_REQUIRED=false`. Missing socket fails PDF processing closed; other editing stays available. The dedicated worker uses the local executor directly and must not set its own dispatch socket. Deploy/test the systemd units and ACL before enabling PDF use; source tests are not host acceptance.
 
-**Status: implementation staged, not installed or verified on the live VPS.** Do not close #774 based on a green CI run. #765 is already closed in GitHub, but separate API egress host-policy evidence is still necessary.
+**Status: implementation merged; actual VPS installation and sandbox acceptance remain separately required.** Do not close #774 or #765 based on a green CI run; both require deployment-specific evidence.
 
 ## Architecture
 
@@ -22,37 +22,86 @@ The example units enforce PrivateNetwork=yes, IPAddressDeny=any and IPAddressAll
 Build from the **merged and reviewed** Studio code. Commands below are a starting example and must be adapted to the actual repository path and Unix identities.
 
 ~~~bash
-# Run as root. Make the primary worker group explicit: do not rely on
-# distribution-dependent default behavior of useradd --system.
+# Run as root in a maintenance window with no active PDF jobs.
+# A subshell stops at the FIRST error without closing the SSH shell.
+(
+set -euo pipefail
+cd /var/www/vhosts/openmanuscript.org/studio/repository
+
+# Root's default Node may be an old system binary. Use the same Plesk
+# Node 24 runtime as the systemd worker; do not replace Ubuntu's Node.
+omi_node_bin=/opt/plesk/node/24/bin
+test -x "$omi_node_bin/node"
+test -x "$omi_node_bin/npm"
+"$omi_node_bin/node" --version
+"$omi_node_bin/node" -e 'if (Number(process.versions.node.split(".")[0]) !== 24) { console.error("Plesk Node 24 is required for this deployment."); process.exit(1); }'
+
+# Resolve the deployed service identity. Never copy a machine-specific
+# Plesk username from an example, guess it from a directory name, or use root.
+omi_api_user="$(systemctl show omi-studio-api.service --property=User --value)"
+if [ -z "$omi_api_user" ]; then
+  echo 'API service User= is empty; inspect the actual service before continuing.' >&2
+  exit 1
+fi
+omi_api_user="$(id -un "$omi_api_user")"
+if [ "$(id -u "$omi_api_user")" -eq 0 ]; then
+  echo 'API service runs as root; resolve the service identity before continuing.' >&2
+  exit 1
+fi
+id "$omi_api_user"
+
+# Generate/compile as the API account, preserving repository file ownership.
+# npm adds the local node_modules/.bin for tsc; dotenv reads server/.env.
+# No database migration is run by this command.
+runuser -u "$omi_api_user" -- env \
+  PATH="$omi_node_bin:/usr/local/bin:/usr/bin:/bin" \
+  "$omi_node_bin/npm" --prefix server run build
+
+# Do not copy a stale or partial dist after a failed build.
+for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js \
+  security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js; do
+  test -s "server/dist/$file"
+done
+
 getent group omi-pdf-worker >/dev/null || groupadd --system omi-pdf-worker
 getent group omi-pdf-clients >/dev/null || groupadd --system omi-pdf-clients
 id -u omi-pdf-worker >/dev/null 2>&1 || \
   useradd --system --gid omi-pdf-worker --no-create-home --shell /usr/sbin/nologin omi-pdf-worker
-# Actual Studio API User= verified on this server; grant socket access only.
-usermod -aG omi-pdf-clients 'openmanuscript.org-obh8w31oiz'
+usermod -aG omi-pdf-clients "$omi_api_user"
 getent passwd omi-pdf-worker
-id 'openmanuscript.org-obh8w31oiz'
+id "$omi_api_user"
 
-cd /var/www/vhosts/openmanuscript.org/studio/repository
-npm --prefix server run build
-
-sudo install -d -o root -g root -m 0755 /opt/omi-pdf-worker
-sudo install -d -o root -g root -m 0755 /opt/omi-pdf-worker/{workers,services,security}
-printf '{"type":"module"}\n' | sudo tee /opt/omi-pdf-worker/package.json >/dev/null
+install -d -o root -g root -m 0755 /opt/omi-pdf-worker
+install -d -o root -g root -m 0755 /opt/omi-pdf-worker/{workers,services,security}
+printf '{"type":"module"}\n' > /opt/omi-pdf-worker/package.json
+chmod 0644 /opt/omi-pdf-worker/package.json
 for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js \
   security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js; do
-  sudo install -o root -g root -m 0644 \
+  install -o root -g root -m 0644 \
     "server/dist/$file" "/opt/omi-pdf-worker/$file"
 done
 
-sudo install -m 0644 deployment/systemd/omi-pdf-worker.socket /etc/systemd/system/
-sudo install -m 0644 deployment/systemd/omi-pdf-worker.service /etc/systemd/system/
-sudo systemd-analyze verify /etc/systemd/system/omi-pdf-worker.socket \
+install -m 0644 deployment/systemd/omi-pdf-worker.socket /etc/systemd/system/
+install -m 0644 deployment/systemd/omi-pdf-worker.service /etc/systemd/system/
+systemd-analyze verify /etc/systemd/system/omi-pdf-worker.socket \
   /etc/systemd/system/omi-pdf-worker.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now omi-pdf-worker.socket
-sudo systemctl start omi-pdf-worker.service
+systemctl daemon-reload
+systemctl enable --now omi-pdf-worker.socket
+systemctl restart omi-pdf-worker.service
+)
 ~~~
+
+### Recover from the observed root-shell errors
+
+`TypeError: ...styleText is not a function` with `Node.js v18.19.1` means the root shell used the old system Node for Prisma. It is not evidence of a schema or database migration failure. Rebuild with the explicitly selected Plesk Node 24 runtime above. Do not upgrade Ubuntu or replace the system Node as part of this fix.
+
+`usermod: user ... does not exist` means the example Plesk account does not match this host. Determine it from the deployed service's `User=` and validate with `id`; do not create the guessed account. For an empty/root `User=`, inspect only:
+
+~~~bash
+systemctl show omi-studio-api.service -p User -p Group -p WorkingDirectory -p ExecStart
+~~~
+
+Do not publish `.env` contents. If the old instructions continued after the build error, neither copied files nor a start command proves a functioning worker. Repeat the guarded build/install block from its start, then perform section 3's socket, rendering and sandbox acceptance before switching/restarting the API. If the build reports permission errors, stop and inspect the particular owner/path; do not recursively chown the entire Plesk vhost or build as root to bypass the failure.
 
 If any account/group already exists, verify its primary group and access rights instead of recreating it. Do not use chmod 666 on the socket, grant membership to arbitrary Plesk sites, mount API secrets into the worker, or disable network isolation or the Chrome sandbox merely to get rendering running. For Chrome/font failures, inspect the worker logs and correct only the specifically verified need. Chrome must work with its native sandbox under the dedicated worker account.
 
