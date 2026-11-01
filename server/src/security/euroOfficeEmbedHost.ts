@@ -8,12 +8,36 @@ import { randomBytes } from 'node:crypto';
  * The browser-executed bootstrap is serialized by the server TypeScript build;
  * no untrusted strings are interpolated into executable JavaScript.
  */
+interface IsolatedDomElement {
+  id: string;
+  src: string;
+  onload: (() => void) | null;
+  onerror: (() => void) | null;
+  append(node: IsolatedDomElement): void;
+  replaceChildren(): void;
+}
+interface IsolatedOfficeBrowser {
+  document: {
+    head: { append(node: IsolatedDomElement): void };
+    createElement(tag: string): IsolatedDomElement;
+    getElementById(id: string): IsolatedDomElement | null;
+  };
+  location: { search: string };
+  parent: { postMessage(value: unknown, targetOrigin: string): void };
+  addEventListener(type: string, listener: (event: {
+    source: unknown; origin: string; data: unknown
+  }) => void): void;
+  DocsAPI?: { DocEditor: new (
+    id: string, config: Record<string, unknown>
+  ) => { destroyEditor?: () => void } };
+}
+
 function isolatedBootstrap(
   apiUrl: string,
   allowedParents: string[],
 ): void {
-  const doc = globalThis.document;
-  const win = globalThis.window;
+  const win = globalThis as unknown as IsolatedOfficeBrowser;
+  const doc = win.document;
   const channel = new URLSearchParams(win.location.search).get('channel');
   const scope = 'omi-eurooffice';
   let ready = false;
@@ -21,9 +45,12 @@ function isolatedBootstrap(
   const report = (action: string) =>
     win.parent.postMessage({ scope, channel, action }, '*');
 
-  win.addEventListener('message', (event: MessageEvent) => {
+  win.addEventListener('message', (event) => {
     if (event.source !== win.parent || !allowedParents.includes(event.origin)) return;
-    const message = event.data;
+    const message = event.data as {
+      scope?: string; channel?: string; action?: string;
+      config?: Record<string, unknown> & { token?: string }
+    } | null;
     if (!message || message.scope !== scope || message.channel !== channel ||
         message.action !== 'launch' || !ready ||
         !message.config || typeof message.config !== 'object' ||
@@ -36,9 +63,7 @@ function isolatedBootstrap(
       const placeholder = doc.createElement('div');
       placeholder.id = 'eurooffice-editor-frame';
       host.append(placeholder);
-      const docsApi = (win as typeof win & { DocsAPI?: {
-        DocEditor: new (id: string, config: Record<string, unknown>) => typeof editor
-      } }).DocsAPI;
+      const docsApi = win.DocsAPI;
       if (!docsApi) throw new Error('Editor API missing');
       editor = new docsApi.DocEditor(placeholder.id, message.config);
       report('started');
@@ -51,7 +76,7 @@ function isolatedBootstrap(
   const script = doc.createElement('script');
   script.src = apiUrl;
   script.onload = () => {
-    const docsApi = (win as typeof win & { DocsAPI?: { DocEditor?: unknown } }).DocsAPI;
+    const docsApi = win.DocsAPI;
     if (typeof docsApi?.DocEditor !== 'function') {
       report('failed');
       return;
