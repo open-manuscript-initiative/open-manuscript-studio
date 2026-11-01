@@ -14,6 +14,7 @@
     "pretest": "npm run test:profile-import && npm run i18n:po:compile && npm run i18n:returned:generate && npm run test:continuous && npm run test:current-study-notes && npm run test:android-update",
     "preview": "vite preview",
     "lint": "eslint .",
+    "check:core-boundaries": "node --test tests/core-import-boundaries.test.mjs && node scripts/check-core-import-boundaries.mjs",
     "playwright:install": "playwright install --only-shell chromium",
     "test:direct-submission": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/direct-submission.test.ts && node --test --experimental-test-module-mocks tests/direct-submission-routes.test.mjs",
     "test:collaboration-invitations": "tsc -p server/tsconfig.json && node --test --experimental-test-module-mocks tests/collaboration-invitation-service.test.mjs tests/collaboration-invitation-routes.test.mjs tests/collaboration-message-routes.test.mjs tests/collaboration-ticket-service.test.mjs tests/collaboration-live-policy.test.mjs tests/collaboration-state-store.test.mjs && npm --prefix server run test:collaboration-availability",
