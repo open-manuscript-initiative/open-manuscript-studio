@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
+import { buildEuroOfficeEmbedHost } from '../server/src/security/euroOfficeEmbedHost';
 
 // Reproduce DocsAPI's DOM contract: replace the placeholder, use a fixed mobile
 // iframe, and restore a fresh placeholder when the editor is destroyed.
@@ -140,28 +141,16 @@ test('native Studio loads EuroOffice in a server-origin frame, never main DocsAP
   });
   await installEuroOffice(page);
 
-  // The mock reproduces only the origin-validated handshake. The real API
-  // endpoint additionally pins DocsAPI and embeds a restricted CSP.
+  // Exercise the real server-generated CSP/iframe bootstrap with a synthetic
+  // office API and document, not a weaker home-grown handshake fixture.
+  const { html, csp } = buildEuroOfficeEmbedHost(
+    'https://eurooffice.example.test', 'http://localhost:5173',
+  );
   await page.route('https://studio.openmanuscript.org/api/v1/eurooffice/embed-host**', async route => {
     await route.fulfill({
       contentType: 'text/html',
-      body: [
-        '<!doctype html><html><body><output id="isolated-state">waiting</output><script>',
-        "const channel = new URL(location.href).searchParams.get('channel');",
-        "window.addEventListener('message', event => {",
-        "  if (event.source !== window.parent || event.data?.channel !== channel ||",
-        "      event.data?.scope !== 'omi-eurooffice') return;",
-        "  if (event.data.action === 'hello') {",
-        "    window.parent.postMessage({ scope: 'omi-eurooffice', channel, action: 'ready' }, '*');",
-        "    return;",
-        "  }",
-        "  if (event.data.action !== 'launch') return;",
-        "  document.getElementById('isolated-state').textContent = event.data.config.document.title;",
-        "  window.parent.postMessage({ scope: 'omi-eurooffice', channel, action: 'started' }, '*');",
-        "});",
-        "window.parent.postMessage({ scope: 'omi-eurooffice', channel, action: 'ready' }, '*');",
-        '</script></body></html>',
-      ].join('\n'),
+      headers: { 'Content-Security-Policy': csp, 'X-Content-Type-Options': 'nosniff' },
+      body: html,
     });
   });
   await signInToStudio(page);
@@ -172,8 +161,13 @@ test('native Studio loads EuroOffice in a server-origin frame, never main DocsAP
   await expect(frame).toBeVisible();
   await expect(frame).toHaveAttribute('sandbox', /allow-scripts/);
   await expect(frame).toHaveAttribute('src', /^https:\/\/studio\.openmanuscript\.org\/api\/v1\/eurooffice\/embed-host\?channel=/);
-  await expect(page.frameLocator('.plain-document-isolated-frame').locator('#isolated-state'))
-    .toHaveText('Layout regression.docx');
+  const nestedEditor = page.frameLocator('.plain-document-isolated-frame')
+    .frameLocator('iframe[name="frameEditor"]')
+    .getByRole('button', { name: 'Edit document' });
+  await expect(nestedEditor).toBeVisible();
+  const clicks = Number(await nestedEditor.getAttribute('data-edit-count'));
+  await nestedEditor.click();
+  await expect(nestedEditor).toHaveAttribute('data-edit-count', String(clicks + 1));
   await expect(page.locator('script[data-eurooffice-api="true"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Document actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Close', exact: true }).click();
