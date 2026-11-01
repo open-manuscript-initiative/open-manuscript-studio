@@ -10,6 +10,8 @@ import { toPortableOmiState } from './omiPortableFormat';
 import type { OmiAsset } from '../types/assets';
 import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 
+export const OMI_CONTAINER_SERIALIZATION_PROFILE = 'urn:omi:studio:container:asset-previews:1' as const;
+
 export const OMI_CONTAINER_VERSION = '0.1.0-alpha.1' as const;
 export const OMI_CONTAINER_MEDIA_TYPE = 'application/vnd.openmanuscript.omi+zip' as const;
 
@@ -30,6 +32,7 @@ export interface OmiContainerManifestEntry {
 }
 
 export interface OmiContainerManifest {
+  serializationProfile?: typeof OMI_CONTAINER_SERIALIZATION_PROFILE;
   format: 'OMI';
   containerVersion: typeof OMI_CONTAINER_VERSION;
   mediaType: typeof OMI_CONTAINER_MEDIA_TYPE;
@@ -187,19 +190,9 @@ export async function buildOmiContainer(
       stableJson({
         versioningModelVersion: manuscript.versioningModelVersion,
         headRevisionId: manuscript.headRevisionId,
-        revisionHistory: {
-          ...manuscript.revisionHistory,
-          revisions: manuscript.revisionHistory.revisions.map((revision) => ({
-            ...revision,
-            // Authoring previews are not scholarly content or history evidence.
-            // Keep original committed snapshots intact in memory while omitting
-            // redundant base64 payloads from the portable history representation.
-            snapshot: {
-              ...revision.snapshot,
-              state: stripAuthoringAssetPreviews(revision.snapshot.state),
-            },
-          })),
-        },
+        // Preserve exact historical snapshots, including any legacy preview
+        // fields covered by an existing v1 digest or external signature.
+        revisionHistory: manuscript.revisionHistory,
       }),
       'application/json',
       'manuscript-history',
@@ -277,6 +270,7 @@ export async function buildOmiContainer(
     },
   ];
   const manifest: OmiContainerManifest = {
+    serializationProfile: OMI_CONTAINER_SERIALIZATION_PROFILE,
     format: 'OMI',
     containerVersion: OMI_CONTAINER_VERSION,
     mediaType: OMI_CONTAINER_MEDIA_TYPE,

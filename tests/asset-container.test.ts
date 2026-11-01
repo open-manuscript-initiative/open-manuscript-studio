@@ -315,7 +315,7 @@ test('embedded-section image is collected, preview stripped and verified across 
   assert.ok(entries.has('media/images/asset-figure-1-figure.png'));
   const document = JSON.parse(new TextDecoder().decode(entries.get('manuscript/document.json')));
   const historyJson = new TextDecoder().decode(entries.get('manuscript/history.json'));
-  assert.equal(historyJson.includes('data:image/png;base64'), false);
+  assert.equal(historyJson.includes('data:image/png;base64'), true, 'historical preview bytes must not be silently removed');
   const originalHistoricVisual = nested.revisionHistory.revisions.at(-1)?.snapshot.state.sections[0]?.children?.[0]?.blocks?.[0]?.visual;
   assert.equal(originalHistoricVisual?.kind, 'image');
   if (originalHistoricVisual?.kind === 'image') assert.ok(originalHistoricVisual.src.startsWith('data:'));
@@ -416,4 +416,29 @@ test('asset recovery refuses an unrelated manuscript package', async () => {
     /another manuscript/,
   );
   assert.equal(await getAssetPayload(manuscript.id, asset.id) !== undefined, true);
+});
+
+test('shared frozen container fixture verifies nested previews, payload and revision digests', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { calculateManuscriptStateDigestValue } = await import('../src/model/stateDigest.ts');
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/container-profile-v1.json', import.meta.url), 'utf8'));
+  const bytes = Buffer.from(fixture.packageBase64, 'base64');
+  assert.equal(await sha256Hex(bytes), fixture.sha256);
+  const plan = await inspectOmiContainer(bytes);
+  assert.equal(plan.validForImport, true, JSON.stringify(plan.diagnostics));
+  assert.equal(plan.manifest?.serializationProfile, 'urn:omi:studio:container:asset-previews:1');
+  assert.equal(plan.assets[0]?.metadata.id, fixture.assetId);
+  assert.equal(await sha256Hex(plan.assets[0]!.bytes), fixture.assetSha256);
+  const entries = readStoreZipEntries(bytes);
+  const history = JSON.parse(new TextDecoder().decode(entries.get('manuscript/history.json')));
+  assert.equal(JSON.stringify(history).includes('data:image/'), true, 'exact historical snapshots are preserved');
+  assert.deepEqual(plan.manuscript!.revisionHistory.revisions.map(revision => calculateManuscriptStateDigestValue(revision.snapshot.state)), fixture.revisionStateDigests);
+  const { createStoreZip } = await import('../src/services/simpleZip.ts');
+  const manifest = JSON.parse(new TextDecoder().decode(entries.get('META-INF/manifest.json')));
+  manifest.serializationProfile = 'urn:omi:studio:container:asset-previews:9';
+  entries.set('META-INF/manifest.json', new TextEncoder().encode(JSON.stringify(manifest)));
+  const future = createStoreZip([...entries].map(([name, bytes]) => ({ name, bytes })));
+  const rejected = await inspectOmiContainer(future);
+  assert.equal(rejected.validForImport, false);
+  assert.ok(rejected.diagnostics.some(issue => issue.code === 'unsupported-container-profile'));
 });
