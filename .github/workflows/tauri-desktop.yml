@@ -15,6 +15,14 @@ on:
         description: 'For 1.0 RC/stable only: enter APPROVE_1_0_RELEASE after final manual Go/No-Go'
         required: false
         type: string
+      release_build_run_id:
+        description: '1.0 only: prior exact-SHA Tauri run whose successful build artifacts were reviewed'
+        required: false
+        type: string
+      release_evidence_json:
+        description: '1.0 only: content-free omi-studio-rc-evidence v1 JSON with exact artifact hashes and manual sign-offs'
+        required: false
+        type: string
   pull_request:
     branches:
       - main
@@ -448,6 +456,7 @@ jobs:
     permissions:
       contents: write
       issues: read
+      actions: read
 
     steps:
       - name: Checkout exact release source
@@ -455,11 +464,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify selected prior candidate build
+        if: ${{ inputs.release_build_run_id != '' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          INPUT_BUILD_RUN_ID: ${{ inputs.release_build_run_id }}
+        run: node scripts/rc-evidence.mjs --build "$INPUT_BUILD_RUN_ID"
+
       - name: Download build artifacts
         uses: actions/download-artifact@v8
         with:
           pattern: open-manuscript-studio-*
           path: release-input
+          run-id: ${{ inputs.release_build_run_id || github.run_id }}
+          github-token: ${{ github.token }}
 
       - name: Prepare stable download filenames
         shell: bash
@@ -502,6 +520,8 @@ jobs:
           INPUT_TAG: ${{ inputs.release_tag }}
           INPUT_RELEASE_APPROVAL: ${{ inputs.release_approval }}
           INPUT_REVIEWED_SHA: ${{ inputs.release_reviewed_sha }}
+          INPUT_BUILD_RUN_ID: ${{ inputs.release_build_run_id }}
+          INPUT_RC_EVIDENCE: ${{ inputs.release_evidence_json }}
         run: |
           set -euo pipefail
 
@@ -544,6 +564,15 @@ jobs:
               echo "::error::1.0 RC/stable release requires manual Go/No-Go, reviewed SHA and explicit dispatch. No tag was created." >&2
               exit 1
             fi
+            if [[ -z "${INPUT_BUILD_RUN_ID:-}" || -z "${INPUT_RC_EVIDENCE:-}" ]]; then
+              echo "::error::Exact candidate artifact evidence is required. No tag was created." >&2
+              exit 1
+            fi
+            # Treat dispatch JSON as data, never interpolate it as shell code.
+            evidence_file="$(mktemp)"
+            printf '%s' "$INPUT_RC_EVIDENCE" > "$evidence_file"
+            GITHUB_TOKEN="$GH_TOKEN" node scripts/rc-evidence.mjs "$evidence_file" release-assets
+            rm -f "$evidence_file"
             GITHUB_TOKEN="$GH_TOKEN" node scripts/release-readiness.mjs \
               --strict-local --strict-release
           fi

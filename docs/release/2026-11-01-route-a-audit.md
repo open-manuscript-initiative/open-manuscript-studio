@@ -1,5 +1,7 @@
 # Studio 1.0 Route A — readiness review, 2026-11-01
 
+> Proposed additional guard: [exact-candidate evidence](rc-evidence.md) binds the reviewed prior build, actual artifact hashes, same-SHA workflow results and manual acceptance receipt before 1.0 tagging. Existing blockers remain unresolved until real evidence is supplied.
+
 **Review scope:** [#390](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues/390), current `main` source, release scope and blocker policy, merged PR/CI evidence and current GitHub issues. This is an evidence inventory, **not** approval to publish `v1.0.0-rc.1` or `v1.0.0`.
 
 ## 1. What is technically complete
