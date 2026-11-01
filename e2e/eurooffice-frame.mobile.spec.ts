@@ -152,6 +152,9 @@ test('native Studio loads EuroOffice in a server-origin frame, never main DocsAP
   // Switch the runtime flag only after the browser-only synthetic login.
   // The editor component then uses its native isolated-WebView code path.
   await page.evaluate(() => {
+    // @tauri-apps/api/core isTauri() checks the isTauri sentinel, while
+    // __TAURI_INTERNALS__ alone is not sufficient to switch runtime mode.
+    Object.defineProperty(window, 'isTauri', { value: true, configurable: true });
     Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
   });
   await page.getByRole('button', { name: /^Everyday DOCX documents/ }).click();
