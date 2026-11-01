@@ -127,3 +127,50 @@ test('EuroOffice also keeps the desktop editor inside its persistent host', asyn
   await page.getByRole('menuitem', { name: 'Close', exact: true }).click();
   await expect(page.locator('iframe[name="frameEditor"]')).toHaveCount(0);
 });
+
+
+test('native Studio loads EuroOffice in a server-origin frame, never main DocsAPI', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  await page.addInitScript(() => {
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
+    Object.defineProperty(navigator, 'userAgent', {
+      get: () => 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Mobile Safari/537.36',
+      configurable: true,
+    });
+  });
+  await installEuroOffice(page);
+
+  // The mock reproduces only the origin-validated handshake. The real API
+  // endpoint additionally pins DocsAPI and embeds a restricted CSP.
+  await page.route('https://studio.openmanuscript.org/api/v1/eurooffice/embed-host**', async route => {
+    await route.fulfill({
+      contentType: 'text/html',
+      body: [
+        '<!doctype html><html><body><output id="isolated-state">waiting</output><script>',
+        "const channel = new URL(location.href).searchParams.get('channel');",
+        "window.addEventListener('message', event => {",
+        "  if (event.source !== window.parent || event.data?.channel !== channel ||",
+        "      event.data?.scope !== 'omi-eurooffice' || event.data?.action !== 'launch') return;",
+        "  document.getElementById('isolated-state').textContent = event.data.config.document.title;",
+        "  window.parent.postMessage({ scope: 'omi-eurooffice', channel, action: 'started' }, '*');",
+        "});",
+        "window.parent.postMessage({ scope: 'omi-eurooffice', channel, action: 'ready' }, '*');",
+        '</script></body></html>',
+      ].join('\n'),
+    });
+  });
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^Everyday DOCX documents/ }).click();
+  await page.getByRole('button', { name: /^Layout regression/ }).click();
+
+  const frame = page.locator('.plain-document-isolated-frame');
+  await expect(frame).toBeVisible();
+  await expect(frame).toHaveAttribute('sandbox', /allow-scripts/);
+  await expect(frame).toHaveAttribute('src', /^https:\/\/studio\.openmanuscript\.org\/api\/v1\/eurooffice\/embed-host\?channel=/);
+  await expect(page.frameLocator('.plain-document-isolated-frame').locator('#isolated-state'))
+    .toHaveText('Layout regression.docx');
+  await expect(page.locator('script[data-eurooffice-api="true"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Document actions', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Close', exact: true }).click();
+  await expect(frame).toHaveCount(0);
+});
