@@ -113,6 +113,24 @@ test('ordinary DOCX stays native and uses an owner-scoped, short-lived EuroOffic
   assert.equal((await request('/api/eurooffice/status', {}, null)).status, 401);
   assert.deepEqual(await (await request('/api/eurooffice/status')).json(), { enabled: true });
 
+  // The anonymous iframe host carries no user token and has its own restricted
+  // security policy. It is allowed to frame only the configured Office origin,
+  // never arbitrary remote JavaScript in the privileged Tauri main WebView.
+  const embed = await request('/api/v1/eurooffice/embed-host', {}, null);
+  assert.equal(embed.status, 200);
+  assert.match(embed.headers.get('content-type') || '', /text\/html/);
+  assert.equal(embed.headers.get('cache-control'), 'no-store');
+  assert.equal(embed.headers.get('referrer-policy'), 'no-referrer');
+  const embedCsp = embed.headers.get('content-security-policy') || '';
+  assert.match(embedCsp, /script-src 'nonce-[^']+' https:\/\/office\.example\.org/);
+  assert.match(embedCsp, /frame-src https:\/\/office\.example\.org/);
+  assert.match(embedCsp, /frame-ancestors [^;]*tauri:\/\/localhost/);
+  assert.doesNotMatch(embedCsp, /unsafe-eval|script-src https:|frame-src https:(?:;|$)/);
+  const embedHtml = await embed.text();
+  assert.match(embedHtml, /\/web-apps\/apps\/api\/documents\/api\.js/);
+  assert.doesNotMatch(embedHtml, /synthetic-config-token|Bearer |"token":/);
+  assert.equal(embed.headers.get('x-frame-options'), null);
+
   const created = await request('/api/eurooffice/documents', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title: 'Plain text' }),
   });
