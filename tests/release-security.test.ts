@@ -148,7 +148,7 @@ test('Tauri CSP restricts main WebView scripts and native IPC to bundled main we
   const isolatedSource = readFileSync(
     new URL('../src/components/EuroOfficeIsolatedFrame.tsx', import.meta.url), 'utf8',
   );
-  assert.match(isolatedSource, /event\.origin !== target\.origin/);
+  assert.match(isolatedSource, /event\.origin !== 'null'/);
   assert.match(isolatedSource, /event\.source !== ref\.current\?\.contentWindow/);
-  assert.match(isolatedSource, /sandbox="allow-scripts allow-same-origin/);
+  assert.match(isolatedSource, /sandbox="allow-scripts allow-downloads"/);
 });

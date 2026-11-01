@@ -119,12 +119,13 @@ export function buildEuroOfficeEmbedHost(
     .replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
   const csp = [
     "default-src 'none'",
+    "sandbox allow-scripts allow-downloads",
     "script-src 'nonce-" + nonce + "' " + office.origin,
     "script-src-attr 'none'",
-    "style-src 'self' 'unsafe-inline' " + office.origin,
-    "img-src 'self' data: blob: " + office.origin,
-    "font-src 'self' data: " + office.origin,
-    "connect-src 'self' " + office.origin,
+    "style-src 'unsafe-inline' " + office.origin,
+    "img-src data: blob: " + office.origin,
+    "font-src data: " + office.origin,
+    "connect-src " + office.origin,
     "frame-src " + office.origin,
     "object-src 'none'",
     "base-uri 'none'",

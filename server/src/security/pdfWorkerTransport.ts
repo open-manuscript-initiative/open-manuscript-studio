@@ -11,8 +11,8 @@ const MAX_LAYOUT_BYTES = 128 * 1024 * 1024;
 export function configuredPdfWorkerSocket(environment: NodeJS.ProcessEnv = process.env): string | null {
   const path = environment.PDF_WORKER_SOCKET;
   if (!path) {
-    if (environment.PDF_WORKER_REQUIRED === 'true') {
-      throw new Error('PDF_WORKER_REQUIRED is enabled but PDF_WORKER_SOCKET is missing');
+    if (environment.NODE_ENV === 'production' || environment.PDF_WORKER_REQUIRED === 'true') {
+      throw new Error('Isolated PDF processing is required but PDF_WORKER_SOCKET is missing');
     }
     return null;
   }
