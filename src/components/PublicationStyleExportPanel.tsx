@@ -22,7 +22,13 @@ import {
   loadPublicationStyle,
   renderStyleBasedHtml,
 } from '../services/publicationStyleExport';
-import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
+import {
+  preparePublicationArtifactWithBuildSidecar,
+  savePublicationArtifactWithBuildSidecar,
+  type PublicationArtifactSidecarInput,
+} from '../services/publicationBuildSidecar';
+import { isNativeStudio } from '../services/nativeManuscriptFile';
+import { WebPublicationDownloads, type WebPublicationDownload } from './WebPublicationDownloads';
 import { renderPdfArtifact } from '../services/vivliostylePdfApi';
 
 export function PublicationStyleExportPanel() {
@@ -33,6 +39,7 @@ export function PublicationStyleExportPanel() {
   const [pdfContentMode, setPdfContentMode] = useState<PdfContentMode>('publication');
   const [pdfMode, setPdfMode] = useState<PdfExportMode>('print');
   const [message, setMessage] = useState('');
+  const [webDownload, setWebDownload] = useState<WebPublicationDownload | null>(null);
   const selectedContentDescription = pdfContentMode === 'publication'
     ? copy.pdfPublicationDescription
     : copy.pdfEditorialDescription;
@@ -40,10 +47,34 @@ export function PublicationStyleExportPanel() {
     ? copy.pdfPrintDescription
     : copy.pdfInteractiveDescription;
 
+
+  async function deliverPublication(
+    input: PublicationArtifactSidecarInput,
+    successMessage: string,
+  ): Promise<void> {
+    if (!isNativeStudio()) {
+      const prepared = await preparePublicationArtifactWithBuildSidecar(input);
+      setWebDownload({
+        artifact: input.artifact,
+        fileName: input.fileName,
+        sidecarText: prepared.sidecarText,
+        sidecarFileName: prepared.sidecarFileName,
+      });
+      return;
+    }
+    const saved = await savePublicationArtifactWithBuildSidecar(input);
+    setMessage(
+      saved.delivery.saved && saved.delivery.sidecarSaved
+        ? successMessage
+        : copy.saveCancelled,
+    );
+  }
+
   async function exportHtml(): Promise<void> {
     if (busy) return;
     setBusy('html');
     setMessage('');
+    setWebDownload(null);
     try {
       await externalizeActiveManuscriptAssets();
       checkpoint('export');
@@ -71,7 +102,7 @@ export function PublicationStyleExportPanel() {
         /\.html\.zip$/i,
         '.styled-html.zip',
       );
-      const saved = await savePublicationArtifactWithBuildSidecar({
+      await deliverPublication({
         manuscript: committed,
         profile: styledProfile,
         artifact: result.blob,
@@ -80,12 +111,7 @@ export function PublicationStyleExportPanel() {
         mediaType: 'application/zip',
         renderer: 'open-manuscript-studio-publisher-html-package',
         rendererVersion: OMI_PUBLISHER_HTML_PACKAGE_VERSION,
-      });
-      setMessage(
-        saved.delivery.saved && saved.delivery.sidecarSaved
-          ? copy.htmlReady
-          : copy.saveCancelled,
-      );
+      }, copy.htmlReady);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : copy.exportError);
     } finally {
@@ -97,6 +123,7 @@ export function PublicationStyleExportPanel() {
     if (busy) return;
     setBusy('pdf');
     setMessage('');
+    setWebDownload(null);
 
     try {
       await externalizeActiveManuscriptAssets();
@@ -117,7 +144,7 @@ export function PublicationStyleExportPanel() {
           );
       const fileName = pdfFileName(committed, pdfMode);
       const artifact = await renderPdfArtifact(html, fileName);
-      const saved = await savePublicationArtifactWithBuildSidecar({
+      await deliverPublication({
         manuscript: committed,
         profile,
         artifact: artifact.blob,
@@ -130,12 +157,7 @@ export function PublicationStyleExportPanel() {
           value: html,
           mediaType: 'text/html;charset=utf-8',
         },
-      });
-      setMessage(
-        saved.delivery.saved && saved.delivery.sidecarSaved
-          ? copy.pdfReady
-          : copy.saveCancelled,
-      );
+      }, copy.pdfReady);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : copy.exportError);
     } finally {
@@ -198,6 +220,7 @@ export function PublicationStyleExportPanel() {
       </div>
 
       {message ? <p className="publication-style-export-message" role="status">{message}</p> : null}
+      {webDownload ? <WebPublicationDownloads download={webDownload} /> : null}
       <p className="publication-style-export-note">{copy.note}</p>
     </section>
   );
