@@ -39,7 +39,8 @@ CapabilityBoundingSet=
 AmbientCapabilities=
 # Never mount Studio/Plesk vhosts or secret .env directories into the worker.
 InaccessiblePaths=-/var/www/vhosts
-TemporaryFileSystem=/tmp:rw,nosuid,nodev,size=1024M
+# The private tmpfs is root-owned; the non-root worker must create job/cache dirs.
+TemporaryFileSystem=/tmp:rw,nosuid,nodev,size=1024M,mode=1777
 MemoryMax=3G
 CPUQuota=200%
 TasksMax=128

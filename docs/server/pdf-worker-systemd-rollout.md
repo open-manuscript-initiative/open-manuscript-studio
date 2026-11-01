@@ -109,6 +109,15 @@ If any account/group already exists, verify its primary group and access rights 
 
 ## 3. Verify sandbox and functionality before switching the API
 
+The private `/tmp` tmpfs must explicitly set `mode=1777`. The observed deployment
+returned HTTP 422 and `EACCES` from `mkdtemp('/tmp/omi-vivliostyle-...')` because
+the dedicated worker could not write to its root-owned tmpfs. Set this mode on
+the worker's `TemporaryFileSystem=` mount, keeping its size limit and
+`nosuid,nodev` options. Do not change the host `/tmp` permissions or remove the
+private mount. Restart the worker after updating its unit, then repeat both the
+socket render and PDF-import smoke tests; this permission fix alone is not host
+acceptance.
+
 ~~~bash
 systemctl is-active omi-pdf-worker.socket omi-pdf-worker.service
 systemctl show omi-pdf-worker.service \
