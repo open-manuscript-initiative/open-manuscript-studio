@@ -1,3 +1,7 @@
 # Preserve the exact bytes pinned by the shared core-review SHA-256 digests.
 /src/model/coreSnapshotValidator.mjs text eol=lf
 /tests/fixtures/core-review/** text eol=lf
+
+# Generated validators must compare consistently on Windows, macOS and Linux.
+/src/services/generated/*.js text eol=lf
+/src/services/generated/*.d.ts text eol=lf

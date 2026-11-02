@@ -12,7 +12,11 @@ if (!check) mkdirSync(directory, { recursive: true });
 function emit(file, content) {
   const path = new URL(file, directory);
   if (check) {
-    if (readFileSync(path, 'utf8') !== content) throw new Error(`${file} is stale: run npm run schemas:generate`);
+    // Git may check text files out as CRLF on Windows. Line endings alone do
+    // not make a generated validator stale; all other content must still match.
+    if (readFileSync(path, 'utf8').replace(/\r\n/g, '\n') !== content.replace(/\r\n/g, '\n')) {
+      throw new Error(`${file} is stale: run npm run schemas:generate`);
+    }
   } else {
     writeFileSync(path, content);
   }
