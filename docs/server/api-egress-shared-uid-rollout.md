@@ -1,4 +1,6 @@
-# #765 — OMI Studio API egress with a shared Plesk UID (staged, not deployed)
+# #765 — OMI Studio API egress with a shared Plesk UID
+
+> **Current reconciliation — 2026-11-02:** [ADR-031](../architecture/adr-031-outbound-security-and-acceptance.md) records the merged two-layer outbound contract and evidence ownership. #765/#774 are closed; older pending/open statements below describe their dated checkpoints, not current issue state. Issue closure, source tests, operator observations and exact-candidate RC receipts remain separate. The existing E02 manual gates still apply; reconcile accepted evidence before requesting new host tests. No production configuration is changed by this document.
 
 **Decision (2026-11-01): retain the Plesk account used by the Studio family of
 sites.** The UID-based nftables profile from PR #820 is **NOT SAFE to apply**
@@ -35,13 +37,13 @@ does **not** block loopback SSRF or arbitrary public destinations.
 also permits **all** localhost ports, not only PostgreSQL. Neither systemd
 IP-list setting filters by TCP port. Be explicit about this residual risk.
 
-`server/src/cloud/security/connectionPinnedHttp.ts` provides a separate
-layer for direct user-configured WebDAV/Nextcloud: each request's *actual socket
-DNS lookup* rejects any nonpublic address, keeps the HTTPS host for certificate
-verification and never follows redirects. This protects that transport from
-DNS validation/connect races. **Do not claim global API SSRF protection**:
-OJS/OMP, public publishing and other user-controlled URLs need equivalent
-connection-time policy/audit before #765 can be accepted.
+`server/src/cloud/security/connectionPinnedHttp.ts` is the shared connection-time
+transport for WebDAV/Nextcloud, PKP, configured publishing/AI, OIDC/ORCID/JWKS
+and Office callback downloads after #823–#825. It validates public A/AAAA
+answers in the actual socket lookup and preserves TLS host validation. Manual
+PKP redirects remain constrained per hop; OIDC and Office prohibit redirects.
+Audit independent OAuth/HTTP helpers separately. This adapter does not itself
+install a host policy, grant manuscript access or prove global SSRF coverage.
 
 ## Review-only preflight (root, no changes)
 
@@ -100,7 +102,7 @@ Remove only this specific file if it is the drop-in installed by this plan.
 Never flush Plesk nftables, change unrelated UID/group memberships, change PHP
 pools, move PostgreSQL, remove PDF-worker sandboxing, or mass-chmod the vhost.
 
-## Acceptance checklist — NOT VERIFIED on the live VPS
+## Host acceptance checklist — map each result to a dated receipt
 
 1. The same UID belongs to other PHP-FPM pools, but only the API service
    cgroup is filtered; verify unchanged PHP-FPM connectivity independently.
@@ -117,15 +119,13 @@ pools, move PostgreSQL, remove PDF-worker sandboxing, or mass-chmod the vhost.
 6. Docker/containers, other processes with the same UID and paths outside the
    service cgroup are assessed separately. Check that any HTTP proxy or
    external helper does not bypass policy.
-7. Audit permitted loopback destinations: the WebDAV guard protects its own
-   transport, but another URL-based connector could still reach an allowed
-   local service. Resolve by connection-time pinning across connectors or a
-   dedicated outbound broker; do not mark #765 PASS yet.
+7. Audit permitted loopback destinations: the shared pinned transport protects its adopted
+   callsites, while any independent URL helper needs separate review. Record
+   coverage and residual risks; issue closure alone is not a host PASS receipt.
 8. Test rollback and boot persistence safely; capture redacted host evidence.
 
 **Status:** code review and CI unit tests are useful, but no production network
-policy is installed by this PR and no full host acceptance is claimed. Keep
-#765 as an unresolved security release gate until every required scenario has
-actual-host evidence. The old UID-based nft generator and checker remain for
+policy is installed by this PR and no full host acceptance is claimed. Keep the E02 `host-egress` manual gate unsatisfied until required scenarios
+have an accepted exact-candidate receipt, independently of the closed #765 state. The old UID-based nft generator and checker remain for
 dedicated-UID deployments only: see
 `docs/server/api-egress-policy-rollout.md`.

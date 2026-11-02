@@ -1,5 +1,7 @@
 # EuroOffice callback download SSRF hardening (RC1)
 
+> **Current reconciliation — 2026-11-02:** [ADR-031](../architecture/adr-031-outbound-security-and-acceptance.md) records the merged two-layer outbound contract and evidence ownership. #765/#774 are closed; older pending/open statements below describe their dated checkpoints, not current issue state. Issue closure, source tests, operator observations and exact-candidate RC receipts remain separate. The existing E02 manual gates still apply; reconcile accepted evidence before requesting new host tests. No production configuration is changed by this document.
+
 ## Security boundary
 
 The Studio API receives a JSON POST from the Office document editor at
@@ -13,8 +15,8 @@ matches the configured Office origin.
 ## Hardening
 
 - Validate the absolute callback URL against the **exact origin** of
-  `EUROOFFICE_URL`. Require HTTPS; refuse mismatched origins, non-default
-  ports, embedded URL credentials, URL fragments and invalid URLs.
+  `EUROOFFICE_URL`. Require HTTPS; refuse mismatched origins (including differing
+  effective ports), embedded URL credentials, URL fragments and invalid URLs.
 - Replace global `fetch()` with the existing connection-pinned HTTPS
   transport introduced in #823. Both A and AAAA answers are checked
   at socket connection, not just during configuration. Literal private,
@@ -30,7 +32,10 @@ matches the configured Office origin.
   or cache keys; never put the full callback URL or its query parameters
   in routine application logs.
 
-## Acceptance before merging
+A custom HTTPS port matching the configured Office origin is permitted by the
+validator. Public DNS at the actual connection remains required.
+
+## Acceptance for the merged implementation
 
 1. `npm run test:release-security` and `npm run test:eurooffice` pass.
    The route test uses a mocked outbound socket; the separate SSRF
