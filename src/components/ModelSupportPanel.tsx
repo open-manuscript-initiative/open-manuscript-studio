@@ -125,10 +125,15 @@ export function ModelSupportPanel() {
         currentRuntime.manuscript.outcome === 'valid' ? copy.liveManuscriptValid :
         currentRuntime.manuscript.outcome === 'invalid' ? copy.liveManuscriptInvalid : copy.liveManuscriptIndeterminate
         : copy.liveManuscriptNone}</p>
-      {currentRuntime.manuscript ? <details><summary>{copy.events}</summary><ul>
-        {currentRuntime.manuscript.checks.map((item) =>
-          <li key={item.id}><code>{item.id}</code>: {item.status}</li>)}
-        </ul></details> : null}
+      {currentRuntime.manuscript ? <>
+        <p>{copy.liveErrors}: {currentRuntime.manuscript.errors} · {copy.liveWarnings}: {currentRuntime.manuscript.warnings}</p>
+        <details><summary>{copy.events}</summary><ul>
+          {currentRuntime.manuscript.checks.map((item) =>
+            <li key={item.id}><code>{item.id}</code>: {item.status === 'pass' ? copy.livePass :
+              item.status === 'fail' ? copy.liveFail : item.status === 'skipped' ? copy.liveCheckSkipped : copy.liveCheckError}
+              {!item.complete ? ` · ${copy.liveCheckIncomplete}` : ''}</li>)}
+        </ul></details>
+      </> : null}
       <p>{copy.liveNotCertified}</p>
     </> : <p>{copy.liveEmpty}</p>}
     <p>{copy.scope}</p>
