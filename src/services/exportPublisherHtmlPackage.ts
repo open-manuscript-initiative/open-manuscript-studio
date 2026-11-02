@@ -18,6 +18,7 @@ import {
   renderHtmlArticle,
   type HtmlDiagnostic,
   type HtmlExportResult,
+  type HtmlRenderOptions,
 } from './exportHtml';
 
 export const OMI_PUBLISHER_HTML_PACKAGE_VERSION = '0.2.0-alpha.1' as const;
@@ -204,8 +205,9 @@ export async function buildPublisherHtmlPackage(
 export function renderPublisherHtmlArticle(
   manuscript: OmiManuscript,
   profile: OmiPublicationProfile = resolvePublicationProfile(manuscript),
+  options: HtmlRenderOptions = {},
 ): HtmlExportResult {
-  const result = renderHtmlArticle(manuscript, profile);
+  const result = renderHtmlArticle(manuscript, profile, options);
   if (!profile.exportStylesheet?.cssText.trim()) return result;
   const html = result.html.replace(
     '</head>',
@@ -328,4 +330,3 @@ function dosDateTime(value: Date): { time: number; date: number } {
     date: ((year - 1980) << 9) | ((valid.getUTCMonth() + 1) << 5) | valid.getUTCDate(),
   };
 }
-
