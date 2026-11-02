@@ -58,7 +58,7 @@ export interface RuntimeAssessment {
   limitations: string[];
   evidenceDigest: string;
 }
-export type RuntimeRequest = (path: string) => Promise<Response>;
+export type RuntimeRequest = (path: string, init?: RequestInit) => Promise<Response>;
 
 const probePaths: ReadonlyArray<{ id: RuntimeProbeId; path: string }> = [
   { id: 'server-health', path: '/api/health' },
@@ -99,10 +99,15 @@ export function validRuntimeProbePayload(id: RuntimeProbeId, value: unknown): bo
 
 async function probe(id: RuntimeProbeId, path: string, request: RuntimeRequest): Promise<RuntimeProbe> {
   let response: Response;
+  // Do not leave the UI checking indefinitely if a selected server hangs.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
   try {
-    response = await request(path);
+    response = await request(path, { signal: controller.signal });
   } catch {
     return { id, status: 'unavailable', code: 'NETWORK_ERROR' };
+  } finally {
+    clearTimeout(timeout);
   }
   const httpStatus = response.status;
   if (httpStatus === 401 || httpStatus === 403) return { id, status: 'unavailable', code: 'AUTH_REQUIRED', httpStatus };
