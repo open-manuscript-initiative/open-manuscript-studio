@@ -90,3 +90,22 @@ test('localized capability limits cover each declared requirement without alteri
   }
   assert.equal(translatedCapabilityDetails('en', capabilities[0]!).limitations[0], capabilities[0]!.limitations[0]);
 });
+
+
+test('actual opened manuscript validation can be summarized without manuscript text', async () => {
+  const { createBlankManuscript } = await import('../src/document/createBlankManuscript.ts');
+  const { validateStudioManuscript } = await import('../src/services/manuscriptValidation.ts');
+  const { summarizeManuscriptValidation } = await import('../src/services/runtimeCapabilityAssessment.ts');
+  const source = createBlankManuscript({ kind: 'study', locale: 'hu', title: 'PRIVATE MANUSCRIPT TITLE' });
+  const validation = await validateStudioManuscript(source, { profile: 'exchange' });
+  const evidence = summarizeManuscriptValidation(validation);
+  assert.equal(evidence.profile, 'exchange');
+  assert.ok(evidence.checks.some((item) => item.id === 'identifiers'));
+  assert.ok(evidence.checks.some((item) => item.id === 'portability'));
+  assert.ok(!JSON.stringify(evidence).includes('PRIVATE MANUSCRIPT TITLE'));
+  const api = mockApi(responses);
+  const runtime = await runRuntimeCapabilityAssessment(implementation, 'web', origin, api.fetch, evidence);
+  assert.equal(runtime.manuscript?.stateDigest, validation.subject.stateDigest);
+  assert.ok(isRuntimeAssessmentCurrent(runtime, implementation, 'web', origin));
+  assert.ok(!JSON.stringify(runtime).includes('PRIVATE MANUSCRIPT TITLE'));
+});
