@@ -1,5 +1,6 @@
 import { digestBytes } from '../model/exchange';
 import type { ImplementationIdentity } from '../model/conformance';
+import type { ValidationReport } from '../model/validation';
 
 /**
  * An operational check of the selected Studio server, NOT an OMI-SPEC
@@ -19,6 +20,27 @@ export interface RuntimeProbe {
   /** HTTP status is evidence of transport only, never proof of authorization. */
   httpStatus?: number;
 }
+export interface RuntimeManuscriptEvidence {
+  profile: 'exchange';
+  stateDigest: string;
+  outcome: 'valid' | 'invalid' | 'indeterminate';
+  complete: boolean;
+  errors: number;
+  warnings: number;
+  checks: Array<{ id: string; status: 'pass' | 'fail' | 'skipped' | 'error'; complete: boolean }>;
+}
+
+/** Projection of actual OMI-SPEC-180 Studio validation, without manuscript text. */
+export function summarizeManuscriptValidation(report: ValidationReport): RuntimeManuscriptEvidence {
+  if (report.profile !== 'exchange') throw new Error('RUNTIME_REQUIRES_EXCHANGE_PROFILE');
+  return {
+    profile: 'exchange', stateDigest: report.subject.stateDigest,
+    outcome: report.summary.outcome, complete: report.summary.complete,
+    errors: report.summary.errors, warnings: report.summary.warnings,
+    checks: report.checks.map(({ id, status, complete }) => ({ id, status, complete })),
+  };
+}
+
 export interface RuntimeAssessment {
   format: 'omi-studio-runtime-capability-check';
   version: '0.1.0';
@@ -32,6 +54,7 @@ export interface RuntimeAssessment {
   serverOrigin: string;
   checkedAt: string;
   probes: RuntimeProbe[];
+  manuscript?: RuntimeManuscriptEvidence;
   limitations: string[];
   evidenceDigest: string;
 }
@@ -111,6 +134,7 @@ export async function runRuntimeCapabilityAssessment(
   platform: string,
   serverOrigin: string,
   request: RuntimeRequest,
+  manuscript?: RuntimeManuscriptEvidence,
 ): Promise<RuntimeAssessment> {
   const probes = await Promise.all(probePaths.map(({ id, path }) => probe(id, path, request)));
   const base = {
@@ -126,6 +150,7 @@ export async function runRuntimeCapabilityAssessment(
     serverOrigin,
     checkedAt: new Date().toISOString(),
     probes,
+    ...(manuscript ? { manuscript } : {}),
     limitations: [
       'Health only verifies an API/database response, not all server components.',
       'Collaboration enabled does not verify WebSocket reachability or manuscript-specific membership.',
@@ -151,7 +176,9 @@ export function isRuntimeAssessmentCurrent(
     report.serverOrigin !== serverOrigin || report.platform !== platform ||
     JSON.stringify(report.implementation) !== JSON.stringify(implementation) ||
     !Array.isArray(report.probes) || report.probes.length !== probePaths.length ||
-    !Array.isArray(report.limitations) || report.limitations.length !== 4) return false;
+    !Array.isArray(report.limitations) || report.limitations.length !== 4 ||
+    (report.manuscript !== undefined && (report.manuscript.profile !== 'exchange' ||
+      typeof report.manuscript.stateDigest !== 'string' || !Array.isArray(report.manuscript.checks)))) return false;
   for (let i = 0; i < probePaths.length; i += 1) {
     const probeItem = report.probes[i];
     if (!probeItem || probeItem.id !== probePaths[i]?.id ||
