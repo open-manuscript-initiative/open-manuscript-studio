@@ -16,6 +16,11 @@ export interface ExportFormatCopy {
   jatsDescription: string;
   html: string;
   htmlDescription: string;
+  htmlPackaging: string;
+  htmlStandalone: string;
+  htmlPackage: string;
+  htmlStandaloneDescription: string;
+  htmlDownload: string;
   docx: string;
   docxDescription: string;
   odt: string;
@@ -66,8 +71,13 @@ const copy: Record<CoreLocale, ExportFormatCopy> = {
     omiJsonDescription: 'Közvetlenül olvasható JSON-fájl technikai feldolgozáshoz vagy integrációhoz, a kézirattal és revíziótörténettel. A médiafájlokat nem tartalmazza, ezért önmagában nem teljes biztonsági másolat; teljes átvitelhez válassza az OMI-csomagot.',
     jats: 'JATS XML 1.4',
     jatsDescription: 'NISO JATS Article Authoring XML folyóirati és kiadói munkafolyamatokhoz.',
-    html: 'Szemantikus HTML5 csomag',
+    html: 'Szemantikus HTML5',
     htmlDescription: 'Offline használható ZIP-csomag index.html fájllal, manifeszttel és az ellenőrzött kézirateszközökkel.',
+    htmlPackaging: 'HTML mentési mód',
+    htmlStandalone: 'Egyetlen HTML-fájl, beágyazott képekkel',
+    htmlPackage: 'ZIP-csomag, külön képfájlokkal',
+    htmlStandaloneDescription: 'Egyetlen böngészőben megnyitható .html fájl, amely a képeket és a formázást is tartalmazza. Nem kell kicsomagolni, a képek internet nélkül is láthatók.',
+    htmlDownload: 'HTML exportálása',
     docx: 'DOCX – teljes kézirat',
     docxDescription: 'A teljes kézirat szerkeszthető Word-változata valódi címsorstílusokkal. A rendezhető blokkokat és egyéni tipográfiát a külön sablonalapú export tartalmazza.',
     odt: 'ODT – OpenDocument szöveg (előzetes)',
@@ -116,8 +126,13 @@ const copy: Record<CoreLocale, ExportFormatCopy> = {
     omiJsonDescription: 'A directly readable JSON file for technical processing or integrations, containing the manuscript and revision history. It does not include media assets, so it is not a complete backup on its own; choose the OMI package for a complete transfer.',
     jats: 'JATS XML 1.4',
     jatsDescription: 'NISO JATS Article Authoring XML for journal and publisher workflows.',
-    html: 'Semantic HTML5 package',
+    html: 'Semantic HTML5',
     htmlDescription: 'Offline ZIP package containing index.html, a manifest and verified manuscript assets.',
+    htmlPackaging: 'HTML save mode',
+    htmlStandalone: 'Single HTML file with embedded images',
+    htmlPackage: 'ZIP package with separate image files',
+    htmlStandaloneDescription: 'One browser-readable .html file containing images and formatting. No extraction is needed, and images remain visible offline.',
+    htmlDownload: 'Export HTML',
     docx: 'DOCX – full manuscript',
     docxDescription: 'Editable Word version of the full manuscript with real heading styles. Reorderable blocks and custom typography are available in the separate template-based export.',
     odt: 'ODT – OpenDocument Text (preview)',
@@ -166,8 +181,13 @@ const copy: Record<CoreLocale, ExportFormatCopy> = {
     omiJsonDescription: 'Eine direkt lesbare JSON-Datei für technische Verarbeitung oder Integrationen mit Manuskript und Versionsverlauf. Mediendateien sind nicht enthalten; die Datei ist daher allein keine vollständige Sicherung. Für eine vollständige Übertragung wählen Sie das OMI-Paket.',
     jats: 'JATS XML 1.4',
     jatsDescription: 'NISO JATS Article Authoring XML für Zeitschriften- und Verlagsworkflows.',
-    html: 'Semantisches HTML5-Paket',
+    html: 'Semantisches HTML5',
     htmlDescription: 'Offline nutzbares ZIP-Paket mit index.html, Manifest und geprüften Manuskript-Assets.',
+    htmlPackaging: 'HTML-Speichermodus',
+    htmlStandalone: 'Eine HTML-Datei mit eingebetteten Bildern',
+    htmlPackage: 'ZIP-Paket mit separaten Bilddateien',
+    htmlStandaloneDescription: 'Eine im Browser lesbare .html-Datei mit Bildern und Formatierung. Kein Entpacken erforderlich; Bilder bleiben auch offline sichtbar.',
+    htmlDownload: 'HTML exportieren',
     docx: 'DOCX – vollständiges Manuskript',
     docxDescription: 'Bearbeitbare Word-Version des vollständigen Manuskripts mit echten Überschriftenformaten. Sortierbare Blöcke und eigene Typografie bietet der separate vorlagenbasierte Export.',
     odt: 'ODT – OpenDocument-Text (Vorschau)',

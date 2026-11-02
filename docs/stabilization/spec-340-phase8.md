@@ -18,9 +18,10 @@ not formal conformance, a complete conversion or semantic-fidelity guarantee.
 
 ## Boundaries, preservation and privacy
 
-- The Studio `html` export-session mapping produces a zipped semantic HTML
-  package. It is **not** the standalone HTML galley used for publication transfer.
-  Each is independently validated in its relevant export service.
+- The Studio `html` export-session mapping accepts a complete standalone HTML
+  document (the default, with embedded images) or a zipped semantic HTML package.
+  The selected envelope is checked before delivery. The publication-transfer
+  galley retains its own study-only renderer and validation.
 - This phase does not change manuscript text, paragraph/section editing
   permissions, hidden provenance behavior, or automatic source attribution.
   Sources remain editable after conversion.

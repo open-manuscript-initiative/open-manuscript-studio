@@ -17,6 +17,11 @@ import {
   OMI_HTML_PACKAGE_VERSION,
 } from '../services/exportHtmlPackage';
 import { buildIdmlExport } from '../services/exportIdml';
+import {
+  buildStandaloneHtmlExport,
+  OMI_STANDALONE_HTML_VERSION,
+  type HtmlExportPackaging,
+} from '../services/exportStandaloneHtml';
 import { loadPublicationStyle } from '../services/publicationStyleExport';
 import {
   jatsFileName,
@@ -78,6 +83,7 @@ export function ExportFormatsPanel() {
   const [selectedId, setSelectedId] = useState<ExportId | ''>('');
   const [pdfContentMode, setPdfContentMode] = useState<PdfContentMode>('publication');
   const [pdfMode, setPdfMode] = useState<PdfExportMode>('print');
+  const [htmlPackaging, setHtmlPackaging] = useState<HtmlExportPackaging>('standalone');
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -92,7 +98,7 @@ export function ExportFormatsPanel() {
     { id: 'omi', group: 'portable', label: copy.omi, description: copy.omiDescription, extension: '.omi' },
     { id: 'omi-json', group: 'portable', label: copy.omiJson, description: copy.omiJsonDescription, extension: '.omi.json' },
     { id: 'jats', group: 'publication', label: copy.jats, description: copy.jatsDescription, extension: '.xml' },
-    { id: 'html', group: 'publication', label: copy.html, description: copy.htmlDescription, extension: '.html.zip' },
+    { id: 'html', group: 'publication', label: copy.html, description: htmlPackaging === 'standalone' ? copy.htmlStandaloneDescription : copy.htmlDescription, extension: htmlPackaging === 'standalone' ? '.html' : '.html.zip' },
     { id: 'docx', group: 'publication', label: copy.docx, description: copy.docxDescription, extension: '.docx' },
     { id: 'odt', group: 'publication', label: copy.odt, description: copy.odtDescription, extension: '.odt' },
     { id: 'custom', group: 'publication', label: customCopy.label, description: customCopy.description, extension: 'DOCX / PDF / HTML' },
@@ -209,8 +215,11 @@ export function ExportFormatsPanel() {
         }
         case 'html': {
           const profile = resolvePublicationProfile(manuscript);
-          const result = await buildHtmlPackage(manuscript, profile);
-          if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
+          const standalone = htmlPackaging === 'standalone';
+          const result = standalone
+            ? await buildStandaloneHtmlExport(manuscript, profile)
+            : await buildHtmlPackage(manuscript, profile);
+          if ('validForExport' in result && !result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           await inspectArtifact(result.blob);
           await deliverPublication({
             manuscript,
@@ -218,9 +227,9 @@ export function ExportFormatsPanel() {
             artifact: result.blob,
             fileName: result.fileName,
             format: 'html',
-            mediaType: 'application/zip',
-            renderer: 'open-manuscript-studio-html-package',
-            rendererVersion: OMI_HTML_PACKAGE_VERSION,
+            mediaType: standalone ? 'text/html;charset=utf-8' : 'application/zip',
+            renderer: standalone ? 'open-manuscript-studio-standalone-html' : 'open-manuscript-studio-html-package',
+            rendererVersion: standalone ? OMI_STANDALONE_HTML_VERSION : OMI_HTML_PACKAGE_VERSION,
           });
           break;
         }
@@ -320,6 +329,7 @@ export function ExportFormatsPanel() {
         </select></label>
         {selectedId === 'pdf' ? <label><span>{copy.pdfContent}</span><select value={pdfContentMode} disabled={busy !== null} onChange={(event) => setPdfContentMode(event.target.value as PdfContentMode)}><option value="publication">{copy.pdfPublication}</option><option value="editorial">{copy.pdfEditorial}</option></select></label> : null}
         {selectedId === 'pdf' ? <label><span>{copy.pdfMode}</span><select value={pdfMode} disabled={busy !== null} onChange={(event) => setPdfMode(event.target.value as PdfExportMode)}><option value="print">{copy.pdfPrint}</option><option value="interactive">{copy.pdfInteractive}</option></select></label> : null}
+        {selectedId === 'html' ? <label><span>{copy.htmlPackaging}</span><select value={htmlPackaging} disabled={busy !== null} onChange={(event) => { setHtmlPackaging(event.target.value as HtmlExportPackaging); setWebDownload(null); }}><option value="standalone">{copy.htmlStandalone}</option><option value="package">{copy.htmlPackage}</option></select></label> : null}
       </div>
       {selectedFormat ? <div className="studio-settings-hint"><strong>{selectedFormat.label}</strong><p>{selectedFormat.description}</p></div> : null}
       {selectedId === 'pdf' ? <div className="studio-settings-hint" data-pdf-content={pdfContentMode}><strong>{pdfContentLabel}</strong><p>{pdfContentDescription}</p></div> : null}

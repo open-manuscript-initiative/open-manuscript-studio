@@ -37,13 +37,13 @@ const COPY: Record<'en' | 'hu' | 'de', HtmlExportCopy> = {
     preparingPackage: 'Preparing package…',
     exportReady: 'The HTML rendering has no blocking diagnostics.',
     exportHasErrors:
-      'The HTML can be inspected, but blocking diagnostics must be resolved before a publication package is created.',
+      'The HTML can be inspected, but blocking diagnostics must be resolved before HTML is exported.',
     errors: 'errors',
     warnings: 'warnings',
     diagnostics: 'HTML diagnostics',
     noDiagnostics: 'No HTML-specific diagnostics.',
     workingPreview:
-      'The preview reflects the current working state. Package download creates a checkpoint first so the output is traceable to a committed revision.',
+      'The preview reflects the current working state. HTML export creates a checkpoint first so the output is traceable to a committed revision.',
     unsupportedProfile:
       'The active profile does not declare HTML as a supported output.',
     accessibilityNote:
@@ -65,13 +65,13 @@ const COPY: Record<'en' | 'hu' | 'de', HtmlExportCopy> = {
     preparingPackage: 'Csomag készítése…',
     exportReady: 'A HTML-renderelésben nincs blokkoló diagnosztika.',
     exportHasErrors:
-      'A HTML ellenőrizhető, de publikációs csomag készítése előtt a blokkoló hibákat meg kell oldani.',
+      'A HTML ellenőrizhető, de HTML-exportálás előtt a blokkoló hibákat meg kell oldani.',
     errors: 'hiba',
     warnings: 'figyelmeztetés',
     diagnostics: 'HTML diagnosztika',
     noDiagnostics: 'Nincs HTML-specifikus diagnosztika.',
     workingPreview:
-      'Az előnézet az aktuális munkapéldányt mutatja. Csomagletöltéskor a Stúdió előbb checkpointot készít, így a kimenet konkrét committed revízióhoz visszavezethető.',
+      'Az előnézet az aktuális munkapéldányt mutatja. HTML-exportáláskor a Stúdió előbb checkpointot készít, így a kimenet konkrét committed revízióhoz visszavezethető.',
     unsupportedProfile:
       'Az aktív profil nem jelöli támogatott kimenetként a HTML formátumot.',
     accessibilityNote:
@@ -93,7 +93,7 @@ const COPY: Record<'en' | 'hu' | 'de', HtmlExportCopy> = {
     preparingPackage: 'Paket wird erstellt…',
     exportReady: 'Das HTML-Rendering enthält keine blockierenden Diagnosen.',
     exportHasErrors:
-      'Das HTML kann geprüft werden, blockierende Fehler müssen jedoch vor der Erstellung eines Publikationspakets behoben werden.',
+      'Das HTML kann geprüft werden, blockierende Fehler müssen jedoch vor dem HTML-Export behoben werden.',
     errors: 'Fehler',
     warnings: 'Warnungen',
     diagnostics: 'HTML-Diagnostik',

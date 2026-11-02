@@ -155,7 +155,7 @@ Android, iOS and iPadOS expose the same mobile-focused export choices:
 - portable OMI package (`.omi.zip`)
 - OMI JSON (`.omi.json`)
 - JATS XML (`.xml`)
-- HTML package (`.html.zip`)
+- HTML document with embedded images (`.html`, default), or an HTML package (`.html.zip`)
 - DOCX (`.docx`)
 - LaTeX (`.tex`)
 - EPUB (`.epub`)

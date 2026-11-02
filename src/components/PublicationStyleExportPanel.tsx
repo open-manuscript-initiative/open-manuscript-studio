@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation, tCatalog } from '../i18n';
+import { getExportFormatCopy } from '../i18n/exportFormats';
 import { createPublisherExportStylesheet } from '../model/publisherExportStyle';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import {
@@ -30,14 +31,21 @@ import {
 import { isNativeStudio } from '../services/nativeManuscriptFile';
 import { WebPublicationDownloads, type WebPublicationDownload } from './WebPublicationDownloads';
 import { renderPdfArtifact } from '../services/vivliostylePdfApi';
+import {
+  buildStandaloneHtmlExport,
+  OMI_STANDALONE_HTML_VERSION,
+  type HtmlExportPackaging,
+} from '../services/exportStandaloneHtml';
 
 export function PublicationStyleExportPanel() {
   const { locale } = useTranslation();
   const copy = copyFor(locale);
+  const htmlCopy = getExportFormatCopy(locale);
   const checkpoint = useStudioStore((state) => state.checkpoint);
   const [busy, setBusy] = useState<'pdf' | 'html' | null>(null);
   const [pdfContentMode, setPdfContentMode] = useState<PdfContentMode>('publication');
   const [pdfMode, setPdfMode] = useState<PdfExportMode>('print');
+  const [htmlPackaging, setHtmlPackaging] = useState<HtmlExportPackaging>('standalone');
   const [message, setMessage] = useState('');
   const [webDownload, setWebDownload] = useState<WebPublicationDownload | null>(null);
   const selectedContentDescription = pdfContentMode === 'publication'
@@ -93,12 +101,15 @@ export function PublicationStyleExportPanel() {
           head?.createdAt ?? committed.updatedAt,
         ),
       };
-      const result = await buildPublisherHtmlPackage(committed, styledProfile);
-      if (!result.validForExport) {
+      const standalone = htmlPackaging === 'standalone';
+      const result = standalone
+        ? await buildStandaloneHtmlExport(committed, styledProfile)
+        : await buildPublisherHtmlPackage(committed, styledProfile);
+      if ('validForExport' in result && !result.validForExport) {
         setMessage(copy.exportError);
         return;
       }
-      const fileName = result.fileName.replace(
+      const fileName = standalone ? result.fileName.replace(/\.html$/i, '.styled.html') : result.fileName.replace(
         /\.html\.zip$/i,
         '.styled-html.zip',
       );
@@ -108,9 +119,9 @@ export function PublicationStyleExportPanel() {
         artifact: result.blob,
         fileName,
         format: 'html',
-        mediaType: 'application/zip',
-        renderer: 'open-manuscript-studio-publisher-html-package',
-        rendererVersion: OMI_PUBLISHER_HTML_PACKAGE_VERSION,
+        mediaType: standalone ? 'text/html;charset=utf-8' : 'application/zip',
+        renderer: standalone ? 'open-manuscript-studio-standalone-html' : 'open-manuscript-studio-publisher-html-package',
+        rendererVersion: standalone ? OMI_STANDALONE_HTML_VERSION : OMI_PUBLISHER_HTML_PACKAGE_VERSION,
       }, copy.htmlReady);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : copy.exportError);
@@ -211,6 +222,16 @@ export function PublicationStyleExportPanel() {
           <div>
             <strong>{copy.htmlLabel}</strong>
             <p>{copy.htmlDescription}</p>
+            <div className="studio-manuscript-fields">
+              <label>
+                <span>{htmlCopy.htmlPackaging}</span>
+                <select value={htmlPackaging} disabled={busy !== null} onChange={(event) => { setHtmlPackaging(event.target.value as HtmlExportPackaging); setWebDownload(null); }}>
+                  <option value="standalone">{htmlCopy.htmlStandalone}</option>
+                  <option value="package">{htmlCopy.htmlPackage}</option>
+                </select>
+              </label>
+            </div>
+            <p className="studio-settings-hint">{htmlPackaging === 'standalone' ? htmlCopy.htmlStandaloneDescription : htmlCopy.htmlDescription}</p>
           </div>
           <button type="button" className="studio-menu-primary-action" disabled={busy !== null} onClick={() => void exportHtml()}>
             <Download size={16} aria-hidden="true" />
@@ -245,7 +266,7 @@ function copyFor(locale: string) {
     htmlLabel: 'Stílusozott HTML webnézet',
     htmlDescription: 'Folyamatos webes nézet ugyanazzal a tipográfiával, de élőfej, oldalszám, lapméret és oldaltörés nélkül.',
     exportPdf: 'PDF készítése', exportHtml: 'HTML webnézet exportálása', preparing: 'Előkészítés…', preparingPdf: 'PDF előkészítése…',
-    pdfReady: 'A PDF-fájl elkészült.', saveCancelled: 'A PDF mentése megszakítva.', htmlReady: 'A stílusozott HTML-csomag elkészült.',
+    pdfReady: 'A PDF-fájl elkészült.', saveCancelled: 'A PDF mentése megszakítva.', htmlReady: 'A stílusozott HTML-export elkészült.',
     exportError: 'A nyomtatási/export nézet nem készíthető el.',
     note: 'A tördelt változat a mentett kiadványstílus nyomdai geometriáját használja. A nyers/szerkesztői változat csak a dokumentum szemantikai szerkezetét és tartalmát formázza olvasható nyomattá.'
   };
@@ -262,7 +283,7 @@ function copyFor(locale: string) {
     htmlLabel: 'Formatierte HTML-Webansicht',
     htmlDescription: 'Fortlaufende Webansicht mit derselben Typografie, jedoch ohne Kolumnentitel, Seitenzahlen, Seitengröße oder Seitenumbrüche.',
     exportPdf: 'PDF erstellen', exportHtml: 'HTML-Webansicht exportieren', preparing: 'Wird vorbereitet…', preparingPdf: 'PDF wird vorbereitet…',
-    pdfReady: 'Die PDF-Datei wurde erstellt.', saveCancelled: 'Das Speichern der PDF-Datei wurde abgebrochen.', htmlReady: 'Das formatierte HTML-Paket wurde erstellt.',
+    pdfReady: 'Die PDF-Datei wurde erstellt.', saveCancelled: 'Das Speichern der PDF-Datei wurde abgebrochen.', htmlReady: 'Der formatierte HTML-Export wurde erstellt.',
     exportError: 'Die PDF-/Exportausgabe konnte nicht erstellt werden.',
     note: 'Die gesetzte Variante verwendet die gespeicherte Druckgeometrie des Publikationsstils. Die redaktionelle Variante formatiert nur die semantische Struktur und den Inhalt als lesbaren Ausdruck.'
   };
@@ -279,7 +300,7 @@ function copyFor(locale: string) {
     htmlLabel: 'Styled HTML web view',
     htmlDescription: 'Continuous web view with the same typography, but no running header, page numbers, page size or page breaks.',
     exportPdf: 'Create PDF', exportHtml: 'Export HTML web view', preparing: 'Preparing…', preparingPdf: 'Preparing PDF…',
-    pdfReady: 'The PDF file is ready.', saveCancelled: 'PDF file save cancelled.', htmlReady: 'The styled HTML package is ready.',
+    pdfReady: 'The PDF file is ready.', saveCancelled: 'PDF file save cancelled.', htmlReady: 'The styled HTML export is ready.',
     exportError: 'The PDF/export output could not be created.',
     note: 'The typeset variant uses the saved publication-style print geometry. The editorial variant formats only the document semantic structure and content as a readable printout.'
   };

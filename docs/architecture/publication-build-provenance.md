@@ -93,6 +93,9 @@ article.xml.omi-build.json
 article.pdf
 article.pdf.omi-build.json
 
+article.html
+article.html.omi-build.json
+
 article.html.zip
 article.html.zip.omi-build.json
 ```
@@ -100,3 +103,10 @@ article.html.zip.omi-build.json
 Publication build manifests intentionally live outside the OMI manuscript
 semantic state. Exporting a manuscript does not create or modify scholarly
 content and therefore does not create a new revision by itself.
+
+HTML export defaults to one `.html` file with inline styles and embedded raster
+images. The reader can open it without extracting a ZIP or keeping a media
+directory beside it. The semantic, styled and general export panels also retain
+the ZIP option. Missing/corrupt image payloads stop standalone export, and remote
+images must first be imported. Both choices retain a verification JSON sidecar
+whose digest describes the exact selected artifact bytes.
