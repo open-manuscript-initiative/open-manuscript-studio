@@ -12,7 +12,7 @@
     "test:android-update": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/android-update-installer.test.ts && node --experimental-vm-modules --test tests/android-distribution.test.mjs && node --test tests/android-modern-ui.test.mjs && node --test tests/android-version-code.test.mjs",
     "test:native-file-sessions": "node --test --experimental-test-module-mocks --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/native-file-session.test.ts",
     "test:profile-import": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/publisher-profile-import.test.ts",
-    "pretest": "npm run test:native-file-sessions && npm run test:profile-import && npm run i18n:po:compile && npm run i18n:returned:generate && npm run test:continuous && npm run test:current-study-notes && npm run test:android-update",
+    "pretest": "npm run schemas:check && npm run test:native-csp && npm run test:native-file-sessions && npm run test:profile-import && npm run i18n:po:compile && npm run i18n:returned:generate && npm run test:continuous && npm run test:current-study-notes && npm run test:android-update",
     "preview": "vite preview",
     "lint": "eslint .",
     "check:core-boundaries": "node --test tests/core-import-boundaries.test.mjs && node scripts/check-core-import-boundaries.mjs",
@@ -94,8 +94,8 @@
     "test:release-hardening": "npm run test:release-security && npm run test:release-recovery && npm run test:release-update",
     "i18n:translation-master": "npm run i18n:pending:supplemental && node scripts/export-translation-master.mjs",
     "i18n:returned:generate": "node scripts/generate-returned-translation-overlays.mjs",
-    "predev": "npm run i18n:po:compile && npm run i18n:returned:generate",
-    "prebuild": "npm run i18n:po:compile && npm run i18n:returned:generate",
+    "predev": "npm run schemas:generate && npm run i18n:po:compile && npm run i18n:returned:generate",
+    "prebuild": "npm run schemas:generate && npm run i18n:po:compile && npm run i18n:returned:generate",
     "test:file-format": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/omi-file-format.test.ts",
     "test:odt": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/odt-import-export.test.ts tests/odt-zip-security.test.ts",
     "test:eurooffice-plain-documents": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/eurooffice-plain-documents.test.ts",
@@ -106,7 +106,11 @@
     "test:validation-model": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/validation-model.test.ts",
     "test:draft-models": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/exchange-conformance.test.ts tests/collaboration-policy.test.ts tests/runtime-capabilities.test.ts",
     "conformance:draft-models": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/draft-model-assessment.ts",
-    "test:core-review": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-model-review.test.ts"
+    "test:core-review": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-model-review.test.ts",
+    "schemas:generate": "node scripts/generate-schema-validators.mjs",
+    "test:native-csp": "node --disallow-code-generation-from-strings --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/native-csp-validation.test.ts",
+    "test:native-csp:build": "node scripts/test-native-csp-build.mjs",
+    "schemas:check": "node scripts/generate-schema-validators.mjs --check"
   },
   "dependencies": {
     "@hocuspocus/provider": "^4.7.0",

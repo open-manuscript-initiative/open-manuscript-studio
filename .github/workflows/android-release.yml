@@ -66,6 +66,8 @@ jobs:
 
       - name: Test Android distribution
         run: |
+          npm run schemas:generate
+          npm run test:native-csp
           node --test tests/android-release-optimization.test.mjs
           node --test tests/android-agp91-test.test.mjs
           node --test tests/android-version-code.test.mjs
