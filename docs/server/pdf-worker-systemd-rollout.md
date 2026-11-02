@@ -1,5 +1,7 @@
 # PDF isolation on Plesk / Ubuntu 24.04: controlled rollout
 
+> **Current reconciliation — 2026-11-02:** [ADR-031](../architecture/adr-031-outbound-security-and-acceptance.md) records the merged two-layer outbound contract and evidence ownership. #765/#774 are closed; older pending/open statements below describe their dated checkpoints, not current issue state. Issue closure, source tests, operator observations and exact-candidate RC receipts remain separate. The existing E02 manual gates still apply; reconcile accepted evidence before requesting new host tests. No production configuration is changed by this document.
+
 > 2026-11-01: Production API calls now require the isolated socket even if `PDF_WORKER_REQUIRED=false`. Missing socket fails PDF processing closed; other editing stays available. The dedicated worker uses the local executor directly and must not set its own dispatch socket. Deploy/test the systemd units and ACL before enabling PDF use; source tests are not host acceptance.
 
 **Status (2026-11-01):** the production VPS worker/socket are active; actual PDF export, render/import, group quotas, restricted namespace and bounded two-job render tests have passed. Forced-timeout process-tree acceptance and complete host security review remain pending. Do not close #774 or #765 based only on a green CI run.

@@ -1,5 +1,7 @@
 # RC1 SSRF hardening: outbound integration HTTP
 
+> **Current reconciliation — 2026-11-02:** [ADR-031](../architecture/adr-031-outbound-security-and-acceptance.md) records the merged two-layer outbound contract and evidence ownership. #765/#774 are closed; older pending/open statements below describe their dated checkpoints, not current issue state. Issue closure, source tests, operator observations and exact-candidate RC receipts remain separate. The existing E02 manual gates still apply; reconcile accepted evidence before requesting new host tests. No production configuration is changed by this document.
+
 **Status: PR review only. No VPS firewall, systemd, Plesk or production configuration changes.**
 
 ## Threat addressed

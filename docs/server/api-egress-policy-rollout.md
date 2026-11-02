@@ -1,5 +1,7 @@
 # Plesk / Ubuntu 24.04 — Studio API outbound firewall (#765)
 
+> **Current reconciliation — 2026-11-02:** [ADR-031](../architecture/adr-031-outbound-security-and-acceptance.md) records the merged two-layer outbound contract and evidence ownership. #765/#774 are closed; older pending/open statements below describe their dated checkpoints, not current issue state. Issue closure, source tests, operator observations and exact-candidate RC receipts remain separate. The existing E02 manual gates still apply; reconcile accepted evidence before requesting new host tests. No production configuration is changed by this document.
+
 > **IMPORTANT — shared Plesk UID:** Production currently uses one UID for the
 > Studio API and multiple Studio PHP-FPM pools. **Do not install this UID-based
 > nftables policy on that host.** Use the staged per-systemd-service plan in
