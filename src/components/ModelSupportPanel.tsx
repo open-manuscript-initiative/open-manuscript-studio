@@ -1,15 +1,20 @@
 import { useState } from 'react';
+import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { translatedCapabilityDetails } from '../i18n/capabilityDetails';
 import { exchangeCopy } from '../i18n/exchange';
 import { capabilityStatement, runModelAssessment, type ImplementationIdentity } from '../model/conformance';
 import { getStudioPlatform } from '../mobile/platform/platform';
+import { validateStudioManuscript } from '../services/manuscriptValidation';
+import { getAssetPayload } from '../services/assetRepository';
+import type { OmiManuscript } from '../types/omi';
 import { studioApiFetch } from '../platform/studioApiTransport';
 import { saveExportText } from '../services/exportFileDelivery';
 import { getStudioApiBaseUrl } from '../services/studioServer';
 import {
   isRuntimeAssessmentCurrent,
   runRuntimeCapabilityAssessment,
+  summarizeManuscriptValidation,
   type RuntimeProbeId,
   type RuntimeAssessment,
 } from '../services/runtimeCapabilityAssessment';
@@ -27,13 +32,19 @@ export function ModelSupportPanel() {
   const [assessment, setAssessment] = useState<ReturnType<typeof runModelAssessment> | null>(null);
   const [runtime, setRuntime] = useState<RuntimeAssessment | null>(null);
   const [checking, setChecking] = useState(false);
+  const [runtimeSource, setRuntimeSource] = useState<OmiManuscript | null>(null);
+  const [runtimeHadDocument, setRuntimeHadDocument] = useState(false);
+  const manuscript = useStudioStore((state) => state.manuscript);
+  const hasOpenDocument = useStudioStore((state) => state.hasOpenDocument);
   const [error, setError] = useState('');
   const implementation: ImplementationIdentity = { name: 'Open Manuscript Studio', version: BUILD_INFO.version,
     build: BUILD_INFO.build, revision: BUILD_INFO.commit, dependencies: BUILD_INFO.dependencies };
   const platform = getStudioPlatform();
   const apiBase = getStudioApiBaseUrl();
   const serverOrigin = new URL(apiBase || '/', globalThis.location?.origin ?? 'https://studio.openmanuscript.org').origin;
-  const currentRuntime = runtime && isRuntimeAssessmentCurrent(runtime, implementation, platform, serverOrigin) ? runtime : null;
+  const currentRuntime = runtime && !checking && runtimeHadDocument === hasOpenDocument &&
+    (!runtimeHadDocument || runtimeSource === manuscript) &&
+    isRuntimeAssessmentCurrent(runtime, implementation, platform, serverOrigin) ? runtime : null;
   const statement = capabilityStatement(implementation, platform);
   const labels: Record<string, string> = {
     'studio.collaboration.scoped-policy': copy.collaborationLabel,
@@ -58,7 +69,21 @@ export function ModelSupportPanel() {
     setError('');
     setRuntime(null);
     try {
-      const result = await runRuntimeCapabilityAssessment(implementation, platform, serverOrigin, studioApiFetch);
+      const source = useStudioStore.getState();
+      let manuscriptEvidence;
+      if (source.hasOpenDocument) {
+        try {
+          const validation = await validateStudioManuscript(source.manuscript,
+            { profile: 'exchange', loadAsset: getAssetPayload });
+          manuscriptEvidence = summarizeManuscriptValidation(validation);
+        } catch {
+          setError(copy.liveManuscriptError);
+        }
+      }
+      const result = await runRuntimeCapabilityAssessment(
+        implementation, platform, serverOrigin, studioApiFetch, manuscriptEvidence);
+      setRuntimeSource(source.hasOpenDocument ? source.manuscript : null);
+      setRuntimeHadDocument(source.hasOpenDocument);
       setRuntime(result);
     } catch {
       setError(copy.liveNETWORK_ERROR);
@@ -96,6 +121,14 @@ export function ModelSupportPanel() {
         <li key={item.id}>{probeLabels[item.id]}: <strong>{item.status === 'pass' ? copy.livePass :
           item.status === 'fail' ? copy.liveFail : copy.liveUnavailable}</strong> — {copy[`live${item.code}`]}
           {item.httpStatus ? ` (HTTP ${item.httpStatus})` : ''}</li>)}</ul></details>
+      <p>{copy.liveManuscript}: {currentRuntime.manuscript ?
+        currentRuntime.manuscript.outcome === 'valid' ? copy.liveManuscriptValid :
+        currentRuntime.manuscript.outcome === 'invalid' ? copy.liveManuscriptInvalid : copy.liveManuscriptIndeterminate
+        : copy.liveManuscriptNone}</p>
+      {currentRuntime.manuscript ? <details><summary>{copy.events}</summary><ul>
+        {currentRuntime.manuscript.checks.map((item) =>
+          <li key={item.id}><code>{item.id}</code>: {item.status}</li>)}
+        </ul></details> : null}
       <p>{copy.liveNotCertified}</p>
     </> : <p>{copy.liveEmpty}</p>}
     <p>{copy.scope}</p>
