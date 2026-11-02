@@ -2,6 +2,8 @@ import { createHash, randomBytes } from 'node:crypto';
 import { SignJWT } from 'jose';
 import { createBlankDocx } from '../integrations/eurooffice/blankDocx.js';
 import { readBoundedDocx } from '../integrations/eurooffice/docxBoundary.js';
+import { validateEuroOfficeCallbackSource } from '../integrations/eurooffice/callbackUrl.js';
+import { fetchPinnedPublicUrl } from '../cloud/security/connectionPinnedHttp.js';
 import { env } from '../config/env.js';
 import { euroOfficeRepository as repository } from '../repositories/euroOfficeRepository.js';
 
@@ -85,11 +87,22 @@ export async function saveEuroOfficeCallback(documentId: string, token: string, 
   if (callback.key !== session.documentKey) throw new EuroOfficeError('DOCUMENT_NOT_FOUND', 404);
   if (![2, 6].includes(callback.status)) return;
   if (!callback.url) throw new EuroOfficeError('INVALID_CALLBACK', 400);
-  const source = new URL(callback.url), expected = new URL(env.EUROOFFICE_URL!);
-  if (source.origin !== expected.origin || source.protocol !== 'https:' || source.username || source.password) throw new EuroOfficeError('INVALID_CALLBACK', 400);
+  let source: URL;
+  try {
+    source = validateEuroOfficeCallbackSource(callback.url, env.EUROOFFICE_URL!);
+  } catch {
+    throw new EuroOfficeError('INVALID_CALLBACK', 400);
+  }
   const callbackDigest = digest(JSON.stringify([session.documentKey, callback.status, source.href]));
   if (await repository.receipt(documentId, callbackDigest)) return;
-  const bytes = await readBoundedDocx(await fetch(source, { redirect: 'error', signal: AbortSignal.timeout(30_000) }));
+  // No unrestricted global fetch: DNS is validated on the exact socket
+  // connection (including all A/AAAA results) and redirects fail closed.
+  const bytes = await readBoundedDocx(await fetchPinnedPublicUrl(source, {
+    method: 'GET',
+    redirect: 'error',
+    headers: { Accept: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+    signal: AbortSignal.timeout(30_000),
+  }));
   await repository.save({ documentId, userId: session.userId, documentKey: session.documentKey, baseRevision: session.baseRevision, callbackDigest, status: callback.status, bytes });
 }
 export async function listEuroOfficeSaves(userId: string, documentId: string) {
