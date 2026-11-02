@@ -1,4 +1,10 @@
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { jwtVerify, type JWTPayload } from 'jose';
+import {
+  assertOidcIssuerBinding,
+  assertOidcRemoteUrl,
+  createPinnedRemoteJWKSet,
+  fetchOidcDiscovery,
+} from './security/oidcMetadataHttp.js';
 
 export interface OrcidOidcTokenResponse {
   access_token?: string;
@@ -27,7 +33,7 @@ export async function validateOrcidIdToken(input: {
   hash: (value: string) => string;
 }): Promise<JWTPayload> {
   const discovery = await getDiscovery(input.baseUrl);
-  const jwks = createRemoteJWKSet(new URL(discovery.jwks_uri));
+  const jwks = createPinnedRemoteJWKSet(discovery.jwks_uri);
   const { payload } = await jwtVerify(input.idToken, jwks, {
     issuer: discovery.issuer,
     audience: input.clientId,
@@ -45,40 +51,33 @@ export async function validateOrcidIdToken(input: {
 }
 
 async function getDiscovery(baseUrl: string): Promise<DiscoveryDocument> {
-  const origin = new URL(baseUrl).origin;
+  const origin = assertOidcRemoteUrl(baseUrl, 'ORCID issuer').origin;
   let cached = discoveryCache.get(origin);
   if (!cached) {
-    cached = fetchDiscovery(origin);
+    cached = fetchDiscovery(origin).catch((error: unknown) => {
+      discoveryCache.delete(origin);
+      throw error;
+    });
     discoveryCache.set(origin, cached);
   }
   return cached;
 }
 
 async function fetchDiscovery(origin: string): Promise<DiscoveryDocument> {
-  const response = await fetch(`${origin}/.well-known/openid-configuration`, {
-    headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!response.ok) {
-    throw new Error(`ORCID OpenID discovery failed with HTTP ${response.status}.`);
-  }
-
-  const payload = await response.json() as Partial<DiscoveryDocument>;
+  const payload = await fetchOidcDiscovery(origin);
   const issuer = payload.issuer;
   const jwksUri = payload.jwks_uri;
 
-  if (typeof issuer !== 'string' || issuer.length === 0 || typeof jwksUri !== 'string' || jwksUri.length === 0) {
+  if (typeof issuer !== 'string' || !issuer || typeof jwksUri !== 'string' || !jwksUri) {
     throw new Error('ORCID OpenID discovery response is incomplete.');
   }
+  assertOidcIssuerBinding(origin, issuer);
+  assertOidcRemoteUrl(jwksUri, 'ORCID JWKS endpoint');
 
-  const discovery: DiscoveryDocument = {
-    issuer,
-    jwks_uri: jwksUri,
-  };
-
-  if (typeof payload.userinfo_endpoint === 'string' && payload.userinfo_endpoint.length > 0) {
+  const discovery: DiscoveryDocument = { issuer, jwks_uri: jwksUri };
+  if (typeof payload.userinfo_endpoint === 'string' && payload.userinfo_endpoint) {
+    assertOidcRemoteUrl(payload.userinfo_endpoint, 'ORCID UserInfo endpoint');
     discovery.userinfo_endpoint = payload.userinfo_endpoint;
   }
-
   return discovery;
 }
