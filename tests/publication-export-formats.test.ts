@@ -20,6 +20,72 @@ import { buildPdfPrintDocument, pdfDocumentTitle } from '../src/services/exportP
 import { buildPublisherHtmlPackage } from '../src/services/exportPublisherHtmlPackage.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
+test('both PDF content modes float footnotes at anchors and preserve true endnotes', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]!.blocks[0]!;
+  const marker = (noteId: string) => ({ type: 'omiNote', attrs: { noteId } });
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [
+      { type: 'text', text: 'FIRST_ANCHOR' }, marker('foot'),
+      { type: 'text', text: ' repeated ' }, marker('foot'),
+      marker('end'), marker('legacy'),
+    ] }],
+  });
+  manuscript.annotations = [
+    { id: 'end', type: 'note', targetBlockId: block.id, noteKind: 'endnote', body: 'TRUE_ENDNOTE_BODY', renderingHint: 'endnote' },
+    { id: 'foot', type: 'note', targetBlockId: block.id, noteKind: 'footnote', body: 'FOOTNOTE_BODY <safe>', renderingHint: 'footnote' },
+    { id: 'legacy', type: 'note', targetBlockId: block.id, body: 'LEGACY_FOOTNOTE_BODY', renderingHint: 'footnote' },
+  ];
+  const before = JSON.stringify(manuscript);
+  for (const contentMode of ['publication', 'editorial'] as const) {
+    for (const mode of ['print', 'interactive'] as const) {
+      const html = buildPdfPrintDocument(manuscript, undefined, mode, contentMode);
+      assert.match(html, /float: footnote/);
+      assert.match(html, /id="note-foot" role="doc-footnote"/);
+      assert.match(html, /id="note-legacy" role="doc-footnote"/);
+      assert.match(html, /id="note-end" role="doc-endnote"/);
+      assert.equal(html.split('FOOTNOTE_BODY &lt;safe&gt;').length - 1, 1);
+      assert.equal(html.split('id="note-foot"').length - 1, 1);
+      assert.ok(html.indexOf('FOOTNOTE_BODY') < html.indexOf('</p>', html.indexOf('FIRST_ANCHOR')));
+      assert.doesNotMatch(html, /<li id="note-(?:foot|legacy)"/);
+      if (mode === 'interactive') {
+        assert.match(html, /href="#note-foot"/);
+        assert.equal(html.split('id="noteref-foot"').length - 1, 1);
+      } else {
+        assert.doesNotMatch(html, /<a\b/);
+      }
+    }
+  }
+  assert.equal(JSON.stringify(manuscript), before);
+  // Continuous HTML retains its navigable notes list.
+  const web = renderHtmlArticle(manuscript).html;
+  assert.match(web, /id="note-foot" role="doc-endnote"/);
+  assert.doesNotMatch(web, /class="omi-page-footnote"/);
+});
+
+test('paged rendering emits only anchored footnotes and keeps unanchored notes available', () => {
+  const manuscript = createVersionedTestManuscript();
+  const root = manuscript.sections[0]!;
+  root.children = [{
+    id: 'nested-section', title: 'Nested', blocks: [{
+      id: 'nested-block', type: 'paragraph',
+      content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+        { type: 'text', text: 'NESTED_ANCHOR' },
+        { type: 'omiNote', attrs: { noteId: 'nested-note' } },
+      ] }] }),
+    }],
+  }];
+  manuscript.annotations = [
+    { id: 'nested-note', type: 'note', targetBlockId: 'nested-block', noteKind: 'footnote', body: 'NESTED_NOTE_BODY', renderingHint: 'footnote' },
+    { id: 'unanchored', type: 'note', targetBlockId: 'nested-block', noteKind: 'footnote', body: 'UNANCHORED_NOTE_BODY', renderingHint: 'footnote' },
+  ];
+  const rendered = renderHtmlArticle(manuscript, undefined, { noteLayout: 'paged' });
+  assert.match(rendered.html, /id="note-nested-note" role="doc-footnote"/);
+  assert.match(rendered.html, /id="note-unanchored" role="doc-endnote"/);
+  assert.equal(rendered.html.split('NESTED_NOTE_BODY').length - 1, 1);
+});
+
 test('DOCX export contains Word heading and named character styles', () => {
   const manuscript = createVersionedTestManuscript();
   const block = manuscript.sections[0]?.blocks[0];

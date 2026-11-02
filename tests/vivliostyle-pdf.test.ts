@@ -74,6 +74,63 @@ test('Vivliostyle PDF source enforces the HTML size boundary', () => {
 });
 
 if (process.env.OMI_RUN_VIVLIOSTYLE_SMOKE === '1') {
+  test('PDF footnotes stay below their anchors on two different pages', async () => {
+    const { buildPdfPrintDocument } = await import('../src/services/exportPdf.ts');
+    const { createTestManuscript } = await import('./testManuscriptFixture.ts');
+    const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const execute = promisify(execFile);
+    const manuscript = createTestManuscript();
+    manuscript.abstract = '';
+    manuscript.keywords = [];
+    manuscript.sections[0]!.blocks = ['ONE', 'TWO'].map((id) => ({
+      id, type: 'paragraph' as const,
+      content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+        { type: 'text', text: 'ANCHOR_' + id },
+        { type: 'omiNote', attrs: { noteId: id } },
+      ] }] }),
+    }));
+    manuscript.annotations = ['ONE', 'TWO'].map((id) => ({
+      id, type: 'note', noteKind: 'footnote', targetBlockId: id,
+      body: 'FOOTNOTE_' + id, renderingHint: 'footnote',
+    }));
+    const directory = await mkdtemp(join(tmpdir(), 'omi-footnote-layout-'));
+    try {
+      for (const contentMode of ['publication', 'editorial'] as const) {
+        const html = buildPdfPrintDocument(manuscript, undefined, 'print', contentMode)
+          .replace('</head>', '<style>#block-TWO { break-before: page; }</style></head>');
+        const artifact = await renderVivliostylePdf(html);
+        const path = join(directory, contentMode + '.pdf');
+        await writeFile(path, artifact.bytes);
+        const { stdout } = await execute(process.env.PDFTOTEXT_BIN || 'pdftotext', ['-bbox', path, '-']);
+        const pages = [...stdout.matchAll(/<page\b([^>]*)>([\s\S]*?)<\/page>/g)];
+        for (const id of ['ONE', 'TWO']) {
+          const pageIndex = pages.findIndex((page) => page[2]!.includes('>ANCHOR_' + id + '</word>'));
+          assert.ok(pageIndex >= 0, 'Missing anchor ' + id);
+          const page = pages[pageIndex]!;
+          const words = [...page[2]!.matchAll(/<word\b([^>]*)>([^<]*)<\/word>/g)];
+          const anchor = words.find((word) => word[2] === 'ANCHOR_' + id)!;
+          const note = words.find((word) => word[2] === 'FOOTNOTE_' + id);
+          assert.ok(note, 'Footnote must share its anchor page: ' + id);
+          const y = (attributes: string) => Number(attributes.match(/yMin="([^"]+)"/)![1]);
+          const height = Number(page[1]!.match(/height="([^"]+)"/)![1]);
+          assert.ok(y(note[1]!) > y(anchor[1]!));
+          assert.ok(y(note[1]!) > height * .65, 'Footnote must be at the foot of the page');
+          assert.equal(stdout.split('>FOOTNOTE_' + id + '</word>').length - 1, 1);
+        }
+        assert.notEqual(
+          pages.findIndex((page) => page[2]!.includes('>ANCHOR_ONE</word>')),
+          pages.findIndex((page) => page[2]!.includes('>ANCHOR_TWO</word>')),
+        );
+      }
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   test('pinned Vivliostyle CLI renders a real PDF artifact', async () => {
     const artifact = await renderVivliostylePdf(
       '<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A5;margin:15mm}h1{break-after:avoid}</style></head><body><h1>OMI PDF smoke test</h1><p>Vivliostyle paged-media artifact.</p></body></html>',

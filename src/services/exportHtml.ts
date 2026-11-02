@@ -7,7 +7,7 @@ import {
 } from '../model/crossReferences.ts';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering.ts';
 import { getBibliographyRecords } from '../model/citations.ts';
-import { buildNoteNumberMap } from '../model/notes.ts';
+import { buildNoteNumberMap, getNoteKind, sortNotesByDocumentOrder } from '../model/notes.ts';
 import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText.ts';
 import { contributorNameParts } from '../model/contributorName.ts';
 import { renderLatexMath } from '../model/equationRendering.ts';
@@ -48,6 +48,8 @@ export interface HtmlDiagnostic {
 export interface HtmlRenderOptions {
   /** Prefix inserted before portable `media/...` asset paths. */
   assetPrefix?: string;
+  /** Move semantic footnotes to their anchors for a paged-media renderer. */
+  noteLayout?: 'paged';
 }
 
 export interface HtmlExportResult {
@@ -77,6 +79,9 @@ interface RenderState {
   noteLabels: Map<string, string>;
   assetMap: Map<string, OmiAsset>;
   assetPrefix: string;
+  pagedNotes: boolean;
+  emittedFootnotes: Set<string>;
+  noteBodies: Map<string, string>;
 }
 
 /**
@@ -133,7 +138,11 @@ export function renderHtmlArticle(
     noteLabels: collectNoteLabels(manuscript),
     assetMap: new Map((manuscript.assets ?? []).map((asset) => [asset.id, asset])),
     assetPrefix: options.assetPrefix ?? '',
+    pagedNotes: options.noteLayout === 'paged',
+    emittedFootnotes: new Set(),
+    noteBodies: new Map(),
   };
+  state.noteBodies = collectNoteBodies(state);
 
   const labels = localizedLabels(context.locale);
   const stateDigest = currentStateDigest(manuscript);
@@ -172,6 +181,7 @@ export function renderHtmlArticle(
     '  <style>',
     indent(renderProfileCss(profile), 2),
     '  </style>',
+    state.pagedNotes ? `<style data-omi-paged-notes>\n${PAGED_NOTE_CSS}\n</style>` : '',
     '</head>',
     '<body>',
     `  <article class="omi-scholarly-article" data-omi-manuscript-id="${escapeAttribute(
@@ -750,25 +760,48 @@ function renderNoteMarker(node: JsonNode, state: RenderState): string {
     return '<sup class="note-ref note-ref-unresolved">?</sup>';
   }
   const label = state.noteLabels.get(annotation.id) ?? '?';
-  return `<sup class="note-ref"><a id="${htmlId('noteref', annotation.id)}" role="doc-noteref" href="#${htmlId(
+  const reference = `<sup class="note-ref"><a id="${htmlId('noteref', annotation.id)}" role="doc-noteref" href="#${htmlId(
     'note',
     annotation.id,
   )}">${escapeHtml(label)}</a></sup>`;
+  if (!state.pagedNotes || getNoteKind(annotation) !== 'footnote') return reference;
+  if (state.emittedFootnotes.has(annotation.id)) {
+    return `<sup class="note-ref"><a role="doc-noteref" href="#${htmlId('note', annotation.id)}">${escapeHtml(label)}</a></sup>`;
+  }
+  state.emittedFootnotes.add(annotation.id);
+  // Keep the float at its anchor, even when the enclosing paragraph is split.
+  // Explicit labels preserve OMI numbering across chapters and repeated calls.
+  // Encode line breaks so HTML source indentation cannot change note content.
+  const body = escapeHtml(state.noteBodies.get(annotation.id) ?? annotation.body)
+    .replace(/\r\n?|\n/g, '&#10;');
+  return `${reference}<span class="omi-page-footnote" id="${htmlId('note', annotation.id)}" role="doc-footnote"><sup class="omi-page-footnote-label">${escapeHtml(label)}</sup> ${body}</span>`;
 }
 
-function renderNotes(
-  state: RenderState,
-  labels: ReturnType<typeof localizedLabels>,
-): string {
-  const notes = state.manuscript.annotations.filter(
-    (annotation) => annotation.type === 'note',
-  );
-  if (!notes.length) return '';
-  const placement = state.context.profile.rules.notes.placement;
+const PAGED_NOTE_CSS = `
+@page { @footnote { border-top: .5pt solid currentColor; padding-top: 2mm; } }
+.omi-page-footnote {
+  float: footnote;
+  font-size: 9.5pt;
+  line-height: 1.4;
+  font-weight: normal;
+  font-style: normal;
+  text-indent: 0;
+  text-align: left;
+  white-space: pre-wrap;
+  orphans: 2;
+  widows: 2;
+}
+.omi-page-footnote::footnote-call, .omi-page-footnote::footnote-marker { content: none; }
+.omi-page-footnote-label { font-size: .75em; line-height: 0; }
+`.trim();
 
+function collectNoteBodies(state: RenderState): Map<string, string> {
   const citationRules = state.context.profile.rules.citations;
   const previouslyCitedTargets = new Set<string>();
-  const noteItems = notes.map((note, index) => {
+  const notes = state.pagedNotes
+    ? sortNotesByDocumentOrder(state.manuscript)
+    : state.manuscript.annotations.filter((annotation) => annotation.type === 'note');
+  return new Map(notes.map((note) => {
     const noteDocument = createNoteBodyDocument(
       note,
       state.manuscript.bibliographicRecords ?? [],
@@ -780,7 +813,22 @@ function renderNotes(
       },
     );
     for (const citation of note.noteCitations ?? []) previouslyCitedTargets.add(citation.target);
-    const body = noteBodyPlainText(noteDocument) || note.body;
+    return [note.id, noteBodyPlainText(noteDocument) || note.body];
+  }));
+}
+
+function renderNotes(
+  state: RenderState,
+  labels: ReturnType<typeof localizedLabels>,
+): string {
+  const notes = state.manuscript.annotations.filter(
+    (annotation) => annotation.type === 'note' && !state.emittedFootnotes.has(annotation.id),
+  );
+  if (!notes.length) return '';
+  const placement = state.pagedNotes ? 'endnotes' : state.context.profile.rules.notes.placement;
+
+  const noteItems = notes.map((note, index) => {
+    const body = state.noteBodies.get(note.id) ?? note.body;
     return `<li id="${htmlId('note', note.id)}" role="doc-endnote" value="${escapeAttribute(
       state.noteLabels.get(note.id) ?? String(index + 1),
     )}">${escapeHtml(

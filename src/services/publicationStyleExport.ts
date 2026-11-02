@@ -409,7 +409,7 @@ body { font-family: var(--omi-publication-font); font-size: ${body.fontSize}pt; 
 figure { margin-left: 0; margin-right: 0; }
 figcaption { font-size: ${figureCaption.fontSize}pt; line-height: ${figureCaption.lineHeight}pt; text-align: ${figureCaption.alignment}; margin: ${figureCaption.spaceBefore}pt 0 ${figureCaption.spaceAfter}pt; }
 table caption { font-size: ${tableCaption.fontSize}pt; line-height: ${tableCaption.lineHeight}pt; text-align: ${tableCaption.alignment}; margin: ${tableCaption.spaceBefore}pt 0 ${tableCaption.spaceAfter}pt; }
-.article-notes, .footnotes, [role="doc-endnotes"] { font-family: ${noteFamily}; font-size: ${footnote.fontSize}pt; line-height: ${footnote.lineHeight}pt; }
+.article-notes, .footnotes, [role="doc-endnotes"], .omi-page-footnote { font-family: ${noteFamily}; font-size: ${footnote.fontSize}pt; line-height: ${footnote.lineHeight}pt; }
 .bibliography p, .references li { font-size: ${bibliography.fontSize}pt; line-height: ${bibliography.lineHeight}pt; text-align: ${bibliography.alignment}; padding-left: ${bibliography.hangingIndent}mm; text-indent: -${bibliography.hangingIndent}mm; }
 img, svg, table { max-width: 100%; }
 ${paragraphStyleRules}
@@ -461,6 +461,7 @@ body { padding: 0; counter-reset: page ${Math.max(0, pageNumberStart - 1)}; }
 .article-body h2, .article-body h3 { break-after: avoid-page; page-break-after: avoid; }
 figure, table { break-inside: avoid-page; page-break-inside: avoid; }
 .article-notes, .footnotes { border-top: ${separator.enabled ? `${separator.width}pt solid currentColor` : '0'}; padding-top: 2mm; }
+@page { @footnote { border-top: ${separator.enabled ? `${separator.width}pt solid currentColor` : '0'}; padding-top: 2mm; } }
 .omi-print-running-header { display: flex; position: fixed; top: -${Math.max(4, topMargin - 5)}mm; left: 0; right: 0; align-items: center; justify-content: space-between; gap: 8mm; font-family: ${family}; font-size: ${style.runningHeaders.fontSize}pt; border-bottom: ${style.runningHeaders.rule.enabled ? `${style.runningHeaders.rule.width}pt solid currentColor` : '0'}; padding-bottom: 1.5mm; }
 .omi-print-page-number::after { content: counter(page); }
 @media screen { body { background: #e9e9e9; } .omi-scholarly-article { box-sizing: border-box; width: ${pageWidth}mm; min-height: ${pageHeight}mm; margin: 12mm auto; padding: ${topMargin}mm ${outerMargin}mm ${bottomMargin}mm ${innerMargin}mm; background: white; box-shadow: 0 2mm 7mm rgba(0,0,0,.18); } .omi-print-running-header { display: none; } }
@@ -914,7 +915,9 @@ export async function renderStyleBasedHtml(
   const renderingManuscript = target === 'print'
     ? applyPublicationCorrectionsForRendering(manuscript)
     : manuscript;
-  const rendered = renderPublisherHtmlArticle(renderingManuscript, profile);
+  const rendered = renderPublisherHtmlArticle(renderingManuscript, profile, {
+    noteLayout: target === 'print' ? 'paged' : undefined,
+  });
   // Keep DOM parsing confined to the semantic article produced by our HTML
   // renderer. Publication-style and publisher values can originate in local
   // storage or an imported IDML package, so add them only after hyphenation.

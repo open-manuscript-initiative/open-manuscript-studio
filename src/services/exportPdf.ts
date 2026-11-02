@@ -38,7 +38,7 @@ export function buildPdfPrintDocument(
     );
   }
 
-  const result = renderHtmlArticle(manuscript, profile);
+  const result = renderHtmlArticle(manuscript, profile, { noteLayout: 'paged' });
   const fatalDiagnostics = result.diagnostics.filter(
     (item) =>
       item.severity === 'error' &&

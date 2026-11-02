@@ -150,6 +150,12 @@ jobs:
       - name: Test JATS4R publication profile
         run: npm run test:jats4r-profile
 
+      - name: Install PDF text extraction tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes poppler-utils
+          pdftotext -v
+
       - name: Install pinned Vivliostyle renderer
         shell: bash
         run: |
