@@ -104,7 +104,7 @@
     "test:transkribus": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/transkribus.test.ts && tsc -p server/tsconfig.json && node --test --experimental-test-module-mocks tests/transkribus-api.test.mjs",
     "test:translation-model": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/translation-model.test.ts tests/translation-actions.test.ts tests/structured-external-content.test.ts",
     "test:validation-model": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/validation-model.test.ts",
-    "test:draft-models": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/exchange-conformance.test.ts tests/collaboration-policy.test.ts",
+    "test:draft-models": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/exchange-conformance.test.ts tests/collaboration-policy.test.ts tests/runtime-capabilities.test.ts",
     "conformance:draft-models": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/draft-model-assessment.ts",
     "test:core-review": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-model-review.test.ts"
   },
