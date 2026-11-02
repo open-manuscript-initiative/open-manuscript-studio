@@ -206,6 +206,9 @@ jobs:
       - name: Verify production locale assets
         run: node scripts/verify-production-locale-assets.mjs
 
+      - name: Verify production startup with native WebView CSP
+        run: npm run test:native-csp:build
+
       - name: Prepare portable deployment validation
         run: cp deployment/.env.example deployment/.env
 

@@ -36,6 +36,7 @@ export default tseslint.config(
       'src-tauri/gen/**',
       'src-tauri/target/**',
       'server/src/generated/**',
+      'src/services/generated/**',
       'src/i18n/helpDetailed.generated.ts',
     ],
   },
