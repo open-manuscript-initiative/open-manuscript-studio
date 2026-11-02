@@ -26,6 +26,9 @@ export function exchangeCopy(locale: string) {
     liveSERVICE_ERROR: 'Server returned an error', liveINVALID_RESPONSE: 'Unexpected API response',
     liveNETWORK_ERROR: 'Unable to reach server', liveNotCertified: 'Operational findings only; OMI-SPEC compliance remains undetermined.',
     liveDeclared: 'Declared scope (not independently verified)',
+    liveManuscript: 'Current manuscript: structural exchange validation', liveManuscriptNone: 'No open manuscript was assessed.',
+    liveManuscriptError: 'Manuscript validation could not be completed.', liveManuscriptValid: 'Valid in Studio exchange-check scope',
+    liveManuscriptInvalid: 'Errors found', liveManuscriptIndeterminate: 'Incomplete or indeterminate',
   };
   if (locale.startsWith('hu')) return { ...en,
     title: 'Átalakítási jelentés', export: 'JSON-jelentés mentése', original: 'Eredeti fájl mentése',
@@ -53,6 +56,9 @@ export function exchangeCopy(locale: string) {
     liveSERVICE_ERROR: 'Szerverhiba érkezett', liveINVALID_RESPONSE: 'Váratlantól eltérő API-válasz',
     liveNETWORK_ERROR: 'A szerver nem érhető el', liveNotCertified: 'Csak működési eredmények; az OMI-SPEC megfelelőség továbbra sem eldönthető.',
     liveDeclared: 'Deklarált hatókör (függetlenül nem igazolt)',
+    liveManuscript: 'Aktuális kézirat: szerkezeti csereformátum-ellenőrzés', liveManuscriptNone: 'Nem volt megnyitott, ellenőrizhető kézirat.',
+    liveManuscriptError: 'A kézirat ellenőrzése nem fejeződött be.', liveManuscriptValid: 'A Stúdió csereformátum-ellenőrzése szerint megfelelő',
+    liveManuscriptInvalid: 'Hibák találhatók', liveManuscriptIndeterminate: 'Hiányos vagy nem eldönthető',
   };
   if (locale.startsWith('de')) return { ...en,
     title: 'Konvertierungsbericht', export: 'JSON-Bericht speichern', original: 'Originaldatei speichern',
@@ -80,6 +86,9 @@ export function exchangeCopy(locale: string) {
     liveSERVICE_ERROR: 'Serverfehler', liveINVALID_RESPONSE: 'Unerwartete API-Antwort',
     liveNETWORK_ERROR: 'Server nicht erreichbar', liveNotCertified: 'Nur betriebliche Ergebnisse; die OMI-SPEC-Konformität bleibt unbestimmt.',
     liveDeclared: 'Deklarierter Umfang (nicht unabhängig geprüft)',
+    liveManuscript: 'Aktuelles Manuskript: strukturelle Austauschprüfung', liveManuscriptNone: 'Kein geöffnetes Manuskript geprüft.',
+    liveManuscriptError: 'Die Manuskriptprüfung konnte nicht abgeschlossen werden.', liveManuscriptValid: 'Im Umfang der Studio-Austauschprüfung gültig',
+    liveManuscriptInvalid: 'Fehler festgestellt', liveManuscriptIndeterminate: 'Unvollständig oder unbestimmt',
   };
   return en;
 }
