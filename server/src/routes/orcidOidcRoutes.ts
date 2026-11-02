@@ -1,3 +1,5 @@
+import { fetchPinnedPublicUrl } from '../cloud/security/connectionPinnedHttp.js';
+import { readOidcJson } from '../integrations/security/oidcMetadataHttp.js';
 import { createHash, randomBytes } from 'node:crypto';
 
 import { Router, type Response } from 'express';
@@ -434,13 +436,14 @@ async function exchangeOrcidCode(code: string): Promise<OrcidOidcTokenResponse> 
     code,
     redirect_uri: redirectUri(),
   });
-  const response = await fetch(new URL('/oauth/token', env.ORCID_BASE_URL), {
+  const response = await fetchPinnedPublicUrl(new URL('/oauth/token', env.ORCID_BASE_URL), {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
+    redirect: 'error',
     signal: AbortSignal.timeout(20_000),
   });
-  const payload = await response.json() as OrcidOidcTokenResponse;
+  const payload = await readOidcJson<OrcidOidcTokenResponse>(response, 128 * 1024);
   if (!response.ok) throw new Error(`ORCID token exchange failed with HTTP ${response.status}.`);
   return payload;
 }
