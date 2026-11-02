@@ -28,7 +28,7 @@ export function exchangeCopy(locale: string) {
     liveDeclared: 'Declared scope (not independently verified)',
     liveManuscript: 'Current manuscript: structural exchange validation', liveManuscriptNone: 'No open manuscript was assessed.',
     liveManuscriptError: 'Manuscript validation could not be completed.', liveManuscriptValid: 'Valid in Studio exchange-check scope',
-    liveManuscriptInvalid: 'Errors found', liveManuscriptIndeterminate: 'Incomplete or indeterminate',
+    liveManuscriptInvalid: 'Errors found', liveManuscriptIndeterminate: 'Incomplete or indeterminate', liveErrors: 'Errors', liveWarnings: 'Warnings', liveCheckSkipped: 'Not assessed', liveCheckError: 'Check error', liveCheckIncomplete: 'Incomplete', 
   };
   if (locale.startsWith('hu')) return { ...en,
     title: 'Átalakítási jelentés', export: 'JSON-jelentés mentése', original: 'Eredeti fájl mentése',
@@ -58,7 +58,7 @@ export function exchangeCopy(locale: string) {
     liveDeclared: 'Deklarált hatókör (függetlenül nem igazolt)',
     liveManuscript: 'Aktuális kézirat: szerkezeti csereformátum-ellenőrzés', liveManuscriptNone: 'Nem volt megnyitott, ellenőrizhető kézirat.',
     liveManuscriptError: 'A kézirat ellenőrzése nem fejeződött be.', liveManuscriptValid: 'A Stúdió csereformátum-ellenőrzése szerint megfelelő',
-    liveManuscriptInvalid: 'Hibák találhatók', liveManuscriptIndeterminate: 'Hiányos vagy nem eldönthető',
+    liveManuscriptInvalid: 'Hibák találhatók', liveManuscriptIndeterminate: 'Hiányos vagy nem eldönthető', liveErrors: 'Hibák', liveWarnings: 'Figyelmeztetések', liveCheckSkipped: 'Nem vizsgált', liveCheckError: 'Ellenőrzési hiba', liveCheckIncomplete: 'Nem teljes', 
   };
   if (locale.startsWith('de')) return { ...en,
     title: 'Konvertierungsbericht', export: 'JSON-Bericht speichern', original: 'Originaldatei speichern',
@@ -88,7 +88,7 @@ export function exchangeCopy(locale: string) {
     liveDeclared: 'Deklarierter Umfang (nicht unabhängig geprüft)',
     liveManuscript: 'Aktuelles Manuskript: strukturelle Austauschprüfung', liveManuscriptNone: 'Kein geöffnetes Manuskript geprüft.',
     liveManuscriptError: 'Die Manuskriptprüfung konnte nicht abgeschlossen werden.', liveManuscriptValid: 'Im Umfang der Studio-Austauschprüfung gültig',
-    liveManuscriptInvalid: 'Fehler festgestellt', liveManuscriptIndeterminate: 'Unvollständig oder unbestimmt',
+    liveManuscriptInvalid: 'Fehler festgestellt', liveManuscriptIndeterminate: 'Unvollständig oder unbestimmt', liveErrors: 'Fehler', liveWarnings: 'Warnungen', liveCheckSkipped: 'Nicht geprüft', liveCheckError: 'Prüffehler', liveCheckIncomplete: 'Unvollständig', 
   };
   return en;
 }
