@@ -85,15 +85,17 @@ test('page styles and transformed graphics survive OMI save/reopen and reject ma
 test('fixed-layout export includes named mixed-size pages, escaped headers and graphic clipping', () => {
   let layout = withFramePages(createFrameLayout());
   layout.pageStyles![0]!.runningHeader.enabled = true;
-  layout.pageStyles![0]!.runningHeader.odd.left = '{title} <script>x</script>';
   layout.pageStyles!.push({ ...defaultFramePageStyle(240, 150), id: 'wide', name: 'Wide' });
   layout = insertFramePage(layout, 0, 'wide', 'second');
   const frame: PublicationFrame = { ...textFrame('g', 0), kind: 'graphic' as const, storyId: undefined, sourceBlockId: 'image' };
   frame.graphicTransform = { ...frameGraphicTransform(frame, 2), rotation: 17, offsetXMm: -5 };
   layout.frames = [frame];
-  const html = renderFrameDocument(layout, flowFrameStories(layout, (text) => text.length), new Map([['image', '<figure><svg></svg></figure>']]), 'Title');
-  assert.match(html, /@page omi_frame_style_1\{size:240mm 150mm/);
-  assert.match(html, /omi-frame-running-header/); assert.doesNotMatch(html, /<script>/);
-  assert.match(html, /&lt;script&gt;/); assert.match(html, /rotate\(17deg\)/);
-  assert.match(html, /\.omi-frame-graphic\{position:absolute;inset:0;overflow:hidden\}/);
+  for (const tag of ['script', 'SCRIPT', 'ScRiPt']) {
+    layout.pageStyles![0]!.runningHeader.odd.left = `{title} <${tag}>x</${tag}>`;
+    const html = renderFrameDocument(layout, flowFrameStories(layout, (text) => text.length), new Map([['image', '<figure><svg></svg></figure>']]), 'Title');
+    assert.match(html, /@page omi_frame_style_1\{size:240mm 150mm/);
+    assert.match(html, /omi-frame-running-header/); assert.doesNotMatch(html, /<script\b/i);
+    assert.match(html, /&lt;script&gt;/i); assert.match(html, /rotate\(17deg\)/);
+    assert.match(html, /\.omi-frame-graphic\{position:absolute;inset:0;overflow:hidden\}/);
+  }
 });
