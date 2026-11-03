@@ -48,9 +48,9 @@ test('policy CLI and workflow gate retain the separate exact-source/manual relea
 
 test('actual promotion shell preserves RC prerelease while beta and stable remain promotable', () => {
   const workflow = readFileSync('.github/workflows/promote-current-release.yml', 'utf8');
-  const block = workflow.match(/        run: \|\n([\s\S]*?)\n  promote:/)?.[1];
+  const block = workflow.match(/ {8}run: \|\n([\s\S]*?)\n {2}promote:/)?.[1];
   assert.ok(block, 'promotion verification shell exists');
-  const script = block.split('\n').map(line => line.replace(/^          /, '')).join('\n');
+  const script = block.split('\n').map(line => line.replace(/^ {10}/, '')).join('\n');
   const directory = mkdtempSync(join(tmpdir(), 'rc-promotion-'));
   try {
     // Exercise the committed shell with a local GitHub stub, no credentials
