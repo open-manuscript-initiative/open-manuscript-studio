@@ -6,6 +6,7 @@ acceptance. Start with:
 - [`1.0-scope.md`](./1.0-scope.md) for Stable, Preview, and Experimental targets;
 - [`1.0-blocker-policy.md`](./1.0-blocker-policy.md) for non-negotiable gates;
 - [`readiness.config.json`](./readiness.config.json) for machine-readable checks.
+- [`2026-11-03-rc1-acceptance-record.md`](./2026-11-03-rc1-acceptance-record.md) for the dated, evidence-linked RC1 GO/NO-GO acceptance record (**currently NO-GO; not a release authorization**).
 
 Run the local structural checks with:
 
