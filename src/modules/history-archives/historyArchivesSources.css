@@ -64,3 +64,47 @@
   font-size: 0.85rem;
   color: var(--studio-muted, #596273);
 }
+
+.history-archives-italian-national {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--studio-border, #d8dce3);
+}
+
+.history-archives-italian-note {
+  margin: 0.5rem 0;
+  color: var(--studio-muted, #596273);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.history-archives-italian-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.55rem;
+  margin-block: 0.85rem;
+}
+
+.history-archives-italian-links a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--studio-border, #d8dce3);
+  border-radius: 0.45rem;
+  background: var(--studio-surface, #fff);
+  color: var(--studio-link, #3949ab);
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.history-archives-italian-links a:hover,
+.history-archives-italian-links a:focus-visible {
+  text-decoration: underline;
+  border-color: currentColor;
+}
+
+.history-archives-italian-reference {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
