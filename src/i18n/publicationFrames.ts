@@ -1,0 +1,46 @@
+const en = {
+  mode: 'Frame layout', continuous: 'Continuous layout', description: 'Place text and graphics in separate frames. Link text frames to continue a story.',
+  addText: 'Add text frame', addGraphic: 'Add graphic frame', frame: 'Frame', selectFrame: 'Select frame', text: 'Story text',
+  importText: 'Copy manuscript text into story', importHelp: 'Copies plain text. The structured manuscript, rich formatting and notes remain in the continuous layout.',
+  source: 'Graphic source', style: 'Shared frame style', newStyle: 'New shared style', styleName: 'Style name', editShared: 'Edit shared style',
+  local: 'Local style overrides', inherited: 'Use shared style', name: 'Frame name', page: 'Page', pages: 'Page count',
+  pageWidth: 'Page width (mm)', pageHeight: 'Page height (mm)', x: 'X (mm)', y: 'Y (mm)', width: 'Width (mm)', height: 'Height (mm)', rotation: 'Rotation (°)',
+  shape: 'Frame shape', rectangle: 'Rectangle', ellipse: 'Ellipse', polygon: 'Custom polygon', points: 'Outline points (%)', addPoint: 'Add point', removePoint: 'Remove point',
+  next: 'Link to text frame', link: 'Link frames', unlink: 'Unlink continuation', linked: 'Continues in', deleteFrame: 'Delete frame',
+  font: 'Font family', size: 'Font size (pt)', leading: 'Leading (pt)', padding: 'Inset (mm)', weight: 'Bold', italic: 'Italic',
+  color: 'Text color', fill: 'Frame fill', stroke: 'Frame stroke', strokeWidth: 'Stroke width (mm)', alignment: 'Alignment', left: 'Left', center: 'Center', right: 'Right',
+  print: 'Print frames / save PDF', exportHtml: 'Download frame HTML', overflow: 'Text does not fit. Add or enlarge linked frames.',
+  empty: 'Add a text or graphic frame to begin.', missingGraphic: 'Select an existing graphic element.',
+  story: 'Story', unusedStory: 'Retained story', freshStory: 'New story', saved: 'Layout saved in the manuscript.',
+  exportFailed: 'Could not export the frame layout.',
+  exportError: 'Resolve overflow and missing graphic sources before exporting.',
+};
+type FrameCopy = typeof en;
+const hu: FrameCopy = {
+  mode: 'Keretalapú tördelés', continuous: 'Folyószöveges tördelés', description: 'A szöveg és a grafika külön keretekbe rendezhető. Az összekapcsolt szövegkeretekben a szöveg továbbfolyik.',
+  addText: 'Szövegkeret hozzáadása', addGraphic: 'Grafikai keret hozzáadása', frame: 'Keret', selectFrame: 'Keret kiválasztása', text: 'Szövegfolyam szövege',
+  importText: 'Kéziratszöveg másolása a szövegfolyamba', importHelp: 'Egyszerű szöveget másol. A strukturált kézirat, a gazdag formázás és a jegyzetek a folyószöveges nézetben maradnak.',
+  source: 'Grafikai forrás', style: 'Közös keretstílus', newStyle: 'Új közös stílus', styleName: 'Stílus neve', editShared: 'Közös stílus szerkesztése',
+  local: 'Egyedi stílusfelülírások', inherited: 'Közös stílus használata', name: 'Keret neve', page: 'Oldal', pages: 'Oldalak száma',
+  pageWidth: 'Oldalszélesség (mm)', pageHeight: 'Oldalmagasság (mm)', x: 'X (mm)', y: 'Y (mm)', width: 'Szélesség (mm)', height: 'Magasság (mm)', rotation: 'Elforgatás (°)',
+  shape: 'Keret alakja', rectangle: 'Téglalap', ellipse: 'Ellipszis', polygon: 'Egyedi sokszög', points: 'Körvonalpontok (%)', addPoint: 'Pont hozzáadása', removePoint: 'Pont törlése',
+  next: 'Összekapcsolás szövegkerettel', link: 'Keretek összekapcsolása', unlink: 'Folytatás szétválasztása', linked: 'Folytatás itt', deleteFrame: 'Keret törlése',
+  font: 'Betűcsalád', size: 'Betűméret (pt)', leading: 'Sorköz (pt)', padding: 'Belső margó (mm)', weight: 'Félkövér', italic: 'Dőlt',
+  color: 'Szövegszín', fill: 'Keret kitöltése', stroke: 'Keret körvonala', strokeWidth: 'Vonalvastagság (mm)', alignment: 'Igazítás', left: 'Balra', center: 'Középre', right: 'Jobbra',
+  print: 'Keretek nyomtatása / PDF mentése', exportHtml: 'Keretes HTML letöltése', overflow: 'A szöveg nem fér el. Adjon hozzá vagy növeljen összekapcsolt kereteket.',
+  empty: 'Kezdésként adjon hozzá szöveg- vagy grafikai keretet.', missingGraphic: 'Válasszon meglévő grafikus elemet.',
+  story: 'Szövegfolyam', unusedStory: 'Megőrzött szövegfolyam', freshStory: 'Új szövegfolyam', saved: 'A tördelés a kéziratban mentve.',
+  exportFailed: 'A keretes tördelés exportálása nem sikerült.',
+  exportError: 'Exportálás előtt rendezze a túlcsorduló szöveget és a hiányzó grafikai forrásokat.',
+};
+const de: FrameCopy = {
+  ...en, mode: 'Rahmenlayout', continuous: 'Fortlaufendes Layout', description: 'Text und Grafiken in eigenen Rahmen anordnen. Verknüpfte Textrahmen führen den Text fort.',
+  addText: 'Textrahmen hinzufügen', addGraphic: 'Grafikrahmen hinzufügen', selectFrame: 'Rahmen auswählen', text: 'Textfluss',
+  importText: 'Manuskripttext in Textfluss kopieren', importHelp: 'Kopiert Klartext. Struktur, Formatierung und Anmerkungen bleiben im fortlaufenden Layout.',
+  style: 'Gemeinsamer Rahmenstil', newStyle: 'Neuer gemeinsamer Stil', editShared: 'Gemeinsamen Stil bearbeiten', local: 'Lokale Stilabweichungen',
+  rotation: 'Drehung (°)', shape: 'Rahmenform', rectangle: 'Rechteck', ellipse: 'Ellipse', polygon: 'Eigenes Polygon',
+  next: 'Mit Textrahmen verknüpfen', link: 'Rahmen verknüpfen', unlink: 'Fortsetzung trennen', deleteFrame: 'Rahmen löschen',
+  print: 'Rahmen drucken / PDF speichern', exportHtml: 'Rahmen-HTML herunterladen', overflow: 'Textüberlauf. Weitere oder größere verknüpfte Rahmen hinzufügen.',
+  exportError: 'Textüberlauf und fehlende Grafikquellen vor dem Export beheben.',
+};
+export function getPublicationFramesCopy(locale: string): FrameCopy { return locale.startsWith('hu') ? hu : locale.startsWith('de') ? de : en; }

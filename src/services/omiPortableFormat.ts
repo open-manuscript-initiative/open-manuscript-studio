@@ -1,3 +1,4 @@
+import { FRAME_LAYOUT_EXTENSION, validateFrameLayout } from '../model/publicationFrames';
 import {
   OMI_FILE_FORMAT_PROFILES,
   OMI_FILE_FORMAT_SPECIFICATIONS,
@@ -320,7 +321,7 @@ export function assertPortableOmiManuscript(
 
   validateTombstones(value.tombstones, indexes.all);
   validateReferences(value, indexes);
-  validateTranslationExtension(value);
+  validateStudioExtensions(value);
   validateHistory(value, indexes);
   rejectCredentialFields(value);
 }
@@ -352,7 +353,12 @@ function validateSection(
   );
 }
 
-function validateTranslationExtension(value: Record<string, unknown>): void {
+function validateStudioExtensions(value: Record<string, unknown>): void {
+  const frameLayout = isRecord(value.extensions) ? value.extensions[FRAME_LAYOUT_EXTENSION] : undefined;
+  if (frameLayout !== undefined) {
+    try { validateFrameLayout(frameLayout); }
+    catch (error) { invalid(error instanceof Error ? error.message : 'Invalid publication frame layout.'); }
+  }
   const model = isRecord(value.extensions) ? value.extensions[TRANSLATION_EXTENSION] : undefined;
   // Unknown profiles are preserved as opaque extension data, never interpreted.
   if (!isRecord(model) || model.profile !== TRANSLATION_PROFILE) return;
@@ -545,7 +551,7 @@ function validateHistory(
         `/revisionHistory/revisions/${index}/actorAgentId`,
       );
     }
-    if (isRecord(record.snapshot) && isRecord(record.snapshot.state)) validateTranslationExtension(record.snapshot.state);
+    if (isRecord(record.snapshot) && isRecord(record.snapshot.state)) validateStudioExtensions(record.snapshot.state);
   });
 
   if (
