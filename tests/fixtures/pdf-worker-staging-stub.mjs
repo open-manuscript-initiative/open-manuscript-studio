@@ -3,7 +3,6 @@
  * Only accepts a private Unix socket inside the test's 0700 temporary dir;
  * it never starts Chromium, Poppler or an external listener.
  */
-import { createServer } from 'node:http';
 import { statSync } from 'node:fs';
 import { basename, dirname, resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
