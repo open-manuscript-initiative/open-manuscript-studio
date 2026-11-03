@@ -29,6 +29,34 @@
   prove** the native GTK/WebKit transitive call graph has no reachable usage.
   Do not declare the issue unexploitable without a reviewed reachability claim.
 
+## 2026-11-03 upstream and actual-locked dependency verification
+
+Checked the *exact current* `main@a0d0ca1ea9bd299361e74dd660e1685d0253d450`
+`src-tauri/Cargo.lock`: `glib 0.18.5`, `gtk 0.18.2`,
+`webkit2gtk 2.0.2`, `wry 0.57.0`, `tauri 2.12.2`,
+`tauri-runtime-wry 2.12.1`. Therefore **the existing Linux
+release source still includes the vulnerable Rust crate**. A green
+Tauri Windows/macOS/Linux/Android build matrix does **not** prove the
+risk is repaired.
+
+The upstream migration PRs
+[Tauri #14684](https://github.com/tauri-apps/tauri/pull/14684),
+[Wry #1530](https://github.com/tauri-apps/wry/pull/1530), and
+[Tao #1104](https://github.com/tauri-apps/tao/pull/1104)
+were each **open and unmerged** when checked. Latest surfaced release
+tags were `tauri-cli-v2.12.4` (Tauri CLI) and `wry-v0.57.1`;
+their existence alone does **not** establish that the Studio's supported
+Linux transitive dependency tree can resolve `glib >=0.20`. Do not
+interpret an open upstream PR as definitive proof that no alternate
+patched compatible release exists. Check compatible upstream release
+metadata and the exact candidate's locked dependency tree for the
+final owner exception criterion.
+
+**Progress:** current-source vulnerability and upstream work status are
+documented. **No reachable-path safety proof, temporary exception,
+owner, review date or Linux Stable scope decision has been supplied.**
+The five required criteria below remain pending.
+
 ## Local bounded technical evidence (read only)
 
 For the **exact reviewed candidate**, in a separate trusted checkout with the
