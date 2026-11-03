@@ -1,3 +1,5 @@
+import { tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../model/tableLayout';
+import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
@@ -541,21 +543,33 @@ function renderImage(block: OmiBlock, state: RenderState): string {
 function renderTable(block: OmiBlock, state: RenderState): string {
   if (block.visual?.kind !== 'table') return '';
   const visual = block.visual;
+  const renderCellText = (cell: string, row: number, column: number) => {
+    const format = tableCellFormat(visual.cellFormats, row, column);
+    const text = escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;');
+    if (format.textRotation === 0 && format.textDirection === 'auto' && !visual.cellFormats?.[`${row}:${column}`]) return text;
+    const css = Object.entries(tableCellTextStyle(format.textRotation)).map(([key, value]) =>
+      `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}`,
+    ).join(';');
+    return `<span class="omi-table-cell-text" dir="${format.textDirection}" data-text-rotation="${format.textRotation}" style="${css}">${text}</span>`;
+  };
   const headerRows = Math.max(0, Math.min(visual.headerRows ?? 0, visual.cells.length));
   const header = headerRows
     ? `<thead>${visual.cells
         .slice(0, headerRows)
         .map(
-          (row) =>
-            `<tr>${row.map((cell) => `<th scope="col">${escapeHtml(cell)}</th>`).join('')}</tr>`,
+          (row, rowIndex) =>
+            `<tr>${row.map((cell, columnIndex) => `<th scope="col">${renderCellText(cell, rowIndex, columnIndex)}</th>`).join('')}</tr>`,
         )
         .join('')}</thead>`
     : '';
   const bodyRows = visual.cells.slice(headerRows);
   const body = `<tbody>${bodyRows
-    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`)
+    .map((row, rowIndex) => `<tr>${row.map((cell, columnIndex) => `<td>${renderCellText(cell, rowIndex + headerRows, columnIndex)}</td>`).join('')}</tr>`)
     .join('')}</tbody>`;
-  const table = `<table>${header}${body}</table>`;
+  const widths = tableColumnWidths(visual.cells, visual.columnWidths);
+  const columns = `<colgroup>${widths.map((width) => `<col style="width:${width}%">`).join('')}</colgroup>`;
+  const reduction = visual.fontSizeReduction === 0 ? 0 : 1;
+  const table = `<table style="--omi-table-font-reduction:${reduction}">${columns}${header}${body}</table>`;
   const caption = visual.caption?.trim()
     ? `<figcaption>${escapeHtml(visual.caption)}</figcaption>`
     : '';
@@ -946,6 +960,7 @@ img { display: block; max-width: 100%; height: auto; margin-inline: auto; }
 table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
 th, td { border: 1px solid #999; padding: .35rem .5rem; vertical-align: top; }
 th { text-align: left; }
+${TABLE_LAYOUT_CSS}
 math { overflow-x: auto; max-width: 100%; }
 .article-notes, .article-bibliography { margin-top: 2.5rem; text-align: left; }
 .article-bibliography li, .article-notes li { margin-bottom: .65em; }

@@ -367,11 +367,22 @@ export interface OmiImageBlockData {
   provenance?: OmiImportProvenance;
 }
 
+export interface OmiTableCellFormat {
+  textRotation?: -90 | 0 | 90 | 180;
+  textDirection?: 'auto' | 'ltr' | 'rtl';
+}
+
 export interface OmiTableBlockData {
   kind: 'table';
   /** Rectangular cell matrix. Cell text is scholarly data, not presentation HTML. */
   cells: string[][];
   headerRows?: number;
+  /** Relative column widths; normalized to percentages at rendering time. */
+  columnWidths?: number[];
+  /** Point reduction from body text. Defaults to one point. */
+  fontSizeReduction?: 0 | 1;
+  /** Sparse cell formatting, keyed by zero-based row:column coordinates. */
+  cellFormats?: Record<string, OmiTableCellFormat>;
   caption?: string;
   provenance?: OmiImportProvenance;
 }

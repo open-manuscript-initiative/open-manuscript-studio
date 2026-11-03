@@ -1,7 +1,9 @@
+import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import type { JSONContent } from '@tiptap/core';
 import { FileCode2, FileText } from 'lucide-react';
 import {
   useEffect,
+  useContext,
   useId,
   useLayoutEffect,
   useMemo,
@@ -47,6 +49,7 @@ import {
 import { cssStringLiteral } from '../services/embeddedCss';
 import type { OmiPublicationFlowBreak } from '../editor/extensions/OmiProofingMarksExtension';
 import { BlockEditor } from './BlockEditor';
+import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
 import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
@@ -120,6 +123,7 @@ export function PublicationDocumentCanvas({
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
+  const previewOnly = usePublicationPreview();
   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
   const {
@@ -322,6 +326,13 @@ export function PublicationDocumentCanvas({
     return () => observer.disconnect();
   }, []);
 
+  const tableBlockIds = useMemo(() => new Set(manuscript.sections.flatMap((section) =>
+    section.blocks.filter((block) => block.visual?.kind === 'table').map((block) => block.id),
+  )), [manuscript.sections]);
+  const textFlowBreaks = useMemo(() => pagination.flowBreaks.filter((item) =>
+    !tableBlockIds.has(item.targetBlockId),
+  ), [pagination.flowBreaks, tableBlockIds]);
+
   useLayoutEffect(() => {
     if (viewMode !== 'print') return;
     const stage = stageRef.current;
@@ -424,11 +435,13 @@ export function PublicationDocumentCanvas({
         while (flowIndex < flow.length
           && (flowIndex === 0 || performance.now() - startedAt < 8)) {
           const { element } = flow[flowIndex]!;
-          const blockId = element.dataset.blockId ?? '';
+          const blockId = publicationFlowBlockId(element) ?? '';
           const blockCorrections = corrections.filter(
             (correction) => correction.targetBlockId === blockId,
           );
-          const splittable = isSplittablePublicationParagraph(element);
+          const table = element.querySelector<HTMLTableElement>('.omi-visual-block--table .omi-table-editor');
+          const tableHeight = element.getBoundingClientRect().height - publicationFlowBreakHeight(element);
+          const splittable = isSplittablePublicationParagraph(element) || Boolean(table && tableHeight > usablePageHeight);
           let lines: PublicationFlowLine[] = [];
           const flowBreakElements = Array.from(
             element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
@@ -440,7 +453,7 @@ export function PublicationDocumentCanvas({
             if (cachedLines && !dirtyBlocks.has(element)) {
               lines = cachedLines.map((line) => ({ ...line }));
             } else {
-              lines = measurePublicationLines(element);
+              lines = table ? measurePublicationTableRows(element, table) : measurePublicationLines(element);
               if (flowBreakElements.length > 0) {
                 measuredLines.delete(element);
               } else {
@@ -522,7 +535,8 @@ export function PublicationDocumentCanvas({
         });
         const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
           (flowBreak) => {
-            const targetBlockId = flow[flowBreak.blockIndex]?.element.dataset.blockId;
+            const targetElement = flow[flowBreak.blockIndex]?.element;
+            const targetBlockId = targetElement ? publicationFlowBlockId(targetElement) : undefined;
             return targetBlockId
               ? [{
                   targetBlockId,
@@ -674,6 +688,7 @@ export function PublicationDocumentCanvas({
     '--omi-publication-running-header-rule': style.runningHeaders.rule.enabled
       ? `${Math.max(0.5, style.runningHeaders.rule.width * PIXELS_PER_POINT * scale)}px`
       : '0px',
+    '--omi-publication-point': `${PIXELS_PER_POINT * scale}px`,
     '--omi-publication-body-size': `${body.fontSize * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-body-leading': `${body.lineHeight * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-first-line': `${body.firstLineIndent * PIXELS_PER_MM * scale}px`,
@@ -724,9 +739,10 @@ export function PublicationDocumentCanvas({
       } as CSSProperties
     : undefined;
   return (
+    <PublicationPreviewContext.Provider value={previewOnly}>
     <section
       id={canvasId}
-      className={`publication-document-canvas publication-document-canvas--${viewMode}`}
+      className={`publication-document-canvas publication-document-canvas--${viewMode}${previewOnly ? ' publication-document-canvas--preview' : ''}`}
       aria-labelledby="publication-document-canvas-title"
     >
       {pagination.css || paragraphStyleCss || sectionLayoutCss
@@ -735,7 +751,7 @@ export function PublicationDocumentCanvas({
       <header className="publication-document-canvas-toolbar">
         <div>
           <strong id="publication-document-canvas-title">{copy.editor}</strong>
-          <span>{viewMode === 'print' ? copy.printDescription : copy.htmlDescription}</span>
+          {!previewOnly ? <span>{viewMode === 'print' ? copy.printDescription : copy.htmlDescription}</span> : null}
         </div>
         <div className="publication-document-canvas-status">
           <div className="publication-document-view-switch" role="group" aria-label={copy.view}>
@@ -783,7 +799,7 @@ export function PublicationDocumentCanvas({
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
         aria-label={viewMode === 'print' ? copy.printLayout : copy.htmlLayout}
       >
-        <PublicationSectionRuler
+        {!previewOnly ? <PublicationSectionRuler
           locale={locale}
           viewMode={viewMode}
           widthPx={pageWidth}
@@ -791,7 +807,7 @@ export function PublicationDocumentCanvas({
           leftMarginMm={firstPageLeftMarginMm}
           rightMarginMm={firstPageRightMarginMm}
           rulerStepPx={5 * PIXELS_PER_MM * scale}
-        />
+        /> : null}
         <article
           className={`publication-document-paper publication-document-paper--${viewMode}`}
           data-publication-view={viewMode}
@@ -914,21 +930,25 @@ export function PublicationDocumentCanvas({
                     paragraphStyleNextById={paragraphStyleNextById}
                     defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
                     manuscriptLanguage={manuscript.locale}
+                    editable={!previewOnly}
                   />
                 ) : (
-                  <BlockEditor
-                    blockId={`omi-publication-document-${manuscript.id}`}
-                    blockType="manuscript"
-                    content={JSON.stringify(document)}
-                    onUpdate={updateDocument}
-                    manuscriptLanguage={manuscript.locale}
-                    className="publication-layout-document-editor"
-                    continuous
-                    proofingMode="publication"
-                    publicationCorrections={publicationCorrections}
-                    publicationFlowBreaks={pagination.flowBreaks}
-                    onProofingSelection={onProofingSelection}
-                  />
+                  <TablePaginationContext.Provider value={pagination.flowBreaks}>
+                    <BlockEditor
+                      blockId={`omi-publication-document-${manuscript.id}`}
+                      blockType="manuscript"
+                      editable={!previewOnly}
+                      content={JSON.stringify(document)}
+                      onUpdate={updateDocument}
+                      manuscriptLanguage={manuscript.locale}
+                      className="publication-layout-document-editor"
+                      continuous
+                      proofingMode="publication"
+                      publicationCorrections={publicationCorrections}
+                      publicationFlowBreaks={textFlowBreaks}
+                      onProofingSelection={onProofingSelection}
+                    />
+                  </TablePaginationContext.Provider>
                 )}
               </div>
             ) : (
@@ -1004,6 +1024,7 @@ export function PublicationDocumentCanvas({
         </article>
       </div>
     </section>
+    </PublicationPreviewContext.Provider>
   );
 }
 
@@ -1022,6 +1043,7 @@ function AutoGrowPublicationField({
   onChange: (value: string) => void;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const previewOnly = useContext(PublicationPreviewContext);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -1033,6 +1055,8 @@ function AutoGrowPublicationField({
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>): void {
     onChange(event.target.value.replace(/[\r\n]+/g, ' '));
   }
+
+  if (previewOnly) return value ? <div className={className}>{value}</div> : null;
 
   return (
     <textarea
@@ -1104,6 +1128,10 @@ interface PublicationFlowElement {
   selector: string;
 }
 
+function publicationFlowBlockId(element: HTMLElement): string | undefined {
+  return element.dataset.blockId ?? element.querySelector<HTMLElement>('[data-block-id]')?.dataset.blockId;
+}
+
 function collectPublicationFlowElements(root: HTMLElement): PublicationFlowElement[] {
   const flow: PublicationFlowElement[] = [];
   const frontMatter = directChild(root, 'publication-document-front-matter');
@@ -1157,6 +1185,31 @@ function offsetTopWithin(element: HTMLElement, root: HTMLElement): number {
 function isSplittablePublicationParagraph(element: HTMLElement): boolean {
   return (element.tagName === 'P' || element.tagName === 'BLOCKQUOTE')
     && Boolean(element.closest('.omi-continuous-tiptap-editor'));
+}
+
+/** Use rows as screen pagination units. Subtract prior presentation spacers
+ * before measuring, so repeated layout passes converge without changing data. */
+function measurePublicationTableRows(element: HTMLElement, table: HTMLTableElement): PublicationFlowLine[] {
+  const rootTop = element.getBoundingClientRect().top;
+  const spacers = Array.from(table.querySelectorAll<HTMLElement>('.omi-table-page-break'))
+    .map((spacer) => spacer.getBoundingClientRect());
+  const rows = Array.from(table.rows).filter((row) => !row.classList.contains('omi-table-page-break'));
+  const naturalTop = (top: number) => top - rootTop - spacers
+    .filter((spacer) => spacer.top < top - 0.5)
+    .reduce((sum, spacer) => sum + spacer.height, 0);
+  const height = element.getBoundingClientRect().height - spacers.reduce((sum, spacer) => sum + spacer.height, 0);
+  const lines = rows.map((row, index) => {
+    const rect = row.getBoundingClientRect();
+    const top = index === 0 ? 0 : naturalTop(rect.top);
+    const bottom = naturalTop(rect.bottom);
+    return { textOffset: index, top, height: Math.max(0, bottom - top) };
+  });
+  const lastRow = lines.at(-1);
+  const bottom = lastRow ? lastRow.top + lastRow.height : 0;
+  // Editing controls are independent of the final data row. Keeping them in
+  // that row's unit could make it taller than a page at smaller zoom settings.
+  if (height > bottom) lines.push({ textOffset: rows.length, top: bottom, height: height - bottom });
+  return lines;
 }
 
 function measurePublicationLines(element: HTMLElement): PublicationFlowLine[] {

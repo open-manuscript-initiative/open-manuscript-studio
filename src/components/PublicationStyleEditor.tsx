@@ -1,3 +1,5 @@
+import { usePublicationPreview } from './PublicationPreviewContext';
+import { getVisualElementsCopy } from '../i18n/visualElements';
 import {
   AlignCenter,
   AlignJustify,
@@ -186,6 +188,7 @@ export function PublicationStyleEditor() {
     (state) => state.clearParagraphStyleAssignments,
   );
   const copy = copyFor(locale);
+  const previewOnly = usePublicationPreview();
   const initial = useMemo(loadInitialState, []);
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
   const [activeId, setActiveId] = useState(initial.activeId);
@@ -696,7 +699,8 @@ export function PublicationStyleEditor() {
         </div>
       </div>
 
-      <div className="publication-style-ribbon" ref={ribbonRef}>
+      {previewOnly ? <p className="publication-mobile-preview-note">{getVisualElementsCopy(locale).mobilePreviewNote}</p> : null}
+      {!previewOnly ? <div className="publication-style-ribbon" ref={ribbonRef}>
         <div className="publication-style-ribbon-row">
           <div className="publication-style-ribbon-actions" role="toolbar" aria-label={copy.title}>
             <PublicationRibbonMenuButton
@@ -1161,7 +1165,7 @@ export function PublicationStyleEditor() {
             </fieldset>
           </div>
         ) : null}
-      </div>
+      </div> : null}
 
       <div className="publication-style-editor-layout">
         <PublicationDocumentCanvas

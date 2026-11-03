@@ -1,3 +1,4 @@
+import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { assetPath, sha256Hex } from '../model/assets';
 import { combinedPublisherPrintCss } from '../model/publisherExportStyle';
 import {
@@ -281,6 +282,7 @@ function buildPublicationPrintStylesheet(profile: OmiPublicationProfile): string
     break-inside: avoid;
     page-break-inside: avoid;
   }
+  ${TABLE_LAYOUT_CSS}
 }
 `.trim();
 
@@ -360,6 +362,8 @@ figure, table, blockquote, pre, .article-contributors,
   break-inside: avoid;
   page-break-inside: avoid;
 }
+
+${TABLE_LAYOUT_CSS}
 
 img, svg, table {
   max-width: 100%;

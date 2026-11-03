@@ -24,6 +24,25 @@ export interface VisualElementsCopy {
   chartTitle: string;
   equationLatex: string;
   equationLabel: string;
+  cellFormatting: string;
+  cellRow: string;
+  cellColumn: string;
+  textRotation: string;
+  rotationNone: string;
+  rotationClockwise: string;
+  rotationCounterclockwise: string;
+  rotationUpsideDown: string;
+  textDirection: string;
+  directionAuto: string;
+  directionLtr: string;
+  directionRtl: string;
+  editCellText: string;
+  mobilePreviewNote: string;
+  tableFontSize: string;
+  bodyFontSize: string;
+  smallerFontSize: string;
+  resizeColumn: string;
+  cell: string;
   addRow: string;
   addColumn: string;
   removeRow: string;
@@ -41,6 +60,8 @@ export interface VisualElementsCopy {
 
 const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   en: {
+    cellFormatting: 'Cell formatting', cellRow: 'Cell row', cellColumn: 'Cell column', textRotation: 'Text rotation', rotationNone: 'No rotation', rotationClockwise: '90° clockwise', rotationCounterclockwise: '90° counterclockwise', rotationUpsideDown: '180° upside down', textDirection: 'Writing direction', directionAuto: 'Automatic', directionLtr: 'Left to right', directionRtl: 'Right to left', editCellText: 'Selected cell text', mobilePreviewNote: 'Mobile shows the current publication layout. Full editing is available on a desktop.',
+    tableFontSize: 'Table font size', bodyFontSize: 'Same as body text', smallerFontSize: 'Body text − 1 pt', resizeColumn: 'Resize column', cell: 'Cell',
     insertMenu: 'Insert', insertElement: 'Insert element', image: 'Image', table: 'Table', chart: 'Chart', equation: 'Equation', musicScore: 'Music score', import: 'Import',
     paste: 'Paste from Word / Excel', pasteHint: 'Paste a table, image or equation here from Word, Excel or another application.',
     importing: 'Importing…', importFailed: 'The file could not be imported.', noImportableElements: 'No supported visual elements were found.',
@@ -51,6 +72,8 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     importedFrom: 'Imported from', fileFormats: 'Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported.',
   },
   hu: {
+    cellFormatting: 'Cellaformázás', cellRow: 'Cella sora', cellColumn: 'Cella oszlopa', textRotation: 'Szöveg elforgatása', rotationNone: 'Nincs elforgatás', rotationClockwise: '90° jobbra', rotationCounterclockwise: '90° balra', rotationUpsideDown: '180° fejjel lefelé', textDirection: 'Írásirány', directionAuto: 'Automatikus', directionLtr: 'Balról jobbra', directionRtl: 'Jobbról balra', editCellText: 'Kijelölt cella szövege', mobilePreviewNote: 'Mobilon a kiadvány aktuális elrendezése tekinthető meg. A teljes szerkesztés asztali gépen érhető el.',
+    tableFontSize: 'Táblázat betűmérete', bodyFontSize: 'Törzsszöveggel azonos', smallerFontSize: 'Törzsszöveg − 1 pt', resizeColumn: 'Oszlop átméretezése', cell: 'Cella',
     insertMenu: 'Beszúrás', insertElement: 'Elem beszúrása', image: 'Kép', table: 'Táblázat', chart: 'Grafikon', equation: 'Egyenlet', musicScore: 'Kotta', import: 'Importálás',
     paste: 'Beillesztés Wordből / Excelből', pasteHint: 'Illesszen be ide táblázatot, képet vagy egyenletet Wordből, Excelből vagy más alkalmazásból.',
     importing: 'Importálás…', importFailed: 'A fájlt nem sikerült importálni.', noImportableElements: 'Nem található támogatott vizuális elem.',
@@ -61,6 +84,8 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     importedFrom: 'Importálva innen', fileFormats: 'Támogatott: képek, DOCX, XLSX, CSV/TSV, HTML és TeX.',
   },
   de: {
+    cellFormatting: 'Zellformatierung', cellRow: 'Zellzeile', cellColumn: 'Zellspalte', textRotation: 'Textdrehung', rotationNone: 'Keine Drehung', rotationClockwise: '90° im Uhrzeigersinn', rotationCounterclockwise: '90° gegen den Uhrzeigersinn', rotationUpsideDown: '180° auf dem Kopf', textDirection: 'Schreibrichtung', directionAuto: 'Automatisch', directionLtr: 'Links nach rechts', directionRtl: 'Rechts nach links', editCellText: 'Text der ausgewählten Zelle', mobilePreviewNote: 'Mobil wird das aktuelle Publikationslayout angezeigt. Die vollständige Bearbeitung ist am Desktop verfügbar.',
+    tableFontSize: 'Tabellenschriftgröße', bodyFontSize: 'Wie Fließtext', smallerFontSize: 'Fließtext − 1 pt', resizeColumn: 'Spaltenbreite ändern', cell: 'Zelle',
     insertMenu: 'Einfügen', insertElement: 'Element einfügen', image: 'Bild', table: 'Tabelle', chart: 'Diagramm', equation: 'Gleichung', musicScore: 'Notensatz', import: 'Importieren',
     paste: 'Aus Word / Excel einfügen', pasteHint: 'Fügen Sie hier eine Tabelle, ein Bild oder eine Gleichung aus Word, Excel oder einer anderen Anwendung ein.',
     importing: 'Importieren…', importFailed: 'Die Datei konnte nicht importiert werden.', noImportableElements: 'Keine unterstützten visuellen Elemente gefunden.',
