@@ -184,7 +184,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
       <button type="button" disabled={exporting || !!flow.overflow.length || missingSources} onClick={() => void exportLayout(true)}>{copy.print}</button>
       <button type="button" disabled={exporting || !!flow.overflow.length || missingSources} onClick={() => void exportLayout(false)}>{copy.exportHtml}</button>
     </div> : null}
-    {flow.overflow.length ? <p className="omi-frame-overflow" role="status">{copy.overflow} {flow.overflow.map((item) => `${layout.stories.find((story) => story.id === item.storyId)?.name}: ${item.text.length}`).join(' · ')}</p> : null}
+    {flow.overflow.length ? <p className="omi-frame-overflow" role="status">{layout.autoFlowStoryId && flow.overflow.some((item) => item.storyId === layout.autoFlowStoryId) ? copy.autoOverflow : copy.overflow} {flow.overflow.map((item) => `${layout.stories.find((story) => story.id === item.storyId)?.name}: ${item.text.length}`).join(' · ')}</p> : null}
     {missingSources ? <p role="alert">{copy.missingGraphic}</p> : null}
     {message ? <p role="alert">{message}</p> : null}
     <div className="omi-frame-workspace">
