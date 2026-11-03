@@ -69,6 +69,9 @@ jobs:
       - name: Verify semantic core import boundaries (A10 incremental)
         run: npm run check:core-boundaries
 
+      - name: Check read-only #765/#774 preflight evaluation
+        run: node --test tests/host-security-preflight.test.mjs
+
       - name: Run tests
         run: npm test
 
