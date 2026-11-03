@@ -24,19 +24,26 @@ test "$(git -C "$stage" -c safe.directory="$stage" rev-parse HEAD)" = "$expected
 grep -Fq 'Isolated PDF worker is temporarily unavailable.' \
   "$stage/server/dist/services/vivliostylePdfRenderer.js"
 
+# The staging test must NOT run with the live API's identity: that account
+# may have access to production .env/DB and Plesk vhost material.
+stage_user=omi-rc-builder
+test "$(id -u "$stage_user")" -gt 0
+test "$(id -Gn "$stage_user")" = "$stage_user"
 api_user="$(systemctl show -P User omi-studio-api.service)"
 test -n "$api_user"
-test "$(id -u "$api_user")" -gt 0
+test "$stage_user" != "$api_user"
 test "$(systemctl is-active omi-studio-api.service)" = active
 test "$(systemctl is-active omi-pdf-worker.service)" = active
 test "$(systemctl is-active omi-pdf-worker.socket)" = active
-runuser -u "$api_user" -- test -r "$stage/tests/pdf-worker-api-failclosed.test.mjs"
-runuser -u "$api_user" -- test -r "$stage/server/dist/services/vivliostylePdfRenderer.js"
+runuser -u "$stage_user" -- test -r "$stage/tests/pdf-worker-api-failclosed.test.mjs"
+runuser -u "$stage_user" -- test -r "$stage/server/dist/services/vivliostylePdfRenderer.js"
 
 suffix="$(date -u +%s)-$BASHPID"
 systemd-run --wait --pipe --collect --service-type=exec \
   --unit="omi-pdf-api-stage-$suffix" \
-  --property="User=$api_user" \
+  --property="User=$stage_user" \
+  --property="Group=$stage_user" \
+  --property="InaccessiblePaths=-/var/www/vhosts -/opt/omi-pdf-worker -/run/omi-pdf-worker.sock" \
   --property="PrivateNetwork=yes" \
   --property="IPAddressDeny=any" \
   --property="IPAddressAllow=localhost" \

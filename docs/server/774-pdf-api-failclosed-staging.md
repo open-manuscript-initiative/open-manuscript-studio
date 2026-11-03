@@ -62,24 +62,27 @@ with synthetic build-time environment and without copying the production
 \`server/node_modules/express/index.js\` exist. The runner will reject
 a stale renderer build that lacks the stable unavailable-worker message.
 
-After locally reviewing the exact candidate SHA and shell script, an
-operator may run this from the **root** Plesk terminal, with the exact
-separately prepared checkout path and 40-digit commit SHA:
+After reviewing the candidate checkout SHA and the exact test runner Git blob
+SHA, copy the runner into a **root-owned, mode-0500** temporary directory
+under `/run` and verify its hash again. Do **not** execute a builder-writable
+checkout script directly as root. The runner takes the separate staging
+checkout and its *candidate* 40-character Git SHA:
 
 ~~~bash
-bash /srv/omi-rc-staging/<unique>/scripts/acceptance/run-pdf-api-failclosed-staging.sh \
+bash /run/<root-owned-runner>/run-pdf-api-failclosed-staging.sh \
   /srv/omi-rc-staging/<unique> \
-  <reviewed-40-char-sha>
+  <candidate-40-char-sha>
 ~~~
 
-The wrapper verifies the candidate HEAD, refuses the production vhost and
-/opt/omi-pdf-worker paths, verifies all required modules, reads the actual API
-user (never hardcodes a Plesk shared UID), and starts a **transient** service
-using \`systemd-run --wait --pipe --collect\`. Its process uses
-\`PrivateNetwork=yes\`, a private temp directory, restricted filesystem,
-no-new-privileges, no external egress, and bounded memory/tasks. The staged
-test process is run as the API account, *not root*. It cannot reach either
-the live API listener or the live PDF-worker socket.
+The wrapper checks the candidate HEAD and compiled modules, rejects production
+vhost/worker checkout paths, and requires an unrelated, non-root
+`omi-rc-builder` system user with no supplementary groups. It refuses to run
+tests under the live API's user identity. It creates an ephemeral systemd unit
+using `systemd-run --wait --pipe --collect`, `PrivateNetwork=yes`, private
+temporary storage, no new privileges, no outbound network, bounded resources,
+and inaccessible `/var/www/vhosts`, `/opt/omi-pdf-worker` and the live
+PDF-worker socket path. The staging code connects only to synthetic AF_UNIX
+endpoints in its own private temporary directory.
 
 **Expected evidence:** \`stagingApiUnavailable: PASS\`,
 \`stagingApiRecovery: PASS\`, \`authenticationFixtureRequired: PASS\`,
