@@ -13,6 +13,12 @@ test('stage-only API outage runner has valid syntax and transient isolation', ()
   const bash = source(script);
   assert.match(bash, /systemd-run --wait --pipe --collect/);
   assert.match(bash, /PrivateNetwork=yes/);
+  assert.match(bash, /stage_user=omi-rc-builder/);
+  assert.match(bash, /--property="User=\$stage_user"/);
+  assert.match(bash, /--property="Group=\$stage_user"/);
+  assert.match(bash, /InaccessiblePaths=.*\/var\/www\/vhosts.*\/opt\/omi-pdf-worker/);
+  assert.match(bash, /test "\$stage_user" != "\$api_user"/);
+  assert.doesNotMatch(bash, /--property="User=\$api_user"/);
   assert.match(bash, /PrivateTmp=yes/);
   assert.match(bash, /NoNewPrivileges=yes/);
   assert.match(bash, /omi-pdf-api-stage-/);
