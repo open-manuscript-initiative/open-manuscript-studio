@@ -181,7 +181,7 @@ test('automatic frame metadata survives portable OMI round-trip', () => {
 
 test('generated frames inherit subsequent default-frame edits without replacing customized frames', () => {
   const layout = createDefaultFlowFrameLayout();
-  layout.stories[0]!.text = 'text '.repeat(1300);
+  layout.stories[0]!.text = 'text '.repeat(2500);
   const grown = paginateAutomaticFrameLayout(layout, monospacedMeasure);
   assert.ok(grown.frames.length >= 3);
   grown.frames[0]!.widthMm = 110;
