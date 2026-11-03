@@ -21,6 +21,13 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
   await menu.getByRole('button', { name: 'Frame layout', exact: true }).click();
+  // Exercise the original manual frame-chain model independently of the new
+  // default automatic story, so legacy save/reopen behaviour remains tested.
+  await page.evaluate(async () => {
+    const { createFrameLayout } = await import('/src/model/publicationFrames.ts');
+    const { stageFrameLayout } = await import('/src/app/publicationFrameActions.ts');
+    stageFrameLayout(createFrameLayout());
+  });
   const editor = menu.locator('.omi-frame-editor');
   const model = () => page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
