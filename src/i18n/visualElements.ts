@@ -24,6 +24,11 @@ export interface VisualElementsCopy {
   chartTitle: string;
   equationLatex: string;
   equationLabel: string;
+  tableFontSize: string;
+  bodyFontSize: string;
+  smallerFontSize: string;
+  resizeColumn: string;
+  cell: string;
   addRow: string;
   addColumn: string;
   removeRow: string;
@@ -41,6 +46,7 @@ export interface VisualElementsCopy {
 
 const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   en: {
+    tableFontSize: 'Table font size', bodyFontSize: 'Same as body text', smallerFontSize: 'Body text − 1 pt', resizeColumn: 'Resize column', cell: 'Cell',
     insertMenu: 'Insert', insertElement: 'Insert element', image: 'Image', table: 'Table', chart: 'Chart', equation: 'Equation', musicScore: 'Music score', import: 'Import',
     paste: 'Paste from Word / Excel', pasteHint: 'Paste a table, image or equation here from Word, Excel or another application.',
     importing: 'Importing…', importFailed: 'The file could not be imported.', noImportableElements: 'No supported visual elements were found.',
@@ -51,6 +57,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     importedFrom: 'Imported from', fileFormats: 'Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported.',
   },
   hu: {
+    tableFontSize: 'Táblázat betűmérete', bodyFontSize: 'Törzsszöveggel azonos', smallerFontSize: 'Törzsszöveg − 1 pt', resizeColumn: 'Oszlop átméretezése', cell: 'Cella',
     insertMenu: 'Beszúrás', insertElement: 'Elem beszúrása', image: 'Kép', table: 'Táblázat', chart: 'Grafikon', equation: 'Egyenlet', musicScore: 'Kotta', import: 'Importálás',
     paste: 'Beillesztés Wordből / Excelből', pasteHint: 'Illesszen be ide táblázatot, képet vagy egyenletet Wordből, Excelből vagy más alkalmazásból.',
     importing: 'Importálás…', importFailed: 'A fájlt nem sikerült importálni.', noImportableElements: 'Nem található támogatott vizuális elem.',
@@ -61,6 +68,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     importedFrom: 'Importálva innen', fileFormats: 'Támogatott: képek, DOCX, XLSX, CSV/TSV, HTML és TeX.',
   },
   de: {
+    tableFontSize: 'Tabellenschriftgröße', bodyFontSize: 'Wie Fließtext', smallerFontSize: 'Fließtext − 1 pt', resizeColumn: 'Spaltenbreite ändern', cell: 'Zelle',
     insertMenu: 'Einfügen', insertElement: 'Element einfügen', image: 'Bild', table: 'Tabelle', chart: 'Diagramm', equation: 'Gleichung', musicScore: 'Notensatz', import: 'Importieren',
     paste: 'Aus Word / Excel einfügen', pasteHint: 'Fügen Sie hier eine Tabelle, ein Bild oder eine Gleichung aus Word, Excel oder einer anderen Anwendung ein.',
     importing: 'Importieren…', importFailed: 'Die Datei konnte nicht importiert werden.', noImportableElements: 'Keine unterstützten visuellen Elemente gefunden.',

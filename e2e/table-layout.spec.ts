@@ -1,0 +1,87 @@
+import { expect, test, type Page } from '@playwright/test';
+import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
+
+async function openTables(page: Page, rows: number) {
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.evaluate(async (rows) => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { createTableBlock } = await import('/src/model/visualBlocks.ts');
+    const manuscript = useStudioStore.getState().manuscript;
+    useStudioStore.getState().loadManuscript({
+      ...manuscript, title: 'Responsive tables', abstract: '',
+      sections: [{ id: 'tables', title: '', blocks: [
+        createTableBlock([['Name', 'Description'], ...Array.from({ length: rows }, (_, i) => [`Row ${i}`, 'Cell text wraps at the available width. '.repeat(3)])], {}, 'layout-table'),
+        { id: 'after-table', type: 'paragraph', content: 'Paragraph after the table.' },
+      ] }],
+    });
+  }, rows);
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  return menu.locator('.publication-document-canvas');
+}
+
+test('tables wrap, resize, accept line breaks and retain formatting across views', async ({ page }) => {
+  const canvas = await openTables(page, 2);
+  const table = canvas.locator('.omi-table-editor');
+  const cell = canvas.getByRole('textbox', { name: 'Cell 2, 2', exact: true });
+  await cell.fill('First line\nSecond line with a longer description.');
+  await expect(cell).toHaveValue('First line\nSecond line with a longer description.');
+  const handle = canvas.getByRole('separator', { name: 'Resize column 1' });
+  await handle.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(handle).toHaveAttribute('aria-valuenow', '51');
+  const handleBox = await handle.boundingBox();
+  expect(handleBox).not.toBeNull();
+  await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handleBox!.x + 35, handleBox!.y + handleBox!.height / 2, { steps: 3 });
+  await page.mouse.up();
+  await expect.poll(() => handle.getAttribute('aria-valuenow')).not.toBe('51');
+  await canvas.getByRole('combobox', { name: 'Table font size' }).selectOption('0');
+  await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
+  await page.setViewportSize({ width: 480, height: 900 });
+  await expect.poll(() => table.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  await expect(canvas.getByRole('combobox', { name: 'Table font size' })).toHaveValue('0');
+  await expect(cell).toHaveValue('First line\nSecond line with a longer description.');
+  await expect.poll(() => cell.evaluate((element: HTMLTextAreaElement) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
+});
+
+test('long tables split between rows and reflow after zoom', async ({ page }) => {
+  const canvas = await openTables(page, 22);
+  await expect(canvas.locator('.omi-table-page-break')).not.toHaveCount(0);
+  const audit = () => canvas.evaluate((root) => {
+    const paper = root.querySelector<HTMLElement>('.publication-document-paper')!;
+    const styles = getComputedStyle(paper);
+    const stride = parseFloat(styles.getPropertyValue('--omi-publication-page-height')) + parseFloat(styles.getPropertyValue('--omi-publication-page-gap'));
+    const guide = getComputedStyle(root.querySelector('.publication-document-page-guide')!);
+    const top = parseFloat(guide.getPropertyValue('--omi-publication-page-top-margin'));
+    const bottom = parseFloat(guide.getPropertyValue('--omi-publication-page-bottom-margin'));
+    const pageHeight = parseFloat(styles.getPropertyValue('--omi-publication-page-height'));
+    const origin = paper.getBoundingClientRect().top;
+    if (![stride, top, bottom, pageHeight].every(Number.isFinite)) return ['Missing page geometry'];
+    const boxes = Array.from(root.querySelectorAll('.omi-table-editor tr:not(.omi-table-page-break)'))
+      .map((row) => row.getBoundingClientRect());
+    const following = root.querySelector('.omi-continuous-tiptap-editor > p[data-block-id="after-table"]');
+    if (following) {
+      const walker = document.createTreeWalker(following, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const range = document.createRange();
+        range.selectNodeContents(walker.currentNode);
+        boxes.push(...Array.from(range.getClientRects()).filter((rect) => rect.height > 0));
+      }
+    }
+    return boxes.flatMap((box, i) => {
+      const start = (box.top - origin) % stride;
+      return start < top - 1 || start + box.height > pageHeight - bottom + 1 ? [`Row ${i} crosses a page margin: top ${start}, height ${box.height}, body ${top}..${pageHeight - bottom}`] : [];
+    });
+  });
+  await expect.poll(audit).toEqual([]);
+  await canvas.getByRole('combobox', { name: 'Zoom', exact: true }).selectOption('50');
+  await expect.poll(audit).toEqual([]);
+  await canvas.getByRole('combobox', { name: 'Zoom', exact: true }).selectOption('100');
+  await expect.poll(audit).toEqual([]);
+  await expect(canvas.locator('.omi-table-editor textarea')).toHaveCount(46);
+});

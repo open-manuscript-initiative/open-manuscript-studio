@@ -1,5 +1,10 @@
 ## Unreleased — Translation and Validation Models
 
+- Make manuscript tables responsive in the visual editor and HTML/PDF output.
+  Add multiline cells, pointer/keyboard column resizing and a body-size or
+  body-minus-one-point font choice. Long print tables flow between rows with
+  repeated headers; the live page view inserts presentation-only row breaks.
+
 - Add the experimental OMI-SPEC-180 Studio validation profile with authoring,
   OMI-exchange and publication-preflight checks; source-bound JSON reports;
   explicit error, warning and incomplete states; and local asset integrity checks.

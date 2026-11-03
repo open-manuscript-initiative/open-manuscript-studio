@@ -372,6 +372,10 @@ export interface OmiTableBlockData {
   /** Rectangular cell matrix. Cell text is scholarly data, not presentation HTML. */
   cells: string[][];
   headerRows?: number;
+  /** Relative column widths; normalized to percentages at rendering time. */
+  columnWidths?: number[];
+  /** Point reduction from body text. Defaults to one point. */
+  fontSizeReduction?: 0 | 1;
   caption?: string;
   provenance?: OmiImportProvenance;
 }

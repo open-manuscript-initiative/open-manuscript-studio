@@ -1,3 +1,4 @@
+import { Fragment, useContext, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import {
   BarChart3,
   FileText,
@@ -32,6 +33,8 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
+import { resizeTableColumn, tableColumnWidths } from '../model/tableLayout';
+import { TablePaginationContext } from './TablePaginationContext';
 
 interface VisualBlockEditorProps {
   block: OmiBlock & { visual: OmiVisualBlockData };
@@ -91,6 +94,7 @@ export function VisualBlockEditor({
       {visual.kind === 'table' ? (
         <>
           <EditableGrid
+            blockId={block.id}
             data={visual}
             onChange={(next) => update(next)}
             copy={copy}
@@ -236,36 +240,116 @@ function EditableGrid({
   data,
   onChange,
   copy,
+  blockId,
 }: {
+  blockId?: string;
   data: OmiTableBlockData | OmiChartBlockData;
   onChange: (next: typeof data) => void;
   copy: ReturnType<typeof getVisualElementsCopy>;
 }) {
   const cells = data.cells;
+  const columnWidths = data.kind === 'table' ? data.columnWidths : undefined;
+  const widths = tableColumnWidths(cells, columnWidths);
+  const pageBreaks = useContext(TablePaginationContext).filter((item) => item.targetBlockId === blockId);
+  const drag = useRef<{ index: number; start: number; width: number; widths: number[] } | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const reduction = data.kind === 'table' && data.fontSizeReduction === 0 ? 0 : 1;
+
+  function updateColumns(nextCells: string[][], nextWidths: number[]): void {
+    onChange(data.kind === 'table'
+      ? { ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths) }
+      : { ...data, cells: nextCells });
+  }
+
+  // Reset before measuring so shortening a cell can also shrink its row. Observe
+  // column changes as well as edits: wrapping changes the required cell height.
+  useLayoutEffect(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    const resize = () => {
+      const inputs = Array.from(table.querySelectorAll('textarea'));
+      inputs.forEach((input) => { input.style.height = '0px'; });
+      const heights = inputs.map((input) => input.scrollHeight);
+      inputs.forEach((input, index) => { input.style.height = `${heights[index]}px`; });
+    };
+    resize();
+    let previousWidth = table.getBoundingClientRect().width;
+    const observer = new ResizeObserver(() => {
+      const width = table.getBoundingClientRect().width;
+      if (Math.abs(previousWidth - width) > 0.5) { previousWidth = width; resize(); }
+    });
+    observer.observe(table);
+    return () => observer.disconnect();
+  }, [cells, columnWidths, reduction]);
 
   return (
     <div className="omi-table-editor-wrap">
       <div className="omi-table-scroll">
-        <table className="omi-table-editor">
+        <table ref={tableRef} className="omi-table-editor" style={{ '--omi-table-font-reduction': reduction } as CSSProperties}>
+          <colgroup>{widths.map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
           <tbody>
             {cells.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {row.map((cell, columnIndex) => {
-                  const Cell = data.kind === 'table' && rowIndex < (data.headerRows ?? 0) ? 'th' : 'td';
-                  return (
-                    <Cell key={columnIndex}>
-                      <input
-                        value={cell}
-                        onChange={(event) =>
-                          onChange({
-                            ...data,
-                            cells: updateTableCell(cells, rowIndex, columnIndex, event.target.value),
-                          })
-                        }
-                      />
-                    </Cell>
-                  );
-                })}
+              <Fragment key={rowIndex}>
+                {pageBreaks.filter((item) => item.textOffset === rowIndex).map((item) => (
+                  <tr key={`break-${rowIndex}`} className="omi-publication-flow-break omi-table-page-break" aria-hidden="true" data-publication-flow-break="true">
+                    <td colSpan={widths.length}><div style={{ height: item.height }} /></td>
+                  </tr>
+                ))}
+                <tr key={rowIndex}>
+                  {row.map((cell, columnIndex) => {
+                    const Cell = data.kind === 'table' && rowIndex < (data.headerRows ?? 0) ? 'th' : 'td';
+                    return (
+                      <Cell key={columnIndex}>
+                        <textarea
+                          rows={1}
+                          aria-label={`${copy.cell} ${rowIndex + 1}, ${columnIndex + 1}`}
+                          value={cell}
+                          onChange={(event) =>
+                            onChange({
+                              ...data,
+                              cells: updateTableCell(cells, rowIndex, columnIndex, event.target.value),
+                            })
+                          }
+                        />
+                        {data.kind === 'table' && rowIndex === 0 && columnIndex < widths.length - 1 ? (
+                          <span
+                            className="omi-table-column-resize"
+                            role="separator"
+                            tabIndex={0}
+                            aria-label={`${copy.resizeColumn} ${columnIndex + 1}`}
+                            aria-orientation="vertical"
+                            aria-valuenow={Math.round(widths[columnIndex]!)}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            onKeyDown={(event) => {
+                              if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                              event.preventDefault();
+                              onChange({ ...data, columnWidths: resizeTableColumn(widths, columnIndex, widths[columnIndex]! + (event.key === 'ArrowRight' ? 1 : -1)) });
+                            }}
+                            onPointerDown={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              drag.current = { index: columnIndex, start: event.clientX, width: tableRef.current!.getBoundingClientRect().width, widths };
+                              event.currentTarget.setPointerCapture(event.pointerId);
+                            }}
+                            onPointerMove={(event) => {
+                              const current = drag.current;
+                              if (!current || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+                              onChange({ ...data, columnWidths: resizeTableColumn(current.widths, current.index, current.widths[current.index]! + (event.clientX - current.start) * 100 / current.width) });
+                            }}
+                            onPointerUp={(event) => { drag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); }}
+                            onLostPointerCapture={() => { drag.current = null; }}
+                          />
+                        ) : null}
+                      </Cell>
+                    );
+                  })}
+                </tr>
+              </Fragment>
+            ))}
+            {pageBreaks.filter((item) => item.textOffset === cells.length).map((item) => (
+              <tr key="break-after-rows" className="omi-publication-flow-break omi-table-page-break" aria-hidden="true" data-publication-flow-break="true">
+                <td colSpan={widths.length}><div style={{ height: item.height }} /></td>
               </tr>
             ))}
           </tbody>
@@ -275,16 +359,25 @@ function EditableGrid({
         <button type="button" onClick={() => onChange({ ...data, cells: addTableRow(cells) })}>
           <Plus size={14} aria-hidden="true" /> {copy.addRow}
         </button>
-        <button type="button" onClick={() => onChange({ ...data, cells: addTableColumn(cells) })}>
+        <button type="button" onClick={() => updateColumns(addTableColumn(cells), [...widths, 100 / Math.max(1, widths.length)])}>
           <Plus size={14} aria-hidden="true" /> {copy.addColumn}
         </button>
         <button type="button" onClick={() => onChange({ ...data, cells: removeTableRow(cells, cells.length - 1) })}>
           {copy.removeRow}
         </button>
-        <button type="button" onClick={() => onChange({ ...data, cells: removeTableColumn(cells, (cells[0]?.length ?? 1) - 1) })}>
+        <button type="button" onClick={() => updateColumns(removeTableColumn(cells, (cells[0]?.length ?? 1) - 1), widths.length > 1 ? widths.slice(0, -1) : widths)}>
           {copy.removeColumn}
         </button>
       </div>
+      {data.kind === 'table' ? (
+        <label className="omi-table-font-size">
+          <span>{copy.tableFontSize}</span>
+          <select value={reduction} onChange={(event) => onChange({ ...data, fontSizeReduction: event.target.value === '0' ? 0 : 1 })}>
+            <option value={0}>{copy.bodyFontSize}</option>
+            <option value={1}>{copy.smallerFontSize}</option>
+          </select>
+        </label>
+      ) : null}
       {data.kind === 'table' ? (
         <label className="omi-table-caption">
           <span>{copy.caption}</span>

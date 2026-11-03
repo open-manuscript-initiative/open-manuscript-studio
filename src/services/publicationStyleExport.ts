@@ -1,3 +1,4 @@
+import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import publisherJson from '../document/publicationStyles/egyhaztorteneti-szemle.publisher.json';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { assetPath } from '../model/assets';
@@ -413,6 +414,7 @@ table caption { font-size: ${tableCaption.fontSize}pt; line-height: ${tableCapti
 .bibliography p, .references li { font-size: ${bibliography.fontSize}pt; line-height: ${bibliography.lineHeight}pt; text-align: ${bibliography.alignment}; padding-left: ${bibliography.hangingIndent}mm; text-indent: -${bibliography.hangingIndent}mm; }
 img, svg, table { max-width: 100%; }
 ${paragraphStyleRules}
+${TABLE_LAYOUT_CSS}
 `;
 
   if (target === 'html') {

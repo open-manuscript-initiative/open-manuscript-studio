@@ -1,3 +1,5 @@
+import { tableColumnWidths } from '../model/tableLayout';
+import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
@@ -547,15 +549,18 @@ function renderTable(block: OmiBlock, state: RenderState): string {
         .slice(0, headerRows)
         .map(
           (row) =>
-            `<tr>${row.map((cell) => `<th scope="col">${escapeHtml(cell)}</th>`).join('')}</tr>`,
+            `<tr>${row.map((cell) => `<th scope="col">${escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;')}</th>`).join('')}</tr>`,
         )
         .join('')}</thead>`
     : '';
   const bodyRows = visual.cells.slice(headerRows);
   const body = `<tbody>${bodyRows
-    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`)
+    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;')}</td>`).join('')}</tr>`)
     .join('')}</tbody>`;
-  const table = `<table>${header}${body}</table>`;
+  const widths = tableColumnWidths(visual.cells, visual.columnWidths);
+  const columns = `<colgroup>${widths.map((width) => `<col style="width:${width}%">`).join('')}</colgroup>`;
+  const reduction = visual.fontSizeReduction === 0 ? 0 : 1;
+  const table = `<table style="--omi-table-font-reduction:${reduction}">${columns}${header}${body}</table>`;
   const caption = visual.caption?.trim()
     ? `<figcaption>${escapeHtml(visual.caption)}</figcaption>`
     : '';
@@ -946,6 +951,7 @@ img { display: block; max-width: 100%; height: auto; margin-inline: auto; }
 table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
 th, td { border: 1px solid #999; padding: .35rem .5rem; vertical-align: top; }
 th { text-align: left; }
+${TABLE_LAYOUT_CSS}
 math { overflow-x: auto; max-width: 100%; }
 .article-notes, .article-bibliography { margin-top: 2.5rem; text-align: left; }
 .article-bibliography li, .article-notes li { margin-bottom: .65em; }

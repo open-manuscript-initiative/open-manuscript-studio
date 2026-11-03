@@ -248,7 +248,8 @@ th, td { padding: 1.5mm 2mm; vertical-align: top; }
   body { padding: 0; background: transparent; }
   .omi-scholarly-article { width: auto; min-height: 0; margin: 0; padding: 0; }
   .article-body h2, .article-body h3 { break-after: avoid-page; page-break-after: avoid; }
-  figure, table { break-inside: avoid-page; page-break-inside: avoid; }
+  figure:not(.scholarly-table) { break-inside: avoid-page; page-break-inside: avoid; }
+  .scholarly-table, .scholarly-table table { break-inside: auto; page-break-inside: auto; }
   .article-notes, .footnotes {
     border-top: var(--ets-rule-width) solid currentColor;
     padding-top: 2mm;

@@ -1828,3 +1828,12 @@
 .publication-page-note-fragment {
   overflow: hidden;
 }
+
+/* Tables use the print body's font size and one scaled point, including zoom. */
+.publication-document-content .omi-table-editor {
+  font-size: calc(var(--omi-publication-body-size) - var(--omi-table-font-reduction, 1) * var(--omi-publication-point));
+  line-height: 1.3;
+}
+.publication-document-content .omi-visual-block--table {
+  background: transparent;
+}
