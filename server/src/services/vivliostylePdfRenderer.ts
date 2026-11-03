@@ -77,10 +77,24 @@ export async function renderVivliostylePdf(
       if (bytes.byteLength < 5 || bytes.subarray(0, 5).toString('ascii') !== '%PDF-') throw new Error('Invalid isolated PDF output.');
       return { bytes: new Uint8Array(bytes), renderer: VIVLIOSTYLE_PDF_RENDERER, rendererVersion: VIVLIOSTYLE_PDF_RENDERER_VERSION };
     } catch (error) {
-      throw new VivliostylePdfError('PDF_RENDER_FAILED', error instanceof Error ? error.message : 'PDF worker unavailable.');
+      // A required worker becoming unavailable must fail closed: no fallback to
+      // local Chromium/Poppler. Return a stable 503 without exposing socket
+      // paths, OS error details or any worker-supplied response body.
+      if (isIsolatedWorkerUnavailable(error)) {
+        throw new VivliostylePdfError('PDF_RENDERER_UNAVAILABLE', 'Isolated PDF worker is temporarily unavailable.');
+      }
+      throw new VivliostylePdfError('PDF_RENDER_FAILED', 'Isolated PDF processing failed.');
     }
   }
   return renderVivliostylePdfLocally(html);
+}
+
+function isIsolatedWorkerUnavailable(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const code = (error as NodeJS.ErrnoException).code;
+  return (typeof code === 'string' && [
+    'ENOENT', 'ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'EACCES', 'EPERM',
+  ].includes(code)) || error.message === 'Isolated PDF worker timed out.';
 }
 
 /** Dedicated sandbox worker execution. Never called as an API fallback in production. */
