@@ -1,6 +1,6 @@
 const en = {
   pageStyles: 'Page styles', selectedPage: 'Selected page', pageStyle: 'Page style', pageStyleName: 'Page style name', editPageStyle: 'Edit page style', newPageStyle: 'New page style', addPage: 'Add page', deletePage: 'Delete selected page', addPageStyle: 'Style for new page', background: 'Page background', marginTop: 'Top margin (mm)', marginRight: 'Right margin (mm)', marginBottom: 'Bottom margin (mm)', marginLeft: 'Left margin (mm)', runningHeaders: 'Running headers', headersEnabled: 'Show running headers', showFirstPage: 'Show on first page', differentEvenPages: 'Different even-page headers', headerLeft: 'Header left', headerCenter: 'Header center', headerRight: 'Header right', evenHeaderLeft: 'Even header left', evenHeaderCenter: 'Even header center', evenHeaderRight: 'Even header right', headerFont: 'Header font family', headerSize: 'Header font size (pt)', headerColor: 'Header color', headerTop: 'Header top (mm)', headerHeight: 'Header height (mm)', headerTokens: 'Fields: {title}, {page}, {pages}, {style}', pageNumberStart: 'First page number', graphicSettings: 'Graphic content', graphicX: 'Graphic X (mm)', graphicY: 'Graphic Y (mm)', graphicWidth: 'Graphic width (mm)', graphicHeight: 'Graphic height (mm)', graphicRotation: 'Graphic rotation (°)', keepAspectRatio: 'Keep graphic proportions', resetGraphic: 'Fit graphic to frame', fillFrame: 'Fill frame proportionally', moveGraphic: 'Move graphic inside frame', resizeGraphic: 'Resize graphic inside frame',
-  mode: 'Frame layout', continuous: 'Continuous layout', description: 'Place text and graphics in separate frames. Link text frames to continue a story.',
+  mode: 'Frame layout', continuous: 'Continuous layout', description: 'An editable default text frame automatically continues on new pages. Additional text and graphic frames remain independent.',
   addText: 'Add text frame', addGraphic: 'Add graphic frame', frame: 'Frame', selectFrame: 'Select frame', text: 'Story text',
   importText: 'Copy manuscript text into story', importHelp: 'Copies plain text. The structured manuscript, rich formatting and notes remain in the continuous layout.',
   source: 'Graphic source', style: 'Shared frame style', newStyle: 'New shared style', styleName: 'Style name', editShared: 'Edit shared style',
@@ -10,7 +10,7 @@ const en = {
   next: 'Link to text frame', link: 'Link frames', unlink: 'Unlink continuation', linked: 'Continues in', deleteFrame: 'Delete frame',
   font: 'Font family', size: 'Font size (pt)', leading: 'Leading (pt)', padding: 'Inset (mm)', weight: 'Bold', italic: 'Italic',
   color: 'Text color', fill: 'Frame fill', stroke: 'Frame stroke', strokeWidth: 'Stroke width (mm)', alignment: 'Alignment', left: 'Left', center: 'Center', right: 'Right',
-  print: 'Print frames / save PDF', exportHtml: 'Download frame HTML', overflow: 'Text does not fit. Add or enlarge linked frames.',
+  print: 'Print frames / save PDF', exportHtml: 'Download frame HTML', overflow: 'Automatic page continuation is exhausted or text cannot fit the frame. Resize the frame or adjust its typography.',
   empty: 'Add a text or graphic frame to begin.', missingGraphic: 'Select an existing graphic element.',
   story: 'Story', unusedStory: 'Retained story', freshStory: 'New story', saved: 'Layout saved in the manuscript.',
   exportFailed: 'Could not export the frame layout.',
@@ -19,7 +19,7 @@ const en = {
 type FrameCopy = typeof en;
 const hu: FrameCopy = {
   pageStyles: 'Oldalstílusok', selectedPage: 'Kiválasztott oldal', pageStyle: 'Oldalstílus', pageStyleName: 'Oldalstílus neve', editPageStyle: 'Oldalstílus szerkesztése', newPageStyle: 'Új oldalstílus', addPage: 'Oldal hozzáadása', deletePage: 'Kiválasztott oldal törlése', addPageStyle: 'Új oldal stílusa', background: 'Oldal háttérszíne', marginTop: 'Felső margó (mm)', marginRight: 'Jobb margó (mm)', marginBottom: 'Alsó margó (mm)', marginLeft: 'Bal margó (mm)', runningHeaders: 'Futó fejlécek', headersEnabled: 'Futó fejlécek megjelenítése', showFirstPage: 'Megjelenítés az első oldalon', differentEvenPages: 'Eltérő fejléc a páros oldalakon', headerLeft: 'Fejléc bal oldalon', headerCenter: 'Fejléc középen', headerRight: 'Fejléc jobb oldalon', evenHeaderLeft: 'Páros fejléc bal oldalon', evenHeaderCenter: 'Páros fejléc középen', evenHeaderRight: 'Páros fejléc jobb oldalon', headerFont: 'Fejléc betűcsaládja', headerSize: 'Fejléc betűmérete (pt)', headerColor: 'Fejléc színe', headerTop: 'Fejléc felső helyzete (mm)', headerHeight: 'Fejléc magassága (mm)', headerTokens: 'Mezők: {title}, {page}, {pages}, {style}', pageNumberStart: 'Kezdő oldalszám', graphicSettings: 'Grafikus tartalom', graphicX: 'Grafika X (mm)', graphicY: 'Grafika Y (mm)', graphicWidth: 'Grafika szélessége (mm)', graphicHeight: 'Grafika magassága (mm)', graphicRotation: 'Grafika elforgatása (°)', keepAspectRatio: 'Grafika arányainak megőrzése', resetGraphic: 'Grafika keretbe illesztése', fillFrame: 'Keret arányos kitöltése', moveGraphic: 'Grafika eltolása a kereten belül', resizeGraphic: 'Grafika átméretezése a kereten belül',
-  mode: 'Keretalapú tördelés', continuous: 'Folyószöveges tördelés', description: 'A szöveg és a grafika külön keretekbe rendezhető. Az összekapcsolt szövegkeretekben a szöveg továbbfolyik.',
+  mode: 'Keretalapú tördelés', continuous: 'Folyószöveges tördelés', description: 'Az alapértelmezett szerkeszthető szövegkeret automatikusan folytatódik az új oldalakon. További szöveg- és grafikai keretek is használhatók.',
   addText: 'Szövegkeret hozzáadása', addGraphic: 'Grafikai keret hozzáadása', frame: 'Keret', selectFrame: 'Keret kiválasztása', text: 'Szövegfolyam szövege',
   importText: 'Kéziratszöveg másolása a szövegfolyamba', importHelp: 'Egyszerű szöveget másol. A strukturált kézirat, a gazdag formázás és a jegyzetek a folyószöveges nézetben maradnak.',
   source: 'Grafikai forrás', style: 'Közös keretstílus', newStyle: 'Új közös stílus', styleName: 'Stílus neve', editShared: 'Közös stílus szerkesztése',
@@ -29,7 +29,7 @@ const hu: FrameCopy = {
   next: 'Összekapcsolás szövegkerettel', link: 'Keretek összekapcsolása', unlink: 'Folytatás szétválasztása', linked: 'Folytatás itt', deleteFrame: 'Keret törlése',
   font: 'Betűcsalád', size: 'Betűméret (pt)', leading: 'Sorköz (pt)', padding: 'Belső margó (mm)', weight: 'Félkövér', italic: 'Dőlt',
   color: 'Szövegszín', fill: 'Keret kitöltése', stroke: 'Keret körvonala', strokeWidth: 'Vonalvastagság (mm)', alignment: 'Igazítás', left: 'Balra', center: 'Középre', right: 'Jobbra',
-  print: 'Keretek nyomtatása / PDF mentése', exportHtml: 'Keretes HTML letöltése', overflow: 'A szöveg nem fér el. Adjon hozzá vagy növeljen összekapcsolt kereteket.',
+  print: 'Keretek nyomtatása / PDF mentése', exportHtml: 'Keretes HTML letöltése', overflow: 'Az automatikus oldalfolytatás elérte a korlátot, vagy a szöveg nem fér a keretbe. Módosítsa a keret méretét vagy a betűbeállításokat.',
   empty: 'Kezdésként adjon hozzá szöveg- vagy grafikai keretet.', missingGraphic: 'Válasszon meglévő grafikus elemet.',
   story: 'Szövegfolyam', unusedStory: 'Megőrzött szövegfolyam', freshStory: 'Új szövegfolyam', saved: 'A tördelés a kéziratban mentve.',
   exportFailed: 'A keretes tördelés exportálása nem sikerült.',
@@ -42,7 +42,7 @@ const de: FrameCopy = {
   style: 'Gemeinsamer Rahmenstil', newStyle: 'Neuer gemeinsamer Stil', editShared: 'Gemeinsamen Stil bearbeiten', local: 'Lokale Stilabweichungen',
   rotation: 'Drehung (°)', shape: 'Rahmenform', rectangle: 'Rechteck', ellipse: 'Ellipse', polygon: 'Eigenes Polygon',
   next: 'Mit Textrahmen verknüpfen', link: 'Rahmen verknüpfen', unlink: 'Fortsetzung trennen', deleteFrame: 'Rahmen löschen',
-  print: 'Rahmen drucken / PDF speichern', exportHtml: 'Rahmen-HTML herunterladen', overflow: 'Textüberlauf. Weitere oder größere verknüpfte Rahmen hinzufügen.',
+  print: 'Rahmen drucken / PDF speichern', exportHtml: 'Rahmen-HTML herunterladen', overflow: 'Der automatische Seitenfluss ist erschöpft oder der Text passt nicht in den Rahmen. Rahmen oder Typografie anpassen.',
   exportError: 'Textüberlauf und fehlende Grafikquellen vor dem Export beheben.',
 };
 export function getPublicationFramesCopy(locale: string): FrameCopy { return locale.startsWith('hu') ? hu : locale.startsWith('de') ? de : en; }
