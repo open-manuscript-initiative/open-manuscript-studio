@@ -25,6 +25,7 @@ import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
 import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { buildRomanianArchivesSearchUrl } from '../src/modules/history-archives/romanianArchives.ts';
+import { ITALIAN_NATIONAL_ARCHIVES_LINKS, ITALIAN_NATIONAL_ARCHIVES_ORIGIN, getItalianNationalArchivesLink } from '../src/modules/history-archives/italianNationalArchives.ts';
 import { DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS, getHistoryArchiveSourcesStorageKey, HISTORY_ARCHIVE_SOURCE_IDS, readVisibleHistoryArchiveSources } from '../src/modules/history-archives/sourcePreferences.ts';
 import { EU_NSI_CATALOGS, getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from '../src/modules/researchCatalogPreferences.ts';
 import { searchEurostatCatalogue } from '../src/modules/eurostatCatalogue.ts';
@@ -838,3 +839,37 @@ test('module display order follows localized titles without changing registratio
     ['org.omi.legal-sources', 'org.omi.history-archives']);
   assert.deepEqual(modules.map((module) => module.id), original);
 });
+
+test('Italian unified archival portal uses documented official destinations, not the retired SAN URL', () => {
+  assert.equal(ITALIAN_NATIONAL_ARCHIVES_LINKS.length, 5);
+  assert.deepEqual(ITALIAN_NATIONAL_ARCHIVES_LINKS.map((link) => link.id),
+    ['home', 'holdings', 'units', 'explore', 'readingRoom']);
+  for (const { id, url: link } of ITALIAN_NATIONAL_ARCHIVES_LINKS) {
+    const url = new URL(link);
+    assert.equal(url.origin, ITALIAN_NATIONAL_ARCHIVES_ORIGIN);
+    assert.equal(url.protocol, 'https:');
+    assert.equal(url.username, '');
+    assert.equal(url.password, '');
+    assert.equal(url.search, ''); // We have no documented search-query API contract.
+    assert.equal(url.hash, '');
+    assert.equal(getItalianNationalArchivesLink(id), link);
+    assert.ok(url.pathname.startsWith('/it/'));
+  }
+  assert.equal(new URL(getItalianNationalArchivesLink('units')).pathname, '/it/unit%C3%A0');
+  assert.equal(new URL(getItalianNationalArchivesLink('readingRoom')).pathname, '/it/sala-studio');
+  const panel = readFileSync(new URL('../src/modules/history-archives/HistoryArchivesSourcesPanel.tsx', import.meta.url), 'utf8');
+  const navigator = readFileSync(new URL('../src/modules/history-archives/ItalianNationalArchivesPanel.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(panel, /san\.beniculturali\.it\/web\/san/);
+  assert.match(panel, /<ItalianNationalArchivesPanel locale=\{locale\}/);
+  assert.match(navigator, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(navigator, /does not fetch catalogue records/);
+});
+
+test('Italian archive becomes an initial visible source but saved archive choices remain unchanged', () => {
+  assert.ok(DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS.includes('italian'));
+  assert.ok(HISTORY_ARCHIVE_SOURCE_IDS.includes('siusa')); // Legacy access stays available.
+  assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['siusa', 'nara'])), ['siusa', 'nara']);
+  assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['italian'])), ['italian']);
+  assert.deepEqual(readVisibleHistoryArchiveSources('[]'), []);
+});
+
