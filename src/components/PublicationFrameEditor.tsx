@@ -1,4 +1,5 @@
 import { PublicationFramePagePanel } from './PublicationFramePagePanel';
+import { createDefaultFlowFrameLayout, paginateAutomaticFrameLayout } from '../model/publicationAutoFlow';
 import { framePages, framePageStyle, frameGraphicTransform, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader, updateFrameGraphicSize, type FrameGraphicTransform } from '../model/publicationFramePages';
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
@@ -6,7 +7,7 @@ import { stageFrameLayout } from '../app/publicationFrameActions';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
 import { useTranslation } from '../i18n';
 import {
-  collectFrameSourceBlocks, createFrameLayout, flowFrameStories, frameDisplayText, frameStyle, getFrameLayout, linkFrames, removeFrame,
+  collectFrameSourceBlocks, flowFrameStories, frameDisplayText, frameStyle, getFrameLayout, linkFrames, removeFrame,
   unlinkFrames, RECTANGLE_POINTS, type FrameTextStyle, type PublicationFrame, type PublicationFrameLayout,
 } from '../model/publicationFrames';
 import { storedContentText } from '../model/proofing';
@@ -29,14 +30,19 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   const { locale } = useTranslation(); const copy = getPublicationFramesCopy(locale);
   const preview = usePublicationPreview();
   const initial = useMemo(() => {
-    const next = createFrameLayout(publicationStyle.page.width, publicationStyle.page.height);
+    const next = createDefaultFlowFrameLayout();
     next.styles[0]!.properties = { ...next.styles[0]!.properties, fontFamily: publicationStyle.fonts.body.family,
       fontSizePt: publicationStyle.styles.body.fontSize, lineHeightPt: publicationStyle.styles.body.lineHeight };
     return next;
   }, [publicationStyle]);
   const stored = getFrameLayout(manuscript) ?? initial;
   const [draft, setDraft] = useState<PublicationFrameLayout | null>(null);
-  const layout = draft ?? stored;
+  const [fontGeneration, setFontGeneration] = useState(0);
+  const measure = useMemo(createFrameTextMeasure, []);
+  const layout = useMemo(() => {
+    void fontGeneration;
+    return paginateAutomaticFrameLayout(draft ?? stored, measure);
+  }, [draft, stored, measure, fontGeneration]);
   const [pageSelection, setPageSelection] = useState(0);
   const activePage = Math.min(Math.max(0, pageSelection), layout.page.count - 1);
   const [selectedId, setSelectedId] = useState('');
@@ -44,9 +50,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   const [graphicAspects, setGraphicAspects] = useState<Record<string, number>>({});
   const [targetId, setTargetId] = useState(''); const [reuseStory, setReuseStory] = useState('');
   const [message, setMessage] = useState(''); const [exporting, setExporting] = useState(false);
-  const [fontGeneration, setFontGeneration] = useState(0);
-  const measure = useMemo(createFrameTextMeasure, []);
-  const flow = useMemo(() => { void fontGeneration; return flowFrameStories(layout, measure); }, [layout, measure, fontGeneration]);
+  const flow = useMemo(() => flowFrameStories(layout, measure), [layout, measure]);
   const blocks = useMemo(() => collectFrameSourceBlocks(manuscript), [manuscript]);
   const graphics = blocks.filter((block) => block.visual);
   const sourceIds = new Set(graphics.map((block) => block.id));
@@ -82,7 +86,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   }, []);
   function commit(next: PublicationFrameLayout) {
     if (preview) return;
-    try { stageFrameLayout(next); setMessage(''); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); }
+    try { stageFrameLayout(paginateAutomaticFrameLayout(next, measure)); setMessage(''); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); }
   }
   function updateFrame(patch: Partial<PublicationFrame>) {
     if (!selected) return;
