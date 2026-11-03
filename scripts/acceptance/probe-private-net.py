@@ -14,9 +14,23 @@ CASES = (
     ("ula_v6", socket.AF_INET6, "fd74::241", False),
 )
 
-def configure():
-    if os.stat("/proc/self/ns/net").st_ino == os.stat("/proc/1/ns/net").st_ino:
+def verify_namespace():
+    # Reading /proc/1/ns/net may require ptrace privileges that the test
+    # unit deliberately does not have (CapabilityBoundingSet). When that
+    # comparison is unavailable, fail closed unless *only* loopback exists.
+    own_namespace = os.stat("/proc/self/ns/net").st_ino
+    interfaces = {name for _, name in socket.if_nameindex()}
+    if interfaces != {"lo"}:
+        raise RuntimeError("Refused: test namespace contains non-loopback interfaces")
+    try:
+        host_namespace = os.stat("/proc/1/ns/net").st_ino
+    except PermissionError:
+        host_namespace = None
+    if host_namespace is not None and own_namespace == host_namespace:
         raise RuntimeError("Host network namespace: refused")
+
+
+def configure():
     if os.geteuid() != 0:
         raise RuntimeError("Transient CAP_NET_ADMIN account required")
     for cmd in (
@@ -45,21 +59,28 @@ def reachable(family, host):
                 return False
 
 def run(mode):
-    if mode not in ("baseline", "filtered"):
-        raise ValueError("Mode must be baseline or filtered")
-    configure()
-    results = {}
-    for name, family, host, allowed in CASES:
-        actual = reachable(family, host)
-        expected = True if mode == "baseline" else allowed
-        results[name] = "PASS" if actual == expected else "FAIL"
-    passed = all(value == "PASS" for value in results.values())
-    print(json.dumps({"mode": mode, "checks": results, "result": "PASS" if passed else "FAIL"}, sort_keys=True))
-    return 0 if passed else 1
+    stage = "argument-validation"
+    try:
+        if mode not in ("baseline", "filtered"):
+            raise ValueError("Mode must be baseline or filtered")
+        stage = "namespace-verification"
+        verify_namespace()
+        stage = "interface-setup"
+        configure()
+        results = {}
+        for name, family, host, allowed in CASES:
+            stage = "connection-" + name
+            actual = reachable(family, host)
+            expected = True if mode == "baseline" else allowed
+            results[name] = "PASS" if actual == expected else "FAIL"
+        passed = all(value == "PASS" for value in results.values())
+        print(json.dumps({"mode": mode, "checks": results, "result": "PASS" if passed else "FAIL"}, sort_keys=True))
+        return 0 if passed else 1
+    except (OSError, subprocess.SubprocessError, RuntimeError, ValueError) as exc:
+        # Fixed phase names and exception classes only: no host identity or
+        # potentially sensitive exception messages in CI/issue evidence.
+        print(json.dumps({"result": "INCONCLUSIVE", "stage": stage, "reason": type(exc).__name__}))
+        return 2
 
 if __name__ == "__main__":
-    try:
-        sys.exit(run(sys.argv[1] if len(sys.argv) == 2 else ""))
-    except (OSError, subprocess.SubprocessError, RuntimeError, ValueError) as exc:
-        print(json.dumps({"result": "INCONCLUSIVE", "reason": type(exc).__name__}))
-        sys.exit(2)
+    sys.exit(run(sys.argv[1] if len(sys.argv) == 2 else ""))
