@@ -15,19 +15,18 @@ CASES = (
 )
 
 def verify_namespace():
-    # Reading /proc/1/ns/net may require ptrace privileges that the test
-    # unit deliberately does not have (CapabilityBoundingSet). When that
-    # comparison is unavailable, fail closed unless *only* loopback exists.
+    # The privileged wrapper supplies the host network namespace inode
+    # *before* systemd-run removes process inspection capabilities.
+    host_inode = os.environ.get("OMI_HOST_NETNS_INODE", "")
+    if not host_inode.isdecimal():
+        raise RuntimeError("Missing trusted host namespace identifier")
     own_namespace = os.stat("/proc/self/ns/net").st_ino
+    if own_namespace == int(host_inode):
+        raise RuntimeError("Host network namespace: refused")
+    # Defense in depth: PrivateNetwork=yes should expose only loopback.
     interfaces = {name for _, name in socket.if_nameindex()}
     if interfaces != {"lo"}:
         raise RuntimeError("Refused: test namespace contains non-loopback interfaces")
-    try:
-        host_namespace = os.stat("/proc/1/ns/net").st_ino
-    except PermissionError:
-        host_namespace = None
-    if host_namespace is not None and own_namespace == host_namespace:
-        raise RuntimeError("Host network namespace: refused")
 
 
 def configure():
