@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { translateCatalog, useTranslation } from '../i18n';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
+import { getValidationProgressCopy } from '../i18n/validationProgress';
 import type { OmiPublicationProfileIssueCode } from '../model/publicationProfile';
-import type { ValidationDiagnostic, ValidationProfile, ValidationReport, ValidationSeverity } from '../model/validation';
+import { VALIDATION_PROFILES, type ValidationDiagnostic, type ValidationProfile, type ValidationProgress, type ValidationReport, type ValidationSeverity } from '../model/validation';
 import { validateStudioManuscript, validationTargetSection } from '../services/manuscriptValidation';
 import { serializeValidationReport } from '../services/validationReport';
 import { saveExportText } from '../services/exportFileDelivery';
@@ -16,14 +17,24 @@ import { ModelSupportPanel } from './ModelSupportPanel';
 export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
   const { locale } = useTranslation();
   const copy = (key: string) => translateCatalog(locale, `/uncataloguedUi/validationModel/${key}`);
+  const progressCopy = getValidationProgressCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const [profile, setProfile] = useState<ValidationProfile>('authoring');
   const [result, setResult] = useState<{ report: ValidationReport; source: OmiManuscript } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<ValidationProgress | null>(null);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [lastDuration, setLastDuration] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<ValidationSeverity | 'all'>('all');
   const [page, setPage] = useState(0);
   const request = useRef(0);
+  useEffect(() => {
+    if (!busy || startedAt === null) return;
+    const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [busy, startedAt]);
   // Conservative reference comparison is constant-time during typing. Reports
   // are point-in-time observations; an edit or checkpoint asks for another run.
   const stale = !!result && (result.source !== manuscript || result.report.profile !== profile);
@@ -32,14 +43,36 @@ export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
   async function run() {
     const requestId = ++request.current;
     const source = useStudioStore.getState().manuscript;
-    setBusy(true); setError('');
+    const started = Date.now();
+    setBusy(true);
+    setResult(null);
+    setError('');
+    setStartedAt(started);
+    setElapsed(0);
+    setLastDuration(null);
+    setProgress({ completed: 0, total: VALIDATION_PROFILES[profile].length, currentCheck: null });
     try {
-      // Paint the running state before the synchronous structural checks.
+      // Paint the busy state before the potentially expensive snapshot and hashes.
       await new Promise<void>((resolve) => { window.setTimeout(resolve, 0); });
-      const next = await validateStudioManuscript(source, { profile, loadAsset: getAssetPayload });
+      const next = await validateStudioManuscript(source, {
+        profile,
+        loadAsset: getAssetPayload,
+        onProgress: (nextProgress) => { if (requestId === request.current) setProgress(nextProgress); },
+        // Only check IDs and aggregate timings are logged; no manuscript contents.
+        onTiming: (event) => {
+          if (import.meta.env.DEV) console.debug('[OMI validation timing]', event.phase, event.checkId ?? '', Math.round(event.durationMs), 'ms');
+        },
+        yieldBetweenChecks: () => new Promise<void>((resolve) => { window.setTimeout(resolve, 0); }),
+      });
       if (requestId === request.current) { setResult({ report: next, source }); setPage(0); }
-    } catch { setError(copy('failed')); }
-    finally { if (requestId === request.current) setBusy(false); }
+    } catch { if (requestId === request.current) setError(copy('failed')); }
+    finally {
+      if (requestId === request.current) {
+        setLastDuration(Math.floor((Date.now() - started) / 1000));
+        setBusy(false);
+        setProgress(null);
+      }
+    }
   }
 
   async function exportReport() {
@@ -61,6 +94,7 @@ export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
   return <><section className="panel omi-validation-panel" aria-labelledby="omi-validation-title">
     <h3 id="omi-validation-title">{copy('title')}</h3>
     <p>{copy('description')}</p>
+    <p className="omi-validation-duration-hint">{progressCopy.notice}</p>
     <div className="omi-validation-controls">
       <label>{copy('profile')}<select value={profile} disabled={busy} onChange={(event) => setProfile(event.target.value as ValidationProfile)}>
         {(['authoring', 'exchange', 'publication-preflight'] as const).map((value) => <option key={value} value={value}>{copy(value)}</option>)}
@@ -68,10 +102,19 @@ export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
       <button type="button" className="studio-menu-primary-action" disabled={busy} onClick={() => void run()}>{copy(busy ? 'running' : 'run')}</button>
       <button type="button" className="studio-menu-secondary-action" disabled={!report || stale || busy} onClick={() => void exportReport()}>{copy('export')}</button>
     </div>
+    {busy && progress ? <div className="omi-validation-running" aria-busy="true">
+      <div role="status" aria-live="polite" aria-atomic="true">
+        <strong>{copy('running')}</strong> {progress.currentCheck ? copy(`check-${progress.currentCheck}`) : progressCopy.preparing}
+      </div>
+      <progress aria-label={copy('checks')} max={progress.total} value={progress.completed} />
+      <span>{progressCopy.completed} {progress.completed}/{progress.total}</span>
+      <span aria-live="off">{progressCopy.elapsed} {elapsed} s</span>
+    </div> : null}
+    {!busy && lastDuration !== null ? <p className="omi-validation-finished-duration">{progressCopy.finished} {lastDuration} s</p> : null}
     <p>{copy('scopeHint')}</p>
     {error ? <p role="alert">{error}</p> : null}
     {stale ? <p role="status" className="omi-validation-stale">{copy('stale')}</p> : null}
-    {!report ? <p>{copy('empty')}</p> : <>
+    {!report ? (busy ? null : <p>{copy('empty')}</p>) : <>
       <div className="omi-validation-summary" role="status">
         <strong>{copy(report.summary.outcome)}</strong>
         <span>{copy(report.summary.complete ? 'complete' : 'incomplete')}</span>

@@ -14,3 +14,8 @@
 .omi-validation-findings code { white-space: pre-wrap; overflow-wrap: anywhere; }
 .omi-validation-panel summary { cursor: pointer; padding-block: .5rem; }
 @media (max-width: 40rem) { .omi-validation-controls { align-items: stretch; } .omi-validation-controls > * { width: 100%; } }
+
+.omi-validation-duration-hint { font-size: .95em; opacity: .85; }
+.omi-validation-running { display: grid; gap: .5rem; padding: .75rem 0; }
+.omi-validation-running progress { width: 100%; max-width: 32rem; height: .85rem; accent-color: var(--accent-color, #356b85); }
+.omi-validation-running span, .omi-validation-finished-duration { font-variant-numeric: tabular-nums; }

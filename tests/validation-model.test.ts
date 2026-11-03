@@ -247,3 +247,36 @@ test('a failing validation adapter cannot change later checks or the inspected s
   assert.deepEqual(manuscript, before);
   assert.equal(isValidationReportCurrent(manuscript, report), true);
 });
+
+
+test('validation progress and timing observers identify stages without changing report semantics', async () => {
+  const manuscript = source();
+  const progress: { completed: number; total: number; currentCheck: ValidationCheckId | null }[] = [];
+  const timings: { phase: string; checkId?: ValidationCheckId; durationMs: number }[] = [];
+  let yields = 0;
+  const report = await validateStudioManuscript(manuscript, {
+    profile: 'authoring',
+    onProgress: (event) => progress.push(event),
+    onTiming: (event) => timings.push(event),
+    yieldBetweenChecks: async () => { yields += 1; },
+  });
+  assert.deepEqual(progress.map((event) => event.currentCheck), [...VALIDATION_PROFILES.authoring, null]);
+  assert.deepEqual(progress.map((event) => event.completed), [0, 1, 2, 3, 4, 5]);
+  assert.equal(progress[0]?.total, 5);
+  assert.equal(yields, 5);
+  assert.equal(timings.filter((event) => event.phase === 'snapshot').length, 1);
+  assert.deepEqual(timings.filter((event) => event.phase === 'check').map((event) => event.checkId), VALIDATION_PROFILES.authoring);
+  assert.ok(timings.every((event) => Number.isFinite(event.durationMs) && event.durationMs >= 0));
+  assert.equal(timings.at(-1)?.phase, 'total');
+  assert.equal(report.summary.outcome, 'valid');
+  assertValidationReport(report);
+});
+
+test('observer exceptions do not change validation outcomes', async () => {
+  const report = await validateStudioManuscript(source(), {
+    onProgress: () => { throw new Error('sensitive user text'); },
+    onTiming: () => { throw new Error('sensitive user text'); },
+  });
+  assert.equal(report.summary.outcome, 'valid');
+  assert.equal(serializeValidationReport(report).includes('sensitive user text'), false);
+});

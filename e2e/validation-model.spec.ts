@@ -15,6 +15,7 @@ for (const width of [1440, 393]) {
     await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
     await page.getByRole('button', { name: 'Validation', exact: true }).click();
     const panel = page.locator('.omi-validation-panel');
+    await expect(panel.getByText('Checks on large manuscripts may take some time.')).toBeVisible();
     await panel.getByRole('button', { name: 'Run checks', exact: true }).click();
     await expect(panel.getByText('Valid within selected scope', { exact: true })).toBeVisible();
     const downloading = page.waitForEvent('download');
