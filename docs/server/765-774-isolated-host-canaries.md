@@ -34,9 +34,15 @@ policies. CI checks only script syntax and safety invariants, not live outcomes.
 
 The egress test creates two distinct transient units, not children of the live
 API. Each has PrivateNetwork=yes, separate cgroup, limited CPU/task/memory
-resources, no credentials, and a no-new-privileges policy. The probe *refuses*
-to configure an interface if it detects the host network namespace. It assigns
-synthetic addresses exclusively to its private namespace loopback interface.
+resources, no credentials, and a no-new-privileges policy. The root
+wrapper reads the host network namespace inode *before* entering the restricted
+transient unit, then supplies that non-secret identifier as a unit environment
+setting. Inside the unit, the probe checks its own network namespace inode,
+refuses an exact host-namespace match, and also fails closed unless the only
+network interface is loopback. This avoids needing CAP_SYS_PTRACE to inspect
+`/proc/1/ns/net` from inside the sandbox. The probe assigns synthetic addresses
+exclusively to the private namespace's loopback interface. Any unrecognized
+namespace or network interface configuration remains INCONCLUSIVE, not PASS.
 
 The first unfiltered BASELINE must reach 127.0.0.1, ::1, 10.243.241.1,
 169.254.241.1 and fd74::241 via temporary local TCP listeners. An unreachable
