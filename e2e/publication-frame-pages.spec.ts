@@ -17,6 +17,13 @@ async function openEditor(page: Page, image = false) {
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
   await menu.getByRole('button', { name: 'Frame layout', exact: true }).click();
+  // This suite verifies backwards compatibility for documents created before
+  // automatic A4 frames. New-document behaviour is covered separately below.
+  await page.evaluate(async () => {
+    const { createFrameLayout } = await import('/src/model/publicationFrames.ts');
+    const { stageFrameLayout } = await import('/src/app/publicationFrameActions.ts');
+    stageFrameLayout(createFrameLayout());
+  });
   return menu.locator('.omi-frame-editor');
 }
 async function model(page: Page) {
