@@ -173,6 +173,9 @@ jobs:
           fi
           echo "OMI_RUN_VIVLIOSTYLE_SMOKE=1" >> "$GITHUB_ENV"
 
+      - name: Verify private PDF staging API runner guards
+        run: node --test tests/pdf-worker-api-staging-harness.test.mjs
+
       - name: Verify isolated PDF staging API fails closed and recovers
         run: node --experimental-test-module-mocks --test tests/pdf-worker-api-failclosed.test.mjs
 
