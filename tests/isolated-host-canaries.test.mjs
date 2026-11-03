@@ -45,3 +45,39 @@ test('PDF stage probe checks timeout and process recovery with deployed executor
   const result = spawnSync(process.execPath, ['--check', path('probe-pdf-timeout.mjs')], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
 });
+
+
+test('private-network guard tolerates inaccessible proc1 but refuses host-like interfaces', () => {
+  const script = [
+    'import importlib.util, os, socket, sys',
+    'from unittest.mock import patch',
+    'from types import SimpleNamespace',
+    'spec = importlib.util.spec_from_file_location("omi_probe", sys.argv[1])',
+    'module = importlib.util.module_from_spec(spec)',
+    'spec.loader.exec_module(module)',
+    'def permission_denied(path):',
+    '    if path == "/proc/1/ns/net": raise PermissionError("hidden host namespace")',
+    '    return SimpleNamespace(st_ino=111)',
+    'with patch.object(module.os, "stat", side_effect=permission_denied), patch.object(module.socket, "if_nameindex", return_value=[(1, "lo")]):',
+    '    module.verify_namespace()',
+    'with patch.object(module.os, "stat", side_effect=permission_denied), patch.object(module.socket, "if_nameindex", return_value=[(1, "lo"), (2, "ens6")]):',
+    '    try: module.verify_namespace(); assert False, "host-like interfaces accepted"',
+    '    except RuntimeError: pass',
+    'with patch.object(module.os, "stat", return_value=SimpleNamespace(st_ino=111)), patch.object(module.socket, "if_nameindex", return_value=[(1, "lo")]):',
+    '    try: module.verify_namespace(); assert False, "same host namespace accepted"',
+    '    except RuntimeError: pass',
+  ].join('\n');
+  const result = spawnSync('python3', ['-c', script, path('probe-private-net.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
+test('network canary errors include a fixed stage and never claim PASS', () => {
+  const result = spawnSync('python3', [path('probe-private-net.py'), 'invalid-mode'], { encoding: 'utf8' });
+  assert.equal(result.status, 2, result.stderr);
+  const data = JSON.parse(result.stdout.trim());
+  assert.deepEqual(data, {
+    result: 'INCONCLUSIVE',
+    stage: 'argument-validation',
+    reason: 'ValueError',
+  });
+});
