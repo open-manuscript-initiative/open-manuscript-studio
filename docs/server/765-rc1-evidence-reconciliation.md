@@ -50,11 +50,62 @@ Git blob SHA and avoid executing a new source file as root merely because
 it appeared in the branch. The read-only host report does not exercise
 private IPs or any actual production API negative outbound request.
 
+## 2026-11-03 late-evening actual-deploy and positive-flow delta
+
+Reviewed deployed source: `a0d0ca1ea9bd299361e74dd660e1685d0253d450`. The
+operator's **22:31 CET** read-only process inspection confirmed
+`SOURCE_MATCH=true`, `RUNTIME_CWD_MATCH=true`, and
+`RUNTIME_ENTRYPOINT_MATCH=true` with the matching successful GitHub
+production deploy. A shell typo originally invalidated the modification-time
+check; the **22:34 CET** corrected command then reported
+`DIST_CHANGED_AFTER_START=false` and
+`RUNTIME TIMESTAMP CHECK: PASS`. This establishes a credible checkout /
+on-disk compiled JS / current process path correlation, **not** a verified
+in-memory module attestation or a signed RC artifact digest.
+[Owner evidence and correction](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues/765#issuecomment-6616010235).
+
+The operator then explicitly reported **3/3 success** for the targeted
+positive integration smoke on the current deployed application:
+
+| Changed integration path | Observed result | Remaining identification limit |
+| --- | --- | --- |
+| OJS connection and safe test-manuscript import | **PASS, operator** | Exact OJS 3.5.0-4 versus 3.5.0-5 instance not reported; one result does not approve both |
+| Connected cloud storage open → save → reopen | **PASS, operator** | The individual provider was not specified; no claim that Drive, OneDrive and Dropbox all passed |
+| ORCID/OIDC sign-in → return to Studio | **PASS, operator** | Specific identity provider and separate callback variants not enumerated |
+
+[Operator positive smoke report](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues/765#issuecomment-6616203667).
+These results **close the three-request functional delta smoke**, without
+substituting for negative security verification, separate OJS version coverage
+or exact RC manual `pass` receipts.
+
+### Source-based outbound transport inventory (review, not an exploit test)
+
+At the reviewed source SHA, user-configurable OJS/OMP integration transports,
+WebDAV and OIDC/JWKS flows use connection-pinned HTTP/DNS validation;
+the `#765` mock-DNS regression suite exercised this transport logic.
+Several separately scoped provider integrations (including OAuth cloud
+provider calls, cloud OAuth token exchange, reference managers and DeepL)
+also contain direct `fetch` operations. These often use known provider
+domains, but they **must not** be silently included in the connection-pinned
+coverage claim. Verify for each actually enabled transport whether request
+destinations and provider redirects can reach unexpected networks through
+proxies, DNS changes or browser-controlled input. This is a coverage gap
+to review, **not** a finding of a demonstrated bypass or a reason to alter
+working production connectors without evidence. See:
+`server/src/cloud/providers/oauth/OAuthCloudProvider.ts`,
+`server/src/cloud/oauth/cloudOAuth.ts`,
+`server/src/integrations/referenceManagers/referenceManagerService.ts`,
+`server/src/integrations/integrationExecution.ts`.
+
+**No further general source, BPF or canary rerun is requested.** Remaining
+tests must be precisely scoped, authorized and safe. Until then the actual
+API-process negative destination behavior remains **NOT VERIFIED**.
+
 ## Still missing — do not silently approve
 
 | Requirement | Required scope | Current state |
 | --- | --- | --- |
-| Matching candidate SHA to actual deployed API and build digest | Not merely the checkout Git HEAD | PENDING |
+| Matching candidate SHA to actual deployed API and build digest | Source/CWD/entrypoint/timestamps match current deploy; signed exact RC artifact digest remains outstanding | PARTIAL — signed RC receipt PENDING |
 | Actual API-cgroup negative IPv4/IPv6 connection and metadata/redirect/rebinding guard | Controlled, authorized live API behavior, not separate canary | NOT VERIFIED |
 | Positive allowed integration workflows | Local DB/proxy/collaboration, OJS 3.5.0-4 and 3.5.0-5, enabled OMP/OIDC/ORCID/WebDAV/Google Drive/OneDrive/Dropbox/EuroOffice/mail only where enabled | PENDING candidate binding |
 | Connection-time helpers, HTTP proxies, containers, localhost and residual public egress | Threat review and no alternate outbound bypass | PENDING |
@@ -71,7 +122,7 @@ proof.
 ## Owner receipt (unfilled)
 
 - Actual RC source SHA and deployed API artifact digest: PENDING
-- Positive enabled-provider/DB workflow observations and dates: PENDING
+- Positive current-deploy OJS/one cloud/ORCID smoke: 3/3 PASS (operator); individual provider and both OJS Stable target versions: PENDING
 - Live API end-to-end negative connection guard: NOT VERIFIED
 - Proxies, DNS rebinding, boot persistence and rollback: PENDING
 - Operator/security reviewer, UTC date and evidence URL: PENDING
