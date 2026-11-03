@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import type { EuropeanaSearchCopy } from '../moduleShellTranslations';
 import { EuropeanaSearchPanel } from './EuropeanaSearchPanel';
 import { EleveltarSearchPanel } from './EleveltarSearchPanel';
+import { ItalianNationalArchivesPanel } from './ItalianNationalArchivesPanel';
 import { NaraSearchPanel } from './NaraSearchPanel';
 import { RomanianArchivesSearchPanel } from './RomanianArchivesSearchPanel';
 import { SIUSASearchPanel } from './SIUSASearchPanel';
@@ -26,13 +27,12 @@ interface HistoryArchivesSourcesPanelProps {
 }
 
 interface ArchivePortal {
-  id: Exclude<HistoryArchiveSourceId, 'europeana' | 'nara' | 'romanian' | 'hungarian' | 'siusa'>;
+  id: Exclude<HistoryArchiveSourceId, 'europeana' | 'nara' | 'romanian' | 'hungarian' | 'siusa' | 'italian'>;
   url: string;
 }
 
 const archivePortals: ArchivePortal[] = [
   { id: 'uk', url: 'https://discovery.nationalarchives.gov.uk/' },
-  { id: 'italian', url: 'https://san.beniculturali.it/web/san/ricerca-negli-archivi' },
   { id: 'spanish', url: 'https://pares.cultura.gob.es/ParesBusquedas20/catalogo/find' },
   { id: 'dutch', url: 'https://www.nationaalarchief.nl/onderzoeken/collectie' },
   { id: 'french', url: 'https://www.siv.archives-nationales.culture.gouv.fr' },
@@ -183,8 +183,8 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     romanian: 'Romanian National Archives',
     hungarian: 'eLevéltár – Hungarian archives',
     uk: 'The National Archives (UK)',
-    italian: 'Sistema Archivistico Nazionale (Italy)',
-    siusa: 'SIUSA — Italian archival descriptions',
+    italian: 'Archivi Nazionali — Italy (ICAR)',
+    siusa: 'SIUSA — legacy Italian archival descriptions',
     spanish: 'PARES – Spanish Archives',
     dutch: 'Nationaal Archief (Netherlands)',
     french: 'Archives nationales (France)',
@@ -223,8 +223,8 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     romanian: 'Nationalarchiv Rumäniens',
     hungarian: 'eLevéltár – Ungarische Archive',
     uk: 'The National Archives (UK)',
-    italian: 'Sistema Archivistico Nazionale (Italien)',
-    siusa: 'SIUSA – italienisches Informationssystem für Archive',
+    italian: 'Archivi Nazionali — Italien (ICAR)',
+    siusa: 'SIUSA – bisheriges italienisches Archivinformationssystem',
     spanish: 'PARES – Spanische Archive',
     dutch: 'Nationaal Archief (Niederlande)',
     french: 'Archives nationales (Frankreich)',
@@ -263,8 +263,8 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     romanian: 'Román Nemzeti Levéltár',
     hungarian: 'eLevéltár – magyar levéltárak',
     uk: 'The National Archives (Egyesült Királyság)',
-    italian: 'Sistema Archivistico Nazionale (Olaszország)',
-    siusa: 'SIUSA – olasz levéltári kereső',
+    italian: 'Archivi Nazionali – Olasz Nemzeti Levéltári Portál (ICAR)',
+    siusa: 'SIUSA – korábbi olasz levéltári katalógus',
     spanish: 'PARES – Spanyol Levéltárak',
     dutch: 'Nationaal Archief (Hollandia)',
     french: 'Archives nationales (Franciaország)',
@@ -380,6 +380,7 @@ export function HistoryArchivesSourcesPanel({
       {visible.has('europeana') ? <EuropeanaSearchPanel copy={europeanaCopy} locale={locale} /> : null}
       {visible.has('nara') ? <NaraSearchPanel copy={naraCopy} locale={locale} /> : null}
       {visible.has('romanian') ? <RomanianArchivesSearchPanel locale={locale} /> : null}
+      {visible.has('italian') ? <ItalianNationalArchivesPanel locale={locale} /> : null}
       {visible.has('siusa') ? <SIUSASearchPanel locale={locale} /> : null}
       {visible.has('hungarian') ? <EleveltarSearchPanel locale={locale} /> : null}
       {archivePortals.filter(({ id }) => visible.has(id)).map((archive) => (
