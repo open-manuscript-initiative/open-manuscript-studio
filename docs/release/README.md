@@ -7,6 +7,7 @@ acceptance. Start with:
 - [`1.0-blocker-policy.md`](./1.0-blocker-policy.md) for non-negotiable gates;
 - [`readiness.config.json`](./readiness.config.json) for machine-readable checks.
 - [`2026-11-03-rc1-acceptance-record.md`](./2026-11-03-rc1-acceptance-record.md) for the dated, evidence-linked RC1 GO/NO-GO acceptance record (**currently NO-GO; not a release authorization**).
+- [`2026-11-03-rc1-final-operator-actions.md`](./2026-11-03-rc1-final-operator-actions.md) for the remaining #765/#271/#390 operator actions, signed updates, rollback and 13-gate RC1 sign-off (**no automatic GO**).
 
 Run the local structural checks with:
 
