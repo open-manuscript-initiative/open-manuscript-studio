@@ -10,9 +10,28 @@ test('demo study produces a portable semantic HTML publication artifact', async 
   const html = await buildPublicationHtmlArtifact(createHtmlGalleyStudy());
   assert.match(html, /<html lang="hu">/);
   assert.match(html, /A strukturált kézirattól/);
-  assert.match(html, /<table>/);
+  // Responsive tables carry presentation attributes. Verify their semantics
+  // without requiring an attribute-free opening tag.
+  const table = html.match(/<table(?:\s[^>]*)?>[\s\S]*?<\/table>/)?.[0];
+  assert.ok(table, 'The publication artifact must contain a semantic HTML table.');
+  assert.match(table, /<thead>[\s\S]*?<th\b[^>]*>[\s\S]*?Elem[\s\S]*?<\/th>/);
+  assert.match(table, /<tbody>[\s\S]*?Szemantikus HTML[\s\S]*?<\/tbody>/);
   assert.match(html, /<style>/);
   assert.doesNotMatch(html, /<script|<link|<iframe/);
+});
+
+test('HTML publication artifacts retain responsive table widths and font settings', async () => {
+  const manuscript = createHtmlGalleyStudy();
+  const table = manuscript.sections.flatMap((section) => section.blocks)
+    .find((block) => block.id === 'demo-table')?.visual;
+  assert.equal(table?.kind, 'table');
+  if (table?.kind !== 'table') throw new Error('Missing table fixture.');
+  table.columnWidths = [30, 70];
+  table.fontSizeReduction = 0;
+
+  const html = await buildPublicationHtmlArtifact(manuscript);
+  assert.match(html, /<table\s[^>]*--omi-table-font-reduction:0/);
+  assert.match(html, /<colgroup><col style="width:30%"><col style="width:70%"><\/colgroup>/);
 });
 
 test('embeds checked raster payloads and rejects missing or changed images', async () => {
