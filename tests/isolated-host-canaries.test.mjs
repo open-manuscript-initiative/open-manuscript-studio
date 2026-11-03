@@ -16,6 +16,8 @@ test('host canary shell is syntactically valid and leaves real services untouche
   assert.match(source, /omi-egress-base-/);
   assert.match(source, /omi-egress-filter-/);
   assert.match(source, /omi-pdf-canary-/);
+  assert.match(source, /suffix="\$\(date -u \+%s\)-\$\{BASHPID\}"/);
+  assert.doesNotMatch(source, /suffix="\$\(date -u \+%s\)-\$"/);
   assert.match(source, /IPAddressDeny=\$deny/);
   assert.doesNotMatch(source, /\bsystemctl\s+(?:stop|start|restart|enable|disable)\b/);
   assert.doesNotMatch(source, /\bnft\s+(?:add|delete|flush)\b/);
