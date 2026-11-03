@@ -137,15 +137,22 @@ test('staging-only authenticated publication API fails closed on worker outage a
     const child = worker;
     worker = null;
     if (child.exitCode === null && child.signalCode === null) {
-      const exited = new Promise((done) => child.once('exit', done));
+      const exited = new Promise((done) => { child.once('exit', done); });
       child.kill('SIGTERM');
-      await Promise.race([
-        exited,
-        new Promise((_, reject) => setTimeout(() => {
-          if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
-          reject(new Error('Synthetic worker shutdown exceeded 5 seconds'));
-        }, 5000)),
-      ]);
+      let timeout;
+      try {
+        await Promise.race([
+          exited,
+          new Promise((_, reject) => {
+            timeout = setTimeout(() => {
+              if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+              reject(new Error('Synthetic worker shutdown exceeded 5 seconds'));
+            }, 5000);
+          }),
+        ]);
+      } finally {
+        clearTimeout(timeout);
+      }
     }
     await rm(stageWorkerSocket, { force: true });
   };
