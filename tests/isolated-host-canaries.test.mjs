@@ -24,7 +24,9 @@ test('host canary shell is syntactically valid and leaves real services untouche
 test('network canary validates its own namespace and uses synthetic listeners', () => {
   const source = read('probe-private-net.py');
   assert.match(source, /\/proc\/self\/ns\/net/);
-  assert.match(source, /\/proc\/1\/ns\/net/);
+  assert.match(read('run-isolated-host-probes.sh'), /\/proc\/1\/ns\/net/);
+  assert.match(read('run-isolated-host-probes.sh'), /OMI_HOST_NETNS_INODE/);
+  assert.match(source, /OMI_HOST_NETNS_INODE/);
   assert.match(source, /mode == "baseline"/);
   assert.match(source, /rfc1918_v4/);
   assert.match(source, /ula_v6/);
@@ -44,4 +46,40 @@ test('PDF stage probe checks timeout and process recovery with deployed executor
   assert.match(source, /subsequentJobRecovery/);
   const result = spawnSync(process.execPath, ['--check', path('probe-pdf-timeout.mjs')], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
+});
+
+
+test('network namespace canary requires a trusted host inode and refuses host namespace', () => {
+  const script = [
+    'import importlib.util, os, sys',
+    'from unittest.mock import patch',
+    'from types import SimpleNamespace',
+    'spec = importlib.util.spec_from_file_location("omi_probe", sys.argv[1])',
+    'module = importlib.util.module_from_spec(spec)',
+    'spec.loader.exec_module(module)',
+    'with patch.dict(module.os.environ, {"OMI_HOST_NETNS_INODE": "222"}), patch.object(module.os, "stat", return_value=SimpleNamespace(st_ino=111)), patch.object(module.socket, "if_nameindex", return_value=[(1, "lo")]):',
+    '    module.verify_namespace()',
+    'with patch.dict(module.os.environ, {}, clear=True), patch.object(module.os, "stat", return_value=SimpleNamespace(st_ino=111)), patch.object(module.socket, "if_nameindex", return_value=[(1, "lo")]):',
+    '    try: module.verify_namespace(); assert False, "missing host inode accepted"',
+    '    except RuntimeError: pass',
+    'with patch.dict(module.os.environ, {"OMI_HOST_NETNS_INODE": "111"}), patch.object(module.os, "stat", return_value=SimpleNamespace(st_ino=111)), patch.object(module.socket, "if_nameindex", return_value=[(1, "lo")]):',
+    '    try: module.verify_namespace(); assert False, "same host namespace accepted"',
+    '    except RuntimeError: pass',
+    'with patch.dict(module.os.environ, {"OMI_HOST_NETNS_INODE": "222"}), patch.object(module.os, "stat", return_value=SimpleNamespace(st_ino=111)), patch.object(module.socket, "if_nameindex", return_value=[(1, "lo"), (2, "ens6")]):',
+    '    try: module.verify_namespace(); assert False, "host-like interfaces accepted"',
+    '    except RuntimeError: pass',
+  ].join('\n');
+  const result = spawnSync('python3', ['-c', script, path('probe-private-net.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
+test('network canary errors include a fixed stage and never claim PASS', () => {
+  const result = spawnSync('python3', [path('probe-private-net.py'), 'invalid-mode'], { encoding: 'utf8' });
+  assert.equal(result.status, 2, result.stderr);
+  const data = JSON.parse(result.stdout.trim());
+  assert.deepEqual(data, {
+    result: 'INCONCLUSIVE',
+    stage: 'argument-validation',
+    reason: 'ValueError',
+  });
 });
