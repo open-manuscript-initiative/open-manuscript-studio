@@ -125,6 +125,8 @@ A 2026-11-03-án vizsgált `76eb11fac62881dd4a917e1f44c5fe4193ade8c3` `main` com
 6. Mind a 13 `RC_MANUAL_GATES` kapu dokumentált, pontos SHA-ra kötött, hiteles megfigyeléssel és tulajdonosi jóváhagyással ellátott; nincs nyitott ütközés a `rc-required` policyval.
 7. Külön emberi **GO** döntés után, a dokumentált manuális kiadási workflow `APPROVE_1_0_RELEASE` jóváhagyásával kezdhető tag/publikáció. Előtte nincs RC-tag, release, installercsere vagy honlapon GA/Stable állítás.
 
+**A hiányzó kötelező feladatok műveleti csomagja:** [#765 cgroup-hatókör, #271 Linux GLib-döntés, #390 aláírt frissítés és rollback](./2026-11-03-rc1-final-operator-actions.md). A kapcsolódó 2026-11-03-i eredmények elfogadható részleges bizonyítékok, nem automatikus `pass`/GO. A dokumentum naplózott pillanatképét nem írjuk át újabb GH Actions állapotokra.
+
 ## 7. Aláírandó döntési rekord — kitöltés nélkül
 
 - **Kiadási jelölt / main SHA:** `[jóváhagyandó]`
