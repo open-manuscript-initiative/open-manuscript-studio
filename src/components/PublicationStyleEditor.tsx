@@ -20,6 +20,8 @@ import {
   RotateCcw,
   Save,
   Scissors,
+  SquareDashed,
+  X,
   Trash2,
   Type,
 } from 'lucide-react';
@@ -191,7 +193,7 @@ export function PublicationStyleEditor() {
   );
   const copy = copyFor(locale);
   const previewOnly = usePublicationPreview();
-  const [frameMode, setFrameMode] = useState(false);
+  const [frameToolsOpen, setFrameToolsOpen] = useState(false);
   const frameCopy = getPublicationFramesCopy(locale);
   const initial = useMemo(loadInitialState, []);
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
@@ -704,11 +706,19 @@ export function PublicationStyleEditor() {
       </div>
 
       {previewOnly ? <p className="publication-mobile-preview-note">{getVisualElementsCopy(locale).mobilePreviewNote}</p> : null}
-      <div className="omi-publication-layout-switch" role="group" aria-label={frameCopy.mode}>
-        <button type="button" aria-pressed={!frameMode} onClick={() => setFrameMode(false)}>{frameCopy.continuous}</button>
-        <button type="button" aria-pressed={frameMode} onClick={() => setFrameMode(true)}>{frameCopy.mode}</button>
+      <div className="publication-frame-inspector-actions">
+        <button
+          type="button"
+          className="publication-frame-inspector-toggle"
+          aria-expanded={frameToolsOpen}
+          aria-controls="publication-frame-inspector-panel"
+          onClick={() => setFrameToolsOpen((open) => !open)}
+        >
+          <SquareDashed size={17} aria-hidden="true" />
+          <span>{frameCopy.tools}</span>
+        </button>
       </div>
-      {!previewOnly && !frameMode ? <div className="publication-style-ribbon" ref={ribbonRef}>
+      {!previewOnly ? <div className="publication-style-ribbon" ref={ribbonRef}>
         <div className="publication-style-ribbon-row">
           <div className="publication-style-ribbon-actions" role="toolbar" aria-label={copy.title}>
             <PublicationRibbonMenuButton
@@ -1176,12 +1186,28 @@ export function PublicationStyleEditor() {
       </div> : null}
 
       <div className="publication-style-editor-layout">
-        {frameMode ? <PublicationFrameEditor publicationStyle={style} /> : <PublicationDocumentCanvas
+        <PublicationDocumentCanvas
           style={style}
           viewMode={documentViewMode}
           onViewModeChange={changeDocumentViewMode}
           onProofingSelection={setProofingSelection}
-        />}
+        />
+        {frameToolsOpen ? (
+          <section
+            id="publication-frame-inspector-panel"
+            className="publication-frame-inspector-panel"
+            aria-label={frameCopy.tools}
+          >
+            <div className="publication-frame-inspector-heading">
+              <h5>{frameCopy.tools}</h5>
+              <button type="button" aria-label={frameCopy.closeTools} onClick={() => setFrameToolsOpen(false)}>
+                <X size={19} aria-hidden="true" />
+              </button>
+            </div>
+            <p className="publication-frame-inspector-advisory">{frameCopy.toolsHelp}</p>
+            <PublicationFrameEditor publicationStyle={style} />
+          </section>
+        ) : null}
       </div>
     </section>
   );

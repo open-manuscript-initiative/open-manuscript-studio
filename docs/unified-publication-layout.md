@@ -15,3 +15,11 @@ This is an incremental step toward a unified text and frame layout, **not yet a 
 5. Provide one publication editing UI with independently editable frame objects, without switching to a lossy plain-text editor. Add round-trip and long-manuscript performance tests.
 
 The first migration must keep existing manual frame documents usable. Existing layouts without `autoFlowStoryId` keep their manual-linking behavior unchanged.
+
+## One publication workspace (UI consolidation)
+
+The two mutually exclusive *Continuous layout* / *Frame layout* buttons have been removed from the live publication editor. The canonical rich-text print/HTML5 canvas stays mounted and visible; `Frames and page styles` opens a closeable inspector over the same workspace on desktop and mobile. It retains access to historical manual frame chains and automatic A4 frame continuations.
+
+**Semantic boundary remains:** This is not yet a single typesetting engine. Frame stories are stored as plain text separately from the authoritative structured manuscript. The frame inspector explicitly warns not to use frame-only HTML/PDF as the complete manuscript export when inline formatting, tables and notes are present. The main canvas and its export pipeline remain the authoritative document preview.
+
+The remaining architectural tasks listed above must be completed before declaring full underlying unification. The single UI deliberately avoids describing continuous text and frames as competing editing modes.

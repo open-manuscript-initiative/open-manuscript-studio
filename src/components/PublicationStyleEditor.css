@@ -17,6 +17,7 @@
 }
 
 .publication-style-editor-layout {
+  position: relative;
   flex: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1845,3 +1846,109 @@
 .publication-document-canvas--preview .publication-document-front-matter :is(.publication-document-title, .publication-document-subtitle, .publication-document-motto, .publication-document-abstract) { white-space: pre-wrap; }
 
 .publication-style-editor > :not(.publication-style-editor-layout) { flex-shrink: 0; }
+
+
+/* One semantic publication canvas, with the separate frame-geometry controls
+   available as a collapsible inspector rather than a second editing mode. */
+.publication-frame-inspector-actions {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  background: var(--omi-surface, #fff);
+}
+
+.publication-frame-inspector-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #c5bfb5;
+  border-radius: 0.4rem;
+  color: #374151;
+  background: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.publication-frame-inspector-toggle:hover,
+.publication-frame-inspector-toggle:focus-visible,
+.publication-frame-inspector-toggle[aria-expanded='true'] {
+  border-color: #8b7047;
+  background: #f3eee6;
+  outline-offset: 2px;
+}
+
+.publication-frame-inspector-panel {
+  position: absolute;
+  z-index: 40;
+  inset: 0 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  box-sizing: border-box;
+  width: min(94%, 66rem);
+  min-width: 0;
+  min-height: 0;
+  padding: 0.75rem;
+  overflow: hidden;
+  border-left: 1px solid #c5bfb5;
+  background: var(--omi-surface, #fff);
+  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.14);
+}
+
+.publication-frame-inspector-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.publication-frame-inspector-heading h5 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.publication-frame-inspector-heading button {
+  display: grid;
+  place-items: center;
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  border: 1px solid #c5bfb5;
+  border-radius: 0.4rem;
+  color: inherit;
+  background: #fff;
+  cursor: pointer;
+}
+
+.publication-frame-inspector-advisory {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid #9b8556;
+  color: #4f555d;
+  background: #f7f5f0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.publication-frame-inspector-panel > .omi-frame-editor {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 760px) {
+  .publication-frame-inspector-actions {
+    padding-inline: 0.35rem;
+  }
+
+  .publication-frame-inspector-toggle {
+    min-height: 44px;
+  }
+
+  .publication-frame-inspector-panel {
+    width: 100%;
+    padding: 0.5rem;
+  }
+}
