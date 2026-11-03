@@ -16,7 +16,7 @@ test -s "$source_dir/probe-pdf-timeout.mjs"
 test "$(systemctl is-active omi-studio-api.service)" = active
 test "$(systemctl is-active omi-pdf-worker.service)" = active
 test "$(systemctl is-active omi-pdf-worker.socket)" = active
-suffix="$(date -u +%s)-$"
+suffix="$(date -u +%s)-${BASHPID}"
 # Resolve host namespace *outside* the restricted transient unit. Within the
 # unit, inspecting PID 1's /proc namespace may need CAP_SYS_PTRACE and fail.
 host_net_inode="$(stat -Lc '%i' /proc/1/ns/net)"
