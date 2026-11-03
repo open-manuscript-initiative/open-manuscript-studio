@@ -10,7 +10,7 @@ const en = {
   next: 'Link to text frame', link: 'Link frames', unlink: 'Unlink continuation', linked: 'Continues in', deleteFrame: 'Delete frame',
   font: 'Font family', size: 'Font size (pt)', leading: 'Leading (pt)', padding: 'Inset (mm)', weight: 'Bold', italic: 'Italic',
   color: 'Text color', fill: 'Frame fill', stroke: 'Frame stroke', strokeWidth: 'Stroke width (mm)', alignment: 'Alignment', left: 'Left', center: 'Center', right: 'Right',
-  print: 'Print frames / save PDF', exportHtml: 'Download frame HTML', overflow: 'Automatic page continuation is exhausted or text cannot fit the frame. Resize the frame or adjust its typography.',
+  print: 'Print frames / save PDF', exportHtml: 'Download frame HTML', overflow: 'Text does not fit. Add or enlarge linked frames.', autoOverflow: 'Automatic page continuation is exhausted or text cannot fit the frame. Resize the frame or adjust its typography.',
   empty: 'Add a text or graphic frame to begin.', missingGraphic: 'Select an existing graphic element.',
   story: 'Story', unusedStory: 'Retained story', freshStory: 'New story', saved: 'Layout saved in the manuscript.',
   exportFailed: 'Could not export the frame layout.',
@@ -29,7 +29,7 @@ const hu: FrameCopy = {
   next: 'Összekapcsolás szövegkerettel', link: 'Keretek összekapcsolása', unlink: 'Folytatás szétválasztása', linked: 'Folytatás itt', deleteFrame: 'Keret törlése',
   font: 'Betűcsalád', size: 'Betűméret (pt)', leading: 'Sorköz (pt)', padding: 'Belső margó (mm)', weight: 'Félkövér', italic: 'Dőlt',
   color: 'Szövegszín', fill: 'Keret kitöltése', stroke: 'Keret körvonala', strokeWidth: 'Vonalvastagság (mm)', alignment: 'Igazítás', left: 'Balra', center: 'Középre', right: 'Jobbra',
-  print: 'Keretek nyomtatása / PDF mentése', exportHtml: 'Keretes HTML letöltése', overflow: 'Az automatikus oldalfolytatás elérte a korlátot, vagy a szöveg nem fér a keretbe. Módosítsa a keret méretét vagy a betűbeállításokat.',
+  print: 'Keretek nyomtatása / PDF mentése', exportHtml: 'Keretes HTML letöltése', overflow: 'A szöveg nem fér el. Adjon hozzá vagy növeljen összekapcsolt kereteket.', autoOverflow: 'Az automatikus oldalfolytatás elérte a korlátot, vagy a szöveg nem fér a keretbe. Módosítsa a keret méretét vagy a betűbeállításokat.',
   empty: 'Kezdésként adjon hozzá szöveg- vagy grafikai keretet.', missingGraphic: 'Válasszon meglévő grafikus elemet.',
   story: 'Szövegfolyam', unusedStory: 'Megőrzött szövegfolyam', freshStory: 'Új szövegfolyam', saved: 'A tördelés a kéziratban mentve.',
   exportFailed: 'A keretes tördelés exportálása nem sikerült.',
@@ -42,7 +42,7 @@ const de: FrameCopy = {
   style: 'Gemeinsamer Rahmenstil', newStyle: 'Neuer gemeinsamer Stil', editShared: 'Gemeinsamen Stil bearbeiten', local: 'Lokale Stilabweichungen',
   rotation: 'Drehung (°)', shape: 'Rahmenform', rectangle: 'Rechteck', ellipse: 'Ellipse', polygon: 'Eigenes Polygon',
   next: 'Mit Textrahmen verknüpfen', link: 'Rahmen verknüpfen', unlink: 'Fortsetzung trennen', deleteFrame: 'Rahmen löschen',
-  print: 'Rahmen drucken / PDF speichern', exportHtml: 'Rahmen-HTML herunterladen', overflow: 'Der automatische Seitenfluss ist erschöpft oder der Text passt nicht in den Rahmen. Rahmen oder Typografie anpassen.',
+  print: 'Rahmen drucken / PDF speichern', exportHtml: 'Rahmen-HTML herunterladen', overflow: 'Textüberlauf. Weitere oder größere verknüpfte Rahmen hinzufügen.', autoOverflow: 'Der automatische Seitenfluss ist erschöpft oder der Text passt nicht in den Rahmen. Rahmen oder Typografie anpassen.',
   exportError: 'Textüberlauf und fehlende Grafikquellen vor dem Export beheben.',
 };
 export function getPublicationFramesCopy(locale: string): FrameCopy { return locale.startsWith('hu') ? hu : locale.startsWith('de') ? de : en; }
