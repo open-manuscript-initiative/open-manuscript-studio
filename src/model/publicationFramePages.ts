@@ -58,7 +58,10 @@ export function deleteFramePage(layout: PublicationFrameLayout, index: number): 
     const visited = new Set<string>();
     while (frame.nextFrameId && removed.has(frame.nextFrameId)) {
       if (visited.has(frame.nextFrameId)) throw new Error('Invalid frame chain.');
-      visited.add(frame.nextFrameId); frame.nextFrameId = byId.get(frame.nextFrameId)?.nextFrameId;
+      visited.add(frame.nextFrameId);
+      const successor = byId.get(frame.nextFrameId)?.nextFrameId;
+      if (successor) frame.nextFrameId = successor;
+      else delete frame.nextFrameId;
     }
   }
   next.frames = next.frames.filter((frame) => !removed.has(frame.id));
