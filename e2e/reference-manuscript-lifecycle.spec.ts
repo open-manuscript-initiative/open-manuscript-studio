@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import {
   expect,
@@ -155,7 +156,11 @@ test('exports release-compatible publication formats and enforces the JATS relea
 
   const docx = await exportFromUi(page, 'docx', /\.docx$/);
   const epub = await exportFromUi(page, 'epub', /\.epub$/);
-  const html = await exportFromUi(page, 'html', /\.html\.zip$/);
+  const html = await exportFromUi(page, 'html', /\.html$/);
+  const htmlZip = await exportFromUi(page, 'html', /\.html\.zip$/, undefined, 'package');
+  const htmlPath = await html.path();
+  assertDownloadPath(htmlPath);
+  await assertStandaloneHtmlReadableOffline(page, html);
 
   await expectJatsReleaseBlocked(page);
 
@@ -168,7 +173,7 @@ test('exports release-compatible publication formats and enforces the JATS relea
     mode: 'interactive',
   });
 
-  for (const download of [docx, epub, html, printPdf, interactivePdf]) {
+  for (const download of [docx, epub, html, htmlZip, printPdf, interactivePdf]) {
     const path = await download.path();
     assertDownloadPath(path);
     expect(readFileSync(path).byteLength).toBeGreaterThan(10);
@@ -186,6 +191,50 @@ test('exports release-compatible publication formats and enforces the JATS relea
   ).toHaveLength(2);
   expect(api.unhandledRequests).toEqual([]);
 });
+
+test('styled and semantic HTML panels download single files whose images work offline', async ({ page }) => {
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await openManuscriptThroughUi(page, REFERENCE_FIXTURE);
+  await installReferenceAssetPayload(page);
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  if (!(await menu.isVisible())) {
+    await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+  }
+  await menu.getByRole('button', { name: 'Publication', exact: true }).click();
+  for (const selector of ['.publication-style-export-panel', '.html-export-panel']) {
+    const panel = menu.locator(selector);
+    await expect(panel.getByLabel('HTML save mode')).toHaveValue('standalone');
+    await panel.getByRole('button', { name: /^Export HTML/ }).click();
+    const downloadButton = panel.getByRole('button', { name: /^Download document/ });
+    await expect(downloadButton).toBeVisible();
+    const pending = page.waitForEvent('download');
+    await downloadButton.click();
+    const download = await pending;
+    expect(download.suggestedFilename()).toMatch(/\.html$/);
+    await assertStandaloneHtmlReadableOffline(page, download);
+  }
+});
+
+async function assertStandaloneHtmlReadableOffline(page: Page, download: Download): Promise<void> {
+  // Browser download internals use extensionless UUID paths; save with the
+  // actual .html filename before opening it as a reader would.
+  const path = test.info().outputPath(download.suggestedFilename());
+  await download.saveAs(path);
+  const source = readFileSync(path, 'utf8');
+  expect(source).toContain('src="data:image/png;base64,');
+  expect(source).not.toMatch(/src="media\//);
+  const offline = await page.context().browser()!.newContext({ offline: true });
+  try {
+    const reader = await offline.newPage();
+    await reader.goto(pathToFileURL(path).href);
+    await expect.poll(() => reader.locator('img').evaluateAll((images) =>
+      images.length > 0 && images.every((image) => image.complete && image.naturalWidth > 0),
+    )).toBe(true);
+  } finally {
+    await offline.close();
+  }
+}
 
 async function openManuscriptThroughUi(
   page: Page,
@@ -259,6 +308,7 @@ async function exportFromUi(
     content: 'publication' | 'editorial';
     mode: 'print' | 'interactive';
   },
+  htmlPackaging: 'standalone' | 'package' = 'standalone',
 ): Promise<Download> {
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   if (!(await menu.isVisible())) {
@@ -273,6 +323,9 @@ async function exportFromUi(
   const exportFormats = menu.locator('.studio-export-formats');
   const formatSelect = exportFormats.getByLabel('Export format');
   await formatSelect.selectOption(format);
+  if (format === 'html') {
+    await exportFormats.getByLabel('HTML save mode').selectOption(htmlPackaging);
+  }
 
   if (format === 'pdf' && pdf) {
     await exportFormats.getByLabel('Print view').selectOption(pdf.content);

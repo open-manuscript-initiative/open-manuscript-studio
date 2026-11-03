@@ -12,6 +12,7 @@ import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getHtmlExportCopy } from '../i18n/htmlExport';
+import { getExportFormatCopy } from '../i18n/exportFormats';
 import {
   profileSupportsOutput,
   resolvePublicationProfile,
@@ -25,11 +26,15 @@ import {
   OMI_PUBLISHER_HTML_PACKAGE_VERSION,
   renderPublisherHtmlArticle,
 } from '../services/exportPublisherHtmlPackage';
-import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
+import { preparePublicationArtifactWithBuildSidecar, savePublicationArtifactWithBuildSidecar, type PublicationArtifactSidecarInput } from '../services/publicationBuildSidecar';
+import { buildStandaloneHtmlExport, OMI_STANDALONE_HTML_VERSION, type HtmlExportPackaging } from '../services/exportStandaloneHtml';
+import { isNativeStudio } from '../services/nativeManuscriptFile';
+import { WebPublicationDownloads, type WebPublicationDownload } from './WebPublicationDownloads';
 
 export function HtmlExportPanel() {
   const { locale } = useTranslation();
   const copy = getHtmlExportCopy(locale);
+  const htmlCopy = getExportFormatCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const checkpoint = useStudioStore((state) => state.checkpoint);
   const profile = resolvePublicationProfile(manuscript);
@@ -40,6 +45,8 @@ export function HtmlExportPanel() {
   );
   const [previewOpen, setPreviewOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [htmlPackaging, setHtmlPackaging] = useState<HtmlExportPackaging>('standalone');
+  const [webDownload, setWebDownload] = useState<WebPublicationDownload | null>(null);
   const [packageDiagnostics, setPackageDiagnostics] = useState<HtmlDiagnostic[]>([]);
   const diagnostics = packageDiagnostics.length
     ? [...result.diagnostics, ...packageDiagnostics]
@@ -51,16 +58,27 @@ export function HtmlExportPanel() {
     (diagnostic) => diagnostic.severity === 'warning',
   );
 
-  async function downloadHtmlPackage(): Promise<void> {
+  async function downloadHtml(): Promise<void> {
     if (!supported || busy) return;
     setBusy(true);
     setPackageDiagnostics([]);
+    setWebDownload(null);
 
     try {
       await externalizeActiveManuscriptAssets();
       checkpoint('export');
       const committedManuscript = useStudioStore.getState().manuscript;
       const committedProfile = resolvePublicationProfile(committedManuscript);
+      if (htmlPackaging === 'standalone') {
+        const single = await buildStandaloneHtmlExport(committedManuscript, committedProfile);
+        await deliverHtml({
+          manuscript: committedManuscript, profile: committedProfile,
+          artifact: single.blob, fileName: single.fileName, format: 'html',
+          mediaType: 'text/html;charset=utf-8', renderer: 'open-manuscript-studio-standalone-html',
+          rendererVersion: OMI_STANDALONE_HTML_VERSION,
+        });
+        return;
+      }
       const packageResult = await buildPublisherHtmlPackage(
         committedManuscript,
         committedProfile,
@@ -76,7 +94,7 @@ export function HtmlExportPanel() {
       setPackageDiagnostics(packageOnlyDiagnostics);
       if (!packageResult.validForExport) return;
 
-      await savePublicationArtifactWithBuildSidecar({
+      await deliverHtml({
         manuscript: committedManuscript,
         profile: committedProfile,
         artifact: packageResult.blob,
@@ -86,9 +104,26 @@ export function HtmlExportPanel() {
         renderer: 'open-manuscript-studio-publisher-html-package',
         rendererVersion: OMI_PUBLISHER_HTML_PACKAGE_VERSION,
       });
+    } catch (cause) {
+      setPackageDiagnostics([{
+        code: 'html-export-failed', severity: 'error',
+        message: cause instanceof Error ? cause.message : 'HTML export failed.',
+      }]);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function deliverHtml(input: PublicationArtifactSidecarInput): Promise<void> {
+    if (isNativeStudio()) {
+      await savePublicationArtifactWithBuildSidecar(input);
+      return;
+    }
+    const prepared = await preparePublicationArtifactWithBuildSidecar(input);
+    setWebDownload({
+      artifact: input.artifact, fileName: input.fileName,
+      sidecarText: prepared.sidecarText, sidecarFileName: prepared.sidecarFileName,
+    });
   }
 
   return (
@@ -177,6 +212,15 @@ export function HtmlExportPanel() {
         </p>
       )}
 
+      <div className="studio-manuscript-fields">
+        <label>
+          <span>{htmlCopy.htmlPackaging}</span>
+          <select value={htmlPackaging} disabled={busy} onChange={(event) => { setHtmlPackaging(event.target.value as HtmlExportPackaging); setWebDownload(null); setPackageDiagnostics([]); }}>
+            <option value="standalone">{htmlCopy.htmlStandalone}</option>
+            <option value="package">{htmlCopy.htmlPackage}</option>
+          </select>
+        </label>
+      </div>
       <div className="html-export-actions">
         <button
           type="button"
@@ -195,10 +239,10 @@ export function HtmlExportPanel() {
           type="button"
           className="studio-menu-primary-action"
           disabled={!supported || busy}
-          onClick={() => void downloadHtmlPackage()}
+          onClick={() => void downloadHtml()}
         >
           <Download size={16} aria-hidden="true" />
-          {busy ? copy.preparingPackage : copy.downloadPackage}
+          {busy ? htmlCopy.preparing : htmlCopy.htmlDownload}
         </button>
       </div>
 
@@ -208,7 +252,8 @@ export function HtmlExportPanel() {
         </pre>
       ) : null}
 
-      <p className="html-export-schema-note">{copy.packageNote}</p>
+      {webDownload ? <WebPublicationDownloads download={webDownload} /> : null}
+      <p className="html-export-schema-note">{htmlPackaging === 'standalone' ? htmlCopy.htmlStandaloneDescription : copy.packageNote}</p>
       <p className="html-export-schema-note">{copy.accessibilityNote}</p>
     </section>
   );

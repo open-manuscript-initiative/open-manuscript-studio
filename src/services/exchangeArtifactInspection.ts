@@ -11,9 +11,19 @@ import { parseOmiJson } from './omiPortableFormat';
 export function hasExpectedExchangeArtifactEnvelope(format: ExchangeFormat, bytes: Uint8Array): boolean {
   if (bytes.byteLength === 0) return false;
 
-  if (['omi', 'docx', 'odt', 'idml', 'html', 'epub'].includes(format)) {
-    // The Studio "html" exchange option emits a ZIP HTML5 package rather than
-    // the standalone HTML article used by the publishing transfer API.
+  if (format === 'html') {
+    if (hasZipDirectoryEnvelope(bytes)) return true;
+    try {
+      const source = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      return /^\s*<!doctype html>\s*<html(?:\s|>)/i.test(source) &&
+        /<head(?:\s|>)[\s\S]*<\/head>/i.test(source) &&
+        /<body(?:\s|>)[\s\S]*<\/body>\s*<\/html>\s*$/i.test(source);
+    } catch {
+      return false;
+    }
+  }
+
+  if (['omi', 'docx', 'odt', 'idml', 'epub'].includes(format)) {
     return hasZipDirectoryEnvelope(bytes);
   }
 

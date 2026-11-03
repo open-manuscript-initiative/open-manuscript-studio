@@ -19,6 +19,70 @@ import { buildEpubExport } from '../src/services/exportEpub.ts';
 import { buildPdfPrintDocument, pdfDocumentTitle } from '../src/services/exportPdf.ts';
 import { buildPublisherHtmlPackage } from '../src/services/exportPublisherHtmlPackage.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
+import { buildStandaloneHtmlExport } from '../src/services/exportStandaloneHtml.ts';
+import { createAssetMetadata } from '../src/model/assets.ts';
+import { clearMemoryAssetCache, putAssetPayload } from '../src/services/assetRepository.ts';
+import { hasExpectedExchangeArtifactEnvelope } from '../src/services/exchangeArtifactInspection.ts';
+
+test('standalone HTML embeds nested and repeated images with inline publisher CSS', async () => {
+  clearMemoryAssetCache();
+  const manuscript = createVersionedTestManuscript();
+  manuscript.title = 'Árvíztűrő képes tanulmány';
+  const bytes = Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', 'base64'));
+  const asset = await createAssetMetadata(bytes, { id: 'inline-pixel', mediaType: 'image/png', fileName: 'ábra.png' });
+  manuscript.assets = [asset];
+  const image = (id: string) => ({
+    id, type: 'image' as const, content: '',
+    visual: { kind: 'image' as const, src: '', assetId: asset.id, mediaType: asset.mediaType, alt: 'Offline test pixel' },
+  });
+  manuscript.sections[0]!.children = [{
+    id: 'nested-images', title: 'Nested images',
+    blocks: [{ id: 'parent', type: 'paragraph', content: 'Nested image group', children: [image('one'), image('two')] }],
+  }];
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const profile = {
+    ...resolvePublicationProfile(manuscript),
+    exportStylesheet: createPublisherExportStylesheet('test.css', '.omi-scholarly-article { color: #123456; }', manuscript.updatedAt),
+  };
+  const before = JSON.stringify(manuscript);
+  const result = await buildStandaloneHtmlExport(manuscript, profile);
+  assert.equal(result.fileName, 'arvizturo-kepes-tanulmany.html');
+  assert.equal(result.blob.type, 'text/html;charset=utf-8');
+  assert.equal(await result.blob.text(), result.html);
+  assert.match(result.html, /color: #123456/);
+  assert.doesNotMatch(result.html, /<link|<script|src="media\//);
+  const images = [...result.html.matchAll(/src="data:image\/png;base64,([^"]+)"/g)];
+  assert.equal(images.length, 2);
+  for (const image of images) assert.deepEqual(Buffer.from(image[1]!, 'base64'), Buffer.from(bytes));
+  assert.equal(hasExpectedExchangeArtifactEnvelope('html', new TextEncoder().encode(result.html)), true);
+  assert.equal(JSON.stringify(manuscript), before);
+  await putAssetPayload(manuscript.id, asset.id, new Uint8Array([1]));
+  await assert.rejects(buildStandaloneHtmlExport(manuscript, profile), /integrity/);
+  clearMemoryAssetCache();
+  await assert.rejects(buildStandaloneHtmlExport(manuscript, profile), /missing/);
+});
+
+test('standalone HTML rejects unresolved remote images while retaining legacy data images', async () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push({
+    id: 'external-image', type: 'image', content: '',
+    visual: { kind: 'image', src: 'https://example.test/image.png', mediaType: 'image/png', alt: 'External image' },
+  });
+  await assert.rejects(buildStandaloneHtmlExport(manuscript), /Import remote images/);
+  manuscript.sections[0]!.blocks.at(-1)!.visual = {
+    kind: 'image', src: 'data:image/png;base64,aGVsbG8=', mediaType: 'image/png', alt: 'Legacy image',
+  };
+  assert.match((await buildStandaloneHtmlExport(manuscript)).html, /src="data:image\/png;base64,aGVsbG8="/);
+});
+
+test('HTML exchange envelopes accept complete documents and ZIPs while rejecting fragments and truncated output', async () => {
+  const source = '<!doctype html><html><head><title>Test</title></head><body>Readable</body></html>';
+  assert.equal(hasExpectedExchangeArtifactEnvelope('html', new TextEncoder().encode(source)), true);
+  for (const invalid of [source.slice(0, -8), '<p>fragment</p>', 'plain text']) {
+    assert.equal(hasExpectedExchangeArtifactEnvelope('html', new TextEncoder().encode(invalid)), false);
+  }
+  assert.equal(hasExpectedExchangeArtifactEnvelope('html', new Uint8Array([0xff])), false);
+});
 
 test('both PDF content modes float footnotes at anchors and preserve true endnotes', () => {
   const manuscript = createVersionedTestManuscript();

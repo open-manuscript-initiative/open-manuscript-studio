@@ -84,7 +84,7 @@ The iPhone/iPad export list intentionally matches the useful Android mobile surf
 - portable OMI package (`.omi.zip`)
 - OMI JSON (`.omi.json`)
 - JATS XML (`.xml`)
-- semantic HTML package (`.html.zip`)
+- semantic HTML with embedded images (`.html`, default), or an HTML package (`.html.zip`)
 - DOCX (`.docx`)
 - LaTeX (`.tex`)
 - EPUB (`.epub`)
