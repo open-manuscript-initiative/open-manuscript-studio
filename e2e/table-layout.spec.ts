@@ -44,6 +44,10 @@ test('tables wrap, resize, accept line breaks and retain formatting across views
   await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
   await page.setViewportSize({ width: 480, height: 900 });
   await expect.poll(() => table.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  await expect(canvas.getByRole('combobox', { name: 'Table font size' })).toHaveCount(0);
+  await expect(canvas.locator('.omi-table-cell-text').filter({ hasText: 'First line' })).toContainText('Second line with a longer description.');
+  await expect(canvas.getByRole('textbox')).toHaveCount(0);
+  await page.setViewportSize({ width: 1440, height: 900 });
   await expect(canvas.getByRole('combobox', { name: 'Table font size' })).toHaveValue('0');
   await expect(cell).toHaveValue('First line\nSecond line with a longer description.');
   await expect.poll(() => cell.evaluate((element: HTMLTextAreaElement) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
@@ -84,4 +88,43 @@ test('long tables split between rows and reflow after zoom', async ({ page }) =>
   await canvas.getByRole('combobox', { name: 'Zoom', exact: true }).selectOption('100');
   await expect.poll(audit).toEqual([]);
   await expect(canvas.locator('.omi-table-editor textarea')).toHaveCount(46);
+});
+
+test('cell rotation and writing direction persist through mobile preview and HTML/print views', async ({ page }, testInfo) => {
+  const canvas = await openTables(page, 2);
+  await canvas.getByRole('textbox', { name: 'Cell 1, 1', exact: true }).fill('Rotated heading');
+  await canvas.getByText('Cell formatting', { exact: true }).click();
+  const rotation = canvas.getByRole('combobox', { name: 'Text rotation' });
+  const direction = canvas.getByRole('combobox', { name: 'Writing direction' });
+  const text = canvas.locator('.omi-table-editor tr').first().locator('.omi-table-cell-text').first();
+  for (const value of ['90', '-90', '180']) {
+    await rotation.selectOption(value);
+    await expect(text).toHaveAttribute('data-text-rotation', value);
+    await expect(text).toContainText('Rotated heading');
+    await expect.poll(() => text.evaluate((element) => getComputedStyle(element).writingMode)).toBe(value === '180' ? 'horizontal-tb' : 'vertical-rl');
+  }
+  await rotation.selectOption('90');
+  await direction.selectOption('rtl');
+  await canvas.getByRole('textbox', { name: 'Selected cell text' }).fill('שלום rotated heading');
+  await expect(text).toHaveAttribute('dir', 'rtl');
+  await expect.poll(() => text.evaluate((element) => element.getBoundingClientRect().height > element.getBoundingClientRect().width)).toBe(true);
+  await page.setViewportSize({ width: 480, height: 900 });
+  await expect(page.locator('.publication-mobile-preview-note')).toBeVisible();
+  await expect(page.locator('.publication-style-ribbon')).toHaveCount(0);
+  await expect(canvas.locator('[contenteditable="true"]')).toHaveCount(0);
+  await expect(canvas.getByRole('textbox')).toHaveCount(0);
+  await expect(canvas.getByRole('separator')).toHaveCount(0);
+  await expect(text).toHaveAttribute('data-text-rotation', '90');
+  await expect(text).toHaveAttribute('dir', 'rtl');
+  await page.screenshot({ path: testInfo.outputPath('mobile-publication-preview.png') });
+  await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
+  await expect(text).toHaveAttribute('data-text-rotation', '90');
+  await expect(text).toContainText('שלום rotated heading');
+  await expect(canvas.locator('[contenteditable="true"]')).toHaveCount(0);
+  await expect(canvas.getByRole('textbox')).toHaveCount(0);
+  await canvas.getByRole('button', { name: 'Print layout', exact: true }).click();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await canvas.getByText('Cell formatting', { exact: true }).click();
+  await expect(rotation).toHaveValue('90');
+  await expect(direction).toHaveValue('rtl');
 });

@@ -22,3 +22,26 @@ Custom publisher CSS can override these layout defaults.
 Validation: model and OMI round-trip tests in `tests/table-layout.test.ts`;
 browser checks for multiline editing, keyboard/pointer resizing, responsive
 width and pagination at multiple zoom settings in `e2e/table-layout.spec.ts`.
+
+## Cell rotation and writing direction
+
+On desktop, focus a cell and open **Cell formatting**, or choose its row and
+column in that panel. Rotation is independently selectable as 0°, 90° clockwise,
+90° counterclockwise or 180°. Writing direction can follow the cell text
+automatically or be explicitly left-to-right/right-to-left. A rotated cell's
+text is edited in the panel, with its formatted appearance retained in the grid.
+Each cell keeps its own settings in `cellFormats`, keyed by zero-based
+`row:column`. Deleted rows/columns lose their formatting; new cells use defaults.
+The renderer normalizes unknown rotation/direction values, and OMI save/reopen,
+semantic HTML and PDF retain the supported settings. Quarter turns use vertical
+writing mode with sideways glyphs so row height includes the rotated text.
+
+## Mobile publication preview
+
+The live publication editor shows the current print or HTML layout on native
+Android/iOS and narrow screens (720 CSS pixels or less). Its menu includes a note
+that full editing is available on desktop. View switching, scrolling and print
+zoom remain available. Typography/page/proofing ribbons, cell-formatting controls
+and editable front matter/body fields are replaced by a read-only preview.
+Returning to a desktop viewport restores editing with the same manuscript and
+formatting. The main manuscript editor remains available for ordinary text work.

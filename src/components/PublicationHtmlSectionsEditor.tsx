@@ -25,6 +25,7 @@ interface PublicationHtmlSectionsEditorProps {
   paragraphStyleNextById: ReadonlyMap<string, string>;
   defaultParagraphStyleId: string;
   manuscriptLanguage: string;
+  editable?: boolean;
 }
 
 export function PublicationHtmlSectionsEditor({
@@ -33,6 +34,7 @@ export function PublicationHtmlSectionsEditor({
   paragraphStyleNextById,
   defaultParagraphStyleId,
   manuscriptLanguage,
+  editable = true,
 }: PublicationHtmlSectionsEditorProps) {
   const document = useMemo(
     () => buildContinuousManuscriptDocument(
@@ -75,6 +77,7 @@ export function PublicationHtmlSectionsEditor({
             <BlockEditor
               blockId={`omi-publication-html-section-${section.id}`}
               blockType="manuscript"
+              editable={editable}
               content={JSON.stringify(sectionDocument)}
               onUpdate={(_documentId, content) => updateSection(section.id, content)}
               manuscriptLanguage={manuscriptLanguage}

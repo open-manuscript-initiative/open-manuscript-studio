@@ -1,7 +1,9 @@
+import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import type { JSONContent } from '@tiptap/core';
 import { FileCode2, FileText } from 'lucide-react';
 import {
   useEffect,
+  useContext,
   useId,
   useLayoutEffect,
   useMemo,
@@ -121,6 +123,7 @@ export function PublicationDocumentCanvas({
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
+  const previewOnly = usePublicationPreview();
   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
   const {
@@ -736,9 +739,10 @@ export function PublicationDocumentCanvas({
       } as CSSProperties
     : undefined;
   return (
+    <PublicationPreviewContext.Provider value={previewOnly}>
     <section
       id={canvasId}
-      className={`publication-document-canvas publication-document-canvas--${viewMode}`}
+      className={`publication-document-canvas publication-document-canvas--${viewMode}${previewOnly ? ' publication-document-canvas--preview' : ''}`}
       aria-labelledby="publication-document-canvas-title"
     >
       {pagination.css || paragraphStyleCss || sectionLayoutCss
@@ -747,7 +751,7 @@ export function PublicationDocumentCanvas({
       <header className="publication-document-canvas-toolbar">
         <div>
           <strong id="publication-document-canvas-title">{copy.editor}</strong>
-          <span>{viewMode === 'print' ? copy.printDescription : copy.htmlDescription}</span>
+          {!previewOnly ? <span>{viewMode === 'print' ? copy.printDescription : copy.htmlDescription}</span> : null}
         </div>
         <div className="publication-document-canvas-status">
           <div className="publication-document-view-switch" role="group" aria-label={copy.view}>
@@ -795,7 +799,7 @@ export function PublicationDocumentCanvas({
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
         aria-label={viewMode === 'print' ? copy.printLayout : copy.htmlLayout}
       >
-        <PublicationSectionRuler
+        {!previewOnly ? <PublicationSectionRuler
           locale={locale}
           viewMode={viewMode}
           widthPx={pageWidth}
@@ -803,7 +807,7 @@ export function PublicationDocumentCanvas({
           leftMarginMm={firstPageLeftMarginMm}
           rightMarginMm={firstPageRightMarginMm}
           rulerStepPx={5 * PIXELS_PER_MM * scale}
-        />
+        /> : null}
         <article
           className={`publication-document-paper publication-document-paper--${viewMode}`}
           data-publication-view={viewMode}
@@ -926,12 +930,14 @@ export function PublicationDocumentCanvas({
                     paragraphStyleNextById={paragraphStyleNextById}
                     defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
                     manuscriptLanguage={manuscript.locale}
+                    editable={!previewOnly}
                   />
                 ) : (
                   <TablePaginationContext.Provider value={pagination.flowBreaks}>
                     <BlockEditor
                       blockId={`omi-publication-document-${manuscript.id}`}
                       blockType="manuscript"
+                      editable={!previewOnly}
                       content={JSON.stringify(document)}
                       onUpdate={updateDocument}
                       manuscriptLanguage={manuscript.locale}
@@ -1018,6 +1024,7 @@ export function PublicationDocumentCanvas({
         </article>
       </div>
     </section>
+    </PublicationPreviewContext.Provider>
   );
 }
 
@@ -1036,6 +1043,7 @@ function AutoGrowPublicationField({
   onChange: (value: string) => void;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const previewOnly = useContext(PublicationPreviewContext);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -1047,6 +1055,8 @@ function AutoGrowPublicationField({
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>): void {
     onChange(event.target.value.replace(/[\r\n]+/g, ' '));
   }
+
+  if (previewOnly) return value ? <div className={className}>{value}</div> : null;
 
   return (
     <textarea

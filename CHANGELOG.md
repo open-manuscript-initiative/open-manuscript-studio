@@ -1,5 +1,9 @@
 ## Unreleased — Translation and Validation Models
 
+- Add per-cell quarter/half-turn text rotation and automatic/LTR/RTL writing
+  direction, preserved in OMI, HTML and PDF. On mobile the live publication editor
+  presents a read-only layout preview and a menu note in place of editing panels.
+
 - Make manuscript tables responsive in the visual editor and HTML/PDF output.
   Add multiline cells, pointer/keyboard column resizing and a body-size or
   body-minus-one-point font choice. Long print tables flow between rows with

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { resizeTableColumn, tableColumnWidths } from '../src/model/tableLayout.ts';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../src/model/tableLayout.ts';
 import { createTableBlock } from '../src/model/visualBlocks.ts';
 import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { serializeOmiJson } from '../src/services/exportOmi.ts';
@@ -49,4 +49,29 @@ test('OMI round trip retains column widths, font choice and multiline scholarly 
     assert.match(pdf, /figure\.scholarly-table, \.scholarly-table table/);
     assert.match(pdf, /display: table-header-group/);
   }
+});
+
+test('cell rotation and bidi direction survive OMI exchange and reach the matching exported cell', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = createTableBlock([['Header', 'Other'], ['שלום', 'Unchanged']], {}, 'direction-table');
+  if (block.visual?.kind !== 'table') throw new Error('Expected table');
+  block.visual.cellFormats = { '0:0': { textRotation: 90, textDirection: 'ltr' }, '1:0': { textRotation: -90, textDirection: 'rtl' } };
+  manuscript.sections[0]!.blocks.push(block);
+  const reopened = parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(reopened.sections[0]!.blocks.at(-1)!.visual, JSON.parse(JSON.stringify(block.visual)));
+  for (const html of [renderHtmlArticle(reopened).html, buildPdfPrintDocument(reopened)]) {
+    assert.match(html, /<th scope="col"><span class="omi-table-cell-text" dir="ltr" data-text-rotation="90"/);
+    assert.match(html, /<td><span class="omi-table-cell-text" dir="rtl" data-text-rotation="-90"/);
+    assert.match(html, /writing-mode:vertical-rl;text-orientation:sideways;transform:rotate\(180deg\)/);
+    assert.match(html, /שלום<\/span>/);
+    assert.match(html, /<td>Unchanged<\/td>/);
+  }
+});
+
+test('cell formats sanitize unknown values and drop deleted row/column coordinates', () => {
+  assert.deepEqual(tableCellFormat(undefined, 0, 0), { textRotation: 0, textDirection: 'auto' });
+  assert.deepEqual(tableCellFormat(JSON.parse('{"0:0":{"textRotation":45,"textDirection":"invalid"}}'), 0, 0), { textRotation: 0, textDirection: 'auto' });
+  assert.deepEqual(pruneTableCellFormats([['A']], { '0:0': { textRotation: 180 }, '0:1': { textDirection: 'rtl' }, '1:0': { textRotation: 90 } }), { '0:0': { textRotation: 180 } });
+  assert.equal(tableCellTextStyle(180).transform, 'rotate(180deg)');
+  assert.equal(tableCellTextStyle(90).writingMode, 'vertical-rl');
 });

@@ -1837,3 +1837,8 @@
 .publication-document-content .omi-visual-block--table {
   background: transparent;
 }
+
+.publication-mobile-preview-note { padding: .6rem; border-left: 3px solid #9b8556; background: rgba(155, 133, 86, .08); }
+.publication-document-canvas--preview .publication-document-canvas-toolbar { flex-wrap: wrap; }
+.publication-document-canvas--preview .publication-document-canvas-status { flex-wrap: wrap; }
+.publication-document-canvas--preview .publication-document-front-matter :is(.publication-document-title, .publication-document-subtitle, .publication-document-motto, .publication-document-abstract) { white-space: pre-wrap; }
