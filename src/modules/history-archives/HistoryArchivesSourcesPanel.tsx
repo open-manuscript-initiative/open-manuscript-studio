@@ -71,7 +71,6 @@ const copyByLocale = getResearchModuleCopyByLocale('history-archives-history-arc
 const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
   en: {
     uk: 'United Kingdom',
-    italian: 'Italy',
     spanish: 'Spain',
     dutch: 'Netherlands',
     french: 'France',
@@ -106,7 +105,6 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
   },
   de: {
     uk: 'Vereinigtes Königreich',
-    italian: 'Italien',
     spanish: 'Spanien',
     dutch: 'Niederlande',
     french: 'Frankreich',
@@ -141,7 +139,6 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
   },
   hu: {
     uk: 'Egyesült Királyság',
-    italian: 'Olaszország',
     spanish: 'Spanyolország',
     dutch: 'Hollandia',
     french: 'Franciaország',
