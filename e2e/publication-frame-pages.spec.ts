@@ -149,7 +149,7 @@ test('new document uses A4 with a 25 mm default frame and automatically extends 
   await expect(first).toHaveAttribute('style', /width: 160mm/);
   await expect(first).toHaveAttribute('style', /height: 247mm/);
 
-  const text = 'The same manuscript story automatically continues onto subsequent pages. '.repeat(250);
+  const text = 'The same manuscript story automatically continues onto subsequent pages. '.repeat(90);
   await editor.getByRole('textbox', { name: 'Story text', exact: true }).fill(text);
   await expect.poll(async () => (await model(page)).page.count).toBeGreaterThan(1);
   const generated = await model(page);
