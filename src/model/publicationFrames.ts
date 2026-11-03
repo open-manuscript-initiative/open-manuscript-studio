@@ -1,3 +1,4 @@
+import { validateFramePageSettings, type FrameGraphicTransform, type FramePage, type FramePageStyle } from './publicationFramePages';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
 
 export const FRAME_LAYOUT_EXTENSION = 'urn:omi:studio:publication-frames:1';
@@ -16,12 +17,14 @@ export interface PublicationFrame {
   shape: 'rectangle' | 'ellipse' | 'polygon'; points: FramePoint[];
   styleId: string; overrides?: Partial<FrameTextStyle>;
   storyId?: string; nextFrameId?: string; sourceBlockId?: string;
+  graphicTransform?: FrameGraphicTransform;
 }
 export interface FrameStory { id: string; name: string; text: string }
 export interface PublicationFrameLayout {
   profile: typeof FRAME_LAYOUT_PROFILE;
   page: { widthMm: number; heightMm: number; count: number };
   styles: PublicationFrameStyle[]; stories: FrameStory[]; frames: PublicationFrame[];
+  pageStyles?: FramePageStyle[]; pages?: FramePage[]; pageNumberStart?: number;
 }
 export interface FrameLine { text: string; start: number; end: number; x: number; y: number; width: number }
 export interface FrameFlow { frameId: string; start: number; end: number; lines: FrameLine[] }
@@ -212,6 +215,7 @@ export function validateFrameLayout(input: unknown): asserts input is Publicatio
       incoming.add(frame.nextFrameId);
     }
   }
+  validateFramePageSettings(value);
   for (const story of value.stories) {
     const frames = value.frames.filter((frame) => frame.storyId === story.id);
     if (!frames.length) continue;

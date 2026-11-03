@@ -88,3 +88,50 @@ invalid graphs/geometry, OMI round trips, output preflight and markup escaping.
 `e2e/publication-frames.spec.ts` exercises pointer moves/resizes, rotated outline
 point editing, story operations, style inheritance, source graphics, exported SVG
 charts, PDF generation and mobile preview.
+
+## Named page styles and page operations
+
+The **Page styles** panel assigns a named style to each physical page. A style
+contains page width/height, working margins, background and running-header rules.
+Editing a shared page style changes all pages using it. **New page style** clones
+the current style and assigns the copy to the selected page, allowing individual
+page formatting. Existing frames keep their explicit positions; margin guides
+show the working area and new frames start inside it.
+
+Choose **Style for new page**, then **Add page** to insert immediately after the
+selected page. Later frame placements are shifted to their corresponding page.
+**Delete selected page** removes its frame placements and reconnects surviving
+text chains. Full story text and original graphic sources remain available;
+new overflow is reported and retained stories can be reassigned to a new frame.
+At least one page remains in the publication.
+
+Running headers support separate left/center/right text, an optional even-page
+variant, first-page visibility, font, size, color, vertical position and height.
+`{title}`, `{page}`, `{pages}` and `{style}` insert the document title, displayed
+page number, page count and page-style name. `{articleTitle}` and `{pageNumber}`
+are supported aliases. The first displayed page number is configurable. Headers
+are rendered as text, so literal markup in a header cannot become executable HTML.
+
+Pages may use different sizes/orientations in one document. Export assigns named
+CSS `@page` rules per style; the preview and PDF use each page's own geometry.
+Legacy page-count-only layouts remain readable and gain explicit page/style
+assignments on their first page-style edit.
+
+## Graphic content inside its frame
+
+A graphic frame and its content now have independent geometry. **Graphic content**
+controls the element's width/height, offsets and rotation relative to the frame.
+**Keep graphic proportions** couples dimension changes; turning it off permits
+independent horizontal/vertical scaling. Re-enabling the lock preserves the
+currently chosen ratio, including an intentionally distorted ratio.
+
+The canvas includes separate handles for moving and resizing the graphic inside
+its frame. Numeric controls remain available for precision. The frame's shape,
+position, size and rotation are unaffected by these content operations, and the
+content remains clipped to the frame outline. Frame and content rotations compose.
+The same transforms and clipping are used in mobile preview, HTML and PDF output.
+
+**Fit graphic to frame** restores automatic proportional fitting. **Fill frame
+proportionally** covers the whole frame with a centered crop. After an explicit
+content transform, resizing the outer frame retains the content's independent
+geometry. Replacing a frame's graphic source resets its content transform.

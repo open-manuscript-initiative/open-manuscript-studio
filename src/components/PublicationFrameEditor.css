@@ -36,3 +36,11 @@
 .omi-frame-workspace { flex: 1; min-height: 0; grid-template-rows: minmax(0,1fr); }
 .omi-frame-stage, .omi-frame-inspector { min-height: 0; height: 100%; max-height: 100%; box-sizing: border-box; }
 .omi-frame-resize { bottom: -12px; right: -12px; }
+.omi-frame-page-panel { display: grid; gap: .4rem; border: 1px solid #c5bfb5; padding: .4rem; min-width: 0; }
+.omi-frame-page-panel details { min-width: 0; }
+.omi-frame-running-header { position: absolute; z-index: 10; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2mm; line-height: 1.15; white-space: pre-wrap; overflow: hidden; pointer-events: none; }
+.omi-frame-running-header span:nth-child(2) { text-align: center; }
+.omi-frame-running-header span:last-child { text-align: right; }
+.omi-frame-margin-guide { position: absolute; border: 1px dashed #cad6e4; pointer-events: none; }
+.omi-frame-graphic-pan { position: absolute; top: 0; left: 0; max-width: 100%; font: 10px system-ui; padding: 2px; border: 1px solid #b77826; background: #fff4dc; cursor: move; touch-action: none; }
+.omi-frame-graphic-resize { position: absolute; bottom: -12px; left: -12px; width: 10px; height: 10px; border: 1px solid white; padding: 0; background: #b77826; cursor: nesw-resize; touch-action: none; }

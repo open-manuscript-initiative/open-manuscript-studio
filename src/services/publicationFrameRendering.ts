@@ -1,6 +1,7 @@
+import { framePageStyle, framePageStyles, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader } from '../model/publicationFramePages';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import {
-  flowFrameStories, frameDisplayText, frameStyle, MM_PER_POINT,
+  flowFrameStories, frameDisplayText, frameStyle, validateFrameLayout, MM_PER_POINT,
   type FrameTextMeasure, type FrameTextStyle, type PublicationFrame, type PublicationFrameFlow, type PublicationFrameLayout,
 } from '../model/publicationFrames';
 import { cssStringLiteral } from './embeddedCss';
@@ -30,21 +31,31 @@ export function frameShapeSvg(frame: PublicationFrame, style: FrameTextStyle): s
   return `<svg xmlns="http://www.w3.org/2000/svg" class="omi-frame-outline" viewBox="0 0 ${frame.widthMm} ${frame.heightMm}" preserveAspectRatio="none" aria-hidden="true">${shape}</svg>`;
 }
 export function renderFrameDocument(layout: PublicationFrameLayout, flow: PublicationFrameFlow, graphics: ReadonlyMap<string, string>, title: string, language = 'en'): string {
+  validateFrameLayout(layout);
   const current = flow.frames;
-  if (flow.overflow.length || !layout.frames.length || layout.frames.some((frame) => frame.kind === 'graphic' && !graphics.has(frame.sourceBlockId!))) {
+  if (flow.overflow.length || layout.frames.some((frame) => frame.kind === 'graphic' && !graphics.has(frame.sourceBlockId!))) {
     throw new Error('Resolve text overflow and missing graphic sources before exporting.');
   }
-  const pages = Array.from({ length: layout.page.count }, (_, page) => `<section class="omi-frame-page" aria-label="${page + 1}">${layout.frames.filter((frame) => frame.page === page).map((frame) => {
+  const pageStyles = framePageStyles(layout);
+  const pageRules = pageStyles.map((style, index) => `@page omi_frame_style_${index}{size:${style.widthMm}mm ${style.heightMm}mm;margin:0}`).join('\n');
+  const pages = Array.from({ length: layout.page.count }, (_, page) => {
+    const pageStyle = framePageStyle(layout, page), styleIndex = pageStyles.findIndex((style) => style.id === pageStyle.id);
+    const header = frameRunningHeader(layout, page, title), headerStyle = pageStyle.runningHeader;
+    const runningHeader = header ? `<header class="omi-frame-running-header" style="top:${headerStyle.topMm}mm;height:${headerStyle.heightMm}mm;left:${pageStyle.margins.left}mm;right:${pageStyle.margins.right}mm;font-size:${headerStyle.fontSizePt}pt;font-family:${escape(cssStringLiteral(headerStyle.fontFamily))};color:${headerStyle.color}"><span>${escape(header.left)}</span><span>${escape(header.center)}</span><span>${escape(header.right)}</span></header>` : '';
+    return `<section class="omi-frame-page" aria-label="${page + 1}" data-page-style="${escape(pageStyle.id)}" style="page:omi_frame_style_${styleIndex};width:${pageStyle.widthMm}mm;height:${pageStyle.heightMm}mm;background:${pageStyle.background}">${runningHeader}${layout.frames.filter((frame) => frame.page === page).map((frame) => {
     const style = frameStyle(layout, frame);
     const typography = Object.entries(frameTypography(style)).map(([key, value]) => `${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}:${value}`).join(';');
     const content = frame.kind === 'text' ? (current.find((item) => item.frameId === frame.id)?.lines ?? []).map((line) =>
       `<div class="omi-frame-line" style="left:${line.x}mm;top:${line.y}mm;width:${line.width}mm;height:${style.lineHeightPt * MM_PER_POINT}mm">${escape(frameDisplayText(line.text)).replace(/\r\n?|\n/g, '&#10;')}</div>`,
-    ).join('') : `<div class="omi-frame-graphic" style="clip-path:${frameClipPath(frame)}">${graphics.get(frame.sourceBlockId!)}</div>`;
+    ).join('') : `<div class="omi-frame-graphic" style="clip-path:${frameClipPath(frame)}"><div class="omi-frame-graphic-position" style="${escape(inlineStyle(frameGraphicContentStyle(frame)))}"><div class="omi-frame-graphic-inner" style="${escape(inlineStyle(frameGraphicInnerStyle(frame)))}">${graphics.get(frame.sourceBlockId!)}</div></div></div>`;
     return `<div class="omi-publication-frame" data-frame-id="${escape(frame.id)}" style="left:${frame.xMm}mm;top:${frame.yMm}mm;width:${frame.widthMm}mm;height:${frame.heightMm}mm;transform:rotate(${frame.rotation}deg);${escape(typography)}">${frameShapeSvg(frame, style)}${content}</div>`;
-  }).join('')}</section>`).join('');
+  }).join('')}</section>`;
+  }).join('');
   return `<!doctype html><html lang="${escape(language)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)}</title><style>
-@page{size:${layout.page.widthMm}mm ${layout.page.heightMm}mm;margin:0}html,body{margin:0;padding:0;background:#eee}
+@page{size:${layout.page.widthMm}mm ${layout.page.heightMm}mm;margin:0}${pageRules}html,body{margin:0;padding:0;background:#eee}
 .omi-frame-page{box-sizing:border-box;position:relative;width:${layout.page.widthMm}mm;height:${layout.page.heightMm}mm;background:white;margin:8mm auto;overflow:hidden;break-after:page;page-break-after:always}
+.omi-frame-running-header{position:absolute;z-index:10;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2mm;line-height:1.15;overflow:hidden;white-space:pre-wrap}.omi-frame-running-header span:nth-child(2){text-align:center}.omi-frame-running-header span:last-child{text-align:right}
+.omi-frame-page{print-color-adjust:exact;-webkit-print-color-adjust:exact}
 .omi-frame-page:last-child{break-after:auto;page-break-after:auto}.omi-publication-frame{position:absolute;transform-origin:center;overflow:visible}
 .omi-frame-outline{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.omi-frame-line{position:absolute;white-space:pre;overflow:visible;text-indent:0;letter-spacing:normal;hyphens:none;margin:0;padding:0}
 .omi-frame-graphic{position:absolute;inset:0;overflow:hidden}.omi-frame-graphic figure{margin:0;width:100%;height:100%}.omi-frame-graphic img,.omi-frame-graphic svg{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain}
@@ -88,3 +99,5 @@ export async function buildFrameExport(manuscript: OmiManuscript, layout: Public
   return renderFrameDocument(layout, flow, graphics, manuscript.title, manuscript.locale);
 }
 function escape(value: string): string { return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+function inlineStyle(style: object): string { return Object.entries(style).map(([key, value]) => `${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}:${value}`).join(';'); }

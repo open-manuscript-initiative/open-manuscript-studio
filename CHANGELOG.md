@@ -1,5 +1,10 @@
 ## Unreleased — Translation and Validation Models
 
+- Extend frame layout with named page styles, per-page size/margins/background,
+  insertion/deletion and editable odd/even running headers with page/title fields.
+  Preserve story text when deleting pages. Add independent graphic-content size,
+  ratio locking, offsets, rotation and clipping, shared by preview and HTML/PDF.
+
 - Add a separate publication frame-layout workspace with text/graphic frames,
   shared and local styles, linked text stories, lossless splitting, arbitrary
   numeric rotation and editable polygon/ellipse outlines. Save layouts in OMI;
