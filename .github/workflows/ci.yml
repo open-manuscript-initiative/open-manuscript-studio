@@ -72,6 +72,9 @@ jobs:
       - name: Check read-only #765/#774 preflight evaluation
         run: node --test tests/host-security-preflight.test.mjs
 
+      - name: Syntax-check isolated host security canaries
+        run: node --test tests/isolated-host-canaries.test.mjs
+
       - name: Run tests
         run: npm test
 
