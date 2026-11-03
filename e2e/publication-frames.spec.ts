@@ -20,7 +20,7 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
-  await menu.getByRole('button', { name: 'Frame layout', exact: true }).click();
+  await menu.getByRole('button', { name: 'Frames and page styles', exact: true }).click();
   // Exercise the original manual frame-chain model independently of the new
   // default automatic story, so legacy save/reopen behaviour remains tested.
   await page.evaluate(async () => {
@@ -131,7 +131,7 @@ test('graphic frame exports retain the rendered vector chart and printable page 
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
-  await menu.getByRole('button', { name: 'Frame layout', exact: true }).click();
+  await menu.getByRole('button', { name: 'Frames and page styles', exact: true }).click();
   const editor = menu.locator('.omi-frame-editor');
   await editor.getByRole('button', { name: 'Add graphic frame' }).click();
   await expect(editor.locator('.omi-chart-svg')).toBeVisible();
