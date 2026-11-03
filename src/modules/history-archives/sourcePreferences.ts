@@ -46,6 +46,7 @@ export const DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS: HistoryArchiveSourceId[
   'nara',
   'romanian',
   'hungarian',
+  'italian',
 ];
 
 const validSourceIds = new Set<string>(HISTORY_ARCHIVE_SOURCE_IDS);
@@ -54,7 +55,7 @@ export function getHistoryArchiveSourcesStorageKey(userId: string, workspaceId: 
   return `omi:history-archive-sources:v1:${encodeURIComponent(userId)}:${encodeURIComponent(workspaceId)}`;
 }
 
-/** Reads saved source IDs, falling back to the familiar four panels for first-time users. */
+/** Reads saved source IDs, retaining saved choices and enabling the new Italian portal for first-time users. */
 export function readVisibleHistoryArchiveSources(raw: string | null): HistoryArchiveSourceId[] {
   if (raw === null) return [...DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS];
 
