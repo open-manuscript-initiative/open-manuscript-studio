@@ -17,6 +17,11 @@ on:
       - main
     paths:
       - .github/workflows/pkp-integration-environment.yml
+      - .github/workflows/rc-e02-evidence.yml
+      - .github/workflows/tauri-desktop.yml
+      - scripts/prepare-release-assets.mjs
+      - scripts/prepare-rc-acceptance.mjs
+      - docs/release/1.0-scope.md
       - docs/pkp-integration-test-environment.md
       - docs/pkp-ojs-3.5-compatibility.md
       - docs/release/ojs-3.5-stable-acceptance.md
@@ -31,6 +36,11 @@ on:
       - main
     paths:
       - .github/workflows/pkp-integration-environment.yml
+      - .github/workflows/rc-e02-evidence.yml
+      - .github/workflows/tauri-desktop.yml
+      - scripts/prepare-release-assets.mjs
+      - scripts/prepare-rc-acceptance.mjs
+      - docs/release/1.0-scope.md
       - docs/pkp-integration-test-environment.md
       - docs/pkp-ojs-3.5-compatibility.md
       - docs/release/ojs-3.5-stable-acceptance.md

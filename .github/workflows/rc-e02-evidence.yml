@@ -53,7 +53,7 @@ jobs:
           node-version: 24
 
       - name: Verify deterministic E02 fail-closed regression fixtures
-        run: node --test tests/rc-evidence-aggregator.test.mjs
+        run: node --test tests/rc-evidence-aggregator.test.mjs tests/rc-acceptance-preparation.test.mjs
 
       - name: Gather exact-SHA release workflow runs, jobs and digests
         env:
@@ -64,6 +64,29 @@ jobs:
             --sha "$REVIEWED_SHA" \
             --json benchmark-results/rc-e02/evidence.json \
             --markdown benchmark-results/rc-e02/evidence.md
+
+      - name: Select successful same-SHA native build from E02
+        id: candidate
+        env:
+          REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+        run: node scripts/prepare-rc-acceptance.mjs --select-build benchmark-results/rc-e02/evidence.json "$REVIEWED_SHA"
+
+      - name: Download only the selected native candidate artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: open-manuscript-studio-*
+          path: ${{ runner.temp }}/rc-input
+          run-id: ${{ steps.candidate.outputs.build_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Hash the exact installers and prepare pending manual receipt
+        env:
+          REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+        run: |
+          node scripts/prepare-release-assets.mjs "$RUNNER_TEMP/rc-input" "$RUNNER_TEMP/rc-assets"
+          node scripts/prepare-rc-acceptance.mjs \
+            benchmark-results/rc-e02/evidence.json "$REVIEWED_SHA" \
+            "$RUNNER_TEMP/rc-assets" benchmark-results/rc-e02
 
       - name: Upload content-neutral RC evidence even when gates fail
         if: ${{ always() }}

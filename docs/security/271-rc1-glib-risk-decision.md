@@ -5,6 +5,28 @@
 > dismiss Dependabot or claim that the advisory is fixed. A green CI is not a
 > security exception. This record contains no owner signature.
 
+## 2026-11-04 RC1 scope proposal: Linux Preview, no exception
+
+The prepared disposition is **CHANGE SCOPE**, submitted for the release owner's
+review in the containing PR. On merge, the public [RC1 support scope](../release/1.0-scope.md)
+labels the Linux native package **Preview**, rather than asserting Linux Stable
+with an unproved five-condition exception. This is a support-scope decision,
+not a claim that `VariantStrIter` is unreachable, patched, or harmless.
+
+- The current RC1 source still resolves affected `glib 0.18.5`; no Cargo
+  dependency, advisory suppression or security label is changed here.
+- #271 remains open. The earlier five exception criteria remain unapproved.
+- All Linux native build/installer jobs and all 13 owner gates, including
+  `linux-device` and `security-review`, remain required; the Linux device
+  observation must explicitly state its Preview scope and known limitation.
+- Windows, Android and web support claims do not gain security approval from
+  this proposal. General security, privacy and data-loss blockers still apply.
+- **Review target: 2026-11-11**, or earlier on a supported upstream fix or
+  changed reachability/severity evidence. Proposed accountable reviewer:
+  the project release owner (`vargaijanos`); no review signature is generated.
+- Restoring Linux Stable needs a separate supported dependency and acceptance
+  decision. Merging this PR accepts the scope amendment only, not final RC GO.
+
 ## Exactly which risk?
 
 - Advisory [RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html)
@@ -98,7 +120,9 @@ all five; if any item is unknown, choose **NO-GO** for Linux Stable.
 - [ ] **NO-GO:** retain Linux Stable and stop RC1 until compatible upstream fix
   (or defensible backport) or the above exception is actually approved.
 
-**Current selection: NO-GO (no signature or exception evidence recorded).**
+**2026-11-03 selection: NO-GO (no signature or exception evidence recorded).**
+The 2026-11-04 scope proposal above supersedes the proposed Linux Stable claim
+only when approved by merge; it does not sign any missing release receipt.
 
 Decision fields: reviewer **PENDING** · UTC timestamp **PENDING** · candidate
 SHA **PENDING** · reachability evidence **PENDING** · mitigations **PENDING** ·

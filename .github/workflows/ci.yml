@@ -61,7 +61,7 @@ jobs:
           node scripts/check-tauri-glib-risk.mjs
 
       - name: Verify release version identity and publication boundaries
-        run: node --test tests/release-version-coherence.test.mjs tests/release-publication-policy.test.mjs
+        run: node --test tests/release-version-coherence.test.mjs tests/release-publication-policy.test.mjs tests/rc-acceptance-preparation.test.mjs
 
       - name: Verify safe browser export delivery (CodeQL #74)
         run: node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/browser-blob-download.test.ts

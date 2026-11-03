@@ -22,7 +22,7 @@ Studio uses one shared React/TypeScript application core and one OMI manuscript 
 |---|---|---|
 | Web | Operational | Hosted Studio |
 | Windows x64 | Operational | Setup EXE and MSI |
-| Linux x64 | Automated native build | AppImage and DEB |
+| Linux x64 | Preview; inherited GLib advisory [#271](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues/271) | AppImage and DEB |
 | macOS Apple Silicon | Automated native build | DMG; signing/notarization hardening remains |
 | macOS Intel | Automated native build | DMG; signing/notarization hardening remains |
 | Android | Operational public beta | Universal APK; Documents/SAF file workflow |

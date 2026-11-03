@@ -3,6 +3,7 @@
 The 1.0 release uses committed scope, automated evidence, and explicit manual
 acceptance. Start with:
 
+- [`2026-11-04-rc1-final-acceptance.md`](./2026-11-04-rc1-final-acceptance.md) for automatic installer hashes/pending receipt preparation, Linux Preview scope, actual signature/update/recovery observations and final publication;
 - [`1.0.0-rc.1.md`](./1.0.0-rc.1.md) for staged RC package identities and publication behavior (**unreleased; acceptance still required**);
 - [`1.0-scope.md`](./1.0-scope.md) for Stable, Preview, and Experimental targets;
 - [`1.0-blocker-policy.md`](./1.0-blocker-policy.md) for non-negotiable gates;

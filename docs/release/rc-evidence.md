@@ -2,11 +2,19 @@
 
 The 1.0 publish guard supplements the existing strict issue/local gate. A green beta workflow or closed issue does not approve RC. No current candidate is approved by this document.
 
-1. Build the exact proposed main SHA with `Tauri Builds and Releases`. Dispatch with `candidate_only=true` so the complete candidate run succeeds without tag/publication; this supplies the existing E02 aggregator with a successful build run. Keep the immutable build run/artifacts.
+1. Build the exact proposed main SHA with `Tauri Builds and Releases`. Since #849, an ordinary 1.0 RC/stable main push is build-only and may supply the successful native run; the existing validator accepts main push or dispatch evidence. Reuse it instead of rebuilding identical bytes. Dispatch `candidate_only=true` only when a required candidate build is missing. Keep the immutable build run/artifacts.
 2. Run Studio CI, CodeQL, OMI-SPEC-320 conformance, PKP integration and 1.0 Readiness for that exact main SHA; dispatch the path-filtered workflows explicitly when necessary. Finish all actual device, host, privacy, accessibility, recovery and performance acceptance on those artifacts. Record only redacted pass/fail references.
 3. Prepare the `omi-studio-rc-evidence` JSON below. `artifacts` must name and hash **every file** produced by the publish job's stable-name preparation, excluding `SHA256SUMS.txt`. Download/relabel the candidate artifacts using the same names before reviewing. Do not include private manuscript data. This is an explicit owner attestation, not an independent signature or automatic test of physical devices.
 4. Dispatch the same exact main SHA with `release_tag`, `release_reviewed_sha`, approval phrase `APPROVE_1_0_RELEASE`, `release_build_run_id` and `release_evidence_json`. The job validates the prior build's source/repository/path/jobs and downloads those exact artifacts. It checks receipt hashes against actual bytes and invokes the existing E02 collector/assessor (latest-attempt, freshness, mandatory jobs and artifact archive digest rules). Only the current publication orchestration is excluded from Tauri candidate selection; no older red candidate is hidden. The selected candidate and other workflow IDs must match the receipt before the strict issue gate and tag creation.
 5. Missing, skipped mandatory, unavailable or mismatched evidence fails closed. E02 retains its existing mandatory-job matrix; skipped mandatory jobs are incomplete evidence. No automated date/score override exists. Keep the receipt with owner-controlled release records and the Actions run; final release SHA256/SBOM/signature rules still apply.
+
+The E02 workflow now downloads only its selected native build, uses the same
+stable-filename staging as publication, and includes `acceptance-draft.json`,
+the seven actual installer hashes in `SHA256SUMS.txt`, and
+`acceptance-next-steps.md` in its evidence artifact. All 13 manual gates stay
+`pending`; owner, approval time and observation references stay empty. The
+existing release validator rejects this unfinished draft. File hashes are not
+signature verification. See [the final acceptance procedure](./2026-11-04-rc1-final-acceptance.md).
 
 Receipt shape (`buildRunId`, `sourceSha`, hashes, dates and references below are placeholders; never paste them as real evidence):
 
