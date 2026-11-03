@@ -53,6 +53,9 @@ on:
       - '.github/workflows/promote-current-release.yml'
       - 'scripts/release-publication-policy.mjs'
       - 'tests/release-publication-policy.test.mjs'
+      - 'scripts/prepare-release-assets.mjs'
+      - 'scripts/prepare-rc-acceptance.mjs'
+      - 'tests/rc-acceptance-preparation.test.mjs'
   push:
     branches:
       - main
@@ -77,7 +80,7 @@ jobs:
         with:
           node-version: 24
       - name: Test publication boundaries
-        run: node --test tests/release-publication-policy.test.mjs
+        run: node --test tests/release-publication-policy.test.mjs tests/rc-acceptance-preparation.test.mjs
       - name: Select publication attempt without approving release
         id: policy
         env:
@@ -510,37 +513,7 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Prepare stable download filenames
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p release-assets
-
-          copy_first() {
-            local pattern="$1"
-            local output="$2"
-            local file
-            file="$(find release-input -type f -name "$pattern" -print -quit)"
-            if [[ -z "$file" ]]; then
-              echo "Missing release asset matching $pattern" >&2
-              exit 1
-            fi
-            cp "$file" "release-assets/$output"
-          }
-
-          copy_first '*.AppImage' 'Open-Manuscript-Studio-Linux-x64.AppImage'
-          copy_first '*.deb' 'Open-Manuscript-Studio-Linux-x64.deb'
-          copy_first '*.exe' 'Open-Manuscript-Studio-Windows-x64-Setup.exe'
-          copy_first '*.msi' 'Open-Manuscript-Studio-Windows-x64.msi'
-          copy_first 'Open-Manuscript-Studio-Android-universal.apk' 'Open-Manuscript-Studio-Android-universal.apk'
-
-          arm_dmg="$(find release-input/open-manuscript-studio-macos-aarch64 -type f -name '*.dmg' -print -quit)"
-          intel_dmg="$(find release-input/open-manuscript-studio-macos-x86_64 -type f -name '*.dmg' -print -quit)"
-          test -n "$arm_dmg" && test -n "$intel_dmg"
-          cp "$arm_dmg" 'release-assets/Open-Manuscript-Studio-macOS-Apple-Silicon.dmg'
-          cp "$intel_dmg" 'release-assets/Open-Manuscript-Studio-macOS-Intel.dmg'
-
-          (cd release-assets && sha256sum * > SHA256SUMS.txt)
-          ls -lh release-assets
+        run: node scripts/prepare-release-assets.mjs release-input release-assets
 
       - name: Resolve immutable release target
         id: release
