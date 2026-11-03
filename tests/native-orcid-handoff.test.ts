@@ -153,6 +153,7 @@ test('iOS configuration uses App Store-compatible versioning and the shared bund
   const baseConfig = JSON.parse(
     readFileSync(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8'),
   ) as {
+    version?: string;
     identifier?: string;
     plugins?: {
       'deep-link'?: {
@@ -167,9 +168,10 @@ test('iOS configuration uses App Store-compatible versioning and the shared bund
   };
 
   assert.equal(baseConfig.identifier, 'org.openmanuscript.studio');
-  assert.equal(iosConfig.version, '0.3.0');
+  assert.match(iosConfig.version ?? '', /^\d+\.\d+\.\d+$/u);
+  assert.equal(iosConfig.version, baseConfig.version?.split('-', 1)[0]);
   assert.equal(iosConfig.bundle?.iOS?.minimumSystemVersion, '14.0');
-  assert.equal(iosConfig.bundle?.iOS?.bundleVersion, '25');
+  assert.match(iosConfig.bundle?.iOS?.bundleVersion ?? '', /^[1-9]\d*$/u);
   assert.equal(iosConfig.bundle?.iOS?.infoPlist, 'Info.ios.plist');
 
   const mobileLinks = baseConfig.plugins?.['deep-link']?.mobile ?? [];

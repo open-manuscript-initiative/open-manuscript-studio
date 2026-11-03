@@ -84,6 +84,14 @@ jobs:
             exit 1
           fi
 
+          # RC distribution stays opt-in. Never rewrite its prerelease flag
+          # or expose it as the general updater's latest stable release.
+          if [[ "$tag" =~ -rc\.[0-9]+($|[.+-]) ]]; then
+            echo "Skipping promotion: $tag must remain a release candidate."
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           tag_sha="$(resolve_tag_commit "$tag" || true)"
           if [[ -z "$tag_sha" || "$tag_sha" != "$expected_sha" ]]; then
             echo "Skipping promotion: $tag does not resolve to the exact workflow source commit $expected_sha."
