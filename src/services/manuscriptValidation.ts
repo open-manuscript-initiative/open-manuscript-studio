@@ -1,5 +1,5 @@
 import type { OmiBlock, OmiManuscript, OmiSection } from '../types/omi';
-import { executeValidationChecks, type ValidationCheckOutput, type ValidationFinding, type ValidationProfile } from '../model/validation';
+import { executeValidationChecks, type ValidationCheckOutput, type ValidationExecutionObservers, type ValidationFinding, type ValidationProfile } from '../model/validation';
 import { validateSectionHierarchy } from '../model/sectionStructure';
 import { collectNoteAnchorsInBlock, isNoteAnnotation } from '../model/notes';
 import { validateNamedAnchors } from '../model/namedAnchors';
@@ -208,7 +208,7 @@ function publication(source: OmiManuscript): ValidationCheckOutput {
   return { findings: issues.map((issue) => ({ code: `publication.${issue.code}`, severity: issue.severity, path: '', ...(issue.targetId ? { targetId: issue.targetId } : {}) })) };
 }
 
-export interface ManuscriptValidationOptions {
+export interface ManuscriptValidationOptions extends ValidationExecutionObservers {
   profile?: ValidationProfile;
   /** The caller supplies local bytes. Validation never fetches remote resources. */
   loadAsset?: (manuscriptId: string, assetId: string) => Promise<Uint8Array | undefined>;
@@ -230,7 +230,7 @@ export function validateStudioManuscript(source: OmiManuscript, options: Manuscr
       }
       return { findings };
     },
-  }, options.createdAt);
+  }, options.createdAt, options);
 }
 
 /** Resolves diagnostics to editor sections without mutating document content. */

@@ -137,22 +137,53 @@ export interface ValidationCheckOutput {
 }
 export const MAX_VALIDATION_FINDINGS_PER_CHECK = 200;
 
+/** Observational events only: never include manuscript text, identifiers or diagnostics. */
+export interface ValidationProgress {
+  completed: number;
+  total: number;
+  currentCheck: ValidationCheckId | null;
+}
+export interface ValidationTiming {
+  phase: 'snapshot' | 'check' | 'total';
+  checkId?: ValidationCheckId;
+  durationMs: number;
+}
+export interface ValidationExecutionObservers {
+  onProgress?: (event: ValidationProgress) => void;
+  onTiming?: (event: ValidationTiming) => void;
+  /** Allows the host UI to paint between CPU-bound checks, without changing their order. */
+  yieldBetweenChecks?: () => Promise<void>;
+}
+function notify<T>(callback: ((event: T) => void) | undefined, event: T): void {
+  // UI/instrumentation observers must not change a validation outcome.
+  try { callback?.(event); } catch { /* Observers do not affect the report. */ }
+}
+function clock(): number { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
+
 /** Independent adapters can fail without suppressing the remaining checks. */
 export async function executeValidationChecks(
   source: OmiManuscript,
   profile: ValidationProfile,
   adapters: Record<ValidationCheckId, (snapshot: OmiManuscript) => ValidationCheckOutput | Promise<ValidationCheckOutput>>,
   createdAt = new Date().toISOString(),
+  observers: ValidationExecutionObservers = {},
 ): Promise<ValidationReport> {
   const required = VALIDATION_PROFILES[profile];
   if (!required) throw new Error('Unknown validation profile.');
-  // Validation adapters receive one point-in-time immutable observation.
-  // A faulty adapter cannot change later checks or falsify the source digest.
+  // Clone synchronously before any host scheduling yield: edits after the call
+  // must never affect the observed snapshot or the report digest.
+  const totalStart = clock();
+  const snapshotStart = clock();
   const snapshot = freezeValidationSnapshot(structuredClone(source));
   const subject = fingerprintValidationSubject(snapshot);
+  notify(observers.onTiming, { phase: 'snapshot', durationMs: clock() - snapshotStart });
   const checks: ValidationCheckResult[] = [];
   const diagnostics: ValidationDiagnostic[] = [];
   for (const id of required) {
+    notify(observers.onProgress, { completed: checks.length, total: required.length, currentCheck: id });
+    try { await observers.yieldBetweenChecks?.(); }
+    catch { /* Scheduling failures must not become validation failures. */ }
+    const checkStart = clock();
     let status: ValidationCheckStatus;
     let findings: ValidationFinding[];
     let complete: boolean;
@@ -178,7 +209,10 @@ export async function executeValidationChecks(
     });
     diagnostics.push(...items);
     checks.push({ id, version: VALIDATION_CHECKS[id].version, status, diagnosticIds: items.map((item) => item.id), truncated, complete: complete && !truncated });
+    notify(observers.onTiming, { phase: 'check', checkId: id, durationMs: clock() - checkStart });
   }
+  notify(observers.onProgress, { completed: required.length, total: required.length, currentCheck: null });
+  notify(observers.onTiming, { phase: 'total', durationMs: clock() - totalStart });
   return {
     $schema: VALIDATION_REPORT_SCHEMA, format: VALIDATION_REPORT_FORMAT,
     version: VALIDATION_REPORT_VERSION, ruleset: VALIDATION_RULESET,
