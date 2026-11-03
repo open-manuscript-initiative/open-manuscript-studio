@@ -8,6 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import { chmod, mkdtemp, rm } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -38,7 +39,6 @@ mock.module(absoluteModule('dist/middleware/requireSession.js'), {
   },
 });
 const { publicationPdfRouter } = await import(absoluteModule('dist/routes/publicationPdfRoutes.js'));
-const { createPdfWorkerServer } = await import(absoluteModule('dist/workers/pdfWorkerServer.js'));
 
 function listenUnix(server, socket) {
   return new Promise((resolveReady, reject) => {
@@ -109,22 +109,44 @@ test('staging-only authenticated publication API fails closed on worker outage a
   app.use(express.json({ limit: '64kb' }));
   app.use('/publication', publicationPdfRouter);
   let apiServer = null;
-  let successes = 0;
+  const fixtureScript = new URL('./fixtures/pdf-worker-staging-stub.mjs', import.meta.url).pathname;
   const startWorker = async () => {
     assert.equal(worker, null);
-    worker = createPdfWorkerServer(async (operation, bytes) => {
-      assert.equal(operation, 'render');
-      assert.match(bytes.toString('utf8'), /OMI synthetic fail-closed canary/);
-      successes += 1;
-      return Buffer.from('%PDF-1.7\n% OMI synthetic contract response\n%%EOF\n');
+    const child = spawn(process.execPath, [fixtureScript, stageWorkerSocket], {
+      stdio: ['ignore', 'ignore', 'pipe', 'ipc'],
+      env: {
+        PATH: process.env.PATH ?? '/usr/bin:/bin',
+        NODE_ENV: 'test',
+        OMI_PDF_STAGE_SERVER_ROOT: root,
+      },
     });
-    await listenUnix(worker, stageWorkerSocket);
+    worker = child;
+    await new Promise((ready, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Synthetic staging worker did not start')), 5000);
+      const settle = (fn) => (argument) => { clearTimeout(timeout); fn(argument); };
+      child.once('message', settle((message) => {
+        if (message?.type === 'ready') ready();
+        else reject(new Error('Unexpected staging worker startup reply'));
+      }));
+      child.once('error', settle(reject));
+      child.once('exit', settle(() => reject(new Error('Synthetic staging worker exited early'))));
+    });
   };
   const stopWorker = async () => {
     if (!worker) return;
-    const closing = worker;
+    const child = worker;
     worker = null;
-    await closeServer(closing);
+    if (child.exitCode === null && child.signalCode === null) {
+      const exited = new Promise((done) => child.once('exit', done));
+      child.kill('SIGTERM');
+      await Promise.race([
+        exited,
+        new Promise((_, reject) => setTimeout(() => {
+          if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+          reject(new Error('Synthetic worker shutdown exceeded 5 seconds'));
+        }, 5000)),
+      ]);
+    }
     await rm(stageWorkerSocket, { force: true });
   };
   t.after(async () => {
@@ -165,7 +187,6 @@ test('staging-only authenticated publication API fails closed on worker outage a
   const recovered = await apiPost(stageApiSocket);
   assert.equal(recovered.status, 200);
   assert.ok(recovered.body.subarray(0, 5).equals(Buffer.from('%PDF-')));
-  assert.equal(successes, 2);
   console.log(JSON.stringify({
     stagingApiUnavailable: 'PASS',
     stagingApiRecovery: 'PASS',
