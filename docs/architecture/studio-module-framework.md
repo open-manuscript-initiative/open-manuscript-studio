@@ -25,7 +25,7 @@ The initial catalog includes these modules:
 
 | Module | Disciplines | Current scope |
 | --- | --- | --- |
-| History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and NARA's federal archival descriptions, and open official catalogues including eLevéltár for Hungarian archival descriptions, the Vatican Apostolic Library catalogue, and BeWeB for Italian ecclesiastical archives. |
+| History and archives | History, archival studies | Search Europeana and NARA, and navigate official archival portals including Italy's 2026 Archivi Nazionali unified portal, eLevéltár, the Vatican Apostolic Library and BeWeB. Historical SIUSA access remains available separately. |
 | Religious texts | Theology, religious studies | Search Sefaria's Jewish text and commentary library live, display short excerpts with citation and edition metadata, and link to Bible, Qur'an, and Buddhist text portals. The first embedded full-text connector covers Sefaria only. |
 | Critical text edition | Philology, classical philology, literary studies, philosophy | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions; search philosophy and textual-studies scholarship in OpenAlex. |
 | Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
@@ -51,6 +51,33 @@ provider's portal because no supported public API endpoint has been confirmed.
 The Vatican Apostolic Library is available as a link to its official online
 catalogue, which includes archive and manuscript holdings; it opens at the
 provider because no supported public search API has been confirmed.
+**Italy — Archivi Nazionali (27 October 2026).** The History and Archives
+module now makes ICAR's new unified [Portale Archivi Nazionali](https://archivinazionali.cultura.gov.it/it/)
+the primary Italian entry point, replacing the obsolete SAN portal URL. The
+provider's verified public pages are linked by archival entity and workflow:
+[archival holdings](https://archivinazionali.cultura.gov.it/it/patrimoni-documentari),
+[archival/documentary units](https://archivinazionali.cultura.gov.it/it/unit%C3%A0),
+[explore resources, advanced search and finding aids](https://archivinazionali.cultura.gov.it/it/esplora-le-risorse),
+and [Sala studio](https://archivinazionali.cultura.gov.it/it/sala-studio)
+for institution-operated reading-room reservations and consultation/reproduction
+requests. The portal covers descriptions of Italian state, public and private
+archives; digital objects are available only where linked. Parts of the reading-room
+workflow can require the researcher's own authentication and institution approval.
+
+These are **external provider navigation links**, not a working embedded
+search API or automated digital-item import. A stable, documented public
+programmatic search contract has not been verified, and the module does not
+scrape results, persist external credentials, assume reproduction rights, or
+claim that every described archival record has digital images. Researchers
+should retain the custodian institution, archival fonds/series, reference
+code, provider record URL and reuse conditions when citing or inserting
+material. SIUSA remains in the selectable list as a *legacy* catalogue; saved
+source visibility preferences are not reset. The Italian portal is visible
+by default only for newly created source selections.
+
+Official announcements: [ICAR, 27 October 2026](https://icar.cultura.gov.it/archivio-notizie/notizia/nasce-il-portale-archivi-nazionali-un-unico-accesso-al-patrimonio-archivistico-italiano);
+[Archivi Nazionali portal](https://archivinazionali.cultura.gov.it/it/).
+
 BeWeB links to the Italian Episcopal Conference's archival catalogue, which
 describes holdings from participating diocesan and other ecclesiastical
 institutions; coverage depends on the institutions that have published data.
