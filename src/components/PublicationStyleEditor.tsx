@@ -1,3 +1,5 @@
+import { PublicationFrameEditor } from './PublicationFrameEditor';
+import { getPublicationFramesCopy } from '../i18n/publicationFrames';
 import { usePublicationPreview } from './PublicationPreviewContext';
 import { getVisualElementsCopy } from '../i18n/visualElements';
 import {
@@ -189,6 +191,8 @@ export function PublicationStyleEditor() {
   );
   const copy = copyFor(locale);
   const previewOnly = usePublicationPreview();
+  const [frameMode, setFrameMode] = useState(false);
+  const frameCopy = getPublicationFramesCopy(locale);
   const initial = useMemo(loadInitialState, []);
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
   const [activeId, setActiveId] = useState(initial.activeId);
@@ -700,7 +704,11 @@ export function PublicationStyleEditor() {
       </div>
 
       {previewOnly ? <p className="publication-mobile-preview-note">{getVisualElementsCopy(locale).mobilePreviewNote}</p> : null}
-      {!previewOnly ? <div className="publication-style-ribbon" ref={ribbonRef}>
+      <div className="omi-publication-layout-switch" role="group" aria-label={frameCopy.mode}>
+        <button type="button" aria-pressed={!frameMode} onClick={() => setFrameMode(false)}>{frameCopy.continuous}</button>
+        <button type="button" aria-pressed={frameMode} onClick={() => setFrameMode(true)}>{frameCopy.mode}</button>
+      </div>
+      {!previewOnly && !frameMode ? <div className="publication-style-ribbon" ref={ribbonRef}>
         <div className="publication-style-ribbon-row">
           <div className="publication-style-ribbon-actions" role="toolbar" aria-label={copy.title}>
             <PublicationRibbonMenuButton
@@ -1168,12 +1176,12 @@ export function PublicationStyleEditor() {
       </div> : null}
 
       <div className="publication-style-editor-layout">
-        <PublicationDocumentCanvas
+        {frameMode ? <PublicationFrameEditor publicationStyle={style} /> : <PublicationDocumentCanvas
           style={style}
           viewMode={documentViewMode}
           onViewModeChange={changeDocumentViewMode}
           onProofingSelection={setProofingSelection}
-        />
+        />}
       </div>
     </section>
   );

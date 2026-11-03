@@ -1,0 +1,135 @@
+import type { PublicationFrame, PublicationFrameLayout } from './publicationFrames';
+
+export interface FrameHeaderFields { left: string; center: string; right: string }
+export interface FrameRunningHeader {
+  enabled: boolean; showFirstPage: boolean; differentEvenPages: boolean;
+  odd: FrameHeaderFields; even: FrameHeaderFields;
+  fontFamily: string; fontSizePt: number; color: string; topMm: number; heightMm: number;
+}
+export interface FramePageStyle {
+  id: string; name: string; widthMm: number; heightMm: number; background: string;
+  margins: { top: number; right: number; bottom: number; left: number };
+  runningHeader: FrameRunningHeader;
+}
+export interface FramePage { id: string; styleId: string }
+export interface FrameGraphicTransform {
+  offsetXMm: number; offsetYMm: number; widthMm: number; heightMm: number;
+  rotation: number; keepAspectRatio: boolean; intrinsicWidthMm: number; intrinsicHeightMm: number;
+}
+export function defaultFramePageStyle(widthMm: number, heightMm: number): FramePageStyle {
+  return { id: 'frame-page-style-default', name: 'Default', widthMm, heightMm, background: '#ffffff',
+    margins: { top: Math.min(18, heightMm / 6), right: Math.min(17, widthMm / 6), bottom: Math.min(18, heightMm / 6), left: Math.min(19, widthMm / 6) },
+    runningHeader: { enabled: false, showFirstPage: true, differentEvenPages: false,
+      odd: { left: '{title}', center: '', right: '{page}' }, even: { left: '{page}', center: '', right: '{title}' },
+      fontFamily: 'Georgia', fontSizePt: 8, color: '#333333', topMm: 4, heightMm: 8 } };
+}
+export function framePageStyles(layout: PublicationFrameLayout): FramePageStyle[] {
+  return layout.pageStyles ?? [defaultFramePageStyle(layout.page.widthMm, layout.page.heightMm)];
+}
+export function framePages(layout: PublicationFrameLayout): FramePage[] {
+  return layout.pages ?? Array.from({ length: layout.page.count }, (_, index) => ({ id: `frame-page-${index + 1}`, styleId: framePageStyles(layout)[0]!.id }));
+}
+export function framePageStyle(layout: PublicationFrameLayout, index: number): FramePageStyle {
+  const page = framePages(layout)[index];
+  if (!page) throw new Error('Unknown publication page.');
+  const style = framePageStyles(layout).find((item) => item.id === page.styleId);
+  if (!style) throw new Error('Unknown page style.');
+  return style;
+}
+/** Materialize legacy page-count layouts on their first page-style edit. */
+export function withFramePages(layout: PublicationFrameLayout): PublicationFrameLayout {
+  return { ...structuredClone(layout), pageStyles: structuredClone(framePageStyles(layout)), pages: structuredClone(framePages(layout)) };
+}
+export function insertFramePage(layout: PublicationFrameLayout, after: number, styleId: string, id: string): PublicationFrameLayout {
+  const next = withFramePages(layout);
+  if (next.page.count >= 100 || !next.pageStyles!.some((style) => style.id === styleId)
+    || !id || next.pages!.some((page) => page.id === id) || !Number.isInteger(after) || after < -1 || after >= next.page.count) throw new Error('Invalid page insertion.');
+  const index = after + 1;
+  next.pages!.splice(index, 0, { id, styleId }); next.page.count = next.pages!.length;
+  next.frames.forEach((frame) => { if (frame.page >= index) frame.page += 1; });
+  return next;
+}
+export function deleteFramePage(layout: PublicationFrameLayout, index: number): PublicationFrameLayout {
+  const next = withFramePages(layout);
+  if (next.page.count <= 1 || !Number.isInteger(index) || index < 0 || index >= next.page.count) throw new Error('Keep at least one publication page.');
+  const removed = new Set(next.frames.filter((frame) => frame.page === index).map((frame) => frame.id));
+  const byId = new Map(next.frames.map((frame) => [frame.id, frame]));
+  for (const frame of next.frames) {
+    const visited = new Set<string>();
+    while (frame.nextFrameId && removed.has(frame.nextFrameId)) {
+      if (visited.has(frame.nextFrameId)) throw new Error('Invalid frame chain.');
+      visited.add(frame.nextFrameId); frame.nextFrameId = byId.get(frame.nextFrameId)?.nextFrameId;
+    }
+  }
+  next.frames = next.frames.filter((frame) => !removed.has(frame.id));
+  next.frames.forEach((frame) => { if (frame.page > index) frame.page -= 1; });
+  next.pages!.splice(index, 1); next.page.count = next.pages!.length;
+  // Stories and source graphics survive page deletion, including unplaced text.
+  return next;
+}
+export function frameRunningHeader(layout: PublicationFrameLayout, index: number, title: string): FrameHeaderFields | undefined {
+  const style = framePageStyle(layout, index), header = style.runningHeader;
+  if (!header.enabled || (index === 0 && !header.showFirstPage)) return undefined;
+  const pageNumber = (layout.pageNumberStart ?? 1) + index;
+  const fields = header.differentEvenPages && pageNumber % 2 === 0 ? header.even : header.odd;
+  const values: Record<string, string> = { title, articleTitle: title, page: String(pageNumber), pageNumber: String(pageNumber), pages: String(layout.page.count), style: style.name };
+  const fill = (text: string) => text.replace(/\{(title|articleTitle|page|pageNumber|pages|style)\}/g, (_, key: string) => values[key]!);
+  return { left: fill(fields.left), center: fill(fields.center), right: fill(fields.right) };
+}
+export function frameGraphicTransform(frame: PublicationFrame, aspectRatio?: number): FrameGraphicTransform {
+  if (frame.graphicTransform) return { ...frame.graphicTransform };
+  const ratio = aspectRatio && Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : frame.widthMm / frame.heightMm;
+  const widthMm = Math.min(frame.widthMm, frame.heightMm * ratio), heightMm = widthMm / ratio;
+  return { widthMm, heightMm, intrinsicWidthMm: widthMm, intrinsicHeightMm: heightMm, offsetXMm: (frame.widthMm - widthMm) / 2, offsetYMm: (frame.heightMm - heightMm) / 2, rotation: 0, keepAspectRatio: true };
+}
+export function updateFrameGraphicSize(value: FrameGraphicTransform, axis: 'widthMm' | 'heightMm', size: number): FrameGraphicTransform {
+  if (!Number.isFinite(size) || size < 0.1 || size > 20000) throw new Error('Invalid graphic size.');
+  const next = { ...value, [axis]: size };
+  if (value.keepAspectRatio) {
+    const factor = size / value[axis];
+    if (axis === 'widthMm') next.heightMm = value.heightMm * factor;
+    else next.widthMm = value.widthMm * factor;
+  }
+  return next;
+}
+export function frameGraphicContentStyle(frame: PublicationFrame) {
+  const transform = frame.graphicTransform;
+  return transform ? { position: 'absolute' as const, left: `${transform.offsetXMm}mm`, top: `${transform.offsetYMm}mm`, width: `${transform.widthMm}mm`, height: `${transform.heightMm}mm`, transform: `rotate(${transform.rotation}deg)`, transformOrigin: 'center' }
+    : { position: 'absolute' as const, left: '0mm', top: '0mm', width: '100%', height: '100%', transform: 'none', transformOrigin: 'center' };
+}
+export function frameGraphicInnerStyle(frame: PublicationFrame) {
+  const graphic = frame.graphicTransform;
+  return graphic ? { width: `${graphic.intrinsicWidthMm}mm`, height: `${graphic.intrinsicHeightMm}mm`, transform: `scale(${graphic.widthMm / graphic.intrinsicWidthMm}, ${graphic.heightMm / graphic.intrinsicHeightMm})`, transformOrigin: 'top left' }
+    : { width: '100%', height: '100%', transform: 'none', transformOrigin: 'top left' };
+}
+export function validateFramePageSettings(layout: PublicationFrameLayout): void {
+  const fail = (): never => { throw new Error('Frame layout: invalid page styles or graphic transform.'); };
+  const finite = (n: unknown, min: number, max: number) => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
+  const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+  const id = (s: unknown) => typeof s === 'string' && s.length > 0 && s.length <= 200;
+  const color = (s: unknown) => typeof s === 'string' && /^#[\da-f]{6}$/i.test(s);
+  if (layout.pageNumberStart !== undefined && (!Number.isInteger(layout.pageNumberStart) || !finite(layout.pageNumberStart, 0, 1_000_000))) fail();
+  if (layout.pageStyles !== undefined || layout.pages !== undefined) {
+    if (!Array.isArray(layout.pageStyles) || !layout.pageStyles.length || layout.pageStyles.length > 100 || !Array.isArray(layout.pages) || layout.pages.length !== layout.page.count) fail();
+    const styles = layout.pageStyles!, pages = layout.pages!;
+    if (styles.some((style) => !record(style) || !id(style.id)) || new Set(styles.map((style) => style.id)).size !== styles.length) fail();
+    for (const style of styles) {
+      if (typeof style.name !== 'string' || style.name.length > 200 || !finite(style.widthMm, 30, 1200) || !finite(style.heightMm, 30, 1200) || !color(style.background) || !record(style.margins)) fail();
+      if (Object.values(style.margins).length !== 4 || ![style.margins.top, style.margins.right, style.margins.bottom, style.margins.left].every((n) => finite(n, 0, 600))
+        || style.margins.left + style.margins.right >= style.widthMm || style.margins.top + style.margins.bottom >= style.heightMm) fail();
+      const header = style.runningHeader;
+      if (!record(header) || ![header.enabled, header.showFirstPage, header.differentEvenPages].every((v) => typeof v === 'boolean')
+        || typeof header.fontFamily !== 'string' || !header.fontFamily || header.fontFamily.length > 150 || !finite(header.fontSizePt, 1, 100) || !color(header.color)
+        || !finite(header.topMm, 0, 1200) || !finite(header.heightMm, 1, 100) || header.topMm + header.heightMm > style.heightMm) fail();
+      for (const fields of [header.odd, header.even]) if (!record(fields) || ![fields.left, fields.center, fields.right].every((s) => typeof s === 'string' && s.length <= 500)) fail();
+    }
+    if (pages.some((page) => !record(page) || !id(page.id) || !styles.some((style) => style.id === page.styleId)) || new Set(pages.map((page) => page.id)).size !== pages.length) fail();
+  }
+  for (const frame of layout.frames) {
+    const transform = frame.graphicTransform;
+    if (transform === undefined) continue;
+    if (frame.kind !== 'graphic' || !record(transform) || !finite(transform.widthMm, 0.1, 20000) || !finite(transform.heightMm, 0.1, 20000)
+      || !finite(transform.intrinsicWidthMm, 0.1, 20000) || !finite(transform.intrinsicHeightMm, 0.1, 20000)
+      || !finite(transform.offsetXMm, -20000, 20000) || !finite(transform.offsetYMm, -20000, 20000) || !finite(transform.rotation, -36000, 36000) || typeof transform.keepAspectRatio !== 'boolean') fail();
+  }
+}

@@ -1,5 +1,17 @@
 ## Unreleased — Translation and Validation Models
 
+- Extend frame layout with named page styles, per-page size/margins/background,
+  insertion/deletion and editable odd/even running headers with page/title fields.
+  Preserve story text when deleting pages. Add independent graphic-content size,
+  ratio locking, offsets, rotation and clipping, shared by preview and HTML/PDF.
+
+- Add a separate publication frame-layout workspace with text/graphic frames,
+  shared and local styles, linked text stories, lossless splitting, arbitrary
+  numeric rotation and editable polygon/ellipse outlines. Save layouts in OMI;
+  add overflow-gated frame HTML/print output and mobile preview. Manuscript text
+  is explicitly copied as plain text; scholarly rich text and notes stay in the
+  continuous layout. See `docs/publication-frames.md`.
+
 - Add per-cell quarter/half-turn text rotation and automatic/LTR/RTL writing
   direction, preserved in OMI, HTML and PDF. On mobile the live publication editor
   presents a read-only layout preview and a menu note in place of editing panels.

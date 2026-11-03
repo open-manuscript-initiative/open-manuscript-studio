@@ -1,0 +1,225 @@
+import { validateFramePageSettings, type FrameGraphicTransform, type FramePage, type FramePageStyle } from './publicationFramePages';
+import type { OmiBlock, OmiManuscript } from '../types/omi';
+
+export const FRAME_LAYOUT_EXTENSION = 'urn:omi:studio:publication-frames:1';
+export const FRAME_LAYOUT_PROFILE = 'studio-publication-frames-0.1';
+export interface FramePoint { x: number; y: number }
+export interface FrameTextStyle {
+  fontFamily: string; fontSizePt: number; lineHeightPt: number;
+  fontWeight: 400 | 700; fontStyle: 'normal' | 'italic';
+  color: string; fill: string; stroke: string; strokeWidthMm: number; paddingMm: number;
+  alignment: 'left' | 'center' | 'right';
+}
+export interface PublicationFrameStyle { id: string; name: string; properties: FrameTextStyle }
+export interface PublicationFrame {
+  id: string; name: string; kind: 'text' | 'graphic'; page: number;
+  xMm: number; yMm: number; widthMm: number; heightMm: number; rotation: number;
+  shape: 'rectangle' | 'ellipse' | 'polygon'; points: FramePoint[];
+  styleId: string; overrides?: Partial<FrameTextStyle>;
+  storyId?: string; nextFrameId?: string; sourceBlockId?: string;
+  graphicTransform?: FrameGraphicTransform;
+}
+export interface FrameStory { id: string; name: string; text: string }
+export interface PublicationFrameLayout {
+  profile: typeof FRAME_LAYOUT_PROFILE;
+  page: { widthMm: number; heightMm: number; count: number };
+  styles: PublicationFrameStyle[]; stories: FrameStory[]; frames: PublicationFrame[];
+  pageStyles?: FramePageStyle[]; pages?: FramePage[]; pageNumberStart?: number;
+}
+export interface FrameLine { text: string; start: number; end: number; x: number; y: number; width: number }
+export interface FrameFlow { frameId: string; start: number; end: number; lines: FrameLine[] }
+export interface PublicationFrameFlow { frames: FrameFlow[]; overflow: { storyId: string; offset: number; text: string }[] }
+export function frameDisplayText(text: string): string { return text.replace(/\t/g, '    '); }
+export type FrameTextMeasure = (text: string, style: FrameTextStyle) => number;
+export const MM_PER_POINT = 25.4 / 72;
+export const RECTANGLE_POINTS: FramePoint[] = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+export const DEFAULT_FRAME_STYLE: FrameTextStyle = {
+  fontFamily: 'Georgia', fontSizePt: 11, lineHeightPt: 15, fontWeight: 400, fontStyle: 'normal',
+  color: '#171717', fill: '#ffffff', stroke: '#999999', strokeWidthMm: 0.2, paddingMm: 3, alignment: 'left',
+};
+export function createFrameLayout(widthMm = 150, heightMm = 240): PublicationFrameLayout {
+  return { profile: FRAME_LAYOUT_PROFILE, page: { widthMm: Math.min(1200, Math.max(30, widthMm)), heightMm: Math.min(1200, Math.max(30, heightMm)), count: 1 },
+    styles: [{ id: 'frame-style-default', name: 'Default', properties: { ...DEFAULT_FRAME_STYLE } }], stories: [], frames: [] };
+}
+export function getFrameLayout(manuscript: OmiManuscript): PublicationFrameLayout | undefined {
+  const value = manuscript.extensions?.[FRAME_LAYOUT_EXTENSION];
+  if (value === undefined) return undefined;
+  validateFrameLayout(value);
+  return value as PublicationFrameLayout;
+}
+export function frameStyle(layout: PublicationFrameLayout, frame: PublicationFrame): FrameTextStyle {
+  return { ...layout.styles.find((style) => style.id === frame.styleId)!.properties, ...frame.overrides };
+}
+export function frameChain(layout: PublicationFrameLayout, startId: string): PublicationFrame[] {
+  const chain: PublicationFrame[] = []; const seen = new Set<string>();
+  let frame = layout.frames.find((item) => item.id === startId);
+  while (frame) {
+    if (seen.has(frame.id)) throw new Error('A frame chain cannot contain a cycle.');
+    seen.add(frame.id); chain.push(frame);
+    frame = frame.nextFrameId ? layout.frames.find((item) => item.id === frame!.nextFrameId) : undefined;
+  }
+  return chain;
+}
+export function linkFrames(layout: PublicationFrameLayout, sourceId: string, targetId: string): PublicationFrameLayout {
+  const next = structuredClone(layout);
+  const source = next.frames.find((frame) => frame.id === sourceId);
+  const target = next.frames.find((frame) => frame.id === targetId);
+  if (!source || !target || source.kind !== 'text' || target.kind !== 'text' || source.nextFrameId
+    || next.frames.some((frame) => frame.nextFrameId === target.id) || source.storyId === target.storyId) {
+    throw new Error('Link a text-chain tail to the start of another text chain.');
+  }
+  const story = next.stories.find((item) => item.id === source.storyId)!;
+  const incoming = next.stories.find((item) => item.id === target.storyId)!;
+  story.text += incoming.text; // Concatenation and later splitting preserve every original character.
+  for (const frame of frameChain(next, target.id)) frame.storyId = story.id;
+  next.stories = next.stories.filter((item) => item.id !== incoming.id);
+  source.nextFrameId = target.id;
+  validateFrameLayout(next); return next;
+}
+export function unlinkFrames(layout: PublicationFrameLayout, sourceId: string, splitOffset: number, storyId: string): PublicationFrameLayout {
+  const next = structuredClone(layout); const source = next.frames.find((frame) => frame.id === sourceId);
+  if (!source?.nextFrameId || source.kind !== 'text') throw new Error('This frame has no continuation.');
+  const story = next.stories.find((item) => item.id === source.storyId)!;
+  if (!Number.isInteger(splitOffset) || splitOffset < 0 || splitOffset > story.text.length) throw new Error('Invalid text split.');
+  const newStory = { id: storyId, name: story.name, text: story.text.slice(splitOffset) };
+  story.text = story.text.slice(0, splitOffset); next.stories.push(newStory);
+  for (const frame of frameChain(next, source.nextFrameId)) frame.storyId = newStory.id;
+  delete source.nextFrameId; validateFrameLayout(next); return next;
+}
+export function removeFrame(layout: PublicationFrameLayout, id: string): PublicationFrameLayout {
+  const next = structuredClone(layout); const removed = next.frames.find((frame) => frame.id === id);
+  for (const frame of next.frames) if (frame.nextFrameId === id) frame.nextFrameId = removed?.nextFrameId;
+  next.frames = next.frames.filter((frame) => frame.id !== id);
+  // Unplaced stories are retained and reported as overflow, never discarded.
+  validateFrameLayout(next); return next;
+}
+
+/** Conservative horizontal intervals inside the complete line band, including concave polygons. */
+export function frameLineIntervals(frame: PublicationFrame, y: number, height: number, padding: number): [number, number][] {
+  if (y < padding || y + height > frame.heightMm - padding + 0.0001) return [];
+  const scan = (at: number): [number, number][] => {
+    if (frame.shape === 'rectangle') return [[padding, frame.widthMm - padding]];
+    if (frame.shape === 'ellipse') {
+      const ry = frame.heightMm / 2, rx = frame.widthMm / 2;
+      const span = rx * Math.sqrt(Math.max(0, 1 - ((at - ry) / ry) ** 2));
+      return [[rx - span + padding, rx + span - padding]];
+    }
+    const points = frame.points.map((p) => ({ x: p.x * frame.widthMm / 100, y: p.y * frame.heightMm / 100 }));
+    const xs: number[] = [];
+    points.forEach((a, i) => {
+      const b = points[(i + 1) % points.length]!;
+      if ((a.y <= at && b.y > at) || (b.y <= at && a.y > at)) xs.push(a.x + (at - a.y) * (b.x - a.x) / (b.y - a.y));
+    });
+    xs.sort((a, b) => a - b);
+    return xs.flatMap((x, i) => i % 2 === 0 && xs[i + 1] !== undefined ? [[x + padding, xs[i + 1]! - padding] as [number, number]] : []);
+  };
+  const epsilon = 0.00001;
+  const samples = [y + epsilon, y + height - epsilon,
+    ...frame.points.filter(() => frame.shape === 'polygon').flatMap((p) => {
+      const at = p.y * frame.heightMm / 100;
+      return at > y && at < y + height ? [at - epsilon, at + epsilon] : [];
+    })];
+  let result = scan(samples[0]!);
+  for (const sample of samples.slice(1)) result = result.flatMap(([a, b]) => scan(sample)
+    .map(([c, d]) => [Math.max(a, c), Math.min(b, d)] as [number, number]).filter(([c, d]) => d > c));
+  return result.filter(([a, b]) => b > a);
+}
+
+export function flowFrameStories(layout: PublicationFrameLayout, measure: FrameTextMeasure): PublicationFrameFlow {
+  validateFrameLayout(layout);
+  const result: PublicationFrameFlow = { frames: [], overflow: [] };
+  for (const story of layout.stories) {
+    const root = layout.frames.find((frame) => frame.storyId === story.id && !layout.frames.some((other) => other.nextFrameId === frame.id));
+    let offset = 0;
+    const segments = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(story.text)];
+    const limits: number[] = Array(segments.length + 1).fill(segments.length);
+    for (let i = segments.length - 1; i >= 0; i -= 1) limits[i] = /[\r\n]/.test(segments[i]!.segment) ? i : limits[i + 1]!;
+    let segmentIndex = 0;
+    for (const frame of root ? frameChain(layout, root.id) : []) {
+      const style = frameStyle(layout, frame); const leading = style.lineHeightPt * MM_PER_POINT;
+      const placed: FrameFlow = { frameId: frame.id, start: offset, end: offset, lines: [] };
+      for (let y = style.paddingMm; y + leading <= frame.heightMm - style.paddingMm + 0.0001 && offset < story.text.length; y += leading) {
+        for (const [left, right] of frameLineIntervals(frame, y, leading, style.paddingMm)) {
+          if (offset >= story.text.length) break;
+          const first = segmentIndex;
+          const limit = limits[first]!;
+          let lower = first, upper = limit;
+          while (lower < upper) {
+            const middle = Math.ceil((lower + upper) / 2);
+            const end = segments[middle - 1]!.index + segments[middle - 1]!.segment.length;
+            if (measure(frameDisplayText(story.text.slice(offset, end)), style) <= right - left + 0.00001) lower = middle;
+            else upper = middle - 1;
+          }
+          if (lower === first && first !== limit) continue;
+          let finish = lower;
+          if (finish < limit) {
+            for (let i = finish - 1; i > first; i -= 1) if (/^[ \t]$/u.test(segments[i]!.segment)) { finish = i + 1; break; }
+          }
+          const textEnd = finish > first ? segments[finish - 1]!.index + segments[finish - 1]!.segment.length : offset;
+          let consumed = textEnd;
+          if (finish === limit && limit < segments.length) { consumed += segments[limit]!.segment.length; finish += 1; }
+          const text = story.text.slice(offset, textEnd);
+          const width = measure(frameDisplayText(text), style);
+          const x = style.alignment === 'center' ? left + (right - left - width) / 2 : style.alignment === 'right' ? right - width : left;
+          placed.lines.push({ text, start: offset, end: consumed, x, y, width: right - left });
+          offset = consumed; segmentIndex = finish;
+          if (consumed > textEnd) break;
+        }
+      }
+      placed.end = offset; result.frames.push(placed);
+    }
+    if (offset < story.text.length) result.overflow.push({ storyId: story.id, offset, text: story.text.slice(offset) });
+  }
+  return result;
+}
+
+export function collectFrameSourceBlocks(manuscript: OmiManuscript): OmiBlock[] {
+  const blocks: OmiBlock[] = [];
+  const visitBlocks = (items: readonly OmiBlock[]) => { for (const item of items) { blocks.push(item); visitBlocks(item.children ?? []); } };
+  const visit = (sections: OmiManuscript['sections']) => { for (const section of sections) { visitBlocks(section.blocks); visit(section.children ?? []); } };
+  visit(manuscript.sections); return blocks;
+}
+
+export function validateFrameLayout(input: unknown): asserts input is PublicationFrameLayout {
+  const fail = (message: string): never => { throw new Error(`Frame layout: ${message}`); };
+  const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
+  if (!record(input) || input.profile !== FRAME_LAYOUT_PROFILE) fail('unsupported profile.');
+  const value = input as unknown as PublicationFrameLayout;
+  const finite = (n: unknown, min: number, max: number) => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
+  const id = (s: unknown) => typeof s === 'string' && s.length > 0 && s.length <= 200;
+  if (!record(value.page) || !finite(value.page.widthMm, 30, 1200) || !finite(value.page.heightMm, 30, 1200)
+    || !Number.isInteger(value.page.count) || !finite(value.page.count, 1, 100)) fail('invalid pages.');
+  for (const collection of [value.frames, value.stories, value.styles]) {
+    if (!Array.isArray(collection) || collection.length > 500 || collection.some((item) => !record(item) || !id(item.id))) fail('invalid collection.');
+    if (new Set(collection.map((item) => item.id)).size !== collection.length) fail('duplicate identifiers.');
+  }
+  const validStyle = (style: FrameTextStyle) => record(style) && typeof style.fontFamily === 'string' && style.fontFamily.length > 0 && style.fontFamily.length <= 150
+    && finite(style.fontSizePt, 1, 300) && finite(style.lineHeightPt, style.fontSizePt, 600) && [400, 700].includes(style.fontWeight)
+    && ['normal', 'italic'].includes(style.fontStyle) && [style.color, style.fill, style.stroke].every((color) => typeof color === 'string' && /^#[\da-f]{6}$/i.test(color))
+    && finite(style.paddingMm, 0, 100) && finite(style.strokeWidthMm, 0, 10) && ['left', 'center', 'right'].includes(style.alignment);
+  if (!value.styles.length || value.styles.some((style) => typeof style.name !== 'string' || !validStyle(style.properties))) fail('invalid shared style.');
+  if (value.stories.some((story) => typeof story.name !== 'string' || typeof story.text !== 'string' || story.text.length > 2_000_000)) fail('invalid story.');
+  const incoming = new Set<string>();
+  for (const frame of value.frames) {
+    if (!['text', 'graphic'].includes(frame.kind) || typeof frame.name !== 'string' || !Number.isInteger(frame.page) || !finite(frame.page, 0, value.page.count - 1)
+      || !finite(frame.xMm, -1200, 2400) || !finite(frame.yMm, -1200, 2400) || !finite(frame.widthMm, 5, 2000) || !finite(frame.heightMm, 5, 2000)
+      || !finite(frame.rotation, -36000, 36000) || !['rectangle', 'ellipse', 'polygon'].includes(frame.shape)
+      || !Array.isArray(frame.points) || frame.points.length < 3 || frame.points.length > 128
+      || frame.points.some((p) => !record(p) || !finite(p.x, 0, 100) || !finite(p.y, 0, 100))
+      || !value.styles.some((style) => style.id === frame.styleId) || !validStyle(frameStyle(value, frame))) fail('invalid frame.');
+    if (frame.kind === 'text' && !value.stories.some((story) => story.id === frame.storyId)) fail('missing text story.');
+    if (frame.kind === 'graphic' && (!id(frame.sourceBlockId) || frame.storyId || frame.nextFrameId)) fail('invalid graphic source.');
+    if (frame.nextFrameId) {
+      const target = value.frames.find((item) => item.id === frame.nextFrameId);
+      if (!target || frame.kind !== 'text' || target.kind !== 'text' || target.storyId !== frame.storyId || incoming.has(target.id)) fail('invalid frame link.');
+      incoming.add(frame.nextFrameId);
+    }
+  }
+  validateFramePageSettings(value);
+  for (const story of value.stories) {
+    const frames = value.frames.filter((frame) => frame.storyId === story.id);
+    if (!frames.length) continue;
+    const roots = frames.filter((frame) => !incoming.has(frame.id));
+    if (roots.length !== 1 || frameChain(value, roots[0]!.id).length !== frames.length) fail('disconnected or cyclic story.');
+  }
+}
