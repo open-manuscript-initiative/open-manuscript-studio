@@ -46,6 +46,8 @@ Audit all URL-consuming helper paths, proxies and container/cgroup escapes.
 | Redacted HTTPS evidence location for the exact candidate | PENDING |
 | Residual risks and operator/security reviewer decision | **NOT APPROVED** |
 
+See the [#765 dated evidence reconciliation](../../docs/server/765-rc1-evidence-reconciliation.md) for the already successful live cgroup+BPF inspection, cloned-policy IPv4/IPv6 canaries and the separate strictly read-only redacted host evidence collector. This is not a manual release gate PASS.
+
 ## Existing observations available without rerunning
 
 - [#765](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues/765#issuecomment-6608027104): 8/8 synthetic connection-pinned HTTP/DNS-rebinding regression tests.
