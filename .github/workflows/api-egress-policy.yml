@@ -11,6 +11,8 @@ on:
       - 'server/src/cloud/security/connectionPinnedHttp.ts'
       - 'server/src/cloud/providers/webdav/WebDavProvider.ts'
       - 'deployment/egress/**'
+      - 'scripts/acceptance/host-egress-evidence.mjs'
+      - 'tests/host-egress-evidence.test.mjs'
       - '.github/workflows/api-egress-policy.yml'
   push:
     branches: [main]
@@ -22,6 +24,8 @@ on:
       - 'server/src/cloud/security/connectionPinnedHttp.ts'
       - 'server/src/cloud/providers/webdav/WebDavProvider.ts'
       - 'deployment/egress/**'
+      - 'scripts/acceptance/host-egress-evidence.mjs'
+      - 'tests/host-egress-evidence.test.mjs'
       - '.github/workflows/api-egress-policy.yml'
 
 permissions:
@@ -39,6 +43,8 @@ jobs:
           node-version: 24
       - name: Regression-test strict private/metadata and UID boundaries
         run: node --test tests/api-egress-policy.test.mjs
+      - name: Check safe live egress evidence collection and no false RC promotion
+        run: node --test tests/host-egress-evidence.test.mjs
       - name: Test service-scoped shared-UID policy and connection-time DNS guard
         run: node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/api-egress-shared-uid.test.ts
       - name: Offline systemd service-cgroup drop-in syntax validation
