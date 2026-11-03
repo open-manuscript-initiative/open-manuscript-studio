@@ -21,6 +21,8 @@ Upstream tracked work as checked on 2026-11-01:
 
 Therefore issue [OMI #271](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues/271) and the corresponding Dependabot advisory must remain open. The security work in issue #770 (Tauri CSP and EuroOffice WebView isolation) addresses a different threat model and does not repair `glib`.
 
+> **RC1 owner decision worksheet (2026-11-03):** [#271 five-condition risk exception / Linux-scope decision](./271-rc1-glib-risk-decision.md). All five exception criteria remain **PENDING** until independently reviewed; no exception is created by linking this document.
+
 ## Automated regression and evidence
 
 Run at any time:
