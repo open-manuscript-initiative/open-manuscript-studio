@@ -27,6 +27,8 @@
 
 ## 1. #765 — close only the actual production-egress evidence gap
 
+Use the [reconciled #765 observed-vs-missing evidence](../server/765-rc1-evidence-reconciliation.md); no need to rerun previously successful kernel probes.
+
 Use the [current shared-Plesk-UID acceptance worksheet](../../deployment/egress/acceptance-TEMPLATE.md)
 and the [existing live host runbook](../server/765-774-live-host-acceptance.md).
 
