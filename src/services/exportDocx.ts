@@ -1,4 +1,5 @@
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
+import { officeMetadataConversion, metadataConversionWarnings, type MetadataConversionObservation } from '../model/metadataConversion';
 import {
   extractOmiInlineRuns,
   inlineLanguageFromMarks,
@@ -20,6 +21,7 @@ export interface DocxExportResult {
   bytes: Uint8Array;
   fileName: string;
   warnings: string[];
+  metadataConversion: MetadataConversionObservation[];
 }
 
 /**
@@ -35,7 +37,8 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   manuscript = publicPublicationManuscript(manuscript);
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
-  const warnings: string[] = [];
+  const metadataConversion = officeMetadataConversion(manuscript, context);
+  const warnings: string[] = metadataConversionWarnings(metadataConversion);
   const body: string[] = [];
   const indexEntriesByBlock = collectIndexEntriesByBlock(manuscript.indexEntries ?? []);
   const annotationsById = new Map(
@@ -173,6 +176,7 @@ ${characterStylesXml()}
     blob: new Blob([copy.buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
     fileName: `${fileStem(manuscript)}.docx`,
     warnings,
+    metadataConversion,
   };
 }
 
