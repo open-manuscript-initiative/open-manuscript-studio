@@ -13,6 +13,7 @@ import {
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getRorAffiliationCopy } from '../i18n/rorAffiliation';
+import { ROR_API_SOURCE } from '../model/identity';
 import {
   searchRorOrganizations,
   type RorOrganizationSuggestion,
@@ -103,6 +104,7 @@ export function RorAffiliationField({
     updateContributor(agentId, {
       affiliation: organization.displayName,
       affiliationRorId: organization.id,
+      affiliationRorSource: ROR_API_SOURCE,
     });
     setSuggestions([]);
     setHasSearched(false);

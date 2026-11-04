@@ -109,7 +109,7 @@ export function setOjsOpenScienceField(
       baseRevisionId: state.manuscript.headRevisionId,
       summary: `Changed OJS Open Science metadata: ${key}`,
       events: [{
-        operation: 'manuscript.abstract.set' as never,
+        operation: 'manuscript.structure.set' as const,
         targetId: state.manuscript.id,
         path: `/extensions/https:~1~1pkp.sfu.ca~1ojs~1/openScience/${key}/${locale}`,
         previousValue: previous,
@@ -139,7 +139,7 @@ function updateMetadata(
       baseRevisionId: state.manuscript.headRevisionId,
       summary: `Changed scholarly metadata: ${key}`,
       events: [{
-        operation: 'manuscript.abstract.set' as never,
+        operation: 'manuscript.structure.set' as const,
         targetId: state.manuscript.id,
         path: `/metadata/${key}`,
         previousValue: previousMetadata[key as keyof OmiScholarlyMetadata],

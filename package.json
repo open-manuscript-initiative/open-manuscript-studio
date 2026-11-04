@@ -6,6 +6,8 @@
   "description": "Reference implementation of the Open Manuscript Initiative Studio.",
   "scripts": {
     "dev": "vite",
+    "test:core-metadata": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-metadata.test.ts",
+    "evidence:core-metadata": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-metadata.ts",
     "build": "tsc -b && vite build",
     "test:continuous": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/continuous-manuscript-document.test.ts tests/changed-workspace-references.test.ts tests/empty-heading-deletion.test.ts tests/continuous-deletion.test.ts tests/nonprinting-mark-changes.test.ts tests/recent-local-editor-content-history.test.ts",
     "test:current-study-notes": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/current-study-notes.test.ts",
@@ -111,7 +113,7 @@
     "test:native-csp": "node --disallow-code-generation-from-strings --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/native-csp-validation.test.ts",
     "test:native-csp:build": "node scripts/test-native-csp-build.mjs",
     "schemas:check": "node scripts/generate-schema-validators.mjs --check",
-    "test:core-identity": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-identity-reference.test.ts",
+    "test:core-identity": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-identity-reference.test.ts && npm run test:core-metadata",
     "evidence:core-identity": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-identity-references.ts"
   },
   "dependencies": {
