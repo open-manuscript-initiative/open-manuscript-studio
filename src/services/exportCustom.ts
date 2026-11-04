@@ -1,4 +1,5 @@
 import { renderBibliography } from '../model/cslRendering';
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { getBibliographyRecords } from '../model/citations';
 import {
   defaultCustomCitationStyle,
@@ -76,6 +77,7 @@ export function openCustomPdfPrintView(manuscript: OmiManuscript, template: Cust
 }
 
 export function buildCustomDocxExport(manuscript: OmiManuscript, template: CustomExportTemplate): CustomExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const citationState: CitationRenderState = { seenTargets: new Set() };
   const body = enabledBlocks(template).flatMap((block) =>
@@ -100,6 +102,7 @@ export function buildCustomDocxExport(manuscript: OmiManuscript, template: Custo
 }
 
 export function renderCustomHtmlDocument(manuscript: OmiManuscript, template: CustomExportTemplate, print = false): string {
+  manuscript = publicPublicationManuscript(manuscript);
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const citationState: CitationRenderState = { seenTargets: new Set() };
   const body = enabledBlocks(template)
