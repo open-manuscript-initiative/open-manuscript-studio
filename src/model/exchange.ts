@@ -1,4 +1,5 @@
 import { sha256HexSync } from './stateDigest';
+import type { MetadataConversionObservation } from './metadataConversion';
 
 /** Studio-owned vocabulary for the Draft; not a canonical OMI wire schema. */
 export const EXCHANGE_PROFILE_VERSION = '0.1.0' as const;
@@ -60,6 +61,7 @@ export interface ExchangeReport {
   lossless: false;
   roundTrip: 'not-assessed';
   events: ExchangeEvent[];
+  metadataConversion?: MetadataConversionObservation[];
   validation: { status: 'not-run' | 'passed' | 'failed'; scope: string; evidenceId?: string };
   confidentiality: { policy: 'existing-adapter-policy'; reviewIdentities: 'not-assessed'; credentials: 'not-part-of-report' };
 }

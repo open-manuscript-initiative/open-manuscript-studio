@@ -95,6 +95,12 @@ export class ExportExchangeSession {
     return new ExportExchangeSession(await beginExportReport(format, source));
   }
   recordAdapterDiagnostics(result: unknown): void {
+    if (result && typeof result === 'object' && 'metadataConversion' in result && Array.isArray(result.metadataConversion)) {
+      const observations = result.metadataConversion.filter((item) => item && typeof item === 'object'
+        && ['preserved', 'normalized', 'omitted', 'unverified'].includes(item.disposition)
+        && typeof item.sourceLocator === 'string' && typeof item.code === 'string');
+      this.report = { ...this.report, metadataConversion: structuredClone(observations) };
+    }
     if (!result || typeof result !== 'object' || !('warnings' in result) || !Array.isArray(result.warnings)) return;
     this.report = { ...this.report, events: [...this.report.events, ...result.warnings
       .filter((item): item is string => typeof item === 'string').map((message) => ({

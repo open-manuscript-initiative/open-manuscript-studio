@@ -61,9 +61,18 @@ export interface OmiIntegrationExtensions {
 }
 
 export function normalizeLocale(locale: string): string {
-  const normalized = locale.trim().replace(/_/g, '-').toLowerCase();
-  const language = normalized.split('-')[0] ?? normalized;
-  return ['hu', 'en', 'de'].includes(language) ? language : normalized;
+  const candidate = locale.trim().replace(/_/g, '-');
+  try { return Intl.getCanonicalLocales(candidate)[0] ?? candidate; }
+  catch { return candidate; } // Retain unsupported tags rather than inventing a language.
+}
+
+/** Reject conflicting spelling aliases instead of overwriting a localized value. */
+export function assignLocalizedValue<T>(target: Partial<Record<string, T>>, locale: string, value: T): void {
+  const key = normalizeLocale(locale);
+  if (Object.hasOwn(target, key) && JSON.stringify(target[key]) !== JSON.stringify(value)) {
+    throw new Error('LOCALIZED_METADATA_LOCALE_COLLISION');
+  }
+  Object.defineProperty(target, key, { value, enumerable: true, writable: true, configurable: true });
 }
 
 export function normalizeLocalizedText(value: unknown): OmiLocalizedText {
@@ -72,7 +81,7 @@ export function normalizeLocalizedText(value: unknown): OmiLocalizedText {
   for (const [locale, item] of Object.entries(value as Record<string, unknown>)) {
     if (typeof item !== 'string') continue;
     const text = item.trim();
-    if (text) result[normalizeLocale(locale)] = text;
+    if (text) assignLocalizedValue(result, locale, text);
   }
   return result;
 }
@@ -90,7 +99,7 @@ export function normalizeLocalizedTerms(value: unknown): OmiLocalizedTerms {
         return typeof name === 'string' ? name.trim() : '';
       })
       .filter(Boolean);
-    if (terms.length) result[normalizeLocale(locale)] = [...new Set(terms)];
+    if (terms.length) assignLocalizedValue(result, locale, [...new Set(terms)]);
   }
   return result;
 }

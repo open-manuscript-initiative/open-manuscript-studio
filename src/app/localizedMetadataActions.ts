@@ -25,7 +25,8 @@ export function setLocalizedAbstract(
 
     const timestamp = new Date().toISOString();
     const abstracts = {
-      ...(state.manuscript.abstracts ?? primaryAbstractMap(state.manuscript)),
+      ...primaryAbstractMap(state.manuscript),
+      ...(state.manuscript.abstracts ?? {}),
       [locale]: abstractText,
     };
     const isPrimary = locale === state.manuscript.locale;
@@ -79,7 +80,8 @@ export function setLocalizedKeywords(
 
     const timestamp = new Date().toISOString();
     const keywordsByLocale = {
-      ...(state.manuscript.keywordsByLocale ?? primaryKeywordMap(state.manuscript)),
+      ...primaryKeywordMap(state.manuscript),
+      ...(state.manuscript.keywordsByLocale ?? {}),
       [locale]: normalized,
     };
     const isPrimary = locale === state.manuscript.locale;

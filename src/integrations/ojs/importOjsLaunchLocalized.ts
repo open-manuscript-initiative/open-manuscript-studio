@@ -4,6 +4,7 @@ import {
   normalizeLocalizedTerms,
   normalizeLocalizedText,
   normalizeLocale,
+  assignLocalizedValue,
   normalizePublicationVenue,
   type OmiIntegrationExtensions,
   type OmiScholarlyMetadata,
@@ -327,7 +328,7 @@ function normalizeLocalizedAbstracts(
   for (const [locale, item] of Object.entries(value)) {
     if (typeof item !== 'string') continue;
     const text = plainText(item).trim();
-    if (text) result[normalizeLocale(locale)] = text;
+    if (text) assignLocalizedValue(result, locale, text);
   }
   return result;
 }
@@ -344,7 +345,7 @@ function normalizeLocalizedKeywords(
   const result: Partial<Record<string, string[]>> = {};
   for (const [locale, item] of Object.entries(value)) {
     const keywords = normalizeKeywordList(item);
-    if (keywords.length) result[normalizeLocale(locale)] = keywords;
+    if (keywords.length) assignLocalizedValue(result, locale, keywords);
   }
   return result;
 }
