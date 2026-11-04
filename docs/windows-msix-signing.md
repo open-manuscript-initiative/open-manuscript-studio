@@ -12,6 +12,21 @@
 
 MSIX is **not a drop-in replacement** for Tauri's existing MSI/NSIS installers. It introduces a Windows package identity, a different installation/state model and potentially different update handling. Do not publish an unsigned or self-signed MSIX as an official public installer.
 
+## Microsoft Store onboarding (preferred for 1.0 RC; no Azure subscription)
+
+1. Open https://storedeveloper.microsoft.com/ and use **Get started**. Registration through the new flow is free for both Individual and Company. Do not start through older Partner Center links because they can open the legacy registration route.
+2. Pick the legal publisher: **Individual** if publishing in the person's own name as a non-business project, or **Company** only if a real incorporated business, university or nonprofit is the publisher and the registrant is authorized to act for it. Individual accounts cannot simply be converted to Company accounts.
+3. Complete Microsoft verification. Individuals use government ID and selfie. Company registration normally requires organizational verification (D-U-N-S or official registry documents) and a domain-matching work contact email.
+4. In Partner Center **Apps & Games → New product → MSIX or PWA app**, check availability and reserve **Open Manuscript Studio**. Do not choose **EXE or MSI app**, because that is a distinct distribution pipeline whose binaries need independent signing.
+5. On the reserved app's **Product management → Product identity** page, copy the exact **Package/Identity/Name**, **Package/Identity/Publisher**, and **Package/Properties/PublisherDisplayName**. All three are input parameters for the workflow; never guess them from the Tauri identifier or project name.
+6. After this PR is merged and the full build/review gate passes, manually dispatch **Windows MSIX candidates (Store or direct signing)** on main, select **store** (default), and paste the three public package identity values. Obtain the **omi-studio-windows-msix-store-unsigned** artifact.
+7. In Partner Center start a new submission and upload that unsigned `.msix` to Packages. Microsoft signs it only after certification. Fill out the listing, privacy, age rating and required geographic/pricing fields. Until Microsoft certification is complete, **the unsigned MSIX is not a public downloadable installer**.
+8. Review app installation, WebView2, document persistence, file handlers, ORCID callback, and Store-managed updates on a real Windows device. Publish only after the separate RC manual Go/No-Go. Use the Store's listing URL for the OMI website once published.
+
+**No Azure subscription, Azure service principal or code-signing certificate is needed for the Store path.** The optional `direct` branch remains inactive unless deliberately selected and configured later. The previous SignPath Foundation rejection does not block the Store route.
+
+Reference: https://learn.microsoft.com/en-us/windows/apps/publish/partner-center/open-a-developer-account and https://learn.microsoft.com/en-us/windows/apps/publish/view-app-identity-details
+
 ## Maintainer provisioning (required before the first signed build)
 
 1. Reserve the application package name in Microsoft Partner Center. Obtain the exact **Package Identity Name** and **Publisher** distinguished name (DN). Do not assume the Tauri identifier, org.openmanuscript.studio, is the Store-reserved identity. Windows MSIX updates depend on an unchanged package name and Publisher and an increasing four-part numeric version.
@@ -20,7 +35,7 @@ MSIX is **not a drop-in replacement** for Tauri's existing MSI/NSIS installers. 
    - Secrets: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET.
    - Variables: AZURE_TRUSTED_SIGNING_ENDPOINT, AZURE_CODE_SIGNING_NAME, AZURE_CERT_PROFILE_NAME.
    Grant only the minimum signing permissions to the identity. Never commit private keys, PFX files or service credentials.
-4. On the main branch, manually dispatch **Windows MSIX candidates (Store or direct signing)**. Select either store or direct and supply the actual package identity plus its exact Publisher DN. Store mode produces the unsigned Partner Center candidate; direct mode submits that same workflow run's package to the protected signing environment and publishes an artifact only after successful SignTool verification.
+4. On the main branch, manually dispatch **Windows MSIX candidates (Store or direct signing)**. Select either store or direct and supply the actual package identity, exact Publisher DN and exact PublisherDisplayName from Partner Center (or the verified matching certificate publisher profile). Store mode produces the unsigned Partner Center candidate; direct mode submits that same workflow run's package to the protected signing environment and publishes an artifact only after successful SignTool verification.
 5. Review SHA-256, source commit, package identity and version, verify the signature chain for direct delivery, and perform Windows x64 installation, launch and uninstall tests. Explicitly test native file open/save, login/ORCID protocol callback, app data and manuscript preservation, WebView2 availability, an update from an older MSIX and coexistence/migration from MSI/NSIS.
 6. A green packaging/signing workflow **does not approve an RC release**. Record device tests and the exact artifact hashes in the existing 1.0 RC approval process, then decide whether to publish through Partner Center and/or the direct channel. Update public links only for actually approved and verified signed artifacts.
 
