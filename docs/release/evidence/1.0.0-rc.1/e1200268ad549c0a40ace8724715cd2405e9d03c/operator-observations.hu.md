@@ -87,3 +87,11 @@ Az üzemeltető új beszámolója: „linuxon is tesztelve 2026.11.04-én 11:53-
 **Eredmény: sikeres Linux-próba az üzemeltető beszámolója alapján; minden működik.** A próba kezdete **2026. november 4. 11:53 magyar idő (CET, UTC+1)**, azaz **2026-11-04T10:53:00Z**. Az időpont a próba kezdetét jelöli, nem a végét; a megadott pontosság egy perc.
 
 Ez az új eredmény felülírja a korábbi „nincs Linux-tesztkörnyezet / még nem tesztelt” állapotot. A Linux-disztribúció és verziója, a használt csomag típusa és ellenőrzőösszege, a részletes műveleti lista és a próba befejezési ideje nem lett megadva; ezeket nem egészítettük ki feltételezéssel. A meglévő RC-rekord jelöltazonosítóit és hash-eit nem változtattuk meg. A Linux Preview-besorolása és az örökölt GLib-korlátozás továbbra is megmarad.
+
+## Korábbi verziók mentéseinek kompatibilitása
+
+Az üzemeltető beszámolója: „Olyan volt többször is, hogy korábbi verziók mentéseit újabbakkal nyitottam meg. Az RC-vel is.”
+
+**Eredmény: a korábbi Studio-verziók mentéseinek megnyitása újabb verziókkal, köztük az RC-vel, többször sikeres volt.** Ezt az újabb alkalmazás régebbi mentésekkel való kompatibilitási próbájaként rögzítjük; ezt a már elvégzett próbát nem kell általánosan megismételni.
+
+A közlésből nem következik, hogy egy korábbi alkalmazásverzió és annak teljes adatbázis-/tárhelyállapota együtt is vissza lett állítva, vagy hogy az újabb alkalmazás által újramentett fájlt régebbi alkalmazással megnyitották. Pontos régi verziókat, platformot, mentési formátumot, tesztidőpontot vagy nem közölt módosításokat nem állítunk. A már rögzített dokumentum-visszaállítási siker megmarad; a teljes alkalmazás- és adatállapot-visszaállítás külön elfogadási tétel.
