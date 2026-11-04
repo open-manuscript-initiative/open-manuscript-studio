@@ -10,10 +10,29 @@ const icons = [
 ];
 
 export function validateMsixIdentity({ identity, publisher, version }) {
-  if (!/^[A-Za-z0-9][A-Za-z0-9.\-]{2,49}$/.test(identity ?? '') || identity.includes('..')) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9.-]{2,49}$/.test(identity ?? '') || identity.includes('..')) {
     throw new Error('MSIX_IDENTITY must be a stable package identity (3-50 letters, numbers, dots or hyphens).');
   }
-  if (!/^CN=[^<>"&]{2,}(?:,\s*(?:O|OU|L|S|C|ST)=[^<>"&]+)*$/.test(publisher ?? '') || /placeholder|example|contoso|test/i.test(publisher)) {
+  // Parse the certificate Subject in linear time: a repeated, ambiguous regex can
+  // backtrack exponentially on adversarial DNs (CodeQL js/inefficient-regular-expression).
+  // Deliberately reject escaped commas, controls and unsupported RDN types until
+  // an exact certificate Subject is verified for the selected distribution channel.
+  const subject = typeof publisher === 'string' ? publisher : '';
+  const parts = subject.split(',');
+  const allowed = new Set(['CN', 'O', 'OU', 'L', 'S', 'ST', 'C']);
+  const validSubject = subject.length >= 5 && subject.length <= 256 && parts.length <= 12
+    && parts.every((raw, index) => {
+      const part = raw.trim();
+      const separator = part.indexOf('=');
+      if (separator < 1) return false;
+      const key = part.slice(0, separator);
+      const value = part.slice(separator + 1);
+      return (index === 0 ? key === 'CN' : allowed.has(key))
+        && value.length >= (index === 0 ? 2 : 1)
+        && value === value.trim()
+        && !/[<>"&\\\x00-\x1f\x7f=]/.test(value);
+    });
+  if (!validSubject || /placeholder|example|contoso|test/i.test(subject)) {
     throw new Error('MSIX_PUBLISHER must exactly match the validated signing certificate Subject / Partner Center publisher (no placeholders).');
   }
   if (!/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(version ?? '') ||
