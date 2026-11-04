@@ -69,8 +69,8 @@
       "id": "linux-device",
       "status": "pending",
       "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
-      "observedAt": "",
-      "evidenceRef": ""
+      "observedAt": "2026-11-04T10:53:00Z",
+      "evidenceRef": "https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/docs/release/evidence/1.0.0-rc.1/e1200268ad549c0a40ace8724715cd2405e9d03c/operator-observations.hu.md#linux-test-2026-11-04"
     },
     {
       "id": "android-device",
