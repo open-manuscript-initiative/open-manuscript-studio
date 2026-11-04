@@ -76,7 +76,7 @@ test('normalizes supported ROR identifier forms to the preferred full URL', () =
   assert.equal(normalizeRorId('not-a-ror-id'), '');
 });
 
-test('stores a selected ROR record on the affiliation assertion, not on the person', () => {
+test('stores a selected ROR source without claiming independent affiliation verification', () => {
   const agent = createPersonAgent(
     {
       givenName: 'Judit',
@@ -91,6 +91,7 @@ test('stores a selected ROR record on the affiliation assertion, not on the pers
     {
       affiliation: 'Eötvös Loránd University',
       affiliationRorId: 'https://ror.org/01jsq2704',
+      affiliationRorSource: ROR_API_SOURCE,
     },
     '2026-08-07T08:01:00.000Z',
   );
@@ -107,7 +108,7 @@ test('stores a selected ROR record on the affiliation assertion, not on the pers
   );
   assert.equal(
     affiliation?.organizationIdentifier?.verificationStatus,
-    'verified',
+    'self-asserted',
   );
   assert.equal(affiliation?.organizationIdentifier?.source, ROR_API_SOURCE);
   assert.equal(affiliation?.source, ROR_API_SOURCE);

@@ -135,6 +135,8 @@ export interface CreatePersonAgentInput {
   language?: string;
   affiliation?: string;
   affiliationRorId?: string;
+  /** Caller-supplied lookup provenance; it is not independent verification. */
+  affiliationRorSource?: string;
   department?: string;
   position?: string;
   email?: string;
@@ -160,6 +162,8 @@ export interface ContributorEditInput {
    * `null` explicitly removes a previously linked ROR identifier.
    */
   affiliationRorId?: string | null;
+  /** Record an actual lookup source without upgrading the affiliation claim. */
+  affiliationRorSource?: string;
 
   orcid?: string;
 }
@@ -208,11 +212,13 @@ export function createPersonAgent(
             input.affiliationRorId ?? '',
             'self-asserted',
             timestamp,
-            ROR_API_SOURCE,
+            input.affiliationRorSource?.trim() || undefined,
           )
         : undefined,
       department: input.department?.trim() || undefined,
       position: input.position?.trim() || undefined,
+      source: normalizeRorId(input.affiliationRorId ?? '')
+        ? input.affiliationRorSource?.trim() || undefined : undefined,
       visibility: 'public',
     });
   }
@@ -319,7 +325,11 @@ export function updatePersonAgent(
       (identifier) => identifier.scheme.toLowerCase() !== 'orcid',
     );
 
-    identifiers = normalizedOrcid
+    const matching = normalizedOrcid && agent.identifiers.some(identifier =>
+      identifier.scheme.trim().toLowerCase() === 'orcid'
+      && normalizeOrcid(identifier.normalizedValue || identifier.value) === normalizedOrcid);
+    const previousOrcid = agent.identifiers.find(identifier => identifier.scheme.trim().toLowerCase() === 'orcid');
+    identifiers = matching ? agent.identifiers : normalizedOrcid
       ? [
           ...otherIdentifiers,
           createExternalIdentifierAssertion(
@@ -327,6 +337,8 @@ export function updatePersonAgent(
             normalizedOrcid,
             'self-asserted',
             timestamp,
+            undefined,
+            previousOrcid?.visibility,
           ),
         ]
       : otherIdentifiers;
@@ -342,23 +354,25 @@ export function updatePersonAgent(
       typeof input.affiliationRorId === 'string'
         ? normalizeRorId(input.affiliationRorId)
         : '';
+    const currentIdentifier = currentAffiliation?.organizationIdentifier;
+    const sameAffiliation = currentAffiliation?.organizationName === organizationName;
+    const sameIdentifier = currentIdentifier?.scheme.trim().toLowerCase() === 'ror'
+      && normalizeRorId(currentIdentifier.normalizedValue || currentIdentifier.value) === normalizedRorId;
     const organizationIdentifier = normalizedRorId
-      ? createExternalIdentifierAssertion(
+      ? sameAffiliation && sameIdentifier ? currentIdentifier : createExternalIdentifierAssertion(
           'ror',
           normalizedRorId,
-          'verified',
+          'self-asserted',
           timestamp,
-          ROR_API_SOURCE,
+          input.affiliationRorSource?.trim() || undefined,
+          currentIdentifier?.visibility ?? currentAffiliation?.visibility,
         )
-      : !rorInputWasProvided &&
-          currentAffiliation?.organizationName === organizationName
+      : !rorInputWasProvided && sameAffiliation
         ? currentAffiliation.organizationIdentifier
         : undefined;
-    const source = normalizedRorId
-      ? ROR_API_SOURCE
-      : organizationIdentifier
-        ? currentAffiliation?.source
-        : undefined;
+    const source = sameAffiliation && organizationIdentifier === currentIdentifier
+      ? currentAffiliation?.source
+      : organizationIdentifier ? input.affiliationRorSource?.trim() || undefined : undefined;
 
     affiliations = organizationName
       ? [
@@ -514,6 +528,7 @@ function createExternalIdentifierAssertion(
   verificationStatus: IdentityVerificationStatus,
   assertedAt: string,
   source?: string,
+  visibility: IdentityVisibility = 'public',
 ): OmiExternalIdentifierAssertion {
   const normalizedScheme = scheme.trim().toLowerCase();
   const normalizedValue =
@@ -531,6 +546,6 @@ function createExternalIdentifierAssertion(
     verificationStatus,
     source,
     assertedAt,
-    visibility: 'public',
+    visibility,
   };
 }
