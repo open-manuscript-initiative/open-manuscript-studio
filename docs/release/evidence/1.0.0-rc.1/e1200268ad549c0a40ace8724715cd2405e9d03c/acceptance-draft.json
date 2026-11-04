@@ -1,0 +1,132 @@
+{
+  "format": "omi-studio-rc-evidence",
+  "version": "1",
+  "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+  "buildRunId": 41741830930,
+  "owner": "Varga István",
+  "reviewedAt": "",
+  "artifacts": {
+    "Open-Manuscript-Studio-Android-universal.apk": "4e10afd8ad4ee7ad792820231f332c65a6bcb3e4c9da5ec6a65f90b6158206ba",
+    "Open-Manuscript-Studio-Linux-x64.AppImage": "1b69db63c55fe9feceba11da00a600c8757c167197c699f62b081ffe389bbab6",
+    "Open-Manuscript-Studio-Linux-x64.deb": "3c3622e474153174810349af99b14ac2e971b860f36be94cc318dfb9e6ab6092",
+    "Open-Manuscript-Studio-Windows-x64-Setup.exe": "e2bd56eef78bf23af335ee7b9efb67af2abe288c979253834fb25bbd22758cda",
+    "Open-Manuscript-Studio-Windows-x64.msi": "397c05bf8abb88ad73315d35c4f29bef7722cef462f0f2e6206fa2edaa47f28a",
+    "Open-Manuscript-Studio-macOS-Apple-Silicon.dmg": "8b2a5a3b1f14b52b2725ba09d285ec0e0940cbef9cc82a67f141ebeef7e89dc9",
+    "Open-Manuscript-Studio-macOS-Intel.dmg": "0507498c0ce3bfa1f22bcebbfcc04909f14183617f19e855229cc18ba8d121cc"
+  },
+  "workflows": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "runId": 41741830837
+    },
+    {
+      "path": ".github/workflows/1.0-readiness.yml",
+      "runId": 41741830886
+    },
+    {
+      "path": ".github/workflows/codeql.yml",
+      "runId": 41741831047
+    },
+    {
+      "path": ".github/workflows/omi-spec-320-conformance.yml",
+      "runId": 41741831059
+    },
+    {
+      "path": ".github/workflows/pkp-integration-environment.yml",
+      "runId": 41741831241
+    }
+  ],
+  "gates": [
+    {
+      "id": "host-egress",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "host-pdf-sandbox",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "private-manuscript-preservation",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "windows-device",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "2026-11-04T00:23:00Z",
+      "evidenceRef": ""
+    },
+    {
+      "id": "linux-device",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "android-device",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "2026-11-04T00:47:00Z",
+      "evidenceRef": ""
+    },
+    {
+      "id": "ojs-3.5.0-4",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "ojs-3.5.0-5",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "security-review",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "accessibility",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "performance",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "recovery",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    },
+    {
+      "id": "owner-go-no-go",
+      "status": "pending",
+      "sourceSha": "e1200268ad549c0a40ace8724715cd2405e9d03c",
+      "observedAt": "",
+      "evidenceRef": ""
+    }
+  ]
+}
