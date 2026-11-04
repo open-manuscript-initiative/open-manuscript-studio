@@ -12,12 +12,17 @@ on:
         options:
           - store
           - direct
+        default: store
       msix_identity:
         description: 'Exact reserved package Identity Name (use the same immutable name for updates)'
         type: string
         required: true
       msix_publisher:
         description: 'Exact Partner Center Publisher or Azure certificate profile Subject (distinguished name)'
+        type: string
+        required: true
+      msix_publisher_display_name:
+        description: 'Exact Package/Properties/PublisherDisplayName from Partner Center'
         type: string
         required: true
 
@@ -61,9 +66,10 @@ jobs:
         env:
           MSIX_IDENTITY: ${{ inputs.msix_identity }}
           MSIX_PUBLISHER: ${{ inputs.msix_publisher }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ inputs.msix_publisher_display_name }}
         run: |
           $ErrorActionPreference = 'Stop'
-          node scripts/build-windows-msix.mjs 'src-tauri/target/release/open-manuscript-studio.exe' 'msix-stage' "$env:MSIX_IDENTITY" "$env:MSIX_PUBLISHER"
+          node scripts/build-windows-msix.mjs 'src-tauri/target/release/open-manuscript-studio.exe' 'msix-stage' "$env:MSIX_IDENTITY" "$env:MSIX_PUBLISHER" "$env:MSIX_PUBLISHER_DISPLAY_NAME"
           if ($LASTEXITCODE -ne 0) { throw "MSIX staging failed ($LASTEXITCODE)." }
           ./scripts/pack-windows-msix.ps1 -ContentRoot 'msix-stage' -OutputFile 'msix-artifacts/Open-Manuscript-Studio-Windows-x64.msix'
           Get-FileHash 'msix-artifacts/Open-Manuscript-Studio-Windows-x64.msix' -Algorithm SHA256 | Format-List
