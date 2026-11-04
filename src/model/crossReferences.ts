@@ -328,11 +328,14 @@ export function collectCrossReferenceAnchors(
 export function removeCrossReferenceAnchorFromSections(
   sections: readonly OmiSection[],
   crossReferenceId: string,
+  replacementText?: string,
 ): OmiSection[] {
   return mapManuscriptBlocks(sections, (block) => {
     const content = transformStructuredContent(block.content, (node) => {
       if (node.type === 'omiCrossReference' && isRecord(node.attrs) &&
-          stringValue(node.attrs.crossReferenceId) === crossReferenceId) return null;
+          stringValue(node.attrs.crossReferenceId) === crossReferenceId) {
+        return replacementText === undefined ? null : { type: 'text', text: replacementText };
+      }
       return node;
     });
     return content === block.content ? block : { ...block, content };
