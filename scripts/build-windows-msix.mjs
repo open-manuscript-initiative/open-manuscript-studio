@@ -30,7 +30,7 @@ export function validateMsixIdentity({ identity, publisher, version }) {
       return (index === 0 ? key === 'CN' : allowed.has(key))
         && value.length >= (index === 0 ? 2 : 1)
         && value === value.trim()
-        && [...value].every(char => !'<>&=' .includes(char) && char !== '\\' && char.charCodeAt(0) >= 32 && char.charCodeAt(0) !== 127);
+        && [...value].every(char => !'<>"&='.includes(char) && char.charCodeAt(0) >= 32 && char.charCodeAt(0) !== 92 && char.charCodeAt(0) !== 127);
     });
   if (!validSubject || /placeholder|example|contoso|test/i.test(subject)) {
     throw new Error('MSIX_PUBLISHER must exactly match the validated signing certificate Subject / Partner Center publisher (no placeholders).');
