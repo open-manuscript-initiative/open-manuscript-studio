@@ -24,6 +24,20 @@ test('requires exact identity, publisher DN and four-part MSIX versions', () => 
   ]) assert.throws(() => validateMsixIdentity({ ...valid, ...change }));
 });
 
+test('publisher parsing rejects malformed, repeated and untrusted certificate subjects', () => {
+  const invalid = [
+    'CN=Valid Publisher,XYZ=unexpected',
+    'CN=Valid Publisher,O=Organization,OU',
+    'CN=Valid Publisher,O=Organization=Extra',
+    'CN=Valid Publisher,OU=Unit,OU=Unit,'.repeat(250),
+    'CN=Valid Publisher' + ',OU=Unit'.repeat(200),
+    'CN=Valid Publisher, OU=Unit\\,Unexpected',
+  ];
+  for (const publisher of invalid) {
+    assert.throws(() => validateMsixIdentity({ ...valid, publisher }), publisher.slice(0, 50));
+  }
+});
+
 test('publisher identity cannot inject additional XML attributes', () => {
   assert.throws(() => renderMsixManifest({ ...valid, publisher: 'CN=Org" invalid="true' }));
 });
