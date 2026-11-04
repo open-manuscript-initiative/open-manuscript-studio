@@ -26,12 +26,12 @@ const xmlEscape = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').
 
 export function renderMsixManifest({ identity, publisher, version }) {
   validateMsixIdentity({ identity, publisher, version });
-  return \`<?xml version="1.0" encoding="utf-8"?>
+  return `<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
          IgnorableNamespaces="uap rescap">
-  <Identity Name="\${xmlEscape(identity)}" Publisher="\${xmlEscape(publisher)}" Version="\${version}" ProcessorArchitecture="x64" />
+  <Identity Name="${xmlEscape(identity)}" Publisher="${xmlEscape(publisher)}" Version="${version}" ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>Open Manuscript Studio</DisplayName>
     <PublisherDisplayName>Open Manuscript Initiative</PublisherDisplayName>
@@ -56,7 +56,7 @@ export function renderMsixManifest({ identity, publisher, version }) {
   </Applications>
   <Capabilities><rescap:Capability Name="runFullTrust" /></Capabilities>
 </Package>
-\`;
+`;
 }
 
 export async function prepareMsixStage({ exe, outputDir, identity, publisher, appVersion, wixVersion, iconDir = join(root, 'src-tauri/icons') }) {
@@ -83,6 +83,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const tauri = JSON.parse(await readFile(join(root, 'src-tauri/tauri.conf.json'), 'utf8'));
     await prepareMsixStage({ exe: resolve(exe), outputDir: resolve(stage), identity, publisher,
       appVersion: tauri.version, wixVersion: tauri.bundle?.windows?.wix?.version });
-    console.log(\`Prepared MSIX stage for \${tauri.version} (MSIX \${tauri.bundle.windows.wix.version}), unsigned.\`);
+    console.log(`Prepared MSIX stage for ${tauri.version} (MSIX ${tauri.bundle.windows.wix.version}), unsigned.`);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
