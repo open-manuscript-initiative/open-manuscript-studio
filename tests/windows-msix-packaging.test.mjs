@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderMsixManifest, validateMsixIdentity } from '../scripts/build-windows-msix.mjs';
 
-const valid = { identity: 'OpenManuscriptInitiative.OpenManuscriptStudio', publisher: 'CN=Open Manuscript Initiative, O=Open Manuscript Initiative, C=HU', version: '1.0.0.1' };
+const valid = { identity: 'OpenManuscriptInitiative.OpenManuscriptStudio', publisher: 'CN=Open Manuscript Initiative, O=Open Manuscript Initiative, C=HU', version: '1.0.0.1', publisherDisplayName: 'Open Manuscript Initiative' };
 
 test('manifest uses full-trust Windows desktop package and explicit deep-link protocol', () => {
   const manifest = renderMsixManifest(valid);
@@ -10,6 +10,7 @@ test('manifest uses full-trust Windows desktop package and explicit deep-link pr
     assert.ok(manifest.includes(marker), marker);
   }
   assert.match(manifest, /Publisher="CN=Open Manuscript Initiative, O=Open Manuscript Initiative, C=HU"/);
+  assert.match(manifest, /<PublisherDisplayName>Open Manuscript Initiative<\/PublisherDisplayName>/);
   assert.match(manifest, /Assets\\Square44x44Logo\.png/);
 });
 
@@ -40,4 +41,13 @@ test('publisher parsing rejects malformed, repeated and untrusted certificate su
 
 test('publisher identity cannot inject additional XML attributes', () => {
   assert.throws(() => renderMsixManifest({ ...valid, publisher: 'CN=Org" invalid="true' }));
+});
+
+
+test('Store Publisher display name uses Partner Center exact value instead of a hardcoded name', () => {
+  const manifest = renderMsixManifest({ ...valid, publisherDisplayName: 'Registered Legal Publisher' });
+  assert.match(manifest, /<PublisherDisplayName>Registered Legal Publisher<\/PublisherDisplayName>/);
+  assert.throws(() => renderMsixManifest({ ...valid, publisherDisplayName: '' }));
+  assert.throws(() => renderMsixManifest({ ...valid, publisherDisplayName: 'Invalid' + String.fromCharCode(0) }));
+  assert.match(renderMsixManifest({ ...valid, publisherDisplayName: 'Smith & Company' }), /Smith &amp; Company/);
 });
