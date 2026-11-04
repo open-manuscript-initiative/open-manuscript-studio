@@ -30,10 +30,10 @@ Ez részleges munkapéldány, önmagában nem végleges kiadási jóváhagyás.
 
 „Jelenleg nincs hozzá tesztkörnyezetem. A webes verzió viszont működik.”
 
-- Linux natív asztali RC: nem tesztelt; jelenleg nincs hozzá tesztkörnyezet. A linux-device kapu pending marad, observedAt és evidenceRef üres. Ez nem hibás teszteredmény és nem jóváhagyás.
+- Korábbi Linux-állapot: a kezdeti beszámoló idején még nem volt tesztkörnyezet. Ezt a későbbi, 2026. november 4-én 11:53-tól végzett sikeres Linux-próba felülírja; lásd a Linux-teszt feljegyzését alább.
 - Webes Studio: működik, üzemeltetői beszámoló szerint. Pontos próbaidőpont, telepített commit és részletes műveleti lista nem lett megadva. A webes működés nem igazolja a natív Linux-csomagot, a hálózati tiltások teljes körét vagy a visszaállítást.
 
-A JSON kapustátuszai változatlanok. Linux továbbra is Preview a jelenlegi RC támogatási körében; a natív eszközpróba hiánya külön fennmaradó elfogadási tétel.
+Linux továbbra is Preview a jelenlegi RC támogatási körében. A később elvégzett Linux-próba eredménye és kezdő időpontja az alábbi kiegészítésben szerepel; a teljes kiadási elfogadás ettől külön folyamat.
 
 ## OJS-verzió pontosítása
 
@@ -55,7 +55,7 @@ A mentésből való visszaállítás sikeres az üzemeltető beszámolója szeri
 
 Arra a kérdésre, hogy hosszabb kézirattal is kipróbálta-e az RC-t, és megfelelő volt-e a betöltés, görgetés és szerkesztés sebessége, az üzemeltető válasza: „Mindegyiken próbáltam.”
 
-A korábban tesztelt Windows, Android és webes felületeken hosszabb kézirattal is történt próba. A Linux natív tesztkörnyezet hiányáról szóló korábbi közlés továbbra is érvényes; a „mindegyiken” választ nem terjesztjük ki Linuxra vagy más, nem tesztelt platformra. Az üzemeltető további válasza: „Igen, 46 oldalas volt a tördelt pdf export. Azonnal reagált, nem volt késlekedés.” A tesztelt kézirat tördelt PDF-exportja 46 oldal volt. A betöltés, görgetés és szerkesztés sebességére vonatkozó kérdésre a Windows, Android és webes változaton megfelelő, érzékelhető késlekedés nélküli működést jelentett. Ez kvalitatív üzemeltetői megfigyelés; milliszekundumos időmérést vagy a PDF exportálásának időtartamát nem állítjuk. Új pontos próbaidőpont nem érkezett. A performance kapuhoz rögzített pozitív működési eredmény rendelkezésre áll; a teljes kapu státusza az időpont és a megfelelő HTTPS-feljegyzéshivatkozás hiányában egyelőre pending marad.
+A korábban tesztelt Windows, Android és webes felületeken hosszabb kézirattal is történt próba. A hosszú kéziratra vonatkozó korábbi „mindegyiken” válasz a Windows, Android és webes próbákat fedte le. A későbbi Linux-próbáról külön kiegészítés készült; annak eredményéből nem következik önálló 46 oldalas Linux-teljesítménymérés. Az üzemeltető további válasza: „Igen, 46 oldalas volt a tördelt pdf export. Azonnal reagált, nem volt késlekedés.” A tesztelt kézirat tördelt PDF-exportja 46 oldal volt. A betöltés, görgetés és szerkesztés sebességére vonatkozó kérdésre a Windows, Android és webes változaton megfelelő, érzékelhető késlekedés nélküli működést jelentett. Ez kvalitatív üzemeltetői megfigyelés; milliszekundumos időmérést vagy a PDF exportálásának időtartamát nem állítjuk. Új pontos próbaidőpont nem érkezett. A performance kapuhoz rögzített pozitív működési eredmény rendelkezésre áll; a teljes kapu státusza az időpont és a megfelelő HTTPS-feljegyzéshivatkozás hiányában egyelőre pending marad.
 
 ## Billentyűzetes és mobil kezelhetőségi próba
 
@@ -79,3 +79,11 @@ Arra a kérdésre, hogy a Windows-telepítő aláírását is ellenőrizte-e, az
 Aktuális állapot: a Windows-telepítő nincs aláírva az üzemeltető közlése szerint. Ez nem egy most végrehajtott Authenticode-parancs eredménye; NotSigned parancskimenetet nem állítunk. A korábban sikeresen megfigyelt Windows-telepítés és működés eredménye megmarad. A Windows kódaláírási feltétel nincs teljesítve; ez nem terjeszthető ki az Android APK-ra, amelynek aláírás-ellenőrzését az üzemeltető sikeresként jelezte.
 
 A Windows teljes kiadási kapuját nem jelöltük sikeresnek. Nem állítottunk ki tanúsítványt, nem írtunk alá binárist, nem módosítottuk a kiadási szabályt és nem publikáltunk RC-t. A receipt JSON azonosítói, ellenőrzőösszegei, korábban rögzített próbaidőpontjai és kapustátuszai változatlanok.
+
+## Linux test 2026-11-04
+
+Az üzemeltető új beszámolója: „linuxon is tesztelve 2026.11.04-én 11:53-tól. Minden működik.”
+
+**Eredmény: sikeres Linux-próba az üzemeltető beszámolója alapján; minden működik.** A próba kezdete **2026. november 4. 11:53 magyar idő (CET, UTC+1)**, azaz **2026-11-04T10:53:00Z**. Az időpont a próba kezdetét jelöli, nem a végét; a megadott pontosság egy perc.
+
+Ez az új eredmény felülírja a korábbi „nincs Linux-tesztkörnyezet / még nem tesztelt” állapotot. A Linux-disztribúció és verziója, a használt csomag típusa és ellenőrzőösszege, a részletes műveleti lista és a próba befejezési ideje nem lett megadva; ezeket nem egészítettük ki feltételezéssel. A meglévő RC-rekord jelöltazonosítóit és hash-eit nem változtattuk meg. A Linux Preview-besorolása és az örökölt GLib-korlátozás továbbra is megmarad.
