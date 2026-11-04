@@ -1,0 +1,34 @@
+name: Core export privacy evidence
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/coreExportPrivacyCases.ts'
+      - 'tests/core-export-privacy.test.ts'
+      - 'tests/testManuscriptFixture.ts'
+      - 'tests/*loader*'
+      - 'scripts/verify-core-export-privacy.ts'
+      - 'package*.json'
+      - '.github/workflows/core-export-privacy.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export-privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:core-privacy
+      - run: npm run evidence:core-privacy -- --report test-results/core-export-privacy.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-export-privacy-evidence
+          path: test-results/core-export-privacy.json
+          retention-days: 30

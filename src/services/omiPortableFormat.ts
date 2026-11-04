@@ -323,7 +323,7 @@ export function assertPortableOmiManuscript(
   validateReferences(value, indexes);
   validateStudioExtensions(value);
   validateHistory(value, indexes);
-  rejectCredentialFields(value);
+  assertNoPortableCredentials(value);
 }
 
 function validateSection(
@@ -759,20 +759,22 @@ function requireTimestamp(value: unknown, path: string): void {
   }
 }
 
-function rejectCredentialFields(value: unknown, path = ''): void {
-  if (!value || typeof value !== 'object') return;
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => rejectCredentialFields(item, `${path}/${index}`));
-    return;
-  }
-
-  const forbidden = /^(?:password|accessToken|refreshToken|session(?:Token|Id|Identifier)|clientSecret|privateKey)$/i;
-  for (const [key, child] of Object.entries(value)) {
-    const childPath = `${path}/${key.replaceAll('~', '~0').replaceAll('/', '~1')}`;
-    if (forbidden.test(key)) {
-      invalid(`Portable OMI documents must not contain credential field ${childPath}.`);
+/** Named operational fields only: scholarly prose is never searched or rewritten. */
+export function assertNoPortableCredentials(value: unknown): void {
+  const forbidden = /^(?:password|accessToken|refreshToken|session(?:Token|Id|Identifier|Cookie)|clientSecret|privateKey|apiKey|idToken|authorizationHeader)$/i;
+  const pending: Array<{ value: unknown; path: string }> = [{ value, path: '' }];
+  const seen = new WeakSet<object>();
+  while (pending.length) {
+    const current = pending.pop()!;
+    if (!current.value || typeof current.value !== 'object' || seen.has(current.value)) continue;
+    seen.add(current.value);
+    for (const [key, child] of Object.entries(current.value)) {
+      const childPath = `${current.path}/${key.replaceAll('~', '~0').replaceAll('/', '~1')}`;
+      if (forbidden.test(key.replace(/[-_]/g, ''))) {
+        invalid(`Portable OMI documents must not contain credential field ${childPath}.`);
+      }
+      pending.push({ value: child, path: childPath });
     }
-    rejectCredentialFields(child, childPath);
   }
 }
 
