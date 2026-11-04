@@ -43,8 +43,13 @@ export function validateMsixIdentity({ identity, publisher, version }) {
 
 const xmlEscape = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-export function renderMsixManifest({ identity, publisher, version }) {
+export function renderMsixManifest({ identity, publisher, publisherDisplayName, version }) {
   validateMsixIdentity({ identity, publisher, version });
+  if (typeof publisherDisplayName !== 'string' || publisherDisplayName.length < 2 || publisherDisplayName.length > 256
+      || publisherDisplayName !== publisherDisplayName.trim()
+      || [...publisherDisplayName].some(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)) {
+    throw new Error('MSIX_PUBLISHER_DISPLAY_NAME must match the exact non-empty Partner Center value.');
+  }
   return `<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
@@ -53,7 +58,7 @@ export function renderMsixManifest({ identity, publisher, version }) {
   <Identity Name="${xmlEscape(identity)}" Publisher="${xmlEscape(publisher)}" Version="${version}" ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>Open Manuscript Studio</DisplayName>
-    <PublisherDisplayName>Open Manuscript Initiative</PublisherDisplayName>
+    <PublisherDisplayName>${xmlEscape(publisherDisplayName)}</PublisherDisplayName>
     <Description>Open Manuscript Studio scholarly writing and publishing</Description>
     <Logo>Assets\\StoreLogo.png</Logo>
   </Properties>
@@ -78,7 +83,7 @@ export function renderMsixManifest({ identity, publisher, version }) {
 `;
 }
 
-export async function prepareMsixStage({ exe, outputDir, identity, publisher, appVersion, wixVersion, iconDir = join(root, 'src-tauri/icons') }) {
+export async function prepareMsixStage({ exe, outputDir, identity, publisher, publisherDisplayName, appVersion, wixVersion, iconDir = join(root, 'src-tauri/icons') }) {
   validateMsixIdentity({ identity, publisher, version: wixVersion });
   if (appVersion !== (await readFile(join(root, 'src-tauri/tauri.conf.json'), 'utf8').then(s => JSON.parse(s).version))) {
     throw new Error('MSIX app version differs from Tauri release version.');
@@ -90,17 +95,17 @@ export async function prepareMsixStage({ exe, outputDir, identity, publisher, ap
   for (const [source, destination] of icons) {
     await copyFile(join(iconDir, source), join(outputDir, 'Assets', destination));
   }
-  const manifest = renderMsixManifest({ identity, publisher, version: wixVersion });
+  const manifest = renderMsixManifest({ identity, publisher, publisherDisplayName, version: wixVersion });
   await writeFile(join(outputDir, 'AppxManifest.xml'), manifest, { flag: 'wx' });
   return manifest;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const [exe, stage, identity, publisher] = process.argv.slice(2);
-    if (!exe || !stage || !identity || !publisher) throw new Error('Usage: node scripts/build-windows-msix.mjs <built-exe> <fresh-stage-dir> <reserved-package-identity> <exact-publisher-DN>');
+    const [exe, stage, identity, publisher, publisherDisplayName] = process.argv.slice(2);
+    if (!exe || !stage || !identity || !publisher || !publisherDisplayName) throw new Error('Usage: node scripts/build-windows-msix.mjs <built-exe> <fresh-stage-dir> <reserved-package-identity> <exact-publisher-DN> <exact-publisher-display-name>');
     const tauri = JSON.parse(await readFile(join(root, 'src-tauri/tauri.conf.json'), 'utf8'));
-    await prepareMsixStage({ exe: resolve(exe), outputDir: resolve(stage), identity, publisher,
+    await prepareMsixStage({ exe: resolve(exe), outputDir: resolve(stage), identity, publisher, publisherDisplayName,
       appVersion: tauri.version, wixVersion: tauri.bundle?.windows?.wix?.version });
     console.log(`Prepared MSIX stage for ${tauri.version} (MSIX ${tauri.bundle.windows.wix.version}), unsigned.`);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
