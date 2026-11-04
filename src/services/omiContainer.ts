@@ -6,7 +6,7 @@ import { resolvePublicationProfile } from '../model/publicationProfile';
 import { renderHtmlArticle } from './exportHtml';
 import { renderJatsArticle } from './exportJats';
 import { getAssetPayload } from './assetRepository';
-import { toPortableOmiState } from './omiPortableFormat';
+import { assertNoPortableCredentials, toPortableOmiState } from './omiPortableFormat';
 import type { OmiAsset } from '../types/assets';
 import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 
@@ -67,6 +67,9 @@ interface PackageEntry extends OmiContainerManifestEntry {
 export async function buildOmiContainer(
   manuscript: OmiManuscript,
 ): Promise<OmiContainerExportResult> {
+  // The container writes history separately from its current-state JSON. Inspect
+  // the entire input before asset I/O so credentials cannot hide in prior snapshots/events.
+  assertNoPortableCredentials(manuscript);
   const diagnostics: OmiContainerDiagnostic[] = [];
   const profile = resolvePublicationProfile(manuscript);
   const assetMap = new Map((manuscript.assets ?? []).map((asset) => [asset.id, asset]));
