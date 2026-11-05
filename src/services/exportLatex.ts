@@ -1,3 +1,4 @@
+import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
   extractOmiInlineRuns,
@@ -14,10 +15,13 @@ export interface LatexExportResult {
   text: string;
   blob: Blob;
   fileName: string;
+  semanticLosses: PublicationSemanticLoss[];
+  warnings: string[];
 }
 
 export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
   manuscript = publicPublicationManuscript(manuscript);
+  const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'LaTeX');
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const body: string[] = [];
 
@@ -81,6 +85,8 @@ export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
   ].join('\n');
 
   return {
+    semanticLosses,
+    warnings: semanticLossWarnings(semanticLosses),
     text,
     blob: new Blob([text], { type: 'application/x-tex;charset=utf-8' }),
     fileName: `${exportFileStem(manuscript)}.tex`,

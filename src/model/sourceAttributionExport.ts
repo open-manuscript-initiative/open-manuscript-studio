@@ -1,7 +1,7 @@
 import type { OmiManuscript } from '../types/omi';
 
 /** No implicit citation, licence claim or private provenance in public artifacts. */
-export function sourceAttributionLossDiagnostics(manuscript: OmiManuscript, format: 'HTML' | 'JATS' | 'ODT') {
+export function sourceAttributionLossDiagnostics(manuscript: OmiManuscript, format: 'HTML' | 'JATS' | 'ODT' | 'DOCX' | 'IDML' | 'XTG' | 'MIF' | 'SLA' | 'LaTeX' | 'EPUB') {
   return (manuscript.sourceAttributions ?? []).map(relation => ({
     code: 'source-attribution-not-preserved',
     severity: 'warning' as const,

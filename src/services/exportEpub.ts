@@ -1,3 +1,4 @@
+import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { contributorNameParts } from '../model/contributorName';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
@@ -9,10 +10,13 @@ export interface EpubExportResult {
   blob: Blob;
   bytes: Uint8Array;
   fileName: string;
+  semanticLosses: PublicationSemanticLoss[];
+  warnings: string[];
 }
 
 export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
   manuscript = publicPublicationManuscript(manuscript);
+  const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'EPUB');
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const modified = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -45,6 +49,8 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
   const bytes = createStoreZip(entries);
   const copy = bytes.slice();
   return {
+    semanticLosses,
+    warnings: semanticLossWarnings(semanticLosses),
     bytes,
     blob: new Blob([copy.buffer], { type: 'application/epub+zip' }),
     fileName: `${fileStem(manuscript)}.epub`,
