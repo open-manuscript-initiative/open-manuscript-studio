@@ -37,7 +37,7 @@ const paths = [
   "src/services/exportEpub.ts",
   "src/services/exportTextUtils.ts",
   "src/services/simpleZip.ts",
-  "src/services/exportExchange.ts"
+  "src/services/exchangeSession.ts"
 ];
 
 export async function verifyCoreRelationships() {
