@@ -1,0 +1,34 @@
+name: Core local authoring and source editability evidence
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/coreLocalAuthoringCases.ts'
+      - 'tests/core-local-authoring.test.ts'
+      - 'tests/testManuscriptFixture.ts'
+      - 'tests/*loader*'
+      - 'scripts/verify-core-local-authoring.ts'
+      - 'package*.json'
+      - '.github/workflows/core-local-authoring.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-authoring:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:core-local-authoring
+      - run: npm run evidence:core-local-authoring -- --report test-results/core-local-authoring.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-local-authoring-evidence
+          path: test-results/core-local-authoring.json
+          retention-days: 30

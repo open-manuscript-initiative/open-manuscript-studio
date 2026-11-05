@@ -1,6 +1,7 @@
 import { workingSession, type DocumentWorkingSession } from '../services/documentSessionManager';
 import { clearDocumentClosedState } from './documentCloseState';
 import { create } from 'zustand';
+import { findManuscriptBlock, mapManuscriptBlocks } from '../model/manuscriptTreeTraversal';
 
 import { createSampleManuscript } from '../document/sampleManuscript';
 import {
@@ -425,7 +426,7 @@ export const useStudioStore = create<StudioState>((set) => ({
 
   updateBlock: (blockId, content) =>
     set((state) => {
-      const previousBlock = findBlock(state.manuscript.sections.flatMap((section) => section.blocks), blockId);
+      const previousBlock = findManuscriptBlock(state.manuscript.sections, blockId)?.block;
 
       if (!previousBlock || previousBlock.content === content) {
         return state;
@@ -446,10 +447,7 @@ export const useStudioStore = create<StudioState>((set) => ({
         : state.manuscript.proofing;
       const nextState: OmiManuscriptState = {
         ...extractManuscriptState(state.manuscript),
-        sections: state.manuscript.sections.map((section) => ({
-          ...section,
-          blocks: replaceBlock(section.blocks, blockId, content),
-        })),
+        sections: mapManuscriptBlocks(state.manuscript.sections, block => block.id === blockId ? { ...block, content } : block),
         proofing,
       };
       const proofingChanged = state.manuscript.proofing?.trackChanges
@@ -1194,20 +1192,6 @@ function findBlock(blocks: readonly OmiBlock[], blockId: string): OmiBlock | und
     if (nested) return nested;
   }
   return undefined;
-}
-
-function replaceBlock(
-  blocks: readonly OmiBlock[],
-  blockId: string,
-  content: string,
-): OmiBlock[] {
-  return blocks.map((block) => ({
-    ...block,
-    ...(block.id === blockId ? { content } : {}),
-    ...(block.children
-      ? { children: replaceBlock(block.children, blockId, content) }
-      : {}),
-  }));
 }
 
 function replaceBlockParagraphStyle(

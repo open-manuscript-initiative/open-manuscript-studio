@@ -3,6 +3,7 @@ import {
   synchronizeCrossReferenceLabels,
 } from '../model/crossReferences.ts';
 import { assertObjectIdentifierAvailable } from '../model/tombstone.ts';
+import { findManuscriptBlock, removeManuscriptBlock } from '../model/manuscriptTreeTraversal';
 import { tableRowsToParagraphBlocks } from '../model/visualBlocks';
 import { getExternalIdentifierValue } from '../model/identity';
 import { extractManuscriptState } from '../model/versioning';
@@ -301,8 +302,10 @@ export function stageRemoveBlock(blockId: string): boolean {
   let changed = false;
 
   useStudioStore.setState((state) => {
-    const located = findBlock(state.manuscript, blockId);
-    if (!located) return state;
+    const entry = findManuscriptBlock(state.manuscript.sections, blockId);
+    if (!entry) return state;
+    const located = { block: entry.block, sectionId: entry.section.id,
+      blockIndex: entry.section.blocks.findIndex(block => block.id === blockId) };
     const removedObjectIds = new Set(collectBlockIds([located.block]));
     const annotations = state.manuscript.annotations.filter(item => !removedObjectIds.has(item.targetBlockId));
     const citations = state.manuscript.citations.filter(item => !removedObjectIds.has(item.targetBlockId));
@@ -320,17 +323,7 @@ export function stageRemoveBlock(blockId: string): boolean {
       contributions: state.manuscript.contributions.filter(item => !removedObjectIds.has(item.targetId)),
       sourceAttributions: (state.manuscript.sourceAttributions ?? []).filter(item => !removedObjectIds.has(item.sourceObjectId)),
     };
-    const unsynchronizedSections = state.manuscript.sections.map(
-      (section) =>
-        section.id === located.sectionId
-          ? {
-              ...section,
-              blocks: section.blocks.filter(
-                (block) => block.id !== blockId,
-              ),
-            }
-          : section,
-    );
+    const unsynchronizedSections = removeManuscriptBlock(state.manuscript.sections, blockId);
     let cleanedSections = unsynchronizedSections;
     for (const reference of state.manuscript.crossReferences ?? []) {
       if (!removedObjectIds.has(reference.sourceBlockId) && !removedObjectIds.has(reference.targetId)) continue;
@@ -356,7 +349,8 @@ export function stageRemoveBlock(blockId: string): boolean {
         events: [
           ...collectBlockObjects([located.block]).map(block => ({
             operation: 'block.remove' as const, targetId: block.id,
-            path: block.id === blockId ? `/sections/${located.sectionId}/blocks/${located.blockIndex}` : `/blocks/${block.id}`,
+            path: block.id === blockId && located.blockIndex >= 0
+              ? `/sections/${located.sectionId}/blocks/${located.blockIndex}` : `/blocks/${block.id}`,
             previousValue: block,
           })),
           ...state.manuscript.annotations.filter(item => removedObjectIds.has(item.id)).map(item => ({
