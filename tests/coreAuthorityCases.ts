@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mock } from 'node:test';
+import { DOMParser as XmlParser } from '@xmldom/xmldom';
 import { createPersonAgent } from '../src/model/identity.ts';
 import { useStudioStore } from '../src/app/useStudioStore.ts';
 import { getCurrentUser, useAuthStore } from '../src/store/authStore.ts';
@@ -128,7 +129,10 @@ export const coreAuthorityCases = [
   { id: 'missing-rights-do-not-become-public-domain-or-service-permission', requirements: ['REQ-MET-009', 'REQ-PRI-013'], run: () => within(async source => {
     delete source.metadata; source.sourceAttributions = []; const result = reopen(source), before = structuredClone(result);
     const output = renderJatsArticle(result);
-    assert.ok(!output.xml.includes('<license')); assert.ok(!output.xml.includes('<copyright-holder>')); assert.ok(!output.xml.includes('creativecommons.org'));
+    const xml = new XmlParser().parseFromString(output.xml, 'application/xml');
+    assert.equal(xml.getElementsByTagName('license').length, 0);
+    assert.equal(xml.getElementsByTagName('copyright-holder').length, 0);
+    assert.equal(xml.getElementsByTagNameNS('http://www.niso.org/schemas/ali/1.0/', 'license_ref').length, 0);
     assert.equal(result.metadata, undefined); assert.deepEqual(result, before); await denied(PRINCIPAL, result.id);
   }) },
   { id: 'inspection-does-not-invent-missing-provenance-or-verified-authorship', requirements: ['REQ-PRI-013', 'REQ-MET-008', 'REQ-MET-009'], run: () => within(async source => {
