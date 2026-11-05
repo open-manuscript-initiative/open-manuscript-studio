@@ -38,6 +38,13 @@ export function* walkManuscriptStructure(
   for (const section of sections) yield* visitSection(section);
 }
 
+export function findManuscriptBlock(sections: readonly OmiSection[], blockId: string) {
+  for (const item of walkManuscriptStructure(sections)) {
+    if (item.kind === 'block' && item.block.id === blockId) return item;
+  }
+  return undefined;
+}
+
 /** Apply an inline-block transformation at any depth, preserving unchanged objects. */
 export function mapManuscriptBlocks(
   sections: readonly OmiSection[],
@@ -69,5 +76,31 @@ export function mapManuscriptBlocks(
       : section;
   }
 
+  return sections.map(mapSection);
+}
+
+/** Remove one addressable block subtree without flattening either tree representation. */
+export function removeManuscriptBlock(sections: readonly OmiSection[], blockId: string): OmiSection[] {
+  const active = new Set<object>();
+  function mapBlock(block: OmiBlock): OmiBlock {
+    if (active.has(block) || !block.children) return block;
+    active.add(block);
+    const children = mapBlocks(block.children);
+    active.delete(block);
+    return children.length !== block.children.length || children.some((item, index) => item !== block.children?.[index])
+      ? { ...block, children } : block;
+  }
+  function mapBlocks(blocks: readonly OmiBlock[]): OmiBlock[] {
+    return blocks.filter(block => block.id !== blockId).map(mapBlock);
+  }
+  function mapSection(section: OmiSection): OmiSection {
+    if (active.has(section)) return section;
+    active.add(section);
+    const blocks = mapBlocks(section.blocks), children = section.children?.map(mapSection);
+    active.delete(section);
+    const changed = blocks.length !== section.blocks.length || blocks.some((item, index) => item !== section.blocks[index])
+      || children?.some((item, index) => item !== section.children?.[index]);
+    return changed ? { ...section, blocks, ...(children ? { children } : {}) } : section;
+  }
   return sections.map(mapSection);
 }
