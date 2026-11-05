@@ -263,7 +263,16 @@ function normalizeScholarlyMetadata(
   if (!value) return undefined;
 
   const publicationVenue = normalizePublicationVenue(value.publicationVenue);
+  // Normalize only owned fields. Preserve foreign metadata and its declared
+  // profile/vocabulary versions without aliasing the launch payload.
+  const opaque = structuredClone(value);
+  for (const key of [
+    'subjects', 'disciplines', 'supportingAgencies', 'coverage', 'rights',
+    'source', 'type', 'dataAvailability', 'languages', 'copyrightHolder',
+    'publicationVenue', 'publisherId', 'licenseUrl', 'copyrightYear',
+  ]) delete opaque[key];
   const metadata: OmiScholarlyMetadata = {
+    ...opaque,
     subjects: normalizeLocalizedTerms(value.subjects),
     disciplines: normalizeLocalizedTerms(value.disciplines),
     supportingAgencies: normalizeLocalizedTerms(value.supportingAgencies),
@@ -294,9 +303,10 @@ function normalizeExtensions(
   value: Record<string, unknown> | undefined,
 ): OmiIntegrationExtensions | undefined {
   if (!value) return undefined;
-  const ojs = value['https://pkp.sfu.ca/ojs/'];
+  const extensions = structuredClone(value);
+  const ojs = extensions['https://pkp.sfu.ca/ojs/'];
   if (!ojs || typeof ojs !== 'object' || Array.isArray(ojs)) {
-    return value as OmiIntegrationExtensions;
+    return extensions as OmiIntegrationExtensions;
   }
 
   const ojsRecord = ojs as Record<string, unknown>;
@@ -306,13 +316,14 @@ function normalizeExtensions(
       ? Object.fromEntries(
           Object.entries(openScienceRaw as Record<string, unknown>).map(([key, item]) => [
             key,
-            normalizeLocalizedText(item),
+            ['openData', 'openMaterials', 'preregistered', 'preregisteredPlus'].includes(key)
+              ? normalizeLocalizedText(item) : item,
           ]),
         )
       : undefined;
 
   return {
-    ...value,
+    ...extensions,
     'https://pkp.sfu.ca/ojs/': {
       ...ojsRecord,
       ...(openScience ? { openScience } : {}),

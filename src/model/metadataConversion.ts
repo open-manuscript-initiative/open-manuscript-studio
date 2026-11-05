@@ -36,6 +36,10 @@ export function officeMetadataConversion(
   if (source.metadata && Object.keys(source.metadata).length) result.push({
     sourceLocator: '/metadata', disposition: 'omitted', code: 'OFFICE_SCHOLARLY_METADATA_OMITTED',
   });
+  // Office adapters do not embed the extension graph or its vocabulary declarations.
+  if (source.extensions && Object.keys(source.extensions).length) result.push({
+    sourceLocator: '/extensions', disposition: 'omitted', code: 'OFFICE_EXTENSIONS_OMITTED',
+  });
   result.push({ sourceLocator: '/', disposition: 'unverified', code: 'OFFICE_METADATA_MAPPING_INCOMPLETE' });
   return result;
 }
