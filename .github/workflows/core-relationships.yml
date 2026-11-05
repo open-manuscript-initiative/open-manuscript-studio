@@ -1,0 +1,34 @@
+name: Core semantic relationship and fallback disclosure evidence
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/coreRelationshipCases.ts'
+      - 'tests/core-relationships.test.ts'
+      - 'tests/testManuscriptFixture.ts'
+      - 'tests/*loader*'
+      - 'scripts/verify-core-relationships.ts'
+      - 'package*.json'
+      - '.github/workflows/core-relationships.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  relationships:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:core-relationships
+      - run: npm run evidence:core-relationships -- --report test-results/core-relationships.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-relationships-evidence
+          path: test-results/core-relationships.json
+          retention-days: 30

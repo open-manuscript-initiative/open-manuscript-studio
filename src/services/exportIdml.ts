@@ -1,3 +1,4 @@
+import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import {
   extractOmiInlineRuns,
   omiCharacterStyleName,
@@ -22,6 +23,7 @@ export interface IdmlExportResult {
   blob: Blob;
   bytes: Uint8Array;
   fileName: string;
+  semanticLosses: PublicationSemanticLoss[];
   warnings: string[];
 }
 
@@ -37,7 +39,8 @@ export function buildIdmlExport(
 ): IdmlExportResult {
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
-  const warnings: string[] = [];
+  const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'IDML');
+  const warnings: string[] = semanticLossWarnings(semanticLosses);
   const storyParts: string[] = [];
   const publishableAnnotations = manuscript.annotations.filter((note) =>
     note.type === 'note' && note.renderingHint !== 'hidden' && !note.visibility);
@@ -88,6 +91,11 @@ export function buildIdmlExport(
   renderSections(context.sections);
 
   const unanchoredAnnotations = publishableAnnotations.filter((note) => !renderedFootnoteIds.has(note.id));
+  for (const note of unanchoredAnnotations) {
+    const loss: PublicationSemanticLoss = { code: 'note-role-projected-as-text', severity: 'warning', targetId: note.id,
+      message: 'IDML output projects this public note into ordinary note-list text; its native note role and anchor relationship are not preserved.' };
+    semanticLosses.push(loss); warnings.push(...semanticLossWarnings([loss]));
+  }
   if (unanchoredAnnotations.length) {
     storyParts.push(styledParagraph(localizedLabel(context.locale, 'notes'), 'OMI Heading 1'));
     unanchoredAnnotations.forEach((note, index) => {
@@ -184,6 +192,7 @@ export function buildIdmlExport(
   const bytes = createStoreZip(entries);
   const copy = bytes.slice();
   return {
+    semanticLosses,
     bytes,
     blob: new Blob([copy.buffer], { type: IDML_MEDIA_TYPE }),
     fileName: `${fileStem(manuscript)}.idml`,

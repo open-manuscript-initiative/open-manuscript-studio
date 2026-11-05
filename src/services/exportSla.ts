@@ -1,3 +1,4 @@
+import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
@@ -8,6 +9,8 @@ export interface SlaExportResult {
   text: string;
   blob: Blob;
   fileName: string;
+  semanticLosses: PublicationSemanticLoss[];
+  warnings: string[];
 }
 
 /**
@@ -16,6 +19,7 @@ export interface SlaExportResult {
  */
 export function buildSlaExport(manuscript: OmiManuscript): SlaExportResult {
   manuscript = publicPublicationManuscript(manuscript);
+  const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'SLA');
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const story: string[] = [];
 
@@ -77,6 +81,8 @@ export function buildSlaExport(manuscript: OmiManuscript): SlaExportResult {
 `;
 
   return {
+    semanticLosses,
+    warnings: semanticLossWarnings(semanticLosses),
     text,
     blob: new Blob([text], { type: 'application/vnd.scribus;charset=utf-8' }),
     fileName: `${exportFileStem(manuscript)}.sla`,

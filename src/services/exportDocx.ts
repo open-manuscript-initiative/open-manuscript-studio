@@ -1,3 +1,4 @@
+import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { officeMetadataConversion, metadataConversionWarnings, type MetadataConversionObservation } from '../model/metadataConversion';
 import {
@@ -20,6 +21,7 @@ export interface DocxExportResult {
   blob: Blob;
   bytes: Uint8Array;
   fileName: string;
+  semanticLosses: PublicationSemanticLoss[];
   warnings: string[];
   metadataConversion: MetadataConversionObservation[];
 }
@@ -38,7 +40,8 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const metadataConversion = officeMetadataConversion(manuscript, context);
-  const warnings: string[] = metadataConversionWarnings(metadataConversion);
+  const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'DOCX');
+  const warnings: string[] = [...metadataConversionWarnings(metadataConversion), ...semanticLossWarnings(semanticLosses)];
   const body: string[] = [];
   const indexEntriesByBlock = collectIndexEntriesByBlock(manuscript.indexEntries ?? []);
   const annotationsById = new Map(
@@ -172,6 +175,7 @@ ${characterStylesXml()}
   const bytes = createStoreZip(entries);
   const copy = bytes.slice();
   return {
+    semanticLosses,
     bytes,
     blob: new Blob([copy.buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
     fileName: `${fileStem(manuscript)}.docx`,

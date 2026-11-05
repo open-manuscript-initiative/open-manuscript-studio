@@ -1,3 +1,4 @@
+import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
@@ -8,11 +9,14 @@ export interface XtgExportResult {
   text: string;
   blob: Blob;
   fileName: string;
+  semanticLosses: PublicationSemanticLoss[];
+  warnings: string[];
 }
 
 /** UTF-8 QuarkXPress XPress Tags text export. */
 export function buildXtgExport(manuscript: OmiManuscript): XtgExportResult {
   manuscript = publicPublicationManuscript(manuscript);
+  const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'XTG');
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const lines: string[] = ['<v21.00><e9>'];
 
@@ -61,6 +65,8 @@ export function buildXtgExport(manuscript: OmiManuscript): XtgExportResult {
 
   const text = `${lines.join('\r')}\r`;
   return {
+    semanticLosses,
+    warnings: semanticLossWarnings(semanticLosses),
     text,
     blob: new Blob([text], { type: 'text/plain;charset=utf-8' }),
     fileName: `${exportFileStem(manuscript)}.xtg`,
