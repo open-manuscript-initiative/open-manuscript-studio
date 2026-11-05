@@ -106,7 +106,7 @@
     "test:validation-model": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/validation-model.test.ts",
     "test:draft-models": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/exchange-conformance.test.ts tests/collaboration-policy.test.ts tests/runtime-capabilities.test.ts",
     "conformance:draft-models": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/draft-model-assessment.ts",
-    "test:core-review": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-model-review.test.ts && npm run test:core-identity && npm run test:core-privacy && npm run test:core-metadata && npm run test:core-localized-conversion && npm run test:core-extensions && npm run test:core-local-authoring",
+    "test:core-review": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-model-review.test.ts && npm run test:core-identity && npm run test:core-privacy && npm run test:core-metadata && npm run test:core-localized-conversion && npm run test:core-extensions && npm run test:core-local-authoring && npm run test:core-authority",
     "schemas:generate": "node scripts/generate-schema-validators.mjs",
     "test:native-csp": "node --disallow-code-generation-from-strings --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/native-csp-validation.test.ts",
     "test:native-csp:build": "node scripts/test-native-csp-build.mjs",
@@ -122,7 +122,9 @@
     "test:core-extensions": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-extension.test.ts",
     "evidence:core-extensions": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-extensions.ts",
     "test:core-local-authoring": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-local-authoring.test.ts",
-    "evidence:core-local-authoring": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-local-authoring.ts"
+    "evidence:core-local-authoring": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-local-authoring.ts",
+    "test:core-authority": "node --test --experimental-test-module-mocks --experimental-transform-types --import ./tests/register-ts-extension-loader.mjs tests/core-authority.test.ts",
+    "evidence:core-authority": "node --experimental-test-module-mocks --experimental-transform-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-authority.ts"
   },
   "dependencies": {
     "@hocuspocus/provider": "^4.7.0",

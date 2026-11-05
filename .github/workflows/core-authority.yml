@@ -1,0 +1,37 @@
+name: Core identity rights and authorization boundary evidence
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'server/src/services/collaborationPolicy.ts'
+      - 'server/src/services/collaborationTicketService.ts'
+      - 'server/src/services/verifiedFederatedIdentity.ts'
+      - 'tests/coreAuthorityCases.ts'
+      - 'tests/core-authority.test.ts'
+      - 'tests/testManuscriptFixture.ts'
+      - 'tests/*loader*'
+      - 'scripts/verify-core-authority.ts'
+      - 'package*.json'
+      - '.github/workflows/core-authority.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:core-authority
+      - run: npm run evidence:core-authority -- --report test-results/core-authority.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-authority-evidence
+          path: test-results/core-authority.json
+          retention-days: 30
