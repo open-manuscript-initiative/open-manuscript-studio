@@ -510,7 +510,6 @@ function DocumentMenuView({
           <input
             ref={browserFileInputRef}
             type="file"
-            accept=".omi,.omi.json,.json,application/zip,application/json,application/vnd.openmanuscript+json"
             hidden
             onChange={(event) => void openDocument(event.target.files?.[0])}
           />
