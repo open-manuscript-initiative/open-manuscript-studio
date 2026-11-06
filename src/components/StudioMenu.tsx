@@ -58,6 +58,8 @@ import {
 } from '../services/nativeManuscriptFile';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { buildOmiContainer } from '../services/omiContainer';
+import { inspectOmiContainer } from '../services/omiContainerImport';
+import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import type { OmiManuscript } from '../types/omi';
 import { ResearchModuleSettings } from '../modules/ResearchModuleSettings';
@@ -343,10 +345,24 @@ function DocumentMenuView({
           browserFileInputRef.current?.click();
           return;
         }
-        const raw = await file.text();
-        const parsed = JSON.parse(raw) as unknown;
-        if (!isOmiManuscript(parsed)) throw new Error(getInvalidDocumentMessage(locale));
-        loadManuscript(parsed);
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const isContainer = bytes.length >= 4
+          && bytes[0] === 0x50 && bytes[1] === 0x4b
+          && bytes[2] === 0x03 && bytes[3] === 0x04;
+        if (isContainer) {
+          const plan = await inspectOmiContainer(bytes);
+          if (!plan.validForImport || !plan.manuscript) {
+            throw new Error(plan.diagnostics
+              .filter((diagnostic) => diagnostic.severity === 'error')
+              .map((diagnostic) => diagnostic.message)
+              .join(' ') || getInvalidDocumentMessage(locale));
+          }
+          await applyOmiContainerImportPlan(plan);
+        } else {
+          const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as unknown;
+          if (!isOmiManuscript(parsed)) throw new Error(getInvalidDocumentMessage(locale));
+          loadManuscript(parsed);
+        }
         setLocalPath(null);
         setFileMessage(labels.opened);
       }
@@ -501,7 +517,7 @@ function DocumentMenuView({
           <input
             ref={browserFileInputRef}
             type="file"
-            accept=".omi.json,.json,application/json,application/vnd.openmanuscript+json"
+            accept=".omi,.omi.json,.json,application/zip,application/json,application/vnd.openmanuscript+json"
             hidden
             onChange={(event) => void openDocument(event.target.files?.[0])}
           />

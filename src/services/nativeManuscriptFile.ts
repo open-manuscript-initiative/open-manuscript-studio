@@ -3,18 +3,20 @@ import { getStudioPlatform } from '../mobile/platform/platform';
 import type { OmiManuscript } from '../types/omi';
 import { serializeOmiJson } from './exportOmi';
 import { parseOmiJson } from './omiPortableFormat';
+import { inspectOmiContainer } from './omiContainerImport';
+import { putAssetPayload } from './assetRepository';
 
 const DESKTOP_OMI_FILTERS = [
   {
     name: 'Open Manuscript',
-    extensions: ['omi.json', 'json'],
+    extensions: ['omi', 'omi.json', 'json'],
   },
 ];
 
 const ANDROID_OMI_FILTERS = [
   {
     name: 'Open Manuscript',
-    extensions: ['application/json', 'application/vnd.openmanuscript+json'],
+    extensions: ['application/json', 'application/vnd.openmanuscript+json', 'application/vnd.openmanuscript.omi+zip', 'application/zip'],
   },
 ];
 
@@ -76,7 +78,7 @@ async function openManuscriptWithPicker(
   }
 
   const { open } = await import('@tauri-apps/plugin-dialog');
-  const { readTextFile } = await import('@tauri-apps/plugin-fs');
+  const { readFile } = await import('@tauri-apps/plugin-fs');
   const platform = getStudioPlatform();
   const android = platform === 'android';
   const ios = platform === 'ios';
@@ -94,9 +96,28 @@ async function openManuscriptWithPicker(
     return null;
   }
 
-  const raw = await readTextFile(selected);
-  const manuscript = parseOmiJson(raw);
-  fileLocations.set(manuscript.id, rememberPath ? selected : null);
+  const bytes = await readFile(selected);
+  const isContainer = bytes.length >= 4 &&
+    bytes[0] === 0x50 && bytes[1] === 0x4b &&
+    bytes[2] === 0x03 && bytes[3] === 0x04;
+  let manuscript: OmiManuscript;
+  if (isContainer) {
+    const plan = await inspectOmiContainer(bytes);
+    if (!plan.validForImport || !plan.manuscript) {
+      throw new Error(plan.diagnostics
+        .filter((diagnostic) => diagnostic.severity === 'error')
+        .map((diagnostic) => diagnostic.message)
+        .join(' ') || 'The selected OMI container failed integrity validation.');
+    }
+    manuscript = plan.manuscript;
+    for (const asset of plan.assets) {
+      await putAssetPayload(manuscript.id, asset.metadata.id, asset.bytes);
+    }
+  } else {
+    manuscript = parseOmiJson(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  }
+  // Container archives must never be overwritten by JSON Save operations.
+  fileLocations.set(manuscript.id, rememberPath && !isContainer ? selected : null);
 
   return { manuscript, path: selected };
 }

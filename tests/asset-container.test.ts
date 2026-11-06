@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { inspectMissingManuscriptAssets, restoreMissingAssetsFromVerifiedPackage } from '../src/services/assetRecovery.ts';
 import { applyOmiContainerImportPlan } from '../src/app/omiContainerImportActions.ts';
+import { readOmiStudyImportSource } from '../src/services/omiStudyImport.ts';
 import { useStudioStore } from '../src/app/useStudioStore.ts';
 import {
   createAssetMetadata,
@@ -158,6 +159,37 @@ test('opens a verified package without creating a new manuscript or revision roo
   assert.equal(new TextDecoder().decode(await getAssetPayload(loaded.id, asset.id)), 'fake-png-payload');
 
   useStudioStore.getState().resetSample();
+});
+
+test('downloaded .omi file can be reopened through the browser File import reader', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const exported = await buildOmiContainer(manuscript);
+  assert.equal(exported.validForExport, true);
+  const downloaded = new File([exported.bytes], 'downloaded.omi', {
+    type: 'application/vnd.openmanuscript.omi+zip',
+  });
+
+  const reopened = await readOmiStudyImportSource(downloaded);
+  assert.equal(reopened.manuscript.id, manuscript.id);
+  assert.equal(reopened.packagedAssets.length, 1);
+  assert.equal(reopened.packagedAssets[0]?.metadata.id, asset.id);
+  assert.deepEqual(reopened.packagedAssets[0]?.bytes, bytes);
+});
+
+test('browser .omi reader rejects modified downloaded packages', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const exported = await buildOmiContainer(manuscript);
+  const corrupted = new Uint8Array(exported.bytes);
+  const offset = findStoreEntryDataOffset(corrupted, 'manuscript/document.json');
+  assert.ok(offset >= 0);
+  corrupted[offset] = (corrupted[offset] ?? 0) ^ 1;
+  await assert.rejects(
+    readOmiStudyImportSource(new File([corrupted], 'corrupted.omi')),
+  );
 });
 
 test('rejects a package whose archived bytes were modified after checksums were created', async () => {
