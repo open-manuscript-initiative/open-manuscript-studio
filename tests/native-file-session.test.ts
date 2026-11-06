@@ -8,7 +8,7 @@ let selected = 'synthetic-a.omi.json';
 const saved: Array<{ path: string; raw: string }> = [];
 mock.module('@tauri-apps/plugin-dialog', { namedExports: { open: async () => selected, save: async () => selected } });
 mock.module('@tauri-apps/plugin-fs', { namedExports: {
-  readTextFile: async (path: string) => serializeOmiJson(path === 'synthetic-a.omi.json' ? a : b),
+  readFile: async (path: string) => new TextEncoder().encode(serializeOmiJson(path === 'synthetic-a.omi.json' ? a : b)),
   writeTextFile: async (path: string, raw: string) => { saved.push({ path, raw }); },
 } });
 const { openLocalManuscript, saveLocalManuscript, clearCurrentManuscriptFilePath, getCurrentManuscriptFilePath } = await import('../src/services/nativeManuscriptFile.ts');
