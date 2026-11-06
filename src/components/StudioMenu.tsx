@@ -360,6 +360,7 @@ function DocumentMenuView({
       }
       clearDocumentClosedState();
       setDocumentClosed(false);
+      onCreated();
     } catch (error) {
       setFileMessage(error instanceof Error ? error.message : String(error));
     } finally {
