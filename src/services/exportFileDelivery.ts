@@ -28,7 +28,7 @@ export async function saveExportBlob(
   }
 
   const { save } = await import('@tauri-apps/plugin-dialog');
-  const { writeFile } = await import('@tauri-apps/plugin-fs');
+  const { writeFile, readFile } = await import('@tauri-apps/plugin-fs');
   const platform = getStudioPlatform();
   const selected = await save({
     defaultPath: fileName,
@@ -39,6 +39,7 @@ export async function saveExportBlob(
 
   const bytes = new Uint8Array(await blob.arrayBuffer());
   await writeFile(selected, bytes);
+  if (platform === 'android') await verifySavedBytes(selected, bytes, readFile);
 
   // Android content:// and iOS file:// document-provider URLs are transport
   // details. Mobile users work with the system Files/Documents surface rather
@@ -76,7 +77,7 @@ export async function saveExportBlobWithSidecar(
   }
 
   const { save } = await import('@tauri-apps/plugin-dialog');
-  const { writeFile } = await import('@tauri-apps/plugin-fs');
+  const { writeFile, readFile } = await import('@tauri-apps/plugin-fs');
   const platform = getStudioPlatform();
   const selected = await save({
     defaultPath: fileName,
@@ -85,7 +86,9 @@ export async function saveExportBlobWithSidecar(
 
   if (!selected) return { saved: false, sidecarSaved: false };
 
-  await writeFile(selected, new Uint8Array(await blob.arrayBuffer()));
+  const artifactBytes = new Uint8Array(await blob.arrayBuffer());
+  await writeFile(selected, artifactBytes);
+  if (platform === 'android') await verifySavedBytes(selected, artifactBytes, readFile);
 
   if (platform === 'android' || platform === 'ios') {
     const sidecarSelected = await save({
@@ -95,10 +98,9 @@ export async function saveExportBlobWithSidecar(
     if (!sidecarSelected) {
       return { saved: true, sidecarSaved: false };
     }
-    await writeFile(
-      sidecarSelected,
-      new Uint8Array(await sidecarBlob.arrayBuffer()),
-    );
+    const sidecarBytes = new Uint8Array(await sidecarBlob.arrayBuffer());
+    await writeFile(sidecarSelected, sidecarBytes);
+    if (platform === 'android') await verifySavedBytes(sidecarSelected, sidecarBytes, readFile);
     return { saved: true, sidecarSaved: true };
   }
 
@@ -164,3 +166,17 @@ function extensionForFileName(fileName: string): string {
   return '*';
 }
 
+
+/** Fail closed if Android's document provider accepted a write but persisted no bytes. */
+async function verifySavedBytes(
+  uri: string,
+  expected: Uint8Array,
+  readFile: (path: string) => Promise<Uint8Array>,
+): Promise<void> {
+  const actual = await readFile(uri).catch(() => {
+    throw new Error('Android save could not be verified by reading the selected document back.');
+  });
+  if (actual.byteLength !== expected.byteLength || actual.some((value, index) => value !== expected[index])) {
+    throw new Error(`Android document save failed verification: expected ${expected.byteLength} bytes, found ${actual.byteLength}.`);
+  }
+}

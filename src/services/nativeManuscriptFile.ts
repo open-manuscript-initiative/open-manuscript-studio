@@ -134,8 +134,10 @@ export async function saveLocalManuscript(
     return saveLocalManuscriptAs(manuscript);
   }
 
-  const { writeTextFile } = await import('@tauri-apps/plugin-fs');
-  await writeTextFile(currentFilePath, serializeOmiJson(manuscript));
+  const { writeTextFile, readFile } = await import('@tauri-apps/plugin-fs');
+  const serialized = serializeOmiJson(manuscript);
+  await writeTextFile(currentFilePath, serialized);
+  if (getStudioPlatform() === 'android') await verifySavedJson(currentFilePath, serialized, readFile);
   return currentFilePath;
 }
 
@@ -166,7 +168,7 @@ async function saveManuscriptWithPicker(
   }
 
   const { save } = await import('@tauri-apps/plugin-dialog');
-  const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+  const { writeTextFile, readFile } = await import('@tauri-apps/plugin-fs');
   const platform = getStudioPlatform();
   const android = platform === 'android';
 
@@ -183,7 +185,9 @@ async function saveManuscriptWithPicker(
     return null;
   }
 
-  await writeTextFile(selected, serializeOmiJson(manuscript));
+  const serialized = serializeOmiJson(manuscript);
+  await writeTextFile(selected, serialized);
+  if (android) await verifySavedJson(selected, serialized, readFile);
   fileLocations.set(manuscript.id, rememberPath ? selected : null);
   return selected;
 }
@@ -196,4 +200,17 @@ function slugify(input: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80) || 'manuscript';
+}
+
+async function verifySavedJson(
+  uri: string,
+  expected: string,
+  readFile: (path: string) => Promise<Uint8Array>,
+): Promise<void> {
+  const actual = await readFile(uri).catch(() => {
+    throw new Error('Android manuscript save could not be verified by reading the document back.');
+  });
+  if (new TextDecoder('utf-8', { fatal: true }).decode(actual) !== expected) {
+    throw new Error(`Android manuscript save failed verification (${actual.byteLength} bytes read).`);
+  }
 }
