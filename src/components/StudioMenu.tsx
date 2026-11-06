@@ -59,7 +59,6 @@ import {
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { buildOmiContainer } from '../services/omiContainer';
 import { restoreOmiContainerBytes } from '../services/restoreOmiContainer';
-import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import type { OmiManuscript } from '../types/omi';
 import { ResearchModuleSettings } from '../modules/ResearchModuleSettings';
