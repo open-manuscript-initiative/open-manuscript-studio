@@ -1,7 +1,6 @@
 import { FolderOpen, Link2Off, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { useTranslation } from '../i18n';
 import { getCloudStorageCopy, getSavedDocumentOpenConfirmation } from '../i18n/cloudStorageTranslations';
 import {
@@ -10,7 +9,7 @@ import {
   unlinkProfileSavedDocument,
   type ProfileSavedDocument,
 } from '../services/cloudStorageApi';
-import { inspectOmiContainer } from '../services/omiContainerImport';
+import { restoreOmiContainerBytes } from '../services/restoreOmiContainer';
 import { inspectMissingManuscriptAssets } from '../services/assetRecovery';
 import { useStudioStore } from '../app/useStudioStore';
 
@@ -48,11 +47,7 @@ export function ProfileSavedDocumentsSection({ confirmOpen = true }: { confirmOp
     setMessage(copy.restoring);
     try {
       const bytes = await downloadCloudBackup(document.id);
-      const plan = await inspectOmiContainer(bytes);
-      if (!plan.validForImport || !plan.manuscript || plan.manuscript.id !== document.manuscriptId) throw new Error(copy.invalidPackage);
-      await applyOmiContainerImportPlan(plan);
-      const missing = await inspectMissingManuscriptAssets(useStudioStore.getState().manuscript);
-      if (missing.length > 0) throw new Error(`Restored document has ${missing.length} unavailable media asset(s).`);
+      await restoreOmiContainerBytes(bytes, document.manuscriptId);
       setMessage(copy.restored);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
