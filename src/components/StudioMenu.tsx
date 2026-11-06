@@ -58,7 +58,7 @@ import {
 } from '../services/nativeManuscriptFile';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { buildOmiContainer } from '../services/omiContainer';
-import { inspectOmiContainer } from '../services/omiContainerImport';
+import { restoreOmiContainerBytes } from '../services/restoreOmiContainer';
 import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import type { OmiManuscript } from '../types/omi';
@@ -350,14 +350,7 @@ function DocumentMenuView({
           && bytes[0] === 0x50 && bytes[1] === 0x4b
           && bytes[2] === 0x03 && bytes[3] === 0x04;
         if (isContainer) {
-          const plan = await inspectOmiContainer(bytes);
-          if (!plan.validForImport || !plan.manuscript) {
-            throw new Error(plan.diagnostics
-              .filter((diagnostic) => diagnostic.severity === 'error')
-              .map((diagnostic) => diagnostic.message)
-              .join(' ') || getInvalidDocumentMessage(locale));
-          }
-          await applyOmiContainerImportPlan(plan);
+          await restoreOmiContainerBytes(bytes);
         } else {
           const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as unknown;
           if (!isOmiManuscript(parsed)) throw new Error(getInvalidDocumentMessage(locale));
