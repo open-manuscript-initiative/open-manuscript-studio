@@ -1,6 +1,9 @@
 #[cfg(desktop)]
 mod updater;
 
+#[cfg(target_os = "android")]
+mod opened_documents;
+
 #[cfg(mobile)]
 fn install_mobile_crypto_provider() {
     let _ = rustls::crypto::ring::default_provider().install_default();
@@ -25,6 +28,11 @@ pub fn run() {
     #[cfg(target_os = "android")]
     let builder = builder.plugin(tauri_plugin_android_updater::init());
 
+    #[cfg(target_os = "android")]
+    let builder = builder
+        .manage(opened_documents::OpenedDocuments::default())
+        .invoke_handler(tauri::generate_handler![opened_documents::take_opened_documents]);
+
     #[cfg(desktop)]
     let builder = builder.invoke_handler(tauri::generate_handler![
         updater::check_for_update,
@@ -32,6 +40,12 @@ pub fn run() {
     ]);
 
     builder
-        .run(tauri::generate_context!())
-        .expect("error while running Open Manuscript Studio");
+        .build(tauri::generate_context!())
+        .expect("error while building Open Manuscript Studio")
+        .run(|_app, _event| {
+            #[cfg(target_os = "android")]
+            if let tauri::RunEvent::Opened { urls } = _event {
+                opened_documents::enqueue(_app, urls);
+            }
+        });
 }

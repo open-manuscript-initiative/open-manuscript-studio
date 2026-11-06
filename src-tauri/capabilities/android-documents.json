@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "android-documents",
+  "description": "Receive only OS-delivered documents in the bundled Studio main WebView.",
+  "webviews": ["main"],
+  "platforms": ["android"],
+  "permissions": ["allow-take-opened-documents"]
+}

@@ -5,7 +5,64 @@
   "bundle": {
     "android": {
       "minSdkVersion": 24,
-      "versionCode": 1353
-    }
+      "versionCode": 1354
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "omi"
+        ],
+        "mimeType": "application/vnd.openmanuscript.omi+zip",
+        "name": "Open Manuscript",
+        "androidIntentActionFilters": [
+          "view",
+          "send"
+        ]
+      },
+      {
+        "ext": [
+          "omi"
+        ],
+        "mimeType": "application/octet-stream",
+        "name": "Open Manuscript",
+        "androidIntentActionFilters": [
+          "view",
+          "send"
+        ]
+      },
+      {
+        "ext": [
+          "omi"
+        ],
+        "mimeType": "application/zip",
+        "name": "Open Manuscript",
+        "androidIntentActionFilters": [
+          "view",
+          "send"
+        ]
+      },
+      {
+        "ext": [
+          "json"
+        ],
+        "mimeType": "application/json",
+        "name": "Open Manuscript JSON",
+        "androidIntentActionFilters": [
+          "view",
+          "send"
+        ]
+      },
+      {
+        "ext": [
+          "json"
+        ],
+        "mimeType": "application/vnd.openmanuscript+json",
+        "name": "Open Manuscript JSON",
+        "androidIntentActionFilters": [
+          "view",
+          "send"
+        ]
+      }
+    ]
   }
 }
