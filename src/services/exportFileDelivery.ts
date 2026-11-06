@@ -77,7 +77,7 @@ export async function saveExportBlobWithSidecar(
   }
 
   const { save } = await import('@tauri-apps/plugin-dialog');
-  const { writeFile } = await import('@tauri-apps/plugin-fs');
+  const { writeFile, readFile } = await import('@tauri-apps/plugin-fs');
   const platform = getStudioPlatform();
   const selected = await save({
     defaultPath: fileName,
