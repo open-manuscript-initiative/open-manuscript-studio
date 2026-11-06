@@ -10,7 +10,6 @@ import {
   type ProfileSavedDocument,
 } from '../services/cloudStorageApi';
 import { restoreOmiContainerBytes } from '../services/restoreOmiContainer';
-import { inspectMissingManuscriptAssets } from '../services/assetRecovery';
 import { useStudioStore } from '../app/useStudioStore';
 
 function formatBytes(value: string): string {
