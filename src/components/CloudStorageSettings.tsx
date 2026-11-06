@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getCloudOAuthCopy, type CloudOAuthCopy } from '../i18n/cloudOAuthTranslations';
@@ -53,7 +52,7 @@ import {
   buildOmiContainer,
   OMI_CONTAINER_VERSION,
 } from '../services/omiContainer';
-import { inspectOmiContainer } from '../services/omiContainerImport';
+import { restoreOmiContainerBytes } from '../services/restoreOmiContainer';
 import { inspectMissingManuscriptAssets, restoreMissingAssetsFromVerifiedPackage, type MissingManuscriptAsset } from '../services/assetRecovery';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 
@@ -392,12 +391,7 @@ export function CloudStorageSettings({ view = 'connections' }: { view?: 'connect
     setMessage(copy.restoring);
     try {
       const bytes = await downloadCloudBackup(backup.id);
-      const plan = await inspectOmiContainer(bytes);
-      if (!plan.validForImport || !plan.manuscript || plan.manuscript.id !== backup.manuscriptId) throw new Error(copy.invalidPackage);
-      await applyOmiContainerImportPlan(plan);
-      const restored = useStudioStore.getState().manuscript;
-      const missing = await inspectMissingManuscriptAssets(restored);
-      if (missing.length > 0) throw new Error(`Restored document has ${missing.length} unavailable media asset(s).`);
+      await restoreOmiContainerBytes(bytes, backup.manuscriptId);
       setMessage(copy.restored);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
