@@ -510,6 +510,7 @@ function DocumentMenuView({
           <input
             ref={browserFileInputRef}
             type="file"
+            accept="*/*"
             hidden
             onChange={(event) => void openDocument(event.target.files?.[0])}
           />
