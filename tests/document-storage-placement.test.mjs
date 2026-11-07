@@ -17,8 +17,9 @@ test('Document menu owns Save, Save As and existing portable backup action', () 
   assert.match(document, /saveLocalManuscript\(current\)/);
   assert.match(document, /savePortableManuscriptCopy\(current\)/);
   assert.match(document, /savePortableBackup\(\)/);
-  assert.match(document, /<CloudStorageSettings view="documents" \/>/);
-  assert.match(document, /cloudBackupsExpanded \? <CloudStorageSettings view="documents" \/> : null/);
+  // Check ownership and the collapsed-state guard while permitting callbacks
+  // and other props on the document-only cloud panel.
+  assert.match(document, /cloudBackupsExpanded \? <CloudStorageSettings\b[^>]*\bview="documents"[^>]*\/> : null/);
   assert.match(document, /aria-expanded=\{cloudBackupsExpanded\}/);
   assert.match(document, /onClick=\{\(\) => setCloudBackupsExpanded/);
   assert.match(menu, /useState\(false\)/);
