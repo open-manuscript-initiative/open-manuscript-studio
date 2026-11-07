@@ -1,5 +1,12 @@
 ## Unreleased — Translation and Validation Models
 
+- Show the manuscript editor immediately after successful local OMI opening,
+  confirmed Word/ODT/PDF import or cloud document opening from the Document menu.
+  Keep import review, cancellation and error messages in the menu until resolved.
+- Bring Word/ODT/PDF import source review into view and focus its heading after
+  reading the file, with explicit instructions to select an option and click
+  Create manuscript to finish the import.
+
 - Extend frame layout with named page styles, per-page size/margins/background,
   insertion/deletion and editable odd/even running headers with page/title fields.
   Preserve story text when deleting pages. Add independent graphic-content size,

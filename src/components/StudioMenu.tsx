@@ -534,12 +534,12 @@ function DocumentMenuView({
             {getCloudStorageCopy(locale).backupTitle}
           </button>
         </div>
-        {cloudBackupsExpanded ? <CloudStorageSettings view="documents" /> : null}
+        {cloudBackupsExpanded ? <CloudStorageSettings view="documents" onOpened={onCreated} /> : null}
       </div>
     ) : null}
-    <ProfileSavedDocumentsSection />
-    <DocxImportPanel />
-    <OdtImportPanel />
+    <ProfileSavedDocumentsSection onOpened={onCreated} />
+    <DocxImportPanel onImported={onCreated} />
+    <OdtImportPanel onImported={onCreated} />
   </section>;
 }
 

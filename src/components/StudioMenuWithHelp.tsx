@@ -178,6 +178,7 @@ export function StudioMenuWithHelp({
       clearDocumentClosedState();
       setDocumentAlreadyClosed(false);
       setBrowserOpenMessage(localFileLabels.opened);
+      onClose();
     } catch (error) {
       setBrowserOpenMessage(error instanceof Error ? error.message : String(error));
     } finally {

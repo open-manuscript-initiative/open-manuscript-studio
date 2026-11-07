@@ -91,7 +91,10 @@ function connectionProviderLabel(connection: CloudConnection, copy: CloudCopy): 
   return 'Dropbox';
 }
 
-export function CloudStorageSettings({ view = 'connections' }: { view?: 'connections' | 'documents' }) {
+export function CloudStorageSettings({ view = 'connections', onOpened }: {
+  view?: 'connections' | 'documents';
+  onOpened?: () => void;
+}) {
   const { locale } = useTranslation();
   const copy = getCloudStorageCopy(locale);
   const oauthCopy = getCloudOAuthCopy(locale);
@@ -393,6 +396,7 @@ export function CloudStorageSettings({ view = 'connections' }: { view?: 'connect
       const bytes = await downloadCloudBackup(backup.id);
       await restoreOmiContainerBytes(bytes, backup.manuscriptId);
       setMessage(copy.restored);
+      onOpened?.();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
