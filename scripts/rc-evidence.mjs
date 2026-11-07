@@ -3,10 +3,11 @@ import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { PKP_MANUAL_GATES } from './pkp-release-policy.mjs';
 
 export const RC_MANUAL_GATES = [
   'host-egress', 'host-pdf-sandbox', 'private-manuscript-preservation',
-  'windows-device', 'linux-device', 'android-device', 'ojs-3.5.0-4', 'ojs-3.5.0-5',
+  'windows-device', 'linux-device', 'android-device', ...PKP_MANUAL_GATES,
   'security-review', 'accessibility', 'performance', 'recovery', 'owner-go-no-go',
 ];
 export const RC_WORKFLOWS = REQUIRED_WORKFLOWS.filter(item => item.id !== 'tauri-desktop.yml').map(item => '.github/workflows/' + item.id);

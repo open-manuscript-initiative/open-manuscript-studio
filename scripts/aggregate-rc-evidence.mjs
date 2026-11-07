@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { PKP_RELEASE_TARGETS } from './pkp-release-policy.mjs';
 
 /**
  * E02 exact-commit cross-workflow gate. Pure assessment is exported for
@@ -36,21 +37,9 @@ export const REQUIRED_WORKFLOWS = Object.freeze([
     id: 'pkp-integration-environment.yml',
     jobs: [
       'Select PKP acceptance targets',
-      'ojs 3_5_0-4 (stable) workflow E2E',
-      'ojs 3_5_0-5 (stable) workflow E2E',
-      'ojs 3_5_0-6 (stable) workflow E2E',
-      'omp 3_5_0-4 (preview) workflow E2E',
-      'omp 3_5_0-5 (preview) workflow E2E',
-      'omp 3_5_0-6 (preview) workflow E2E',
+      ...PKP_RELEASE_TARGETS.map(target => target.job),
     ],
-    artifacts: [
-      'pkp-ojs-3_5_0-4-stable-diagnostics-{attempt}',
-      'pkp-ojs-3_5_0-5-stable-diagnostics-{attempt}',
-      'pkp-ojs-3_5_0-6-stable-diagnostics-{attempt}',
-      'pkp-omp-3_5_0-4-preview-diagnostics-{attempt}',
-      'pkp-omp-3_5_0-5-preview-diagnostics-{attempt}',
-      'pkp-omp-3_5_0-6-preview-diagnostics-{attempt}',
-    ],
+    artifacts: PKP_RELEASE_TARGETS.map(target => target.artifact),
   },
   {
     id: 'tauri-desktop.yml',

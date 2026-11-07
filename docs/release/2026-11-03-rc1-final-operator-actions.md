@@ -1,5 +1,8 @@
 # OMI Studio v1.0.0-rc.1 — last-gate operator action pack
 
+> Historical worksheet. For the 7 November OJS/OMP -4/-5/-6 matrix and the current 14-gate receipt, follow [current acceptance](2026-11-04-rc1-final-acceptance.md) and [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md). This notice does not change any historical observation or approval.
+
+
 > **State: PREPARED / NO-GO. 2026-11-03, Europe/Budapest.**
 > This is an evidence-collection procedure and decision sheet, **not** a
 > finished receipt or an authorization to tag/release. Use the existing

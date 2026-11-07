@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { PKP_RELEASE_TARGETS, PKP_MANUAL_GATES } from '../scripts/pkp-release-policy.mjs';
 import {
   REQUIRED_WORKFLOWS, assessRcEvidence, renderRcEvidence,
 } from '../scripts/aggregate-rc-evidence.mjs';
@@ -8,6 +10,23 @@ const SHA = 'a'.repeat(40);
 const OLD_SHA = 'b'.repeat(40);
 const NOW = Date.parse('2026-11-01T12:00:00Z');
 const REPO = 'open-manuscript-initiative/open-manuscript-studio';
+
+test('PKP workflow, readiness, E02 and manual acceptance cover the same declared support matrix', () => {
+  const workflow = readFileSync('.github/workflows/pkp-integration-environment.yml', 'utf8');
+  const readiness = JSON.parse(readFileSync('docs/release/readiness.config.json', 'utf8'));
+  const spec = REQUIRED_WORKFLOWS.find(item => item.id === 'pkp-integration-environment.yml');
+  assert.equal(PKP_RELEASE_TARGETS.length, 6);
+  assert.deepEqual(PKP_MANUAL_GATES, ['ojs-3.5.0-4', 'ojs-3.5.0-5', 'ojs-3.5.0-6']);
+  assert.deepEqual(spec.jobs.slice(1), PKP_RELEASE_TARGETS.map(target => target.job));
+  assert.deepEqual(spec.artifacts, PKP_RELEASE_TARGETS.map(target => target.artifact));
+  const both = workflow.slice(workflow.indexOf('            both)'), workflow.indexOf('            *)'));
+  const declared = [...both.matchAll(/\{"platform":"(ojs|omp)","version":"([^"]+)","release_tier":"([^"]+)"\}/g)]
+    .map(([, platform, version, releaseTier]) => ({ platform, version, releaseTier }));
+  assert.deepEqual(declared, PKP_RELEASE_TARGETS.map(({ platform, version, releaseTier }) => ({ platform, version, releaseTier })));
+  for (const version of new Set(PKP_RELEASE_TARGETS.map(target => target.version))) {
+    assert.ok(readiness.workflowMarkers['.github/workflows/pkp-integration-environment.yml'].includes(version));
+  }
+});
 
 function complete() {
   const workflows = {};

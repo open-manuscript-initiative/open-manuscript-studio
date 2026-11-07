@@ -5,6 +5,8 @@ or publish RC1. The real device observations and release-owner decision remain
 required. Existing successful observations can be reused when their source,
 artifact and relevant code delta are demonstrably covered.
 
+**7 November scope update:** OJS and OMP -4/-5/-6 each require E02 regression evidence; OMP remains Preview. The current manual receipt requires 14 gates. Preserve historical receipts as-is and generate a new unapproved draft for the selected candidate; do not infer new observations. See [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md).
+
 ## 1. Finish the automated evidence collection
 
 After the preparation PR is merged, select the **new merged main SHA**, rather
@@ -25,7 +27,7 @@ The `omi-rc-e02-<sha>-<attempt>` artifact includes:
 | --- | --- |
 | `evidence.json` / `evidence.md` | Exact-SHA workflow, mandatory-job and immutable archive evidence |
 | `SHA256SUMS.txt` | Actual SHA-256 of all seven installer files under publication's stable filenames |
-| `acceptance-draft.json` | Existing v1 receipt with exact SHA, build/workflow IDs and installer hashes; all 13 owner gates pending |
+| `acceptance-draft.json` | Existing v1 receipt with exact SHA, build/workflow IDs and installer hashes; all 14 owner gates pending |
 | `acceptance-next-steps.md` | Candidate build link and outstanding manual gates |
 
 The hash preparation and publication use the **same staging implementation**.
@@ -47,7 +49,7 @@ manuscript and credentials out of GitHub and CI artifacts.
 | Android / Play | Verify APK with `apksigner verify --verbose --print-certs`; verify package, versionCode and certificate against the selected direct-install or Play signing lineage. A direct APK is not automatically interchangeable with a Play-signed package. | Upgrade the reference phone on its actual channel; reopen test content. Prove backup/reinstall/restore on disposable data. Ordinary Android in-place downgrade is generally rejected; do not call it a tested rollback. |
 | Linux native Preview | Verify DEB/AppImage hashes and trusted origin; record the inherited `glib 0.18.5` limitation and the approved Preview scope. Keep all Linux build/installer and `linux-device` gates. | In disposable Ubuntu, launch/edit/save/reopen; verify update and restore prior trusted package plus compatible state. CI package installation alone is not a device observation. |
 | Web/API | Bind deployed source and API/web image digests or equivalent deployment identity. A mutable image tag is insufficient. | In isolated staging, restore the previous application **and compatible DB/storage snapshot**. Do not test destructive rollback on the production VPS. |
-| OJS | Record each actual plugin commit and target OJS version; both 3.5.0-4 and 3.5.0-5 are required. | Reuse exact-candidate PKP evidence where valid; cover authorized transfer, revision/provenance and privacy, plus isolated restoration. OMP stays Preview. |
+| OJS | Record each actual plugin commit and target OJS version; all three versions, 3.5.0-4/5/6, are required. | Reuse exact-candidate PKP evidence where valid; cover authorized transfer, revision/provenance and privacy, plus isolated restoration. OMP stays Preview. |
 
 The native workflow currently always signs/verifies its release Android APK,
 but a successful APK signature check does not establish Play channel lineage.
@@ -72,6 +74,7 @@ UTC review time, then reviews each required gate:
 | `android-device` | Reference-phone identity, real update channel, signing lineage and document preservation. |
 | `ojs-3.5.0-4` | Exact-candidate integration evidence for this version. |
 | `ojs-3.5.0-5` | Exact-candidate integration evidence for this version. |
+| `ojs-3.5.0-6` | Separate exact-candidate integration evidence, external plugin SHA and real observation reference for -6. |
 | `security-review` | Actual security review including unresolved #271 and the approved Linux Preview distribution scope. |
 | `accessibility` | Declared desktop/mobile accessibility observations plus linked automated evidence. |
 | `performance` | Reference-device measurements and validation/large-document responsiveness observations. |

@@ -21,6 +21,9 @@ on:
       - .github/workflows/tauri-desktop.yml
       - scripts/prepare-release-assets.mjs
       - scripts/prepare-rc-acceptance.mjs
+      - scripts/pkp-release-policy.mjs
+      - scripts/rc-evidence.mjs
+      - scripts/aggregate-rc-evidence.mjs
       - docs/release/1.0-scope.md
       - docs/pkp-integration-test-environment.md
       - docs/pkp-ojs-3.5-compatibility.md
@@ -40,6 +43,9 @@ on:
       - .github/workflows/tauri-desktop.yml
       - scripts/prepare-release-assets.mjs
       - scripts/prepare-rc-acceptance.mjs
+      - scripts/pkp-release-policy.mjs
+      - scripts/rc-evidence.mjs
+      - scripts/aggregate-rc-evidence.mjs
       - docs/release/1.0-scope.md
       - docs/pkp-integration-test-environment.md
       - docs/pkp-ojs-3.5-compatibility.md

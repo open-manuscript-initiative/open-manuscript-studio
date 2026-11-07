@@ -21,6 +21,24 @@ test('candidate evidence requires every manual gate, exact subject and actual ar
     x => { x.gates[0] = x.gates[1]; },
   ]) { const x = receipt(); mutate(x); assert.throws(() => validateRcEvidence(x, sha, artifacts)); }
 });
+test('OJS -6 requires its own exact-candidate observation; historical 13-gate receipts cannot approve the expanded scope', () => {
+  const current = receipt();
+  assert.equal(current.gates.length, 14);
+  assert.ok(current.gates.some(gate => gate.id === 'ojs-3.5.0-6'));
+  const historical = structuredClone(current);
+  historical.gates = historical.gates.filter(gate => gate.id !== 'ojs-3.5.0-6');
+  assert.throws(() => validateRcEvidence(historical, sha, artifacts), /GATES_INCOMPLETE/);
+  for (const change of [
+    gate => { gate.status = 'pending'; },
+    gate => { gate.sourceSha = 'c'.repeat(40); },
+    gate => { gate.evidenceRef = ''; },
+    gate => { gate.observedAt = ''; },
+  ]) {
+    const invalid = receipt(); change(invalid.gates.find(gate => gate.id === 'ojs-3.5.0-6'));
+    assert.throws(() => validateRcEvidence(invalid, sha, artifacts), /MANUAL_GATE_NOT_PASSED/);
+  }
+  assert.doesNotThrow(() => validateRcEvidence(current, sha, artifacts));
+});
 test('prior native build must be trusted main source and all platform builds successful', () => {
   const run = { head_sha: sha, path: '.github/workflows/tauri-desktop.yml', head_repository: { full_name: 'synthetic/studio' }, head_branch: 'main', event: 'push' };
   const jobs = ['Desktop (linux-x86_64)', 'Desktop (windows-x86_64)', 'Desktop (macos-aarch64)', 'Desktop (macos-x86_64)', 'Android universal APK'].map(name => ({ name, status: 'completed', conclusion: 'success' }));

@@ -11,7 +11,7 @@ The 1.0 publish guard supplements the existing strict issue/local gate. A green 
 The E02 workflow now downloads only its selected native build, uses the same
 stable-filename staging as publication, and includes `acceptance-draft.json`,
 the seven actual installer hashes in `SHA256SUMS.txt`, and
-`acceptance-next-steps.md` in its evidence artifact. All 13 manual gates stay
+`acceptance-next-steps.md` in its evidence artifact. All 14 manual gates stay
 `pending`; owner, approval time and observation references stay empty. The
 existing release validator rejects this unfinished draft. File hashes are not
 signature verification. See [the final acceptance procedure](./2026-11-04-rc1-final-acceptance.md).
@@ -38,4 +38,8 @@ Receipt shape (`buildRunId`, `sourceSha`, hashes, dates and references below are
 }
 ```
 
-Supply every gate in `RC_MANUAL_GATES` from `scripts/rc-evidence.mjs`: host-egress, host-pdf-sandbox, private-manuscript-preservation, windows-device, linux-device, android-device, both supported OJS versions, security-review, accessibility, performance, recovery and owner-go-no-go. The prior build must include successful Windows/Linux/macOS/Android build jobs; this does not promote macOS from Preview. OMP and iOS maturity are unchanged. No assertion can waive an open release blocker; independently assessed conformance remains a separate governance decision.
+Supply every gate in `RC_MANUAL_GATES` from `scripts/rc-evidence.mjs`: host-egress, host-pdf-sandbox, private-manuscript-preservation, windows-device, linux-device, android-device, all three supported OJS versions (3.5.0-4, 3.5.0-5 and 3.5.0-6), security-review, accessibility, performance, recovery and owner-go-no-go. The prior build must include successful Windows/Linux/macOS/Android build jobs; this does not promote macOS from Preview. OMP and iOS maturity are unchanged. No assertion can waive an open release blocker; independently assessed conformance remains a separate governance decision.
+
+## PKP scope and historical receipts — 7 November 2026
+
+The shared `scripts/pkp-release-policy.mjs` inventory requires OJS and OMP -4/-5/-6 jobs and archives in E02, while OMP retains its Preview feature tier. Separate manual OJS gates now include `ojs-3.5.0-6`. The v1 envelope remains; the required gate inventory is 14. Old 13-gate evidence remains historical and fails current publication validation; regenerate a pending draft for the actual candidate/artifacts and record only real observations. No old receipt is rewritten or preapproved. See [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md).
