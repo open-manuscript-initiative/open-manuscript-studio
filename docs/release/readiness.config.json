@@ -59,7 +59,8 @@
     "e2e/release-accessibility.spec.ts",
     "e2e/release-accessibility.mobile.spec.ts",
     "e2e/release-recovery.spec.ts",
-    "e2e/support/accessibilityAssertions.ts"
+    "e2e/support/accessibilityAssertions.ts",
+    "scripts/pkp-release-policy.mjs"
   ],
   "workflowMarkers": {
     ".github/workflows/ci.yml": [
@@ -81,6 +82,7 @@
       "matrix.target",
       "3_5_0-4",
       "3_5_0-5",
+      "3_5_0-6",
       "release_tier",
       "acceptance-*.json"
     ],

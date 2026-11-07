@@ -92,13 +92,15 @@ test('draft selection rejects blocked, foreign-SHA, missing, duplicate and faile
   ]) { const r = report(); mutate(r); assert.throws(() => selectAcceptanceBuild(r, sha), /E02_NOT_READY/); }
 });
 
-test('generated receipt uses the existing v1 schema and remains unpublishable with all 13 gates pending', async t => {
+test('generated receipt uses the existing v1 schema and remains unpublishable with all 14 gates pending', async t => {
   const f = await fixture(t); await prepareReleaseAssets(f.input, f.output);
   const destination = join(f.root, 'evidence'); await mkdir(destination);
   const draft = await prepareRcAcceptance(report(), sha, f.output, destination);
   assert.deepEqual(draft, createRcAcceptanceDraft(report(), sha, f.hashes));
   assert.equal(draft.owner, ''); assert.equal(draft.reviewedAt, '');
   assert.deepEqual(draft.gates.map(gate => gate.id), RC_MANUAL_GATES);
+  assert.equal(draft.gates.length, 14);
+  assert.equal(draft.gates.find(gate => gate.id === 'ojs-3.5.0-6')?.status, 'pending');
   assert.ok(draft.gates.every(gate => gate.status === 'pending' && gate.observedAt === '' && gate.evidenceRef === ''));
   assert.equal(draft.workflows.length, 5);
   assert.deepEqual(JSON.parse(await readFile(join(destination, 'acceptance-draft.json'), 'utf8')), draft);

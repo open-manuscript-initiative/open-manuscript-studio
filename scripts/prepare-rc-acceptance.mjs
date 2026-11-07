@@ -71,7 +71,7 @@ async function main() {
   if (args.length !== 4) throw new Error('Usage: prepare-rc-acceptance.mjs <report.json> <reviewed-sha> <assets-directory> <existing-output-directory>');
   const report = JSON.parse(await readFile(args[0], 'utf8'));
   await prepareRcAcceptance(report, args[1], resolve(args[2]), resolve(args[3]));
-  console.log('RC acceptance draft prepared; all 13 manual gates remain pending.');
+  console.log(`RC acceptance draft prepared; all ${RC_MANUAL_GATES.length} manual gates remain pending.`);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

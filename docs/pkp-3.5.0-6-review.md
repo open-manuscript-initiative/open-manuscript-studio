@@ -65,3 +65,8 @@ source inspection is not a substitute for those results.
 No production PKP upgrade, plugin release tag or installer publication is
 performed by this compatibility change. PHP/Docker integration runs execute in
 GitHub CI; this workspace has neither PHP nor Docker installed.
+
+
+## Release-policy reconciliation — 2026-11-07
+
+[ADR-033](architecture/adr-033-pkp-support-and-release-evidence.md) retains all six automated targets as mandatory E02 regression evidence, keeps OMP Preview, and adds `ojs-3.5.0-6` as the fourteenth manual gate. Original 13-gate receipts remain historical; prepare a new unapproved draft for the selected candidate rather than rewriting them.

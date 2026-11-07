@@ -181,7 +181,7 @@ fixture metadata in the uploaded diagnostics artifact.
 ## 1.0 OJS Stable acceptance
 
 The release-level acceptance contract is documented in
-`docs/release/ojs-3.5-stable-acceptance.md`. The two OJS matrix jobs are
+`docs/release/ojs-3.5-stable-acceptance.md`. The three OJS matrix jobs are
 mandatory evidence for the Route A Stable claim. OMP remains Preview and does
 not inherit the OJS Stable label merely because it executes the same shared
 harness.
@@ -202,3 +202,8 @@ Both -6 jobs and their attempt-bound artifacts are required by E02 evidence
 aggregation. OMP's feature tier remains Preview. Existing immutable RC1
 candidate receipts and their manual gate IDs are not rewritten by this update.
 See [the source review](pkp-3.5.0-6-review.md).
+
+
+## Current release evidence policy — 2026-11-07
+
+All six declared OJS/OMP jobs and their attempt-bound diagnostics are required E02 regression evidence, including Preview OMP. OJS 3.5.0-6 also has its own manual gate, `ojs-3.5.0-6`, bringing the current receipt to 14 gates. Historical 13-gate receipts retain their original scope and cannot approve this expanded matrix. See [ADR-033](architecture/adr-033-pkp-support-and-release-evidence.md).

@@ -5,6 +5,13 @@ on:
     branches: [main]
     paths:
       - 'scripts/aggregate-rc-evidence.mjs'
+      - 'scripts/pkp-release-policy.mjs'
+      - 'scripts/rc-evidence.mjs'
+      - 'scripts/prepare-rc-acceptance.mjs'
+      - 'tests/rc-evidence.test.mjs'
+      - 'tests/rc-acceptance-preparation.test.mjs'
+      - 'docs/release/readiness.config.json'
+      - '.github/workflows/pkp-integration-environment.yml'
       - 'tests/rc-evidence-aggregator.test.mjs'
       - '.github/workflows/rc-e02-evidence.yml'
       - '.github/workflows/rc-e02-tests.yml'
@@ -12,6 +19,13 @@ on:
     branches: [main]
     paths:
       - 'scripts/aggregate-rc-evidence.mjs'
+      - 'scripts/pkp-release-policy.mjs'
+      - 'scripts/rc-evidence.mjs'
+      - 'scripts/prepare-rc-acceptance.mjs'
+      - 'tests/rc-evidence.test.mjs'
+      - 'tests/rc-acceptance-preparation.test.mjs'
+      - 'docs/release/readiness.config.json'
+      - '.github/workflows/pkp-integration-environment.yml'
       - 'tests/rc-evidence-aggregator.test.mjs'
       - '.github/workflows/rc-e02-evidence.yml'
       - '.github/workflows/rc-e02-tests.yml'
@@ -29,4 +43,4 @@ jobs:
         with:
           node-version: 24
       - name: Verify strict run/job/artifact contract
-        run: node --test tests/rc-evidence-aggregator.test.mjs
+        run: node --test tests/rc-evidence-aggregator.test.mjs tests/rc-evidence.test.mjs tests/rc-acceptance-preparation.test.mjs

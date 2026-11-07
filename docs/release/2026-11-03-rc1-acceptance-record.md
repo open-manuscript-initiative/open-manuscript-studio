@@ -1,5 +1,8 @@
 # OMI Studio 1.0 — RC1 végső elfogadási és GO/NO-GO jegyzőkönyv
 
+> Historical worksheet. For the 7 November OJS/OMP -4/-5/-6 matrix and the current 14-gate receipt, follow [current acceptance](2026-11-04-rc1-final-acceptance.md) and [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md). This notice does not change any historical observation or approval.
+
+
 > **Állapot: ELŐKÉSZÍTETT / NO-GO — nem kiadási engedély.**  
 > Ellenőrzés napja: **2026-11-03** (Europe/Budapest).  
 > Kiadási cél: `v1.0.0-rc.1`.  

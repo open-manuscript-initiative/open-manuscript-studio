@@ -9,7 +9,7 @@ The main Studio 1.0 Readiness job collects local tests, publication evidence, SB
 ## How to run a non-publishing RC dry-run
 
 1. Select and record an immutable reviewed **main branch** 40-character commit SHA; avoid using a pull request's synthetic merge ref.
-2. On that exact main commit, complete **all** named workflows: `OMI Studio CI/CD`, `1.0 Readiness`, `CodeQL`, `OMI-SPEC-320 conformance`, `PKP integration environment` with **both** OJS 3.5.0-4/5 Stable and OMP 3.5.0-4 Preview targets, and `Tauri Builds and Releases` for Windows, Linux, both macOS previews and Android. Where `paths` filters skip a workflow, dispatch that existing workflow manually on `main`; never count a different commit or a PR run.
+2. On that exact main commit, complete **all** named workflows: `OMI Studio CI/CD`, `1.0 Readiness`, `CodeQL`, `OMI-SPEC-320 conformance`, `PKP integration environment` with OJS 3.5.0-4/5/6 Stable and OMP 3.5.0-4/5/6 Preview targets, and `Tauri Builds and Releases` for Windows, Linux, both macOS previews and Android. Where `paths` filters skip a workflow, dispatch that existing workflow manually on `main`; never count a different commit or a PR run.
 3. Open GitHub Actions → **1.0 RC exact-commit evidence (E02)** → Run workflow; choose `main` and paste that identical commit SHA as `reviewed_sha`.
 4. The workflow's job fails closed if the reviewed SHA does not equal its checkout/dispatch SHA or when any required workflow/job/archive is missing, red, skipped, cancelled, stale (over 14 days), or attached to a different commit. The latest matching attempt wins; a successful earlier run never hides a later failed run.
 5. On success, a content-neutral `omi-rc-e02-<sha>-<attempt>` artifact contains `evidence.json` and `evidence.md` with each run ID/attempt, immutable GitHub archive SHA-256 digest, byte count, and status. Review this **alongside**, not instead of, the `1.0 Readiness` artifact's own `SHA256SUMS.txt` and source manifest.
@@ -24,7 +24,7 @@ The E02 report is a **candidate evidence inventory**, even when all six workflow
 | `1.0-readiness.yml` | Build release evidence | `omi-1.0-readiness-<attempt>` |
 | `codeql.yml` | At least one completed successful language analysis | None |
 | `omi-spec-320-conformance.yml` | Completed `conformance` job | None |
-| `pkp-integration-environment.yml` | OJS 3.5.0-4/5 Stable and OMP 3.5.0-4 Preview matrix; all required jobs succeeded | Three version/role-specific evidence archives tied to the run attempt |
+| `pkp-integration-environment.yml` | OJS 3.5.0-4/5/6 Stable and OMP 3.5.0-4/5/6 Preview matrix; all required jobs succeeded | Six version/role-specific evidence archives tied to the run attempt |
 | `tauri-desktop.yml` | Windows/Linux/macOS x2 desktop and Android APK builds | Five native binary archives |
 
 A workflow must be a successful **push** or **workflow_dispatch** on the reviewed `main` commit, not merely a previously green pull request. Content-free failures remain in the Markdown report for traceability. All GitHub API calls are read-only and scoped by `actions: read`; no third-party service credentials are requested.
@@ -47,3 +47,7 @@ node --test tests/rc-evidence-aggregator.test.mjs
 Regression tests cover valid exact-SHA aggregation, missing workflow evidence, PR/foreign branches, later red/cancelled runs, skipped PKP/Android targets, duplicates/expired/empty/unhashed archives, stale timestamps and rerun attempt artifact freshness.
 
 **Rollback:** the E02 workflow can be disabled or the new script/test removed without changing the web/native applications, manuscript schemas, production API, regular beta build workflows, or existing release artifacts. This change intentionally creates no database or storage migrations.
+
+## Explicit PKP regression policy — 7 November 2026
+
+All six declared targets remain mandatory even though OMP remains Preview. This is a regression evidence gate, not a Stable OMP capability claim. The separate owner receipt now has 14 required manual gates, including `ojs-3.5.0-6`; this inventory still does not approve any manual gate. See [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md).

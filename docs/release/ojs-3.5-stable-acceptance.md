@@ -25,9 +25,9 @@ branch:
 | OJS | `pkpofficial/ojs:3_5_0-4` | Stable | Blocking |
 | OJS | `pkpofficial/ojs:3_5_0-5` | Stable | Blocking |
 | OJS | `pkpofficial/ojs:3_5_0-6` | Stable | Blocking |
-| OMP | `pkpofficial/omp:3_5_0-4` | Preview | Compatibility evidence only |
-| OMP | `pkpofficial/omp:3_5_0-5` | Preview | Compatibility evidence only |
-| OMP | pinned 3.5.0-6 source on -5 PHP/Apache runtime | Preview | Compatibility evidence only |
+| OMP | `pkpofficial/omp:3_5_0-4` | Preview | Required E02 regression evidence; Preview feature tier |
+| OMP | `pkpofficial/omp:3_5_0-5` | Preview | Required E02 regression evidence; Preview feature tier |
+| OMP | pinned 3.5.0-6 source on -5 PHP/Apache runtime | Preview | Required E02 regression evidence; Preview feature tier |
 
 OMP remains visibly labelled Preview even though it uses the same harness.
 Privacy or data-loss defects found in Preview code still remain release
@@ -106,9 +106,13 @@ release evidence.
 
 ## Release rule
 
-For `v1.0.0-rc.1` and `v1.0.0`, neither OJS Stable matrix target may be
+For `v1.0.0-rc.1` and `v1.0.0`, no OJS Stable matrix target may be
 waived because another target is green. A regression in 3.5.0-4, 3.5.0-5 or 3.5.0-6
 reopens the OJS Stable gate.
 
 The corresponding automation is
 `.github/workflows/pkp-integration-environment.yml`.
+
+## Acceptance policy — 7 November 2026
+
+All six OJS/OMP version jobs and attempt-bound archives are mandatory E02 regression evidence. This does not promote OMP from Preview. OJS -4/-5/-6 each additionally require their own exact-candidate manual gate; new receipts contain 14 gates, all pending until actual review. Historical 13-gate receipts remain unchanged and cannot approve the expanded scope. See [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md).
