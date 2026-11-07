@@ -144,7 +144,11 @@ export function StudioMenuWithHelp({
   }, [contentHost, helpOpen, integrationsOpen, agentsOpen, listsOpen, modulesOpen]);
 
   const closeExternalViews = () => { setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); setModulesOpen(false); };
-  const requestDocumentClose = () => { if (window.confirm(closeDocumentCopy.confirm)) void closeCurrentDocument(); };
+  const requestDocumentClose = () => {
+    if (!window.confirm(closeDocumentCopy.confirm)) return;
+    onClose();
+    void closeCurrentDocument();
+  };
 
   async function sendOmpRevision(): Promise<void> {
     if (!ompAuthorContext?.writable || ompRevisionBusy) return;

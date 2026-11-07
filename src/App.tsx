@@ -187,6 +187,9 @@ function StudioApplication() {
   const activateDesktopTab = documentSessions.activate;
   const closeDesktopTab = documentSessions.close;
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
+  useEffect(() => {
+    if (!hasOpenDocument) setMenuOpen(false);
+  }, [hasOpenDocument]);
 
   useEffect(() => {
     if (reviewMode) return;

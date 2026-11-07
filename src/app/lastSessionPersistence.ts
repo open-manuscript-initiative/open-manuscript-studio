@@ -89,6 +89,7 @@ export async function initializeLastSessionPersistence(): Promise<void> {
 
   useStudioStore.subscribe((state, previousState) => {
     if (
+      state.hasOpenDocument === previousState.hasOpenDocument &&
       state.manuscript === previousState.manuscript &&
       state.selectedSectionId === previousState.selectedSectionId &&
       state.pendingChangeSet === previousState.pendingChangeSet

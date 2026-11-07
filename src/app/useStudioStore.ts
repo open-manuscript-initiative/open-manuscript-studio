@@ -121,6 +121,7 @@ interface StudioState {
   revertRevision: (revisionId: RevisionId) => void;
   loadManuscript: (manuscript: LegacyOmiManuscript) => void;
   resumeDocumentSession: (session: DocumentWorkingSession) => void;
+  closeDocumentSession: () => void;
   resetSample: () => void;
 }
 
@@ -889,6 +890,19 @@ export const useStudioStore = create<StudioState>((set) => ({
           : manuscript.sections[0]?.id ?? null,
       };
     }),
+
+  closeDocumentSession: () => {
+    cancelAutomaticCheckpoint();
+    set({
+      hasOpenDocument: false,
+      pendingChangeSet: null,
+      selectedSectionId: null,
+      currentStudyNotesVisible: false,
+      proofingPanelOpen: false,
+      activeProofingChangeId: null,
+      proofingSelection: null,
+    });
+  },
 
   resumeDocumentSession: (session) => {
     cancelAutomaticCheckpoint();

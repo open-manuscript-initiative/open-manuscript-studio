@@ -64,3 +64,39 @@ test('an explicitly closed workspace still requires sign-in', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'Welcome to OMI Studio!' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'No document is open' })).toHaveCount(0);
 });
+
+for (const width of [1440, 393]) {
+  test(`the final document closes without a session recheck or logout (${width}px)`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const api = await installMockStudioApi(page);
+    await signInToStudio(page);
+    let sessionRechecks = 0;
+    let logoutRequests = 0;
+    await page.route('**/api/auth/me', async (route) => {
+      sessionRechecks++;
+      await route.fulfill({ status: 401, json: { error: { code: 'SYNTHETIC_REAUTH_UNAVAILABLE' } } });
+    });
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/auth/logout') logoutRequests++;
+    });
+    await page.evaluate(() => { (window as unknown as Record<string, unknown>).__closeDocumentSentinel = 'same-page'; });
+    for (let i = 0; i < 2; i++) {
+      await page.getByRole('button', { name: /^New OMI study/ }).click();
+      await expect(page.locator('section.editor')).toBeVisible();
+      await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+      const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+      await menu.getByRole('button', { name: 'Document', exact: true }).click();
+      page.once('dialog', (dialog) => { void dialog.accept(); });
+      await menu.locator('[data-document-close="true"]').click();
+      await expect(page.getByRole('heading', { name: 'No document is open' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Welcome to OMI Studio!' })).toHaveCount(0);
+      expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).__closeDocumentSentinel)).toBe('same-page');
+      expect(sessionRechecks).toBe(0);
+      expect(logoutRequests).toBe(0);
+    }
+    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Welcome to OMI Studio!' })).toBeVisible();
+    expect(logoutRequests).toBe(1);
+    expect(api.unhandledRequests).toEqual([]);
+  });
+}
