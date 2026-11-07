@@ -19,7 +19,10 @@ function formatBytes(value: string): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ProfileSavedDocumentsSection({ confirmOpen = true }: { confirmOpen?: boolean }) {
+export function ProfileSavedDocumentsSection({ confirmOpen = true, onOpened }: {
+  confirmOpen?: boolean;
+  onOpened?: () => void;
+}) {
   const { locale } = useTranslation();
   const copy = getCloudStorageCopy(locale);
   const [documents, setDocuments] = useState<ProfileSavedDocument[]>([]);
@@ -47,6 +50,7 @@ export function ProfileSavedDocumentsSection({ confirmOpen = true }: { confirmOp
       const bytes = await downloadCloudBackup(document.id);
       await restoreOmiContainerBytes(bytes, document.manuscriptId);
       setMessage(copy.restored);
+      onOpened?.();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
