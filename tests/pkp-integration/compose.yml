@@ -26,6 +26,7 @@ services:
         PKP_PLATFORM: ${PKP_PLATFORM:-ojs}
         PKP_VERSION: ${PKP_VERSION:-3_5_0-6}
         PKP_IMAGE_VERSION: ${PKP_IMAGE_VERSION:-3_5_0-6}
+        OMI_PKP_TARGET_VERSION: ${PKP_VERSION:-3_5_0-6}
     environment:
       SERVERNAME: pkp
       PKP_CLI_INSTALL: "0"

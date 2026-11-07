@@ -66,6 +66,10 @@ test('OMP -6 uses exact source and locked dependencies rather than falsely relab
   assert.match(pkpDockerfileSource, /PKP source version does not match target/);
   assert.match(environmentScriptSource, /export PKP_IMAGE_VERSION="3_5_0-5"/);
   assert.match(composeSource, /PKP_IMAGE_VERSION:/);
+  assert.match(pkpDockerfileSource, /ARG OMI_PKP_TARGET_VERSION/);
+  assert.match(pkpDockerfileSource, /ENV PKP_VERSION=\$\{OMI_PKP_TARGET_VERSION\}/);
+  assert.match(pkpDockerfileSource, /"\$OMI_PKP_TARGET_VERSION"/);
+  assert.match(composeSource, /OMI_PKP_TARGET_VERSION:/);
 });
 
 test('CI only executes the fixed plugin branch without shared credentials or caches', () => {
