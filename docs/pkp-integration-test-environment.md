@@ -19,7 +19,7 @@ The boundary is intentional:
 
 | Service | Purpose |
 | --- | --- |
-| `pkp` | OJS 3.5.0-4/3.5.0-5 (Stable acceptance) or OMP 3.5.0-4 (Preview) with the matching OMI plugin source |
+| `pkp` | OJS 3.5.0-4/5/6 (Stable acceptance) or OMP 3.5.0-4/5/6 (Preview) with the matching OMI plugin source |
 | `pkp-db` | Isolated MariaDB for OJS/OMP |
 | `studio-api` | The real Open Manuscript Studio API after both Prisma migrations |
 | `studio-db` | Isolated PostgreSQL databases for Studio and OMI Identity |
@@ -53,16 +53,16 @@ npm ci
 npm run playwright:install
 ```
 
-Start and install the OJS 3.5.0-4 Stable target:
+Start and install the OJS 3.5.0-6 Stable target:
 
 ```bash
-PKP_VERSION=3_5_0-4 npm run pkp:up -- ojs
-PKP_VERSION=3_5_0-4 npm run pkp:verify -- ojs
-PKP_VERSION=3_5_0-4 npm run pkp:test -- ojs
+PKP_VERSION=3_5_0-6 npm run pkp:up -- ojs
+PKP_VERSION=3_5_0-6 npm run pkp:verify -- ojs
+PKP_VERSION=3_5_0-6 npm run pkp:test -- ojs
 ```
 
 Repeat with `PKP_VERSION=3_5_0-5` for the second Stable OJS target.
-Use `omp` with `PKP_VERSION=3_5_0-4` for the Preview OMP target. The default endpoints are:
+Use `omp` with `PKP_VERSION=3_5_0-6` for the Preview OMP target. The default endpoints are:
 
 - PKP: `http://127.0.0.1:8080`
 - Studio API: `http://127.0.0.1:3001`
@@ -132,7 +132,8 @@ for relevant pull requests and pushes:
 
 - OJS 3.5.0-4 — **Stable**, release-blocking acceptance target;
 - OJS 3.5.0-5 — **Stable**, release-blocking acceptance target;
-- OMP 3.5.0-4 — **Preview**, retained as a clearly labelled compatibility target.
+- OJS 3.5.0-6 — **Stable**, release-blocking acceptance target;
+- OMP 3.5.0-4, 3.5.0-5 and 3.5.0-6 — **Preview**, each with its own compatibility job.
 
 A manual run can select `ojs`, `omp` or `both`. CI always checks out the
 matching plugin's protected `main` branch; arbitrary plugin refs are
@@ -184,3 +185,20 @@ The release-level acceptance contract is documented in
 mandatory evidence for the Route A Stable claim. OMP remains Preview and does
 not inherit the OJS Stable label merely because it executes the same shared
 harness.
+
+
+## 3.5.0-6 source/runtime distinction
+
+Local runs now default to 3.5.0-6. Older explicit `PKP_VERSION` targets remain available.
+OJS uses the official `pkpofficial/ojs:3_5_0-6` image. On 2026-11-07 the
+corresponding official OMP image tag returned 404, although the OMP source tag
+was already published. For OMP -6 the harness uses the -5 PHP/Apache image
+only as a runtime and replaces the entire application with the official -6
+checkout at `9e2a7fd0054ca73e5f5a04c40fdcf9da2545dc6c`, its exact recursive
+submodules and Composer-locked dependencies. A build-time version check
+rejects any application that does not identify as the selected target.
+
+Both -6 jobs and their attempt-bound artifacts are required by E02 evidence
+aggregation. OMP's feature tier remains Preview. Existing immutable RC1
+candidate receipts and their manual gate IDs are not rewritten by this update.
+See [the source review](pkp-3.5.0-6-review.md).

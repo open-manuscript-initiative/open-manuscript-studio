@@ -1,8 +1,39 @@
 ARG PKP_PLATFORM=ojs
-ARG PKP_VERSION=3_5_0-4
-FROM docker.io/pkpofficial/${PKP_PLATFORM}:${PKP_VERSION}
+ARG PKP_VERSION=3_5_0-6
+ARG PKP_IMAGE_VERSION=3_5_0-6
+ARG OMI_PKP_TARGET_VERSION=${PKP_VERSION}
+FROM docker.io/pkpofficial/${PKP_PLATFORM}:${PKP_IMAGE_VERSION}
+
+ARG PKP_PLATFORM
+ARG OMI_PKP_TARGET_VERSION
+ARG PKP_IMAGE_VERSION
+ENV PKP_VERSION=${OMI_PKP_TARGET_VERSION}
 
 USER root
+
+# OMP's 3.5.0-6 source release exists, but its official Docker tag is not yet
+# published. Reuse only the 3.5.0-5 PHP/Apache runtime and replace the complete
+# application with the exact release checkout, pinned recursive submodules and
+# dependencies from its Composer lock. Never label the old application as -6.
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+RUN if [ "${PKP_PLATFORM}:${OMI_PKP_TARGET_VERSION}" = "omp:3_5_0-6" ]; then \
+      test "$PKP_IMAGE_VERSION" = "3_5_0-5" \
+      && apt-get update \
+      && apt-get install -y --no-install-recommends git ca-certificates unzip \
+      && rm -rf /var/lib/apt/lists/* \
+      && git clone --depth 1 --branch 3_5_0-6 https://github.com/pkp/omp.git /tmp/omp-release \
+      && test "$(git -C /tmp/omp-release rev-parse HEAD)" = "9e2a7fd0054ca73e5f5a04c40fdcf9da2545dc6c" \
+      && git -C /tmp/omp-release submodule update --init --recursive --depth 1 \
+      && COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir=/tmp/omp-release/lib/pkp --no-dev --prefer-dist --no-interaction --no-progress \
+      && composer check-platform-reqs --working-dir=/tmp/omp-release/lib/pkp --no-dev \
+      && COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir=/tmp/omp-release/plugins/generic/citationStyleLanguage --no-dev --prefer-dist --no-interaction --no-progress \
+      && composer check-platform-reqs --working-dir=/tmp/omp-release/plugins/generic/citationStyleLanguage --no-dev \
+      && cp /tmp/omp-release/config.TEMPLATE.inc.php /tmp/omp-release/config.inc.php \
+      && rm -rf /var/www/html \
+      && mv /tmp/omp-release /var/www/html \
+      && chown -R www-data:www-data /var/www/html; \
+    fi \
+    && php -r '$xml = simplexml_load_file("/var/www/html/dbscripts/xml/version.xml"); if ((string)$xml->release !== str_replace(["_", "-"], ".", $argv[1])) { fwrite(STDERR, "PKP source version does not match target\n"); exit(1); }' "$OMI_PKP_TARGET_VERSION"
 
 COPY --chown=www-data:www-data runtime/plugin/ /var/www/html/plugins/generic/studioIntegration/
 COPY --chown=www-data:www-data pkp/omiIntegrationFixture.php /var/www/html/tools/omiIntegrationFixture.php

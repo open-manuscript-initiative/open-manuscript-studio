@@ -75,19 +75,25 @@ jobs:
             ojs)
               targets='[
                 {"platform":"ojs","version":"3_5_0-4","release_tier":"stable"},
-                {"platform":"ojs","version":"3_5_0-5","release_tier":"stable"}
+                {"platform":"ojs","version":"3_5_0-5","release_tier":"stable"},
+                {"platform":"ojs","version":"3_5_0-6","release_tier":"stable"}
               ]'
               ;;
             omp)
               targets='[
-                {"platform":"omp","version":"3_5_0-4","release_tier":"preview"}
+                {"platform":"omp","version":"3_5_0-4","release_tier":"preview"},
+                {"platform":"omp","version":"3_5_0-5","release_tier":"preview"},
+                {"platform":"omp","version":"3_5_0-6","release_tier":"preview"}
               ]'
               ;;
             both)
               targets='[
                 {"platform":"ojs","version":"3_5_0-4","release_tier":"stable"},
                 {"platform":"ojs","version":"3_5_0-5","release_tier":"stable"},
-                {"platform":"omp","version":"3_5_0-4","release_tier":"preview"}
+                {"platform":"ojs","version":"3_5_0-6","release_tier":"stable"},
+                {"platform":"omp","version":"3_5_0-4","release_tier":"preview"},
+                {"platform":"omp","version":"3_5_0-5","release_tier":"preview"},
+                {"platform":"omp","version":"3_5_0-6","release_tier":"preview"}
               ]'
               ;;
             *)

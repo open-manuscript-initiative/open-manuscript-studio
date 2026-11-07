@@ -38,12 +38,18 @@ export const REQUIRED_WORKFLOWS = Object.freeze([
       'Select PKP acceptance targets',
       'ojs 3_5_0-4 (stable) workflow E2E',
       'ojs 3_5_0-5 (stable) workflow E2E',
+      'ojs 3_5_0-6 (stable) workflow E2E',
       'omp 3_5_0-4 (preview) workflow E2E',
+      'omp 3_5_0-5 (preview) workflow E2E',
+      'omp 3_5_0-6 (preview) workflow E2E',
     ],
     artifacts: [
       'pkp-ojs-3_5_0-4-stable-diagnostics-{attempt}',
       'pkp-ojs-3_5_0-5-stable-diagnostics-{attempt}',
+      'pkp-ojs-3_5_0-6-stable-diagnostics-{attempt}',
       'pkp-omp-3_5_0-4-preview-diagnostics-{attempt}',
+      'pkp-omp-3_5_0-5-preview-diagnostics-{attempt}',
+      'pkp-omp-3_5_0-6-preview-diagnostics-{attempt}',
     ],
   },
   {

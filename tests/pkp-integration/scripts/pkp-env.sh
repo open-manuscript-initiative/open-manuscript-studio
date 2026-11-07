@@ -60,9 +60,16 @@ case "$PLATFORM" in
 esac
 
 export PKP_PLATFORM="$PLATFORM"
-export PKP_VERSION="${PKP_VERSION:-3_5_0-4}"
+export PKP_VERSION="${PKP_VERSION:-3_5_0-6}"
+# OMP -6 has a source tag but no published official image yet. The Dockerfile
+# replaces the entire -5 application with the pinned -6 release source.
+if [[ "$PLATFORM" == "omp" && "$PKP_VERSION" == "3_5_0-6" ]]; then
+  export PKP_IMAGE_VERSION="3_5_0-5"
+else
+  export PKP_IMAGE_VERSION="$PKP_VERSION"
+fi
 if [[ -z "${PKP_RELEASE_TIER:-}" ]]; then
-  if [[ "$PLATFORM" == "ojs" && ( "$PKP_VERSION" == "3_5_0-4" || "$PKP_VERSION" == "3_5_0-5" ) ]]; then
+  if [[ "$PLATFORM" == "ojs" && ( "$PKP_VERSION" == "3_5_0-4" || "$PKP_VERSION" == "3_5_0-5" || "$PKP_VERSION" == "3_5_0-6" ) ]]; then
     PKP_RELEASE_TIER="stable"
   else
     PKP_RELEASE_TIER="preview"

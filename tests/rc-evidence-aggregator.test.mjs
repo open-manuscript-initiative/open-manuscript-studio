@@ -94,6 +94,19 @@ test('a skipped mandatory PKP version or Android native build is a release block
   assert.ok(failureCodes(assess(other)).includes('MISSING_OR_SKIPPED_JOB'));
 });
 
+test('both 3.5.0-6 targets require successful jobs and attempt-bound evidence', () => {
+  for (const platform of ['ojs', 'omp']) {
+    const workflows = complete();
+    const target = workflows['pkp-integration-environment.yml'];
+    target.jobs.find(job => job.name.startsWith(platform + ' 3_5_0-6 ')).conclusion = 'skipped';
+    assert.ok(failureCodes(assess(workflows)).includes('MISSING_OR_SKIPPED_JOB'));
+    const missingArtifact = complete();
+    const evidence = missingArtifact['pkp-integration-environment.yml'];
+    evidence.artifacts = evidence.artifacts.filter(item => !item.name.startsWith('pkp-' + platform + '-3_5_0-6-'));
+    assert.ok(failureCodes(assess(missingArtifact)).includes('MISSING_OR_DUPLICATE_ARTIFACT'));
+  }
+});
+
 test('missing, duplicate, expired, empty or unhashed GitHub archives fail closed', () => {
   for (const mutate of [
     artifacts => artifacts.pop(),
@@ -159,5 +172,5 @@ test('the report contains only content-neutral run identifiers and archive check
   assert.equal(serialized.includes('GITHUB_TOKEN'), false);
   assert.equal(serialized.includes('manuscriptTitle'), false);
   assert.match(serialized, /sha256:[a-f0-9]{64}/);
-  assert.equal(report.workflows.find(w => w.workflow === 'pkp-integration-environment.yml').artifacts.length, 3);
+  assert.equal(report.workflows.find(w => w.workflow === 'pkp-integration-environment.yml').artifacts.length, 6);
 });
