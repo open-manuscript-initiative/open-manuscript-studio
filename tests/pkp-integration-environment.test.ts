@@ -38,21 +38,34 @@ test('configuration checks are independent of checkout line endings', () => {
 
 test('PKP integration environment supports the stable OJS matrix and preview OMP target', () => {
   assert.match(pkpDockerfileSource, /ARG PKP_PLATFORM=ojs/);
-  assert.match(pkpDockerfileSource, /ARG PKP_VERSION=3_5_0-4/);
+  assert.match(pkpDockerfileSource, /ARG PKP_VERSION=3_5_0-6/);
   assert.match(workflowSource, /"platform":"ojs","version":"3_5_0-4","release_tier":"stable"/);
   assert.match(workflowSource, /"platform":"ojs","version":"3_5_0-5","release_tier":"stable"/);
   assert.match(workflowSource, /"platform":"omp","version":"3_5_0-4","release_tier":"preview"/);
+  assert.match(workflowSource, /"platform":"ojs","version":"3_5_0-6","release_tier":"stable"/);
+  assert.match(workflowSource, /"platform":"omp","version":"3_5_0-5","release_tier":"preview"/);
+  assert.match(workflowSource, /"platform":"omp","version":"3_5_0-6","release_tier":"preview"/);
   assert.ok(workflowSource.includes('PKP_VERSION: $' + '{{ matrix.target.version }}'));
   assert.ok(workflowSource.includes('PKP_RELEASE_TIER: $' + '{{ matrix.target.release_tier }}'));
   assert.match(
     pkpDockerfileSource,
-    /docker\.io\/pkpofficial\/\$\{PKP_PLATFORM\}:\$\{PKP_VERSION\}/,
+    /docker\.io\/pkpofficial\/\$\{PKP_PLATFORM\}:\$\{PKP_IMAGE_VERSION\}/,
   );
   assert.match(environmentScriptSource, /PLATFORM.*ojs/);
   assert.match(environmentScriptSource, /omi-ojs-plugin\.git/);
   assert.match(environmentScriptSource, /omi-omp-plugin\.git/);
   assert.match(pkpDockerfileSource, /SetEnvIf Authorization/);
   assert.match(pkpDockerfileSource, /HTTP_AUTHORIZATION/);
+});
+
+test('OMP -6 uses exact source and locked dependencies rather than falsely relabelling an old image', () => {
+  assert.match(pkpDockerfileSource, /9e2a7fd0054ca73e5f5a04c40fdcf9da2545dc6c/);
+  assert.match(pkpDockerfileSource, /submodule update --init --recursive --depth 1/);
+  assert.match(pkpDockerfileSource, /composer install .*--no-dev/);
+  assert.match(pkpDockerfileSource, /composer check-platform-reqs/);
+  assert.match(pkpDockerfileSource, /PKP source version does not match target/);
+  assert.match(environmentScriptSource, /export PKP_IMAGE_VERSION="3_5_0-5"/);
+  assert.match(composeSource, /PKP_IMAGE_VERSION:/);
 });
 
 test('CI only executes the fixed plugin branch without shared credentials or caches', () => {

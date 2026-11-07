@@ -2,7 +2,7 @@
 
 Status: Route A release gate
 Target: Open Manuscript Studio 1.0
-Accepted OJS targets: 3.5.0-4 and 3.5.0-5
+Accepted OJS target matrix: 3.5.0-4, 3.5.0-5 and 3.5.0-6 (each requires passing evidence)
 OMP status: Preview
 
 ## Purpose
@@ -17,14 +17,17 @@ the separate conformance and publication-release gates.
 
 ## Mandatory matrix
 
-Both OJS jobs must pass against the matching plugin from its protected `main`
+All three OJS jobs must pass against the matching plugin from its protected `main`
 branch:
 
 | Platform | PKP image | Release tier | Route A consequence |
 | --- | --- | --- | --- |
 | OJS | `pkpofficial/ojs:3_5_0-4` | Stable | Blocking |
 | OJS | `pkpofficial/ojs:3_5_0-5` | Stable | Blocking |
+| OJS | `pkpofficial/ojs:3_5_0-6` | Stable | Blocking |
 | OMP | `pkpofficial/omp:3_5_0-4` | Preview | Compatibility evidence only |
+| OMP | `pkpofficial/omp:3_5_0-5` | Preview | Compatibility evidence only |
+| OMP | pinned 3.5.0-6 source on -5 PHP/Apache runtime | Preview | Compatibility evidence only |
 
 OMP remains visibly labelled Preview even though it uses the same harness.
 Privacy or data-loss defects found in Preview code still remain release
@@ -104,7 +107,7 @@ release evidence.
 ## Release rule
 
 For `v1.0.0-rc.1` and `v1.0.0`, neither OJS Stable matrix target may be
-waived because the other target is green. A regression in 3.5.0-4 or 3.5.0-5
+waived because another target is green. A regression in 3.5.0-4, 3.5.0-5 or 3.5.0-6
 reopens the OJS Stable gate.
 
 The corresponding automation is
