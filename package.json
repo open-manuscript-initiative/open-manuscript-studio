@@ -126,7 +126,8 @@
     "test:core-authority": "node --test --experimental-test-module-mocks --experimental-transform-types --import ./tests/register-ts-extension-loader.mjs tests/core-authority.test.ts",
     "evidence:core-authority": "node --experimental-test-module-mocks --experimental-transform-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-authority.ts",
     "test:core-relationships": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-relationships.test.ts",
-    "evidence:core-relationships": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-relationships.ts"
+    "evidence:core-relationships": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-relationships.ts",
+    "test:privacy": "npm --prefix server run test:privacy && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/privacy-client.test.ts tests/account-deletion-flow.test.ts"
   },
   "dependencies": {
     "@hocuspocus/provider": "^4.7.0",

@@ -38,7 +38,7 @@ export async function deleteStudioAccount(
   });
 
   try {
-    await anonymizeStudioPrincipal(userId);
+    await pseudonymizeStudioPrincipal(userId);
   } catch (error) {
     // The Identity record still exists at this point. Re-enable it if the
     // Studio-side transaction failed so the user can retry safely.
@@ -94,7 +94,7 @@ async function assertOwnershipCanBeReleased(userId: string): Promise<void> {
   }
 }
 
-async function anonymizeStudioPrincipal(userId: string): Promise<void> {
+async function pseudonymizeStudioPrincipal(userId: string): Promise<void> {
   const deletedAddress = `deleted-${randomBytes(16).toString('hex')}@deleted.invalid`;
   const unusablePasswordHash = `deleted:${randomBytes(32).toString('hex')}`;
 

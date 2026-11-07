@@ -1,3 +1,4 @@
+import { PrivacyNotice } from '../components/PrivacyNotice';
 import {
   type FormEvent,
   useEffect,
@@ -313,6 +314,7 @@ export function RegisterPage({
               </div>
             )}
 
+            <div className="auth-register-full"><PrivacyNotice /></div>
             <button
               className="auth-primary-button auth-login-submit auth-register-submit auth-register-full"
               type="submit"

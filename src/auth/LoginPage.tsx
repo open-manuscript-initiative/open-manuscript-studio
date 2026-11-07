@@ -1,3 +1,4 @@
+import { PrivacyNotice } from '../components/PrivacyNotice';
 import { hasPlatformPasskey } from '../platform/passkeyCapability';
 import {
   type FormEvent,
@@ -404,6 +405,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
                   : t('auth.login.submit')}
             </button>
           </form>
+          <PrivacyNotice />
 
           {adminMode ? (
             <footer className="auth-footer auth-login-footer auth-admin-login-footer">

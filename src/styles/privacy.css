@@ -1,0 +1,11 @@
+.privacy-notice { margin-block: 1rem; max-width: 100%; overflow-wrap: anywhere; }
+.privacy-notice > summary { cursor: pointer; font-weight: 600; }
+.privacy-notice__body { padding-block: .5rem; }
+.privacy-notice__body h3 { font-size: 1rem; margin-block: 1rem .25rem; }
+.privacy-notice__body p { white-space: pre-line; }
+.privacy-notice__body dl { border-block-start: 1px solid #cbd5e1; padding-block-start: .75rem; }
+.privacy-notice__body dt { font-weight: 600; }
+.privacy-notice__body dd { margin-inline-start: 0; margin-block-end: .5rem; white-space: pre-line; }
+.account-privacy { margin-block: 1.5rem; }
+.account-privacy > button { width: fit-content; max-width: 100%; }
+.privacy-page { padding: 1.25rem; max-width: 55rem; margin-inline: auto; }

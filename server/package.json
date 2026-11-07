@@ -27,7 +27,10 @@
     "test:extension-manifest": "node --import tsx --test src/integrations/extensionManifestSchema.test.ts",
     "test:profile-saved-documents": "npm run prisma:generate && tsc -p tsconfig.json && node --test --experimental-test-module-mocks ../tests/profile-saved-documents-routes.test.mjs",
     "server:register": "node dist/cli/registerServer.js",
-    "test:oidc-ssrf": "node --import tsx --test src/integrations/security/oidcMetadataHttp.test.ts"
+    "test:oidc-ssrf": "node --import tsx --test src/integrations/security/oidcMetadataHttp.test.ts",
+    "privacy:check": "tsx src/cli/checkPrivacyNotice.ts",
+    "privacy:cleanup": "tsx src/cli/cleanupExpiredAuthentication.ts",
+    "test:privacy": "tsc -p tsconfig.json && node --test --experimental-test-module-mocks ../tests/privacy-notice.test.mjs ../tests/privacy-routes.test.mjs ../tests/privacy-retention.test.mjs"
   },
   "dependencies": {
     "@hocuspocus/server": "4.7.0",

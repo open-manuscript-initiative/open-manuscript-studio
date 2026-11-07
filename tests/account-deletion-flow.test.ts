@@ -20,7 +20,7 @@ test('account deletion is authenticated and requires the current e-mail address'
   assert.match(serviceSource, /identityUser\.email/);
 });
 
-test('account deletion removes login data while preserving scholarly history only through an anonymized principal', () => {
+test('account deletion removes login data while preserving scholarly history through a pseudonymized principal', () => {
   assert.match(serviceSource, /identityPrisma\.user\.delete/);
   assert.match(serviceSource, /userSession\.deleteMany/);
   assert.match(serviceSource, /userIdentity\.deleteMany/);
@@ -46,4 +46,10 @@ test('account deletion copy explains retained and external data', () => {
     assert.ok(copy.retained.length > 0);
     assert.ok(copy.external.length > 0);
   }
+});
+
+// Old translation overlays must not resurrect a blanket anonymity promise.
+test('retention copy stays on the reviewed text until legal translations are updated', () => {
+  assert.equal(getAccountDeletionCopy('bg').retained, getAccountDeletionCopy('en').retained);
+  assert.match(getAccountDeletionCopy('en').retained, /pseudonymized/);
 });

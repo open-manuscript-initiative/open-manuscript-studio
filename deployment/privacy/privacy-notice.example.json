@@ -1,0 +1,32 @@
+{
+  "version": "2026-11-07",
+  "language": "hu",
+  "operatorReviewed": false,
+  "controller": {
+    "name": "",
+    "postalAddress": "",
+    "email": ""
+  },
+  "noticeUrl": "",
+  "authority": {
+    "name": "",
+    "url": ""
+  },
+  "processing": [
+    {
+      "purpose": "",
+      "categories": "",
+      "legalBasis": "",
+      "retention": "",
+      "recipients": "",
+      "internationalTransfers": ""
+    }
+  ],
+  "rights": "",
+  "dataSources": "",
+  "requiredData": "",
+  "automatedDecisions": "",
+  "cookies": "",
+  "backups": "",
+  "deletion": ""
+}
