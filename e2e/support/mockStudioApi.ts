@@ -167,6 +167,11 @@ export async function installMockStudioApi(
       return;
     }
 
+    if (request.method() === 'GET' && url.pathname === '/api/privacy') {
+      await fulfillJson(route, 200, { configured: false });
+      return;
+    }
+
     if (request.method() === 'GET' && url.pathname === '/api/auth/providers') {
       await fulfillJson(route, 200, {
         providers: AUTH_PROVIDERS,

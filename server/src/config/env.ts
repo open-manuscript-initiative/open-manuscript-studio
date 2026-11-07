@@ -15,6 +15,8 @@ import {
 } from './collaborationAvailability.js';
 
 const environmentSchema = z.object({
+  // Absolute path to a reviewed JSON notice; all its contents are public.
+  OMI_PRIVACY_CONFIG_PATH: z.string().trim().min(1).optional(),
   NODE_ENV: z
     .enum([
       'development',

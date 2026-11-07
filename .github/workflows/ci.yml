@@ -138,6 +138,9 @@ jobs:
           npx tsc -p server/tsconfig.json
           node --test --experimental-test-module-mocks tests/extension-registry-routes.test.mjs
 
+      - name: Test privacy notice, account export and expiry-only cleanup
+        run: npm run test:privacy
+
       - name: Test passkey authentication routes
         run: npm run test:passkey-auth
 

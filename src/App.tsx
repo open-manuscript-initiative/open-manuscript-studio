@@ -1,3 +1,4 @@
+import { PublicPrivacyPage } from './components/PrivacyNotice';
 import { createStudioDocumentSessions } from './app/documentSessions';
 import {
   useCallback,
@@ -121,6 +122,10 @@ export function App() {
   const [authView, setAuthView] = useState<AuthView>(() =>
     new URLSearchParams(window.location.search).has('invite') ? 'register' : 'login',
   );
+
+  if (new URLSearchParams(window.location.search).get('privacy') === '1') {
+    return <PublicPrivacyPage />;
+  }
 
   const authScreen = authView === 'login' ? (
     <LoginPage onShowRegister={() => setAuthView('register')} />

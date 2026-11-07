@@ -399,3 +399,11 @@ Repository documents include:
 Open Manuscript Studio is a **reference implementation**, not a proprietary replacement for the OMI standard. Its purpose is to exercise OMI specifications in real authoring, peer-review, editorial, institutional and publishing workflows while keeping scholarly manuscripts structured, portable and interoperable.
 
 **Write naturally. Structure once. Publish everywhere.**
+
+### Privacy and legal operations
+
+Each hosted server must identify its actual controller and provide its own reviewed
+notice before registration. See [configuration, requests, retention, breach handling
+and conditional regulatory duties](docs/server/privacy-and-legal-operations.md).
+Public notice: `/?privacy=1`; authenticated account overview: Account → Privacy.
+These tools do not certify a deployment or configure its offsite backups.

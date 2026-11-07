@@ -10,6 +10,7 @@ import {
   authRateLimit,
   integrationRateLimit,
 } from './middleware/rateLimits.js';
+import { privacyRouter } from './routes/privacyRoutes.js';
 import { accountDeletionRouter } from './routes/accountDeletionRoutes.js';
 import { agentReviewRouter } from './routes/agentReviewRoutes.js';
 import { authRouter } from './routes/authRoutes.js';
@@ -151,6 +152,7 @@ app.use('/api/auth', passkeyRouter); // Compatibility facade; identical applicat
 app.use('/api/auth', authRouter);
 app.use('/api/central-admin', centralAdminRouter);
 app.use('/api/institution-admin', institutionAdminApiRouter);
+app.use('/api', privacyRouter);
 app.use('/api', accountDeletionRouter);
 app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);
