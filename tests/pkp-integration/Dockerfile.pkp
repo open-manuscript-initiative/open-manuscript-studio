@@ -24,6 +24,8 @@ RUN if [ "${PKP_PLATFORM}:${PKP_VERSION}" = "omp:3_5_0-6" ]; then \
       && git -C /tmp/omp-release submodule update --init --recursive --depth 1 \
       && COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir=/tmp/omp-release/lib/pkp --no-dev --prefer-dist --no-interaction --no-progress \
       && composer check-platform-reqs --working-dir=/tmp/omp-release/lib/pkp --no-dev \
+      && COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir=/tmp/omp-release/plugins/generic/citationStyleLanguage --no-dev --prefer-dist --no-interaction --no-progress \
+      && composer check-platform-reqs --working-dir=/tmp/omp-release/plugins/generic/citationStyleLanguage --no-dev \
       && cp /tmp/omp-release/config.TEMPLATE.inc.php /tmp/omp-release/config.inc.php \
       && rm -rf /var/www/html \
       && mv /tmp/omp-release /var/www/html \
