@@ -6,5 +6,12 @@ fn main() {
         println!("cargo:rustc-link-arg-cdylib=-Wl,-z,max-page-size=16384");
         println!("cargo:rustc-link-arg-cdylib=-Wl,-z,common-page-size=16384");
     }
-    tauri_build::build()
+    if android {
+        tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
+            tauri_build::AppManifest::new().commands(&["take_opened_documents"]),
+        ))
+        .expect("failed to build Studio permissions")
+    } else {
+        tauri_build::build()
+    }
 }

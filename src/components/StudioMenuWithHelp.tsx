@@ -15,7 +15,7 @@ import { isNativeStudio } from '../services/nativeManuscriptFile';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import type { OmpNativeAuthorContext } from '../integrations/omp/importOmpLaunch';
 import { sendAuthorRevisionToOmp } from '../services/ompNativeApi';
-import type { OmiManuscript } from '../types/omi';
+import { readLocalManuscriptBytes } from '../services/localManuscriptImport';
 import { LongTaskStatus } from './LongTaskStatus';
 import { getModuleShellCopy } from '../modules/moduleShellTranslations';
 import { StudioMenu } from './StudioMenu';
@@ -173,10 +173,8 @@ export function StudioMenuWithHelp({
     if (!file) return;
     setBrowserOpenMessage('');
     try {
-      const raw = await file.text();
-      const parsed = JSON.parse(raw) as unknown;
-      if (!isOmiManuscript(parsed)) throw new Error(getInvalidDocumentMessage(locale));
-      loadManuscript(parsed);
+      const { manuscript } = await readLocalManuscriptBytes(new Uint8Array(await file.arrayBuffer()));
+      loadManuscript(manuscript);
       clearDocumentClosedState();
       setDocumentAlreadyClosed(false);
       setBrowserOpenMessage(localFileLabels.opened);
@@ -207,7 +205,7 @@ export function StudioMenuWithHelp({
           <input
             ref={browserFileInputRef}
             type="file"
-            accept=".omi.json,.json,application/json,application/vnd.openmanuscript+json"
+            accept="*/*"
             hidden
             onChange={(event) => void openBrowserDocument(event.target.files?.[0])}
           />
@@ -300,14 +298,6 @@ export function StudioMenuWithHelp({
   </>;
 }
 
-function isOmiManuscript(value: unknown): value is OmiManuscript {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Partial<OmiManuscript>;
-  return typeof candidate.id === 'string'
-    && typeof candidate.title === 'string'
-    && Array.isArray(candidate.sections);
-}
-
 function getOmpRevisionCopy(locale: string) {
   if (locale === 'hu') {
     return {
@@ -334,12 +324,6 @@ function getOmpRevisionCopy(locale: string) {
     failed: 'The revised manuscript could not be sent to OMP.',
     notWritable: 'The current OMP workflow does not allow an author revision upload.',
   };
-}
-
-function getInvalidDocumentMessage(locale: string): string {
-  if (locale === 'hu') return 'A kiválasztott fájl nem érvényes OMI-kézirat.';
-  if (locale === 'de') return 'Die ausgewählte Datei ist kein gültiges OMI-Manuskript.';
-  return 'The selected file is not a valid OMI manuscript.';
 }
 
 function getAgentsLabel(locale: string): string { return ({ de: 'OMI Agents', en: 'OMI Agents', hu: 'OMI Agents' } as Record<string, string>)[locale] ?? 'OMI Agents'; }

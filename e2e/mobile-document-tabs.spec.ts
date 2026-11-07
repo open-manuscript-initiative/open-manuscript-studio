@@ -1,16 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
+import { installMockAndroidRuntime } from './support/mockAndroidRuntime';
 
 test('mobile workspace keeps multiple manuscripts open and switches without replacing them', async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 851 });
   // MobileLayout is selected for the native Android/iOS shell, not a narrow web viewport.
-  await page.addInitScript(() => {
-    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
-    Object.defineProperty(navigator, 'userAgent', {
-      get: () => 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Mobile Safari/537.36',
-      configurable: true,
-    });
-  });
+  await installMockAndroidRuntime(page);
   await installMockStudioApi(page);
   await signInToStudio(page);
 
@@ -64,13 +59,7 @@ test('mobile workspace keeps multiple manuscripts open and switches without repl
 
 test('mobile document tabs survive batched open and rename operations', async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 851 });
-  await page.addInitScript(() => {
-    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
-    Object.defineProperty(navigator, 'userAgent', {
-      get: () => 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Mobile Safari/537.36',
-      configurable: true,
-    });
-  });
+  await installMockAndroidRuntime(page);
   await installMockStudioApi(page);
   await signInToStudio(page);
 

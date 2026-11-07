@@ -44,9 +44,11 @@ import {
 } from './integrations/ojs/importOjsLaunchLocalized';
 import { MobileLayout } from './mobile/navigation/MobileLayout';
 import { isMobileStudio } from './mobile/platform/platform';
+import { connectAndroidDocumentOpening } from './services/androidDocumentOpening';
 import type { OjsAssignmentLaunchContext } from './services/ojsAssignmentApi';
 import {
   isNativeStudio,
+  forgetManuscriptFilePath,
   openLocalManuscript,
   saveLocalManuscript,
   saveLocalManuscriptAs,
@@ -153,6 +155,7 @@ function StudioApplication() {
     !reviewMode ? getRestoredDesktopSession() : null,
   );
   const [menuOpen, setMenuOpen] = useState(false);
+  const [localOpenError, setLocalOpenError] = useState<string | null>(null);
   const [plainDocumentWorkspace, setPlainDocumentWorkspace] = useState<{
     open: boolean;
     documentId: string | null;
@@ -179,6 +182,17 @@ function StudioApplication() {
   const activateDesktopTab = documentSessions.activate;
   const closeDesktopTab = documentSessions.close;
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
+
+  useEffect(() => {
+    if (reviewMode) return;
+    return connectAndroidDocumentOpening((manuscript) => {
+      forgetManuscriptFilePath(manuscript.id);
+      loadManuscript(manuscript);
+      setLocalOpenError(null);
+      setPlainDocumentWorkspace({ open: false, documentId: null });
+      setMenuOpen(false);
+    }, (error) => setLocalOpenError(error instanceof Error ? error.message : String(error)));
+  }, [loadManuscript, reviewMode]);
 
   useEffect(() => {
     const openPlainDocument = (event: Event) => {
@@ -339,6 +353,16 @@ function StudioApplication() {
   }, [loadManuscript, reviewMode]);
 
   if (reviewMode) return <ReviewPortal />;
+
+  if (localOpenError) {
+    return <main className="auth-page" role="alert">
+      <section className="auth-card">
+        <h1>{tCatalog("/uncataloguedUi/app/unable-to-load-manuscript-29ad65e")}</h1>
+        <p>{localOpenError}</p>
+        <button type="button" onClick={() => setLocalOpenError(null)}>OK</button>
+      </section>
+    </main>;
+  }
 
   if (externalImportState.status === 'loading') {
     return (

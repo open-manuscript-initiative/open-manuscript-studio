@@ -2,9 +2,7 @@ import { DocumentFileLocations } from './documentFileLocations';
 import { getStudioPlatform } from '../mobile/platform/platform';
 import type { OmiManuscript } from '../types/omi';
 import { serializeOmiJson } from './exportOmi';
-import { parseOmiJson } from './omiPortableFormat';
-import { inspectOmiContainer } from './omiContainerImport';
-import { putAssetPayload } from './assetRepository';
+import { readLocalManuscriptBytes } from './localManuscriptImport';
 
 const DESKTOP_OMI_FILTERS = [
   {
@@ -13,12 +11,10 @@ const DESKTOP_OMI_FILTERS = [
   },
 ];
 
-const ANDROID_OMI_FILTERS = [
-  {
-    name: 'Open Manuscript',
-    extensions: ['application/json', 'application/vnd.openmanuscript+json', 'application/vnd.openmanuscript.omi+zip', 'application/zip'],
-  },
-];
+// Providers often classify downloaded .omi packages as application/octet-stream.
+// Content validation, rather than Android MIME metadata, decides what can open.
+const ANDROID_OPEN_FILTERS = [{ name: 'Open Manuscript', extensions: ['*/*'] }];
+const ANDROID_SAVE_FILTERS = [{ name: 'Open Manuscript', extensions: ['application/json'] }];
 
 const fileLocations = new DocumentFileLocations();
 
@@ -45,6 +41,10 @@ export function getCurrentManuscriptFilePath(manuscriptId: string): string | nul
 
 export function clearCurrentManuscriptFilePath(): void {
   fileLocations.clear();
+}
+
+export function forgetManuscriptFilePath(manuscriptId: string): void {
+  fileLocations.set(manuscriptId, null);
 }
 
 export async function openLocalManuscript(): Promise<{
@@ -87,7 +87,7 @@ async function openManuscriptWithPicker(
   const selected = await open({
     multiple: false,
     directory: false,
-    filters: android ? ANDROID_OMI_FILTERS : DESKTOP_OMI_FILTERS,
+    filters: android ? ANDROID_OPEN_FILTERS : DESKTOP_OMI_FILTERS,
     ...(mobile ? { pickerMode: 'document' as const } : {}),
     ...(ios ? { fileAccess: 'scoped' as const } : {}),
   });
@@ -97,25 +97,7 @@ async function openManuscriptWithPicker(
   }
 
   const bytes = await readFile(selected);
-  const isContainer = bytes.length >= 4 &&
-    bytes[0] === 0x50 && bytes[1] === 0x4b &&
-    bytes[2] === 0x03 && bytes[3] === 0x04;
-  let manuscript: OmiManuscript;
-  if (isContainer) {
-    const plan = await inspectOmiContainer(bytes);
-    if (!plan.validForImport || !plan.manuscript) {
-      throw new Error(plan.diagnostics
-        .filter((diagnostic) => diagnostic.severity === 'error')
-        .map((diagnostic) => diagnostic.message)
-        .join(' ') || 'The selected OMI container failed integrity validation.');
-    }
-    manuscript = plan.manuscript;
-    for (const asset of plan.assets) {
-      await putAssetPayload(manuscript.id, asset.metadata.id, asset.bytes);
-    }
-  } else {
-    manuscript = parseOmiJson(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-  }
+  const { manuscript, isContainer } = await readLocalManuscriptBytes(bytes);
   // Container archives must never be overwritten by JSON Save operations.
   fileLocations.set(manuscript.id, rememberPath && !isContainer ? selected : null);
 
@@ -178,7 +160,7 @@ async function saveManuscriptWithPicker(
   // does not request broad shared-storage access on either mobile platform.
   const selected = await save({
     defaultPath: `${slugify(manuscript.title || 'manuscript')}.omi.json`,
-    filters: android ? ANDROID_OMI_FILTERS : DESKTOP_OMI_FILTERS,
+    filters: android ? ANDROID_SAVE_FILTERS : DESKTOP_OMI_FILTERS,
   });
 
   if (!selected) {

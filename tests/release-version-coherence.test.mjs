@@ -21,7 +21,7 @@ test('release candidate uses one shared version across JS, native and lockfiles'
 });
 
 test('mobile and Windows package counters are incremented coherently', () => {
-  assert.equal(android.bundle.android.versionCode, 1353);
+  assert.equal(android.bundle.android.versionCode, 1354);
   assert.equal(ios.version, '1.0.0');
   assert.equal(ios.bundle.iOS.bundleVersion, '26');
   assert.equal(tauri.bundle.windows.wix.version, '1.0.0.1');

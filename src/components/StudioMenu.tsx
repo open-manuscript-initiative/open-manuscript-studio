@@ -58,9 +58,8 @@ import {
 } from '../services/nativeManuscriptFile';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { buildOmiContainer } from '../services/omiContainer';
-import { restoreOmiContainerBytes } from '../services/restoreOmiContainer';
+import { readLocalManuscriptBytes } from '../services/localManuscriptImport';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
-import type { OmiManuscript } from '../types/omi';
 import { ResearchModuleSettings } from '../modules/ResearchModuleSettings';
 import { AssetContainerPanel } from './AssetContainerPanel';
 import { AuthorSignaturePanel } from './AuthorSignaturePanel';
@@ -345,16 +344,8 @@ function DocumentMenuView({
           return;
         }
         const bytes = new Uint8Array(await file.arrayBuffer());
-        const isContainer = bytes.length >= 4
-          && bytes[0] === 0x50 && bytes[1] === 0x4b
-          && bytes[2] === 0x03 && bytes[3] === 0x04;
-        if (isContainer) {
-          await restoreOmiContainerBytes(bytes);
-        } else {
-          const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as unknown;
-          if (!isOmiManuscript(parsed)) throw new Error(getInvalidDocumentMessage(locale));
-          loadManuscript(parsed);
-        }
+        const { manuscript } = await readLocalManuscriptBytes(bytes);
+        loadManuscript(manuscript);
         setLocalPath(null);
         setFileMessage(labels.opened);
       }
@@ -628,20 +619,6 @@ function formatNativeLocation(
   if (!path) return labels.noFile;
   if (platform === 'android' || isAndroidDocumentUri(path)) return labels.targetSelected;
   return path;
-}
-
-function isOmiManuscript(value: unknown): value is OmiManuscript {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Partial<OmiManuscript>;
-  return typeof candidate.id === 'string'
-    && typeof candidate.title === 'string'
-    && Array.isArray(candidate.sections);
-}
-
-function getInvalidDocumentMessage(locale: string): string {
-  if (locale === 'hu') return 'A kiválasztott fájl nem érvényes OMI-kézirat.';
-  if (locale === 'de') return 'Die ausgewählte Datei ist kein gültiges OMI-Manuskript.';
-  return 'The selected file is not a valid OMI manuscript.';
 }
 
 function getCloseDocumentCopy(locale: string) {

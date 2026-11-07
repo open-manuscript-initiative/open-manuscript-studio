@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
+import { installMockAndroidRuntime } from './support/mockAndroidRuntime';
 
 async function openMobileManuscript(page: Page) {
   await page.setViewportSize({ width: 393, height: 851 });
@@ -25,13 +26,7 @@ test('browser mobile exposes the manuscript tab strip and real editorial tools',
 
 test('Android mobile exposes the same outline, proofing, notes, search and save state', async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 851 });
-  await page.addInitScript(() => {
-    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
-    Object.defineProperty(navigator, 'userAgent', {
-      get: () => 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Mobile Safari/537.36',
-      configurable: true,
-    });
-  });
+  await installMockAndroidRuntime(page);
   await openMobileManuscript(page);
   const toolbar = page.locator('.mobile-action-bar');
   const outline = toolbar.getByRole('button', { name: 'Show document outline' });
