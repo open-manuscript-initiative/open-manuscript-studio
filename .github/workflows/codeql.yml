@@ -26,6 +26,9 @@ jobs:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-22.04
     timeout-minutes: 60
+    env:
+      # Match the Java bundle selected by the linked CodeQL v4 action.
+      CODEQL_JAVA_BUNDLE_VERSION: '2.27.4'
     strategy:
       fail-fast: false
       matrix:
@@ -43,11 +46,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Cache CodeQL Java bundle
+        if: matrix.language == 'java-kotlin'
+        id: java-bundle
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/codeql-bundle-java-linux64.tar.zst
+          key: codeql-java-linux64-${{ env.CODEQL_JAVA_BUNDLE_VERSION }}
+
+      - name: Download CodeQL Java bundle with bounded retries
+        if: matrix.language == 'java-kotlin' && steps.java-bundle.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle="$RUNNER_TEMP/codeql-bundle-java-linux64.tar.zst"
+          url="https://github.com/github/codeql-action/releases/download/codeql-bundle-v${CODEQL_JAVA_BUNDLE_VERSION}/codeql-bundle-java-linux64.tar.zst"
+          curl --fail --location --retry 5 --retry-delay 10 --retry-max-time 480 \
+            --retry-connrefused --connect-timeout 30 --max-time 180 \
+            --output "$bundle.partial" "$url"
+          tar --zstd -tf "$bundle.partial" >/dev/null
+          mv "$bundle.partial" "$bundle"
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+          tools: ${{ matrix.language == 'java-kotlin' && format('{0}/codeql-bundle-java-linux64.tar.zst', runner.temp) || '' }}
 
       - name: Set up Node.js for Android build
         if: matrix.language == 'java-kotlin'
