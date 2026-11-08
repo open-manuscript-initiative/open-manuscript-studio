@@ -19,6 +19,7 @@ import { readLocalManuscriptBytes } from '../services/localManuscriptImport';
 import { LongTaskStatus } from './LongTaskStatus';
 import { getModuleShellCopy } from '../modules/moduleShellTranslations';
 import { StudioMenu } from './StudioMenu';
+import type { ExternalWorkflowContext } from '../model/workflowRole';
 import './StudioMenuWithHelp.css';
 
 const LazyHelpPanel = lazy(async () => {
@@ -52,6 +53,7 @@ const LazyModuleManagerPanel = lazy(async () => {
 });
 
 interface StudioMenuWithHelpProps {
+  workflowContext?: ExternalWorkflowContext | null;
   open: boolean;
   onClose: () => void;
   ojsAssignment?: { actorMode: 'editor' | 'author'; context: OjsAssignmentLaunchContext } | null;
@@ -59,6 +61,7 @@ interface StudioMenuWithHelpProps {
 }
 
 export function StudioMenuWithHelp({
+  workflowContext = null,
   open,
   onClose,
   ojsAssignment = null,
@@ -248,6 +251,7 @@ export function StudioMenuWithHelp({
 
   return <>
     <StudioMenu
+      workflowContext={workflowContext}
       open={open}
       onClose={onClose}
       ojsAssignment={ojsAssignment}

@@ -1,4 +1,5 @@
 import type { AgentId } from './identity';
+import type { WorkflowRole } from './workflowRole';
 
 /**
  * Open Manuscript Studio
@@ -31,6 +32,7 @@ export interface ExternalIdentity {
 }
 
 export interface UserPreferences {
+  workflowRole?: WorkflowRole;
   interfaceLanguage: LanguageCode;
   workingLanguages: LanguageCode[];
   timeZone?: string;
@@ -112,6 +114,7 @@ export interface CreateUserInput {
 }
 
 export interface UpdateUserProfileInput {
+  workflowRole?: WorkflowRole;
   fullName?: string;
   affiliation?: string;
   affiliationRorId?: string;

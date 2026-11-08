@@ -1,5 +1,10 @@
 ## Unreleased — Translation and Validation Models
 
+- Add an account working-role preference and focused manuscript menus for
+  authors, editors, reviewers, translators, language reviewers and layout editors.
+  Verified OJS/OMP handoffs select the role for the active imported manuscript;
+  existing assignment permissions remain authoritative. See `docs/working-roles.md`.
+
 - Keep the print preview's page gaps visible above spanning table backgrounds,
   preserving the original gap size, with clearer page labels on desktop and mobile.
 

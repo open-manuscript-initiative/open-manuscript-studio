@@ -9,7 +9,7 @@ export async function exportAccountOverview(userId: string) {
     where: { id: userId },
     select: {
       id: true, email: true, fullName: true, affiliation: true, affiliationRorId: true,
-      country: true, website: true, orcid: true, bio: true, timeZone: true,
+      country: true, website: true, orcid: true, bio: true, timeZone: true, workflowRole: true,
       interfaceLanguage: true, status: true, createdAt: true, updatedAt: true, lastLoginAt: true,
       profileEmails: { take: limit + 1, orderBy: { id: 'asc' }, select: { email: true, isPrimary: true, createdAt: true } },
       identities: { take: limit + 1, orderBy: { id: 'asc' }, select: { provider: true, issuer: true, subject: true, displayName: true, createdAt: true, lastUsedAt: true } },
@@ -30,3 +30,4 @@ export async function exportAccountOverview(userId: string) {
     ...Object.fromEntries(Object.entries(sections).map(([name, rows]) => [name, rows.slice(0, limit)])),
   };
 }
+
