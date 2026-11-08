@@ -1,0 +1,14 @@
+.studio-menu-workflow-role {
+  display: grid;
+  gap: .35rem;
+  padding: .6rem;
+  margin: .3rem 0 .5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: .35rem;
+  background: #f8fafc;
+  color: #334155;
+  font-size: .8rem;
+}
+.studio-menu-workflow-role small { color: #475569; }
+.studio-menu-workflow-role label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
+.studio-menu-workflow-role input { width: auto; margin: 0; }

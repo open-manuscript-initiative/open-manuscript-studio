@@ -16,6 +16,7 @@ import {
   type UpdateUserInput,
 } from '../services/authService.js';
 import { getAssignmentInvitation } from '../services/assignmentInvitationService.js';
+import { workflowRolePreferences } from '../services/workflowRolePreference.js';
 import {
   requestPasswordReset,
   resetPasswordWithToken,
@@ -49,6 +50,7 @@ const resetPasswordSchema = z.object({
 });
 
 const updateProfileSchema = z.object({
+  workflowRole: z.enum(workflowRolePreferences).optional(),
   fullName: z.string().min(1).max(200).optional(),
   country: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/).nullable().optional(),
   website: z.string().trim().url().max(2048).nullable().optional(),
@@ -209,6 +211,7 @@ authRouter.patch('/me', async (request, response) => {
 
     const parsed = updateProfileSchema.parse(request.body);
     const input: UpdateUserInput = {
+      ...(parsed.workflowRole !== undefined ? { workflowRole: parsed.workflowRole } : {}),
       ...(parsed.fullName !== undefined ? { fullName: parsed.fullName } : {}),
       ...(parsed.country !== undefined ? { country: parsed.country } : {}),
       ...(parsed.website !== undefined ? { website: parsed.website } : {}),

@@ -30,6 +30,7 @@ import { PlainDocumentWorkspace } from './components/PlainDocumentWorkspace';
 import { ReviewPortal } from './components/ReviewPortal';
 import { SearchReplaceOverlay } from './components/SearchReplaceOverlay';
 import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
+import { workflowContextFromHandoff, type ExternalWorkflowContext } from './model/workflowRole';
 import {
   createManuscriptFromOmpLaunch,
   fetchOmpHandoff,
@@ -172,6 +173,7 @@ function StudioApplication() {
       : { status: 'idle' },
   );
   const [ojsContributors, setOjsContributors] = useState<OjsContributors>([]);
+  const [externalWorkflowContext, setExternalWorkflowContext] = useState<ExternalWorkflowContext | null>(null);
   const [ojsAssignment, setOjsAssignment] = useState<{
     actorMode: 'editor' | 'author';
     context: OjsAssignmentLaunchContext;
@@ -219,6 +221,7 @@ function StudioApplication() {
 
   useEffect(() => {
     if (reviewMode) {
+      setExternalWorkflowContext(null);
       setOjsContributors([]);
       setOjsAssignment(null);
       setOmpAuthorAssignment(null);
@@ -253,6 +256,7 @@ function StudioApplication() {
           }
 
           setOjsContributors([]);
+          setExternalWorkflowContext(workflowContextFromHandoff(manuscript.id, 'omp', launch.actorMode));
           setOjsAssignment(null);
           setOmpAuthorAssignment(
             launch.actorMode === 'author' && launch.nativeContext?.actorMode === 'author'
@@ -291,6 +295,10 @@ function StudioApplication() {
         if (!manuscript) {
           throw new Error('The OJS manuscript could not be imported.');
         }
+
+        setExternalWorkflowContext(ojsHandoffToken && ojsHandoffToken !== '1'
+          ? workflowContextFromHandoff(manuscript.id, 'ojs', launch.actorMode)
+          : null);
 
         setOjsContributors(
           launch.scope?.includes('contributors.read') ? launch.contributors ?? [] : [],
@@ -434,6 +442,7 @@ function StudioApplication() {
         <StudioMenuWithHelp
           open={menuOpen}
           onClose={navigateHome}
+          workflowContext={hasOpenDocument ? externalWorkflowContext : null}
           ojsAssignment={ojsAssignment}
           ompAuthorContext={
             ompAuthorAssignment?.manuscriptId === activeManuscriptId
@@ -462,6 +471,7 @@ function StudioApplication() {
       <StudioMenuWithHelp
         open={menuOpen}
         onClose={navigateHome}
+        workflowContext={hasOpenDocument ? externalWorkflowContext : null}
         ojsAssignment={ojsAssignment}
         ompAuthorContext={
           ompAuthorAssignment?.manuscriptId === activeManuscriptId

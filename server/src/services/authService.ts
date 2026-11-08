@@ -13,6 +13,7 @@ import {
 import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
 import { consumeAssignmentInvitation } from './assignmentInvitationService.js';
+import type { WorkflowRolePreference } from './workflowRolePreference.js';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_TTL_DAYS = 30;
@@ -29,6 +30,7 @@ export interface RegisterUserInput {
 }
 
 export interface UpdateUserInput {
+  workflowRole?: WorkflowRolePreference;
   fullName?: string;
   country?: string | null;
   website?: string | null;
@@ -226,6 +228,7 @@ export async function updateUserForSession(
   if (!session) return null;
 
   const data: {
+    workflowRole?: WorkflowRolePreference;
     fullName?: string;
     country?: string | null;
     website?: string | null;
@@ -242,6 +245,7 @@ export async function updateUserForSession(
     if (!fullName) throw new Error('The user name is required.');
     data.fullName = fullName;
   }
+  if (input.workflowRole !== undefined) data.workflowRole = input.workflowRole;
   if (input.country !== undefined) {
     const country = cleanNullable(input.country)?.toUpperCase() ?? null;
     if (country !== null && !/^[A-Z]{2}$/.test(country)) {
@@ -344,6 +348,7 @@ function toPrincipalSnapshot(user: {
 }
 
 function serializeUser(user: {
+  workflowRole: string;
   id: string;
   email: string;
   fullName: string;
@@ -375,6 +380,7 @@ function serializeUser(user: {
       ...(user.bio !== null ? { bio: user.bio } : {}),
     },
     preferences: {
+      workflowRole: user.workflowRole,
       interfaceLanguage: user.interfaceLanguage,
       workingLanguages: [],
       ...(user.timeZone !== null ? { timeZone: user.timeZone } : {}),

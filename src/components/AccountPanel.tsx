@@ -12,6 +12,8 @@ import { getSystemTimeZone, getTimeZoneOptions } from '../account/timeZones';
 import { getCountryOptions } from '../model/countryCodes';
 import { useTranslation } from '../i18n';
 import { getAccountPanelCopy } from '../i18n/accountPanelTranslations';
+import { getWorkflowRoleCopy } from '../i18n/workflowRoleTranslations';
+import { normalizeWorkflowRole, workflowRoles, type WorkflowRole } from '../model/workflowRole';
 import { getCentralAdminContext, type CentralAdminRole } from '../services/centralAdminApi';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { AccountDeletionSection } from './AccountDeletionSection';
@@ -26,6 +28,7 @@ import { WebPublishingSettings } from './WebPublishingSettings';
 import '../styles/account.css';
 
 type AccountFormState = {
+  workflowRole: WorkflowRole;
   fullName: string;
   orcid: string;
   bio: string;
@@ -39,6 +42,7 @@ type ProfileView = 'personal' | 'institutional' | 'central';
 export function AccountPanel() {
   const { locale } = useTranslation();
   const labels = getAccountPanelCopy(locale);
+  const roleCopy = getWorkflowRoleCopy(locale);
   const user = useAuthStore(getCurrentUser);
   const update = useAuthStore((state) => state.updateCurrentUser);
   const loading = useAuthStore((state) => state.isLoading);
@@ -48,6 +52,7 @@ export function AccountPanel() {
   const [saved, setSaved] = useState(false);
   const [emailRevision, setEmailRevision] = useState(0);
   const [form, setForm] = useState<AccountFormState>({
+    workflowRole: 'general',
     fullName: '',
     orcid: '',
     bio: '',
@@ -64,6 +69,7 @@ export function AccountPanel() {
   useEffect(() => {
     if (!user) return;
     setForm({
+      workflowRole: normalizeWorkflowRole(user.preferences.workflowRole),
       fullName: user.profile.fullName ?? '',
       orcid: user.profile.orcid ?? '',
       bio: user.profile.bio ?? '',
@@ -82,6 +88,7 @@ export function AccountPanel() {
     event.preventDefault();
     setSaved(false);
     await update({
+      workflowRole: form.workflowRole,
       fullName: form.fullName,
       orcid: form.orcid || undefined,
       bio: form.bio || undefined,
@@ -205,6 +212,16 @@ export function AccountPanel() {
               </label>
 
               <h2>{labels.preferences}</h2>
+              <label>
+                {roleCopy.preference}
+                <select
+                  value={form.workflowRole}
+                  onChange={(event) => setForm({ ...form, workflowRole: normalizeWorkflowRole(event.target.value) })}
+                >
+                  {workflowRoles.map((role) => <option key={role} value={role}>{roleCopy.roles[role]}</option>)}
+                </select>
+                <small className="account-field-hint">{roleCopy.hint}</small>
+              </label>
               <label>
                 {labels.timezone}
                 <select

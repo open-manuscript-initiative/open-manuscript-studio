@@ -1,5 +1,10 @@
 ## Unreleased — Translation and Validation Models
 
+- Add an account working-role preference and focused manuscript menus for
+  authors, editors, reviewers, translators, language reviewers and layout editors.
+  Verified OJS/OMP handoffs select the role for the active imported manuscript;
+  existing assignment permissions remain authoritative. See `docs/working-roles.md`.
+
 - Show the manuscript editor immediately after successful local OMI opening,
   confirmed Word/ODT/PDF import or cloud document opening from the Document menu.
   Keep import review, cancellation and error messages in the menu until resolved.

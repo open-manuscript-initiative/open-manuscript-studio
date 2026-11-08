@@ -86,6 +86,7 @@ model User {
   orcid                  String?                 @unique @db.VarChar(19)
   bio                    String?                 @db.VarChar(2000)
   timeZone               String?                 @map("time_zone") @db.VarChar(64)
+  workflowRole           String                  @default("general") @map("workflow_role") @db.VarChar(32)
   interfaceLanguage      String                  @default("en") @map("interface_language") @db.VarChar(16)
   status                 UserStatus              @default(ACTIVE)
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)

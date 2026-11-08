@@ -39,6 +39,9 @@ import { getLocalFileLabels, type LocalFileLabels } from '../i18n/nativeStorageT
 import { getCloudStorageCopy } from '../i18n/cloudStorageTranslations';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
+import { getWorkflowRoleCopy } from '../i18n/workflowRoleTranslations';
+import { isWorkflowTaskVisible, resolveWorkflowRole, type ExternalWorkflowContext } from '../model/workflowRole';
+import '../styles/workflow-role.css';
 import { getStudioPlatform, type StudioPlatform } from '../mobile/platform/platform';
 import {
   getDeviceStorageMode,
@@ -105,6 +108,7 @@ type StudioMenuView =
   | 'settings';
 
 interface StudioMenuProps {
+  workflowContext?: ExternalWorkflowContext | null;
   open: boolean;
   onClose: () => void;
   ojsAssignment?: {
@@ -119,6 +123,7 @@ interface StudioMenuProps {
 }
 
 export function StudioMenu({
+  workflowContext = null,
   open,
   onClose,
   ojsAssignment = null,
@@ -130,6 +135,12 @@ export function StudioMenu({
 }: StudioMenuProps) {
   const { t, locale } = useTranslation();
   const manuscriptId = useStudioStore((state) => state.manuscript.id);
+  const user = useAuthStore(getCurrentUser);
+  const roleCopy = getWorkflowRoleCopy(locale);
+  const effectiveRole = resolveWorkflowRole(user?.preferences.workflowRole, workflowContext, manuscriptId);
+  const focusKey = `${user?.id}:${manuscriptId}:${effectiveRole.source}:${effectiveRole.role}`;
+  const [allToolsKey, setAllToolsKey] = useState<string | null>(null);
+  const showAllTools = allToolsKey === focusKey;
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const editorialWorkflowLabel = supplementalCopy.editorialWorkspace;
@@ -138,6 +149,7 @@ export function StudioMenu({
   const [navigationOpen, setNavigationOpen] = useState(true);
   const navigationToggleRef = useRef<HTMLButtonElement>(null);
   const [activeView, setActiveView] = useState<StudioMenuView | null>(null);
+  const canShow = (view: StudioMenuView) => activeView === view || isWorkflowTaskVisible(effectiveRole.role, view, showAllTools);
   const hasActiveContent = activeView !== null || externalContentActive;
 
   const returnHome = () => {
@@ -217,25 +229,35 @@ export function StudioMenu({
               className="studio-menu-nav-button"
               onClick={returnHome}
             ><House size={18} aria-hidden="true" /><span>{supplementalCopy.home}</span></button>
+            {effectiveRole.role !== 'general' ? (
+              <section className="studio-menu-workflow-role" aria-label={roleCopy.current}>
+                <strong>{roleCopy.current}: {roleCopy.roles[effectiveRole.role]}</strong>
+                <small>{roleCopy.sources[effectiveRole.source]}</small>
+                <label>
+                  <input type="checkbox" checked={showAllTools} onChange={(event) => setAllToolsKey(event.target.checked ? focusKey : null)} />
+                  <span>{roleCopy.showAll}</span>
+                </label>
+              </section>
+            ) : null}
             <MenuNavGroup label={supplementalCopy.manuscriptGroup}>
-              <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
-              <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
-              <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
-              <MenuButton active={activeView === 'translations'} icon={<Languages size={18} aria-hidden="true" />} label={translateCatalog(locale, '/translationModel/title')} onClick={() => setActiveView('translations')} />
-              <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
-              <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
+              {canShow('document') ? <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} /> : null}
+              {canShow('manuscript') ? <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} /> : null}
+              {canShow('contributors') ? <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} /> : null}
+              {canShow('translations') ? <MenuButton active={activeView === 'translations'} icon={<Languages size={18} aria-hidden="true" />} label={translateCatalog(locale, '/translationModel/title')} onClick={() => setActiveView('translations')} /> : null}
+              {canShow('notes') ? <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} /> : null}
+              {canShow('references') ? <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} /> : null}
               {navigationAfterReferences}
-              <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
-              <MenuButton active={activeView === 'validation'} icon={<ShieldCheck size={18} aria-hidden="true" />} label={translateCatalog(locale, '/uncataloguedUi/validationModel/title')} onClick={() => setActiveView('validation')} />
+              {canShow('history') ? <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} /> : null}
+              {canShow('validation') ? <MenuButton active={activeView === 'validation'} icon={<ShieldCheck size={18} aria-hidden="true" />} label={translateCatalog(locale, '/uncataloguedUi/validationModel/title')} onClick={() => setActiveView('validation')} /> : null}
             </MenuNavGroup>
-            <MenuNavGroup label={supplementalCopy.editorialGroup}>
-              <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} />
-              {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
-              <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
+            <MenuNavGroup label={supplementalCopy.editorialGroup} hidden={!['editorial-workflow', 'assignments', 'signatures'].some((view) => canShow(view as StudioMenuView))}>
+              {canShow('editorial-workflow') ? <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} /> : null}
+              {ojsAssignment && canShow('assignments') ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
+              {canShow('signatures') ? <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} /> : null}
             </MenuNavGroup>
-            <MenuNavGroup label={supplementalCopy.publicationGroup}>
-              <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} />
-              <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
+            <MenuNavGroup label={supplementalCopy.publicationGroup} hidden={!canShow('publication-editor') && !canShow('publication')}>
+              {canShow('publication-editor') ? <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} /> : null}
+              {canShow('publication') ? <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} /> : null}
             </MenuNavGroup>
             <MenuNavGroup label={supplementalCopy.toolsGroup}>
               {navigationBeforeTools}
@@ -280,7 +302,8 @@ function MenuButton({ active, icon, label, onClick }: MenuButtonProps) {
   return <button type="button" className={`studio-menu-nav-button${active ? ' studio-menu-nav-button--active' : ''}`} aria-current={active ? 'page' : undefined} onClick={onClick}>{icon}<span>{label}</span></button>;
 }
 
-function MenuNavGroup({ label, children }: { label: string; children: ReactNode }) {
+function MenuNavGroup({ label, children, hidden = false }: { label: string; children: ReactNode; hidden?: boolean }) {
+  if (hidden) return null;
   return <div className="studio-menu-nav-group" role="group" aria-label={label}>
     <span className="studio-menu-nav-group-label" aria-hidden="true">{label}</span>
     {children}

@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import type { WorkflowRole } from '../../src/model/workflowRole';
 
 const TEST_USER = {
   id: 'user:e2e-editor',
@@ -64,6 +65,7 @@ interface MockCollaborationOptions {
 export async function installMockStudioApi(
   page: Page,
   options: {
+    workflowRole?: WorkflowRole;
     authenticated?: boolean;
     collaboration?: MockCollaborationOptions;
     savedDocuments?: Array<{
@@ -77,6 +79,7 @@ export async function installMockStudioApi(
     }>;
   } = {},
 ): Promise<MockStudioApi> {
+  const user = { ...TEST_USER, preferences: { ...TEST_USER.preferences, workflowRole: options.workflowRole ?? 'general' } };
   let authenticated = options.authenticated ?? false;
   const loginRequests: Array<Record<string, unknown>> = [];
   const publicationRequests: string[] = [];
@@ -182,7 +185,7 @@ export async function installMockStudioApi(
 
     if (request.method() === 'GET' && url.pathname === '/api/auth/me') {
       if (authenticated) {
-        await fulfillJson(route, 200, { user: TEST_USER });
+        await fulfillJson(route, 200, { user });
       } else {
         await fulfillJson(route, 401, {
           error: { code: 'AUTHENTICATION_REQUIRED', message: 'Authentication is required.' },
@@ -215,7 +218,7 @@ export async function installMockStudioApi(
       const payload = request.postDataJSON() as Record<string, unknown>;
       loginRequests.push(payload);
       authenticated = true;
-      await fulfillJson(route, 200, { user: TEST_USER });
+      await fulfillJson(route, 200, { user });
       return;
     }
 
