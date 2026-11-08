@@ -19,7 +19,10 @@ replace('buildSrc/build.gradle.kts', /com\.android\.tools\.build:gradle:[\d.]+/g
 replace('gradle/wrapper/gradle-wrapper.properties', /gradle-[\d.]+-bin\.zip/g, 'gradle-9.1.0-bin.zip');
 const properties = resolve(root, 'gradle.properties');
 const source = readFileSync(properties, 'utf8');
-if (/^distributionSha256Sum=/m.test(readFileSync(resolve(root, 'gradle/wrapper/gradle-wrapper.properties'), 'utf8'))) {
+const wrapperPath = resolve(root, 'gradle/wrapper/gradle-wrapper.properties');
+const originalWrapper = readFileSync(wrapperPath, 'utf8');
+const updatedWrapper = updates.find(([path]) => path === wrapperPath)?.[1];
+if (/^distributionSha256Sum=/m.test(originalWrapper) && updatedWrapper !== originalWrapper) {
   throw new Error('Update the pinned wrapper checksum explicitly before changing Gradle.');
 }
 const clean = source.replace(/^android\.(builtInKotlin|newDsl|nonFinalResIds|r8\.(optimizedResourceShrinking|gradual\.support))=.*\r?\n?/gm, '').trimEnd();

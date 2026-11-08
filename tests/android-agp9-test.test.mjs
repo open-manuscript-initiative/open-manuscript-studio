@@ -63,6 +63,34 @@ test('unexpected generated files fail before modifying the toolchain', () => {
   } finally { rmSync(f.cwd, { recursive: true, force: true }); }
 });
 
+test('default probe preserves an already-verified local Gradle distribution', () => {
+  const f = fixture();
+  try {
+    assert.equal(f.run('compatibility').status, 0);
+    const path = join(f.root, 'gradle/wrapper/gradle-wrapper.properties');
+    const verified = 'distributionUrl=file:///tmp/gradle-9.1.0-bin.zip\ndistributionSha256Sum=synthetic-hash\n';
+    writeFileSync(path, verified);
+    const result = f.run('defaults');
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(readFileSync(path, 'utf8'), verified);
+    assert.match(readFileSync(join(f.root, 'gradle.properties'), 'utf8'), /android.builtInKotlin=true/);
+  } finally { rmSync(f.cwd, { recursive: true, force: true }); }
+});
+
+test('changing a pinned Gradle distribution still fails before modifying generated files', () => {
+  const f = fixture();
+  try {
+    const path = join(f.root, 'gradle/wrapper/gradle-wrapper.properties');
+    const pinned = readFileSync(path, 'utf8') + 'distributionSha256Sum=synthetic-hash\n';
+    writeFileSync(path, pinned);
+    const result = f.run('compatibility');
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Update the pinned wrapper checksum/);
+    assert.equal(readFileSync(path, 'utf8'), pinned);
+    assert.match(readFileSync(join(f.root, 'build.gradle.kts'), 'utf8'), /gradle:8\.11\.0/);
+  } finally { rmSync(f.cwd, { recursive: true, force: true }); }
+});
+
 test('compatibility mode accepts the Kotlin compilerOptions DSL in Tauri 2.12 templates', () => {
   const f = fixture(true);
   try {
