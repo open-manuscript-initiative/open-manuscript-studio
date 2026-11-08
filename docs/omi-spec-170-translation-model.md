@@ -35,13 +35,28 @@ ledger until the author explicitly archives their alignments; the archived trans
 stay in the manuscript. A restored source gets a fresh alignment ID after archival.
 Source language changes require a new translation relationship.
 
-DeepL's **Save as language variant** now writes into the same portable manuscript
-model after the author has seen the preview. The request's exact source snapshot,
-scope and target language are retained even if form controls or source content change
-while the request is running. A preview cannot write into a different active document.
+The **DeepL translation workspace** is inside **Manuscript menu → Translations**,
+using that page's target language and scope. **Request machine translation suggestions**
+prepares an editable, paginated source/target comparison. It does not create a translation
+or overwrite source text or existing variants. Clear individual **Use suggestion**
+checkboxes to exclude results, or **Discard suggestions** to dismiss the entire proposal.
+Only **Accept selected suggestions as new translation** creates a new portable variant.
+The selected text is always an unassessed draft, never automatically reviewed. Excluded
+segments stay blank for manual translation. The separate equivalence and human review
+steps remain required for public translation proof export.
+
+The request's exact source snapshot, scope and target language are retained even if
+form controls or source content change while the request is running. Source changes
+are highlighted and keep the accepted draft stale until explicitly synchronized.
+A proposal cannot write into a different active document. Cancelling the request or
+leaving the workspace aborts pending client requests and stops subsequent batches.
+Unsaved suggestions are session-only and disappear when leaving the workspace.
 No second server-side variant write is needed. Previously saved server records remain
-accessible as **Earlier server variants**; their missing alignment/version evidence is
+accessible under **Earlier server variants** on the Translations page; their missing alignment/version evidence is
 not silently invented or labelled reviewed.
+
+DeepL API-key configuration remains in Integrations; the general integration execution
+workspace retains its AI, extension-registry and audit controls.
 
 The panel renders 20 alignment editors per page. Saving a translation action checkpoints
 the shared working state. Source text is never locked by translation state. Revision

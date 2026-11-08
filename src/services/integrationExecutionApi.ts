@@ -167,6 +167,7 @@ async function readError(response: Response, fallback: string): Promise<Error> {
 
 export async function translateWithDeepL(
   request: DeepLTranslationRequest,
+  signal?: AbortSignal,
 ): Promise<DeepLTranslationResult> {
   const response = await fetch(`${API_BASE_URL}/integrations/deepl/translate`, {
     method: 'POST',
@@ -176,6 +177,7 @@ export async function translateWithDeepL(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(request),
+    ...(signal ? { signal } : {}),
   });
   if (!response.ok) {
     throw await readError(response, `DeepL translation failed with HTTP ${response.status}.`);

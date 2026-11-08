@@ -6,9 +6,10 @@ import { getManuscriptLanguageOptions } from '../model/manuscriptLanguage';
 import { currentUnits, getTranslationModel, translationFreshness, translationProgress, type ManuscriptTranslation, type TranslationAlignment, type TranslationEquivalence } from '../model/translation';
 import { saveExportText } from '../services/exportFileDelivery';
 import { isPublicTranslationProofReady, renderTranslationHtml } from '../services/translationExport';
+import { DeepLTranslationWorkspace } from './DeepLTranslationWorkspace';
 import './TranslationPanel.css';
 
-export function TranslationPanel() {
+export function TranslationPanel({ active = true }: { active?: boolean }) {
   const { locale } = useTranslation();
   const copy = (key: string) => translateCatalog(locale, `/translationModel/${key}`);
   const manuscript = useStudioStore((state) => state.manuscript);
@@ -59,6 +60,12 @@ export function TranslationPanel() {
     </div>
     {result.error || error ? <p role="alert">{result.error || error}</p> : null}
     {notice ? <p role="status">{notice}</p> : null}
+    {active ? <DeepLTranslationWorkspace
+      scope={scopeKind === 'manuscript' ? { kind: 'manuscript', id: manuscript.id } : selectedSectionId ? { kind: 'section', id: selectedSectionId } : null}
+      targetLanguage={target}
+      disabled={!result.model}
+      onAccepted={(id) => { setSelectedId(id); setPage(0); setNotice(copy('saved')); }}
+    /> : null}
     {!variant ? <p>{copy('empty')}</p> : <>
       <label>{copy('variant')}<select value={variant.id} onChange={(event) => { setSelectedId(event.target.value); setPage(0); }}>
         {result.model?.variants.map((item) => <option key={item.id} value={item.id}>{item.sourceLanguage} → {item.targetLanguage} · {copy(item.scope.kind)} · {new Date(item.createdAt).toLocaleString(locale)}</option>)}
