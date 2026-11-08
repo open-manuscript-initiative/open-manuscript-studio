@@ -16,6 +16,7 @@ import {
   patchAndroidNativeDebugSymbols,
   patchAndroidTheme,
   patchTauriDebugSymbolScoping,
+  patchGradleDownloadPolicy,
 } from '../scripts/configure-android-modern-ui.mjs';
 
 const generatedBuildGradle = `android {
@@ -208,6 +209,9 @@ test('Android modern UI configuration patches a generated project idempotently',
     mkdirSync(day, { recursive: true });
     mkdirSync(night, { recursive: true });
     mkdirSync(join(activityPath, '..'), { recursive: true });
+    mkdirSync(join(root, 'gradle/wrapper'), { recursive: true });
+    writeFileSync(join(root, 'gradle/wrapper/gradle-wrapper.properties'),
+      'distributionUrl=https\\://services.gradle.org/distributions/gradle-9.6.1-bin.zip\nnetworkTimeout=10000\nvalidateDistributionUrl=true\n');
     writeFileSync(join(root, 'build.gradle.kts'), generatedRootBuildGradle);
     writeFileSync(activityPath, generatedActivity);
     writeFileSync(join(app, 'build.gradle.kts'), generatedBuildGradle);
@@ -216,11 +220,16 @@ test('Android modern UI configuration patches a generated project idempotently',
 
     configureAndroidModernUi(root);
     const rootOnce = readFileSync(join(root, 'build.gradle.kts'), 'utf8');
+    const wrapperOnce = readFileSync(join(root, 'gradle/wrapper/gradle-wrapper.properties'), 'utf8');
     const activityOnce = readFileSync(activityPath, 'utf8');
     const once = readFileSync(join(app, 'build.gradle.kts'), 'utf8');
     const dayOnce = readFileSync(join(day, 'themes.xml'), 'utf8');
     configureAndroidModernUi(root);
 
+    assert.equal(readFileSync(join(root, 'gradle/wrapper/gradle-wrapper.properties'), 'utf8'), wrapperOnce);
+    assert.match(wrapperOnce, /^networkTimeout=60000$/m);
+    assert.match(wrapperOnce, /^retries=3$/m);
+    assert.match(wrapperOnce, /^retryBackOffMs=1000$/m);
     assert.equal(readFileSync(join(root, 'build.gradle.kts'), 'utf8'), rootOnce);
     assert.equal(readFileSync(activityPath, 'utf8'), activityOnce);
     assert.match(activityOnce, /WindowCompat\.setDecorFitsSystemWindows/);
@@ -237,6 +246,19 @@ test('Android modern UI configuration patches a generated project idempotently',
     assert.match(readFileSync(join(night, 'themes.xml'), 'utf8'), /Theme\.AppCompat\.DayNight\.NoActionBar/);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('Gradle download policy preserves the trusted distribution, checksum and validation', () => {
+  for (const newline of ['\n', '\r\n']) {
+    const source = ['distributionUrl=https\\://services.gradle.org/distributions/gradle-9.6.1-bin.zip',
+      'distributionSha256Sum=synthetic-checksum', 'validateDistributionUrl=true',
+      'networkTimeout=10000', 'retries=0', 'retryBackOffMs=500', ''].join(newline);
+    const patched = patchGradleDownloadPolicy(source);
+    for (const line of source.split(/\r?\n/).slice(0, 3)) assert.ok(patched.includes(line));
+    assert.match(patched, /^networkTimeout=60000$/m);
+    assert.match(patched, /^retries=3$/m);
+    assert.equal(patchGradleDownloadPolicy(patched), patched);
   }
 });
 

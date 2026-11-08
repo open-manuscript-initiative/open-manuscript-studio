@@ -10,6 +10,18 @@ export const ANDROID_UI_DEPENDENCIES = Object.freeze({
 export const ANDROID_KOTLIN_VERSION = '2.1.20';
 export const ANDROID_NDK_VERSION = '27.3.13750724';
 
+export function patchGradleDownloadPolicy(source) {
+  // Keep the generated distribution URL, checksum and validation settings intact.
+  let result = source;
+  for (const [key, value] of Object.entries({ networkTimeout: 60000, retries: 3, retryBackOffMs: 1000 })) {
+    const pattern = new RegExp(`^${key}\\s*[=:].*$`, 'gm');
+    result = pattern.test(result)
+      ? result.replace(pattern, `${key}=${value}`)
+      : `${result.trimEnd()}\n${key}=${value}\n`;
+  }
+  return result;
+}
+
 export const ANDROID_REMOVED_UI_DEPENDENCIES = Object.freeze([
   'com.google.android.material:material',
 ]);
@@ -280,6 +292,8 @@ function updateFile(path, transform) {
 
 export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')) {
   const changes = [];
+  const wrapperProperties = resolve(root, 'gradle/wrapper/gradle-wrapper.properties');
+  if (updateFile(wrapperProperties, patchGradleDownloadPolicy)) changes.push('gradle/wrapper/gradle-wrapper.properties');
   const rootBuildGradle = resolve(root, 'build.gradle.kts');
   if (updateFile(rootBuildGradle, patchAndroidKotlinVersion)) changes.push('build.gradle.kts');
 

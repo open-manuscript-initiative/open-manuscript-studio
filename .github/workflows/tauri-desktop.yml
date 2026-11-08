@@ -49,6 +49,8 @@ on:
       - 'tests/android-modern-ui.test.mjs'
       - 'scripts/bundle-macos-dmg.sh'
       - 'tests/macos-dmg-bundling.test.mjs'
+      - 'scripts/tauri-build-with-download-retry.sh'
+      - 'tests/tauri-download-retry.test.mjs'
       - '.github/workflows/tauri-desktop.yml'
       - '.github/workflows/promote-current-release.yml'
       - 'scripts/release-publication-policy.mjs'
@@ -166,9 +168,13 @@ jobs:
         run: npm test
 
       - name: Build Tauri bundles
-        uses: tauri-apps/tauri-action@v0
-        with:
-          args: ${{ matrix.args }}
+        shell: bash
+        env:
+          TAURI_BUILD_ARGS: ${{ matrix.args }}
+        run: |
+          set -euo pipefail
+          read -r -a build_args <<< "$TAURI_BUILD_ARGS"
+          bash scripts/tauri-build-with-download-retry.sh npm run tauri -- build "${build_args[@]}"
 
       - name: Package macOS DMG with bounded contention retries
         if: startsWith(matrix.platform, 'macos')

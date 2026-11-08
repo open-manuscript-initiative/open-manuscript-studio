@@ -75,6 +75,9 @@ jobs:
       - name: Syntax-check isolated host security canaries
         run: node --test tests/isolated-host-canaries.test.mjs
 
+      - name: Verify native bundler download recovery
+        run: node --test tests/tauri-download-retry.test.mjs
+
       - name: Run tests
         run: npm test
 
