@@ -69,7 +69,20 @@ export function createDocumentSessionManager(port: DocumentSessionPort, restored
     connect() {
       port.persist?.(snapshot);
       return port.subscribe((state, previous) => {
-        if (transitioning || !state.hasOpenDocument) return;
+        if (transitioning) return;
+        if (!state.hasOpenDocument) {
+          if (!previous.hasOpenDocument) return;
+          const index = snapshot.tabs.findIndex(tab => tab.id === snapshot.activeTabId);
+          const tabs = snapshot.tabs.filter(tab => tab.id !== snapshot.activeTabId);
+          const next = tabs[Math.min(Math.max(index, 0), tabs.length - 1)];
+          snapshot = { tabs, activeTabId: next?.id ?? '' };
+          if (next) {
+            transitioning = true;
+            try { port.restore(next); } finally { transitioning = false; }
+          }
+          publish();
+          return;
+        }
         // A new open resets the singleton store: capture the outgoing pending
         // batch before replacing its projection, even if no checkpoint ran.
         if (previous.hasOpenDocument && previous.manuscript.id !== state.manuscript.id) capture(previous);
