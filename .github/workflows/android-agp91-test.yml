@@ -80,6 +80,9 @@ jobs:
           printf 'storeFile=%s\nstorePassword=android\nkeyPassword=android\nkeyAlias=agp91-test\n'             "$RUNNER_TEMP/agp91-test.jks" > src-tauri/gen/android/keystore.properties
           node scripts/configure-android-signing.mjs
 
+      - name: Prepare verified Gradle distribution
+        run: node scripts/prepare-native-ci-downloads.mjs gradle
+
       - name: Build ARM64 release AAB and APK with R8
         env:
           CI: 'true'

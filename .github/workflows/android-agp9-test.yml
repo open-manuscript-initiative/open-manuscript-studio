@@ -71,6 +71,8 @@ jobs:
           keytool -genkeypair -keystore "$RUNNER_TEMP/agp-test.jks" -storepass android -keypass android -alias agp-test -dname 'CN=OMI AGP compatibility test' -keyalg RSA -keysize 2048 -validity 2
           printf 'storeFile=%s\nstorePassword=android\nkeyPassword=android\nkeyAlias=agp-test\n' "$RUNNER_TEMP/agp-test.jks" > src-tauri/gen/android/keystore.properties
           node scripts/configure-android-signing.mjs
+      - name: Prepare verified Gradle distribution
+        run: node scripts/prepare-native-ci-downloads.mjs gradle
       - name: Build ARM64 release AAB and APK with R8
         env:
           CI: 'true'
