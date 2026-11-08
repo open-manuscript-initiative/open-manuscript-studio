@@ -49,6 +49,7 @@ test('metadata and binary downloads retry transient HTTP failures', async t => {
   assert.equal(await downloadReleaseAsset(f.options), digest);
   assert.equal(f.requests.length, 5);
   assert.deepEqual(f.waits, [5000, 5000, 10000]);
+  assert.equal(f.requests[3].url, 'https://github.com/github/codeql-action/releases/download/synthetic-tag/tool.bin');
 });
 
 test('valid cached bytes are verified and reused without another binary download', async t => {

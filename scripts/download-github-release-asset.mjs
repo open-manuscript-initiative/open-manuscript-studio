@@ -22,11 +22,13 @@ export async function downloadReleaseAsset({ repository, tag, assetName, destina
     throw new Error('Expected a supported official release asset.');
   }
   const headers = { 'User-Agent': 'Open-Manuscript-CI', Accept: 'application/vnd.github+json' };
-  async function request(url, accept) {
+  async function request(url, accept, alternatives = []) {
+    const sources = [url, ...alternatives];
     for (let attempt = 1; attempt <= 4; attempt += 1) {
+      const source = sources[(attempt - 1) % sources.length];
       let response;
       try {
-        response = await fetchImpl(url, {
+        response = await fetchImpl(source, {
           headers: { ...headers, Accept: accept }, signal: AbortSignal.timeout(180_000),
         });
       } catch (error) {
@@ -37,7 +39,7 @@ export async function downloadReleaseAsset({ repository, tag, assetName, destina
       if (response.ok) return response;
       const retryable = [408, 429, 500, 502, 503, 504].includes(response.status);
       await response.body?.cancel();
-      if (!retryable || attempt === 4) throw new Error(`Official asset download failed: HTTP ${response.status}`);
+      if (!retryable || attempt === 4) throw new Error(`Official asset download failed at ${new URL(source).origin}: HTTP ${response.status}`);
       await wait(attempt * 5000);
     }
   }
@@ -64,6 +66,11 @@ export async function downloadReleaseAsset({ repository, tag, assetName, destina
     const response = await request(
       `https://api.github.com/repos/${repository}/releases/assets/${asset.id}`,
       'application/octet-stream',
+      [
+        `https://github.com/${repository}/releases/download/${encodeURIComponent(tag)}/${encodeURIComponent(assetName)}`,
+        ...(repository === 'gradle/gradle-distributions'
+          ? [`https://downloads.gradle.org/distributions/${encodeURIComponent(assetName)}`] : []),
+      ],
     );
     const hash = createHash('sha256');
     await pipeline(response.body, new Transform({ transform(chunk, encoding, callback) {
