@@ -90,6 +90,53 @@ test('long tables split between rows and reflow after zoom', async ({ page }) =>
   await expect(canvas.locator('.omi-table-editor textarea')).toHaveCount(46);
 });
 
+test('page gaps stay visible over a spanning table on desktop and mobile', async ({ page }, testInfo) => {
+  const canvas = await openTables(page, 22);
+  await expect(canvas.locator('.omi-table-page-break')).not.toHaveCount(0);
+  const separator = canvas.locator('.publication-document-page-separator').first();
+
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await separator.scrollIntoViewIfNeeded();
+    await expect(separator).toBeVisible();
+    await expect(separator).toHaveAttribute('data-page-label', 'Page 1');
+    await expect.poll(() => separator.evaluate((element: HTMLElement) => {
+      const gap = element.getBoundingClientRect();
+      const paper = element.closest('.publication-document-paper')!.getBoundingClientRect();
+      const table = element.closest('article')!.querySelector('.omi-table-editor')!.getBoundingClientRect();
+      const styles = getComputedStyle(element);
+      // Hit testing with pointer events temporarily enabled verifies the painted
+      // stacking order above the table, including its white card background.
+      const original = element.style.pointerEvents;
+      let aboveTable: boolean;
+      try {
+        element.style.pointerEvents = 'auto';
+        aboveTable = document.elementFromPoint(gap.x + gap.width / 2, gap.y + gap.height / 2) === element;
+      } finally {
+        element.style.pointerEvents = original;
+      }
+      return {
+        fullWidth: Math.abs(gap.width - paper.width) < 1,
+        clearGap: gap.height >= 32 && styles.backgroundColor === 'rgb(203, 213, 225)',
+        tableSpansGap: table.top < gap.top && table.bottom > gap.bottom,
+        aboveTable,
+        ignoresInput: getComputedStyle(element).pointerEvents === 'none',
+      };
+    })).toEqual({
+      fullWidth: true, clearGap: true, tableSpansGap: true, aboveTable: true, ignoresInput: true,
+    });
+    await testInfo.attach(`page-gap-${width}`, {
+      body: await canvas.screenshot(), contentType: 'image/png',
+    });
+  }
+
+  await page.emulateMedia({ media: 'print' });
+  await expect(separator).toBeHidden();
+  await page.emulateMedia({ media: 'screen' });
+  await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
+  await expect(canvas.locator('.publication-document-page-separator')).toHaveCount(0);
+});
+
 test('cell rotation and writing direction persist through mobile preview and HTML/print views', async ({ page }, testInfo) => {
   const canvas = await openTables(page, 2);
   await canvas.getByRole('textbox', { name: 'Cell 1, 1', exact: true }).fill('Rotated heading');
