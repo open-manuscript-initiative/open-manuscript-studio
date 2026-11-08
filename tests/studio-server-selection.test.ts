@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { mock } from 'node:test';
 
 import { normalizeNativeStudioServerOrigin } from '../src/services/studioServer.ts';
-import { parseStudioServerDirectory } from '../src/services/studioServerDirectory.ts';
-import { fetchStudioServerDirectory } from '../src/services/studioServerDirectory.ts';
-import { mock } from 'node:test';
+import { parseStudioServerDirectory, fetchStudioServerDirectory } from '../src/services/studioServerDirectory.ts';
 import { NATIVE_SESSION_STORAGE_KEY, persistNativeServerSelection } from '../src/platform/nativeServerSelection.ts';
 
 test('native Studio server addresses normalize to an origin', () => {

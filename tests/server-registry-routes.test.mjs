@@ -90,7 +90,7 @@ test('daily public directory includes only recent active instances, with metadat
   ]) records.set(id,{id,name:id,origin:`https://${id}.example.org`,status,
     softwareVersion:'test',capabilities:['web'],lastHeartbeatAt:age===null?null:new Date(now-age),heartbeatTokenHash:'secret'});
   const app=express(); app.use(apiCors(new Set(['https://studio.example.org']))); app.use('/api/v1/server-registry',serverRegistryRouter); app.use('/api/server-registry',serverRegistryRouter);
-  const server=app.listen(0,'127.0.0.1'); await new Promise(r=>server.once('listening',r)); t.after(()=>new Promise(r=>server.close(r)));
+  const server=app.listen(0,'127.0.0.1'); await new Promise(r=>{server.once('listening',r);}); t.after(()=>new Promise(r=>{server.close(r);}));
   const origin=`http://127.0.0.1:${server.address().port}`;
   for(const base of ['/api/v1/server-registry','/api/server-registry']) {
     const response=await fetch(origin+base+'/servers/daily',{headers:{Origin:'https://openmanuscript.org'}}); const body=await response.json();
@@ -113,7 +113,7 @@ test('daily public directory includes only recent active instances, with metadat
 test('automatic announcements derive metadata from HTTPS proof without DNS, GitHub or issued secrets',async t=>{
   records.clear(); proofMode='valid'; probes=0;
   const app=express(); app.use(express.json()); app.use('/api/v1/server-registry',serverRegistryRouter);
-  const server=app.listen(0,'127.0.0.1'); await new Promise(r=>server.once('listening',r)); t.after(()=>new Promise(r=>server.close(r)));
+  const server=app.listen(0,'127.0.0.1'); await new Promise(r=>{server.once('listening',r);}); t.after(()=>new Promise(r=>{server.close(r);}));
   const base=`http://127.0.0.1:${server.address().port}/api/v1/server-registry`;
   const announce=async body=>{const response=await fetch(base+'/announcements',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); return {status:response.status,body:await response.json()};};
   const auditBefore=auditCalls;

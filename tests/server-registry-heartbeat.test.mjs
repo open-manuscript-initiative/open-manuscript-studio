@@ -31,7 +31,7 @@ test('heartbeat sends at startup, then daily; failures retry, recover and stop s
     if(resolvePending===true) return new Promise(resolve=>{resolvePending=resolve;});
     return {ok,status:ok?200:503};
   });
-  const run=async()=>{ scheduled.shift().callback(); await new Promise(resolve=>setImmediate(resolve)); };
+  const run=async()=>{ scheduled.shift().callback(); await new Promise(resolve=>{setImmediate(resolve);}); };
   const stop=startServerRegistryHeartbeat();
   assert.equal(scheduled[0].delay,0);
   await run(); assert.equal(calls,1); assert.equal(scheduled[0].delay,86400_000);
@@ -48,7 +48,7 @@ test('heartbeat sends at startup, then daily; failures retry, recover and stop s
   await run();
   stop();
   resolvePending({ok:true,status:200});
-  await new Promise(resolve=>setImmediate(resolve));
+  await new Promise(resolve=>{setImmediate(resolve);});
   assert.equal(scheduled.length,0);
   env.OMI_SERVER_REGISTRY_INSTANCE_ID=undefined;
   env.OMI_SERVER_REGISTRY_HEARTBEAT_TOKEN=undefined;
@@ -66,7 +66,7 @@ test('registry host updates its own directory entry without a network request or
   mock.method(globalThis,'fetch',async()=>{throw Error('The registry must not call itself over the network.');});
   const before=localRefreshes;
   const stop=startServerRegistryHeartbeat();
-  scheduled.shift().callback(); await new Promise(resolve=>setImmediate(resolve));
+  scheduled.shift().callback(); await new Promise(resolve=>{setImmediate(resolve);});
   assert.equal(localRefreshes,before+1); assert.equal(scheduled.length,1);
   assert.ok(scheduled[0].delay>=86400_000-30_000);
   stop();
@@ -88,7 +88,7 @@ test('public production server announces itself without any per-instance registr
     return {ok:true,status:200};
   });
   const stop=startServerRegistryHeartbeat(); assert.equal(typeof stop,'function');
-  scheduled.shift().callback(); await new Promise(resolve=>setImmediate(resolve));
+  scheduled.shift().callback(); await new Promise(resolve=>{setImmediate(resolve);});
   assert.equal(calls,1);
   assert.ok(scheduled[0].delay>=86400_000-30_000 && scheduled[0].delay<=86400_000);
   stop();
