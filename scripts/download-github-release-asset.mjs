@@ -7,7 +7,8 @@ import { pipeline } from 'node:stream/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const REPOSITORIES = new Set(['github/codeql-action', 'tauri-apps/binary-releases',
-  'tauri-apps/nsis-tauri-utils', 'wixtoolset/wix3', 'gradle/gradle-distributions', 'JetBrains/kotlin']);
+  'tauri-apps/nsis-tauri-utils', 'wixtoolset/wix3', 'gradle/gradle-distributions',
+  'JetBrains/kotlin', 'linuxdeploy/linuxdeploy-plugin-appimage']);
 
 async function hashFile(path) {
   const hash = createHash('sha256');

@@ -73,8 +73,6 @@ jobs:
           node scripts/configure-android-signing.mjs
       - name: Prepare verified Gradle distribution
         run: node scripts/prepare-native-ci-downloads.mjs gradle
-      - name: Prepare verified Gradle Kotlin compiler
-        run: node scripts/prepare-native-ci-downloads.mjs kotlin 2.2.0
       - name: Build ARM64 release AAB and APK with R8
         env:
           CI: 'true'

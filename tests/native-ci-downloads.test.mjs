@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { downloadReleaseAsset } from '../scripts/download-github-release-asset.mjs';
-import { gradleRelease } from '../scripts/prepare-native-ci-downloads.mjs';
+import { gradleRelease, prepareBundledKotlinCompiler } from '../scripts/prepare-native-ci-downloads.mjs';
 
 const payload = Buffer.from('Synthetic official binary bytes');
 const digest = createHash('sha256').update(payload).digest('hex');
@@ -91,4 +92,28 @@ test('Gradle source selection retains the exact generated version and archive ty
   assert.deepEqual(gradleRelease('distributionUrl=https\\://downloads.gradle.org/distributions/gradle-9.3.1-all.zip\r\n'),
     { tag: 'v9.3.1', assetName: 'gradle-9.3.1-all.zip' });
   assert.throws(() => gradleRelease('distributionUrl=https://untrusted.invalid/gradle-9.6.1-bin.zip'), /official/);
+});
+
+test('the exact compiler bundled with Gradle seeds its content-addressed cache', async t => {
+  const f = await fixture(t);
+  const archive = join(f.root, 'gradle.zip');
+  const prepared = spawnSync('python3', ['-c',
+    "import sys,zipfile; z=zipfile.ZipFile(sys.argv[1],'w'); z.writestr('gradle-9.6.1/lib/kotlin-compiler-embeddable-2.3.21.jar', b'Compiler from verified distribution'); z.close()", archive]);
+  assert.equal(prepared.status, 0, prepared.stderr?.toString());
+  const previous = { GRADLE_USER_HOME: process.env.GRADLE_USER_HOME, RUNNER_TEMP: process.env.RUNNER_TEMP };
+  process.env.GRADLE_USER_HOME = f.root;
+  process.env.RUNNER_TEMP = f.root;
+  try {
+    assert.equal(await prepareBundledKotlinCompiler(archive), '2.3.21');
+    const bytes = Buffer.from('Compiler from verified distribution');
+    const sha1 = createHash('sha1').update(bytes).digest('hex');
+    const path = join(f.root, 'caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable',
+      '2.3.21', sha1, 'kotlin-compiler-embeddable-2.3.21.jar');
+    assert.deepEqual(await readFile(path), bytes);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });

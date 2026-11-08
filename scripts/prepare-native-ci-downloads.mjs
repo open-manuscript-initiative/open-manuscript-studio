@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { chmod, cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { downloadReleaseAsset } from './download-github-release-asset.mjs';
 
@@ -22,6 +22,14 @@ export async function prepareGradle(properties = resolve('src-tauri/gen/android/
   const destination = join(temporaryRoot(), 'omi-native-downloads', release.assetName);
   const sha256 = await downloadReleaseAsset({ repository: 'gradle/gradle-distributions', ...release,
     destination, sha256: /^distributionSha256Sum\s*[=:](.*)$/m.exec(source)?.[1]?.trim() });
+  const embeddedVersion = await prepareBundledKotlinCompiler(destination);
+  try {
+    const rootBuild = await readFile(resolve(dirname(properties), '../../build.gradle.kts'), 'utf8');
+    const pluginVersion = /org\.jetbrains\.kotlin:kotlin-gradle-plugin:(\d+\.\d+\.\d+)/.exec(rootBuild)?.[1];
+    if (pluginVersion && pluginVersion !== embeddedVersion) await prepareKotlinCompiler(pluginVersion);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
   let result = source.replace(/^distributionUrl\s*[=:].*$/m,
     `distributionUrl=${pathToFileURL(destination).href}`);
   result = /^distributionSha256Sum\s*[=:]/m.test(result)
@@ -42,11 +50,39 @@ async function prepareCodeql(language) {
 }
 
 export async function prepareKotlinCompiler(version) {
-  if (!['2.2.0', '2.2.21'].includes(version)) throw new Error('Expected the compiler used by an AGP compatibility test.');
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('Expected an exact Kotlin compiler version.');
   const artifact = `kotlin-compiler-embeddable-${version}.jar`;
   const destination = join(temporaryRoot(), 'omi-native-downloads', artifact);
   await downloadReleaseAsset({ repository: 'JetBrains/kotlin', tag: `v${version}`,
     assetName: artifact, destination });
+  await seedKotlinCompiler(destination, version);
+}
+
+export async function prepareBundledKotlinCompiler(distribution) {
+  // The enclosing Gradle archive has already passed official SHA-256 validation.
+  const result = spawnSync('python3', ['-c', `
+import json, re, sys, zipfile
+from pathlib import Path
+with zipfile.ZipFile(sys.argv[1]) as archive:
+    pattern = re.compile(r'^gradle-[^/]+/lib/kotlin-compiler-embeddable-(\\d+\\.\\d+\\.\\d+)\\.jar$')
+    matches = [(name, pattern.match(name)) for name in archive.namelist() if pattern.match(name)]
+    if len(matches) != 1:
+        raise RuntimeError('Expected exactly one bundled Kotlin compiler')
+    name, match = matches[0]
+    destination = Path(sys.argv[2]) / Path(name).name
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(archive.read(name))
+    print(json.dumps({'path': str(destination), 'version': match.group(1)}))
+`, distribution, join(temporaryRoot(), 'omi-native-downloads')], { encoding: 'utf8' });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`Bundled Kotlin compiler extraction failed: ${result.stderr}`);
+  const compiler = JSON.parse(result.stdout);
+  await seedKotlinCompiler(compiler.path, compiler.version);
+  return compiler.version;
+}
+
+async function seedKotlinCompiler(destination, version) {
+  const artifact = `kotlin-compiler-embeddable-${version}.jar`;
   // Gradle's shared artifact store addresses files by their SHA-1. The downloaded
   // bytes have already passed SHA-256 verification against the official release.
   const hash = createHash('sha1');
@@ -75,12 +111,13 @@ async function prepareBundler() {
   const tools = join(cacheRoot, 'tauri');
   await mkdir(tools, { recursive: true });
   if (process.platform === 'linux') {
-    for (const [tag, assetName, filename] of [
-      ['apprun-old', 'AppRun-x86_64', 'AppRun-x86_64'],
-      ['linuxdeploy-07333c6', 'linuxdeploy-x86_64.AppImage', 'linuxdeploy-07333c6-x86_64.AppImage'],
+    for (const [repository, tag, assetName, filename] of [
+      ['tauri-apps/binary-releases', 'apprun-old', 'AppRun-x86_64', 'AppRun-x86_64'],
+      ['tauri-apps/binary-releases', 'linuxdeploy-07333c6', 'linuxdeploy-x86_64.AppImage', 'linuxdeploy-07333c6-x86_64.AppImage'],
+      ['linuxdeploy/linuxdeploy-plugin-appimage', 'continuous', 'linuxdeploy-plugin-appimage-x86_64.AppImage', 'linuxdeploy-plugin-appimage.AppImage'],
     ]) {
       const destination = join(tools, filename);
-      await downloadReleaseAsset({ repository: 'tauri-apps/binary-releases', tag, assetName, destination });
+      await downloadReleaseAsset({ repository, tag, assetName, destination });
       await chmod(destination, 0o770);
     }
   } else {
