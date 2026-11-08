@@ -7,23 +7,29 @@ if (!connectionString) {
   throw new Error('IDENTITY_DATABASE_URL is required.');
 }
 
-const globalForIdentityPrisma = globalThis as unknown as {
-  identityPrisma: PrismaClient | undefined;
-};
-
 const adapter = new PrismaPg({
   connectionString,
 });
 
-export const identityPrisma =
-  globalForIdentityPrisma.identityPrisma ??
-  new PrismaClient({
+function createIdentityPrisma() {
+  return new PrismaClient({
     adapter,
+    // This optional UI preference must not be included in implicit User
+    // projections (including nested session users) before its migration lands.
+    // The preference service reads it explicitly with a narrow compatibility fallback.
+    omit: { user: { workflowRole: true } },
     log:
       process.env.NODE_ENV === 'development'
         ? ['query', 'info', 'warn', 'error']
         : ['warn', 'error'],
   });
+}
+
+const globalForIdentityPrisma = globalThis as unknown as {
+  identityPrisma: ReturnType<typeof createIdentityPrisma> | undefined;
+};
+
+export const identityPrisma = globalForIdentityPrisma.identityPrisma ?? createIdentityPrisma();
 
 if (process.env.NODE_ENV !== 'production') {
   globalForIdentityPrisma.identityPrisma = identityPrisma;

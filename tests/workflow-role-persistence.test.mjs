@@ -13,7 +13,10 @@ let hasSession = true;
 mock.module(new URL('../server/dist/lib/identityPrisma.js', import.meta.url).href, {
   namedExports: { identityPrisma: {
     userSession: { findUnique: async () => hasSession ? { userId: user.id, expiresAt: new Date(Date.now() + 60_000), user } : null },
-    user: { update: async (input) => { updates.push(input); Object.assign(user, input.data); return user; } },
+    user: {
+      findUnique: async () => ({ workflowRole: user.workflowRole }),
+      update: async (input) => { updates.push(input); Object.assign(user, input.data); return user; },
+    },
   } },
 });
 mock.module(new URL('../server/dist/identity/studioPrincipalBridge.js', import.meta.url).href, {

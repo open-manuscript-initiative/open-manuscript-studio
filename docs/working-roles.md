@@ -50,3 +50,20 @@ npm run prisma:generate:all
 
 The migration adds `users.workflow_role` with the default `general`, preserving
 the existing interface for accounts that have not chosen a working role.
+
+If sign-in reports that `users.workflow_role` does not exist, run the Identity
+migration from the deployed `server` directory using the same Node runtime and
+environment as the API. On the production Plesk host:
+
+```sh
+export PATH="/opt/plesk/node/24/bin:$PATH"
+cd /var/www/vhosts/openmanuscript.org/studio/repository/server
+npm run prisma:migrate:identity:deploy
+```
+
+The compatibility fix excludes the optional preference from implicit account and
+nested session queries. A separate preference read falls back to Full workspace
+only for this exact missing-column error. Password validation, account status,
+session expiry and other database failures keep their existing behavior. Once
+the migration is applied, subsequent reads return the saved preference without
+restarting the API. Saving a working-role preference still requires the migration.

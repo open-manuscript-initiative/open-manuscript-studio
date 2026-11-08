@@ -14,6 +14,7 @@ import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
 import { consumeAssignmentInvitation } from './assignmentInvitationService.js';
 import type { WorkflowRolePreference } from './workflowRolePreference.js';
+import { readWorkflowRolePreference } from './workflowRoleStorage.js';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_TTL_DAYS = 30;
@@ -86,7 +87,7 @@ export async function registerUser(input: RegisterUserInput) {
 
   await ensureStudioPrincipal(toPrincipalSnapshot(user));
   const session = await createSession(user.id);
-  return { user: serializeUser(user), ...session };
+  return { user: await serializeUser(user), ...session };
 }
 
 async function registerInvitedUser(
@@ -145,7 +146,7 @@ async function registerInvitedUser(
   });
 
   const session = await createSession(identityUser.id);
-  return { user: serializeUser(identityUser), ...session };
+  return { user: await serializeUser(identityUser), ...session };
 }
 
 export async function loginUser(input: LoginUserInput) {
@@ -193,7 +194,7 @@ export async function loginUser(input: LoginUserInput) {
   await ensureStudioPrincipal(toPrincipalSnapshot(updated));
 
   const session = await createSession(updated.id);
-  return { user: serializeUser(updated), ...session };
+  return { user: await serializeUser(updated), ...session };
 }
 
 export async function loginUserWithPasskey(userId: string) {
@@ -207,7 +208,7 @@ export async function loginUserWithPasskey(userId: string) {
   });
   await ensureStudioPrincipal(toPrincipalSnapshot(updated));
   const session = await createSession(updated.id);
-  return { user: serializeUser(updated), ...session };
+  return { user: await serializeUser(updated), ...session };
 }
 
 export async function getUserForSession(rawToken: string) {
@@ -347,8 +348,7 @@ function toPrincipalSnapshot(user: {
   };
 }
 
-function serializeUser(user: {
-  workflowRole: string;
+async function serializeUser(user: {
   id: string;
   email: string;
   fullName: string;
@@ -380,7 +380,7 @@ function serializeUser(user: {
       ...(user.bio !== null ? { bio: user.bio } : {}),
     },
     preferences: {
-      workflowRole: user.workflowRole,
+      workflowRole: await readWorkflowRolePreference(user.id),
       interfaceLanguage: user.interfaceLanguage,
       workingLanguages: [],
       ...(user.timeZone !== null ? { timeZone: user.timeZone } : {}),
