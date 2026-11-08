@@ -170,7 +170,7 @@ export async function installMockStudioApi(
       return;
     }
 
-    if (request.method() === 'GET' && url.pathname === '/api/privacy') {
+    if (request.method() === 'GET' && url.pathname === '/api/v1/privacy') {
       await fulfillJson(route, 200, { configured: false });
       return;
     }

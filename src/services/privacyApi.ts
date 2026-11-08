@@ -1,18 +1,10 @@
-import { isTauri } from '@tauri-apps/api/core';
+import { studioApiFetch } from '../platform/studioApiTransport';
 import { getStudioApiBaseUrl } from './studioServer';
-
-export interface PrivacyNotice {
-  version: string; language: string;
-  controller: { name: string; postalAddress: string; email: string; dpoEmail?: string };
-  noticeUrl: string; authority: { name: string; url: string };
-  processing: Array<{ purpose: string; categories: string; legalBasis: string; retention: string; recipients: string; internationalTransfers: string }>;
-  rights: string; dataSources: string; requiredData: string; automatedDecisions: string;
-  cookies: string; backups: string; deletion: string;
-}
-export type PublicPrivacyNotice = { configured: false } | { configured: true; notice: PrivacyNotice };
+import type { PublicPrivacyNotice } from '../api/privacyContract';
+export type { PrivacyNotice, PublicPrivacyNotice } from '../api/privacyContract';
 
 export async function fetchPrivacyNotice(signal?: AbortSignal): Promise<PublicPrivacyNotice> {
-  const response = await fetch(`${getStudioApiBaseUrl()}/api/privacy`, {
+  const response = await fetch(`${getStudioApiBaseUrl()}/api/v1/privacy`, {
     credentials: 'omit', cache: 'no-store', signal, headers: { Accept: 'application/json' },
   });
   if (!response.ok) throw new Error('Privacy notice is unavailable.');
@@ -20,15 +12,7 @@ export async function fetchPrivacyNotice(signal?: AbortSignal): Promise<PublicPr
 }
 
 export async function fetchAccountData(): Promise<Blob> {
-  const headers = new Headers({ Accept: 'application/json' });
-  if (isTauri()) {
-    headers.set('X-OMI-Native-Client', '1');
-    const token = globalThis.localStorage?.getItem('omi_native_session_token');
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-  }
-  const response = await fetch(`${getStudioApiBaseUrl()}/api/account/data`, {
-    credentials: 'include', cache: 'no-store', headers,
-  });
+  const response = await studioApiFetch('/api/v1/account/data');
   if (!response.ok) throw new Error('Account data copy is unavailable.');
   return response.blob();
 }

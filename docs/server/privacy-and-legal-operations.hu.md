@@ -25,7 +25,7 @@ mentéseit, és nem jelent jogi megfelelőségi tanúsítást.
    `OMI_PRIVACY_CONFIG_PATH=/etc/omi/privacy-notice.json`.
    A `server` könyvtárból futtassa: `npm run privacy:check`.
 8. A szokásos telepítési eljárással történő aktiválás után ellenőrizze a
-   `/?privacy=1` oldalt, az `/api/privacy` választ, a regisztrációs és Fiók felületet,
+   `/?privacy=1` oldalt, az `/api/v1/privacy` választ, a regisztrációs és Fiók felületet,
    valamint a kiválasztott szervert az Android/asztali kliensben.
 
 Az ellenőrzés a fájl szerkezetét vizsgálja, nem a jogalap helyességét. Hiányzó
@@ -109,3 +109,19 @@ kötelezettséget az adott működés alapján kell vizsgálni.
 
 A részletes forrásokat és teendőket az angol üzemeltetési útmutató tartalmazza.
 Jogszabály: [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj).
+
+## API-kompatibilitás és felelősségi határok
+
+Az új kliens az `/api/v1/privacy` és `/api/v1/account/data` végpontot használja.
+A régi `/api/privacy` és `/api/account/data` cím ugyanazt a handlert, hitelesítést
+és közös kvótát használó kompatibilitási útvonal marad. Deprecation fejléc és
+kizárólag a rögzített útvonal nevét tartalmazó használati esemény segíti az átállást;
+eltávolítási határidő még nincs. Előbb az API-t, utána a klienseket telepítse.
+
+A JSON csak részleges fiókáttekintés; nem helyettesíti a teljes érintetti választ.
+A kiválasztott szerver tényleges üzemeltetője adja meg az adatkezelő tényeit;
+a tájékoztató nem ad identity-, szerkesztői vagy publikációs jogosultságot.
+Az [ADR-034](../architecture/adr-034-privacy-api-and-account-overview.md) rögzíti
+a DTO/OpenAPI-, repository- és release-gate határt. A `npm run test:privacy` a
+meglévő kötelező CI-ellenőrzés része, de nem helyettesít éles elfogadást vagy jogi
+ellenőrzést. A javítás nem vezet be adatbázis-migrációt vagy szerkesztési korlátot.

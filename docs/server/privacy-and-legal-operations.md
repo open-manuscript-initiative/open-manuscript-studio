@@ -36,7 +36,7 @@ changed by merging the source. Missing operator facts remain required work.
    `OMI_PRIVACY_CONFIG_PATH=/etc/omi/privacy-notice.json` in the API environment.
    From `server`, run `npm run privacy:check` before restarting through the normal
    deployment procedure. The checker validates shape, **not legal compliance**.
-7. Verify `/api/privacy`, `/?privacy=1`, registration, sign-in and Account on web
+7. Verify `/api/v1/privacy`, `/?privacy=1`, registration, sign-in and Account on web
    and the selected native server. Invalid configured files fail startup with a
    generic error. An absent file explicitly displays missing information; it does
    not manufacture a controller or claim compliance. Existing login is preserved.
@@ -66,7 +66,7 @@ or number of requests, inform the person within the original month of an extensi
 of up to two additional months and its reasons. Refusals need reasons and complaint
 and judicial-remedy information. Withdrawal of consent must be as easy as giving it.
 
-`GET /api/account/data` returns only the authenticated user's explicitly selected
+`GET /api/v1/account/data` returns only the authenticated user's explicitly selected
 profile, additional email addresses, linked sign-in metadata, memberships, session
 metadata and passkey labels. It returns no password hash, token, key or identity
 provider raw profile. The download is private/no-store and rate-limited. Sections
@@ -201,3 +201,17 @@ and obtain the relevant role/scope assessments. A source merge is not that evide
 - [Hungarian cybersecurity act](https://njt.jog.gov.hu/jogszabaly/2024-69-00-00).
 - [Hungarian public-sector accessibility act](https://njt.jog.gov.hu/jogszabaly/2018-75-00-00).
 - [EAA scope](https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=legissum:4403933).
+
+## API compatibility and architecture
+
+Use `/api/v1/privacy` and `/api/v1/account/data` for new clients. The original
+`/api/privacy` and `/api/account/data` remain shared-handler compatibility facades
+with deprecation headers and content-free route-usage events. There is no removal
+date yet. Both aliases share authentication, no-store behaviour and the same export
+quota; switching paths cannot reset it. Deploy the API before updated clients.
+
+The executable DTO/error contract and generated OpenAPI are described in
+[ADR-034](../architecture/adr-034-privacy-api-and-account-overview.md). Existing
+identity/API/privacy release gates include `npm run test:privacy`; source tests do
+not replace operator notice review or deployed-system acceptance. No new database
+migration is introduced by this boundary repair.
