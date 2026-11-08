@@ -1,7 +1,7 @@
 ## Unreleased — Translation and Validation Models
 
 - Keep the print preview's page gaps visible above spanning table backgrounds,
-  with a wider gray separator and clearer page labels on desktop and mobile.
+  preserving the original gap size, with clearer page labels on desktop and mobile.
 
 - Show the manuscript editor immediately after successful local OMI opening,
   confirmed Word/ODT/PDF import or cloud document opening from the Document menu.

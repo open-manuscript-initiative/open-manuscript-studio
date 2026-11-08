@@ -189,7 +189,7 @@ export function PublicationDocumentCanvas({
   const innerMargin = innerMarginMm * PIXELS_PER_MM * scale;
   const outerMargin = outerMarginMm * PIXELS_PER_MM * scale;
   const bleed = bleedMm * PIXELS_PER_MM * scale;
-  const pageGap = Math.max(32, bleed * 2 + 12);
+  const pageGap = Math.max(28, bleed * 2 + 12);
   const pageStride = pageHeight + pageGap;
   const pageCount = viewMode === 'print' ? pagination.pageCount : 1;
   const usablePageHeight = Math.max(

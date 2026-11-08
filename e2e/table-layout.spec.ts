@@ -117,7 +117,7 @@ test('page gaps stay visible over a spanning table on desktop and mobile', async
       }
       return {
         fullWidth: Math.abs(gap.width - paper.width) < 1,
-        clearGap: gap.height >= 32 && styles.backgroundColor === 'rgb(203, 213, 225)',
+        clearGap: gap.height >= 28 && styles.backgroundColor === 'rgb(203, 213, 225)',
         tableSpansGap: table.top < gap.top && table.bottom > gap.bottom,
         aboveTable,
         ignoresInput: getComputedStyle(element).pointerEvents === 'none',
