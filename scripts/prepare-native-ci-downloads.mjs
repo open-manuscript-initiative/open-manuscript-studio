@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import { chmod, cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -37,6 +39,23 @@ async function prepareCodeql(language) {
   await downloadReleaseAsset({ repository: 'github/codeql-action', tag: `codeql-bundle-v${version}`,
     assetName, destination: join(temporaryRoot(), assetName) });
   console.log(`Prepared verified official CodeQL ${version} ${language} bundle.`);
+}
+
+export async function prepareKotlinCompiler(version) {
+  if (!['2.2.0', '2.2.21'].includes(version)) throw new Error('Expected the compiler used by an AGP compatibility test.');
+  const artifact = `kotlin-compiler-embeddable-${version}.jar`;
+  const destination = join(temporaryRoot(), 'omi-native-downloads', artifact);
+  await downloadReleaseAsset({ repository: 'JetBrains/kotlin', tag: `v${version}`,
+    assetName: artifact, destination });
+  // Gradle's shared artifact store addresses files by their SHA-1. The downloaded
+  // bytes have already passed SHA-256 verification against the official release.
+  const hash = createHash('sha1');
+  for await (const chunk of createReadStream(destination)) hash.update(chunk);
+  const directory = join(process.env.GRADLE_USER_HOME || join(homedir(), '.gradle'),
+    'caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable', version, hash.digest('hex'));
+  await mkdir(directory, { recursive: true });
+  await cp(destination, join(directory, artifact));
+  console.log(`Prepared verified Kotlin ${version} compiler in the Gradle artifact cache.`);
 }
 
 function expandZip(archive, destination) {
@@ -88,8 +107,9 @@ async function main() {
   switch (process.argv[2]) {
     case 'gradle': return prepareGradle();
     case 'codeql': return prepareCodeql(process.argv[3]);
+    case 'kotlin': return prepareKotlinCompiler(process.argv[3]);
     case 'bundler': return prepareBundler();
-    default: throw new Error('Expected gradle, codeql or bundler.');
+    default: throw new Error('Expected gradle, kotlin, codeql or bundler.');
   }
 }
 
