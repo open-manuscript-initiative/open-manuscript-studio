@@ -362,9 +362,10 @@ function DocumentMenuView({
   async function closeDocument(): Promise<void> {
     if (!window.confirm(closeCopy.confirm)) return;
     await closeCurrentDocument();
-    setDocumentClosed(true);
+    setDocumentClosed(!useStudioStore.getState().hasOpenDocument);
     setLocalPath(null);
     setFileMessage('');
+    onCreated();
   }
 
   async function saveNative(asNewFile = false): Promise<void> {
