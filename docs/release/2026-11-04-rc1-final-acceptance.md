@@ -7,6 +7,8 @@ artifact and relevant code delta are demonstrably covered.
 
 **7 November scope update:** OJS and OMP -4/-5/-6 each require E02 regression evidence; OMP remains Preview. The current manual receipt requires 14 gates. Preserve historical receipts as-is and generate a new unapproved draft for the selected candidate; do not infer new observations. See [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md).
 
+> **8 November progress:** Store-only MSIX packaging succeeded. Store validation/signing, update routing and the channel-specific release contract remain outstanding. See the [completion checklist](2026-11-08-1.0-status.md).
+
 ## 1. Finish the automated evidence collection
 
 After the preparation PR is merged, select the **new merged main SHA**, rather

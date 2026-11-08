@@ -8,11 +8,16 @@ Open Manuscript Studio is an open-source application distributed by the Open Man
 
 The source code for Open Manuscript Studio is publicly available in this repository and is licensed under the MIT License. Official signed binaries must be produced from source code in the official `open-manuscript-initiative/open-manuscript-studio` repository.
 
-## Signing service
+## Signing service and status — 8 November 2026
 
-The Open Manuscript Initiative intends to use the SignPath Foundation open-source code-signing service for eligible Windows release artifacts.
+The selected path is **Microsoft Store MSIX**. Microsoft signs the package during
+publication after certification. The Store-only workflow builds an unsigned
+candidate without Azure or private signing credentials.
+[Current build and remaining validation](windows-msix-signing.md).
 
-Code signing is provided free of charge by SignPath Foundation for approved open-source projects. The signing certificate and signing infrastructure are controlled by SignPath Foundation. Approval by SignPath Foundation is required before this integration can be activated.
+The earlier SignPath Foundation application was declined, according to the owner.
+SignPath is not an active signing provider; no SignPath certificate or sponsorship
+is claimed. Direct EXE/MSI signing remains unconfigured.
 
 ## Trusted build provenance
 
@@ -22,7 +27,7 @@ Official signed release artifacts must:
 2. be built by the project's GitHub Actions release workflow using GitHub-hosted runners;
 3. be generated from the exact commit associated with the release;
 4. pass the project's automated tests before signing;
-5. be submitted to the configured SignPath project without manual replacement or modification of the binary between build and signing;
+5. be submitted through the approved channel (Partner Center for Store MSIX) without unreviewed binary replacement;
 6. be published only after successful signing and verification.
 
 Unsigned locally produced binaries are development builds and must not be represented as official signed releases.
@@ -41,7 +46,7 @@ A person may hold more than one project role where appropriate, but release appr
 
 Accounts with administrative, release, or signing privileges must use multi-factor authentication where supported. Access to signing configuration, GitHub environments, secrets, and release permissions must be limited to maintainers who require it.
 
-Signing credentials or service secrets must never be committed to the repository. They must be stored using the secret-management facilities provided by GitHub and/or SignPath.
+Signing credentials or service secrets must never be committed to the repository. They must be stored using the secret-management facilities provided by the approved CI/signing service.
 
 ## Release approval
 
@@ -57,7 +62,7 @@ The approver should verify at minimum:
 
 ## Windows artifacts
 
-The intended Windows release artifacts are the Tauri-generated NSIS `.exe` installer and WiX `.msi` installer. Where supported by the signing configuration, executable payloads that require Authenticode signatures should be signed before the containing installer is finalized or by an approved SignPath artifact configuration that performs the required nested/deep signing.
+The Store workflow produces an unsigned `.msix` candidate for Partner Center validation and Microsoft certification/signing. Existing NSIS `.exe` and WiX `.msi` installers remain a separate channel and must not be described as signed without their own verified Authenticode signatures. Store-managed updates, identity and migration require real-device acceptance.
 
 ## Verification
 
@@ -69,7 +74,7 @@ If signing credentials, signing configuration, release permissions, or build pro
 
 ## Privacy
 
-The signing workflow is intended to process release artifacts and build/release metadata, not manuscript content or end-user data. SignPath Foundation and GitHub process account, audit, build, and service metadata according to their respective privacy policies.
+The signing workflow is intended to process release artifacts and build/release metadata, not manuscript content or end-user data. Microsoft and GitHub process account, audit, build, submission and service metadata according to their respective privacy policies.
 
 The Open Manuscript Initiative's application-level privacy documentation is maintained separately from this code-signing policy.
 

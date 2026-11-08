@@ -2,6 +2,33 @@
 
 **Status:** separate candidate workflow, not an approved Windows RC publication. Existing MSI/NSIS outputs, Android release artifacts and the seven-file 1.0 RC evidence/hash/approval gate remain unchanged.
 
+## Verified MSIX packaging — 8 November 2026
+
+[Run 42497264488](https://github.com/open-manuscript-initiative/open-manuscript-studio/actions/runs/42497264488) completed successfully at **17:03 CET** (16:03 UTC)
+on source `87cbcfdfdca90b9391479351293225e47eeb4160`.
+Compilation, MakeAppx packaging and artifact upload succeeded.
+
+| Evidence | Value |
+| --- | --- |
+| Artifact / ID | `omi-studio-windows-msix-store-unsigned` / `13623708085` |
+| Package | `Open-Manuscript-Studio-Windows-x64.msix` |
+| App / package version | `1.0.0-rc.1` / `1.0.0.1` |
+| MSIX file SHA-256 (job log) | `00901d9483045f7574090a385432cde8ed8ea3b036426a762d9a6149c343e502` |
+| GitHub ZIP archive digest | `sha256:d7d892843a77acfcd683a23cbac181dc8f0580c49b90b2d8e4711ce50754fb28` |
+
+The file hash and ZIP digest identify different bytes. This is an unsigned
+candidate, not Store certification or a signed public installer.
+
+**Before submission:** reconcile inherited MSI version `1.0.0.1` with the
+[Store numbering requirements](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/app-package-requirements#package-version-numbering),
+which reserve the fourth component as zero. Record an increasing Store-compatible
+version, rebuild, run Windows App Certification Kit and validate in Partner Center.
+MakeAppx success alone does not prove Store acceptance.
+
+Listing, certification/Microsoft signing, Store-aware updates and actual Windows
+install/update/data-preservation acceptance remain outstanding. Existing EXE/MSI
+packages are not signed by this build. See the [1.0 completion checklist](release/2026-11-08-1.0-status.md).
+
 ## Distribution and trust
 
 | Path | Package | Signature | Updates |
