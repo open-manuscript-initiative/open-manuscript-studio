@@ -61,7 +61,7 @@ export function startServerRegistryHeartbeat(): (() => void) | null {
     }
   };
 
-  timer = setTimeout(() => { void sendHeartbeat(); }, Math.floor(Math.random() * 30_000));
+  timer = setTimeout(() => { void sendHeartbeat(); }, localRegistry ? 0 : Math.floor(Math.random() * 30_000));
   return () => {
     stopped = true;
     controller.abort();

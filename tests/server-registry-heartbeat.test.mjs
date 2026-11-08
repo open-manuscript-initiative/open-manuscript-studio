@@ -66,6 +66,7 @@ test('registry host updates its own directory entry without a network request or
   mock.method(globalThis,'fetch',async()=>{throw Error('The registry must not call itself over the network.');});
   const before=localRefreshes;
   const stop=startServerRegistryHeartbeat();
+  assert.equal(scheduled[0].delay,0);
   scheduled.shift().callback(); await new Promise(resolve=>{setImmediate(resolve);});
   assert.equal(localRefreshes,before+1); assert.equal(scheduled.length,1);
   assert.ok(scheduled[0].delay>=86400_000-30_000);
