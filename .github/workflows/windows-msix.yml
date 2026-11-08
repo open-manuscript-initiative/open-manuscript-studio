@@ -1,36 +1,33 @@
-name: Windows MSIX candidates (Store or direct signing)
+name: Windows MSIX candidates (Microsoft Store)
 
 # Additive, manually dispatched candidate workflow. Does not publish GitHub releases
 # and does not change the exact-SHA 1.0 RC acceptance/release contract.
+# Keep this Store-only: GitHub checks action policy before job conditions,
+# so even a skipped third-party signing action can block the entire run.
 on:
   workflow_dispatch:
     inputs:
-      distribution:
-        description: 'Store: unsigned package for Microsoft to sign; direct: Azure-signed package for website/GitHub'
-        type: choice
-        required: true
-        options:
-          - store
-          - direct
-        default: store
       msix_identity:
         description: 'Exact reserved package Identity Name (use the same immutable name for updates)'
         type: string
         required: true
+        default: 'VargaIstvn.OpenManuscriptStudio'
       msix_publisher:
-        description: 'Exact Partner Center Publisher or Azure certificate profile Subject (distinguished name)'
+        description: 'Exact Partner Center Publisher (distinguished name)'
         type: string
         required: true
+        default: 'CN=ED26F194-9F12-45EE-A4BC-C7DCD3A00E83'
       msix_publisher_display_name:
         description: 'Exact Package/Properties/PublisherDisplayName from Partner Center'
         type: string
         required: true
+        default: 'Varga István'
 
 permissions:
   contents: read
 
 concurrency:
-  group: windows-msix-${{ github.ref }}-${{ inputs.distribution }}
+  group: windows-msix-store-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -74,61 +71,8 @@ jobs:
           ./scripts/pack-windows-msix.ps1 -ContentRoot 'msix-stage' -OutputFile 'msix-artifacts/Open-Manuscript-Studio-Windows-x64.msix'
           Get-FileHash 'msix-artifacts/Open-Manuscript-Studio-Windows-x64.msix' -Algorithm SHA256 | Format-List
       - name: Store submission candidate (not installable until Store signs)
-        if: inputs.distribution == 'store'
         uses: actions/upload-artifact@v7
         with:
           name: omi-studio-windows-msix-store-unsigned
           path: msix-artifacts/*.msix
-          if-no-files-found: error
-      - name: Transfer unsigned package to protected signing job
-        if: inputs.distribution == 'direct'
-        uses: actions/upload-artifact@v7
-        with:
-          name: omi-studio-windows-msix-direct-unsigned-INTERNAL
-          path: msix-artifacts/*.msix
-          if-no-files-found: error
-
-  sign-direct:
-    name: Sign and verify public direct-download MSIX
-    if: inputs.distribution == 'direct'
-    needs: build-msix
-    runs-on: windows-latest
-    environment: windows-signing
-    steps:
-      - name: Download exact package from this workflow run
-        uses: actions/download-artifact@v8
-        with:
-          name: omi-studio-windows-msix-direct-unsigned-INTERNAL
-          path: msix-artifacts
-      - name: Sign with Azure Artifact Signing (protected environment)
-        uses: azure/trusted-signing-action@v0
-        with:
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          endpoint: ${{ vars.AZURE_TRUSTED_SIGNING_ENDPOINT }}
-          trusted-signing-account-name: ${{ vars.AZURE_CODE_SIGNING_NAME }}
-          certificate-profile-name: ${{ vars.AZURE_CERT_PROFILE_NAME }}
-          files-folder: ${{ github.workspace }}\msix-artifacts
-          files-folder-filter: msix
-      - name: Verify Authenticode and record package digest
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $sdk = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
-          $signtool = Get-ChildItem -LiteralPath $sdk -Filter 'signtool.exe' -Recurse -File |
-            Where-Object { $_.FullName -match '\\x64\\signtool\.exe$' } |
-            Sort-Object { [version]($_.Directory.Parent.Name) } -Descending |
-            Select-Object -First 1
-          if (-not $signtool) { throw 'Windows SDK SignTool missing.' }
-          $file = 'msix-artifacts/Open-Manuscript-Studio-Windows-x64.msix'
-          & $signtool.FullName verify /pa /v $file
-          if ($LASTEXITCODE -ne 0) { throw 'MSIX Authenticode verification failed: no public artifact.' }
-          $digest = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
-          Set-Content -LiteralPath 'msix-artifacts/SHA256SUMS.txt' -Value "$digest  Open-Manuscript-Studio-Windows-x64.msix" -Encoding utf8
-      - name: Upload verified signed package (candidate only)
-        uses: actions/upload-artifact@v7
-        with:
-          name: omi-studio-windows-msix-direct-SIGNED-CANDIDATE
-          path: msix-artifacts/*
           if-no-files-found: error
