@@ -1,5 +1,9 @@
 ## Unreleased — Translation and Validation Models
 
+- Move the DeepL translation workspace into Translations. Machine results are
+  editable, selectable suggestions; only explicit acceptance creates an unreviewed
+  portable draft. Keep source text and existing translations unchanged.
+
 - Keep password/passkey login and session restoration working when the optional
   working-role column has not been migrated yet. Fall back to the full workspace
   only for that missing column and migrate before rebuilding the live API.

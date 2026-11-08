@@ -272,7 +272,7 @@ export function StudioMenu({
             {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={returnHome} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
-            {activeView === 'translations' ? <TranslationPanel key={manuscriptId} /> : null}
+            {activeView === 'translations' ? <TranslationPanel key={manuscriptId} active={!externalContentActive} /> : null}
             {activeView === 'validation' ? <ValidationPanel key={manuscriptId} onNavigate={returnHome} /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={returnHome} /> : null}
             {activeView === 'references' ? <ReferencesView /> : null}

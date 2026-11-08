@@ -58,19 +58,19 @@ test('DeepL saves the preview basis rather than later form values or source edit
     useStudioStore.getState().loadManuscript(createBlankManuscript({ kind: 'study', locale: 'hu', title: 'Captured source' }));
   });
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
-  await page.locator('[data-integrations-navigation="true"]').click();
-  const card = page.locator('.omi-integration-workspace-card').filter({ has: page.getByRole('heading', { name: 'DeepL translation workspace', exact: true }) });
-  await card.getByRole('combobox', { name: 'Scope', exact: true }).selectOption('manuscript');
-  await card.getByRole('button', { name: 'Translate', exact: true }).click();
-  await expect(card.getByText('Translated Captured source', { exact: true })).toBeVisible();
-  await card.getByRole('combobox', { name: 'Target language', exact: true }).selectOption('DE');
-  await card.getByRole('combobox', { name: 'Scope', exact: true }).selectOption('section');
+  await page.getByRole('button', { name: 'Translations', exact: true }).click();
+  const panel = page.locator('.omi-translation-panel');
+  const card = panel.locator('.omi-machine-translation-workspace');
+  await card.getByRole('button', { name: 'Request machine translation suggestions', exact: true }).click();
+  await expect(card.getByRole('textbox', { name: 'Machine suggestion 1', exact: true })).toHaveValue('Translated Captured source');
+  await panel.getByLabel('Target language', { exact: true }).fill('de');
+  await panel.getByRole('combobox', { name: 'Scope', exact: true }).selectOption('section');
   await page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     useStudioStore.getState().setTitle('Later source');
   });
-  await card.getByRole('button', { name: 'Save as language variant', exact: true }).click();
-  await expect(card.getByRole('status')).toContainText('Translation saved.');
+  await card.getByRole('button', { name: 'Accept selected suggestions as new translation', exact: true }).click();
+  await expect(panel.getByRole('status')).toContainText('Translation saved.');
   const saved = await page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     const { getTranslationModel, translationProgress } = await import('/src/model/translation.ts');
@@ -81,3 +81,60 @@ test('DeepL saves the preview basis rather than later form values or source edit
   });
   expect(saved).toEqual({ target: 'en', scope: 'manuscript', original: 'Captured source', provider: 'DeepL', stale: 1 });
 });
+
+for (const width of [1440, 393]) {
+  test(`DeepL suggestions can be edited, excluded or discarded before acceptance (${width}px)`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await installMockStudioApi(page);
+    await page.route('**/integrations/deepl/translate', async (route) => {
+      const request = route.request().postDataJSON();
+      await route.fulfill({ json: { providerId: 'deepl', targetLanguage: request.targetLanguage, scope: request.scope,
+        segments: request.segments.map((segment: { id: string; text: string }) => ({ ...segment, text: `Translated ${segment.text}` })) } });
+    });
+    await signInToStudio(page);
+    await page.evaluate(async () => {
+      const { createBlankManuscript } = await import('/src/document/createBlankManuscript.ts');
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+      const m = createBlankManuscript({ kind: 'study', locale: 'hu', title: 'Original title' });
+      m.sections[0]!.title = 'Section heading';
+      m.sections[0]!.blocks = [{ id: 'source-body', type: 'paragraph', content: 'Original paragraph' }];
+      useStudioStore.getState().loadManuscript(m);
+    });
+    await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+    await page.getByRole('button', { name: 'Translations', exact: true }).click();
+    const panel = page.locator('.omi-translation-panel');
+    const workspace = panel.locator('.omi-machine-translation-workspace');
+    const countVariants = () => page.evaluate(async () => {
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+      const { getTranslationModel } = await import('/src/model/translation.ts');
+      return getTranslationModel(useStudioStore.getState().manuscript).variants.length;
+    });
+    await workspace.getByRole('button', { name: 'Request machine translation suggestions', exact: true }).click();
+    await expect(workspace.locator('.omi-machine-translation-suggestion')).toHaveCount(3);
+    expect(await countVariants()).toBe(0);
+    await workspace.getByRole('button', { name: 'Discard suggestions', exact: true }).click();
+    await expect(workspace.locator('.omi-machine-translation-suggestion')).toHaveCount(0);
+    expect(await countVariants()).toBe(0);
+    await workspace.getByRole('button', { name: 'Request machine translation suggestions', exact: true }).click();
+    await workspace.getByRole('textbox', { name: 'Machine suggestion 1', exact: true }).fill('Corrected translation');
+    await workspace.getByRole('checkbox', { name: 'Use suggestion 2', exact: true }).uncheck();
+    await workspace.getByRole('button', { name: 'Accept selected suggestions as new translation', exact: true }).click();
+    await expect.poll(countVariants).toBe(1);
+    const saved = await page.evaluate(async () => {
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+      const { getTranslationModel } = await import('/src/model/translation.ts');
+      const m = useStudioStore.getState().manuscript;
+      return { source: m.title, sourceBody: m.sections[0]!.blocks[0]!.content,
+        alignments: getTranslationModel(m).variants[0]!.alignments.map((item) => ({ text: item.targetText, status: item.status, equivalence: item.equivalence })) };
+    });
+    expect(saved.source).toBe('Original title');
+    expect(saved.sourceBody).toBe('Original paragraph');
+    expect(saved.alignments.map((item) => item.text)).toEqual(['Corrected translation', '', 'Translated Original paragraph']);
+    expect(saved.alignments.every((item) => item.status === 'draft' && item.equivalence === 'unassessed')).toBe(true);
+    await expect(panel.getByRole('button', { name: 'Parallel text HTML', exact: true })).toBeDisabled();
+    expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.getByRole('button', { name: 'Manuscript menu', exact: true }).last().click();
+    await page.locator('[data-integrations-navigation="true"]').click();
+    await expect(page.getByRole('heading', { name: 'DeepL translation workspace', exact: true })).toHaveCount(0);
+  });
+}

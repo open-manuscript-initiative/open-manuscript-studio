@@ -127,7 +127,8 @@ export function createManuscriptTranslation(
       id: crypto.randomUUID(), sourceAnchor: unit.anchor, sourceObjectId: unit.objectId,
       sourceText: unit.text, sourceFingerprint: unit.fingerprint,
       targetText: supplied.get(unit.anchor) ?? '', status: 'draft', equivalence: 'unassessed',
-      notes: '', origin: { ...origin }, modifiedAt: timestamp,
+      notes: '', origin: origin.method === 'machine' && !supplied.has(unit.anchor)
+        ? { method: 'human', createdAt: timestamp } : { ...origin }, modifiedAt: timestamp,
     })),
   };
 }

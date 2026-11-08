@@ -7,4 +7,11 @@
 .omi-translation-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .omi-translation-columns p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .omi-translation-alignment { display: grid; gap: .7rem; border-top: 1px solid var(--border-color, #d9dee5); padding: 1rem 0; min-width: 0; }
+.omi-machine-translation-workspace { display: grid; gap: .8rem; min-width: 0; border: 1px solid var(--border-color, #d9dee5); border-radius: .5rem; padding: 1rem; }
+.omi-machine-translation-workspace h4, .omi-machine-translation-workspace p { margin: 0; }
+.omi-machine-translation-suggestion { display: grid; gap: .6rem; min-width: 0; border-top: 1px solid var(--border-color, #d9dee5); padding-top: .8rem; }
+.omi-translation-panel .omi-machine-translation-choice { display: flex; align-items: center; gap: .5rem; }
+.omi-translation-panel .omi-machine-translation-choice input { width: auto; margin: 0; }
+.omi-machine-translation-workspace summary { cursor: pointer; }
+.omi-machine-translation-workspace button { white-space: normal; overflow-wrap: anywhere; text-align: start; }
 @media (max-width: 650px) { .omi-translation-columns { grid-template-columns: minmax(0, 1fr); } }
