@@ -815,6 +815,7 @@ export function PublicationDocumentCanvas({
           lang={manuscript.locale}
         >
           {viewMode === 'print' ? (
+            <>
             <div className="publication-document-page-guides" aria-hidden="true">
             {Array.from({ length: visiblePageEnd - firstVisiblePage }, (_, visibleIndex) => {
               const index = firstVisiblePage + visibleIndex;
@@ -859,6 +860,20 @@ export function PublicationDocumentCanvas({
               );
             })}
             </div>
+            <div className="publication-document-page-separators" aria-hidden="true">
+              {Array.from({ length: visiblePageEnd - firstVisiblePage }, (_, visibleIndex) => {
+                const index = firstVisiblePage + visibleIndex;
+                return (
+                  <div
+                    className="publication-document-page-separator"
+                    key={index}
+                    style={{ top: `${index * pageStride + pageHeight}px` }}
+                    data-page-label={copy.page(firstPageNumber + index)}
+                  />
+                );
+              })}
+            </div>
+            </>
           ) : null}
 
           <div
