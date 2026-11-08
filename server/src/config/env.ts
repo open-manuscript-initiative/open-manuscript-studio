@@ -55,6 +55,8 @@ const environmentSchema = z.object({
   OMI_SERVER_REGISTRY_ORIGIN: z.string().url().default('https://studio.openmanuscript.org'),
   OMI_SERVER_REGISTRY_SOFTWARE_VERSION: z.string().trim().max(80).optional(),
   OMI_SERVER_REGISTRY_CAPABILITIES: z.string().trim().default('web,api'),
+  // Public production installations announce themselves automatically; private installations may opt out.
+  OMI_SERVER_REGISTRY_AUTOMATIC_DISCOVERY: z.enum(['true', 'false']).default('true').transform(value => value === 'true'),
 
   TRANSKRIBUS_API_ORIGIN: z.enum([
     'https://api.transkribus.org',

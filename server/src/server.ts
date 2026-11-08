@@ -4,7 +4,7 @@ import { startCollaborationServer, stopCollaborationServer } from './collaborati
 import { prisma } from './lib/prisma.js';
 import { startServerRegistryHeartbeat } from './serverRegistry/heartbeat.js';
 
-const stopRegistryHeartbeat = startServerRegistryHeartbeat();
+let stopRegistryHeartbeat: (() => void) | null = null;
 
 const collaborationServer = env.MANUSCRIPT_COLLABORATION_ENABLED
   ? await startCollaborationServer()
@@ -14,6 +14,7 @@ const server = app.listen(
   env.PORT,
   env.API_BIND_HOST,
   () => {
+    stopRegistryHeartbeat = startServerRegistryHeartbeat();
     console.log(
       `Open Manuscript Studio API listening on ${env.API_BIND_HOST}:${env.PORT}.`,
     );
@@ -21,6 +22,7 @@ const server = app.listen(
 );
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {
+  stopRegistryHeartbeat?.();
   console.log(
     `Received ${signal}. Shutting down gracefully.`,
   );
@@ -35,7 +37,6 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
       process.exitCode = 1;
     }
 
-    stopRegistryHeartbeat?.();
     await stopCollaborationServer(collaborationServer);
     await prisma.$disconnect();
 

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { mock } from 'node:test';
 
 import { normalizeNativeStudioServerOrigin } from '../src/services/studioServer.ts';
-import { parseStudioServerDirectory } from '../src/services/studioServerDirectory.ts';
+import { parseStudioServerDirectory, fetchStudioServerDirectory } from '../src/services/studioServerDirectory.ts';
 import { NATIVE_SESSION_STORAGE_KEY, persistNativeServerSelection } from '../src/platform/nativeServerSelection.ts';
 
 test('native Studio server addresses normalize to an origin', () => {
@@ -98,4 +98,33 @@ test('server directory rejects duplicate origins and invalid endpoints', () => {
   assert.throws(() => parseStudioServerDirectory({
     servers: [{ id: 'insecure', name: 'Insecure', origin: 'http://studio.example.org' }],
   }), /HTTPS/);
+});
+
+test('each chooser request reads the central live directory without cache or packaged merging', async (t) => {
+  t.after(() => mock.restoreAll());
+  const requests: string[] = [];
+  let servers: unknown[] = [{id:'current-server',name:'Current',origin:'https://current.example.org',status:'online'}];
+  mock.method(globalThis,'fetch',async (url: string, options: RequestInit) => {
+    requests.push(url);
+    assert.equal(options.cache,'no-store');
+    assert.ok(url.endsWith('/api/v1/server-registry/servers'));
+    return Response.json({servers});
+  });
+  assert.equal((await fetchStudioServerDirectory()).servers[0]?.name,'Current');
+  servers=[];
+  assert.deepEqual(await fetchStudioServerDirectory(),{servers:[],source:'live'});
+  assert.equal(requests.length,2);
+});
+
+test('fallback is visibly unverified, used only on failure and cancelled with the chooser', async (t) => {
+  t.after(() => mock.restoreAll());
+  mock.method(globalThis,'fetch',async (url: string) => {
+    if(url.startsWith('https:')) throw Error('Registry unavailable');
+    return Response.json({servers:[{id:'omi-official',name:'Official',origin:'https://studio.openmanuscript.org',status:'online'}]});
+  });
+  const result=await fetchStudioServerDirectory();
+  assert.equal(result.source,'fallback');
+  assert.equal(result.servers[0]?.availability,'unknown');
+  const controller=new AbortController(); controller.abort();
+  await assert.rejects(fetchStudioServerDirectory(controller.signal));
 });

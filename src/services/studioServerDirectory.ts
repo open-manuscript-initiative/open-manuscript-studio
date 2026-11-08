@@ -46,33 +46,28 @@ export function parseStudioServerDirectory(value: unknown): StudioServerDirector
   return entries;
 }
 
-async function fetchDirectory(url: string): Promise<StudioServerDirectoryEntry[]> {
+async function fetchDirectory(url: string, signal?: AbortSignal): Promise<StudioServerDirectoryEntry[]> {
   const response = await fetch(url, {
     headers: { Accept: 'application/json' },
     cache: 'no-store',
-    signal: AbortSignal.timeout(8_000),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8_000)]) : AbortSignal.timeout(8_000),
   });
   if (!response.ok) throw new Error('The server directory could not be loaded.');
   return parseStudioServerDirectory(await response.json());
 }
 
-export async function fetchStudioServerDirectory(): Promise<StudioServerDirectoryEntry[]> {
+export async function fetchStudioServerDirectory(signal?: AbortSignal): Promise<{
+  servers: StudioServerDirectoryEntry[];
+  source: 'live' | 'fallback';
+}> {
   const configuredRegistryOrigin = import.meta.env?.VITE_STUDIO_SERVER_REGISTRY_ORIGIN?.trim();
   const registryOrigin = (configuredRegistryOrigin || 'https://studio.openmanuscript.org').replace(/\/$/, '');
-  const [liveResult, fallbackResult] = await Promise.allSettled([
-    fetchDirectory(`${registryOrigin}/api/v1/server-registry/servers`),
-    fetchDirectory('/studio-servers.json'),
-  ]);
-
-  const liveEntries = liveResult.status === 'fulfilled' ? liveResult.value : [];
-  const fallbackEntries = fallbackResult.status === 'fulfilled' ? fallbackResult.value : [];
-  const byOrigin = new Map<string, StudioServerDirectoryEntry>();
-
-  for (const entry of fallbackEntries) byOrigin.set(entry.origin, entry);
-  for (const entry of liveEntries) byOrigin.set(entry.origin, entry);
-
-  if (byOrigin.size === 0) {
-    throw liveResult.status === 'rejected' ? liveResult.reason : new Error('The Studio server directory is empty.');
+  try {
+    // A successful empty live response is authoritative. Packaged data must not resurrect removed entries.
+    return {servers: await fetchDirectory(`${registryOrigin}/api/v1/server-registry/servers`, signal), source: 'live'};
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    const servers = await fetchDirectory('/studio-servers.json', signal);
+    return {servers: servers.map(server => ({...server, availability: 'unknown'})), source: 'fallback'};
   }
-  return [...byOrigin.values()];
 }

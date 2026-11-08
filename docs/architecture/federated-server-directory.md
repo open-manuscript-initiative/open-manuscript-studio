@@ -10,9 +10,13 @@ Let an author discover participating Open Manuscript Studio servers and then wor
 - No manuscript content, account information, server IP address, credentials, or user counts are collected.
 - The browser and native applications use the directory to get a list. After selection, every application request goes directly to the selected Studio origin.
 - Registry reads and heartbeats are small metadata requests. A cacheable public JSON response and rate limits keep registry load low.
-- A server can operate without publishing itself in the directory. Registration is an explicit operator opt-in.
+- Public production servers participate automatically using their existing canonical origin. Private production installations may opt out; development and local instances do not automatically participate.
 
 ## Registration and liveness
+
+The default path, added 2026-11-08, is automatic HTTPS discovery. The API announces its existing canonical origin after startup and once daily; the central registry probes a fixed public identity endpoint using a fresh nonce. Public metadata is accepted only from that HTTPS response. Socket-pinned public DNS, no redirects, bounded responses/timeouts and announcement rate limits protect the registry. No per-instance DNS, token, registration command, local credential file or GitHub configuration is needed. The registry host writes its own entry locally without sending requests to itself. Revocations and uncertain manual audits remain blocked. See [operator and rollout details](../../server/SERVER_DIRECTORY.md).
+
+The earlier DNS/bearer workflow remains available for compatibility:
 
 1. During installation, the operator may opt in and submit the server's display name and public HTTPS origin to the registry.
 2. The registry creates a pending record and a one-time domain challenge. The operator publishes the challenge as a DNS TXT record under `_omi-studio-verification.<domain>`.
@@ -26,6 +30,9 @@ GitHub is the auditable catalogue of approved public entries, not the heartbeat 
 ## Public API contract
 
 - `GET /api/v1/server-registry/servers`: return domain-verified entries and current liveness, suitable for the OMI website and Studio server chooser. Cache for at most 60 seconds.
+- `GET /api/v1/server-registry/servers/daily`: recent entries only, with generation/freshness metadata and a 24-hour cache policy; used by the website.
+- `POST /api/v1/server-registry/announcements`: origin-only announcement followed by HTTPS identity verification.
+- `GET /api/v1/server-registry/identity?challenge=...`: public production identity with a fresh 64-hex challenge echo; never exposes credentials.
 - `POST /api/v1/server-registry/registrations`: create a pending registration; rate limited.
 - `POST /api/v1/server-registry/registrations/:id/verify`: verify the DNS challenge and create a GitHub audit issue.
 - `POST /api/v1/server-registry/instances/:id/heartbeat`: authenticated by that instance's bearer token; update last-seen time and compatible version/capabilities.
@@ -35,7 +42,7 @@ The public response must not expose heartbeat tokens, challenge values, database
 
 ## Website and application integration
 
-The OMI website renders the public directory and its online/offline state. Studio's chooser requests the same endpoint and makes one-click navigation possible. Browser selection opens the selected server's own Studio web origin so authentication cookies remain first-party. Native selection updates the API origin and clears the previous server's session token.
+The OMI website renders only recent entries from the daily endpoint, showing last-seen and list-generation times in English, Hungarian and German. It loads on opening and refreshes after 24 hours while open, without manual browser refresh or a website deployment. Failed reads clear displayed availability and retry after five minutes. Studio's chooser retains the existing full directory endpoint. Browser selection opens the selected server's own Studio web origin so authentication cookies remain first-party. Native selection updates the API origin and clears the previous server's session token.
 
 When the registry cannot be reached, the Studio chooser may show its cached list or the packaged official-server fallback. A registry outage must not prevent an author from using an already selected server.
 
@@ -59,7 +66,7 @@ The registry's GitHub App needs only Issues: write on the catalogue repository t
 
 ## Registry authority hardening (2026-10-21)
 
-The registry remains Preview and is discovery only. DNS control is not editorial authority, software certification or evidence of API compatibility. `online` means only that an authenticated heartbeat was received in the last 15 minutes; it does not mean a health probe succeeded. No automatic load balancing, account migration or manuscript forwarding occurs.
+The registry remains Preview and is discovery only. Domain control is not editorial authority, software certification or evidence of API compatibility. `online` means a successful HTTPS identity proof, registry-local update or legacy authenticated heartbeat in the last 48 hours; it does not certify all Studio features. No automatic load balancing, account migration or manuscript forwarding occurs.
 
 Registration returns two different values: publish only `verification.value` in DNS. Keep `registrationToken` private in the server environment as `OMI_SERVER_REGISTRATION_TOKEN`; the CLI sends it as a bearer credential during verification. It expires after 24 hours and is consumed on successful activation. Expired pending requests can be replaced by starting registration again. Never publish this proof or heartbeat credentials in DNS, GitHub, browser bundles or support logs. DNS TXT chunks within each record are concatenated before comparison.
 
@@ -70,3 +77,8 @@ A compare-and-swap claims PENDING → VERIFYING before the GitHub side effect. O
 Required gates: synthetic route tests for private proof, expiry, split TXT, replay, concurrent verification, audit failure, secret redaction and both mounts; PostgreSQL tests applying both actual registry migrations, concurrent claim/rotation, revoke and legacy-pending invalidation. These are wired into the integration-state PostgreSQL CI job. A passing mock test alone does not establish database concurrency or external GitHub/DNS acceptance.
 
 The route handles HTTP only, `serverRegistryService` owns use cases, `serverRegistryRepository` owns Prisma and conditional writes, and the GitHub audit adapter owns external publication. Registry credentials grant registry control only, never Studio accounts, manuscripts, review identities or publishing-system authority.
+
+
+## Studio chooser refresh
+
+Every time the user opens the server selector (on the login screen or account panel), Studio requests the full central `/api/v1/server-registry/servers` endpoint directly with `cache: no-store`. Closing the selector cancels the pending request; reopening clears the old results and fetches again. A successful empty live list is authoritative. The packaged official-server fallback is used only after a failed live read, is labeled unverified, and is never merged into a successful live response. The website keeps its separate daily endpoint and refresh schedule.

@@ -44,4 +44,17 @@ export const serverRegistryRepository = {
   },
   list: () => prisma.studioServerDirectoryEntry.findMany({ where: { status: 'ACTIVE' }, orderBy: { name: 'asc' },
     select: { id: true, name: true, origin: true, softwareVersion: true, capabilities: true, lastHeartbeatAt: true } }),
+  async observe(origin: string, data: { name: string; hostname: string; softwareVersion?: string; capabilities: string[]; domainChallengeHash: string }, id: string, tokenHash: string) {
+    // Only the registry's HTTPS probe supplies these values. Never issue a bearer token to an announcer.
+    // Explicit revocation and an uncertain manual audit (VERIFYING) always take precedence.
+    const now = new Date();
+    const values = {...data, status: 'ACTIVE' as const, verifiedAt: now, lastHeartbeatAt: now, registrationTokenHash: null, challengeExpiresAt: null};
+    try {
+      await prisma.studioServerDirectoryEntry.create({data: {id, origin, heartbeatTokenHash: tokenHash, ...values}});
+      return true;
+    } catch (error) {
+      if (typeof error !== 'object' || error === null || !('code' in error) || error.code !== 'P2002') throw error;
+    }
+    return (await prisma.studioServerDirectoryEntry.updateMany({where: {origin, status: {in: ['ACTIVE', 'PENDING']}}, data: values})).count === 1;
+  },
 };
