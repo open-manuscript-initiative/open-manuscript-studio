@@ -651,4 +651,4 @@ jobs:
       - name: Test migration and cross-process-safe storage contracts
         run: node --test tests/integration-state.postgres.test.mjs tests/server-registry.postgres.test.mjs
       - name: Registry security and v1 compatibility
-        run: node --test --experimental-test-module-mocks tests/server-registry-routes.test.mjs
+        run: node --test --experimental-test-module-mocks tests/server-registry-routes.test.mjs tests/server-registry-heartbeat.test.mjs tests/server-registry-local.test.mjs

@@ -1,5 +1,5 @@
 import { extensionRegistryRouter } from './routes/extensionRegistryRoutes.js';
-import cors from 'cors';
+import {apiCors} from './middleware/apiCors.js';
 import express from 'express';
 import helmet from 'helmet';
 
@@ -83,23 +83,7 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(helmet());
 
-const standardCors = cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
-      callback(null, true);
-      return;
-    }
-    callback(new Error(`Origin ${origin} is not allowed by CORS.`));
-  },
-  credentials: true,
-});
-
-app.use((request, response, next) => {
-  if (['/api/server-registry/servers', '/api/v1/server-registry/servers'].includes(request.path)) {
-    return cors({ origin: true, credentials: false })(request, response, next);
-  }
-  return standardCors(request, response, next);
-});
+app.use(apiCors(allowedOrigins));
 
 // Apply controls before body parsing: unauthenticated large JSON requests
 // must not consume the 25–140 MiB parser allocations before rate limiting.

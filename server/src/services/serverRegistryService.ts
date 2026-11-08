@@ -1,11 +1,13 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { resolveTxt } from 'node:dns/promises';
-import { isIP } from 'node:net';
 
 import { z } from 'zod';
 
 import { serverRegistryRepository as repository } from '../repositories/serverRegistryRepository.js';
 import { submitGithubRegistration } from '../serverRegistry/githubAudit.js';
+import { DIRECTORY_PROTOCOL, DIRECTORY_REFRESH_SECONDS, HEARTBEAT_FRESH_FOR_SECONDS, HEARTBEAT_INTERVAL_SECONDS, hasRecentHeartbeat } from '../serverRegistry/policy.js';
+import {normalizePublicOrigin} from '../serverRegistry/publicOrigin.js';
+import {fetchPinnedPublicUrl} from '../cloud/security/connectionPinnedHttp.js';
 
 const registrationSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -22,26 +24,6 @@ const heartbeatSchema = z.object({
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 
 
-function normalizePublicOrigin(value: string): { origin: string; hostname: string } {
-  const url = new URL(value);
-  const hostname = url.hostname.toLowerCase().replace(/\.$/, '');
-  if (
-    url.protocol !== 'https:' ||
-    url.username ||
-    url.password ||
-    url.pathname !== '/' ||
-    url.search ||
-    url.hash ||
-    isIP(hostname) !== 0 ||
-    hostname === 'localhost' ||
-    hostname.endsWith('.localhost') ||
-    hostname.endsWith('.local')
-  ) {
-    throw new Error('Server origins must be public HTTPS origins without a path.');
-  }
-  return { origin: url.origin, hostname };
-}
-
 function bearerToken(header: string | undefined): string | null {
   const match = header?.match(/^Bearer ([A-Za-z0-9_-]{40,})$/);
   return match?.[1] ?? null;
@@ -54,6 +36,76 @@ function tokenMatches(presented: string, storedHash: string): boolean {
 }
 
 export interface RegistryResult { status: number; body?: unknown }
+
+const announcementSchema = z.object({origin: z.string().url().max(512)}).strict();
+const probeSchema = registrationSchema.extend({
+  protocol: z.literal(DIRECTORY_PROTOCOL),
+  challenge: z.string().regex(/^[a-f0-9]{64}$/),
+});
+const probes = new Map<string, Promise<RegistryResult>>();
+
+async function observePublicServer(origin: string, hostname: string): Promise<RegistryResult> {
+  const existing = await repository.findByOrigin(origin);
+  if (existing?.status === 'REVOKED' || existing?.status === 'VERIFYING') {
+    return {status: 409, body: {error: {code: 'REGISTRY_ENTRY_BLOCKED'}}};
+  }
+  // Repeated unauthenticated announcements cannot advance last-seen without an HTTPS proof.
+  if (existing?.status === 'ACTIVE' && existing.lastHeartbeatAt &&
+      Date.now() - existing.lastHeartbeatAt.getTime() >= 0 &&
+      Date.now() - existing.lastHeartbeatAt.getTime() < 12 * 60 * 60 * 1000) {
+    return {status: 202, body: {status: 'recently_verified', heartbeatIntervalSeconds: HEARTBEAT_INTERVAL_SECONDS}};
+  }
+  const challenge = randomBytes(32).toString('hex');
+  try {
+    const response = await fetchPinnedPublicUrl(new URL(`/api/v1/server-registry/identity?challenge=${challenge}`, origin), {
+      method: 'GET', redirect: 'error', headers: {Accept: 'application/json'}, signal: AbortSignal.timeout(8_000),
+    });
+    if (!response.ok || !response.body) {
+      await response.body?.cancel();
+      throw new Error('Public identity unavailable.');
+    }
+    const reader = response.body.getReader();
+    let size = 0;
+    const chunks: Uint8Array[] = [];
+    try {
+      while (true) {
+        const part = await reader.read();
+        if (part.done) break;
+        size += part.value.byteLength;
+        if (size > 8192) { await reader.cancel(); throw new Error('Public identity too large.'); }
+        chunks.push(part.value);
+      }
+    } finally { reader.releaseLock(); }
+    const proof = probeSchema.safeParse(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+    if (!proof.success || proof.data.challenge !== challenge || proof.data.origin !== origin) {
+      throw new Error('Public identity does not match the announced origin.');
+    }
+    const changed = await repository.observe(origin, {
+      name: proof.data.name, hostname,
+      ...(proof.data.softwareVersion === undefined ? {} : {softwareVersion: proof.data.softwareVersion}),
+      capabilities: proof.data.capabilities, domainChallengeHash: digest(challenge),
+    }, randomBytes(16).toString('hex'), digest(randomBytes(32).toString('base64url')));
+    return changed
+      ? {status: 200, body: {status: 'active', heartbeatIntervalSeconds: HEARTBEAT_INTERVAL_SECONDS}}
+      : {status: 409, body: {error: {code: 'REGISTRY_ENTRY_BLOCKED'}}};
+  } catch {
+    return {status: 503, body: {error: {code: 'PUBLIC_SERVER_VERIFICATION_FAILED'}}};
+  }
+}
+
+export async function announce(input: unknown = {}): Promise<RegistryResult> {
+  const parsed = announcementSchema.safeParse(input);
+  if (!parsed.success) return {status: 400, body: {error: {code: 'INVALID_ANNOUNCEMENT'}}};
+  let normalized: {origin: string; hostname: string};
+  try { normalized = normalizePublicOrigin(parsed.data.origin); }
+  catch { return {status: 400, body: {error: {code: 'INVALID_SERVER_ORIGIN'}}}; }
+  const pending = probes.get(normalized.origin);
+  if (pending) return pending;
+  const task = observePublicServer(normalized.origin, normalized.hostname);
+  probes.set(normalized.origin, task);
+  try { return await task; }
+  finally { probes.delete(normalized.origin); }
+}
 
 export async function register(input: unknown = {}): Promise<RegistryResult> {
   const parsed = registrationSchema.safeParse(input);
@@ -104,7 +156,7 @@ export async function register(input: unknown = {}): Promise<RegistryResult> {
       name: `_omi-studio-verification.${normalized.hostname}`,
       value: challenge,
     },
-    heartbeatIntervalSeconds: 300,
+    heartbeatIntervalSeconds: HEARTBEAT_INTERVAL_SECONDS,
     instructions: 'Publish the DNS TXT record, then call POST /api/v1/server-registry/registrations/{id}/verify. Store the heartbeat token only on the server.',
   } };
 }
@@ -138,7 +190,7 @@ export async function verify(_input: unknown = {}, id = '', authorization?: stri
   }
   const heartbeatToken = randomBytes(32).toString('base64url');
   if (!await repository.activate(id, digest(token), digest(heartbeatToken), githubIssueUrl)) return { status: 409, body: { error: { code: 'REGISTRATION_EXPIRED_OR_CONSUMED' } } };
-  return { status: 200, body: { id, status: 'active', auditUrl: githubIssueUrl, heartbeatToken, heartbeatIntervalSeconds: 300 } };
+  return { status: 200, body: { id, status: 'active', auditUrl: githubIssueUrl, heartbeatToken, heartbeatIntervalSeconds: HEARTBEAT_INTERVAL_SECONDS } };
 }
 
 export async function heartbeat(input: unknown = {}, id = '', authorization?: string): Promise<RegistryResult> {
@@ -188,18 +240,30 @@ export async function revoke(_input: unknown = {}, id = '', authorization?: stri
   return changed ? { status: 204 } : { status: 409, body: { error: { code: 'REGISTRY_CREDENTIAL_CHANGED' } } };
 }
 
-export async function list(): Promise<RegistryResult> {
+async function directorySnapshot() {
   const entries = await repository.list();
-  const onlineBefore = Date.now() - 15 * 60 * 1000;
-  return { status: 200, body: {
+  const now = Date.now();
+  return {
+    generatedAt: new Date(now).toISOString(),
+    refreshAfterSeconds: DIRECTORY_REFRESH_SECONDS,
+    heartbeatFreshForSeconds: HEARTBEAT_FRESH_FOR_SECONDS,
     servers: entries.map((entry) => ({
       id: entry.id,
       name: entry.name,
       origin: entry.origin,
       softwareVersion: entry.softwareVersion,
       capabilities: entry.capabilities,
-      status: entry.lastHeartbeatAt && entry.lastHeartbeatAt.getTime() >= onlineBefore ? 'online' : 'offline',
+      status: hasRecentHeartbeat(entry.lastHeartbeatAt, now) ? 'online' : 'offline',
       lastSeenAt: entry.lastHeartbeatAt?.toISOString() ?? null,
     })),
-  } };
+  };
+}
+
+export async function list(): Promise<RegistryResult> {
+  return { status: 200, body: await directorySnapshot() };
+}
+
+export async function dailyList(): Promise<RegistryResult> {
+  const body = await directorySnapshot();
+  return { status: 200, body: { ...body, servers: body.servers.filter((entry) => entry.status === 'online') } };
 }

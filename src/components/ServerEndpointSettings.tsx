@@ -20,6 +20,7 @@ function copy(locale: string) {
     return {
       title: 'Studio-szerver', summary: 'Studio-szerver kiválasztása', current: 'Jelenlegi szerver',
       directory: 'Elérhető szerverek', loading: 'Szerverlista betöltése…', offline: 'Nem érhető el',
+      unknown: 'Az állapot nem ellenőrizhető',
       unavailable: 'A szerverlista most nem érhető el. Saját szervercímet ettől függetlenül megadhat.',
       address: 'Másik szerver címe', placeholder: 'https://studio.pelda.hu',
       help: 'A saját szervernek HTTPS-en elérhető Studio-felületet és API-t kell biztosítania. Váltáskor az új szerveren folytatja; a korábbi szerveren tárolt adatok nem változnak.',
@@ -32,6 +33,7 @@ function copy(locale: string) {
     return {
       title: 'Studio-Server', summary: 'Studio-Server auswählen', current: 'Aktueller Server',
       directory: 'Verfügbare Server', loading: 'Serverliste wird geladen…', offline: 'Nicht erreichbar',
+      unknown: 'Status nicht überprüfbar',
       unavailable: 'Die Serverliste ist derzeit nicht verfügbar. Sie können trotzdem eine eigene Serveradresse eingeben.',
       address: 'Adresse eines anderen Servers', placeholder: 'https://studio.beispiel.org',
       help: 'Der eigene Server muss eine über HTTPS erreichbare Studio-Oberfläche und API bereitstellen. Beim Wechsel wird der neue Server geöffnet; auf dem bisherigen Server gespeicherte Daten bleiben unverändert.',
@@ -43,6 +45,7 @@ function copy(locale: string) {
   return {
     title: 'Studio server', summary: 'Choose a Studio server', current: 'Current server',
     directory: 'Available servers', loading: 'Loading server list…', offline: 'Offline',
+    unknown: 'Status not verified',
     unavailable: 'The server list is unavailable right now. You can still enter a server address.',
     address: 'Another server address', placeholder: 'https://studio.example.org',
     help: 'A custom server must provide a Studio web interface and API over HTTPS. Switching opens the new server; data stored on the previous server is unchanged.',
@@ -60,18 +63,28 @@ export function ServerEndpointSettings() {
   const [open, setOpen] = useState(Boolean(savedOrigin));
   const [serverOrigin, setServerOrigin] = useState(savedOrigin ?? '');
   const [servers, setServers] = useState<StudioServerDirectoryEntry[]>([]);
-  const [directoryLoading, setDirectoryLoading] = useState(true);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
   const [directoryAvailable, setDirectoryAvailable] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!open) return;
     let active = true;
-    void fetchStudioServerDirectory()
-      .then((entries) => { if (active) setServers(entries); })
+    const controller = new AbortController();
+    setDirectoryLoading(true);
+    setDirectoryAvailable(true);
+    setServers([]);
+    void fetchStudioServerDirectory(controller.signal)
+      .then((directory) => {
+        if (active) {
+          setServers(directory.servers);
+          setDirectoryAvailable(directory.source === 'live');
+        }
+      })
       .catch(() => { if (active) setDirectoryAvailable(false); })
       .finally(() => { if (active) setDirectoryLoading(false); });
-    return () => { active = false; };
-  }, []);
+    return () => { active = false; controller.abort(); };
+  }, [open]);
 
   const currentOrigin = native ? getNativeStudioServerOrigin() : window.location.origin;
 
@@ -114,7 +127,7 @@ export function ServerEndpointSettings() {
           <p className="native-server-settings__current">
             <strong>{text.current}:</strong> <span dir="ltr">{currentOrigin}</span>
           </p>
-          <div className="native-server-settings__directory" aria-label={text.directory}>
+          <div className="native-server-settings__directory" aria-label={text.directory} aria-busy={directoryLoading} aria-live="polite">
             <strong>{text.directory}</strong>
             {directoryLoading ? <p>{text.loading}</p> : null}
             {!directoryLoading && !directoryAvailable ? (
@@ -126,6 +139,7 @@ export function ServerEndpointSettings() {
             {servers.map((server) => {
               const selected = server.origin === currentOrigin;
               const unavailable = server.availability === 'offline';
+              const status = selected ? text.current : unavailable ? text.offline : server.availability === 'unknown' ? text.unknown : text.choose;
               const label = server.id === 'omi-official' ? text.official : server.name;
               return (
                 <button
@@ -135,13 +149,13 @@ export function ServerEndpointSettings() {
                     ? 'native-server-settings__server native-server-settings__server--current'
                     : 'native-server-settings__server'}
                   aria-current={selected ? 'true' : undefined}
-                  aria-label={`${label} (${server.origin}) — ${selected ? text.current : unavailable ? text.offline : text.choose}`}
+                  aria-label={`${label} (${server.origin}) — ${status}`}
                   disabled={unavailable}
                   onClick={() => openServer(server.origin)}
                 >
                   <span>{label}</span>
                   <span dir="ltr">{server.origin}</span>
-                  <span>{selected ? text.current : unavailable ? text.offline : text.choose}</span>
+                  <span>{status}</span>
                 </button>
               );
             })}

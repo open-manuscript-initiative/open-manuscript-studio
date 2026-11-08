@@ -33,4 +33,23 @@ test('real registry migrations and concurrent proof/token CAS',async t=>{
  assert.deepEqual(await r.list(),[]);
  await r.register('expired',{...data,origin:'https://expired.example.org',challengeExpiresAt:new Date(0)},false);
  assert.equal(await r.claim('expired',data.registrationTokenHash),false);
+ const observed={name:'Automatic',hostname:'automatic.example.org',softwareVersion:'1.0.0',capabilities:['web'],domainChallengeHash:'c'.repeat(64)};
+ const observedOrigin='https://automatic.example.org';
+ const observations=await Promise.all([
+   r.observe(observedOrigin,observed,'auto-a','a'.repeat(64)),
+   r.observe(observedOrigin,observed,'auto-b','b'.repeat(64)),
+ ]);
+ assert.ok(observations.every(Boolean));
+ const automatic=await r.findByOrigin(observedOrigin);
+ assert.equal(automatic.status,'ACTIVE'); assert.ok(automatic.lastHeartbeatAt); assert.equal(automatic.registrationTokenHash,null);
+ assert.equal((await r.list()).filter(e=>e.origin===observedOrigin).length,1);
+ await r.revoke(automatic.id,automatic.heartbeatTokenHash,'r'.repeat(64));
+ assert.equal(await r.observe(observedOrigin,observed,'auto-c','c'.repeat(64)),false);
+ assert.equal((await r.findByOrigin(observedOrigin)).status,'REVOKED');
+ await r.register('quarantined',{...data,origin:'https://quarantined.example.org'},false);
+ await r.claim('quarantined',data.registrationTokenHash);
+ assert.equal(await r.observe('https://quarantined.example.org',observed,'auto-d','d'.repeat(64)),false);
+ assert.equal((await r.findById('quarantined')).status,'VERIFYING');
+ assert.equal(await r.observe('https://expired.example.org',observed,'auto-e','e'.repeat(64)),true);
+ assert.equal((await r.findById('expired')).registrationTokenHash,null);
 });
