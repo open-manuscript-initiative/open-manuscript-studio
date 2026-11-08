@@ -1,4 +1,5 @@
 import { identityPrisma } from '../lib/identityPrisma.js';
+import { readWorkflowRolePreference } from './workflowRoleStorage.js';
 
 const limit = 1000;
 
@@ -9,7 +10,7 @@ export async function exportAccountOverview(userId: string) {
     where: { id: userId },
     select: {
       id: true, email: true, fullName: true, affiliation: true, affiliationRorId: true,
-      country: true, website: true, orcid: true, bio: true, timeZone: true, workflowRole: true,
+      country: true, website: true, orcid: true, bio: true, timeZone: true,
       interfaceLanguage: true, status: true, createdAt: true, updatedAt: true, lastLoginAt: true,
       profileEmails: { take: limit + 1, orderBy: { id: 'asc' }, select: { email: true, isPrimary: true, createdAt: true } },
       identities: { take: limit + 1, orderBy: { id: 'asc' }, select: { provider: true, issuer: true, subject: true, displayName: true, createdAt: true, lastUsedAt: true } },
@@ -26,7 +27,7 @@ export async function exportAccountOverview(userId: string) {
     scope: 'Account profile, sign-in metadata and institution memberships only. Not a complete subject access response or manuscript backup.',
     omitted: ['Manuscripts, review contents, collaboration history, operational logs and external provider copies. Request a full response from this server operator. Authentication secrets are never exported.'],
     incompleteSections: Object.entries(sections).filter(([, rows]) => rows.length > limit).map(([name]) => name),
-    profile,
+    profile: { ...profile, workflowRole: await readWorkflowRolePreference(userId) },
     ...Object.fromEntries(Object.entries(sections).map(([name, rows]) => [name, rows.slice(0, limit)])),
   };
 }

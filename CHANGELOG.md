@@ -1,5 +1,9 @@
 ## Unreleased — Translation and Validation Models
 
+- Keep password/passkey login and session restoration working when the optional
+  working-role column has not been migrated yet. Fall back to the full workspace
+  only for that missing column and migrate before rebuilding the live API.
+
 - Add an account working-role preference and focused manuscript menus for
   authors, editors, reviewers, translators, language reviewers and layout editors.
   Verified OJS/OMP handoffs select the role for the active imported manuscript;

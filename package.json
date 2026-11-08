@@ -128,7 +128,7 @@
     "test:core-relationships": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-relationships.test.ts",
     "evidence:core-relationships": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-relationships.ts",
     "test:privacy": "npm --prefix server run test:privacy && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/privacy-client.test.ts tests/account-deletion-flow.test.ts",
-    "test:workflow-role-persistence": "tsc -p server/tsconfig.json && node --test --experimental-test-module-mocks tests/workflow-role-persistence.test.mjs"
+    "test:workflow-role-persistence": "tsc -p server/tsconfig.json && node --test --experimental-test-module-mocks tests/workflow-role-persistence.test.mjs tests/workflow-role-login-compatibility.test.mjs tests/workflow-role-prisma-projection.test.mjs"
   },
   "dependencies": {
     "@hocuspocus/provider": "^4.7.0",
