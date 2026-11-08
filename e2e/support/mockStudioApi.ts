@@ -170,7 +170,7 @@ export async function installMockStudioApi(
       return;
     }
 
-    if (request.method() === 'GET' && url.pathname === '/api/privacy') {
+    if (request.method() === 'GET' && url.pathname === '/api/v1/privacy') {
       await fulfillJson(route, 200, { configured: false });
       return;
     }
@@ -191,6 +191,34 @@ export async function installMockStudioApi(
           error: { code: 'AUTHENTICATION_REQUIRED', message: 'Authentication is required.' },
         });
       }
+      return;
+    }
+
+    if (request.method() === 'GET' && url.pathname === '/api/auth/me/profile-emails') {
+      await fulfillJson(route, 200, { emails: [] });
+      return;
+    }
+
+    if (request.method() === 'GET' && url.pathname === '/api/auth/me/publishing-credentials') {
+      await fulfillJson(route, 200, { credentials: [] });
+      return;
+    }
+
+    if (request.method() === 'GET' && url.pathname === '/api/auth/identities') {
+      await fulfillJson(route, 200, {
+        localCredential: { type: 'password', email: user.email, enabled: true },
+        identities: [],
+      });
+      return;
+    }
+
+    if (request.method() === 'GET' && url.pathname === '/api/v1/auth/passkeys') {
+      await fulfillJson(route, 200, { passkeys: [] });
+      return;
+    }
+
+    if (request.method() === 'GET' && url.pathname === '/api/central-admin/context') {
+      await fulfillJson(route, 200, { centralAdmin: false, role: null });
       return;
     }
 

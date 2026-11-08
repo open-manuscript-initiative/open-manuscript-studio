@@ -26,35 +26,55 @@ jobs:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-22.04
     timeout-minutes: 60
+    env:
+      # Match the bundle selected by the linked CodeQL v4 action.
+      CODEQL_BUNDLE_VERSION: '2.27.4'
     strategy:
       fail-fast: false
       matrix:
         include:
           - language: actions
             build-mode: none
+            bundle: actions
           - language: javascript-typescript
             build-mode: none
+            bundle: javascript
           - language: rust
             build-mode: none
+            bundle: rust
           - language: java-kotlin
             build-mode: manual
+            bundle: java
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Set up Node.js for verified downloads
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Cache verified CodeQL bundle
+        id: codeql-bundle
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/codeql-bundle-${{ matrix.bundle }}-linux64.tar.zst
+          key: codeql-api-${{ matrix.bundle }}-linux64-${{ env.CODEQL_BUNDLE_VERSION }}
+
+      - name: Download verified CodeQL bundle through official asset API
+        if: steps.codeql-bundle.outputs.cache-hit != 'true'
+        env:
+          CODEQL_BUNDLE_LANGUAGE: ${{ matrix.bundle }}
+        run: node scripts/prepare-native-ci-downloads.mjs codeql "$CODEQL_BUNDLE_LANGUAGE"
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-
-      - name: Set up Node.js for Android build
-        if: matrix.language == 'java-kotlin'
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
+          tools: ${{ runner.temp }}/codeql-bundle-${{ matrix.bundle }}-linux64.tar.zst
 
       - name: Set up Java for Android build
         if: matrix.language == 'java-kotlin'
@@ -123,6 +143,10 @@ jobs:
       - name: Generate Android launcher icons
         if: matrix.language == 'java-kotlin'
         run: npm run icons:generate
+
+      - name: Prepare verified Gradle distribution
+        if: matrix.language == 'java-kotlin'
+        run: node scripts/prepare-native-ci-downloads.mjs gradle
 
       - name: Build Android code for CodeQL
         if: matrix.language == 'java-kotlin'

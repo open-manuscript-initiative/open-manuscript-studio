@@ -1,5 +1,9 @@
 ## Unreleased — Translation and Validation Models
 
+- Version privacy/account-copy endpoints under `/api/v1` with shared legacy
+  facades, bounded typed DTOs, standard errors and isolated identity repositories.
+  Keep account copies explicitly partial and retain the optional-role migration fallback.
+
 - Move the DeepL translation workspace into Translations. Machine results are
   editable, selectable suggestions; only explicit acceptance creates an unreviewed
   portable draft. Keep source text and existing translations unchanged.

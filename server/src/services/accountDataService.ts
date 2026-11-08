@@ -1,34 +1,36 @@
-import { identityPrisma } from '../lib/identityPrisma.js';
-import { readWorkflowRolePreference } from './workflowRoleStorage.js';
+import { accountOverviewSchema, accountOverviewLimit, accountSectionNames, type AccountOverview } from '../contracts/privacyContract.js';
+import type { WorkflowRolePreference } from './workflowRolePreference.js';
 
-const limit = 1000;
-
-/** Deliberately scoped account overview. A full Art.15 response is an operator
- * workflow: shared manuscripts/reviews need third-party-rights review. */
-export async function exportAccountOverview(userId: string) {
-  const user = await identityPrisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true, email: true, fullName: true, affiliation: true, affiliationRorId: true,
-      country: true, website: true, orcid: true, bio: true, timeZone: true,
-      interfaceLanguage: true, status: true, createdAt: true, updatedAt: true, lastLoginAt: true,
-      profileEmails: { take: limit + 1, orderBy: { id: 'asc' }, select: { email: true, isPrimary: true, createdAt: true } },
-      identities: { take: limit + 1, orderBy: { id: 'asc' }, select: { provider: true, issuer: true, subject: true, displayName: true, createdAt: true, lastUsedAt: true } },
-      institutionMemberships: { take: limit + 1, orderBy: { id: 'asc' }, select: { role: true, createdAt: true, institution: { select: { name: true } } } },
-      sessions: { take: limit + 1, orderBy: { id: 'asc' }, select: { createdAt: true, expiresAt: true } },
-      passkeys: { take: limit + 1, orderBy: { id: 'asc' }, select: { label: true, deviceType: true, backedUp: true, createdAt: true, lastUsedAt: true } },
-    },
-  });
-  if (!user) return null;
-  const { profileEmails, identities, institutionMemberships, sessions, passkeys, ...profile } = user;
-  const sections = { profileEmails, identities, institutionMemberships, sessions, passkeys };
-  return {
-    schema: 'omi-account-overview/1', exportedAt: new Date().toISOString(),
-    scope: 'Account profile, sign-in metadata and institution memberships only. Not a complete subject access response or manuscript backup.',
-    omitted: ['Manuscripts, review contents, collaboration history, operational logs and external provider copies. Request a full response from this server operator. Authentication secrets are never exported.'],
-    incompleteSections: Object.entries(sections).filter(([, rows]) => rows.length > limit).map(([name]) => name),
-    profile: { ...profile, workflowRole: await readWorkflowRolePreference(userId) },
-    ...Object.fromEntries(Object.entries(sections).map(([name, rows]) => [name, rows.slice(0, limit)])),
+type StoredDates<T> = { [K in keyof T]: K extends 'createdAt' | 'updatedAt' | 'expiresAt' ? Date
+  : K extends 'lastLoginAt' | 'lastUsedAt' ? Date | null : T[K] };
+export type AccountDataRecord = StoredDates<Omit<AccountOverview['profile'], 'workflowRole'>> & {
+  [K in typeof accountSectionNames[number]]: Array<StoredDates<AccountOverview[K][number]>>;
+};
+/** Application port; the adapter alone owns Prisma and optional-column compatibility. */
+export interface AccountDataRepository {
+  findAccount(userId: string): Promise<AccountDataRecord | null>;
+  readWorkflowRole(userId: string): Promise<WorkflowRolePreference>;
+}
+export function createAccountDataService(repository: AccountDataRepository) {
+  return async function exportAccountOverview(userId: string): Promise<AccountOverview | null> {
+    const user = await repository.findAccount(userId);
+    if (!user) return null;
+    const { profileEmails, identities, institutionMemberships, sessions, passkeys, ...profile } = user;
+    const sections = { profileEmails, identities, institutionMemberships, sessions, passkeys };
+    // Serialization is part of the wire boundary. Strict validation also rejects
+    // accidental secret fields added to the adapter or use case in the future.
+    return accountOverviewSchema.parse({
+      schema: 'omi-account-overview/1', exportedAt: new Date().toISOString(),
+      scope: 'Account profile, sign-in metadata and institution memberships only. Not a complete subject access response or manuscript backup.',
+      omitted: ['Manuscripts, review contents, collaboration history, operational logs and external provider copies. Request a full response from this server operator. Authentication secrets are never exported.'],
+      incompleteSections: accountSectionNames.filter(name => sections[name].length > accountOverviewLimit),
+      profile: { ...profile, createdAt: profile.createdAt.toISOString(), updatedAt: profile.updatedAt.toISOString(),
+        lastLoginAt: profile.lastLoginAt?.toISOString() ?? null, workflowRole: await repository.readWorkflowRole(userId) },
+      profileEmails: profileEmails.slice(0, accountOverviewLimit).map(row => ({ ...row, createdAt: row.createdAt.toISOString() })),
+      identities: identities.slice(0, accountOverviewLimit).map(row => ({ ...row, createdAt: row.createdAt.toISOString(), lastUsedAt: row.lastUsedAt?.toISOString() ?? null })),
+      institutionMemberships: institutionMemberships.slice(0, accountOverviewLimit).map(row => ({ ...row, createdAt: row.createdAt.toISOString() })),
+      sessions: sessions.slice(0, accountOverviewLimit).map(row => ({ ...row, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString() })),
+      passkeys: passkeys.slice(0, accountOverviewLimit).map(row => ({ ...row, createdAt: row.createdAt.toISOString(), lastUsedAt: row.lastUsedAt?.toISOString() ?? null })),
+    });
   };
 }
-

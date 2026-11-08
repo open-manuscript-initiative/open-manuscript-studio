@@ -49,6 +49,11 @@ on:
       - 'tests/android-modern-ui.test.mjs'
       - 'scripts/bundle-macos-dmg.sh'
       - 'tests/macos-dmg-bundling.test.mjs'
+      - 'scripts/tauri-build-with-download-retry.sh'
+      - 'tests/tauri-download-retry.test.mjs'
+      - 'scripts/download-github-release-asset.mjs'
+      - 'scripts/prepare-native-ci-downloads.mjs'
+      - 'tests/native-ci-downloads.test.mjs'
       - '.github/workflows/tauri-desktop.yml'
       - '.github/workflows/promote-current-release.yml'
       - 'scripts/release-publication-policy.mjs'
@@ -165,10 +170,18 @@ jobs:
       - name: Run frontend tests
         run: npm test
 
+      - name: Prepare verified official bundler tools
+        if: matrix.artifact == 'linux-x86_64' || matrix.artifact == 'windows-x86_64'
+        run: node scripts/prepare-native-ci-downloads.mjs bundler
+
       - name: Build Tauri bundles
-        uses: tauri-apps/tauri-action@v0
-        with:
-          args: ${{ matrix.args }}
+        shell: bash
+        env:
+          TAURI_BUILD_ARGS: ${{ matrix.args }}
+        run: |
+          set -euo pipefail
+          read -r -a build_args <<< "$TAURI_BUILD_ARGS"
+          bash scripts/tauri-build-with-download-retry.sh npm run tauri -- build "${build_args[@]}"
 
       - name: Package macOS DMG with bounded contention retries
         if: startsWith(matrix.platform, 'macos')
@@ -401,6 +414,9 @@ jobs:
             >/dev/null
 
           echo 'Android release signing key loaded successfully.'
+
+      - name: Prepare verified Gradle distribution
+        run: node scripts/prepare-native-ci-downloads.mjs gradle
 
       - name: Build Android APK for pull request
         if: github.event_name == 'pull_request'
