@@ -94,6 +94,7 @@ jobs:
       - name: Verify production rollback snapshot and migration safety
         run: |
           bash -n scripts/production-rollback.sh
+          node --check scripts/backup-reviewed-migration.mjs
           node --test tests/production-rollback.test.mjs
 
       - name: Run release hardening unit gates
