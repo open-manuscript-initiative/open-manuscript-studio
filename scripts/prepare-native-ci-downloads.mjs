@@ -151,7 +151,10 @@ async function seedKotlinCompiler(destination, version) {
     'caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable', version, hash.digest('hex'));
   await mkdir(directory, { recursive: true });
   await cp(destination, join(directory, artifact));
-  await mirrorVerifiedKotlinCompiler(destination, version);
+  // Only the Gradle-embedded 2.3.21 artifact has a reviewed local POM.
+  // A different Kotlin plugin version is still preloaded from its verified
+  // official release without changing its remote Maven resolution metadata.
+  if (version === '2.3.21') await mirrorVerifiedKotlinCompiler(destination, version);
   console.log(`Prepared verified Kotlin ${version} compiler in the Gradle artifact cache.`);
 }
 
