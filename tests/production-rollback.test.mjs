@@ -21,6 +21,11 @@ function fixture(t) {
   mkdirSync(join(repo, 'server', 'dist'), { recursive: true });
   mkdirSync(join(repo, 'server', 'node_modules'), { recursive: true });
   mkdirSync(web);
+  // Mirror the pre-migration backup executable into the simulated deployment
+  // checkout; the production gate resolves it from its repository directory.
+  mkdirSync(join(repo, 'scripts'), { recursive: true });
+  writeFileSync(join(repo, 'scripts', 'backup-reviewed-migration.mjs'),
+    readFileSync(new URL('../scripts/backup-reviewed-migration.mjs', import.meta.url)));
   git(repo, 'init', '-q');
   writeFileSync(join(repo, 'version.txt'), 'v1');
   git(repo, 'add', '.');
