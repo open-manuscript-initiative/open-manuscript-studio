@@ -35,13 +35,24 @@ if [[ "$action" == snapshot ]]; then
   current="${STUDIO_TARGET_SHA:-$(git -C "$repo" rev-parse HEAD)}"
   git -C "$repo" cat-file -e "$current^{commit}"
 
-  # Automatic rollback cannot undo a database migration. For any future PR
-  # modifying migrations require an explicit database backup/manual rollout.
-  migrations="$(git -C "$repo" diff --name-only "$previous" "$current" -- server/prisma/migrations server/prisma/identity/migrations)"
-  if [[ -n "$migrations" ]]; then
-    echo "Migration changes require a reviewed database backup and manual migration rollout:" >&2
-    echo "$migrations" >&2
-    exit 1
+  # Never allow unreviewed migrations through an automatic code rollback.
+  # Exception: ONE pinned, additive-only Android test applicant table migration.
+  # Its schema is backwards compatible with the previous API (old code simply
+  # ignores the table). Full DB dumps must be created and validated BEFORE
+  # any npm install, Prisma migration or live-file update.
+  approved_migration='server/prisma/migrations/20261109060000_android_closed_test_signups/migration.sql'
+  approved_blob='dfc5ee96dc2cbc9bf2d1622ce494bd5b133e0bba'
+  migration_changes="$(git -C "$repo" diff --name-status "$previous" "$current" -- server/prisma/migrations server/prisma/identity/migrations)"
+  needs_db_backup=false
+  if [[ -n "$migration_changes" ]]; then
+    if [[ "$migration_changes" != "$(printf 'A\t%s' "$approved_migration")" ]] ||
+       [[ "$(git -C "$repo" hash-object "$repo/$approved_migration")" != "$approved_blob" ]]; then
+      echo "Migration changes require a reviewed database backup and manual migration rollout:" >&2
+      printf '%s\n' "$migration_changes" >&2
+      exit 1
+    fi
+    needs_db_backup=true
+    echo 'Reviewed additive Android test migration verified against pinned Git blob.'
   fi
   [[ -d "$web" && -d "$repo/server/dist" && -d "$repo/server/node_modules" ]] || {
     echo 'Cannot snapshot: missing live webroot, compiled API, or runtime dependencies' >&2
@@ -61,6 +72,18 @@ if [[ "$action" == snapshot ]]; then
   chmod 700 "$snapshot"
   printf '%s\n' "$previous" > "$snapshot/previous-sha"
   printf '%s\n' "$current" > "$snapshot/new-sha"
+  if [[ "$needs_db_backup" == true ]]; then
+    # This fail-closed operation must be allowed to use the database credentials
+    # from server/.env. No password is echoed or written to the backup manifest.
+    node "$repo/scripts/backup-reviewed-migration.mjs" "$repo" "$snapshot"
+    [[ -s "$snapshot/database/studio.dump" &&
+       -s "$snapshot/database/identity.dump" &&
+       -s "$snapshot/database/manifest.json" ]] || {
+      echo 'Pre-migration PostgreSQL backup validation failed.' >&2
+      exit 1
+    }
+    printf '%s\n' "$approved_migration" > "$snapshot/reviewed-migration"
+  fi
   rsync -a "$web/" "$snapshot/web/"
   rsync -a "$repo/server/dist/" "$snapshot/server-dist/"
   rsync -a "$repo/server/node_modules/" "$snapshot/server-modules/"
@@ -83,6 +106,10 @@ previous="$(<"$snapshot/previous-sha")"
 [[ "$previous" =~ ^[0-9a-f]{40}$ ]] || exit 1
 
 echo "Restoring Studio production code and web/API assets to $previous."
+if [[ -f "$snapshot/reviewed-migration" ]]; then
+  echo 'A reviewed additive migration may have run. Keeping the PostgreSQL schema and all user data unchanged.'
+  echo 'Private pre-migration archives are available under the snapshot/database directory for a reviewed restore if ever needed.'
+fi
 # Preserve PostgreSQL, identity records, stored manuscripts, uploaded images,
 # runtime .env files and certificates. No destructive database down-migration.
 git -C "$repo" reset --hard "$previous"
