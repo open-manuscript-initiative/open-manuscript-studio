@@ -10,6 +10,17 @@ export function apiCors(allowedOrigins: ReadonlySet<string>): RequestHandler {
     credentials: true,
   });
   const publicDirectory = cors({origin: true, credentials: false});
+  // The confirmation/cancellation links are opened as top-level HTML pages,
+  // often in an e-mail client's in-app browser. These endpoints never use
+  // cookie authentication: their authority comes solely from a one-time token.
+  // They do not require cross-origin JavaScript access, so do not apply the
+  // credentialed API CORS callback (which turns foreign Origin into HTTP 500).
+  // Never return Access-Control-Allow-Origin or allow credentials here.
+  const publicEmailLink = cors({origin: false, credentials: false});
+  const publicEmailPaths = new Set([
+    '/api/public/android-test/confirm',
+    '/api/public/android-test/unsubscribe',
+  ]);
   // Do not widen cookie-authenticated API CORS to the marketing website.
   // This one anonymous form accepts only the canonical OMI website origin.
   const publicSignup = cors({
@@ -25,6 +36,10 @@ export function apiCors(allowedOrigins: ReadonlySet<string>): RequestHandler {
   return (request, response, next) => {
     if (request.path === '/api/public/android-test/signups' && ['POST', 'OPTIONS'].includes(request.method)) {
       publicSignup(request, response, next);
+      return;
+    }
+    if (publicEmailPaths.has(request.path) && ['GET', 'HEAD', 'POST'].includes(request.method)) {
+      publicEmailLink(request, response, next);
       return;
     }
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method) && publicPaths.has(request.path)) {
