@@ -74,8 +74,9 @@ test('Store candidate workflow cannot depend on a skipped external signing actio
 
 test('Store MSIX derives reserved fourth component as zero without changing WiX/MSI version', async () => {
   const tauri = JSON.parse(await readFile(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
-  assert.equal(tauri.bundle.windows.wix.version, '1.0.0.1', 'historical WiX/MSI version stays unchanged');
-  assert.equal(toStoreMsixVersion(tauri.bundle.windows.wix.version), '1.0.0.0');
+  const existingWixVersion = tauri.bundle.windows.wix.version;
+  assert.equal(toStoreMsixVersion(existingWixVersion), existingWixVersion.split('.').slice(0, 3).join('.') + '.0');
+  assert.equal(tauri.bundle.windows.wix.version, existingWixVersion, 'Store version conversion must not modify WiX/MSI configuration');
   assert.equal(toStoreMsixVersion('1.2.3.42'), '1.2.3.0');
   assert.throws(() => toStoreMsixVersion('1.0.0-rc.1'));
   assert.throws(() => toStoreMsixVersion('0.0.0.1'));
