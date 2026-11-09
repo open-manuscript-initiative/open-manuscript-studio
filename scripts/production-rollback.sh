@@ -54,6 +54,30 @@ if [[ "$action" == snapshot ]]; then
     needs_db_backup=true
     echo 'Reviewed additive Android test migration verified against pinned Git blob.'
   fi
+  # A manual deploy.sh may already have reset the checkout to the latest
+  # commit WITHOUT running Prisma migrations. A Git diff alone misses this.
+  # Query the live database read-only before allowing the automatic deploy.
+  if [[ -z "$migration_changes" && -f "$repo/$approved_migration" ]]; then
+    if [[ "$(git -C "$repo" hash-object "$repo/$approved_migration")" != "$approved_blob" ]]; then
+      echo 'Approved migration SQL differs from its pinned reviewed blob.' >&2
+      exit 1
+    fi
+    migration_state="$(node "$repo/scripts/reviewed-migration-status.mjs" "$repo")" || {
+      echo 'Pending database migration preflight failed; refusing to deploy.' >&2
+      exit 1
+    }
+    case "$migration_state" in
+      pending)
+        needs_db_backup=true
+        echo 'Detected pending reviewed migration despite unchanged Git revision; requiring fresh database backups.'
+        ;;
+      applied) ;;
+      *)
+        echo 'Unexpected migration status, refusing to deploy.' >&2
+        exit 1
+        ;;
+    esac
+  fi
   [[ -d "$web" && -d "$repo/server/dist" && -d "$repo/server/node_modules" ]] || {
     echo 'Cannot snapshot: missing live webroot, compiled API, or runtime dependencies' >&2
     exit 1

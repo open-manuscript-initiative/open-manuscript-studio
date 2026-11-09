@@ -184,3 +184,80 @@ test('an accompanying identity migration always blocks automatic rollout', { ski
   assert.notEqual(snapshot.status, 0);
   assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
 });
+
+
+function fakePrismaStatus(f, { pending = true, identityPending = false, unknown = false } = {}) {
+  const bin = join(f.repo, 'server', 'node_modules', '.bin');
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(join(f.repo, 'scripts', 'reviewed-migration-status.mjs'),
+    readFileSync(new URL('../scripts/reviewed-migration-status.mjs', import.meta.url)));
+  const cli = [
+    '#!/bin/sh',
+    'case "$*" in',
+    '  *prisma.identity.config.ts*)',
+    identityPending
+      ? "    echo 'Following migration have not yet been applied:'; echo '20261110_unreviewed_identity'; exit 1 ;;"
+      : "    echo 'Database schema is up to date!'; exit 0 ;;",
+    '  *)',
+    unknown
+      ? "    echo 'Following migration have not yet been applied:'; echo '20261110_unreviewed'; exit 1 ;;"
+      : pending
+        ? "    echo 'Following migration have not yet been applied:'; echo '20261109060000_android_closed_test_signups'; echo 'To apply migrations in production run prisma migrate deploy.'; exit 1 ;;"
+        : "    echo 'Database schema is up to date!'; exit 0 ;;",
+    'esac',
+  ].join('\n') + '\n';
+  writeFileSync(join(bin, 'prisma'), cli);
+  chmodSync(join(bin, 'prisma'), 0o700);
+}
+
+test('manual checkout at target SHA still requires backups for pending migration', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedMigration(f);
+  fakePrismaStatus(f);
+  const env = {
+    ...fakePostgres(f),
+    STUDIO_PREVIOUS_SHA: target,
+    STUDIO_TARGET_SHA: target,
+  };
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
+  assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
+  assert.match(snapshot.stdout, /Detected pending reviewed migration despite unchanged Git revision/);
+  assert.ok(existsSync(join(f.snapshot, 'database', 'studio.dump')));
+  assert.ok(existsSync(join(f.snapshot, 'database', 'identity.dump')));
+  assert.ok(existsSync(join(f.snapshot, 'reviewed-migration')));
+});
+
+test('already-applied migration after manual checkout needs no extra dumps', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedMigration(f);
+  fakePrismaStatus(f, { pending: false });
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_PREVIOUS_SHA: target, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
+  assert.ok(existsSync(join(f.snapshot, 'snapshot-complete')));
+  assert.equal(existsSync(join(f.snapshot, 'database')), false);
+});
+
+test('unknown pending migration after manual checkout blocks deployment', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedMigration(f);
+  fakePrismaStatus(f, { unknown: true });
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_PREVIOUS_SHA: target, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /Pending database migration preflight failed/);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});
+
+test('unapplied identity migration after manual checkout blocks deployment', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedMigration(f);
+  fakePrismaStatus(f, { identityPending: true });
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_PREVIOUS_SHA: target, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /Pending database migration preflight failed/);
+});
