@@ -30,6 +30,7 @@
     "test:oidc-ssrf": "node --import tsx --test src/integrations/security/oidcMetadataHttp.test.ts",
     "privacy:check": "node --import tsx src/cli/checkPrivacyNotice.ts",
     "privacy:cleanup": "node --import tsx src/cli/cleanupExpiredAuthentication.ts",
+    "test:android-signup": "tsc -p tsconfig.json && node --experimental-test-module-mocks --test ../tests/android-test-signup-routes.test.mjs",
     "test:privacy": "tsc -p tsconfig.json && node --test --experimental-test-module-mocks ../tests/privacy-contract.test.mjs ../tests/privacy-notice.test.mjs ../tests/privacy-routes.test.mjs ../tests/privacy-retention.test.mjs"
   },
   "dependencies": {
