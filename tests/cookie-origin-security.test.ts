@@ -97,3 +97,26 @@ test('one-time HMAC-signed PKP review launch endpoints preserve Origin-less serv
     assert.equal(rejects({ method: 'DELETE', path, cookie: 'omi_session=opaque' }), true);
   }
 });
+
+test('one-time Android signup confirmation and removal ignore only ambient session cookies', () => {
+  for (const path of ['/api/public/android-test/confirm', '/api/public/android-test/unsubscribe']) {
+    for (const origin of [undefined, 'null', 'https://mail.example.test']) {
+      assert.equal(rejects({
+        method: 'POST', path, origin,
+        cookie: 'omi_session=existing-studio-session', fetchSite: 'cross-site',
+      }), false, 'token-only POST ' + path + ' / ' + origin);
+    }
+    for (const method of ['PUT', 'PATCH', 'DELETE']) {
+      assert.equal(rejects({ method, path, origin: 'null', cookie: 'omi_session=opaque' }), true, method + ': ' + path);
+    }
+    assert.equal(rejects({ method: 'POST', path: path + '/extra', origin: 'null', cookie: 'omi_session=opaque' }), true);
+  }
+  for (const path of [
+    '/api/public/android-test/signups',
+    '/api/auth/logout',
+    '/api/public/android-test/confirm/extra',
+    '/api/public/android-test',
+  ]) {
+    assert.equal(rejects({ method: 'POST', path, origin: 'null', cookie: 'omi_session=opaque' }), true, path);
+  }
+});

@@ -145,16 +145,47 @@ test('email-client navigation origins do not cause HTTP 500 for one-time public 
   assert.match(await remove.text(), /Registration removed/);
 });
 
-test('email token CORS exception never bypasses credentialed cookie Origin protection', async () => {
-  const response = await fetch(base + '/confirm', {
+test('mobile e-mail form POST with ambient Studio session and Origin null uses only its one-time token', async () => {
+  for (const [path, expected] of [
+    ['/confirm', /Registration confirmed/],
+    ['/unsubscribe', /Registration removed/],
+  ]) {
+    for (const origin of ['null', 'https://mail.example.test']) {
+      const response = await fetch(base + path, {
+        method: 'POST',
+        headers: {
+          Origin: origin,
+          Cookie: 'omi_session=unrelated-studio-session',
+          'Sec-Fetch-Site': 'cross-site',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ token: 'e'.repeat(43) }),
+      });
+      assert.equal(response.status, 200, path + ' from ' + origin);
+      assert.equal(response.headers.get('access-control-allow-origin'), null);
+      assert.match(await response.text(), expected);
+    }
+  }
+
+  const malformed = await fetch(base + '/confirm', {
     method: 'POST',
     headers: {
-      Origin: 'https://mail.example.test',
-      Cookie: 'omi_session=fake',
+      Origin: 'null',
+      Cookie: 'omi_session=unrelated-studio-session',
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: new URLSearchParams({ token: 'e'.repeat(43) }),
+    body: new URLSearchParams({ token: 'not-a-valid-token' }),
   });
-  assert.equal(response.status, 403);
-  assert.equal((await response.json()).error.code, 'COOKIE_ORIGIN_FORBIDDEN');
+  assert.equal(malformed.status, 400, 'one-time token validation still applies');
+  const regularMutation = await fetch(base + '/signups', {
+    method: 'POST',
+    headers: {
+      Origin: 'null',
+      Cookie: 'omi_session=unrelated-studio-session',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email: 'tester@example.test', consent: true }),
+  });
+  assert.equal(regularMutation.status, 403, 'other cookie-bearing public writes are still guarded');
+  assert.equal((await regularMutation.json()).error.code, 'COOKIE_ORIGIN_FORBIDDEN');
 });
