@@ -35,11 +35,11 @@ type SignupRow = { email: string };
 
 async function pruneExpired(): Promise<void> {
   // Database migration must be applied before enabling this endpoint.
-  await prisma.$executeRaw\`
+  await prisma.$executeRaw`
     DELETE FROM "android_closed_test_signups"
     WHERE ("verified_at" IS NULL AND "created_at" < NOW() - INTERVAL '7 days')
        OR ("verified_at" IS NOT NULL AND "verified_at" < NOW() - INTERVAL '180 days')
-  \`;
+  `;
 }
 
 async function sendVerification(email: string, language: 'hu' | 'en' | 'de', confirmToken: string, cancelToken: string): Promise<void> {
@@ -146,10 +146,10 @@ androidTestSignupRouter.post('/signups', signupRateLimit, async (request, respon
   const confirmHash = digest(confirmToken);
   try {
     await pruneExpired();
-    const rows = await prisma.$queryRaw<SignupRow[]>\`
+    const rows = await prisma.$queryRaw<SignupRow[]>`
       INSERT INTO "android_closed_test_signups"
         ("email", "confirm_token_hash", "cancel_token_hash", "confirm_expires_at")
-      VALUES (\${email}, \${confirmHash}, \${digest(cancelToken)}, NOW() + INTERVAL '48 hours')
+      VALUES (${email}, ${confirmHash}, ${digest(cancelToken)}, NOW() + INTERVAL '48 hours')
       ON CONFLICT ("email") DO UPDATE SET
         "confirm_token_hash" = EXCLUDED."confirm_token_hash",
         "cancel_token_hash" = EXCLUDED."cancel_token_hash",
@@ -158,16 +158,16 @@ androidTestSignupRouter.post('/signups', signupRateLimit, async (request, respon
       WHERE "android_closed_test_signups"."verified_at" IS NULL
         AND "android_closed_test_signups"."updated_at" < NOW() - INTERVAL '15 minutes'
       RETURNING "email"
-    \`;
+    `;
     if (rows.length) {
       try {
         await sendVerification(email, data.data.language, confirmToken, cancelToken);
       } catch {
         // A failed mail must not strand this address for the retry window.
-        await prisma.$executeRaw\`
+        await prisma.$executeRaw`
           DELETE FROM "android_closed_test_signups"
-          WHERE "email" = \${email} AND "confirm_token_hash" = \${confirmHash} AND "verified_at" IS NULL
-        \`;
+          WHERE "email" = ${email} AND "confirm_token_hash" = ${confirmHash} AND "verified_at" IS NULL
+        `;
         response.status(503).json({ error: { code: 'MAIL_UNAVAILABLE', message: 'Confirmation mail could not be sent. Try again later.' } });
         return;
       }
@@ -200,14 +200,14 @@ androidTestSignupRouter.post('/confirm', async (request, response) => {
   const data = formSchema.safeParse(request.body);
   if (!data.success) { response.status(400).type('text').send('Invalid token.'); return; }
   try {
-    const rows = await prisma.$queryRaw<SignupRow[]>\`
+    const rows = await prisma.$queryRaw<SignupRow[]>`
       UPDATE "android_closed_test_signups"
       SET "verified_at" = NOW(), "updated_at" = NOW()
-      WHERE "confirm_token_hash" = \${digest(data.data.token)}
+      WHERE "confirm_token_hash" = ${digest(data.data.token)}
         AND "confirm_expires_at" > NOW()
         AND "verified_at" IS NULL
       RETURNING "email"
-    \`;
+    `;
     if (!rows.length) {
       sendPage(response, 'Link expired or already used', 'If needed, request another confirmation e-mail through the registration page.');
       return;
@@ -235,10 +235,10 @@ androidTestSignupRouter.post('/unsubscribe', async (request, response) => {
   const data = formSchema.safeParse(request.body);
   if (!data.success) { response.status(400).type('text').send('Invalid token.'); return; }
   try {
-    await prisma.$executeRaw\`
+    await prisma.$executeRaw`
       DELETE FROM "android_closed_test_signups"
-      WHERE "cancel_token_hash" = \${digest(data.data.token)}
-    \`;
+      WHERE "cancel_token_hash" = ${digest(data.data.token)}
+    `;
     sendPage(response, 'Registration removed', 'If a Google Play invitation was already granted, leave the test separately in Google Play. Removal here does not manage your Google account.');
   } catch {
     response.status(503).type('text').send('Please try again later.');
