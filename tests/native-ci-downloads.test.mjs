@@ -121,7 +121,7 @@ test('the exact compiler bundled with Gradle seeds its content-addressed cache',
     assert.match(init, /exclusiveContent/);
     assert.match(init, /forRepository\(verifiedRepo\)/);
     assert.doesNotMatch(init, /gradle\.beforeProject/);
-    assert.match(init, /includeModule\('org\.jetbrains\.kotlin', 'kotlin-compiler-embeddable'\)/);
+    assert.match(init, /includeVersion\('org\.jetbrains\.kotlin', 'kotlin-compiler-embeddable', '2\.3\.21'\)/);
     assert.match(init, /omi-verified-kotlin-maven/);
 
   } finally {
