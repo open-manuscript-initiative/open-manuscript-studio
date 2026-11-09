@@ -1,3 +1,4 @@
+import { androidTestSignupRouter } from './routes/androidTestSignupRoutes.js';
 import { extensionRegistryRouter } from './routes/extensionRegistryRoutes.js';
 import {apiCors} from './middleware/apiCors.js';
 import express from 'express';
@@ -118,6 +119,8 @@ app.get('/api', (_request, response) => {
   });
 });
 
+// Central OMI's optional tester application endpoint (no Studio session required).
+app.use('/api/public/android-test', express.urlencoded({extended: false, limit: '2kb'}), androidTestSignupRouter);
 app.use('/api/v1/server-registry', serverRegistryRouter);
 app.use('/api/server-registry', serverRegistryRouter); // Compatibility facade; identical policy and limits.
 app.use('/api/v1', euroOfficeRouter);
