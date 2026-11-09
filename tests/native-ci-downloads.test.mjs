@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { downloadReleaseAsset } from '../scripts/download-github-release-asset.mjs';
-import { gradleRelease, prepareBundledKotlinCompiler } from '../scripts/prepare-native-ci-downloads.mjs';
+import { gradleRelease, prepareBundledKotlinCompiler, verifiedKotlinCompilerPom } from '../scripts/prepare-native-ci-downloads.mjs';
 
 const payload = Buffer.from('Synthetic official binary bytes');
 const digest = createHash('sha256').update(payload).digest('hex');
@@ -111,10 +111,25 @@ test('the exact compiler bundled with Gradle seeds its content-addressed cache',
     const path = join(f.root, 'caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable',
       '2.3.21', sha1, 'kotlin-compiler-embeddable-2.3.21.jar');
     assert.deepEqual(await readFile(path), bytes);
+    const mavenRoot = join(f.root, 'omi-verified-kotlin-maven', 'org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.21');
+    assert.deepEqual(await readFile(join(mavenRoot, 'kotlin-compiler-embeddable-2.3.21.jar')), bytes);
+    const pom = await readFile(join(mavenRoot, 'kotlin-compiler-embeddable-2.3.21.pom'), 'utf8');
+    assert.match(pom, /<version>2\.3\.21<\/version>/);
+    assert.match(pom, /kotlin-script-runtime/);
+    assert.match(pom, /kotlin-daemon-embeddable/);
+    const init = await readFile(join(f.root, 'init.d', 'omi-verified-kotlin.init.gradle'), 'utf8');
+    assert.match(init, /exclusiveContent/);
+    assert.match(init, /includeModule\('org\.jetbrains\.kotlin', 'kotlin-compiler-embeddable'\)/);
+    assert.match(init, /omi-verified-kotlin-maven/);
+
   } finally {
     for (const [key, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }
   }
+});
+
+test('unreviewed Kotlin compiler versions cannot reuse pinned local dependency metadata', () => {
+  assert.throws(() => verifiedKotlinCompilerPom('2.4.0'), /explicit review/);
 });
