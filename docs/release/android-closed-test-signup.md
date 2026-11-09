@@ -24,11 +24,24 @@ permissions. The public website is `https://openmanuscript.org/android-test/`.
 
 ### Google Play Console
 
-In the **Closed testing** track for `org.openmanuscript.studio`,
-set up a dedicated e-mail tester list (or an authorised Google Group).
-Only verified requests should be added. The existing opt-in link is:
+In Google Play Console, the existing **Closed testing – Alpha** track for
+`org.openmanuscript.studio` already has two e-mail tester lists as confirmed
+by the operator on 9 November 2026:
 
-`https://play.google.com/apps/testing/org.openmanuscript.studio`
+- **OMI Stúdió** (25 entries in the screenshot): preserve unchanged.
+- **OMI – új Android-tesztelők** (initially one entry): import newly confirmed applicants here, not into the original list.
+
+Both lists appeared selected in the screenshot. Confirm that the selection has
+actually been **saved** in Play Console (and any required review/publishing action
+completed) before assuming it is active. Do not create another track or list.
+
+The operator has provided both URLs for the existing Alpha channel:
+
+- Official web opt-in: `https://play.google.com/apps/testing/org.openmanuscript.studio`
+- Official Google Play app listing (installation after test opt-in): `https://play.google.com/store/apps/details?id=org.openmanuscript.studio`
+
+Only verified requests should be added. Existing tester eligibility does not
+prove that the tester has opted in, installed the app or completed a test.
 
 From a trusted server console, export confirmed applicant addresses:
 
