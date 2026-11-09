@@ -45,6 +45,10 @@ const environmentSchema = z.object({
 
   DEPLOYMENT_MODE: z.enum(['personal', 'institutional']).default('personal'),
 
+  // Explicitly opt in only on central Studio; never enable on institutional clones by default.
+  OMI_ANDROID_TEST_SIGNUPS_ENABLED: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
+  OMI_ANDROID_TEST_ORIGIN: z.string().url().default('https://studio.openmanuscript.org'),
+
   // Registry audit credentials exist only on the registry host. Per-instance Studio servers never receive this token.
   OMI_SERVER_REGISTRY_GITHUB_APP_ID: z.string().trim().min(1).optional(),
   OMI_SERVER_REGISTRY_GITHUB_INSTALLATION_ID: z.string().trim().min(1).optional(),
