@@ -928,3 +928,19 @@ model StudioServerDirectoryEntry {
   @@index([status, lastHeartbeatAt])
   @@map("studio_server_directory_entries")
 }
+
+/// Central OMI-only programme; not a Studio account or Google Play entitlement.
+/// Explicit consent, token-confirmed intake, and short retention are enforced
+/// by the public route and administrator export/cleanup command.
+model AndroidClosedTestSignup {
+  email            String    @id @db.VarChar(320)
+  confirmTokenHash String    @unique @map("confirm_token_hash") @db.VarChar(64)
+  cancelTokenHash  String    @unique @map("cancel_token_hash") @db.VarChar(64)
+  confirmExpiresAt DateTime  @map("confirm_expires_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  verifiedAt       DateTime? @map("verified_at") @db.Timestamptz(6)
+
+  @@index([verifiedAt], map: "android_closed_test_signups_verified_at_idx")
+  @@map("android_closed_test_signups")
+}
