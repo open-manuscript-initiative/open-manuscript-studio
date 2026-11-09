@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -80,5 +80,102 @@ test('automatic code-only rollback refuses database migrations without a separat
   });
   assert.notEqual(denied.status, 0);
   assert.match(denied.stderr, /Migration changes require a reviewed database backup/);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});
+
+
+function reviewedMigration(f, sql = readFileSync(
+  new URL('../server/prisma/migrations/20261109060000_android_closed_test_signups/migration.sql', import.meta.url),
+  'utf8',
+)) {
+  const dir = join(f.repo, 'server/prisma/migrations/20261109060000_android_closed_test_signups');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'migration.sql'), sql);
+  git(f.repo, 'add', '.');
+  git(f.repo, '-c', 'user.email=ci@example.invalid', '-c', 'user.name=CI', 'commit', '-qm', 'migration');
+  return git(f.repo, 'rev-parse', 'HEAD');
+}
+
+function fakePostgres(f, fail = false) {
+  const bin = join(f.root, 'bin');
+  mkdirSync(bin);
+  writeFileSync(join(bin, 'pg_dump'), fail ? '#!/bin/sh\nexit 1\n' :
+    [
+      '#!/bin/sh',
+      'set -eu',
+      "archive=''",
+      'for arg in "$@"; do',
+      '  case "$arg" in --file=*) archive=$(echo "$arg" | cut -d= -f2-) ;; esac',
+      'done',
+      'test -n "$archive"',
+      'test -n "$PGPASSWORD"',
+      "printf 'fake custom-format archive\\n' > \"$archive\"",
+    ].join('\n') + '\n');
+  writeFileSync(join(bin, 'pg_restore'), '#!/bin/sh\nset -eu\nfor arg in "$@"; do :; done\ntest -s "$arg"\n');
+  chmodSync(join(bin, 'pg_dump'), 0o700);
+  chmodSync(join(bin, 'pg_restore'), 0o700);
+  writeFileSync(join(f.repo, 'server', '.env'),
+    'DATABASE_URL=postgresql://test:secret@127.0.0.1:5432/omi_ci?schema=public\n' +
+    'IDENTITY_DATABASE_URL=postgresql://test:secret@127.0.0.1:5432/identity_ci?schema=public\n');
+  return { ...f.env, PATH: bin + ':' + process.env.PATH };
+}
+
+test('reviewed additive migration creates two validated backups before runtime snapshot', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedMigration(f);
+  const env = { ...fakePostgres(f), STUDIO_TARGET_SHA: target };
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
+  assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
+  assert.ok(existsSync(join(f.snapshot, 'snapshot-complete')));
+  assert.ok(existsSync(join(f.snapshot, 'reviewed-migration')));
+  for (const db of ['studio', 'identity']) {
+    assert.ok(readFileSync(join(f.snapshot, 'database', db + '.dump')).length > 0);
+  }
+  const manifest = JSON.parse(readFileSync(join(f.snapshot, 'database', 'manifest.json'), 'utf8'));
+  assert.equal(manifest.restoreWasTested, false);
+  assert.equal(manifest.archives.length, 2);
+  assert.doesNotMatch(JSON.stringify(manifest), /secret|postgresql:\/\//);
+  writeFileSync(join(f.web, 'index.html'), '<p>failed deploy</p>');
+  const restored = spawnSync('bash', [join(f.snapshot, 'rollback.sh'), 'restore', f.snapshot], {
+    env, encoding: 'utf8',
+  });
+  assert.equal(restored.status, 0, restored.stderr || restored.stdout);
+  assert.equal(readFileSync(join(f.web, 'index.html'), 'utf8'), '<p>previous published web</p>');
+  assert.ok(existsSync(join(f.snapshot, 'database', 'studio.dump')));
+});
+
+test('reviewed migration refuses deployment when backup fails', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedMigration(f);
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...fakePostgres(f, true), STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /backup blocked/i);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});
+
+test('modifying approved SQL prevents automatic migration', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedMigration(f, 'DROP TABLE manuscripts;\n');
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /Migration changes require a reviewed database backup/);
+});
+
+test('an accompanying identity migration always blocks automatic rollout', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  reviewedMigration(f);
+  const dir = join(f.repo, 'server/prisma/identity/migrations/20261109_unreviewed');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'migration.sql'), 'ALTER TABLE users ADD COLUMN test TEXT;\n');
+  git(f.repo, 'add', '.');
+  git(f.repo, '-c', 'user.email=ci@example.invalid', '-c', 'user.name=CI', 'commit', '-qm', 'identity migration');
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_TARGET_SHA: git(f.repo, 'rev-parse', 'HEAD') }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
   assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
 });
