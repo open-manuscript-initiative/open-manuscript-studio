@@ -5,6 +5,14 @@ const SIGNED_REVIEW_LAUNCH_PATHS = new Set([
   '/integrations/ojs/review/launch',
   '/integrations/omp/review/launch',
 ]);
+// These two public POST handlers use only a one-time random token supplied in
+// the form body. They never read or authorise with the Studio session cookie.
+// Mobile e-mail WebViews can still attach omi_session with Origin: null; in
+// that case the cookie is incidental, not a credential for this operation.
+const ANONYMOUS_TOKEN_POST_PATHS = new Set([
+  '/api/public/android-test/confirm',
+  '/api/public/android-test/unsubscribe',
+]);
 
 /**
  * A browser can send SameSite cookies from another subdomain of the same
@@ -25,6 +33,14 @@ export function rejectsCookieOrigin(input: {
   allowedOrigins: ReadonlySet<string>;
 }): boolean {
   if (!UNSAFE_METHODS.has(input.method.toUpperCase())) return false;
+
+  // Only exact POST confirmation/removal paths are exempt from cookie Origin
+  // checks: these routes do NOT authenticate or authorise with the cookie.
+  // They require a separate high-entropy e-mail token, validated server-side.
+  // Every other cookie-authenticated mutation stays fail-closed.
+  if (input.method.toUpperCase() === 'POST' && input.path && ANONYMOUS_TOKEN_POST_PATHS.has(input.path)) {
+    return false;
+  }
 
   const cookiePresent = (input.cookie ?? '').split(';').some((part) =>
     part.trim().split('=', 1)[0] === 'omi_session',
