@@ -147,6 +147,9 @@ jobs:
       - name: Test privacy notice, account export and expiry-only cleanup
         run: npm run test:privacy
 
+      - name: Test Android closed-test signups and confirmation safety
+        run: npm --prefix server run test:android-signup
+
       - name: Test passkey authentication routes
         run: npm run test:passkey-auth
 
