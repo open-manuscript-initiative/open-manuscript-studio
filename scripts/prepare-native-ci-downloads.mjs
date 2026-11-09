@@ -126,7 +126,7 @@ export async function mirrorVerifiedKotlinCompiler(destination, version) {
     '  }',
     '  repositories.exclusiveContent {',
     '    forRepository(verifiedRepo)',
-    "    filter { includeModule('org.jetbrains.kotlin', 'kotlin-compiler-embeddable') }",
+    "    filter { includeVersion('org.jetbrains.kotlin', 'kotlin-compiler-embeddable', '2.3.21') }",
     '  }',
     '}',
     'gradle.settingsEvaluated { settings ->',
