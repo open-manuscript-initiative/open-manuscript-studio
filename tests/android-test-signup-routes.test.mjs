@@ -37,8 +37,14 @@ mock.module('node:child_process', {
 });
 
 const { androidTestSignupRouter } = await import('../server/dist/routes/androidTestSignupRoutes.js');
+const { apiCors } = await import('../server/dist/middleware/apiCors.js');
+const { cookieOriginGuard } = await import('../server/dist/middleware/cookieOriginGuard.js');
+const allowedOrigins = new Set(['https://studio.openmanuscript.org']);
 const app = express();
 app.set('trust proxy', 1);
+// Use the same middleware ordering as the central API, not a router-only mock.
+app.use(apiCors(allowedOrigins));
+app.use(cookieOriginGuard(allowedOrigins));
 app.use(express.json());
 app.use('/api/public/android-test', express.urlencoded({ extended: false }), androidTestSignupRouter);
 const server = await new Promise(resolve => {
@@ -109,4 +115,46 @@ test('the unsubscribe endpoint removes an applicant by a separate secret', async
   });
   assert.equal(response.status, 200);
   assert.match(await response.text(), /Registration removed/);
+});
+
+test('email-client navigation origins do not cause HTTP 500 for one-time public token pages', async () => {
+  const token = 'c'.repeat(43);
+  for (const origin of ['null', 'https://mail.example.test']) {
+    const view = await fetch(base + '/confirm?token=' + token + '&lang=hu', {
+      headers: { Origin: origin },
+    });
+    assert.equal(view.status, 200, 'confirmation GET with Origin ' + origin);
+    assert.equal(view.headers.get('access-control-allow-origin'), null);
+    assert.match(await view.text(), /Jelentkezés megerősítése/);
+    const submit = await fetch(base + '/confirm', {
+      method: 'POST',
+      headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token }),
+    });
+    assert.equal(submit.status, 200, 'confirmation POST with Origin ' + origin);
+    assert.equal(submit.headers.get('access-control-allow-origin'), null);
+    assert.match(await submit.text(), /Registration confirmed/);
+  }
+  const remove = await fetch(base + '/unsubscribe', {
+    method: 'POST',
+    headers: { Origin: 'null', 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token: 'd'.repeat(43) }),
+  });
+  assert.equal(remove.status, 200);
+  assert.equal(remove.headers.get('access-control-allow-origin'), null);
+  assert.match(await remove.text(), /Registration removed/);
+});
+
+test('email token CORS exception never bypasses credentialed cookie Origin protection', async () => {
+  const response = await fetch(base + '/confirm', {
+    method: 'POST',
+    headers: {
+      Origin: 'https://mail.example.test',
+      Cookie: 'omi_session=fake',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({ token: 'e'.repeat(43) }),
+  });
+  assert.equal(response.status, 403);
+  assert.equal((await response.json()).error.code, 'COOKIE_ORIGIN_FORBIDDEN');
 });
