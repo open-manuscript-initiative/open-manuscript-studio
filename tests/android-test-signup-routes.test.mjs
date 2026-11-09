@@ -83,7 +83,7 @@ test('new application sends confirmation but does not grant Google Play entitlem
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal(messages.length, 1);
   assert.match(messages[0], /Erősítsd meg/);
-  assert.match(messages[0], /https:\/\/studio.openmanuscript.org\/api\/public\/android-test\/confirm\?token=/);
+  assert.match(messages[0], /https:\/\/studio\.openmanuscript\.org\/api\/public\/android-test\/confirm\?token=/);
   assert.match(messages[0], /unsubscribe\?token=/);
 });
 
