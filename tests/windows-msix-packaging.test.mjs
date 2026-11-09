@@ -1,13 +1,13 @@
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import { renderMsixManifest, validateMsixIdentity } from '../scripts/build-windows-msix.mjs';
+import { renderMsixManifest, validateMsixIdentity, toStoreMsixVersion } from '../scripts/build-windows-msix.mjs';
 
-const valid = { identity: 'OpenManuscriptInitiative.OpenManuscriptStudio', publisher: 'CN=Open Manuscript Initiative, O=Open Manuscript Initiative, C=HU', version: '1.0.0.1', publisherDisplayName: 'Open Manuscript Initiative' };
+const valid = { identity: 'OpenManuscriptInitiative.OpenManuscriptStudio', publisher: 'CN=Open Manuscript Initiative, O=Open Manuscript Initiative, C=HU', version: '1.0.0.0', publisherDisplayName: 'Open Manuscript Initiative' };
 
 test('manifest uses full-trust Windows desktop package and explicit deep-link protocol', () => {
   const manifest = renderMsixManifest(valid);
-  for (const marker of ['Windows.FullTrustApplication', 'Name="runFullTrust"', 'windows.protocol', 'Name="openmanuscript"', 'ProcessorArchitecture="x64"', 'Version="1.0.0.1"']) {
+  for (const marker of ['Windows.FullTrustApplication', 'Name="runFullTrust"', 'windows.protocol', 'Name="openmanuscript"', 'ProcessorArchitecture="x64"', 'Version="1.0.0.0"']) {
     assert.ok(manifest.includes(marker), marker);
   }
   assert.match(manifest, /Publisher="CN=Open Manuscript Initiative, O=Open Manuscript Initiative, C=HU"/);
@@ -22,7 +22,9 @@ test('requires exact identity, publisher DN and four-part MSIX versions', () => 
     { publisher: 'CN=Contoso' },
     { publisher: 'CN=Example <corp>' },
     { version: '1.0.0-rc.1' },
+    { version: '1.0.0.1' },
     { version: '1.0.0.65536' },
+    { version: '0.0.0.0' },
   ]) assert.throws(() => validateMsixIdentity({ ...valid, ...change }));
 });
 
@@ -68,4 +70,15 @@ test('Store candidate workflow cannot depend on a skipped external signing actio
   assert.doesNotMatch(workflow, /secrets\.|inputs\.distribution|sign-direct:|windows-signing/);
   assert.match(workflow, /name: omi-studio-windows-msix-store-unsigned/);
   assert.match(workflow, /if-no-files-found: error/);
+});
+
+test('Store MSIX derives reserved fourth component as zero without changing WiX/MSI version', async () => {
+  const tauri = JSON.parse(await readFile(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
+  assert.equal(tauri.bundle.windows.wix.version, '1.0.0.1', 'historical WiX/MSI version stays unchanged');
+  assert.equal(toStoreMsixVersion(tauri.bundle.windows.wix.version), '1.0.0.0');
+  assert.equal(toStoreMsixVersion('1.2.3.42'), '1.2.3.0');
+  assert.throws(() => toStoreMsixVersion('1.0.0-rc.1'));
+  assert.throws(() => toStoreMsixVersion('0.0.0.1'));
+  assert.throws(() => toStoreMsixVersion('1.0.0.65536'));
+  assert.match(renderMsixManifest({ ...valid, version: toStoreMsixVersion('1.0.0.1') }), /Version="1\.0\.0\.0"/);
 });
