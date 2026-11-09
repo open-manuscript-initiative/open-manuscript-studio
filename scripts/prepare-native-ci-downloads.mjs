@@ -81,6 +81,62 @@ with zipfile.ZipFile(sys.argv[1]) as archive:
   return compiler.version;
 }
 
+// Gradle's SHA-256-verified distribution includes Kotlin compiler 2.3.21.
+// Copying it to ~/.gradle/caches alone does not provide Maven module metadata.
+// A local, narrowly scoped Maven repository prevents a redundant remote HEAD
+// request that repeatedly returned HTTP 504 during the Android CI build.
+export function verifiedKotlinCompilerPom(version) {
+  if (version !== '2.3.21') throw new Error('Kotlin compiler metadata requires explicit review for a new version.');
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<project xmlns="http://maven.apache.org/POM/4.0.0">',
+    '<modelVersion>4.0.0</modelVersion>',
+    '<groupId>org.jetbrains.kotlin</groupId>',
+    '<artifactId>kotlin-compiler-embeddable</artifactId>',
+    '<version>' + version + '</version><packaging>jar</packaging>',
+    '<dependencies>',
+    '<dependency><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-stdlib</artifactId><version>2.3.21</version><scope>runtime</scope></dependency>',
+    '<dependency><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-script-runtime</artifactId><version>2.3.21</version><scope>runtime</scope></dependency>',
+    '<dependency><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-reflect</artifactId><version>1.6.10</version><scope>runtime</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>',
+    '<dependency><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-daemon-embeddable</artifactId><version>2.3.21</version><scope>runtime</scope></dependency>',
+    '<dependency><groupId>org.jetbrains.kotlinx</groupId><artifactId>kotlinx-coroutines-core-jvm</artifactId><version>1.8.0</version><scope>runtime</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>',
+    '</dependencies></project>',
+  ].join('\n') + '\n';
+}
+
+export async function mirrorVerifiedKotlinCompiler(destination, version) {
+  const gradleHome = process.env.GRADLE_USER_HOME || join(homedir(), '.gradle');
+  const root = join(gradleHome, 'omi-verified-kotlin-maven');
+  const module = join(root, 'org', 'jetbrains', 'kotlin', 'kotlin-compiler-embeddable', version);
+  await mkdir(module, { recursive: true });
+  await cp(destination, join(module, 'kotlin-compiler-embeddable-' + version + '.jar'));
+  await writeFile(join(module, 'kotlin-compiler-embeddable-' + version + '.pom'), verifiedKotlinCompilerPom(version));
+
+  const scriptDir = join(gradleHome, 'init.d');
+  await mkdir(scriptDir, { recursive: true });
+  const repoUri = JSON.stringify(pathToFileURL(root).href);
+  const script = [
+    '// Isolated CI-only repository, seeded from a verified official Gradle distribution.',
+    'def verifiedKotlinRepo = new URI(' + repoUri + ')',
+    'def addVerifiedKotlin = { repositories ->',
+    '  def verifiedRepo = repositories.maven {',
+    "    name = 'OMIVerifiedKotlinCompiler'",
+    '    url = verifiedKotlinRepo',
+    '    metadataSources { mavenPom() }',
+    '  }',
+    '  repositories.exclusiveContent {',
+    '    forRepositories(verifiedRepo)',
+    "    filter { includeVersion('org.jetbrains.kotlin', 'kotlin-compiler-embeddable', '2.3.21') }",
+    '  }',
+    '}',
+    'gradle.settingsEvaluated { settings ->',
+    '  addVerifiedKotlin(settings.dependencyResolutionManagement.repositories)',
+    '}',
+  ].join('\n') + '\n';
+  await writeFile(join(scriptDir, 'omi-verified-kotlin.init.gradle'), script);
+  console.log('Prepared verified local Maven Kotlin compiler module for Android CI.');
+}
+
 async function seedKotlinCompiler(destination, version) {
   const artifact = `kotlin-compiler-embeddable-${version}.jar`;
   // Gradle's shared artifact store addresses files by their SHA-1. The downloaded
@@ -91,6 +147,10 @@ async function seedKotlinCompiler(destination, version) {
     'caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable', version, hash.digest('hex'));
   await mkdir(directory, { recursive: true });
   await cp(destination, join(directory, artifact));
+  // Only the Gradle-embedded 2.3.21 artifact has a reviewed local POM.
+  // A different Kotlin plugin version is still preloaded from its verified
+  // official release without changing its remote Maven resolution metadata.
+  if (version === '2.3.21') await mirrorVerifiedKotlinCompiler(destination, version);
   console.log(`Prepared verified Kotlin ${version} compiler in the Gradle artifact cache.`);
 }
 

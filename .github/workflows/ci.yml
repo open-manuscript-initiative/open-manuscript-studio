@@ -94,6 +94,7 @@ jobs:
       - name: Verify production rollback snapshot and migration safety
         run: |
           bash -n scripts/production-rollback.sh
+          node --check scripts/backup-reviewed-migration.mjs
           node --test tests/production-rollback.test.mjs
 
       - name: Run release hardening unit gates
@@ -385,6 +386,9 @@ jobs:
         with:
           host: 85.215.185.85
           port: 22
+          # A complete, decompression-verified pre-migration database snapshot
+          # may take longer than the action's default remote-command timeout.
+          command_timeout: 60m
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           envs: DEPLOY_REPOSITORY_TOKEN
