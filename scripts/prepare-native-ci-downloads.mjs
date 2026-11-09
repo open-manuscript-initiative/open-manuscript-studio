@@ -125,7 +125,7 @@ export async function mirrorVerifiedKotlinCompiler(destination, version) {
     '    metadataSources { mavenPom() }',
     '  }',
     '  repositories.exclusiveContent {',
-    '    forRepository(verifiedRepo)',
+    '    forRepositories(verifiedRepo)',
     "    filter { includeVersion('org.jetbrains.kotlin', 'kotlin-compiler-embeddable', '2.3.21') }",
     '  }',
     '}',
