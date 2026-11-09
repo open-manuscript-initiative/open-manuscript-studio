@@ -19,10 +19,15 @@ Compilation, MakeAppx packaging and artifact upload succeeded.
 The file hash and ZIP digest identify different bytes. This is an unsigned
 candidate, not Store certification or a signed public installer.
 
-**Before submission:** reconcile inherited MSI version `1.0.0.1` with the
-[Store numbering requirements](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/app-package-requirements#package-version-numbering),
-which reserve the fourth component as zero. Record an increasing Store-compatible
-version, rebuild, run Windows App Certification Kit and validate in Partner Center.
+**Before submission:** the 8 November artifact has inherited MSI version
+`1.0.0.1` and **must not be uploaded** as the final Store candidate. The Store-only
+manifest now converts this to **`1.0.0.0`**, leaving the existing MSI/NSIS release
+version **`1.0.0.1` unchanged**. The fourth field is reserved by Microsoft and
+new Store updates must increment one of the first three fields. Once this fix is
+merged into `main`, dispatch a **new** `Windows MSIX candidates (Microsoft Store)`
+build and inspect its manifest/version and SHA-256 before uploading that new artifact.
+Run the Windows App Certification Kit and validate in Partner Center. A package
+build alone does not imply certification.
 MakeAppx success alone does not prove Store acceptance.
 
 Listing, certification/Microsoft signing, Store-aware updates and actual Windows

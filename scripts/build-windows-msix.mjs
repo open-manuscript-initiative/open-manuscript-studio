@@ -36,9 +36,26 @@ export function validateMsixIdentity({ identity, publisher, version }) {
     throw new Error('MSIX_PUBLISHER must exactly match the validated signing certificate Subject / Partner Center publisher (no placeholders).');
   }
   if (!/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(version ?? '') ||
-      version.split('.').some(n => Number(n) > 65535)) {
-    throw new Error('MSIX version must be four unsigned 16-bit integers (e.g., 1.0.0.1).');
+      version.split('.').some(n => Number(n) > 65535) || Number(version.split('.')[0]) === 0) {
+    throw new Error('Store MSIX version must be four 16-bit integers, with a nonzero major version.');
   }
+  if (version.split('.')[3] !== '0') {
+    throw new Error('Microsoft Store reserves the fourth MSIX version component; it must be zero.');
+  }
+}
+
+// The WiX/MSI installer version is independent of the Microsoft Store package.
+// Keep MSI/NSIS identities unchanged; future Store updates must increment the
+// first three MSIX fields, not the Store-reserved fourth field.
+export function toStoreMsixVersion(wixVersion) {
+  if (typeof wixVersion !== 'string' ||
+      !/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(wixVersion) ||
+      wixVersion.split('.').some(n => Number(n) > 65535) ||
+      Number(wixVersion.split('.')[0]) === 0) {
+    throw new Error('WiX version must contain four numeric 16-bit components and a nonzero major version.');
+  }
+  const [major, minor, patch] = wixVersion.split('.');
+  return major + '.' + minor + '.' + patch + '.0';
 }
 
 const xmlEscape = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -84,7 +101,8 @@ export function renderMsixManifest({ identity, publisher, publisherDisplayName, 
 }
 
 export async function prepareMsixStage({ exe, outputDir, identity, publisher, publisherDisplayName, appVersion, wixVersion, iconDir = join(root, 'src-tauri/icons') }) {
-  validateMsixIdentity({ identity, publisher, version: wixVersion });
+  const storeVersion = toStoreMsixVersion(wixVersion);
+  validateMsixIdentity({ identity, publisher, version: storeVersion });
   if (appVersion !== (await readFile(join(root, 'src-tauri/tauri.conf.json'), 'utf8').then(s => JSON.parse(s).version))) {
     throw new Error('MSIX app version differs from Tauri release version.');
   }
@@ -95,7 +113,7 @@ export async function prepareMsixStage({ exe, outputDir, identity, publisher, pu
   for (const [source, destination] of icons) {
     await copyFile(join(iconDir, source), join(outputDir, 'Assets', destination));
   }
-  const manifest = renderMsixManifest({ identity, publisher, publisherDisplayName, version: wixVersion });
+  const manifest = renderMsixManifest({ identity, publisher, publisherDisplayName, version: storeVersion });
   await writeFile(join(outputDir, 'AppxManifest.xml'), manifest, { flag: 'wx' });
   return manifest;
 }
@@ -107,6 +125,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const tauri = JSON.parse(await readFile(join(root, 'src-tauri/tauri.conf.json'), 'utf8'));
     await prepareMsixStage({ exe: resolve(exe), outputDir: resolve(stage), identity, publisher, publisherDisplayName,
       appVersion: tauri.version, wixVersion: tauri.bundle?.windows?.wix?.version });
-    console.log(`Prepared MSIX stage for ${tauri.version} (MSIX ${tauri.bundle.windows.wix.version}), unsigned.`);
+    console.log(`Prepared MSIX stage for ${tauri.version} (Store MSIX ${toStoreMsixVersion(tauri.bundle.windows.wix.version)}; WiX/MSI ${tauri.bundle.windows.wix.version}), unsigned.`);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
