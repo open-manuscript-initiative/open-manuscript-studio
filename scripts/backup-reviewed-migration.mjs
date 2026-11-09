@@ -3,7 +3,7 @@
 // deployment. Never prints connection strings, passwords or SQL data.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const [repoArg, snapshotArg] = process.argv.slice(2);
@@ -49,8 +49,10 @@ function checked(program, args, env) {
   }
 }
 
-function sha256(path) {
-  return createHash('sha256').update(readFileSync(path)).digest('hex');
+async function sha256(path) {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest('hex');
 }
 
 try {
@@ -76,7 +78,7 @@ try {
     // modifying any DB. This is not a full restore drill.
     checked('pg_restore', ['--list', archive], pgEnv);
     checked('pg_restore', ['--file=/dev/null', archive], pgEnv);
-    archives.push({ name, bytes: info.size, sha256: sha256(archive) });
+    archives.push({ name, bytes: info.size, sha256: await sha256(archive) });
   }
   const manifest = join(backupDir, 'manifest.json');
   writeFileSync(manifest, JSON.stringify({
