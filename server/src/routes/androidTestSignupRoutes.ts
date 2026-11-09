@@ -37,7 +37,7 @@ async function pruneExpired(): Promise<void> {
   // Database migration must be applied before enabling this endpoint.
   await prisma.$executeRaw`
     DELETE FROM "android_closed_test_signups"
-    WHERE ("verified_at" IS NULL AND "created_at" < NOW() - INTERVAL '7 days')
+    WHERE ("verified_at" IS NULL AND "updated_at" < NOW() - INTERVAL '7 days')
        OR ("verified_at" IS NOT NULL AND "verified_at" < NOW() - INTERVAL '180 days')
   `;
 }
