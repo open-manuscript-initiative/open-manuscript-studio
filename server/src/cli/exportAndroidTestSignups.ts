@@ -25,7 +25,7 @@ try {
     }
     process.stdout.write(row.email + '\n');
   }
-} catch (error) {
+} catch (_error) {
   console.error('Tester export failed; verify migration and database connection.');
   process.exitCode = 1;
 } finally {
