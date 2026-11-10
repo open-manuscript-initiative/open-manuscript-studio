@@ -1349,6 +1349,11 @@
             "overview": "Pracovný priestor pre právny výskum",
             "title": "Právne zdroje a citácie"
           },
+          "org.omi.literary-studies": {
+            "description": "Evidencia diel a vydaní, anotovanie úryvkov, analýza frekvencie slov a konkordancií a zaznamenávanie intertextových vzťahov.",
+            "overview": "Pracovný priestor literárneho výskumu",
+            "title": "Literárna veda"
+          },
           "org.omi.mathematics": {
             "description": "Rovnice v LaTeXe s overeným náhľadom v MathML, matice, prípady a zarovnané rovnice.",
             "overview": "Pracovný priestor pre matematické rovnice",
