@@ -1,6 +1,12 @@
 # Open Manuscript Studio – Microsoft Store / Partner Center beküldési adatlap
 
-**Előkészített tervezet, nem beküldött Store-publikáció.** A regisztráció és az alkalmazásnév foglalása megtörtént. Az adatlapokat a tényleges Partner Center mezőihez igazítsd; a jogi és tesztelési nyilatkozatokat csak ellenőrzés után jelöld.
+## Állapotfrissítés — 2026. november 10.
+
+A Microsoft kiadónak küldött értesítése szerint az **Open Manuscript Studio beküldését feldolgozták, az alkalmazás a Microsoft Store-ban elérhető**, a megjelenés a felhasználóknak akár két órát is igénybe vehet. Az **IARC Live Rating Notice** visszaigazolja, hogy a november 9-én beküldött kérdőív alapján létrejött besorolások érvénybe léptek. Az értesítés nem tartalmazza a pontos korhatárkategóriát.
+
+**A következő adatlap az eredeti beküldés előkészítésének történeti dokumentuma.** A tényleges Store-csomag verzióját, termék-URL-jét, Microsoft-aláírását, valós Windows 11 telepítését, Store-alapú frissítését és adatmegőrzését még külön ellenőrizni kell. A Store jóváhagyása nem jelenti a közvetlen EXE/MSI telepítők aláírását, és nem hagyja jóvá automatikusan a stabil 1.0 kiadást.
+
+**A beküldés előtti állapotot rögzítő, történeti tervezet.** A regisztráció és az alkalmazásnév foglalása megtörtént. Az adatlapokat a tényleges Partner Center mezőihez igazítsd; a jogi és tesztelési nyilatkozatokat csak ellenőrzés után jelöld.
 
 ## 1. Csomag és azonosító
 
