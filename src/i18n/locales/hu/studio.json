@@ -1349,6 +1349,11 @@
             "overview": "Jogi kutatási munkaterület",
             "title": "Jogi források és hivatkozások"
           },
+          "org.omi.literary-studies": {
+            "description": "Művek és kiadások nyilvántartása, szöveghelyek annotálása, szógyakoriságok és konkordanciák vizsgálata, intertextuális kapcsolatok rögzítése.",
+            "overview": "Irodalomtudományi kutatási munkaterület",
+            "title": "Irodalomtudomány"
+          },
           "org.omi.mathematics": {
             "description": "LaTeX-egyenletek érvényesített MathML-előnézettel, mátrixokkal, esetekkel és igazított egyenletekkel.",
             "overview": "Matematikai egyenletek munkaterülete",
