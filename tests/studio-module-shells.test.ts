@@ -41,6 +41,7 @@ const expectedModuleIds = [
   'org.omi.history-archives',
   'org.omi.religious-texts',
   'org.omi.critical-text-edition',
+  'org.omi.literary-studies',
   'org.omi.corpus-linguistics',
   'org.omi.musicology',
   'org.omi.social-research-methods',
