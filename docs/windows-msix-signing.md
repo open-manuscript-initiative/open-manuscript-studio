@@ -4,6 +4,8 @@
 
 On 10 November the publisher received a Microsoft notice that its Open Manuscript Studio submission had been processed and the app was **available in Microsoft Store**, with customer visibility possibly taking up to two hours. A separate IARC Live Rating Notice confirmed the ratings from the 9 November questionnaire were live; the specific age-category values were not shown.
 
+A further **publisher-supplied Windows Microsoft Store screenshot dated 10 November 2026** shows the product listing, **PEGI 3** age label and a **"Megnyitás" (Open)** button. This provides visible listing and Store-recognized installation evidence for that device, but **not** successful app launch, package signature verification or update acceptance.
+
 This notice supersedes the earlier **pending submission/publication** status below, which is retained as 8 November build history. Store listing URL, exact delivered MSIX version, verification of Microsoft signature, physical-device installation, Store-managed update routing and profile/document preservation have **not yet been independently evidenced**. Direct-download EXE/MSI packages remain an unsigned, distinct channel. No stable v1.0 approval is inferred.
 
 **Status:** separate candidate workflow, not an approved Windows RC publication. Existing MSI/NSIS outputs, Android release artifacts and the seven-file 1.0 RC evidence/hash/approval gate remain unchanged.
