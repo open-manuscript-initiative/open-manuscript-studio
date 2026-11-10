@@ -8,11 +8,17 @@ Open Manuscript Studio is an open-source application distributed by the Open Man
 
 The source code for Open Manuscript Studio is publicly available in this repository and is licensed under the MIT License. Official signed binaries must be produced from source code in the official `open-manuscript-initiative/open-manuscript-studio` repository.
 
-## Signing service and status — 8 November 2026
+## Signing service and status — 10 November 2026
 
 The selected path is **Microsoft Store MSIX**. Microsoft signs the package during
 publication after certification. The Store-only workflow builds an unsigned
 candidate without Azure or private signing credentials.
+On 10 November Microsoft notified the publisher that the Store submission was
+processed and available, possibly taking up to two hours to appear to customers.
+This does not itself verify the Store-delivered package signature or installation,
+update and data-preservation behavior, and it does not approve stable Studio 1.0.
+The IARC classification questionnaire submitted on 9 November has separately been
+reported live, without a confirmed age-category value in the notification.
 [Current build and remaining validation](windows-msix-signing.md).
 
 The earlier SignPath Foundation application was declined, according to the owner.
