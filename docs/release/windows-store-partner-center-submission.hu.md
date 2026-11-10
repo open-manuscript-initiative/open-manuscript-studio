@@ -6,7 +6,7 @@ A Microsoft kiadónak küldött értesítése szerint az **Open Manuscript Studi
 
 A kiadó 2026. november 10-én **Microsoft Store-termékoldalt ábrázoló Windows-képernyőképet** is küldött. A termékoldalon **„Megnyitás”** gomb és **PEGI 3** besorolás látható. Ez igazolja az áruházi láthatóságot és azt, hogy a Store a telepítést felismeri, de a program tényleges elindulását, aláírását és automatikus frissítését még nem bizonyítja.
 
-**Üzemeltetői visszaigazolás, 2026. november 10.:** a kiadó közvetlenül a Microsoft Store-ból telepítette az Open Manuscript Studio alkalmazást Windowsra. Egy tényleges áruházi telepítés tehát igazolt. A kiadó ezt követően **a sikeres indítást és bejelentkezést is megerősítette**. A helyi fájlmegnyitás és -mentés, a csomagaláírás, valamint a frissítés és adatmegőrzés még külön ellenőrizendő.
+**Üzemeltetői visszaigazolás, 2026. november 10.:** a kiadó közvetlenül a Microsoft Store-ból telepítette az Open Manuscript Studio alkalmazást Windowsra. Egy tényleges áruházi telepítés tehát igazolt. A kiadó ezt követően **a sikeres indítást és bejelentkezést is megerősítette**. A kiadó ezután arról is beszámolt, hogy egy korábban mentett helyi **`.omi` kézirat megnyitása, szerkesztése, mentése és újbóli megnyitása** hibátlanul működött. A csomagaláírás hiteles ellenőrzése, a Store-alapú frissítés és a frissítés közbeni adatmegőrzés még külön tesztelendő.
 
 **A következő adatlap az eredeti beküldés előkészítésének történeti dokumentuma.** A tényleges Store-csomag verzióját, termék-URL-jét, Microsoft-aláírását, Store-alapú frissítését és adatmegőrzését még külön ellenőrizni kell. A Store jóváhagyása nem jelenti a közvetlen EXE/MSI telepítők aláírását, és nem hagyja jóvá automatikusan a stabil 1.0 kiadást.
 
