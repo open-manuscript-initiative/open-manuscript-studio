@@ -1349,6 +1349,11 @@
             "overview": "Arbeitsbereich Rechtswissenschaft",
             "title": "Rechtsquellen und Zitate"
           },
+          "org.omi.literary-studies": {
+            "description": "Werke und Ausgaben erfassen, Textstellen annotieren, Worthäufigkeiten und Konkordanzen analysieren und intertextuelle Beziehungen dokumentieren.",
+            "overview": "Literaturwissenschaftlicher Forschungsbereich",
+            "title": "Literaturwissenschaft"
+          },
           "org.omi.mathematics": {
             "description": "LaTeX-Formeln mit geprüfter MathML-Vorschau, Matrizen, Fallunterscheidungen und Gleichungssystemen.",
             "overview": "Mathematischer Formelarbeitsbereich",
