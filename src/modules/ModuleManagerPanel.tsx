@@ -148,7 +148,7 @@ export function ModuleManagerPanel({
                 ) : module.id === criticalTextEditionModule.id ? (
                   <><TranskribusPanel key={userId + ':' + workspaceId} locale={locale} userId={userId} workspaceId={workspaceId} /><CriticalTextEditionPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="critical-text-edition" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
                 ) : module.id === literaryStudiesModule.id ? (
-                  <LiteraryStudiesPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
+                  <LiteraryStudiesPanel key={userId + ':' + workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === corpusLinguisticsModule.id ? (
                   <CorpusLinguisticsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === musicologyModule.id ? (
