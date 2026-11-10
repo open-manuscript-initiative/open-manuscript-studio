@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { downloadWorkspaceFile, downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
 import {
@@ -89,6 +89,14 @@ const kindLabels: Record<LiteraryAnnotationKind, { en: string; hu: string; de: s
   reception: { en: 'Reception', hu: 'Recepció', de: 'Rezeption' },
   other: { en: 'Other', hu: 'Egyéb', de: 'Sonstiges' },
 };
+const relationLabels: Record<LiteraryRelation, { en: string; hu: string; de: string }> = {
+  allusion: { en: 'Allusion', hu: 'Allúzió', de: 'Anspielung' },
+  quotation: { en: 'Quotation', hu: 'Idézet', de: 'Zitat' },
+  adaptation: { en: 'Adaptation', hu: 'Adaptáció', de: 'Adaption' },
+  translation: { en: 'Translation', hu: 'Fordítás', de: 'Übersetzung' },
+  influence: { en: 'Influence', hu: 'Hatás', de: 'Einfluss' },
+  comparison: { en: 'Comparison', hu: 'Összehasonlítás', de: 'Vergleich' },
+};
 const blankWork = (): LiteraryWork => ({
   id: newWorkspaceId(), title: '', creator: '', date: '', language: 'hu',
   genre: '', edition: '', source: '', rights: '', text: '',
@@ -107,13 +115,15 @@ export function LiteraryStudiesPanel({ locale = 'en', storageKey = 'literary-stu
   const [relation, setRelation] = useState<LiteraryRelation>('comparison');
   const [relatedId, setRelatedId] = useState('');
   const [relationNote, setRelationNote] = useState('');
+  const [relationEvidence, setRelationEvidence] = useState('');
   const [error, setError] = useState('');
   const projectFile = useRef<HTMLInputElement>(null);
   const textFile = useRef<HTMLInputElement>(null);
   const work = workspace.works.find(w => w.id === selectedId) ?? workspace.works[0];
   const annotations = workspace.annotations.filter(a => a.workId === work?.id);
-  const frequencies = useMemo(() => wordFrequencies(work?.text ?? '', work?.language || 'en'), [work?.text, work?.language]);
-  const matches = useMemo(() => concordance(work?.text ?? '', query, work?.language || 'en'), [work?.text, work?.language, query]);
+  const analysisText = useDeferredValue(work?.text ?? '');
+  const frequencies = useMemo(() => wordFrequencies(analysisText, work?.language || 'en'), [analysisText, work?.language]);
+  const matches = useMemo(() => concordance(analysisText, query, work?.language || 'en'), [analysisText, work?.language, query]);
 
   const updateProject = (patch: Partial<typeof workspace>) => setWorkspace(current => ({ ...current, ...patch }));
   const updateWork = (patch: Partial<LiteraryWork>) => {
@@ -175,9 +185,10 @@ export function LiteraryStudiesPanel({ locale = 'en', storageKey = 'literary-stu
     if (!work || !relatedId || relatedId === work.id) return;
     setWorkspace(current => ({ ...current, relations: [...current.relations, {
       id: newWorkspaceId(), fromWorkId: work.id, toWorkId: relatedId,
-      relation, evidence: '', note: relationNote,
+      relation, evidence: relationEvidence, note: relationNote,
     }] }));
     setRelationNote('');
+    setRelationEvidence('');
   };
 
   return <main className="discipline-workspace">
@@ -271,16 +282,18 @@ export function LiteraryStudiesPanel({ locale = 'en', storageKey = 'literary-stu
               {workspace.works.filter(item => item.id !== work.id).map(item => <option key={item.id} value={item.id}>{item.title || item.id}</option>)}
             </select></label>
             <label>{t.relation}<select value={relation} onChange={event => setRelation(event.target.value as LiteraryRelation)}>
-              {LITERARY_RELATIONS.map(item => <option key={item} value={item}>{item}</option>)}
+              {LITERARY_RELATIONS.map(item => <option key={item} value={item}>{relationLabels[item][lang === 'de' || lang === 'hu' ? lang : 'en']}</option>)}
             </select></label>
           </div>
           <label>{t.note}<textarea rows={2} value={relationNote} onChange={event => setRelationNote(event.target.value)} /></label>
+          <label>{t.evidence}<input value={relationEvidence} onChange={event => setRelationEvidence(event.target.value)} /></label>
           <button type="button" onClick={addRelation}>{t.addRelation}</button>
         </>}
         {workspace.relations.filter(r => r.fromWorkId === work.id || r.toWorkId === work.id).map(item =>
           <article key={item.id} className="discipline-workspace__card">
-            <strong>{workspace.works.find(w => w.id === item.fromWorkId)?.title} — {item.relation} — {workspace.works.find(w => w.id === item.toWorkId)?.title}</strong>
+            <strong>{workspace.works.find(w => w.id === item.fromWorkId)?.title} — {relationLabels[item.relation][lang === 'de' || lang === 'hu' ? lang : 'en']} — {workspace.works.find(w => w.id === item.toWorkId)?.title}</strong>
             <p>{item.note}</p>
+            {item.evidence && <p>{t.evidence}: {item.evidence}</p>}
             <button type="button" className="discipline-workspace__danger" onClick={() => setWorkspace(current => ({ ...current, relations: current.relations.filter(r => r.id !== item.id) }))}>{t.remove}</button>
           </article>,
         )}
