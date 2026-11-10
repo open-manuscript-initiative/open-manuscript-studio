@@ -67,13 +67,13 @@ export function readResearchExcerpts(moduleId: string, userId: string): Research
       if (!annotation) continue;
       const work = items(project.works).map(record).find(candidate => candidate && string(candidate.id) === string(annotation.workId));
       if (!work || !string(work.source)) continue;
-      const quote = string(annotation.quote);
+      const quote = typeof annotation.quote === 'string' ? annotation.quote : '';
       const start = annotation.start;
       const end = annotation.end;
       if (typeof start !== 'number' || typeof end !== 'number'
         || !Number.isSafeInteger(start) || !Number.isSafeInteger(end)
         || start < 0 || end <= start || typeof work.text !== 'string'
-        || work.text.slice(start, end) !== quote || quote.length > 20000) continue;
+        || !quote.trim() || work.text.slice(start, end) !== quote || quote.length > 20000) continue;
       add(string(annotation.id), [string(work.title), string(annotation.kind)].filter(Boolean).join(' · '), quote, string(work.source));
     }
   } else if (moduleId === 'org.omi.corpus-linguistics' && project.version === 1) {
