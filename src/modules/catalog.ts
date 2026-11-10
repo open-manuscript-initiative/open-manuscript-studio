@@ -4,6 +4,7 @@ import { moduleManifest as mathematicsModule } from './mathematics/index';
 import { historyArchivesModule } from './history-archives/index';
 import { moduleManifest as religiousTextsModule } from './religious-texts/index';
 import { moduleManifest as criticalTextEditionModule } from './critical-text-edition/index';
+import { moduleManifest as literaryStudiesModule } from './literary-studies/index';
 import { moduleManifest as corpusLinguisticsModule } from './corpus-linguistics/index';
 import { moduleManifest as musicologyModule } from './musicology/index';
 import { moduleManifest as culturalHeritageModule } from './cultural-heritage/index';
@@ -21,6 +22,7 @@ export {
   historyArchivesModule,
   religiousTextsModule,
   criticalTextEditionModule,
+  literaryStudiesModule,
   corpusLinguisticsModule,
   musicologyModule,
   culturalHeritageModule,
@@ -40,6 +42,7 @@ export const builtinModuleManifests = [
   historyArchivesModule,
   religiousTextsModule,
   criticalTextEditionModule,
+  literaryStudiesModule,
   corpusLinguisticsModule,
   musicologyModule,
   socialResearchMethodsModule,
