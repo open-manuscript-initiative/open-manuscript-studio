@@ -1349,6 +1349,11 @@
             "overview": "Area di lavoro per la ricerca giuridica",
             "title": "Fonti giuridiche e citazioni"
           },
+          "org.omi.literary-studies": {
+            "description": "Catalogare opere ed edizioni, annotare passi, analizzare frequenze e concordanze e documentare relazioni intertestuali.",
+            "overview": "Ambiente di ricerca letteraria",
+            "title": "Studi letterari"
+          },
           "org.omi.mathematics": {
             "description": "Equazioni LaTeX con anteprima MathML convalidata, matrici, casi ed equazioni allineate.",
             "overview": "Area di lavoro delle equazioni matematiche",

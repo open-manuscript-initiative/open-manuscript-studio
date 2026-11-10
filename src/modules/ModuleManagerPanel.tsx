@@ -7,13 +7,14 @@ import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from '
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
-import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, statisticalAnalysisModule, studioModules } from './catalog';
+import { corpusLinguisticsModule, criticalTextEditionModule, literaryStudiesModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, statisticalAnalysisModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { getResearchModuleCopyByLocale } from './moduleTranslationCatalog';
 import { normalizeModuleLocale } from './moduleLocale';
 import { HistoryArchivesSourcesPanel } from './history-archives/HistoryArchivesSourcesPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
+import { LiteraryStudiesPanel } from './literary-studies/LiteraryStudiesPanel';
 import { TranskribusPanel } from './transkribus/TranskribusPanel';
 import { CorpusLinguisticsPanel } from './corpus-linguistics/CorpusLinguisticsPanel';
 import { MusicologyPanel } from './musicology/MusicologyPanel';
@@ -146,6 +147,8 @@ export function ModuleManagerPanel({
                   <ReligiousTextsPanel locale={locale} />
                 ) : module.id === criticalTextEditionModule.id ? (
                   <><TranskribusPanel key={userId + ':' + workspaceId} locale={locale} userId={userId} workspaceId={workspaceId} /><CriticalTextEditionPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="critical-text-edition" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
+                ) : module.id === literaryStudiesModule.id ? (
+                  <LiteraryStudiesPanel key={userId + ':' + workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === corpusLinguisticsModule.id ? (
                   <CorpusLinguisticsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === musicologyModule.id ? (

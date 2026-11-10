@@ -11,6 +11,7 @@ export interface ResearchExcerpt {
 
 const storagePrefixes: Readonly<Record<string, string>> = {
   'org.omi.critical-text-edition': 'omi:critical-edition:v1:',
+  'org.omi.literary-studies': '',
   'org.omi.corpus-linguistics': 'omi:corpus-linguistics:v1:',
   'org.omi.musicology': 'omi:musicology:v1:',
   'org.omi.cultural-heritage': 'omi:cultural-heritage:v1:',
@@ -59,6 +60,21 @@ export function readResearchExcerpts(moduleId: string, userId: string): Research
     for (const item of items(project.segments)) {
       const segment = record(item);
       if (segment) add(string(segment.id), string(segment.locus), string(segment.lemma), '');
+    }
+  } else if (moduleId === 'org.omi.literary-studies' && project.schemaVersion === 1) {
+    for (const item of items(project.annotations)) {
+      const annotation = record(item);
+      if (!annotation) continue;
+      const work = items(project.works).map(record).find(candidate => candidate && string(candidate.id) === string(annotation.workId));
+      if (!work || !string(work.source)) continue;
+      const quote = typeof annotation.quote === 'string' ? annotation.quote : '';
+      const start = annotation.start;
+      const end = annotation.end;
+      if (typeof start !== 'number' || typeof end !== 'number'
+        || !Number.isSafeInteger(start) || !Number.isSafeInteger(end)
+        || start < 0 || end <= start || typeof work.text !== 'string'
+        || !quote.trim() || work.text.slice(start, end) !== quote || quote.length > 20000) continue;
+      add(string(annotation.id), [string(work.title), string(annotation.kind)].filter(Boolean).join(' · '), quote, string(work.source));
     }
   } else if (moduleId === 'org.omi.corpus-linguistics' && project.version === 1) {
     for (const item of items(project.documents)) {

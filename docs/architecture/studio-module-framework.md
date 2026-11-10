@@ -28,6 +28,7 @@ The initial catalog includes these modules:
 | History and archives | History, archival studies | Search Europeana and NARA, and navigate official archival portals including Italy's 2026 Archivi Nazionali unified portal, eLevéltár, the Vatican Apostolic Library and BeWeB. Historical SIUSA access remains available separately. |
 | Religious texts | Theology, religious studies | Search Sefaria's Jewish text and commentary library live, display short excerpts with citation and edition metadata, and link to Bible, Qur'an, and Buddhist text portals. The first embedded full-text connector covers Sefaria only. |
 | Critical text edition | Philology, classical philology, literary studies, philosophy | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions; search philosophy and textual-studies scholarship in OpenAlex. |
+| Literary studies | Literary studies, comparative literature, narratology, poetics, reception studies, digital humanities | Catalogue works/editions, annotate exact quotations, examine word frequencies and concordances, record intertextual relations, and export project JSON or annotation CSV. |
 | Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
 | Musicology | Musicology | Import uncompressed MusicXML, catalog musical events, and link score events to recording timestamps. |
 | Archaeology and cultural heritage | Archaeology, archaeometry, material culture, art history, museum studies | Document sites, contexts, stratigraphy, finds, samples and source records; describe heritage objects with provenance, rights and images; annotate image regions; search Pleiades, ARIADNE and Open Context. |
@@ -97,6 +98,8 @@ storage. It builds an apparatus from witness readings and supports project JSON
 import/export plus TEI XML download. Browser storage is device-local; use JSON
 export for backup or transfer. Review and validate the TEI output against the
 project's target schema before publication.
+
+Literary Studies (`org.omi.literary-studies`) is a distinct interpretive workspace, not a replacement for Critical Text Edition or Corpus Linguistics. The versioned project JSON stores works (creator, genre, date, edition, language, source, rights and text), UTF-16-offset anchored quotations, categories, researcher interpretations, evidence and intertextual relations. The text editor detects stale annotations after source changes and can reanchor only unique exact matches; ambiguous matches require manual review. The panel provides Unicode word-frequency counts, a bounded concordance, text-file import, and JSON/CSV export. Content remains in the browser's per-user/workspace local storage; it does not synchronize or verify source metadata. The manuscript excerpt projection includes only unchanged quotations with a nonempty source citation, never research interpretations or arbitrary project data. TEI P5 full-text export, IIIF manuscript alignment, automated distant reading, machine translation and provider searches are future integrations, not implemented features.
 
 Corpus Linguistics stores corpus metadata, text documents, character-offset
 annotations, and manually aligned parallel passages in browser storage. It

@@ -5611,6 +5611,21 @@ msgctxt "/researchModules/shell/translations/modules/org.omi.legal-sources/title
 msgid "Legal sources and citations"
 msgstr "Źródła prawne i cytaty"
 
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.literary-studies/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.literary-studies/description"
+msgid "Catalogue works and editions, annotate quotations, analyze word frequencies and concordances, and record intertextual relations."
+msgstr "Katalogowanie dzieł i wydań, anotowanie fragmentów, analiza frekwencji słów i konkordancji oraz rejestrowanie relacji intertekstualnych."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.literary-studies/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.literary-studies/overview"
+msgid "Literary research workspace"
+msgstr "Przestrzeń badań literackich"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.literary-studies/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.literary-studies/title"
+msgid "Literary Studies"
+msgstr "Literaturoznawstwo"
+
 #. OMI translation key: /researchModules/shell/translations/modules/org.omi.mathematics/description
 msgctxt "/researchModules/shell/translations/modules/org.omi.mathematics/description"
 msgid "LaTeX equations with validated MathML preview, matrices, cases and aligned equations."

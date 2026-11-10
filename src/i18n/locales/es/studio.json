@@ -1349,6 +1349,11 @@
             "overview": "Espacio de trabajo de investigación jurídica",
             "title": "Fuentes jurídicas y citas"
           },
+          "org.omi.literary-studies": {
+            "description": "Catalogar obras y ediciones, anotar pasajes, analizar frecuencias y concordancias y documentar relaciones intertextuales.",
+            "overview": "Espacio de investigación literaria",
+            "title": "Estudios literarios"
+          },
           "org.omi.mathematics": {
             "description": "Ecuaciones LaTeX con vista previa MathML validada, matrices, casos y ecuaciones alineadas.",
             "overview": "Área de trabajo de ecuaciones matemáticas",
