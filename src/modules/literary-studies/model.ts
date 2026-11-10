@@ -111,38 +111,42 @@ export function extractAnnotation(
 const WORD_PATTERN = /[\p{L}\p{M}]+(?:[’'-][\p{L}\p{M}]+)*/gu;
 export function wordFrequencies(text: string, locale = 'en'): { word: string; count: number }[] {
   const counts = new Map<string, number>();
+  let safeLocale = 'en';
+  try { safeLocale = Intl.getCanonicalLocales(locale)[0] ?? 'en'; } catch { /* Invalid source metadata uses English fallback. */ }
   for (const match of text.matchAll(WORD_PATTERN)) {
-    const word = match[0].toLocaleLowerCase(locale);
+    const word = match[0].toLocaleLowerCase(safeLocale);
     counts.set(word, (counts.get(word) ?? 0) + 1);
   }
   return [...counts].map(([word, count]) => ({ word, count })).sort((a, b) =>
-    b.count - a.count || a.word.localeCompare(b.word, locale));
+    b.count - a.count || a.word.localeCompare(b.word, safeLocale));
 }
-export function concordance(text: string, query: string, locale = 'en', limit = 50): { before: string; hit: string; after: string; offset: number }[] {
+/** Regex matching preserves UTF-16 offsets even for Unicode case-folding edge cases. */
+export function concordance(text: string, query: string, _locale = 'en', limit = 50): { before: string; hit: string; after: string; offset: number }[] {
   const needle = query.trim();
   if (!needle || needle.length > 150) return [];
-  const foldedText = text.toLocaleLowerCase(locale);
-  const foldedNeedle = needle.toLocaleLowerCase(locale);
+  const pattern = new RegExp(needle.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&'), 'giu');
   const results: { before: string; hit: string; after: string; offset: number }[] = [];
-  let from = 0;
-  while (results.length < Math.max(0, Math.min(limit, 200))) {
-    const offset = foldedText.indexOf(foldedNeedle, from);
-    if (offset === -1) break;
-    const hit = text.slice(offset, offset + foldedNeedle.length);
+  for (const match of text.matchAll(pattern)) {
+    if (results.length >= Math.max(0, Math.min(limit, 200))) break;
+    const offset = match.index;
+    const hit = match[0];
     results.push({
       before: text.slice(Math.max(0, offset - 45), offset),
       hit,
-      after: text.slice(offset + foldedNeedle.length, offset + foldedNeedle.length + 45),
+      after: text.slice(offset + hit.length, offset + hit.length + 45),
       offset,
     });
-    from = offset + Math.max(1, foldedNeedle.length);
   }
   return results;
 }
 
 /** Exported annotations are stored in JSON; this CSV is a human-readable, source-aware report. */
 export function annotationsCsv(workspace: LiteraryWorkspace): string {
-  const quote = (value: string) => '"' + value.replace(/"/g, '""') + '"';
+  const quote = (value: string) => {
+    // CSV quoting alone does not prevent spreadsheet formula execution.
+    const safe = /^[\s\u0000-\u001f]*[=+\-@]/u.test(value) ? "'" + value : value;
+    return '"' + safe.replace(/"/g, '""') + '"';
+  };
   const rows: string[][] = [
     ['work', 'creator', 'edition', 'source', 'kind', 'offset_start', 'offset_end', 'anchor_valid', 'quotation', 'interpretation', 'evidence'],
   ];
