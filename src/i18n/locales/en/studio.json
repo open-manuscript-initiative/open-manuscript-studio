@@ -1349,6 +1349,11 @@
             "overview": "Legal research workspace",
             "title": "Legal sources and citations"
           },
+          "org.omi.literary-studies": {
+            "description": "Catalogue works and editions, annotate quotations, analyze word frequencies and concordances, and record intertextual relations.",
+            "overview": "Literary research workspace",
+            "title": "Literary Studies"
+          },
           "org.omi.mathematics": {
             "description": "LaTeX equations with validated MathML preview, matrices, cases and aligned equations.",
             "overview": "Mathematical equation workspace",
