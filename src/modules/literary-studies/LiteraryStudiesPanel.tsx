@@ -214,7 +214,7 @@ export function LiteraryStudiesPanel({ locale = 'en', storageKey = 'literary-stu
           </div>
           <label>{t.text}<textarea rows={12} maxLength={1000000} value={work.text}
             onChange={event => { updateWork({ text: event.target.value }); setSelection(null); }}
-            onSelect={event => { const target = event.currentTarget; if (target.selectionEnd > target.selectionStart) setSelection({ start: target.selectionStart, end: target.selectionEnd }); }}
+            onSelect={event => { const target = event.currentTarget; setSelection(target.selectionEnd > target.selectionStart ? { start: target.selectionStart, end: target.selectionEnd } : null); }}
           /></label>
           <button type="button" onClick={() => textFile.current?.click()}>{t.importText}</button>{' '}
           <button type="button" className="discipline-workspace__danger" onClick={removeWork}>{t.remove}</button>
