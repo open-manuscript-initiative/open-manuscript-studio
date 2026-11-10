@@ -124,7 +124,7 @@ export function wordFrequencies(text: string, locale = 'en'): { word: string; co
 export function concordance(text: string, query: string, _locale = 'en', limit = 50): { before: string; hit: string; after: string; offset: number }[] {
   const needle = query.trim();
   if (!needle || needle.length > 150) return [];
-  const pattern = new RegExp(needle.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&'), 'giu');
+  const pattern = new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\needle.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&')'), 'giu');
   const results: { before: string; hit: string; after: string; offset: number }[] = [];
   for (const match of text.matchAll(pattern)) {
     if (results.length >= Math.max(0, Math.min(limit, 200))) break;
@@ -144,7 +144,7 @@ export function concordance(text: string, query: string, _locale = 'en', limit =
 export function annotationsCsv(workspace: LiteraryWorkspace): string {
   const quote = (value: string) => {
     // CSV quoting alone does not prevent spreadsheet formula execution.
-    const safe = /^[\s\u0000-\u001f]*[=+\-@]/u.test(value) ? "'" + value : value;
+    const safe = /^[=+@-]/u.test(value.trimStart()) ? "'" + value : value;
     return '"' + safe.replace(/"/g, '""') + '"';
   };
   const rows: string[][] = [
