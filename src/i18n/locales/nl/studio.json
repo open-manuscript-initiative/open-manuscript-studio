@@ -1349,6 +1349,11 @@
             "overview": "Werkruimte voor juridisch onderzoek",
             "title": "Juridische bronnen en verwijzingen"
           },
+          "org.omi.literary-studies": {
+            "description": "Werken en edities catalogiseren, tekstfragmenten annoteren, woordfrequenties en concordanties analyseren en intertekstuele relaties vastleggen.",
+            "overview": "Werkruimte voor literatuuronderzoek",
+            "title": "Literatuurwetenschap"
+          },
           "org.omi.mathematics": {
             "description": "LaTeX-vergelijkingen met gevalideerd MathML-voorbeeld, matrices, gevallen en uitgelijnde vergelijkingen.",
             "overview": "Werkruimte voor wiskundige vergelijkingen",
