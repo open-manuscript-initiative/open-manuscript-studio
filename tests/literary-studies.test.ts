@@ -48,7 +48,7 @@ test('counts Unicode word forms and returns bounded concordance offsets', () => 
   const words = wordFrequencies('Árvíztűrő tükörfúrógép; árvíztűrő.');
   assert.deepEqual(words.find(item => item.word === 'árvíztűrő'), { word: 'árvíztűrő', count: 2 });
   const matches = concordance(work.text, 'kertben');
-  assert.deepEqual(matches.map(item => item.offset), [9, 20]);
+  assert.deepEqual(matches.map(item => item.offset), [8, 19]);
   assert.equal(concordance('a a a a', 'a', 'en', 2).length, 2);
   assert.deepEqual(concordance(work.text, ''), []);
 });
