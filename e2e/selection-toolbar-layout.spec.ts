@@ -119,6 +119,8 @@ test('dragging and resizing remember the panel without losing the text selection
 
   await editor.press('Escape');
   await expect(toolbar).toHaveCount(0);
+  // Escape suppresses the current selection until the user makes a new one.
+  await editor.press('ArrowRight');
   await selectText(editor);
   await expect(toolbar).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
