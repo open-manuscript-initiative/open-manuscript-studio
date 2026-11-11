@@ -99,17 +99,21 @@ test('dragging and resizing remember the panel without losing the text selection
   const moveHandle = toolbar.getByRole('button', { name: /^Move toolbar/ });
   const before = (await toolbar.boundingBox())!;
   const handle = (await moveHandle.boundingBox())!;
-  const dx = 24 - before.x;
+  const dx = -40 - before.x;
   const dy = 520 - before.y;
   await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
   await page.mouse.down();
   await page.mouse.move(handle.x + handle.width / 2 + dx, handle.y + handle.height / 2 + dy, { steps: 8 });
   await page.mouse.up();
-  await expect(toolbar).toHaveAttribute('data-pinned', 'true');
+  const pin = toolbar.getByRole('button', { name: 'Pin toolbar position', exact: true });
+  await expect(pin).toHaveAttribute('aria-pressed', 'false');
   await expect(toolbar).toHaveAttribute('data-selection-length', selectionLength!);
   const moved = (await toolbar.boundingBox())!;
-  expect(moved.x).toBeCloseTo(24, 0);
+  expect(moved.x).toBe(0);
   expect(moved.y).toBeCloseTo(520, 0);
+  await pin.click();
+  await expect(toolbar).toHaveAttribute('data-pinned', 'true');
+  await expect.poll(() => toolbar.boundingBox()).toEqual(moved);
 
   const resize = (await toolbar.getByRole('button', { name: /^Resize toolbar/ }).boundingBox())!;
   await page.mouse.move(resize.x + resize.width / 2, resize.y + resize.height / 2);
@@ -117,6 +121,7 @@ test('dragging and resizing remember the panel without losing the text selection
   await page.mouse.move(resize.x + resize.width / 2 - 160, resize.y + resize.height / 2 + 60, { steps: 8 });
   await page.mouse.up();
   const resized = (await toolbar.boundingBox())!;
+  expect(resized.x).toBe(0);
   expect(resized.width).toBeCloseTo(moved.width - 160, 0);
   expect(resized.height).toBeGreaterThanOrEqual(moved.height + 59);
   await expectNoScrollbars(toolbar);
@@ -170,6 +175,11 @@ test('panel placement also works with the keyboard and can return to selection f
   const before = (await toolbar.boundingBox())!;
   await toolbar.getByRole('button', { name: /^Move toolbar/ }).press('Shift+ArrowRight');
   expect((await toolbar.boundingBox())!.x).toBeCloseTo(before.x + 40, 0);
+  await expect(pin).toHaveAttribute('aria-pressed', 'false');
+  const moved = (await toolbar.boundingBox())!;
+  await pin.click();
+  await expect(pin).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => toolbar.boundingBox()).toEqual(moved);
   await toolbar.getByRole('button', { name: /^Resize toolbar/ }).press('ArrowRight');
   expect((await toolbar.boundingBox())!.width).toBeCloseTo(before.width + 10, 0);
   await pin.click();

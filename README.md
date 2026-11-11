@@ -43,7 +43,7 @@ The iOS/iPadOS target is no longer only architectural planning: Tauri/Xcode proj
 
 - semantic manuscript sections and blocks rather than presentation-only document state;
 - Tiptap-based rich-text editing with headings, lists, tables, notes, references and inline formatting;
-- desktop selection tools wrap without scrollbars in a movable, resizable panel; dragging pins its position, which is remembered with its size across sessions, with controls to follow the selection again or reset the layout;
+- desktop selection tools wrap without scrollbars in a movable, resizable panel; drag it to any viewport edge and use the pin button to remember its current position and size across sessions, with controls to follow the selection again or reset the layout;
 - browser-style multi-document tabs on desktop;
 - optional Word-like document outline for long-form navigation;
 - structured search and replace with scoped result navigation;
