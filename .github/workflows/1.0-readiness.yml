@@ -58,7 +58,9 @@ jobs:
         run: npm run test:release-hardening
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        # Runtime libraries are already present on this hosted runner. Installing
+        # optional system fonts via apt made DNS outages prevent all browser gates.
+        run: npx playwright install chromium
 
       - name: Run reference manuscript UI lifecycle gate
         run: npx playwright test e2e/reference-manuscript-lifecycle.spec.ts --project=desktop-chromium

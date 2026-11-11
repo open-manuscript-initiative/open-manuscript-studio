@@ -37,6 +37,8 @@ Playwright starts Vite automatically on `127.0.0.1:5173`. To target an already r
 
 The main CI job installs only Chromium's headless shell and runs the browser suite before server typechecking and the production build. A failed run retains the HTML report, screenshots, video and trace data for 14 days in the `playwright-diagnostics-*` artifact.
 
+GitHub-hosted runners supply the browser's runtime libraries. The workflows install the browser version matching the lockfile without `--with-deps`, so an Ubuntu mirror or DNS outage while downloading additional system fonts cannot block browser setup. Browser startup and all test gates remain mandatory. For a minimal local Linux system that lacks the runtime libraries, use `npx playwright install --with-deps --only-shell chromium`.
+
 The test configuration retries failed cases twice in CI. A trace is captured on the first retry; screenshots and videos are retained only for failures.
 
 
