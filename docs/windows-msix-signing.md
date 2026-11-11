@@ -1,5 +1,17 @@
 # Windows MSIX signing and distribution (Open Manuscript Studio)
 
+## Publisher-reported Store availability — 10 November 2026
+
+On 10 November the publisher received a Microsoft notice that its Open Manuscript Studio submission had been processed and the app was **available in Microsoft Store**, with customer visibility possibly taking up to two hours. A separate IARC Live Rating Notice confirmed the ratings from the 9 November questionnaire were live; the specific age-category values were not shown.
+
+A further **publisher-supplied Windows Microsoft Store screenshot dated 10 November 2026** shows the product listing, **PEGI 3** age label and a **"Megnyitás" (Open)** button. This provides visible listing and Store-recognized installation evidence for that device, but **not** successful app launch, package signature verification or update acceptance.
+
+**Operator-confirmed Store install (10 November 2026):** The publisher reported installing Open Manuscript Studio **from Microsoft Store on a Windows PC**, in addition to the listing screenshot. The publisher subsequently confirmed **successful launch and account sign-in** on that installation. The publisher subsequently reported successful end-to-end handling of a previously saved local **`.omi` file: open, edit, save and reopen**, without errors. Package signing-chain verification, update routing and data persistence across Store updates remain unverified.
+
+**Active Partner Center package, 10 November 2026:** Screenshot of **Open Manuscript Studio → Current packages → Submission 1** identifies `Open-Manuscript-Studio-Windows-x64.msix` with **version `1.0.0.0`**, **x64**, **7.9 MB**, **`en-US`** package language, minimum supported **Windows.Desktop OS `10.0.19041.0`**, and declared **`runFullTrust`** capability. This confirms that the active Store MSIX uses the required zero-valued fourth version component; it does not establish which unsigned GitHub artifact was uploaded, nor does it establish an independent signature/hash check of the device-installed package. The Windows 10 minimum includes compatible Windows 11 systems. The `en-US` package language is not a claim about available Studio UI locales. The Store MSIX version `1.0.0.0`, the Studio `1.0.0-rc.1` application version and the direct MSI/EXE package version are separate identities.
+
+This notice supersedes the earlier **pending submission/publication** status below, which is retained as 8 November build history. Store listing URL, independently verified version/hash and Microsoft signature of the device-installed MSIX, Store-managed update routing and profile/document preservation have **not yet been independently evidenced**. Direct-download EXE/MSI packages remain an unsigned, distinct channel. No stable v1.0 approval is inferred.
+
 **Status:** separate candidate workflow, not an approved Windows RC publication. Existing MSI/NSIS outputs, Android release artifacts and the seven-file 1.0 RC evidence/hash/approval gate remain unchanged.
 
 ## Verified MSIX packaging — 8 November 2026
