@@ -1,7 +1,9 @@
 # Release-readiness evidence
 
 The 1.0 release uses committed scope, automated evidence, and explicit manual
-acceptance. The current PKP policy is [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md): OJS/OMP -4/-5/-6 automated evidence and 14 manual gates, with OMP remaining Preview. Start with:
+acceptance. The next prepared candidate is [1.0.0-rc.2](./1.0.0-rc.2.md)
+(desktop Document-menu layout fix; publication acceptance pending).
+The current PKP policy is [ADR-033](../architecture/adr-033-pkp-support-and-release-evidence.md): OJS/OMP -4/-5/-6 automated evidence and 14 manual gates, with OMP remaining Preview. Start with:
 
 - [`evidence/1.0.0-rc.1/e1200268ad549c0a40ace8724715cd2405e9d03c/`](./evidence/1.0.0-rc.1/e1200268ad549c0a40ace8724715cd2405e9d03c/) for the operator's 4 November Windows/Android/web/PKP observations and the partially completed receipt (**not final release approval; full gates remain pending**);
 - [`2026-11-04-rc1-final-acceptance.md`](./2026-11-04-rc1-final-acceptance.md) for automatic installer hashes/pending receipt preparation, Linux Preview scope, actual signature/update/recovery observations and final publication;
