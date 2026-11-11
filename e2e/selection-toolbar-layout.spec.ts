@@ -49,23 +49,31 @@ async function openToolbar(page: Page) {
 }
 
 async function expectNoScrollbars(toolbar: Locator) {
-  const panels = toolbar.locator(
-    ':scope, .omi-rich-text-toolbar-row, .omi-selection-action-toolbar, .omi-rich-text-popover',
-  );
-  for (const panel of await panels.all()) {
-    expect(await panel.evaluate((element) => ({
-      horizontal: element.scrollWidth > element.clientWidth + 1,
-      vertical: element.scrollHeight > element.clientHeight + 1,
-    }))).toEqual({ horizontal: false, vertical: false });
-  }
-  const box = (await toolbar.boundingBox())!;
-  for (const control of await toolbar.locator('button, input, select').all()) {
-    const controlBox = (await control.boundingBox())!;
-    expect(controlBox.x).toBeGreaterThanOrEqual(box.x - 1);
-    expect(controlBox.y).toBeGreaterThanOrEqual(box.y - 1);
-    expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(box.x + box.width + 1);
-    expect(controlBox.y + controlBox.height).toBeLessThanOrEqual(box.y + box.height + 1);
-  }
+  // Selection following and ResizeObserver can reposition the whole panel.
+  // Read every rectangle in one browser frame instead of mixing old/new origins.
+  await expect.poll(() => toolbar.evaluate((root) => {
+    const errors: string[] = [];
+    const box = root.getBoundingClientRect();
+    if (box.left < 0 || box.top < 0 || box.right > innerWidth || box.bottom > innerHeight) {
+      errors.push('Panel outside viewport');
+    }
+    const panels = [root, ...root.querySelectorAll<HTMLElement>(
+      '.omi-rich-text-toolbar-row, .omi-selection-action-toolbar, .omi-rich-text-popover',
+    )];
+    for (const panel of panels) {
+      if (panel.scrollWidth > panel.clientWidth + 1 || panel.scrollHeight > panel.clientHeight + 1) {
+        errors.push(`Overflow: ${panel.className}`);
+      }
+    }
+    for (const control of root.querySelectorAll('button, input, select')) {
+      const rect = control.getBoundingClientRect();
+      if (rect.left < box.left - 1 || rect.top < box.top - 1
+        || rect.right > box.right + 1 || rect.bottom > box.bottom + 1) {
+        errors.push(`Control outside panel: ${control.getAttribute('aria-label') ?? control.textContent}`);
+      }
+    }
+    return errors;
+  })).toEqual([]);
 }
 
 test('desktop selection tools wrap without scrolling, including expanded tools', async ({ page }) => {
