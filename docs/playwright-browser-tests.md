@@ -8,7 +8,7 @@ Open Manuscript Studio uses Playwright for deterministic browser-level smoke tes
 - full-screen manuscript menu and the live publication editor;
 - publication-editor ribbon controls and document canvas;
 - responsive login and editor layout without horizontal overflow;
-- desktop selection panels without internal scrolling, pointer and keyboard move/resize, retained text selection, remembered placement after reload, viewport clamping and mobile layout isolation;
+- desktop selection panels without internal scrolling, pointer and keyboard move/resize to the viewport edges, explicit pinning at the current position, retained text selection, remembered placement after reload, viewport clamping and mobile layout isolation;
 - release accessibility invariants on desktop and mobile viewports; and
 - IndexedDB-backed unclosed-session recovery after a browser reload.
 

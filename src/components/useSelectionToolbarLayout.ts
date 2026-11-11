@@ -15,24 +15,30 @@ interface Layout {
   width: number;
   height: number;
   position: Point | null;
+  pinned: boolean;
 }
 
 const STORAGE_KEY = 'omi.selectionToolbarLayout.v1';
 const CHANGE_EVENT = 'omi-selection-toolbar-layout-change';
-const DEFAULT_LAYOUT: Layout = { width: 704, height: 0, position: null };
-const MARGIN = 12;
+const DEFAULT_LAYOUT: Layout = { width: 704, height: 0, position: null, pinned: false };
+// Let the panel reach the viewport edges while keeping all of it on screen.
+const MARGIN = 0;
 const MIN_WIDTH = 360;
 
 function readLayout(): Layout {
   try {
     const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
     if (!saved || saved.version !== 1) return DEFAULT_LAYOUT;
+    const position = saved.position && Number.isFinite(saved.position.left)
+      && Number.isFinite(saved.position.top) ? saved.position as Point : null;
+    // Previously every stored position was implicitly pinned.
+    const pinned = position !== null && saved.pinned !== false;
     return {
       width: Number.isFinite(saved.width) && saved.width >= MIN_WIDTH
         ? saved.width : DEFAULT_LAYOUT.width,
       height: Number.isFinite(saved.height) && saved.height >= 0 ? saved.height : 0,
-      position: saved.position && Number.isFinite(saved.position.left)
-        && Number.isFinite(saved.position.top) ? saved.position : null,
+      position: pinned ? position : null,
+      pinned,
     };
   } catch {
     return DEFAULT_LAYOUT;
@@ -47,8 +53,10 @@ function constrain(value: number, maximum: number): number {
 export function useSelectionToolbarLayout(
   toolbarRef: RefObject<HTMLDivElement | null>,
   anchor: Anchor | null,
+  selectionKey: string,
 ) {
   const [layout, setLayout] = useState(readLayout);
+  const sourceRef = useRef({});
   const [viewport, setViewport] = useState(() => ({
     width: window.innerWidth, height: window.innerHeight,
   }));
@@ -67,19 +75,29 @@ export function useSelectionToolbarLayout(
 
   function save(next: Layout) {
     setLayout(next);
+    const preference = { ...next, position: next.pinned ? next.position : null };
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, ...next }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, ...preference }));
     } catch {
       // The panel remains usable when browser storage is unavailable.
     }
     // Also update toolbars belonging to other blocks or open manuscripts.
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: next }));
+    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, {
+      detail: { layout: preference, source: sourceRef.current },
+    }));
   }
+
+  useLayoutEffect(() => {
+    // An unpinned drag is temporary: the next selection follows the text again.
+    setLayout((current) => current.pinned || !current.position
+      ? current : { ...current, position: null });
+  }, [visible, selectionKey]);
 
   useEffect(() => {
     const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
     const sync = (event: Event) => {
-      setLayout((event as CustomEvent<Layout>).detail);
+      const change = (event as CustomEvent<{ layout: Layout; source: object }>).detail;
+      if (change?.layout && change.source !== sourceRef.current) setLayout(change.layout);
     };
     const storage = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY || event.key === null) setLayout(readLayout());
@@ -142,6 +160,7 @@ export function useSelectionToolbarLayout(
     const dy = event.clientY - interaction.y;
     interaction.draft = mode === 'move' ? {
       ...original,
+      pinned: false,
       position: {
         left: constrain(rect.left + dx, viewport.width - rect.width - MARGIN),
         top: constrain(rect.top + dy, viewport.height - rect.height - MARGIN),
@@ -174,6 +193,7 @@ export function useSelectionToolbarLayout(
     const [dx, dy] = direction.map((value) => value * (event.shiftKey ? 40 : 10));
     save(mode === 'move' ? {
       ...layout,
+      pinned: false,
       position: {
         left: constrain(rect.left + dx, viewport.width - rect.width - MARGIN),
         top: constrain(rect.top + dy, viewport.height - rect.height - MARGIN),
@@ -197,14 +217,18 @@ export function useSelectionToolbarLayout(
 
   return {
     desktop, style, interactionRef,
-    pinned: layout.position !== null,
+    pinned: layout.pinned,
     moveHandle: handle('move'),
     resizeHandle: handle('resize'),
     reset: () => save(DEFAULT_LAYOUT),
     togglePin: () => {
       const rect = toolbarRef.current?.getBoundingClientRect();
       if (!rect) return;
-      save({ ...layout, position: layout.position ? null : { left: rect.left, top: rect.top } });
+      save({
+        ...layout,
+        pinned: !layout.pinned,
+        position: layout.pinned ? null : { left: rect.left, top: rect.top },
+      });
     },
   };
 }

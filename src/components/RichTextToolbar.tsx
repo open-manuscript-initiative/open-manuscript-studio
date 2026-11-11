@@ -84,7 +84,9 @@ export function RichTextToolbar({
   const [languageDraft, setLanguageDraft] = useState(manuscriptLanguage);
   const [languageError, setLanguageError] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const floating = useSelectionToolbarLayout(toolbarRef, position);
+  const floating = useSelectionToolbarLayout(
+    toolbarRef, position, `${editor.state.selection.from}:${editor.state.selection.to}`,
+  );
   const { interactionRef } = floating;
 
   useEffect(() => {
