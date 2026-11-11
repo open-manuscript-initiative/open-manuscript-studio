@@ -224,35 +224,101 @@
 }
 
 @media (min-width: 761px) {
-  .omi-rich-text-toolbar--expanded,
-  .omi-rich-text-toolbar--expanded.omi-rich-text-toolbar--below {
-    left: auto !important;
-    right: 1rem;
-    top: 5rem !important;
-    width: min(21rem, calc(100vw - 2rem));
-    max-width: min(21rem, calc(100vw - 2rem));
-    max-height: calc(100dvh - 6rem);
+  .omi-rich-text-toolbar,
+  .omi-rich-text-toolbar--below {
+    display: flex;
+    flex-direction: column;
+    max-width: calc(100vw - 1.5rem);
     transform: none;
-    overflow: hidden;
-    border-radius: 0.55rem;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+    overflow: visible;
   }
 
-  .omi-rich-text-toolbar--expanded .omi-rich-text-toolbar-row {
-    position: sticky;
-    top: 0;
-    z-index: 2;
+  .omi-rich-text-toolbar > * {
     flex: 0 0 auto;
-    border-bottom: 1px solid var(--omi-editor-border);
-    background: var(--omi-editor-surface);
   }
 
-  .omi-rich-text-toolbar--expanded .omi-rich-text-popover {
+  .omi-rich-text-toolbar-row {
+    flex-wrap: wrap;
+  }
+
+  .omi-rich-text-toolbar .omi-rich-text-popover {
     width: 100%;
-    max-height: calc(100dvh - 9rem);
-    border-top: 0;
-    border-radius: 0 0 0.55rem 0.55rem;
-    padding: 0.6rem;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .omi-rich-text-more-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .omi-rich-text-more-menu .omi-rich-text-language-editor {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .omi-rich-text-more-menu .omi-rich-text-symbols {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .omi-rich-text-symbol-grid {
+    grid-template-columns: repeat(auto-fit, minmax(2rem, 1fr));
+  }
+
+  .omi-rich-text-toolbar-placement {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.2rem 0.35rem;
+    border-bottom: 1px solid var(--omi-editor-border);
+    color: var(--omi-editor-text-muted);
+  }
+
+  .omi-rich-text-toolbar-placement button,
+  .omi-rich-text-toolbar-resize {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 1.75rem;
+    padding: 0.2rem 0.4rem;
+    border: 0;
+    border-radius: 0.35rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+
+  .omi-rich-text-toolbar-placement button:hover,
+  .omi-rich-text-toolbar-placement button[aria-pressed="true"] {
+    background: var(--omi-editor-surface-hover);
+    color: var(--omi-editor-accent);
+  }
+
+  .omi-rich-text-toolbar-placement .omi-rich-text-toolbar-move {
+    flex: 1;
+    justify-content: flex-start;
+    cursor: move;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .omi-rich-text-toolbar-resize-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+  }
+
+  .omi-rich-text-toolbar-resize {
+    min-height: 1.25rem;
+    cursor: nwse-resize;
+    touch-action: none;
+    user-select: none;
   }
 }
 

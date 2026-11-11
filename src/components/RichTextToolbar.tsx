@@ -1,12 +1,15 @@
 import type { Editor } from '@tiptap/core';
+import { Grip, MoveDiagonal2, Pin, PinOff, RotateCcw } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import {
   useEffect,
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type ReactNode,
 } from 'react';
+
+import { useSelectionToolbarLayout } from './useSelectionToolbarLayout';
 
 import { getRichTextCopy } from '../i18n/richText';
 import type { SupportedLocale } from '../i18n/types';
@@ -81,6 +84,8 @@ export function RichTextToolbar({
   const [languageDraft, setLanguageDraft] = useState(manuscriptLanguage);
   const [languageError, setLanguageError] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const floating = useSelectionToolbarLayout(toolbarRef, position);
+  const { interactionRef } = floating;
 
   useEffect(() => {
     const editorDom = editor.view.dom;
@@ -136,7 +141,7 @@ export function RichTextToolbar({
     // both DOM selection and ProseMirror state, and never open another editor's menu.
     const syncSelectionToolbar = () => {
       selectionTimer = null;
-      if (editor.isDestroyed || selecting || toolbarHasFocus()) return;
+      if (editor.isDestroyed || selecting || toolbarHasFocus() || interactionRef.current) return;
       const selection = editorDom.ownerDocument.getSelection();
       const ownsSelection = Boolean(selection?.anchorNode && selection.focusNode
         && editorDom.contains(selection.anchorNode) && editorDom.contains(selection.focusNode));
@@ -277,7 +282,7 @@ export function RichTextToolbar({
         editorDom.style.removeProperty('-webkit-touch-callout');
       }
     };
-  }, [editor]);
+  }, [editor, interactionRef]);
 
   const currentLanguage = useMemo(() => {
     void revision;
@@ -303,11 +308,6 @@ export function RichTextToolbar({
   if (!position) {
     return null;
   }
-
-  const style = {
-    left: `${position.left}px`,
-    top: `${position.top}px`,
-  } as CSSProperties;
 
   function keepEditorSelection(event: React.MouseEvent<HTMLButtonElement>): void {
     event.preventDefault();
@@ -392,17 +392,51 @@ export function RichTextToolbar({
 
   const expanded = moreOpen || linkOpen;
 
-  return (
+  return createPortal(
     <div
       ref={toolbarRef}
       className={`omi-rich-text-toolbar${
         position.below ? ' omi-rich-text-toolbar--below' : ''
       }${expanded ? ' omi-rich-text-toolbar--expanded' : ''}`}
-      style={style}
+      style={floating.style}
       role="toolbar"
       aria-label={copy.toolbar}
       data-selection-length={editor.state.selection.to - editor.state.selection.from}
+      data-pinned={floating.desktop && floating.pinned}
     >
+      {floating.desktop ? (
+        <div className="omi-rich-text-toolbar-placement">
+          <button
+            type="button"
+            className="omi-rich-text-toolbar-move"
+            aria-label={copy.moveToolbar}
+            title={copy.moveToolbar}
+            {...floating.moveHandle}
+          >
+            <Grip size={14} aria-hidden="true" />
+            <span>{copy.toolbar}</span>
+          </button>
+          <button
+            type="button"
+            aria-label={copy.pinToolbar}
+            title={floating.pinned ? copy.unpinToolbar : copy.pinToolbar}
+            aria-pressed={floating.pinned}
+            onMouseDown={keepEditorSelection}
+            onClick={floating.togglePin}
+          >
+            {floating.pinned ? <PinOff size={14} aria-hidden="true" /> : <Pin size={14} aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            aria-label={copy.resetToolbar}
+            title={copy.resetToolbar}
+            onMouseDown={keepEditorSelection}
+            onClick={floating.reset}
+          >
+            <RotateCcw size={14} aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
       <div className="omi-rich-text-toolbar-row">
         <ToolbarButton
           label={copy.bold}
@@ -598,7 +632,21 @@ export function RichTextToolbar({
           </div>
         </div>
       ) : null}
-    </div>
+      {floating.desktop ? (
+        <div className="omi-rich-text-toolbar-resize-row">
+          <button
+            type="button"
+            className="omi-rich-text-toolbar-resize"
+            aria-label={copy.resizeToolbar}
+            title={copy.resizeToolbar}
+            {...floating.resizeHandle}
+          >
+            <MoveDiagonal2 size={14} aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
+    </div>,
+    document.body,
   );
 }
 

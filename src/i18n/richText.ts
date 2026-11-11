@@ -29,6 +29,11 @@ export interface RichTextCopy {
   specialCharacters: string;
   clearMarks: string;
   toolbar: string;
+  moveToolbar: string;
+  resizeToolbar: string;
+  pinToolbar: string;
+  unpinToolbar: string;
+  resetToolbar: string;
 }
 
 const COPY: Record<CoreLocale, RichTextCopy> = {
@@ -60,6 +65,11 @@ const COPY: Record<CoreLocale, RichTextCopy> = {
     specialCharacters: 'Special characters',
     clearMarks: 'Clear inline formatting',
     toolbar: 'Semantic text tools',
+    moveToolbar: 'Move toolbar (drag or use arrow keys)',
+    resizeToolbar: 'Resize toolbar (drag or use arrow keys)',
+    pinToolbar: 'Pin toolbar position',
+    unpinToolbar: 'Follow text selection',
+    resetToolbar: 'Reset toolbar size and position',
   },
   hu: {
     bold: 'Félkövér / kiemelt',
@@ -89,6 +99,11 @@ const COPY: Record<CoreLocale, RichTextCopy> = {
     specialCharacters: 'Speciális karakterek',
     clearMarks: 'Sorközi formázás törlése',
     toolbar: 'Szemantikus szövegeszközök',
+    moveToolbar: 'Menü áthelyezése (húzással vagy nyílbillentyűkkel)',
+    resizeToolbar: 'Menü átméretezése (húzással vagy nyílbillentyűkkel)',
+    pinToolbar: 'Menü helyének rögzítése',
+    unpinToolbar: 'Kijelölés követése',
+    resetToolbar: 'Menü méretének és helyének alaphelyzetbe állítása',
   },
   de: {
     bold: 'Fett / stark',
@@ -118,6 +133,11 @@ const COPY: Record<CoreLocale, RichTextCopy> = {
     specialCharacters: 'Sonderzeichen',
     clearMarks: 'Inline-Formatierung entfernen',
     toolbar: 'Semantische Textwerkzeuge',
+    moveToolbar: 'Werkzeugleiste verschieben (ziehen oder Pfeiltasten)',
+    resizeToolbar: 'Werkzeugleiste skalieren (ziehen oder Pfeiltasten)',
+    pinToolbar: 'Position der Werkzeugleiste fixieren',
+    unpinToolbar: 'Textauswahl folgen',
+    resetToolbar: 'Größe und Position der Werkzeugleiste zurücksetzen',
   },
 };
 
