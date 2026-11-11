@@ -1,0 +1,35 @@
+name: Remaining core requirement evidence
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/coreRemainingCases.ts'
+      - 'tests/core-remaining.test.ts'
+      - 'tests/testManuscriptFixture.ts'
+      - 'tests/*loader*'
+      - 'scripts/verify-core-remaining.ts'
+      - 'scripts/check-core-import-boundaries.mjs'
+      - 'package*.json'
+      - '.github/workflows/core-remaining.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  remaining:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:core-remaining
+      - run: npm run evidence:core-remaining -- --report test-results/core-remaining.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-remaining-evidence
+          path: test-results/core-remaining.json
+          retention-days: 30

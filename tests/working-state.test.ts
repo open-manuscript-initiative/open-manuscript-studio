@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+test('pending and checkpoint event extensions detach identity maps from mutable inputs', () => {
+  const extensions = { 'https://openmanuscript.org/extensions/block-identity-mapping/1': { sourceBlockIds: ['a'], targetBlockIds: ['a', 'b'] } };
+  const pending = stagePendingChanges(null, { baseRevisionId: 'root', summary: 'Split',
+    events: [{ operation: 'block.content.set', targetId: 'b', nextValue: 'Right', extensions }], cloneEventValues: false });
+  extensions['https://openmanuscript.org/extensions/block-identity-mapping/1'].targetBlockIds.push('injected');
+  const checkpoint = createCheckpointDescriptor(pending);
+  assert.deepEqual(checkpoint.events[0]?.extensions, { 'https://openmanuscript.org/extensions/block-identity-mapping/1': { sourceBlockIds: ['a'], targetBlockIds: ['a', 'b'] } });
+  (pending.events[0]!.extensions!['https://openmanuscript.org/extensions/block-identity-mapping/1'] as { targetBlockIds: string[] }).targetBlockIds.push('later');
+  assert.ok(!JSON.stringify(checkpoint).includes('later'));
+});
+
 import {
   createCheckpointDescriptor,
   stagePendingChanges,
