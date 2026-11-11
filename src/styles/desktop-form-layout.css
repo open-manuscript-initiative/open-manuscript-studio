@@ -345,6 +345,31 @@
     margin: 0;
   }
 
+  /* Wrap each card's contents before its text or actions become cramped. */
+  .studio-menu-view--document > .studio-tool-card {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .studio-menu-view--document > .studio-tool-card > div:not(.studio-tool-actions) {
+    flex: 1 1 16rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .studio-menu-view--document > .studio-tool-card > .studio-tool-actions {
+    flex: 0 1 auto;
+  }
+
+  .studio-menu-view--document > .studio-tool-card[data-document-cloud-backup="true"] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .studio-menu-view--document > .studio-tool-card[data-document-cloud-backup="true"] > div:not(.studio-tool-actions) {
+    flex: 0 1 auto;
+  }
+
   .studio-menu-view--tools > .studio-technical-details {
     grid-column: 1 / -1;
     margin-top: 0;
@@ -481,6 +506,16 @@
 @container (min-width: 1000px) {
   .studio-menu-content .studio-menu-view--document {
     grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  /* Every panel needs a span; implicit one-track cards are too narrow. */
+  .studio-menu-content .studio-menu-view--document > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .studio-menu-content .studio-menu-view--document > .studio-tool-card {
+    grid-column: span 6;
   }
 
   .studio-menu-content .studio-menu-view--document > .omi-new-document-actions {

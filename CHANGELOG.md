@@ -1,3 +1,16 @@
+## 1.0.0-rc.2 — 2026-11-11 (prepared; publication acceptance pending)
+
+- Fix the desktop Document menu: local/shared-device saving and cloud backup
+  panels occupy readable grid columns instead of a single narrow track. Text and
+  compact action buttons wrap within each panel; import cards retain their layout.
+- Keep expanded cloud backup controls together inside their panel, with saved
+  documents spanning the full menu width.
+- Advance web/desktop/Android to **1.0.0-rc.2**, Windows MSI and Store MSIX to
+  **1.0.1.0**, Android APK floor to **1359**, the Android Release run offset to
+  **1203**, and the experimental iOS build to **27**.
+- See [RC2 package and acceptance notes](docs/release/1.0.0-rc.2.md). Existing
+  publication gates and the portable **OMI-SPEC-320@0.3.0** format are unchanged.
+
 ## Unreleased — Translation and Validation Models
 
 - Version privacy/account-copy endpoints under `/api/v1` with shared legacy
