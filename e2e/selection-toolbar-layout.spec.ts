@@ -6,19 +6,31 @@ async function selectText(editor: Locator) {
   await editor.focus();
   await editor.evaluate((element) => {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const nodes: Text[] = [];
+    let text = '';
     while (walker.nextNode()) {
       const node = walker.currentNode as Text;
-      const start = node.data.indexOf('Select these words');
-      if (start < 0) continue;
-      const range = document.createRange();
-      range.setStart(node, start);
-      range.setEnd(node, start + 'Select these words'.length);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-      return;
+      nodes.push(node);
+      text += node.data;
     }
-    throw new Error('Fixture text is missing');
+    const start = text.indexOf('Select these words');
+    if (start < 0) throw new Error('Fixture text is missing');
+    // Proofreading decorations and formatting can split a phrase across nodes.
+    const pointAt = (offset: number): [Text, number] => {
+      for (const node of nodes) {
+        if (offset <= node.length) return [node, offset];
+        offset -= node.length;
+      }
+      throw new Error('Selection offset is outside the fixture');
+    };
+    const [fromNode, fromOffset] = pointAt(start);
+    const [toNode, toOffset] = pointAt(start + 'Select these words'.length);
+    const range = document.createRange();
+    range.setStart(fromNode, fromOffset);
+    range.setEnd(toNode, toOffset);
+    const selection = document.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
   });
 }
 
@@ -29,6 +41,7 @@ async function openToolbar(page: Page) {
   const editor = page.locator('.omi-continuous-tiptap-editor[contenteditable="true"]').first();
   await editor.click();
   await page.keyboard.insertText('Select these words to format them.');
+  await expect(editor).toContainText('Select these words to format them.');
   await selectText(editor);
   const toolbar = page.locator('.omi-rich-text-toolbar');
   await expect(toolbar).toBeVisible();
@@ -101,7 +114,8 @@ test('dragging and resizing remember the panel without losing the text selection
   await expectNoScrollbars(toolbar);
   await expect(toolbar).toHaveAttribute('data-selection-length', selectionLength!);
   await toolbar.getByRole('button', { name: 'Bold / strong', exact: true }).click();
-  await expect(editor.locator('strong')).toContainText('Select these words');
+  await expect.poll(async () => (await editor.locator('strong').allTextContents()).join(''))
+    .toContain('Select these words');
 
   await editor.press('Escape');
   await expect(toolbar).toHaveCount(0);

@@ -115,7 +115,7 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
     (element) => Number.parseFloat(getComputedStyle(element).width),
   )).toBeGreaterThan(2);
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-  const textToTable = activeHtmlSection.getByRole('button', {
+  const textToTable = menu.getByRole('toolbar', { name: 'Semantic text tools', exact: true }).getByRole('button', {
     name: 'Convert text to table',
     exact: true,
   });

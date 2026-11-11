@@ -646,7 +646,9 @@ export function RichTextToolbar({
         </div>
       ) : null}
     </div>,
-    document.body,
+    // Keep the panel in the active modal's accessibility/focus scope, outside
+    // the zoomed publication canvas that otherwise changes fixed coordinates.
+    editor.view.dom.closest('[role="dialog"], dialog') ?? document.body,
   );
 }
 
