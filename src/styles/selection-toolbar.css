@@ -82,7 +82,20 @@
   outline-offset: 1px;
 }
 
-@media (max-width: 640px) {
+@media (min-width: 761px) {
+  .omi-selection-action-toolbar {
+    flex-wrap: wrap;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  .omi-selection-table-conversion {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
   .omi-selection-action-toolbar {
     width: 100%;
     max-width: 100%;

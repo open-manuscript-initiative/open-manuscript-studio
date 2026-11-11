@@ -102,7 +102,9 @@ jobs:
         run: npm run test:release-hardening
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps --only-shell chromium
+        # Hosted runners already provide Chromium's runtime libraries. Avoid an
+        # unrelated apt/font download blocking browser installation on DNS outages.
+        run: npx playwright install --only-shell chromium
 
       - name: Run browser smoke tests
         run: npm run test:e2e
@@ -278,7 +280,8 @@ jobs:
         env:
           DEMO_BASE_PATH: /collaboration-demo/
       - name: Install Playwright browser
-        run: npx playwright install --with-deps --only-shell chromium
+        # Use the runner's runtime libraries and Playwright's matching browser.
+        run: npx playwright install --only-shell chromium
       - name: Run two-browser collaboration tests
         run: npm run test:e2e
         env:
