@@ -3,7 +3,7 @@ import {
   findManuscriptBlock,
   type ManuscriptBlockLocation,
 } from '../model/manuscriptEditingOrder';
-import { extractManuscriptState, type CreateChangeEventInput } from '../model/versioning';
+import { BLOCK_IDENTITY_MAPPING_EXTENSION, extractManuscriptState, type CreateChangeEventInput } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
 import type { OmiBlock, OmiManuscriptState } from '../types/omi';
 import { useStudioStore } from './useStudioStore';
@@ -73,6 +73,10 @@ export function splitParagraphBlock(
           targetId: newBlock.id,
           path: `/blocks/${newBlock.id}/content`,
           nextValue: rightContent,
+          extensions: { [BLOCK_IDENTITY_MAPPING_EXTENSION]: {
+            version: '0.1.0', operation: 'split', sourceBlockIds: [blockId],
+            targetBlockIds: [blockId, newBlock.id], preservedBlockId: blockId,
+          } },
         },
       ],
     );
@@ -156,6 +160,10 @@ function mergeAdjacentParagraph(
           targetId: removed.id,
           path: `/blocks/${removed.id}`,
           previousValue: removed,
+          extensions: { [BLOCK_IDENTITY_MAPPING_EXTENSION]: {
+            version: '0.1.0', operation: 'merge', sourceBlockIds: [first.id, second.id],
+            targetBlockIds: [survivor.id], preservedBlockId: survivor.id,
+          } },
         },
       ],
     );

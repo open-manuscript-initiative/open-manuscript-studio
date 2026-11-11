@@ -150,6 +150,7 @@ function coalesceEvents(
     result[index] = {
       ...previous,
       nextValue: cloneEventValue(event.nextValue, cloneEventValues),
+      ...(event.extensions ? { extensions: cloneEventPayload(event.extensions) } : {}),
     };
   }
 
@@ -202,6 +203,7 @@ function cloneEvent(
     ...event,
     previousValue: cloneEventValue(event.previousValue, cloneEventValues),
     nextValue: cloneEventValue(event.nextValue, cloneEventValues),
+    ...(event.extensions ? { extensions: cloneEventPayload(event.extensions) } : {}),
   };
 }
 

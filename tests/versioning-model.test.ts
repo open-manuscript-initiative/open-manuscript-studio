@@ -150,6 +150,20 @@ test('creates a valid immutable root revision for a new manuscript', () => {
   );
 });
 
+test('committed event identity maps are detached and survive portable history exchange', () => {
+  const manuscript = createManuscript();
+  const extensions = { 'https://openmanuscript.org/extensions/block-identity-mapping/1': {
+    version: '0.1.0', operation: 'split', sourceBlockIds: ['source'], targetBlockIds: ['source', 'new'], preservedBlockId: 'source',
+  } };
+  const committed = commitManuscriptRevision(manuscript, extractManuscriptState(manuscript), {
+    summary: 'Recorded identity provenance', events: [{ operation: 'block.content.set', targetId: 'new', nextValue: 'Text', extensions }],
+  });
+  extensions['https://openmanuscript.org/extensions/block-identity-mapping/1'].targetBlockIds.push('mutated');
+  const event = committed.revisionHistory.revisions.at(-1)!.changeSet.events[0]!;
+  assert.ok(!JSON.stringify(event).includes('mutated'));
+  assert.ok(serializeOmiJson(committed).includes('block-identity-mapping/1'));
+});
+
 test('keeps nested root-revision data detached without serializing the full state', () => {
   const state = {
     ...createState(),

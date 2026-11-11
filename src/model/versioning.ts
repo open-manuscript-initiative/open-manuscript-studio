@@ -20,6 +20,10 @@ export type RevisionId = string;
 export type ChangeSetId = string;
 export type ChangeEventId = string;
 
+/** Studio extension, not a new OMI-SPEC-160 normative operation or wire version. */
+export const BLOCK_IDENTITY_MAPPING_EXTENSION =
+  'https://openmanuscript.org/extensions/block-identity-mapping/1';
+
 export type OmiHistoryCompleteness =
   | 'complete'
   | 'shallow';
@@ -72,6 +76,8 @@ export interface OmiChangeEvent {
   previousValue?: unknown;
   nextValue?: unknown;
   createdAt: string;
+  /** Versioned implementation-specific provenance retained with the event. */
+  extensions?: Record<string, unknown>;
 }
 
 export interface OmiChangeSet {
@@ -118,6 +124,7 @@ export interface CreateChangeEventInput {
   path?: string;
   previousValue?: unknown;
   nextValue?: unknown;
+  extensions?: Record<string, unknown>;
 }
 
 export interface CreateInitialHistoryInput {
@@ -428,6 +435,7 @@ function createChangeSet(
       path: event.path,
       previousValue: clonePortableValue(event.previousValue),
       nextValue: clonePortableValue(event.nextValue),
+      ...(event.extensions ? { extensions: clonePortableValue(event.extensions) as Record<string, unknown> } : {}),
       createdAt: timestamp,
     })),
   };

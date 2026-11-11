@@ -1,5 +1,7 @@
 const RELATIVE_SPECIFIER = /^(?:\.\.?\/)/;
 const EXPLICIT_EXTENSION = /\.[cm]?[jt]sx?(?:[?#].*)?$/i;
+import { readFile } from 'node:fs/promises';
+import ts from 'typescript';
 
 /**
  * Node's native ESM resolver does not infer `.ts` for the extensionless source
@@ -30,10 +32,12 @@ export async function resolve(specifier, context, nextResolve) {
       RELATIVE_SPECIFIER.test(specifier) &&
       !EXPLICIT_EXTENSION.test(specifier)
     ) {
-      try {
-        return await nextResolve(`${specifier}.ts`, context);
-      } catch {
-        // Preserve Node's original resolution error below.
+      for (const extension of ['.ts', '.tsx', '/index.ts', '/index.tsx']) {
+        try {
+          return await nextResolve(`${specifier}${extension}`, context);
+        } catch {
+          // Preserve Node's original resolution error below.
+        }
       }
     }
 
@@ -42,6 +46,18 @@ export async function resolve(specifier, context, nextResolve) {
 }
 
 export async function load(url, context, nextLoad) {
+  // Collaboration initialization imports the real visual-node extension. Node
+  // strips TypeScript but cannot parse its JSX, so compile only TSX modules in
+  // this test loader, using the same React JSX mode as the production tsconfig.
+  if (url.endsWith('.tsx')) {
+    const source = await readFile(new URL(url), 'utf8');
+    return {
+      format: 'module', shortCircuit: true,
+      source: ts.transpileModule(source, { fileName: new URL(url).pathname,
+        compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX },
+      }).outputText,
+    };
+  }
   if (url.endsWith('.css')) {
     return {
       format: 'module',
