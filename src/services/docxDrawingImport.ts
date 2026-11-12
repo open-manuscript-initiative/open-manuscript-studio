@@ -68,7 +68,7 @@ export async function prepareWordDrawings(
   // Keep the monograph fast path allocation-free for ordinary documents.
   if (!/(?:AlternateContent|txbxContent|srcRect)\b/.test(xml))
     return { xml, images, warnings };
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const doc = new DOMParser().parseFromString(xml, "text/xml");
   if (doc.getElementsByTagName("parsererror").length)
     return { xml, images, warnings };
   selectAlternateDrawings(doc);
@@ -84,7 +84,7 @@ export async function prepareWordDrawings(
   const styleDocument = archive.has("word/styles.xml")
     ? new DOMParser().parseFromString(
         await archive.text("word/styles.xml"),
-        "application/xml",
+        "text/xml",
       )
     : undefined;
   const styles = new Map<string, Element>();
@@ -418,7 +418,7 @@ function normalizeVmlTextBoxes(doc: Document): void {
           "#ffffff");
     const markup = `<wp:anchor xmlns:wp="${WP}" xmlns:a="${A}" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" relativeHeight="${Number(css.get("z-index")) || 0}"><wp:positionH relativeFrom="${css.get("mso-position-horizontal-relative") === "page" ? "page" : "column"}"><wp:posOffset>${Math.round(x * EMU)}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="${css.get("mso-position-vertical-relative") === "page" ? "page" : "paragraph"}"><wp:posOffset>${Math.round(y * EMU)}</wp:posOffset></wp:positionV><wp:extent cx="${Math.round(width * EMU)}" cy="${Math.round(height * EMU)}"/><wps:wsp><wps:spPr><a:xfrm rot="${Math.round((Number(css.get("rotation")) || 0) * 60000)}"/>${fill ? `<a:solidFill><a:srgbClr val="${fill.slice(1)}"/></a:solidFill>` : ""}</wps:spPr><wps:txbx/><wps:bodyPr lIns="${Math.round((inset[0] ?? 0) * EMU)}" tIns="${Math.round((inset[1] ?? 0) * EMU)}" rIns="${Math.round((inset[2] ?? 0) * EMU)}" bIns="${Math.round((inset[3] ?? 0) * EMU)}"/></wps:wsp></wp:anchor>`;
     const anchor = doc.importNode(
-      new DOMParser().parseFromString(markup, "application/xml")
+      new DOMParser().parseFromString(markup, "text/xml")
         .documentElement,
       true,
     ) as Element;
@@ -807,7 +807,7 @@ async function readTheme(archive: Archive): Promise<Map<string, string>> {
   if (!archive.has("word/theme/theme1.xml")) return result;
   const doc = new DOMParser().parseFromString(
     await archive.text("word/theme/theme1.xml"),
-    "application/xml",
+    "text/xml",
   );
   for (const kind of ["major", "minor"]) {
     const font = elements(doc, A, `${kind}Font`)[0];
