@@ -83,6 +83,14 @@
 - Document profile scope and remaining canonical translation/publication work in
   `docs/omi-spec-170-translation-model.md`; upstream 170 remains Reserved.
 
+- Add separately activated Family Trees and Relationship Networks modules sharing
+  a user/workspace-scoped, editable research graph. Import core GEDCOM 5.5/5.5.1/7
+  with an explicit preview, merge or replace choice, original-file preservation,
+  Unicode/selected Windows encodings and parentage validation. Edit people,
+  institutions, sources and dated relationships; drag, focus and zoom diagrams.
+  Save locally, exchange editable JSON, export SVG/CSV and insert a diagram
+  snapshot into a manuscript. See [genealogy modules](docs/genealogy-networks.md).
+
 ## 0.3.0-beta.13 — 2026-10-31 (prepared; release gates pending)
 
 - Consolidates nine merged implementation-stabilization stages (PRs #786, #788–#795): core and notes, history, citations, containers, collaboration/review, publication, import/export, capability claims and extension API boundaries.

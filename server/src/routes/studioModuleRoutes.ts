@@ -9,6 +9,8 @@ import { writeStudioModuleAuditEvent } from '../services/studioModuleAuditServic
 export const studioModuleRouter = Router();
 
 const MODULE_IDS = [
+  'org.omi.genealogy',
+  'org.omi.relationship-networks',
   'org.omi.history-archives',
   'org.omi.religious-texts',
   'org.omi.critical-text-edition',

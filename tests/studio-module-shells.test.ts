@@ -38,6 +38,8 @@ before(async () => {
 });
 
 const expectedModuleIds = [
+  'org.omi.genealogy',
+  'org.omi.relationship-networks',
   'org.omi.history-archives',
   'org.omi.religious-texts',
   'org.omi.critical-text-edition',

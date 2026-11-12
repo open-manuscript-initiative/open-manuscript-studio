@@ -1,3 +1,4 @@
+import { genealogyModule, relationshipNetworkModule } from './genealogy/index';
 import { moduleManifest as psychologyModule } from './psychology/index';
 import { moduleManifest as medicalSciencesModule } from './medical-sciences/index';
 import { moduleManifest as mathematicsModule } from './mathematics/index';
@@ -19,6 +20,8 @@ import { StudioModuleRegistry } from './registry';
 import type { StudioModuleInstallationPolicy } from './types';
 
 export {
+  genealogyModule,
+  relationshipNetworkModule,
   historyArchivesModule,
   religiousTextsModule,
   criticalTextEditionModule,
@@ -39,6 +42,8 @@ export {
 };
 
 export const builtinModuleManifests = [
+  genealogyModule,
+  relationshipNetworkModule,
   historyArchivesModule,
   religiousTextsModule,
   criticalTextEditionModule,

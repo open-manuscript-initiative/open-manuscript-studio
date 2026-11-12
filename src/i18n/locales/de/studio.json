@@ -1398,6 +1398,16 @@
             "description": "CSV/TSV-Datensätze importieren und deskriptive Statistik, Welch-Tests, einfaktorielle ANOVA sowie lineare Regression mit reproduzierbaren JSON-Berichten durchführen.",
             "overview": "Arbeitsbereich Statistik",
             "title": "Statistik und Datenanalyse"
+          },
+          "org.omi.genealogy": {
+            "title": "Stammbäume und Genealogie",
+            "overview": "Stammbaum-Arbeitsbereich",
+            "description": "GEDCOM-Stammbäume importieren sowie Personen, Abstammung, Partner, Daten und Quellen bearbeiten."
+          },
+          "org.omi.relationship-networks": {
+            "title": "Beziehungsnetzwerke",
+            "overview": "Netzwerk-Arbeitsbereich",
+            "description": "Persönliche, institutionelle, wissenschaftliche und Förderbeziehungen mit gemeinsamen Genealogiedaten darstellen und bearbeiten."
           }
         },
         "nara": {

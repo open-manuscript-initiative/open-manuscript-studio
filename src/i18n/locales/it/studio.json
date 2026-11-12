@@ -1398,6 +1398,16 @@
             "description": "Importa set di dati CSV/TSV ed esegui statistiche descrittive, test di Welch, ANOVA a una via e regressione lineare con report JSON riproducibili.",
             "overview": "Area di lavoro per l'analisi statistica",
             "title": "Analisi statistica e dati"
+          },
+          "org.omi.genealogy": {
+            "title": "Alberi genealogici e genealogia",
+            "overview": "Spazio di lavoro genealogico",
+            "description": "Importare alberi GEDCOM e modificare persone, filiazioni, coppie, date e fonti."
+          },
+          "org.omi.relationship-networks": {
+            "title": "Reti di relazioni",
+            "overview": "Spazio di lavoro delle relazioni",
+            "description": "Rappresentare e modificare relazioni personali, istituzionali, scientifiche e di patronato con dati genealogici condivisi."
           }
         },
         "nara": {
