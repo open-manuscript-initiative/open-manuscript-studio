@@ -1,3 +1,4 @@
+import { DOMParser as XmlParser, XMLSerializer as XmlSerializer, type Node as XmlNode } from "@xmldom/xmldom";
 import type { DocxImportWarning } from "../model/docxImport";
 import type { OmiImageBlockData, OmiTextBox } from "../types/omi";
 
@@ -8,6 +9,19 @@ const A = "http://schemas.openxmlformats.org/drawingml/2006/main";
 const MC = "http://schemas.openxmlformats.org/markup-compatibility/2006";
 const R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 const EMU = 9525; // 96 CSS pixels per inch
+
+/** Parse Office XML with a non-HTML parser; malformed packages are left untouched. */
+function parseWordXml(source: string): Document | undefined {
+  try {
+    return new XmlParser({
+      onError: () => {
+        throw new Error("Invalid Office XML");
+      },
+    }).parseFromString(source, "application/xml") as unknown as Document;
+  } catch {
+    return undefined;
+  }
+}
 
 export type WordDrawingImage = Omit<OmiImageBlockData, "kind"> & {
   sourcePart: string;
@@ -68,11 +82,8 @@ export async function prepareWordDrawings(
   // Keep the monograph fast path allocation-free for ordinary documents.
   if (!/(?:AlternateContent|txbxContent|srcRect)\b/.test(xml))
     return { xml, images, warnings };
-  // The inert XML DOM is inspected and serialized as XML; its nodes are never attached to the live HTML DOM.
-  // codeql[js/xss-through-dom]
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
-  if (doc.getElementsByTagName("parsererror").length)
-    return { xml, images, warnings };
+  const doc = parseWordXml(xml);
+  if (!doc) return { xml, images, warnings };
   selectAlternateDrawings(doc);
   normalizeVmlTextBoxes(doc);
   const anchors = [
@@ -84,10 +95,7 @@ export async function prepareWordDrawings(
 
   const theme = await readTheme(archive);
   const styleDocument = archive.has("word/styles.xml")
-    ? new DOMParser().parseFromString(
-        await archive.text("word/styles.xml"),
-        "application/xml",
-      )
+    ? parseWordXml(await archive.text("word/styles.xml"))
     : undefined;
   const styles = new Map<string, Element>();
   if (styleDocument)
@@ -419,11 +427,10 @@ function normalizeVmlTextBoxes(doc: Document): void {
         : (hex(shape.getAttribute("fillcolor")?.replace(/^#/, "")) ??
           "#ffffff");
     const markup = `<wp:anchor xmlns:wp="${WP}" xmlns:a="${A}" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" relativeHeight="${Number(css.get("z-index")) || 0}"><wp:positionH relativeFrom="${css.get("mso-position-horizontal-relative") === "page" ? "page" : "column"}"><wp:posOffset>${Math.round(x * EMU)}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="${css.get("mso-position-vertical-relative") === "page" ? "page" : "paragraph"}"><wp:posOffset>${Math.round(y * EMU)}</wp:posOffset></wp:positionV><wp:extent cx="${Math.round(width * EMU)}" cy="${Math.round(height * EMU)}"/><wps:wsp><wps:spPr><a:xfrm rot="${Math.round((Number(css.get("rotation")) || 0) * 60000)}"/>${fill ? `<a:solidFill><a:srgbClr val="${fill.slice(1)}"/></a:solidFill>` : ""}</wps:spPr><wps:txbx/><wps:bodyPr lIns="${Math.round((inset[0] ?? 0) * EMU)}" tIns="${Math.round((inset[1] ?? 0) * EMU)}" rIns="${Math.round((inset[2] ?? 0) * EMU)}" bIns="${Math.round((inset[3] ?? 0) * EMU)}"/></wps:wsp></wp:anchor>`;
-    const anchor = doc.importNode(
-      new DOMParser().parseFromString(markup, "application/xml")
-        .documentElement,
-      true,
-    ) as Element;
+    const anchorDocument = parseWordXml(markup);
+    const anchorRoot = anchorDocument?.documentElement;
+    if (!anchorRoot) continue;
+    const anchor = doc.importNode(anchorRoot, true) as Element;
     descendants(anchor, "txbx")[0]!.appendChild(content);
     shape.parentNode.replaceChild(anchor, shape);
   }
@@ -807,10 +814,8 @@ async function readTheme(archive: Archive): Promise<Map<string, string>> {
     ["tx1", "#000000"],
   ]);
   if (!archive.has("word/theme/theme1.xml")) return result;
-  const doc = new DOMParser().parseFromString(
-    await archive.text("word/theme/theme1.xml"),
-    "application/xml",
-  );
+  const doc = parseWordXml(await archive.text("word/theme/theme1.xml"));
+  if (!doc) return result;
   for (const kind of ["major", "minor"]) {
     const font = elements(doc, A, `${kind}Font`)[0];
     const family = font
@@ -1087,7 +1092,9 @@ function dataUrl(bytes: Uint8Array, type: string): string {
   return `data:${type};base64,${btoa(binary)}`;
 }
 function serialize(doc: Document): string {
-  return new XMLSerializer().serializeToString(doc);
+  return new XmlSerializer().serializeToString(
+    doc as unknown as XmlNode,
+  );
 }
 function escapeXml(value: string): string {
   return value
