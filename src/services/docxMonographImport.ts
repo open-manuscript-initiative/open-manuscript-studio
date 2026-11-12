@@ -1,3 +1,4 @@
+import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
 import {
   createEmptyDocxImportStats,
   detectKeywordLine,
@@ -89,7 +90,9 @@ export async function parseDocxMonograph(
   const core = archive.has('docProps/core.xml')
     ? parseCoreProperties(await archive.text('docProps/core.xml'))
     : {};
-  const documentXml = await archive.text('word/document.xml');
+  const drawings = await prepareWordDrawings(await archive.text('word/document.xml'), archive, relationships);
+  const documentXml = drawings.xml;
+  warnings.push(...drawings.warnings);
 
   if (/<w:commentReference\b/i.test(documentXml)) {
     warnings.push(makeWarning('comments-not-imported', 'Word comments are not imported in large-document mode.'));
@@ -201,7 +204,7 @@ export async function parseDocxMonograph(
       }
     }
 
-    const visuals = await extractImages(paragraphXml, archive, relationships, provenance, stats);
+    const visuals = await extractImages(paragraphXml, archive, relationships, provenance, stats, drawings.images);
     const blockId = crypto.randomUUID();
     const inline = parseInline(
       paragraphXml,
@@ -370,11 +373,19 @@ async function extractImages(
   relationships: ReadonlyMap<string, Relationship>,
   provenance: OmiImportProvenance,
   stats: ReturnType<typeof createEmptyDocxImportStats>,
+  composedImages: ReadonlyMap<string, WordDrawingImage>,
 ): Promise<OmiBlock[]> {
   const blocks: OmiBlock[] = [];
   const seen = new Set<string>();
   for (const match of paragraphXml.matchAll(/<a:blip\b[^>]*\br:embed="([^"]+)"[^>]*>/gi)) {
     const relationshipId = match[1];
+    const composed = relationshipId ? composedImages.get(relationshipId) : undefined;
+    if (composed) {
+      const { sourcePart, ...data } = composed;
+      blocks.push(createImageBlock({ ...data, provenance: { ...provenance, sourcePart } }));
+      stats.images += 1;
+      continue;
+    }
     const target = relationshipId ? relationships.get(relationshipId)?.target : undefined;
     if (!target) continue;
     const archivePath = normalizeWordTarget(target);
