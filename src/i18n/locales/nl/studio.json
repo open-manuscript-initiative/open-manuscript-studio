@@ -1398,6 +1398,16 @@
             "description": "Importeer CSV-/TSV-datasets en voer beschrijvende statistieken, Welch-toetsen, eenzijdige ANOVA en lineaire regressie uit met reproduceerbare JSON-rapporten.",
             "overview": "Werkruimte voor statistische analyse",
             "title": "Statistische analyse en gegevens"
+          },
+          "org.omi.genealogy": {
+            "title": "Stambomen en genealogie",
+            "overview": "Genealogische werkruimte",
+            "description": "GEDCOM-stambomen importeren en personen, afstamming, partners, datums en bronnen bewerken."
+          },
+          "org.omi.relationship-networks": {
+            "title": "Relatienetwerken",
+            "overview": "Werkruimte voor relatienetwerken",
+            "description": "Persoonlijke, institutionele, wetenschappelijke en patronagerelaties met gedeelde genealogische gegevens weergeven en bewerken."
           }
         },
         "nara": {

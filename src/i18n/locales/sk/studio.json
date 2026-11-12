@@ -1398,6 +1398,16 @@
             "description": "Importujte dátové súbory vo formáte CSV/TSV a vykonávajte deskriptívnu štatistiku, Welchove testy, jednosmernú ANOVA a lineárnu regresiu s reprodukovateľnými správami vo formáte JSON.",
             "overview": "Pracovný priestor pre štatistickú analýzu",
             "title": "Štatistická analýza a údaje"
+          },
+          "org.omi.genealogy": {
+            "title": "Rodokmene a genealógia",
+            "overview": "Genealogický pracovný priestor",
+            "description": "Import rodokmeňov GEDCOM a úprava osôb, rodičovstva, partnerov, dátumov a prameňov."
+          },
+          "org.omi.relationship-networks": {
+            "title": "Siete vzťahov",
+            "overview": "Pracovný priestor sietí vzťahov",
+            "description": "Zobrazenie a úprava osobných, inštitucionálnych, vedeckých a patronátnych vzťahov so spoločnými genealogickými údajmi."
           }
         },
         "nara": {

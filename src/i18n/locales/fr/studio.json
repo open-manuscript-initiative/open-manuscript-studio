@@ -1398,6 +1398,16 @@
             "description": "Importez des ensembles de données au format CSV/TSV et effectuez des analyses statistiques descriptives, des tests de Welch, des ANOVA à un facteur et des régressions linéaires, avec des rapports JSON reproductibles.",
             "overview": "Espace de travail dédié à l'analyse statistique",
             "title": "Analyse statistique et données"
+          },
+          "org.omi.genealogy": {
+            "title": "Arbres familiaux et généalogie",
+            "overview": "Espace de travail généalogique",
+            "description": "Importer des arbres GEDCOM et modifier les personnes, filiations, couples, dates et sources."
+          },
+          "org.omi.relationship-networks": {
+            "title": "Réseaux de relations",
+            "overview": "Espace de travail des relations",
+            "description": "Représenter et modifier les relations personnelles, institutionnelles, scientifiques et de patronage avec les données généalogiques partagées."
           }
         },
         "nara": {

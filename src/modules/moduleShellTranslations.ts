@@ -48,5 +48,6 @@ export interface ModuleCatalogCopy {
 
 export function getModuleShellCopy(locale: string): ModuleShellCopy {
   const copies = getResearchModuleCopyByLocale<ModuleShellCopy>('shell/translations');
-  return copies[normalizeModuleLocale(locale)] ?? copies.en!;
+  const current = copies[normalizeModuleLocale(locale)] ?? copies.en!;
+  return { ...current, modules: { ...copies.en!.modules, ...current.modules } };
 }

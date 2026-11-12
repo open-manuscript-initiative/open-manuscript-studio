@@ -1398,6 +1398,16 @@
             "description": "Import CSV/TSV datasets and run descriptive statistics, Welch tests, one-way ANOVA, and linear regression with reproducible JSON reports.",
             "overview": "Statistical analysis workspace",
             "title": "Statistical Analysis and Data"
+          },
+          "org.omi.genealogy": {
+            "title": "Family trees and genealogy",
+            "overview": "Family-tree workspace",
+            "description": "Import GEDCOM family trees and edit people, parentage, partners, dates and sources."
+          },
+          "org.omi.relationship-networks": {
+            "title": "Relationship networks",
+            "overview": "Relationship-network workspace",
+            "description": "Map and edit personal, institutional, scholarly and patronage relationships using shared genealogy data."
           }
         },
         "nara": {
