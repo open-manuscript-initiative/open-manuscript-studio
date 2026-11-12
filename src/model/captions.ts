@@ -34,6 +34,7 @@ export interface OmiResolvedCaption extends OmiCaption {
 
 const DEFAULT_LABELS: Record<OmiVisualBlockData['kind'], string> = {
   image: 'Figure',
+  'text-box': 'Text box',
   table: 'Table',
   chart: 'Figure',
   equation: 'Equation',
@@ -147,6 +148,7 @@ export function updateCaptionSemantics(
 
 
 declare module '../types/omi' {
+  interface OmiTextBoxBlockData { semanticCaption?: OmiCaption; }
   interface OmiImageBlockData {
     semanticCaption?: OmiCaption;
   }

@@ -12,7 +12,7 @@ import {
   type DocxDetectedAuthor,
   type DocxImportWarning,
 } from '../model/docxImport';
-import { createImageBlock } from '../model/visualBlocks';
+import { createImageBlock, createTextBoxBlock } from '../model/visualBlocks';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import { withParentSectionId } from '../model/sectionStructure';
 import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection } from '../types/omi';
@@ -381,9 +381,11 @@ async function extractImages(
     const relationshipId = match[1];
     const composed = relationshipId ? composedImages.get(relationshipId) : undefined;
     if (composed) {
-      const { sourcePart, ...data } = composed;
-      blocks.push(createImageBlock({ ...data, provenance: { ...provenance, sourcePart } }));
-      stats.images += 1;
+      const { sourcePart, textBox, ...data } = composed;
+      const block = textBox ? createTextBoxBlock(textBox) : createImageBlock(data);
+      block.visual!.provenance = { ...provenance, sourcePart };
+      blocks.push(block);
+      if (!textBox) stats.images += 1;
       continue;
     }
     const target = relationshipId ? relationships.get(relationshipId)?.target : undefined;

@@ -1,3 +1,4 @@
+import { visualTextBoxText } from '../model/textBoxes';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { officeMetadataConversion, metadataConversionWarnings, type MetadataConversionObservation } from '../model/metadataConversion';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -58,7 +59,12 @@ function renderSection(section: ReturnType<typeof buildPublicationRenderingConte
 }
 
 function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>, warnings: string[], images: Array<{ path: string; bytes: Uint8Array; mediaType: string }>): string {
+  if (block.visual?.kind === 'text-box') {
+    warnings.push(`Text box ${block.id} is preserved as semantic text; graphical placement is unsupported in ODT.`);
+    return `<text:p>${escape(visualTextBoxText(block.visual))}</text:p>`;
+  }
   if (block.visual?.kind === 'image') {
+    if (block.visual.textBoxes?.length) warnings.push(`Image annotations on ${block.id} are preserved as text after the image in ODT.`);
     const match = /^data:(image\/(?:png|jpeg|gif|svg\+xml|webp));base64,([A-Za-z0-9+/=\s]+)$/i.exec(block.visual.src.trim());
     if (match) {
       try {
@@ -68,11 +74,11 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
         const binary = atob(match[2]!.replace(/\s/g, ''));
         const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
         images.push({ path, bytes, mediaType });
-        return `<text:p><draw:frame draw:name="${path.split('/').at(-1)}" text:anchor-type="as-char" svg:width="5in"><draw:image xlink:href="${path}" xlink:type="simple"/></draw:frame>${block.visual.alt ? `<text:span>${escape(block.visual.alt)}</text:span>` : ''}</text:p>`;
+        return `<text:p><draw:frame draw:name="${path.split('/').at(-1)}" text:anchor-type="as-char" svg:width="5in"><draw:image xlink:href="${path}" xlink:type="simple"/></draw:frame>${block.visual.alt ? `<text:span>${escape(block.visual.alt)}</text:span>` : ''}</text:p>${visualTextBoxText(block.visual) ? `<text:p>${escape(visualTextBoxText(block.visual))}</text:p>` : ''}`;
       } catch { /* fall through to a visible placeholder */ }
     }
     warnings.push(`Image ${block.id} is not embedded in the ODT because it is not a supported local data URI.`);
-    return `<text:p>[Image${block.visual.alt ? `: ${escape(block.visual.alt)}` : ''}]</text:p>`;
+    return `<text:p>[Image${block.visual.alt ? `: ${escape(block.visual.alt)}` : ''}] ${escape(visualTextBoxText(block.visual))}</text:p>`;
   }
   if (block.visual?.kind === 'table') {
     const rows = block.visual.cells.map((row) => `<table:table-row>${row.map((cell) => `<table:table-cell office:value-type="string"><text:p>${escape(cell)}</text:p></table:table-cell>`).join('')}</table:table-row>`).join('');

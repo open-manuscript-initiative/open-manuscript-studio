@@ -1,3 +1,6 @@
+import { TextBoxCanvas } from './TextBoxCanvas';
+import { createTextBox } from '../model/textBoxes';
+import { getTextBoxCopy } from '../i18n/textBoxes';
 import { Fragment, useContext, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   BarChart3,
@@ -26,6 +29,7 @@ import {
 } from '../model/visualBlocks';
 import type {
   OmiBlock,
+  OmiImageBlockData,
   OmiChartBlockData,
   OmiChartType,
   OmiTableBlockData,
@@ -74,7 +78,7 @@ export function VisualBlockEditor({
 
       {visual.kind === 'image' ? (
         <figure className="omi-image-block">
-          <AssetBackedImage visual={visual} />
+          <EditableImage visual={visual} readOnly={previewOnly} onChange={update} />
           <figcaption>
             <label>
               <span>{copy.altText}</span>
@@ -93,6 +97,8 @@ export function VisualBlockEditor({
           </figcaption>
         </figure>
       ) : null}
+
+      {visual.kind === 'text-box' ? <TextBoxCanvas standalone boxes={[visual.textBox]} width={Math.max(visual.textBox.width + visual.textBox.x, 240)} height={Math.max(visual.textBox.height + visual.textBox.y, 90)} readOnly={previewOnly} onChange={(boxes) => update({ ...visual, textBox: boxes[0] })} /> : null}
 
       {visual.kind === 'table' ? (
         <>
@@ -582,9 +588,19 @@ function visualLabel(
 ): string {
   switch (kind) {
     case 'image': return copy.image;
+    case 'text-box': return copy.textBox;
     case 'table': return copy.table;
     case 'chart': return copy.chart;
     case 'equation': return copy.equation;
     case 'music-score': return copy.musicScore;
   }
+}
+
+function EditableImage({ visual, readOnly, onChange }: { visual: OmiImageBlockData; readOnly: boolean; onChange(visual: OmiImageBlockData): void }) {
+  const { locale } = useTranslation(); const copy = getTextBoxCopy(locale);
+  const [size, setSize] = useState({ width: 600, height: 300 });
+  const width = visual.width || size.width, height = visual.height || size.height;
+  const dimensions = (w: number, h: number) => setSize((old) => old.width === w && old.height === h ? old : { width: w, height: h });
+  if (!visual.textBoxes?.length) return <><AssetBackedImage visual={visual} onDimensions={dimensions} />{!readOnly ? <button type="button" className="omi-text-box-add" onClick={() => onChange({ ...visual, width, height, textBoxes: [{ ...createTextBox(), x: 10, y: 10, width: Math.max(16, Math.min(240, width - 10)) }] })}>{copy.add}</button> : null}</>;
+  return <TextBoxCanvas boxes={visual.textBoxes} width={width} height={height} readOnly={readOnly} onChange={(textBoxes) => onChange({ ...visual, width, height, textBoxes })}><AssetBackedImage visual={visual} onDimensions={dimensions} /></TextBoxCanvas>;
 }

@@ -1,3 +1,4 @@
+import { createTextBox } from '../model/textBoxes';
 import {
   BarChart3,
   BookA,
@@ -30,6 +31,7 @@ import type { OmiGeneratedListKind } from '../model/generatedLists';
 import type { OmiTableOfContents } from '../model/tableOfContents';
 import {
   createChartBlock,
+  createTextBoxBlock,
   createTableBlock,
 } from '../model/visualBlocks';
 import {
@@ -218,6 +220,7 @@ export function VisualInsertPanel({
           <ImagePlus size={17} aria-hidden="true" />
           {copy.image}
         </button>
+        <button type="button" onClick={() => insert([createTextBoxBlock(createTextBox())])}><span aria-hidden="true">T</span>{copy.textBox}</button>
         <button type="button" onClick={() => insert([createTableBlock()])}>
           <Table2 size={17} aria-hidden="true" />
           {copy.table}

@@ -354,6 +354,26 @@ export interface OmiImportProvenance {
   sourcePart?: string;
 }
 
+/** Semantic rich text with independent graphical presentation, in CSS pixels. */
+export interface OmiTextBox {
+  id: string;
+  content: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  background?: string;
+  padding?: [number, number, number, number];
+  verticalAlign?: 'top' | 'center' | 'bottom';
+}
+export interface OmiTextBoxBlockData {
+  kind: 'text-box';
+  textBox: OmiTextBox;
+  caption?: string;
+  provenance?: OmiImportProvenance;
+}
+
 export interface OmiImageBlockData {
   kind: 'image';
   /** Portable alpha representation. Future OMI containers may externalize it. */
@@ -364,6 +384,7 @@ export interface OmiImageBlockData {
   caption?: string;
   width?: number;
   height?: number;
+  textBoxes?: OmiTextBox[];
   provenance?: OmiImportProvenance;
 }
 
@@ -438,6 +459,7 @@ export interface OmiMusicScoreBlockData {
 
 export type OmiVisualBlockData =
   | OmiImageBlockData
+  | OmiTextBoxBlockData
   | OmiTableBlockData
   | OmiChartBlockData
   | OmiEquationBlockData

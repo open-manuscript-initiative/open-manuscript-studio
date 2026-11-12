@@ -2,6 +2,7 @@ import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport'
 import {
   createEquationBlock,
   createImageBlock,
+  createTextBoxBlock,
   createTableBlock,
   MAX_VISUAL_IMPORT_BYTES,
 } from '../model/visualBlocks';
@@ -896,9 +897,11 @@ async function extractParagraphVisuals(
     const relationId = attributeByLocalName(blip, 'embed');
     const composed = relationId ? composedImages.get(relationId) : undefined;
     if (composed) {
-      const { sourcePart, ...data } = composed;
-      blocks.push(createImageBlock({ ...data, provenance: { ...provenance, sourcePart } }));
-      stats.images += 1;
+      const { sourcePart, textBox, ...data } = composed;
+      const block = textBox ? createTextBoxBlock(textBox) : createImageBlock(data);
+      block.visual!.provenance = { ...provenance, sourcePart };
+      blocks.push(block);
+      if (!textBox) stats.images += 1;
       continue;
     }
     const target = relationId ? relationships.get(relationId)?.target : undefined;

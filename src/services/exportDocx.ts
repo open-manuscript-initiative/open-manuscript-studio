@@ -1,3 +1,4 @@
+import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { officeMetadataConversion, metadataConversionWarnings, type MetadataConversionObservation } from '../model/metadataConversion';
@@ -403,7 +404,7 @@ function blockPlainText(block: OmiBlock): string {
   if (block.visual) {
     const caption = 'caption' in block.visual ? block.visual.caption : undefined;
     const label = block.visual.kind.charAt(0).toUpperCase() + block.visual.kind.slice(1);
-    return caption?.trim() ? `[${label}: ${caption.trim()}]` : `[${label}]`;
+    return [caption?.trim() ? `[${label}: ${caption.trim()}]` : `[${label}]`, visualTextBoxText(block.visual)].filter(Boolean).join('\n');
   }
   const runs = extractOmiInlineRuns(block.content);
   if (runs.length) return runs.map((run) => run.text).join('').replace(/\s+/g, ' ').trim();

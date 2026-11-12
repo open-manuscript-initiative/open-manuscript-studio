@@ -1,8 +1,10 @@
+import { prepareWordDrawings } from './docxDrawingImport';
 import { sanitizeMathMlForPreview } from '../model/equationRendering';
 import {
   createChartBlock,
   createEquationBlock,
   createImageBlock,
+  createTextBoxBlock,
   createTableBlock,
   MAX_VISUAL_IMPORT_BYTES,
   parseDelimitedTable,
@@ -198,7 +200,8 @@ async function importDocx(
   const relationships = archive.has('word/_rels/document.xml.rels')
     ? parseRelationships(await archive.text('word/_rels/document.xml.rels'))
     : new Map<string, string>();
-  const xml = parseXml(documentXml);
+  const drawings = await prepareWordDrawings(documentXml, archive, new Map([...relationships].map(([id, target]) => [id, { target }])));
+  const xml = parseXml(drawings.xml);
   const body = descendantsByLocalName(xml, 'body')[0];
   const blocks: OmiBlock[] = [];
 
@@ -229,6 +232,13 @@ async function importDocx(
 
     for (const blip of descendantsByLocalName(child, 'blip')) {
       const relationId = attributeByLocalName(blip, 'embed');
+      const drawing = relationId ? drawings.images.get(relationId) : undefined;
+      if (drawing) {
+        const { sourcePart, textBox, ...data } = drawing;
+        const block = textBox ? createTextBoxBlock(textBox) : createImageBlock(data);
+        block.visual!.provenance = { ...provenance, sourcePart };
+        blocks.push(block); continue;
+      }
       const target = relationId ? relationships.get(relationId) : undefined;
       if (!target) continue;
       const archivePath = normalizeWordTarget(target);

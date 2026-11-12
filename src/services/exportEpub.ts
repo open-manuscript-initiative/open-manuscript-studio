@@ -1,3 +1,4 @@
+import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { contributorNameParts } from '../model/contributorName';
@@ -66,7 +67,7 @@ function renderSection(section: ReturnType<typeof buildPublicationRenderingConte
 function renderBlock(block: OmiBlock): string {
   if (block.visual) {
     const caption = 'caption' in block.visual ? block.visual.caption : undefined;
-    return `<p class="visual-placeholder">[${escapeXml(block.visual.kind)}${caption ? `: ${escapeXml(caption)}` : ''}]</p>`;
+    return `<p>${escapeXml(visualTextBoxText(block.visual)).replace(/\n/g, '<br/>')}</p><p class="visual-placeholder">[${escapeXml(block.visual.kind)}${caption ? `: ${escapeXml(caption)}` : ''}]</p>`;
   }
   const text = plainText(block.content);
   return text ? `<p>${escapeXml(text)}</p>` : '';

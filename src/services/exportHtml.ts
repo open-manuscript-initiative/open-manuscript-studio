@@ -1,3 +1,4 @@
+import { renderTextBoxGraphic } from '../model/textBoxes';
 import { tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../model/tableLayout';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
@@ -453,6 +454,10 @@ function renderBlockTree(block: OmiBlock, state: RenderState): string {
 function renderBlock(block: OmiBlock, state: RenderState): string {
   if (block.visual) {
     switch (block.visual.kind) {
+      case 'text-box': {
+        const box = block.visual.textBox;
+        return `<figure id="${htmlId('block', block.id)}" data-omi-block-id="${escapeAttribute(block.id)}">${renderTextBoxGraphic(box.width + Math.max(0, box.x), box.height + Math.max(0, box.y), [box])}</figure>`;
+      }
       case 'image':
         return renderImage(block, state);
       case 'table':
@@ -525,7 +530,7 @@ function renderImage(block: OmiBlock, state: RenderState): string {
 
   const width = finiteDimension(visual.width);
   const height = finiteDimension(visual.height);
-  const image = `<img src="${escapeAttribute(src)}" alt="${escapeAttribute(visual.alt)}"${
+  const image = visual.textBoxes?.length ? renderTextBoxGraphic(width ?? 600, height ?? 300, visual.textBoxes, { src, alt: visual.alt }) : `<img src="${escapeAttribute(src)}" alt="${escapeAttribute(visual.alt)}"${
     width ? ` width="${width}"` : ''
   }${height ? ` height="${height}"` : ''}>`;
   const caption = visual.caption?.trim()

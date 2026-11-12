@@ -1,3 +1,4 @@
+import { visualTextBoxText } from '../model/textBoxes';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
 
 export function exportFileStem(manuscript: Pick<OmiManuscript, 'title' | 'id'>): string {
@@ -14,7 +15,7 @@ export function blockPlainText(block: OmiBlock): string {
   if (block.visual) {
     const caption = 'caption' in block.visual ? block.visual.caption : undefined;
     const label = block.visual.kind.charAt(0).toUpperCase() + block.visual.kind.slice(1);
-    return caption?.trim() ? `[${label}: ${caption.trim()}]` : `[${label}]`;
+    return [caption?.trim() ? `[${label}: ${caption.trim()}]` : `[${label}]`, visualTextBoxText(block.visual)].filter(Boolean).join('\n');
   }
 
   const value = block.content.trim();

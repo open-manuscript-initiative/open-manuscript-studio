@@ -1,3 +1,4 @@
+import { visualTextBoxText } from '../model/textBoxes';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
@@ -439,6 +440,9 @@ function renderBlockTree(block: OmiBlock, state: RenderState): string {
 function renderBlock(block: OmiBlock, state: RenderState): string {
   if (block.visual) {
     switch (block.visual.kind) {
+      case 'text-box':
+        state.diagnostics.push({ code: 'text-box-layout-fallback', severity: 'warning', message: 'Text box content is preserved as semantic text; graphical positioning is unsupported in JATS.', targetId: block.id });
+        return `<boxed-text id="${xmlId('block', block.id)}"><p>${escapeXml(visualTextBoxText(block.visual))}</p></boxed-text>`;
       case 'image':
         return renderImage(block, state);
       case 'table':
@@ -716,6 +720,8 @@ function renderImage(block: OmiBlock, state: RenderState): string {
     ? state.assetMap.get(block.visual.assetId)
     : undefined;
   const source = asset ? assetPath(asset) : block.visual.src.trim();
+  const annotationText = visualTextBoxText(block.visual);
+  if (annotationText) state.diagnostics.push({ code: 'picture-annotation-layout-fallback', severity: 'warning', message: 'Picture annotations are preserved as text in the figure caption; graphical positioning is unsupported in JATS.', targetId: block.id });
   const graphic = `<graphic xlink:href="${escapeAttribute(source)}" mimetype="image"${mimeSubtypeAttribute(block.visual.mediaType)}/>`;
 
   if (!source) {
@@ -737,9 +743,9 @@ function renderImage(block: OmiBlock, state: RenderState): string {
   const alt = block.visual.alt.trim()
     ? `<alt-text>${escapeXml(block.visual.alt.trim())}</alt-text>`
     : '';
-  const figureCaption = caption || label
+  const figureCaption = caption || label || annotationText
     ? `<caption>${label ? `<title>${escapeXml(label)}</title>` : ''}${
-        caption ? `<p>${escapeXml(caption)}</p>` : ''
+        [caption, annotationText].filter(Boolean).map((text) => `<p>${escapeXml(text!)}</p>`).join('')
       }</caption>`
     : '';
 
