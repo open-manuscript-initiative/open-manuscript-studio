@@ -13,6 +13,12 @@
 
 ## Unreleased — Translation and Validation Models
 
+- Preserve Word picture annotations as scalable artwork with their opaque
+  backgrounds, layer order, fonts, per-run colors and original point sizes.
+  Import only one compatible drawing representation. Apply this to both normal
+  and large-document DOCX import; flag estimated positions for annotations
+  anchored in the preceding paragraph. See [import details](docs/docx-picture-annotations.md).
+
 - Version privacy/account-copy endpoints under `/api/v1` with shared legacy
   facades, bounded typed DTOs, standard errors and isolated identity repositories.
   Keep account copies explicitly partial and retain the optional-role migration fallback.

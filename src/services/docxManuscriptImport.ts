@@ -1,3 +1,4 @@
+import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
 import {
   createEquationBlock,
   createImageBlock,
@@ -166,7 +167,9 @@ export async function parseDocxManuscript(
   );
   stats.references = bibliographicRecords.length;
 
-  const document = parseXml(await archive.text('word/document.xml'));
+  const drawings = await prepareWordDrawings(await archive.text('word/document.xml'), archive, relationships);
+  warnings.push(...drawings.warnings);
+  const document = parseXml(drawings.xml);
   const body = descendantsByLocalName(document, 'body')[0];
   if (!body) {
     throw new Error('The DOCX document body is missing.');
@@ -350,6 +353,7 @@ export async function parseDocxManuscript(
             provenance,
             warnings,
             stats,
+            drawings.images,
           )),
         );
         stats.paragraphs += 1;
@@ -377,6 +381,7 @@ export async function parseDocxManuscript(
       provenance,
       warnings,
       stats,
+      drawings.images,
     );
 
     // Parse inline content before deciding that a paragraph is empty. A Word
@@ -866,6 +871,7 @@ async function extractParagraphVisuals(
   provenance: OmiImportProvenance,
   warnings: DocxImportWarning[],
   stats: DocxImportStats,
+  composedImages: ReadonlyMap<string, WordDrawingImage>,
 ): Promise<OmiBlock[]> {
   const blocks: OmiBlock[] = [];
   const mathNodes = descendantsByLocalName(paragraph, 'oMath');
@@ -888,6 +894,13 @@ async function extractParagraphVisuals(
   const seenTargets = new Set<string>();
   for (const blip of descendantsByLocalName(paragraph, 'blip')) {
     const relationId = attributeByLocalName(blip, 'embed');
+    const composed = relationId ? composedImages.get(relationId) : undefined;
+    if (composed) {
+      const { sourcePart, ...data } = composed;
+      blocks.push(createImageBlock({ ...data, provenance: { ...provenance, sourcePart } }));
+      stats.images += 1;
+      continue;
+    }
     const target = relationId ? relationships.get(relationId)?.target : undefined;
     if (!target) continue;
     const archivePath = normalizeWordTarget(target);
