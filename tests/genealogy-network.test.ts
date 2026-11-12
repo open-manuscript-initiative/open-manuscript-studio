@@ -340,7 +340,7 @@ test('SVG is self-contained escaped artwork with visible relationship arrowheads
   });
   const layout = graphLayout(graph, 'tree');
   const svg = graphSvg(layout, relationLabels(graphCopy('hu')), '<Title>');
-  assert.doesNotMatch(svg, /<script>|<img onerror/);
+  assert.doesNotMatch(svg, /<script>|<img onerror/i);
   assert.match(svg, /&lt;script&gt;&amp;&quot;Ő/);
   assert.match(svg, /marker-end/);
   const p = connectionPoints({ x: 0, y: 0 }, { x: 0, y: 145 });
