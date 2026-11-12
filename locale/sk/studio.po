@@ -8539,3 +8539,33 @@ msgstr "Veľkosť alebo kontrolný súčet prílohy sa nezhoduje s miestnymi úd
 msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
 msgid "This check could not run; the result is incomplete."
 msgstr "Túto kontrolu sa nepodarilo vykonať; výsledok je neúplný."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/title"
+msgid "Family trees and genealogy"
+msgstr "Rodokmene a genealógia"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/overview"
+msgid "Family-tree workspace"
+msgstr "Genealogický pracovný priestor"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/description"
+msgid "Import GEDCOM family trees and edit people, parentage, partners, dates and sources."
+msgstr "Import rodokmeňov GEDCOM a úprava osôb, rodičovstva, partnerov, dátumov a prameňov."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/title"
+msgid "Relationship networks"
+msgstr "Siete vzťahov"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/overview"
+msgid "Relationship-network workspace"
+msgstr "Pracovný priestor sietí vzťahov"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/description"
+msgid "Map and edit personal, institutional, scholarly and patronage relationships using shared genealogy data."
+msgstr "Zobrazenie a úprava osobných, inštitucionálnych, vedeckých a patronátnych vzťahov so spoločnými genealogickými údajmi."

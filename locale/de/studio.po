@@ -8534,3 +8534,33 @@ msgstr "Größe oder Prüfsumme einer Anlage stimmt nicht mit der lokalen Datei 
 msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
 msgid "This check could not run; the result is incomplete."
 msgstr "Diese Prüfung konnte nicht ausgeführt werden; das Ergebnis ist unvollständig."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/title"
+msgid "Family trees and genealogy"
+msgstr "Stammbäume und Genealogie"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/overview"
+msgid "Family-tree workspace"
+msgstr "Stammbaum-Arbeitsbereich"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/description"
+msgid "Import GEDCOM family trees and edit people, parentage, partners, dates and sources."
+msgstr "GEDCOM-Stammbäume importieren sowie Personen, Abstammung, Partner, Daten und Quellen bearbeiten."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/title"
+msgid "Relationship networks"
+msgstr "Beziehungsnetzwerke"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/overview"
+msgid "Relationship-network workspace"
+msgstr "Netzwerk-Arbeitsbereich"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/description"
+msgid "Map and edit personal, institutional, scholarly and patronage relationships using shared genealogy data."
+msgstr "Persönliche, institutionelle, wissenschaftliche und Förderbeziehungen mit gemeinsamen Genealogiedaten darstellen und bearbeiten."

@@ -1,0 +1,162 @@
+.genealogy-workspace {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  color: inherit;
+}
+.genealogy-workspace fieldset {
+  min-width: 0;
+  border: 1px solid var(--border-color, #d0d5dd);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0;
+}
+.genealogy-workspace legend {
+  font-weight: 600;
+  padding: 0 0.35rem;
+}
+.genealogy-toolbar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.genealogy-workspace label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  min-width: 0;
+}
+.genealogy-workspace input:not([type='checkbox']),
+.genealogy-workspace textarea,
+.genealogy-workspace select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #98a2b3;
+  border-radius: 5px;
+  background: var(--input-background, #fff);
+  color: var(--text-color, #172b45);
+  font: inherit;
+}
+.genealogy-workspace button {
+  width: auto;
+  max-width: 100%;
+  padding: 0.4rem 0.7rem;
+  white-space: normal;
+  border: 1px solid #98a2b3;
+  border-radius: 5px;
+  font: inherit;
+  cursor: pointer;
+  background: var(--button-background, #f8fafc);
+  color: inherit;
+}
+.genealogy-workspace button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.genealogy-workspace button:focus-visible,
+.genealogy-node:focus-visible {
+  outline: 3px solid #397fd5;
+  outline-offset: 3px;
+}
+.genealogy-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 0.7rem;
+}
+.genealogy-full {
+  grid-column: 1/-1;
+}
+.genealogy-workspace .genealogy-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+}
+.genealogy-hint {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted-text, #526174);
+  margin: 0.3rem 0;
+}
+.genealogy-canvas {
+  min-width: 0;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 0.65rem;
+  background: #fff;
+  color: #172b45;
+}
+.genealogy-diagram {
+  display: block;
+  width: 100%;
+  height: clamp(320px, 55vh, 700px);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  background: #fff;
+}
+.genealogy-node {
+  cursor: grab;
+}
+.genealogy-node-label {
+  font: 12px sans-serif;
+  fill: #172b45;
+  pointer-events: none;
+}
+.genealogy-node-dates {
+  font: 10px sans-serif;
+  fill: #475467;
+  pointer-events: none;
+}
+.genealogy-edge-label {
+  font: 11px sans-serif;
+  fill: #344054;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.genealogy-relation-list {
+  max-height: 18rem;
+  overflow: auto;
+  padding-left: 1rem;
+}
+.genealogy-relation-list li {
+  margin: 0.35rem 0;
+}
+.genealogy-import-preview {
+  margin-top: 1rem;
+  border-top: 1px solid #d0d5dd;
+  padding-top: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.genealogy-import input[type='file'] {
+  max-width: 22rem;
+}
+.genealogy-entity-form,
+.genealogy-controls {
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .genealogy-workspace fieldset {
+    padding: 0.65rem;
+  }
+  .genealogy-toolbar {
+    align-items: stretch;
+  }
+  .genealogy-toolbar > label {
+    flex: 1 1 180px;
+  }
+  .genealogy-workspace button {
+    font-size: 0.85rem;
+  }
+  .genealogy-diagram {
+    height: 380px;
+  }
+}

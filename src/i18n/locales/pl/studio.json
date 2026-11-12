@@ -1398,6 +1398,16 @@
             "description": "Importuj zbiory danych w formacie CSV/TSV i przeprowadzaj analizy statystyczne opisowe, testy Welcha, jednoczynnikową analizę wariancji (ANOVA) oraz regresję liniową, uzyskując powtarzalne raporty w formacie JSON.",
             "overview": "Obszar roboczy analizy statystycznej",
             "title": "Analiza statystyczna i dane"
+          },
+          "org.omi.genealogy": {
+            "title": "Drzewa rodzinne i genealogia",
+            "overview": "Przestrzeń pracy genealogicznej",
+            "description": "Importowanie drzew GEDCOM oraz edycja osób, pochodzenia, partnerów, dat i źródeł."
+          },
+          "org.omi.relationship-networks": {
+            "title": "Sieci relacji",
+            "overview": "Przestrzeń pracy nad sieciami relacji",
+            "description": "Przedstawianie i edycja relacji osobistych, instytucjonalnych, naukowych i patronackich ze wspólnymi danymi genealogicznymi."
           }
         },
         "nara": {

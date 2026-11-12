@@ -8539,3 +8539,33 @@ msgstr "Rozmiar lub suma kontrolna załącznika nie zgadza się z lokalnymi dany
 msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
 msgid "This check could not run; the result is incomplete."
 msgstr "Nie udało się wykonać tej kontroli; wynik jest niepełny."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/title"
+msgid "Family trees and genealogy"
+msgstr "Drzewa rodzinne i genealogia"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/overview"
+msgid "Family-tree workspace"
+msgstr "Przestrzeń pracy genealogicznej"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/description"
+msgid "Import GEDCOM family trees and edit people, parentage, partners, dates and sources."
+msgstr "Importowanie drzew GEDCOM oraz edycja osób, pochodzenia, partnerów, dat i źródeł."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/title"
+msgid "Relationship networks"
+msgstr "Sieci relacji"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/overview"
+msgid "Relationship-network workspace"
+msgstr "Przestrzeń pracy nad sieciami relacji"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/description"
+msgid "Map and edit personal, institutional, scholarly and patronage relationships using shared genealogy data."
+msgstr "Przedstawianie i edycja relacji osobistych, instytucjonalnych, naukowych i patronackich ze wspólnymi danymi genealogicznymi."

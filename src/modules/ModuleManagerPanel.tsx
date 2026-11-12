@@ -1,3 +1,5 @@
+import { GenealogyNetworkPanel } from './genealogy/GenealogyNetworkPanel';
+import { genealogyModule, relationshipNetworkModule } from './genealogy/index';
 import { sortModulesForLocale } from './moduleOrdering';
 import { HealthResearchPanel } from './health-research/HealthResearchPanel';
 import { ResearchDatabasePanel } from './research-databases/ResearchDatabasePanel';
@@ -131,7 +133,9 @@ export function ModuleManagerPanel({
                 moduleTitle={details?.title ?? module.titleKey}
                 locale={locale}
               >
-                {module.id === 'org.omi.psychology' || module.id === 'org.omi.medical-sciences' ? (
+                {module.id === genealogyModule.id || module.id === relationshipNetworkModule.id ? (
+                  <GenealogyNetworkPanel key={userId + ':' + workspaceId + ':' + module.id} mode={module.id === genealogyModule.id ? 'tree' : 'network'} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, genealogyModule.id)} />
+                ) : module.id === 'org.omi.psychology' || module.id === 'org.omi.medical-sciences' ? (
                   <HealthResearchPanel workspaceId={workspaceId} key={userId + ':' + workspaceId + ':' + module.id} discipline={module.id === 'org.omi.psychology' ? 'psychology' : 'medical-sciences'} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === 'org.omi.mathematics' ? (
                   <MathematicsPanel locale={locale} />

@@ -35,7 +35,7 @@ test('primary PO catalogs are complete and drive the runtime dictionaries', asyn
   assert.ok(englishEntries.length > 0, 'English PO catalog must not be empty');
   assert.equal(
     englishEntries.filter((entry) => entry.pointer.startsWith('/researchModules/')).length,
-    654 + englishEntries.filter((entry) => entry.pointer.startsWith('/researchModules/transkribus/')).length,
+    660 + englishEntries.filter((entry) => entry.pointer.startsWith('/researchModules/transkribus/')).length,
     'research module copy must be stored in the primary PO catalogs',
   );
 

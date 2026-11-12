@@ -8534,3 +8534,33 @@ msgstr "La dimensione o l’impronta dell’allegato non corrisponde ai dati loc
 msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
 msgid "This check could not run; the result is incomplete."
 msgstr "Impossibile eseguire questo controllo; il risultato è incompleto."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/title"
+msgid "Family trees and genealogy"
+msgstr "Alberi genealogici e genealogia"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/overview"
+msgid "Family-tree workspace"
+msgstr "Spazio di lavoro genealogico"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/description"
+msgid "Import GEDCOM family trees and edit people, parentage, partners, dates and sources."
+msgstr "Importare alberi GEDCOM e modificare persone, filiazioni, coppie, date e fonti."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/title"
+msgid "Relationship networks"
+msgstr "Reti di relazioni"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/overview"
+msgid "Relationship-network workspace"
+msgstr "Spazio di lavoro delle relazioni"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/description"
+msgid "Map and edit personal, institutional, scholarly and patronage relationships using shared genealogy data."
+msgstr "Rappresentare e modificare relazioni personali, istituzionali, scientifiche e di patronato con dati genealogici condivisi."

@@ -1398,6 +1398,16 @@
             "description": "CSV/TSV adatkészletek importálása, valamint leíró statisztikák, Welch-próbák, egyirányú ANOVA és lineáris regresszió futtatása reprodukálható JSON-jelentésekkel.",
             "overview": "Statisztikai elemzési munkaterület",
             "title": "Statisztikai elemzés és adatok"
+          },
+          "org.omi.genealogy": {
+            "title": "Családfák és genealógia",
+            "overview": "Családfa-munkaterület",
+            "description": "GEDCOM-családfák importálása; személyek, szülői viszonyok, házastársak, dátumok és források szerkesztése."
+          },
+          "org.omi.relationship-networks": {
+            "title": "Kapcsolati hálók",
+            "overview": "Kapcsolatiháló-munkaterület",
+            "description": "Személyi, intézményi, tudományos és patrónusi kapcsolatok ábrázolása és szerkesztése, a családfával közös adatokból."
           }
         },
         "nara": {

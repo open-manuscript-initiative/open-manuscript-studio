@@ -8534,3 +8534,33 @@ msgstr "El tamaño o la huella del archivo adjunto no coincide con los datos loc
 msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
 msgid "This check could not run; the result is incomplete."
 msgstr "No se pudo ejecutar esta comprobación; el resultado está incompleto."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/title"
+msgid "Family trees and genealogy"
+msgstr "Árboles familiares y genealogía"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/overview"
+msgid "Family-tree workspace"
+msgstr "Espacio de trabajo genealógico"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.genealogy/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.genealogy/description"
+msgid "Import GEDCOM family trees and edit people, parentage, partners, dates and sources."
+msgstr "Importar árboles GEDCOM y editar personas, filiación, parejas, fechas y fuentes."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/title"
+msgid "Relationship networks"
+msgstr "Redes de relaciones"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/overview"
+msgid "Relationship-network workspace"
+msgstr "Espacio de trabajo de relaciones"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.relationship-networks/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.relationship-networks/description"
+msgid "Map and edit personal, institutional, scholarly and patronage relationships using shared genealogy data."
+msgstr "Representar y editar relaciones personales, institucionales, científicas y de mecenazgo con datos genealógicos compartidos."
