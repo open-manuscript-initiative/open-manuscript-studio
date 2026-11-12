@@ -13,6 +13,14 @@
 
 ## Unreleased — Translation and Validation Models
 
+- Add editable graphical text boxes, both standalone and over images. Preserve
+  semantic rich text separately from font family, point size, color, background,
+  padding, position, size and rotation. Retain these in OMI files and positioned
+  HTML/PDF output; preserve text with explicit fallbacks in other exporters.
+- Share Word drawing conversion with graphical-element import, retain standalone
+  DrawingML/VML boxes and make imported picture labels independently editable.
+  See [text-box details](docs/docx-picture-annotations.md).
+
 - Preserve Word picture annotations as scalable artwork with their opaque
   backgrounds, layer order, fonts, per-run colors and original point sizes.
   Import only one compatible drawing representation. Apply this to both normal

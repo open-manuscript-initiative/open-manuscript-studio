@@ -1,27 +1,33 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
+import {
+  renderTextBoxGraphic,
+  textBoxPlainText,
+  visualTextBoxText,
+} from "../src/model/textBoxes.ts";
+import { importVisualBlocksFromFile } from "../src/services/officeImport.ts";
+import assert from "node:assert/strict";
+import test from "node:test";
 import {
   DOMParser as XmlDomParser,
   XMLSerializer as XmlSerializer,
-} from '@xmldom/xmldom';
-import { parseDocxManuscript } from '../src/services/docxManuscriptImport.ts';
-import { parseDocxMonograph } from '../src/services/docxMonographImport.ts';
-import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
+} from "@xmldom/xmldom";
+import { parseDocxManuscript } from "../src/services/docxManuscriptImport.ts";
+import { parseDocxMonograph } from "../src/services/docxMonographImport.ts";
+import { createStoreZip, textZipEntry } from "../src/services/simpleZip.ts";
 
 // Share the browser DOM compatibility used by the existing fidelity tests.
 const globals = globalThis as unknown as Record<string, unknown>;
 globals.DOMParser = XmlDomParser;
 globals.XMLSerializer = XmlSerializer;
-const probe = new XmlDomParser().parseFromString('<root/>', 'application/xml');
+const probe = new XmlDomParser().parseFromString("<root/>", "application/xml");
 if (
   !Object.getOwnPropertyDescriptor(
     Object.getPrototypeOf(probe.documentElement),
-    'children',
+    "children",
   )
 )
   Object.defineProperty(
     Object.getPrototypeOf(probe.documentElement),
-    'children',
+    "children",
     {
       configurable: true,
       get(this: { childNodes: ArrayLike<{ nodeType: number }> }) {
@@ -34,10 +40,10 @@ if (
 if (
   !Object.getOwnPropertyDescriptor(
     Object.getPrototypeOf(probe),
-    'querySelector',
+    "querySelector",
   )
 )
-  Object.defineProperty(Object.getPrototypeOf(probe), 'querySelector', {
+  Object.defineProperty(Object.getPrototypeOf(probe), "querySelector", {
     configurable: true,
     value(
       this: { getElementsByTagName(name: string): ArrayLike<unknown> },
@@ -51,11 +57,11 @@ const ns = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 // A real 1x1 transparent PNG. The content is intentionally synthetic.
 const png = new Uint8Array(
   Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==',
-    'base64',
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==",
+    "base64",
   ),
 );
-function picture(id = 'rImage') {
+function picture(id = "rImage") {
   return `<w:r><w:drawing><wp:inline><wp:extent cx="3810000" cy="1905000"/><wp:docPr id="1" name="Score" descr="Music example"/><a:graphic><a:graphicData><a:blip r:embed="${id}"/></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
 }
 function label(
@@ -69,7 +75,7 @@ function label(
     fill?: string;
   } = {},
 ) {
-  return `<w:r><mc:AlternateContent><mc:Choice Requires="wps"><w:drawing><wp:anchor relativeHeight="${options.z ?? 1}" behindDoc="0"><wp:positionH relativeFrom="column"><wp:posOffset>${options.x ?? 190500}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="paragraph"><wp:posOffset>${options.y ?? 95250}</wp:posOffset></wp:positionV><wp:extent cx="1905000" cy="476250"/><a:graphic><a:graphicData><wps:wsp><wps:spPr><a:xfrm rot="${options.rot ?? 0}"/><a:solidFill>${options.fill ?? '<a:schemeClr val="lt1"/>'}</a:solidFill></wps:spPr><wps:txbx><w:txbxContent><w:p><w:pPr><w:jc w:val="left"/></w:pPr>${options.runs ?? `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman"/><w:sz w:val="24"/><w:color w:val="EE0000"/></w:rPr><w:t>${options.text ?? 'English annotation'}</w:t></w:r>`}</w:p></w:txbxContent></wps:txbx><wps:bodyPr lIns="0" tIns="0" rIns="0" bIns="0"/></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice><mc:Fallback><w:pict><v:shape><v:textbox><w:txbxContent><w:p><w:r><w:t>Legacy duplicate</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></mc:Fallback></mc:AlternateContent></w:r>`;
+  return `<w:r><mc:AlternateContent><mc:Choice Requires="wps"><w:drawing><wp:anchor relativeHeight="${options.z ?? 1}" behindDoc="0"><wp:positionH relativeFrom="column"><wp:posOffset>${options.x ?? 190500}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="paragraph"><wp:posOffset>${options.y ?? 95250}</wp:posOffset></wp:positionV><wp:extent cx="1905000" cy="476250"/><a:graphic><a:graphicData><wps:wsp><wps:spPr><a:xfrm rot="${options.rot ?? 0}"/><a:solidFill>${options.fill ?? '<a:schemeClr val="lt1"/>'}</a:solidFill></wps:spPr><wps:txbx><w:txbxContent><w:p><w:pPr><w:jc w:val="left"/></w:pPr>${options.runs ?? `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman"/><w:sz w:val="24"/><w:color w:val="EE0000"/></w:rPr><w:t>${options.text ?? "English annotation"}</w:t></w:r>`}</w:p></w:txbxContent></wps:txbx><wps:bodyPr lIns="0" tIns="0" rIns="0" bIns="0"/></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice><mc:Fallback><w:pict><v:shape><v:textbox><w:txbxContent><w:p><w:r><w:t>Legacy duplicate</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></mc:Fallback></mc:AlternateContent></w:r>`;
 }
 function file(
   body: string,
@@ -79,31 +85,31 @@ function file(
     [
       createStoreZip([
         textZipEntry(
-          'word/document.xml',
+          "word/document.xml",
           `<w:document ${ns}><w:body>${body}<w:sectPr><w:pgSz w:w="8880"/><w:pgMar w:left="1440" w:right="1440"/></w:sectPr></w:body></w:document>`,
         ),
         textZipEntry(
-          'word/_rels/document.xml.rels',
+          "word/_rels/document.xml.rels",
           '<Relationships><Relationship Id="rImage" Target="media/test.png"/></Relationships>',
         ),
         ...(!options.missing
-          ? [{ name: 'word/media/test.png', bytes: png }]
+          ? [{ name: "word/media/test.png", bytes: png }]
           : []),
         ...(options.theme
-          ? [textZipEntry('word/theme/theme1.xml', options.theme)]
+          ? [textZipEntry("word/theme/theme1.xml", options.theme)]
           : []),
         ...(options.styles
-          ? [textZipEntry('word/styles.xml', options.styles)]
+          ? [textZipEntry("word/styles.xml", options.styles)]
           : []),
       ]),
     ],
-    'synthetic-picture-labels.docx',
+    "synthetic-picture-labels.docx",
   );
 }
 const text = (blocks: Array<{ content: string }>) =>
-  blocks.map((block) => block.content).join('');
+  blocks.map((block) => block.content).join("");
 function svg(src: string) {
-  return Buffer.from(src.split(',')[1]!, 'base64').toString('utf8');
+  return Buffer.from(src.split(",")[1]!, "base64").toString("utf8");
 }
 
 for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
@@ -117,29 +123,32 @@ for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
     );
     const blocks = plan.sections.flatMap((section) => section.blocks);
     const visual = blocks.find(
-      (block) => block.visual?.kind === 'image',
+      (block) => block.visual?.kind === "image",
     )?.visual;
     assert.equal(plan.stats.images, 1);
-    assert.ok(visual?.kind === 'image');
+    assert.ok(visual?.kind === "image");
     assert.equal(visual.width, 400);
     assert.equal(visual.height, 200);
-    const artwork = svg(visual.src);
+    const artwork = renderTextBoxGraphic(
+      visual.width!,
+      visual.height!,
+      visual.textBoxes!,
+    );
+    assert.doesNotMatch(svg(visual.src), /Red nine|Blue fifteen/);
     assert.match(artwork, /translate\(20 10\)/);
-    assert.match(artwork, /<rect[^>]*fill="#ffffff"/);
+    assert.match(artwork, /background:#ffffff/);
     assert.match(
       artwork,
-      /font-family="Arial" font-size="12" fill="#EE0000" font-weight="bold"/,
+      /font-family:Arial;font-size:12px;color:#EE0000[^>]*>Red nine/,
     );
-    assert.match(
-      artwork,
-      /font-size="20" fill="#0055CC"[^>]*font-style="italic"/,
-    );
-    assert.equal(artwork.match(/<image /g)?.length, 1);
-    assert.equal(visual.alt, 'Music example');
+    assert.match(artwork, /<em><span[^>]*font-size:20px;color:#0055CC/);
+    assert.equal(svg(visual.src).match(/<image /g)?.length, 1);
+    assert.match(artwork, /<strong>/);
+    assert.equal(visual.alt, "Music example");
     assert.doesNotMatch(text(blocks), /Red nine|Blue fifteen|Legacy duplicate/);
     assert.match(text(blocks), /Body survives/);
     assert.equal(
-      plan.warnings.some((warning) => warning.code === 'text-boxes-flattened'),
+      plan.warnings.some((warning) => warning.code === "text-boxes-flattened"),
       false,
     );
   });
@@ -151,18 +160,22 @@ for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
       '<w:r><w:rPr><w:sz w:val="20"/><w:color w:themeColor="accent1" w:val="123456"/></w:rPr><w:t>Ő &amp; &lt;English&gt;</w:t></w:r>';
     const plan = await parse(
       file(
-        `<w:p>${picture()}${label({ text: 'Front label', z: 20 })}${label({ runs, z: 10 })}</w:p>`,
+        `<w:p>${picture()}${label({ text: "Front label", z: 20 })}${label({ runs, z: 10 })}</w:p>`,
         { theme },
       ),
     );
     const block = plan.sections
       .flatMap((section) => section.blocks)
-      .find((block) => block.visual?.kind === 'image');
-    assert.ok(block?.visual?.kind === 'image');
-    const artwork = svg(block.visual.src);
-    assert.match(artwork, /fill="#008877"/);
+      .find((block) => block.visual?.kind === "image");
+    assert.ok(block?.visual?.kind === "image");
+    const artwork = renderTextBoxGraphic(
+      block.visual.width!,
+      block.visual.height!,
+      block.visual.textBoxes ?? [],
+    );
+    assert.match(artwork, /color:#008877/);
     assert.match(artwork, /Ő &amp; &lt;English&gt;/);
-    assert.ok(artwork.indexOf('Ő &amp;') < artwork.indexOf('Front label'));
+    assert.ok(artwork.indexOf("Ő &amp;") < artwork.indexOf("Front label"));
     assert.equal(artwork.match(/<g /g)?.length, 2);
     assert.doesNotMatch(
       text(plan.sections.flatMap((section) => section.blocks)),
@@ -179,29 +192,27 @@ for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
     );
     const block = plan.sections
       .flatMap((section) => section.blocks)
-      .find((block) => block.visual?.kind === 'image');
-    assert.ok(block?.visual?.kind === 'image');
-    const artwork = svg(block.visual.src);
-    assert.match(
-      artwork,
-      /font-family="Georgia" font-size="14" fill="#AA2200"[^>]*font-style="italic"/,
+      .find((block) => block.visual?.kind === "image");
+    assert.ok(block?.visual?.kind === "image");
+    const artwork = renderTextBoxGraphic(
+      block.visual.width!,
+      block.visual.height!,
+      block.visual.textBoxes ?? [],
     );
-    assert.match(
-      artwork,
-      /font-family="Georgia" font-size="24" fill="#002288"/,
-    );
+    assert.match(artwork, /font-family:Georgia;font-size:14px;color:#AA2200/);
+    assert.match(artwork, /font-family:Georgia;font-size:24px;color:#002288/);
   });
 
   test(`${parse.name}: keeps a label extending below the bitmap visible`, async () => {
     const plan = await parse(
       file(
-        `<w:p>${picture()}${label({ y: 1809750, text: 'Below the edge' })}</w:p>`,
+        `<w:p>${picture()}${label({ y: 1809750, text: "Below the edge" })}</w:p>`,
       ),
     );
     const block = plan.sections
       .flatMap((section) => section.blocks)
-      .find((block) => block.visual?.kind === 'image');
-    assert.ok(block?.visual?.kind === 'image');
+      .find((block) => block.visual?.kind === "image");
+    assert.ok(block?.visual?.kind === "image");
     assert.equal(block.visual.height, 240);
     assert.match(svg(block.visual.src), /viewBox="0 0 400 240"/);
     assert.match(svg(block.visual.src), /<image width="400" height="200"/);
@@ -213,9 +224,10 @@ for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
     const plan = await parse(file(body));
     const block = plan.sections
       .flatMap((section) => section.blocks)
-      .find((block) => block.visual?.kind === 'image');
-    assert.ok(block?.visual?.kind === 'image');
-    assert.equal(svg(block.visual.src).includes('translate(20 10)'), true);
+      .find((block) => block.visual?.kind === "image");
+    assert.ok(block?.visual?.kind === "image");
+    assert.equal(block.visual.textBoxes?.[0].x, 20);
+    assert.equal(block.visual.textBoxes?.[0].y, 10);
   });
 
   test(`${parse.name}: retains the Word crop before painting annotations over the visible image`, async () => {
@@ -223,33 +235,37 @@ for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
       '<a:blip r:embed="rImage"/>',
       '<a:blip r:embed="rImage"/><a:srcRect b="20000"/>',
     );
-    for (const overlay of ['', label()]) {
+    for (const overlay of ["", label()]) {
       const plan = await parse(file(`<w:p>${croppedPicture}${overlay}</w:p>`));
       const block = plan.sections
         .flatMap((section) => section.blocks)
-        .find((block) => block.visual?.kind === 'image');
-      assert.ok(block?.visual?.kind === 'image');
+        .find((block) => block.visual?.kind === "image");
+      assert.ok(block?.visual?.kind === "image");
       const artwork = svg(block.visual.src);
       assert.match(artwork, /viewBox="0 0 400 200" overflow="hidden"/);
       assert.match(artwork, /<image x="0" y="0" width="400" height="250"/);
-      assert.equal((artwork.match(/<g /g) ?? []).length, overlay ? 1 : 0);
+      assert.equal(block.visual.textBoxes?.length ?? 0, overlay ? 1 : 0);
     }
   });
 
-  test(`${parse.name}: retains unsupported or unresolvable labels once as editable text`, async () => {
+  test(`${parse.name}: keeps rotated labels and unresolved-picture boxes editable`, async () => {
     for (const source of [
       file(`<w:p>${label({ rot: 5400000 })}${picture()}</w:p>`),
       file(`<w:p>${label()}${picture()}</w:p>`, { missing: true }),
     ]) {
       const plan = await parse(source);
-      const body = text(plan.sections.flatMap((section) => section.blocks));
-      assert.equal((body.match(/English annotation/g) ?? []).length, 1);
-      assert.doesNotMatch(body, /Legacy duplicate/);
-      assert.ok(
-        plan.warnings.some(
-          (warning) => warning.code === 'text-boxes-flattened',
-        ),
+      const blocks = plan.sections.flatMap((section) => section.blocks);
+      const boxes = blocks.flatMap((b) =>
+        b.visual?.kind === "text-box"
+          ? [b.visual.textBox]
+          : b.visual?.kind === "image"
+            ? (b.visual.textBoxes ?? [])
+            : [],
       );
+      assert.equal(boxes.length, 1);
+      assert.equal(textBoxPlainText(boxes[0]), "English annotation");
+      assert.doesNotMatch(text(blocks), /English annotation|Legacy duplicate/);
+      assert.ok(!plan.warnings.some((w) => w.code === "text-boxes-flattened"));
     }
   });
 
@@ -264,12 +280,13 @@ for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
     assert.doesNotMatch(text(blocks), /English annotation/);
     assert.ok(
       plan.warnings.some(
-        (warning) => warning.code === 'picture-label-position-estimated',
+        (warning) => warning.code === "picture-label-position-estimated",
       ),
     );
-    const block = blocks.find((block) => block.visual?.kind === 'image');
-    assert.ok(block?.visual?.kind === 'image');
-    assert.match(svg(block.visual.src), /translate\(20 24\)/);
+    const block = blocks.find((block) => block.visual?.kind === "image");
+    assert.ok(block?.visual?.kind === "image");
+    assert.equal(block.visual.textBoxes?.[0].x, 20);
+    assert.equal(block.visual.textBoxes?.[0].y, 24);
   });
 
   test(`${parse.name}: never guesses across a caption or table`, async () => {
@@ -279,9 +296,66 @@ for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
       ),
     );
     const blocks = plan.sections.flatMap((section) => section.blocks);
-    assert.match(text(blocks), /English annotation/);
-    const block = blocks.find((block) => block.visual?.kind === 'image');
-    assert.ok(block?.visual?.kind === 'image');
-    assert.equal(block.visual.mediaType, 'image/png');
+    const standalone = blocks.find((b) => b.visual?.kind === "text-box");
+    assert.ok(standalone?.visual?.kind === "text-box");
+    assert.equal(
+      textBoxPlainText(standalone.visual.textBox),
+      "English annotation",
+    );
+    const block = blocks.find((block) => block.visual?.kind === "image");
+    assert.ok(block?.visual?.kind === "image");
+    assert.equal(block.visual.mediaType, "image/png");
+  });
+}
+
+test("graphical-element DOCX import shares editable image and standalone box conversion", async () => {
+  const blocks = await importVisualBlocksFromFile(
+    file(
+      `<w:p>${picture()}${label()}</w:p><w:p>${label({ text: "Standalone" })}</w:p>`,
+    ),
+  );
+  assert.equal(blocks.length, 2);
+  assert.equal(blocks[0].visual?.kind, "image");
+  assert.equal(blocks[1].visual?.kind, "text-box");
+  assert.equal(visualTextBoxText(blocks[0].visual!), "English annotation");
+  assert.equal(visualTextBoxText(blocks[1].visual!), "Standalone");
+});
+for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
+  test(`${parse.name}: imports legacy standalone VML without losing color, size or semantic underline`, async () => {
+    const plan = await parse(
+      file(
+        `<w:p><w:pict><v:shape style="position:absolute;width:150pt;height:40pt;margin-left:15pt" fillcolor="#ffeeaa"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:r><w:rPr><w:color w:val="CC0033"/><w:sz w:val="30"/><w:u w:val="single"/></w:rPr><w:t>Legacy editable</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:p>`,
+      ),
+    );
+    const block = plan.sections
+      .flatMap((s) => s.blocks)
+      .find((b) => b.visual?.kind === "text-box");
+    assert.ok(block?.visual?.kind === "text-box");
+    assert.equal(block.visual.textBox.width, 200);
+    assert.equal(block.visual.textBox.background, "#ffeeaa");
+    assert.match(block.visual.textBox.content, /CC0033/);
+    assert.match(block.visual.textBox.content, /"fontSize":20/);
+    assert.match(block.visual.textBox.content, /underline/);
+    assert.equal(textBoxPlainText(block.visual.textBox), "Legacy editable");
+  });
+  test(`${parse.name}: retains inline and page-anchored boxes as graphical text without body duplicates`, async () => {
+    for (const drawing of [
+      label().replace(
+        'positionV relativeFrom="paragraph"',
+        'positionV relativeFrom="page"',
+      ),
+      label().replace(/wp:anchor/g, "wp:inline"),
+    ]) {
+      const plan = await parse(file(`<w:p>${drawing}</w:p>`));
+      const blocks = plan.sections.flatMap((s) => s.blocks);
+      const box = blocks.find((b) => b.visual?.kind === "text-box");
+      assert.ok(box?.visual?.kind === "text-box");
+      assert.equal(textBoxPlainText(box.visual.textBox), "English annotation");
+      assert.doesNotMatch(text(blocks), /English annotation/);
+      if (drawing.includes('positionV relativeFrom="page"'))
+        assert.ok(
+          plan.warnings.some((w) => w.code === "text-box-position-estimated"),
+        );
+    }
   });
 }

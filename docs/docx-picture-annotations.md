@@ -1,49 +1,70 @@
-# Word picture annotations
+# Editable graphical text boxes
 
-DOCX import preserves floating text boxes over raster pictures as a single,
-self-contained SVG image. The bitmap remains embedded without recompression.
-The annotation text remains text inside the SVG and scales with the picture.
-It is part of the artwork, not an independently editable manuscript paragraph.
+Insert independent text boxes from **Insert → Text box**, or use **Add text box**
+below an image. Select a box to open its independent rich-text editor. Move and
+resize it using its handles, arrow keys or numeric coordinates. Text, font
+family, point size, RGB color, background, padding, alignment and rotation remain
+editable. The image preview scales its annotations together with the bitmap.
+The property editor is an independent surface, so manuscript selection and
+clipboard handling do not interfere with editing its text.
 
-The shared drawing preparation runs in the normal and monograph import paths.
-It selects one Word `mc:AlternateContent` drawing representation so modern
-DrawingML text boxes and legacy VML copies cannot duplicate the same label.
-Only labels successfully incorporated into the artwork are removed from the
-main text flow. Other text boxes retain the existing editable-text fallback.
+## Semantic text and presentation
 
-## Typography and positioning
+`OmiTextBox.content` stores a constrained Tiptap document with paragraphs, text,
+line breaks and semantic bold, emphasis, underline, strike, small capitals,
+superscript and subscript marks. A separate `textBoxStyle` mark carries font
+family, CSS-pixel size and RGB color. Box geometry and background are independent
+of the text. The main manuscript editor's semantic formatting rules do not change.
+Import keeps the literal source text and does not perform translation.
 
-Each text run retains its literal text, font family, size, RGB or theme color,
-bold/italic setting, and superscript/subscript alignment. Font sizes resolve
-through document defaults, named style inheritance and direct overrides.
-Word half-point sizes convert to CSS pixels with `size * 2 / 3`; for example,
-18 half-points means 9 points, or 12 CSS pixels. Missing system fonts can still
-require a renderer font substitution.
+Images retain an ordered `visual.textBoxes` array. Independent objects use
+`visual.kind = "text-box"` and `visual.textBox`. Both survive OMI JSON and asset-
+container save/reopen. Schema validation checks geometry; rich-text rendering
+admits only the supported semantic vocabulary and safe presentation values.
+HTML/PDF publication retains positioned text as HTML inside a responsive SVG
+viewport, without rasterizing the labels. The current DOCX/IDML/ODT/EPUB/JATS
+adapters retain annotation text with explicit graphical-layout fallbacks; they
+do not promise editable Word text-box export.
 
-The picture retains its Word source crop before annotations are overlaid.
-The artwork includes the text-box background, insets, paragraph alignment,
-wrapping and drawing layer order. Its bounds include labels extending outside
-the bitmap so annotation text is not clipped at the picture edge. Images and
-labels resize together in the editor and the existing HTML/PDF image pipeline.
+## DOCX conversion
+
+The shared drawing preparation covers normal, large-document and graphical-
+element DOCX import. It selects one `mc:AlternateContent` representation, avoiding
+duplicates between DrawingML boxes and their VML fallback. Supported VML-only
+boxes are normalized into the same editable model. Only successfully converted
+boxes are removed from the main text flow.
+
+Runs retain literal Unicode text, font family, size, direct/theme color and
+semantic styles. Typography resolves through document defaults, named styles and
+direct overrides. Word half-point sizes convert to CSS pixels using `size * 2 / 3`:
+18 half-points means 9 points, or 12 CSS pixels. Unavailable fonts may require a
+system substitution. Pictures retain their source crop without recompression.
+White masks, insets, paragraph alignment and drawing order remain independent
+from the bitmap. Bounds include labels extending outside the visible picture.
 
 Picture-relative placement is exact for supported numeric offsets sharing the
-same paragraph anchor. An annotation anchored in the immediately preceding
-paragraph can be attached to a unique following inline picture. The vertical
-position then requires an estimate of the preceding paragraph's rendered height;
-import shows a localized review warning. This is not a Word pagination engine.
-A caption, table or other intervening block prevents that association.
+same paragraph anchor. A box anchored in the immediately preceding paragraph can
+attach to a unique following inline image. Its vertical position requires an
+estimate of the preceding paragraph height; import reports a localized review
+warning. Captions, tables and intervening blocks prevent that association.
+This is not a Word pagination engine.
 
-Page-relative vertical positioning, rotated text boxes, tables, fields, note
-references, and unresolved picture relationships keep the text fallback rather
-than silently discarding unsupported content. Arbitrary groups, VML-only layout
-and complex drawing transformations are outside the supported picture-overlay
-path. Raster inputs are embedded only from local DOCX package parts; no external
-images or external SVG resources are fetched.
+Independent or unresolved-picture boxes remain at their semantic paragraph
+anchor. Numeric paragraph-relative offsets are retained where possible;
+page-relative placement is reported for review. Original page pagination is
+not reconstructed. Complex groups, vertical writing, flipped text, fields,
+tables or note references inside boxes retain the existing body-text fallback
+and warning. Only local raster package parts are embedded; external resources
+are not fetched.
 
-## Validation
+## Verification
 
-Synthetic fixtures exercise both parsers: per-run colors and sizes, font style
-inheritance, white masks, layer order, alternate-content deduplication, Unicode
-and escaping, preceding-paragraph estimates, safe fallback, and labels extending
-below an image. The uploaded manuscript is used only for local verification;
-its text and images are not committed to the repository.
+Fixtures cover all DOCX paths, VML/alternate deduplication, style inheritance,
+colors/sizes, white masks, crop, layer order, standalone/rotated boxes, estimated
+positions, safe rendering and OMI round trips. Browser checks exercise text
+replacement, formatting, geometry, pointer movement and reopening at desktop and
+mobile widths. The uploaded manuscript is used for local verification only;
+its text and images are not committed.
+
+After updating Studio, reimport the original DOCX to obtain structured boxes.
+Earlier flattened imports cannot reconstruct the author's original geometry.
