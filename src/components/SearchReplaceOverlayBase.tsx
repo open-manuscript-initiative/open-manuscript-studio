@@ -1,3 +1,4 @@
+import { visualTextBoxText } from '../model/textBoxes';
 import { ChevronDown, ChevronUp, Replace, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -259,7 +260,7 @@ function flattenBlocks(blocks: OmiBlock[]): OmiBlock[] { return blocks.flatMap((
 function objectKind(block: OmiBlock): string { return block.visual?.kind ?? block.type; }
 function matchesObjectScope(block: OmiBlock, scope: ObjectScope): boolean {
   const kind = objectKind(block);
-  if (scope === 'visuals') return ['figure', 'image', 'table', 'chart', 'equation', 'music-score'].includes(kind) || ['figure', 'image', 'table', 'chart', 'equation', 'music-score'].includes(block.type);
+  if (scope === 'visuals') return ['figure', 'image', 'text-box', 'table', 'chart', 'equation', 'music-score'].includes(kind) || ['figure', 'image', 'text-box', 'table', 'chart', 'equation', 'music-score'].includes(block.type);
   if (scope === 'images') return kind === 'image' || block.type === 'image' || block.type === 'figure';
   if (scope === 'tables') return kind === 'table' || block.type === 'table';
   if (scope === 'charts') return kind === 'chart' || block.type === 'chart';
@@ -268,7 +269,8 @@ function matchesObjectScope(block: OmiBlock, scope: ObjectScope): boolean {
 function objectSearchText(block: OmiBlock): string {
   const visual = block.visual;
   if (!visual) return block.content;
-  if (visual.kind === 'image') return [visual.fileName, visual.alt, visual.caption].filter(Boolean).join('\n');
+  if (visual.kind === 'text-box') return visualTextBoxText(visual);
+  if (visual.kind === 'image') return [visual.fileName, visual.alt, visual.caption, visualTextBoxText(visual)].filter(Boolean).join('\n');
   if (visual.kind === 'table') return [visual.caption, ...visual.cells.flat()].filter(Boolean).join('\n');
   if (visual.kind === 'chart') return [visual.title, visual.caption, ...visual.cells.flat()].filter(Boolean).join('\n');
   if (visual.kind === 'music-score') return [visual.title, visual.composer, visual.caption, ...visual.notes.map((note) => `${note.step}${note.octave}`)].filter(Boolean).join('\n');

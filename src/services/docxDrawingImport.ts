@@ -1,5 +1,5 @@
 import type { DocxImportWarning } from '../model/docxImport';
-import type { OmiImageBlockData } from '../types/omi';
+import type { OmiImageBlockData, OmiTextBox } from '../types/omi';
 
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const WP =
@@ -11,6 +11,7 @@ const EMU = 9525; // 96 CSS pixels per inch
 
 export type WordDrawingImage = Omit<OmiImageBlockData, 'kind'> & {
   sourcePart: string;
+  textBox?: OmiTextBox;
 };
 type ImageData = WordDrawingImage;
 interface Archive {
@@ -43,18 +44,16 @@ interface Font {
   bold: boolean;
   italic: boolean;
   shift: string;
+  underline?: boolean;
+  strike?: boolean;
+  smallCaps?: boolean;
 }
 interface Run {
   text: string;
   font: Font;
 }
 
-/**
- * Resolve Word's alternate drawing representations once, then preserve picture
- * annotations as self-contained SVG artwork. The underlying bitmap, opaque
- * masks and styled text stay together in every existing image rendering path.
- * Only successfully composed labels are removed from manuscript text.
- */
+/** Resolve alternate drawings and keep semantic labels independent of artwork. */
 export async function prepareWordDrawings(
   xml: string,
   archive: Archive,
@@ -73,7 +72,8 @@ export async function prepareWordDrawings(
   if (doc.getElementsByTagName('parsererror').length)
     return { xml, images, warnings };
   selectAlternateDrawings(doc);
-  const anchors = elements(doc, WP, 'anchor').filter(
+  normalizeVmlTextBoxes(doc);
+  const anchors = [...elements(doc, WP, 'anchor'), ...elements(doc, WP, 'inline')].filter(
     (anchor) => elements(anchor, W, 'txbxContent').length,
   );
   if (!anchors.length && !elements(doc, A, 'srcRect').length)
@@ -167,9 +167,10 @@ export async function prepareWordDrawings(
     });
   }
 
+  const standalone: Label[] = [];
   for (const anchor of anchors) {
     const paragraph = ancestor(anchor, W, ['p']);
-    if (!paragraph || anchor.getAttribute('behindDoc') === '1') continue;
+    if (!paragraph) continue;
     const column = columnGeometry(paragraph);
     const extent = child(anchor, WP, 'extent');
     const label: Label = {
@@ -182,7 +183,7 @@ export async function prepareWordDrawings(
       order: number(anchor, 'relativeHeight'),
     };
     if (
-      ![label.x, label.y, label.width, label.height].every(Number.isFinite) ||
+      ![label.width, label.height].every(Number.isFinite) ||
       label.width <= 0 ||
       label.height <= 0
     )
@@ -197,7 +198,6 @@ export async function prepareWordDrawings(
       ) ||
       transform?.getAttribute('flipH') === '1' ||
       transform?.getAttribute('flipV') === '1' ||
-      number(transform, 'rot') ||
       number(body, 'rot') ||
       (body?.getAttribute('vert') && body.getAttribute('vert') !== 'horz') ||
       anchor.getAttribute('simplePos') === '1' ||
@@ -208,6 +208,7 @@ export async function prepareWordDrawings(
       elements(label.content, W, 'endnoteReference').length
     )
       continue;
+    if (!Number.isFinite(label.x) || !Number.isFinite(label.y) || anchor.getAttribute('behindDoc') === '1' || anchor.localName === 'inline') { standalone.push(label); continue; }
     const same = pictures.filter(
       (picture) => picture.paragraph === paragraph && overlaps(label, picture),
     );
@@ -242,7 +243,7 @@ export async function prepareWordDrawings(
         }
       }
     }
-    if (!picture) continue;
+    if (!picture) { standalone.push(label); continue; }
     picture.labels.push({
       ...label,
       x: label.x - picture.x,
@@ -291,13 +292,14 @@ export async function prepareWordDrawings(
         ...rendered.map((item) => item.bounds.y + item.bounds.height),
       ) - minY;
     const bitmapMarkup = renderBitmap(picture, bitmap);
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${fmt(width)}" height="${fmt(height)}" viewBox="${fmt(minX)} ${fmt(minY)} ${fmt(width)} ${fmt(height)}">${bitmapMarkup}${rendered.map((item) => item.svg).join('')}</svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${fmt(width)}" height="${fmt(height)}" viewBox="${fmt(minX)} ${fmt(minY)} ${fmt(width)} ${fmt(height)}">${bitmapMarkup}</svg>`;
     let key = `omi-picture-${images.size}`;
     while (relationships.has(key) || images.has(key)) key += '-';
     const props = child(picture.container, WP, 'docPr');
     images.set(key, {
       src: dataUrl(new TextEncoder().encode(svg), 'image/svg+xml'),
       mediaType: 'image/svg+xml',
+      textBoxes: labels.map((label) => ({ ...readTextBox(label, defaultFont, theme, styles), x: label.x - minX, y: label.y - minY })),
       sourcePart: path,
       fileName: `${
         path
@@ -313,6 +315,23 @@ export async function prepareWordDrawings(
     for (const label of labels)
       label.anchor.parentNode?.removeChild(label.anchor);
   }
+  for (const picture of pictures) for (const label of picture.labels) {
+    if (label.anchor.parentNode) standalone.push(label);
+  }
+  for (const label of standalone) {
+    const textBox = readTextBox(label, defaultFont, theme, styles);
+    const paragraph = ancestor(label.anchor, W, ['p']);
+    const column = paragraph ? columnGeometry(paragraph) : { left: 0 };
+    textBox.x = Number.isFinite(label.x) ? Math.max(0, label.x - column.left) : 0;
+    textBox.y = Number.isFinite(label.y) ? Math.max(0, label.y) : 0;
+    if (!Number.isFinite(label.x) || !Number.isFinite(label.y)) warnings.push({ code: 'text-box-position-estimated', severity: 'warning', message: 'Independent text box retained at its semantic paragraph anchor; original page positioning requires review.' });
+    let key = `omi-text-box-${images.size}`;
+    while (relationships.has(key) || images.has(key)) key += '-';
+    images.set(key, { src: '', mediaType: '', alt: '', sourcePart: 'word/document.xml', textBox });
+    const marker = doc.createElementNS(A, 'a:blip');
+    marker.setAttributeNS(R, 'r:embed', key);
+    label.anchor.parentNode?.replaceChild(marker, label.anchor);
+  }
   return { xml: serialize(doc), images, warnings };
 }
 
@@ -325,6 +344,29 @@ function renderBitmap(picture: Picture, source: string): string {
   // A nested viewport clips the source image without clipping annotations
   // which intentionally extend outside the visible picture bounds.
   return `<svg width="${fmt(width)}" height="${fmt(height)}" viewBox="0 0 ${fmt(width)} ${fmt(height)}" overflow="hidden"><image x="${fmt(-crop.left * imageWidth)}" y="${fmt(-crop.top * imageHeight)}" width="${fmt(imageWidth)}" height="${fmt(imageHeight)}" preserveAspectRatio="none" xlink:href="${source}"/></svg>`;
+}
+
+function normalizeVmlTextBoxes(doc: Document): void {
+  const V = 'urn:schemas-microsoft-com:vml';
+  function length(value: string | undefined): number {
+    const m = value?.trim().match(/^(-?[\d.]+)(pt|px|in|cm|mm)?$/i);
+    return m ? Number(m[1]) * ({ pt: 4 / 3, px: 1, in: 96, cm: 96 / 2.54, mm: 96 / 25.4 }[m[2]?.toLowerCase() || 'px'] ?? 1) : 0;
+  }
+  for (const shape of elements(doc, V, 'shape')) {
+    const textbox = elements(shape, V, 'textbox')[0];
+    const content = textbox && elements(textbox, W, 'txbxContent')[0];
+    if (!content || !shape.parentNode) continue;
+    const css = new Map((shape.getAttribute('style') ?? '').split(';').map((part) => { const i = part.indexOf(':'); return [part.slice(0, i).trim(), part.slice(i + 1).trim()]; }));
+    const width = length(css.get('width')), height = length(css.get('height'));
+    if (!(width > 0 && height > 0)) continue;
+    const x = length(css.get('margin-left') ?? css.get('left')), y = length(css.get('margin-top') ?? css.get('top'));
+    const inset = (textbox?.getAttribute('inset') ?? '7.2pt,3.6pt,7.2pt,3.6pt').split(',').map((v) => length(v));
+    const fill = shape.getAttribute('filled') === 'f' ? undefined : hex(shape.getAttribute('fillcolor')?.replace(/^#/, '')) ?? '#ffffff';
+    const markup = `<wp:anchor xmlns:wp="${WP}" xmlns:a="${A}" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" relativeHeight="${Number(css.get('z-index')) || 0}"><wp:positionH relativeFrom="${css.get('mso-position-horizontal-relative') === 'page' ? 'page' : 'column'}"><wp:posOffset>${Math.round(x * EMU)}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="${css.get('mso-position-vertical-relative') === 'page' ? 'page' : 'paragraph'}"><wp:posOffset>${Math.round(y * EMU)}</wp:posOffset></wp:positionV><wp:extent cx="${Math.round(width * EMU)}" cy="${Math.round(height * EMU)}"/><wps:wsp><wps:spPr><a:xfrm rot="${Math.round((Number(css.get('rotation')) || 0) * 60000)}"/>${fill ? `<a:solidFill><a:srgbClr val="${fill.slice(1)}"/></a:solidFill>` : ''}</wps:spPr><wps:txbx/><wps:bodyPr lIns="${Math.round((inset[0] ?? 0) * EMU)}" tIns="${Math.round((inset[1] ?? 0) * EMU)}" rIns="${Math.round((inset[2] ?? 0) * EMU)}" bIns="${Math.round((inset[3] ?? 0) * EMU)}"/></wps:wsp></wp:anchor>`;
+    const anchor = doc.importNode(new DOMParser().parseFromString(markup, 'application/xml').documentElement, true) as Element;
+    descendants(anchor, 'txbx')[0]!.appendChild(content);
+    shape.parentNode.replaceChild(anchor, shape);
+  }
 }
 
 function selectAlternateDrawings(doc: Document): void {
@@ -348,6 +390,33 @@ function selectAlternateDrawings(doc: Document): void {
       alternate.parentNode.insertBefore(selected.firstChild, alternate);
     alternate.parentNode.removeChild(alternate);
   }
+}
+
+function readTextBox(label: Label, defaultFont: Font, theme: Map<string, string>, styles: ReadonlyMap<string, Element>): OmiTextBox {
+  const body = descendants(label.anchor, 'bodyPr')[0];
+  const fill = child(descendants(label.anchor, 'spPr')[0], A, 'solidFill');
+  const base = styledFont(child(ancestor(label.anchor, W, ['r']), W, 'rPr'), defaultFont, theme, styles);
+  const content = Array.from(label.content.childNodes).filter((n): n is Element => n.nodeType === 1 && (n as Element).localName === 'p').map((paragraph) => {
+    const pPr = child(paragraph, W, 'pPr');
+    const font = styledFont(pPr, base, theme, styles);
+    const spacing = child(pPr, W, 'spacing');
+    const runs = elements(paragraph, W, 'r').flatMap((run) => {
+      const f = styledFont(child(run, W, 'rPr'), font, theme, styles);
+      const marks = [{ type: 'textBoxStyle', attrs: { fontFamily: f.family, fontSize: f.size, color: f.color } }, ...(f.bold ? [{ type: 'bold' }] : []), ...(f.italic ? [{ type: 'italic' }] : []), ...(f.underline ? [{ type: 'underline' }] : []), ...(f.strike ? [{ type: 'strike' }] : []), ...(f.smallCaps ? [{ type: 'omiSmallCaps' }] : []), ...(f.shift ? [{ type: f.shift === 'super' ? 'omiSuperscript' : 'omiSubscript' }] : [])];
+      return Array.from(run.childNodes).flatMap((node) => {
+        if (node.nodeType !== 1 || (node as Element).namespaceURI !== W) return [];
+        const name = (node as Element).localName;
+        if (name === 'br' || name === 'cr') return [{ type: 'hardBreak' }];
+        const text = name === 't' ? node.textContent ?? '' : name === 'tab' ? '\t' : '';
+        return text ? [{ type: 'text', text, marks }] : [];
+      });
+    });
+    const maxFont = Math.max(font.size, ...elements(paragraph, W, 'r').map((r) => styledFont(child(r, W, 'rPr'), font, theme, styles).size));
+    const line = number(spacing, 'line', W);
+    return { type: 'paragraph', attrs: { textAlign: value(child(pPr, W, 'jc')) === 'both' ? 'justify' : value(child(pPr, W, 'jc')) ?? 'left', lineHeight: line ? spacing?.getAttributeNS(W, 'lineRule') === 'exact' ? line / 15 / maxFont : line / 240 : 1.15, spaceBefore: number(spacing, 'before', W) / 15, spaceAfter: number(spacing, 'after', W) / 15 }, content: runs };
+  });
+  const vertical = body?.getAttribute('anchor');
+  return { id: crypto.randomUUID(), content: JSON.stringify({ type: 'doc', content }), x: label.x, y: label.y, width: label.width, height: label.height, rotation: number(elements(label.anchor, A, 'xfrm')[0], 'rot') / 60000, background: fill ? readColor(fill, theme, '#ffffff') : undefined, padding: [optionalNumber(body, 'tIns', 45720), optionalNumber(body, 'rIns', 91440), optionalNumber(body, 'bIns', 45720), optionalNumber(body, 'lIns', 91440)].map((v) => v / EMU) as [number, number, number, number], verticalAlign: vertical === 'ctr' ? 'center' : vertical === 'b' ? 'bottom' : 'top' };
 }
 
 function renderLabel(
@@ -577,6 +646,9 @@ function readFont(
     color: child(rPr, W, 'color')
       ? readColor(child(rPr, W, 'color')!, theme, inherited.color)
       : inherited.color,
+    underline: child(rPr, W, 'u') ? value(child(rPr, W, 'u')) !== 'none' : inherited.underline,
+    strike: toggle(child(rPr, W, 'strike'), inherited.strike ?? false),
+    smallCaps: toggle(child(rPr, W, 'smallCaps'), inherited.smallCaps ?? false),
     bold: toggle(child(rPr, W, 'b'), inherited.bold),
     italic: toggle(child(rPr, W, 'i'), inherited.italic),
     shift:

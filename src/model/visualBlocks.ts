@@ -1,5 +1,6 @@
 import type {
   OmiBlock,
+  OmiTextBox,
   OmiChartType,
   OmiEquationBlockData,
   OmiImageBlockData,
@@ -413,4 +414,8 @@ function escapeRegExp(value: string): string {
 
 export function cloneVisualData<T extends OmiVisualBlockData>(data: T): T {
   return JSON.parse(JSON.stringify(data)) as T;
+}
+
+export function createTextBoxBlock(textBox: OmiTextBox, id = crypto.randomUUID()): OmiBlock {
+  return { id, type: 'text-box', content: '', visual: { kind: 'text-box', textBox } };
 }

@@ -410,6 +410,8 @@ function targetTitle(
   if (!visual) return '';
 
   switch (visual.kind) {
+    case 'text-box':
+      return visual.caption?.trim() || '';
     case 'image':
       return visual.caption?.trim() || visual.alt.trim();
     case 'table':

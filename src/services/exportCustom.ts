@@ -1,3 +1,4 @@
+import { visualTextBoxText } from '../model/textBoxes';
 import { renderBibliography } from '../model/cslRendering';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { getBibliographyRecords } from '../model/citations';
@@ -186,7 +187,7 @@ function renderHtmlBodyBlock(
 ): string {
   if (block.visual) {
     const caption = 'caption' in block.visual ? block.visual.caption : undefined;
-    return `<p>[${escapeHtml(block.visual.kind)}${caption ? `: ${escapeHtml(caption)}` : ''}]</p>`;
+    return `<p>${escapeHtml(visualTextBoxText(block.visual)).replace(/\n/g, '<br>')}</p><p>[${escapeHtml(block.visual.kind)}${caption ? `: ${escapeHtml(caption)}` : ''}]</p>`;
   }
   const segments = customCitationSegments(block.content, manuscript, template, citationState);
   if (!segments.length) return '';
@@ -382,7 +383,7 @@ function wordRun(value: string, typography: CustomExportTypography): string {
 function htmlTypography(value: CustomExportTypography): string { return [`font-family:${cssString(value.fontFamily)}`, `font-size:${value.fontSizePt}pt`, `font-weight:${value.bold ? '700' : '400'}`, `font-style:${value.italic ? 'italic' : 'normal'}`, `text-align:${value.alignment ?? 'left'}`, `margin-top:${value.spaceBeforePt ?? 0}pt`, `margin-bottom:${value.spaceAfterPt ?? 0}pt`, `line-height:${value.lineHeight ?? 1.15}`].join(';'); }
 function htmlInlineTypography(value: CustomExportTypography, fallback: CustomExportTypography): string { return [`font-family:${cssString(value.fontFamily || fallback.fontFamily)}`, `font-size:${value.fontSizePt || fallback.fontSizePt}pt`, `font-weight:${value.bold ? '700' : '400'}`, `font-style:${value.italic ? 'italic' : 'normal'}`].join(';'); }
 function enabledBlocks(template: CustomExportTemplate): CustomExportBlock[] { return template.blocks.filter((block) => block.enabled); }
-function blockPlainText(block: OmiBlock): string { if (block.visual) { const caption = 'caption' in block.visual ? block.visual.caption : undefined; return `[${block.visual.kind}${caption ? `: ${caption}` : ''}]`; } return plainStoredContent(block.content); }
+function blockPlainText(block: OmiBlock): string { if (block.visual) { const caption = 'caption' in block.visual ? block.visual.caption : undefined; return [`[${block.visual.kind}${caption ? `: ${caption}` : ''}]`, visualTextBoxText(block.visual)].filter(Boolean).join('\n'); } return plainStoredContent(block.content); }
 function localizedLabel(locale: string, key: 'abstract' | 'keywords' | 'notes' | 'bibliography'): string { const language = locale.toLowerCase().split(/[-_]/)[0]; const values = language === 'hu' ? { abstract: 'Absztrakt', keywords: 'Kulcsszavak', notes: 'Jegyzetek', bibliography: 'Bibliográfia' } : language === 'de' ? { abstract: 'Zusammenfassung', keywords: 'Schlüsselwörter', notes: 'Anmerkungen', bibliography: 'Literaturverzeichnis' } : { abstract: 'Abstract', keywords: 'Keywords', notes: 'Notes', bibliography: 'Bibliography' }; return values[key]; }
 function fileStem(manuscript: Pick<OmiManuscript, 'title' | 'id'>): string { return manuscript.title.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 72) || manuscript.id || 'manuscript'; }
 function escapeHtml(value: string): string { return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }

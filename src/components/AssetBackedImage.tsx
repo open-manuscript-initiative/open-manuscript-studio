@@ -5,9 +5,10 @@ import { getAssetPayload } from '../services/assetRepository';
 import type { OmiImageBlockData } from '../types/omi';
 
 export function AssetBackedImage({
-  visual,
+  visual, onDimensions,
 }: {
   visual: OmiImageBlockData;
+  onDimensions?: (width: number, height: number) => void;
 }) {
   const manuscriptId = useStudioStore((state) => state.manuscript.id);
   const [resolvedSrc, setResolvedSrc] = useState(visual.src);
@@ -42,7 +43,7 @@ export function AssetBackedImage({
   }, [manuscriptId, visual.assetId, visual.mediaType, visual.src]);
 
   return resolvedSrc ? (
-    <img src={resolvedSrc} alt={visual.alt} />
+    <img src={resolvedSrc} alt={visual.alt} onLoad={(e) => onDimensions?.(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)} />
   ) : (
     <div
       className="omi-image-asset-placeholder"
