@@ -15,6 +15,7 @@ for (const width of [1440, 393]) {
       const { createImageBlock, createTextBoxBlock } =
         await import("/src/model/visualBlocks.ts");
       const { createTextBox } = await import("/src/model/textBoxes.ts");
+      const { decodeTextBoxContent, encodeTextBoxContent } = await import("/src/model/textBoxContent.ts");
       const box = {
         ...createTextBox("English label"),
         x: 20,
@@ -22,7 +23,7 @@ for (const width of [1440, 393]) {
         width: 200,
         height: 50,
       };
-      const doc = JSON.parse(box.content);
+      const doc = decodeTextBoxContent(box.content, box.contentProfile).document;
       doc.content[0].content[0].marks = [
         {
           type: "textBoxStyle",
@@ -30,7 +31,7 @@ for (const width of [1440, 393]) {
         },
         { type: "bold" },
       ];
-      box.content = JSON.stringify(doc);
+      box.content = encodeTextBoxContent(doc);
       const image = createImageBlock(
         {
           src:
@@ -152,6 +153,17 @@ for (const width of [1440, 393]) {
       "Standalone revised",
     );
     await panel.getByRole("button", { name: "Close text box editor" }).click();
+    const storedProfile = await page.evaluate(async () => {
+      const { useStudioStore } = await import("/src/app/useStudioStore.ts");
+      const image = useStudioStore.getState().manuscript.sections[0].blocks.find(b => b.id === "image-box-test");
+      if (image?.visual?.kind !== "image") throw new Error("Missing edited diagram");
+      const box = image.visual.textBoxes![0];
+      return { profile: box.contentProfile, content: JSON.parse(box.content) };
+    });
+    expect(storedProfile.profile).toBe("https://openmanuscript.org/profiles/text-box-content/0.1");
+    expect(storedProfile.content.format).toBe("omi-text-box-content");
+    expect(storedProfile.content.version).toBe("0.1.0");
+    expect(storedProfile.content.paragraphs[0].runs[0].text).toBe("Edited English label");
     await page.evaluate(async () => {
       const { useStudioStore } = await import("/src/app/useStudioStore.ts");
       const { serializeOmiJson } = await import("/src/services/exportOmi.ts");

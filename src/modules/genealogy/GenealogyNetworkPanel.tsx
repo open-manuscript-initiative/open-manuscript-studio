@@ -1,5 +1,5 @@
 import { saveExportBlob } from '../../services/exportFileDelivery';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { stageInsertBlocks } from '../../app/visualBlockActions';
 import { useStudioStore } from '../../app/useStudioStore';
 import { buildGraphDiagramContribution, diagramSourceSuggestion } from './manuscriptContribution';
@@ -80,6 +80,7 @@ export function GenealogyNetworkPanel({
   const [focus, setFocus] = useState(false),
     [depth, setDepth] = useState(3);
   const [diagramReview, setDiagramReview] = useState<{ svg: string; fingerprint: string; manuscriptId: string; sectionId: string } | null>(null);
+  const diagramSourceId = useId();
   const [diagramSource, setDiagramSource] = useState('');
   const [diagramOwn, setDiagramOwn] = useState(false);
   const [diagramApproved, setDiagramApproved] = useState(false);
@@ -544,7 +545,8 @@ export function GenealogyNetworkPanel({
         <h3>{t.diagramReview}</h3>
         <img alt={t.diagramReview} src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(diagramReview.svg)}`} style={{ maxWidth: '100%' }} />
         <p>{t.diagramSnapshot}</p>
-        <label>{t.source}<textarea maxLength={20000} value={diagramSource} onChange={e => { setDiagramSource(e.target.value); setDiagramApproved(false); }} /></label>
+        <label htmlFor={diagramSourceId}>{t.source}</label>
+        <textarea id={diagramSourceId} maxLength={20000} value={diagramSource} onChange={e => { setDiagramSource(e.target.value); setDiagramApproved(false); }} />
         <label><input type="checkbox" checked={diagramOwn} onChange={e => { setDiagramOwn(e.target.checked); setDiagramApproved(false); }} />{t.diagramOwn}</label>
         <label><input type="checkbox" checked={diagramApproved} onChange={e => setDiagramApproved(e.target.checked)} />{t.diagramApprove}</label>
         <button type="button" disabled={!diagramApproved || (!diagramOwn && !diagramSource.trim())} onClick={confirmDiagram}>{t.diagramConfirm}</button>
