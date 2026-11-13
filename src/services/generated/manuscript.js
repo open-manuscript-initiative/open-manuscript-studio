@@ -7,12 +7,12 @@ const equal = equalModule.default ?? equalModule;
 "use strict";
 export const validate = validate20;
 export default validate20;
-const schema31 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json","title":"Open Manuscript Initiative manuscript file format 0.3","description":"Normative structural schema for OMI-SPEC-320@0.3.0 including semantic source-attribution relationships.","$comment":"Status: Draft. Unknown members are permitted for forward-compatible preservation and require semantic unknown-field handling.","type":"object","required":["schema","omi","id","locale","title","sections","createdAt","updatedAt","sourceAttributions"],"properties":{"schema":{"const":"https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json"},"omi":{"$ref":"#/$defs/omiEnvelope"},"id":{"$ref":"#/$defs/identifier"},"version":{"type":"string","minLength":1,"description":"Optional manuscript revision or application-defined state label; never the file-format version."},"locale":{"$ref":"#/$defs/languageTag"},"title":{"$ref":"#/$defs/nonEmptyString"},"subtitle":{"type":"string"},"abstract":{"oneOf":[{"type":"string"},{"type":"object"},{"type":"array"}]},"keywords":{"type":"array","items":{"type":"string","minLength":1}},"sections":{"type":"array","items":{"$ref":"#/$defs/section"}},"agents":{"$ref":"#/$defs/addressableCollection"},"contributions":{"$ref":"#/$defs/addressableCollection"},"tombstones":{"$ref":"#/$defs/addressableCollection"},"annotations":{"type":"array","items":{"$ref":"#/$defs/annotation"}},"bibliographicRecords":{"$ref":"#/$defs/addressableCollection"},"citations":{"type":"array","items":{"$ref":"#/$defs/citation"}},"citationClusters":{"type":"array","items":{"$ref":"#/$defs/citationCluster"}},"crossReferences":{"type":"array","items":{"$ref":"#/$defs/crossReference"}},"assets":{"type":"array","items":{"$ref":"#/$defs/asset"}},"identityModelVersion":{"$ref":"#/$defs/specificationReference"},"versioningModelVersion":{"$ref":"#/$defs/specificationReference"},"headRevisionId":{"$ref":"#/$defs/identifier"},"revisionHistory":{"$ref":"#/$defs/revisionHistory"},"createdAt":{"$ref":"#/$defs/timestamp"},"updatedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"},"sourceAttributions":{"type":"array","items":{"$ref":"#/$defs/sourceAttribution"}}},"additionalProperties":true,"allOf":[{"if":{"properties":{"omi":{"type":"object","properties":{"profiles":{"type":"array","contains":{"const":"history-exchange"}}},"required":["profiles"]}},"required":["omi"]},"then":{"type":"object","required":["versioningModelVersion","headRevisionId","revisionHistory"],"properties":{"versioningModelVersion":true,"headRevisionId":true,"revisionHistory":true,"omi":{"type":"object","properties":{"specifications":{"type":"object","properties":{"OMI-SPEC-160":true},"required":["OMI-SPEC-160"]}}}}}},{"if":{"type":"object","properties":{"revisionHistory":true},"required":["revisionHistory"]},"then":{"properties":{"omi":{"type":"object","properties":{"profiles":{"type":"array","contains":{"const":"history-exchange"}}}}}}}],"$defs":{"nonEmptyString":{"type":"string","minLength":1},"identifier":{"type":"string","minLength":1,"maxLength":2048},"semanticVersion":{"type":"string","pattern":"^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},"specificationReference":{"type":"string","pattern":"^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},"timestamp":{"type":"string","format":"date-time","pattern":"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},"languageTag":{"type":"string","minLength":2,"maxLength":255,"pattern":"^(?:[A-Za-z]{2,8}|(?:[A-Za-z]{1,8}|[xX])(?:-[A-Za-z0-9]{1,8})+)$"},"extensions":{"type":"object","propertyNames":{"pattern":"^(?:https://|urn:)[^\\s]+$"},"additionalProperties":true},"generator":{"type":"object","required":["name","version"],"properties":{"name":{"$ref":"#/$defs/nonEmptyString"},"version":{"$ref":"#/$defs/nonEmptyString"},"uri":{"type":"string","format":"uri"}},"additionalProperties":true},"omiEnvelope":{"type":"object","required":["format","version","profiles","specifications"],"properties":{"format":{"const":"manuscript"},"version":{"const":"0.3.0"},"profiles":{"type":"array","minItems":1,"uniqueItems":true,"contains":{"const":"core-snapshot"},"items":{"type":"string","pattern":"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"}},"specifications":{"type":"object","required":["OMI-SPEC-100","OMI-SPEC-120","OMI-SPEC-140"],"properties":{"OMI-SPEC-100":{"$ref":"#/$defs/semanticVersion"},"OMI-SPEC-120":{"$ref":"#/$defs/semanticVersion"},"OMI-SPEC-140":{"$ref":"#/$defs/semanticVersion"}},"propertyNames":{"pattern":"^OMI-SPEC-[0-9]{3}$"},"additionalProperties":{"$ref":"#/$defs/semanticVersion"}},"generator":{"$ref":"#/$defs/generator"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"addressableObject":{"type":"object","required":["id"],"properties":{"id":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"addressableCollection":{"type":"array","items":{"$ref":"#/$defs/addressableObject"}},"section":{"type":"object","required":["id","title","blocks"],"properties":{"id":{"$ref":"#/$defs/identifier"},"title":{"type":"string"},"role":{"type":"string","minLength":1},"language":{"$ref":"#/$defs/languageTag"},"blocks":{"type":"array","items":{"$ref":"#/$defs/block"}},"children":{"type":"array","items":{"$ref":"#/$defs/section"}},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"block":{"type":"object","required":["id","type"],"properties":{"id":{"$ref":"#/$defs/identifier"},"type":{"$ref":"#/$defs/nonEmptyString"},"content":true,"data":true,"language":{"$ref":"#/$defs/languageTag"},"children":{"type":"array","items":{"$ref":"#/$defs/block"}},"extensions":{"$ref":"#/$defs/extensions"},"visual":{"type":"object","properties":{"kind":{"type":"string"},"textBoxes":{"type":"array","items":{"$ref":"#/$defs/textBox"}},"textBox":{"$ref":"#/$defs/textBox"}},"allOf":[{"if":{"properties":{"kind":{"const":"text-box"}},"required":["kind"]},"then":{"required":["textBox"],"properties":{"textBox":true}}}],"additionalProperties":true}},"additionalProperties":true},"annotation":{"type":"object","required":["id","targetBlockId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"type":{"type":"string","minLength":1},"targetBlockId":{"$ref":"#/$defs/identifier"},"creatorAgentId":{"$ref":"#/$defs/identifier"},"createdAt":{"$ref":"#/$defs/timestamp"},"modifiedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"citation":{"type":"object","required":["id","target","anchorId","targetBlockId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"target":{"$ref":"#/$defs/identifier"},"anchorId":{"$ref":"#/$defs/identifier"},"targetBlockId":{"$ref":"#/$defs/identifier"},"clusterId":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"citationCluster":{"type":"object","required":["id","anchorId","targetBlockId","citationIds"],"properties":{"id":{"$ref":"#/$defs/identifier"},"anchorId":{"$ref":"#/$defs/identifier"},"targetBlockId":{"$ref":"#/$defs/identifier"},"citationIds":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/identifier"}},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"crossReference":{"type":"object","required":["id","sourceBlockId","targetId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"sourceBlockId":{"$ref":"#/$defs/identifier"},"targetId":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"asset":{"type":"object","required":["id","mediaType"],"properties":{"id":{"$ref":"#/$defs/identifier"},"mediaType":{"type":"string","pattern":"^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$"},"role":{"type":"string","minLength":1},"size":{"type":"integer","minimum":0,"maximum":9007199254740991},"uri":{"type":"string","format":"uri-reference"},"checksum":{"type":"object","required":["algorithm","value"],"properties":{"algorithm":{"type":"string","minLength":1},"value":{"type":"string","minLength":1}},"additionalProperties":true},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"revision":{"type":"object","required":["id","parentRevisionIds","createdAt"],"properties":{"id":{"$ref":"#/$defs/identifier"},"parentRevisionIds":{"type":"array","uniqueItems":true,"items":{"$ref":"#/$defs/identifier"}},"createdAt":{"$ref":"#/$defs/timestamp"},"actorAgentId":{"$ref":"#/$defs/identifier"},"summary":{"type":"string"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"revisionHistory":{"type":"object","required":["completeness","rootRevisionId","headRevisionId","revisions"],"properties":{"profile":{"type":"string","minLength":1},"completeness":{"enum":["complete","partial","shallow"]},"rootRevisionId":{"$ref":"#/$defs/identifier"},"headRevisionId":{"$ref":"#/$defs/identifier"},"revisions":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/revision"}},"omissionNotice":{"type":"string","minLength":1},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true,"allOf":[{"if":{"type":"object","properties":{"completeness":{"enum":["partial","shallow"]}},"required":["completeness"]},"then":{"type":"object","properties":{"omissionNotice":true},"required":["omissionNotice"]}}]},"sourceAttribution":{"type":"object","required":["id","sourceObjectId","targetBibliographicRecordId","predicate","assertionStatus"],"properties":{"id":{"$ref":"#/$defs/identifier"},"sourceObjectId":{"$ref":"#/$defs/identifier"},"targetBibliographicRecordId":{"$ref":"#/$defs/identifier"},"predicate":{"const":"prov:wasDerivedFrom"},"role":{"type":"string","minLength":1},"locator":{"type":"object","required":["type","value"],"properties":{"type":{"type":"string","minLength":1},"value":{"type":"string","minLength":1}},"additionalProperties":true},"assertionStatus":{"enum":["machine-inferred","author-declared","author-confirmed"]},"createdAt":{"$ref":"#/$defs/timestamp"},"modifiedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"textBox":{"type":"object","description":"Semantic rich text with graphical coordinates in CSS pixels.","required":["id","content","x","y","width","height"],"properties":{"id":{"$ref":"#/$defs/identifier"},"content":{"type":"string"},"x":{"type":"number","minimum":-100000,"maximum":100000},"y":{"type":"number","minimum":-100000,"maximum":100000},"width":{"type":"number","minimum":1,"maximum":100000},"height":{"type":"number","minimum":1,"maximum":100000},"rotation":{"type":"number"},"background":{"type":"string","pattern":"^(?:#[0-9A-Fa-f]{6}|transparent)$"},"padding":{"type":"array","minItems":4,"maxItems":4,"items":{"type":"number","minimum":0,"maximum":1000}},"verticalAlign":{"enum":["top","center","bottom"]}},"additionalProperties":true}}};
+const schema31 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json","title":"Open Manuscript Initiative manuscript file format 0.3","description":"Normative structural schema for OMI-SPEC-320@0.3.0 including semantic source-attribution relationships.","$comment":"Status: Draft. Unknown members are permitted for forward-compatible preservation and require semantic unknown-field handling.","type":"object","required":["schema","omi","id","locale","title","sections","createdAt","updatedAt","sourceAttributions"],"properties":{"schema":{"const":"https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json"},"omi":{"$ref":"#/$defs/omiEnvelope"},"id":{"$ref":"#/$defs/identifier"},"version":{"type":"string","minLength":1,"description":"Optional manuscript revision or application-defined state label; never the file-format version."},"locale":{"$ref":"#/$defs/languageTag"},"title":{"$ref":"#/$defs/nonEmptyString"},"subtitle":{"type":"string"},"abstract":{"oneOf":[{"type":"string"},{"type":"object"},{"type":"array"}]},"keywords":{"type":"array","items":{"type":"string","minLength":1}},"sections":{"type":"array","items":{"$ref":"#/$defs/section"}},"agents":{"$ref":"#/$defs/addressableCollection"},"contributions":{"$ref":"#/$defs/addressableCollection"},"tombstones":{"$ref":"#/$defs/addressableCollection"},"annotations":{"type":"array","items":{"$ref":"#/$defs/annotation"}},"bibliographicRecords":{"$ref":"#/$defs/addressableCollection"},"citations":{"type":"array","items":{"$ref":"#/$defs/citation"}},"citationClusters":{"type":"array","items":{"$ref":"#/$defs/citationCluster"}},"crossReferences":{"type":"array","items":{"$ref":"#/$defs/crossReference"}},"assets":{"type":"array","items":{"$ref":"#/$defs/asset"}},"identityModelVersion":{"$ref":"#/$defs/specificationReference"},"versioningModelVersion":{"$ref":"#/$defs/specificationReference"},"headRevisionId":{"$ref":"#/$defs/identifier"},"revisionHistory":{"$ref":"#/$defs/revisionHistory"},"createdAt":{"$ref":"#/$defs/timestamp"},"updatedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"},"sourceAttributions":{"type":"array","items":{"$ref":"#/$defs/sourceAttribution"}}},"additionalProperties":true,"allOf":[{"if":{"properties":{"omi":{"type":"object","properties":{"profiles":{"type":"array","contains":{"const":"history-exchange"}}},"required":["profiles"]}},"required":["omi"]},"then":{"type":"object","required":["versioningModelVersion","headRevisionId","revisionHistory"],"properties":{"versioningModelVersion":true,"headRevisionId":true,"revisionHistory":true,"omi":{"type":"object","properties":{"specifications":{"type":"object","properties":{"OMI-SPEC-160":true},"required":["OMI-SPEC-160"]}}}}}},{"if":{"type":"object","properties":{"revisionHistory":true},"required":["revisionHistory"]},"then":{"properties":{"omi":{"type":"object","properties":{"profiles":{"type":"array","contains":{"const":"history-exchange"}}}}}}}],"$defs":{"nonEmptyString":{"type":"string","minLength":1},"identifier":{"type":"string","minLength":1,"maxLength":2048},"semanticVersion":{"type":"string","pattern":"^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},"specificationReference":{"type":"string","pattern":"^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},"timestamp":{"type":"string","format":"date-time","pattern":"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},"languageTag":{"type":"string","minLength":2,"maxLength":255,"pattern":"^(?:[A-Za-z]{2,8}|(?:[A-Za-z]{1,8}|[xX])(?:-[A-Za-z0-9]{1,8})+)$"},"extensions":{"type":"object","propertyNames":{"pattern":"^(?:https://|urn:)[^\\s]+$"},"additionalProperties":true},"generator":{"type":"object","required":["name","version"],"properties":{"name":{"$ref":"#/$defs/nonEmptyString"},"version":{"$ref":"#/$defs/nonEmptyString"},"uri":{"type":"string","format":"uri"}},"additionalProperties":true},"omiEnvelope":{"type":"object","required":["format","version","profiles","specifications"],"properties":{"format":{"const":"manuscript"},"version":{"const":"0.3.0"},"profiles":{"type":"array","minItems":1,"uniqueItems":true,"contains":{"const":"core-snapshot"},"items":{"type":"string","pattern":"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"}},"specifications":{"type":"object","required":["OMI-SPEC-100","OMI-SPEC-120","OMI-SPEC-140"],"properties":{"OMI-SPEC-100":{"$ref":"#/$defs/semanticVersion"},"OMI-SPEC-120":{"$ref":"#/$defs/semanticVersion"},"OMI-SPEC-140":{"$ref":"#/$defs/semanticVersion"}},"propertyNames":{"pattern":"^OMI-SPEC-[0-9]{3}$"},"additionalProperties":{"$ref":"#/$defs/semanticVersion"}},"generator":{"$ref":"#/$defs/generator"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"addressableObject":{"type":"object","required":["id"],"properties":{"id":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"addressableCollection":{"type":"array","items":{"$ref":"#/$defs/addressableObject"}},"section":{"type":"object","required":["id","title","blocks"],"properties":{"id":{"$ref":"#/$defs/identifier"},"title":{"type":"string"},"role":{"type":"string","minLength":1},"language":{"$ref":"#/$defs/languageTag"},"blocks":{"type":"array","items":{"$ref":"#/$defs/block"}},"children":{"type":"array","items":{"$ref":"#/$defs/section"}},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"block":{"type":"object","required":["id","type"],"properties":{"id":{"$ref":"#/$defs/identifier"},"type":{"$ref":"#/$defs/nonEmptyString"},"content":true,"data":true,"language":{"$ref":"#/$defs/languageTag"},"children":{"type":"array","items":{"$ref":"#/$defs/block"}},"extensions":{"$ref":"#/$defs/extensions"},"visual":{"type":"object","properties":{"kind":{"type":"string"},"textBoxes":{"type":"array","items":{"$ref":"#/$defs/textBox"}},"textBox":{"$ref":"#/$defs/textBox"}},"allOf":[{"if":{"properties":{"kind":{"const":"text-box"}},"required":["kind"]},"then":{"required":["textBox"],"properties":{"textBox":true}}}],"additionalProperties":true}},"additionalProperties":true},"annotation":{"type":"object","required":["id","targetBlockId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"type":{"type":"string","minLength":1},"targetBlockId":{"$ref":"#/$defs/identifier"},"creatorAgentId":{"$ref":"#/$defs/identifier"},"createdAt":{"$ref":"#/$defs/timestamp"},"modifiedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"citation":{"type":"object","required":["id","target","anchorId","targetBlockId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"target":{"$ref":"#/$defs/identifier"},"anchorId":{"$ref":"#/$defs/identifier"},"targetBlockId":{"$ref":"#/$defs/identifier"},"clusterId":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"citationCluster":{"type":"object","required":["id","anchorId","targetBlockId","citationIds"],"properties":{"id":{"$ref":"#/$defs/identifier"},"anchorId":{"$ref":"#/$defs/identifier"},"targetBlockId":{"$ref":"#/$defs/identifier"},"citationIds":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/identifier"}},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"crossReference":{"type":"object","required":["id","sourceBlockId","targetId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"sourceBlockId":{"$ref":"#/$defs/identifier"},"targetId":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"asset":{"type":"object","required":["id","mediaType"],"properties":{"id":{"$ref":"#/$defs/identifier"},"mediaType":{"type":"string","pattern":"^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$"},"role":{"type":"string","minLength":1},"size":{"type":"integer","minimum":0,"maximum":9007199254740991},"uri":{"type":"string","format":"uri-reference"},"checksum":{"type":"object","required":["algorithm","value"],"properties":{"algorithm":{"type":"string","minLength":1},"value":{"type":"string","minLength":1}},"additionalProperties":true},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"revision":{"type":"object","required":["id","parentRevisionIds","createdAt"],"properties":{"id":{"$ref":"#/$defs/identifier"},"parentRevisionIds":{"type":"array","uniqueItems":true,"items":{"$ref":"#/$defs/identifier"}},"createdAt":{"$ref":"#/$defs/timestamp"},"actorAgentId":{"$ref":"#/$defs/identifier"},"summary":{"type":"string"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"revisionHistory":{"type":"object","required":["completeness","rootRevisionId","headRevisionId","revisions"],"properties":{"profile":{"type":"string","minLength":1},"completeness":{"enum":["complete","partial","shallow"]},"rootRevisionId":{"$ref":"#/$defs/identifier"},"headRevisionId":{"$ref":"#/$defs/identifier"},"revisions":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/revision"}},"omissionNotice":{"type":"string","minLength":1},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true,"allOf":[{"if":{"type":"object","properties":{"completeness":{"enum":["partial","shallow"]}},"required":["completeness"]},"then":{"type":"object","properties":{"omissionNotice":true},"required":["omissionNotice"]}}]},"sourceAttribution":{"type":"object","required":["id","sourceObjectId","targetBibliographicRecordId","predicate","assertionStatus"],"properties":{"id":{"$ref":"#/$defs/identifier"},"sourceObjectId":{"$ref":"#/$defs/identifier"},"targetBibliographicRecordId":{"$ref":"#/$defs/identifier"},"predicate":{"const":"prov:wasDerivedFrom"},"role":{"type":"string","minLength":1},"locator":{"type":"object","required":["type","value"],"properties":{"type":{"type":"string","minLength":1},"value":{"type":"string","minLength":1}},"additionalProperties":true},"assertionStatus":{"enum":["machine-inferred","author-declared","author-confirmed"]},"createdAt":{"$ref":"#/$defs/timestamp"},"modifiedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true},"textBox":{"type":"object","description":"Semantic rich text with graphical coordinates in CSS pixels.","required":["id","content","x","y","width","height"],"properties":{"id":{"$ref":"#/$defs/identifier"},"content":{"type":"string"},"x":{"type":"number","minimum":-100000,"maximum":100000},"y":{"type":"number","minimum":-100000,"maximum":100000},"width":{"type":"number","minimum":1,"maximum":100000},"height":{"type":"number","minimum":1,"maximum":100000},"rotation":{"type":"number"},"background":{"type":"string","pattern":"^(?:#[0-9A-Fa-f]{6}|transparent)$"},"padding":{"type":"array","minItems":4,"maxItems":4,"items":{"type":"number","minimum":0,"maximum":1000}},"verticalAlign":{"enum":["top","center","bottom"]},"contentProfile":{"type":"string","format":"uri","description":"Explicit experimental content profile. Absence is the legacy unprofiled Studio import representation; unknown profiles remain opaque."},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true}}};
 const schema41 = {"type":"string","minLength":1,"maxLength":2048};
 const schema42 = {"type":"string","minLength":2,"maxLength":255,"pattern":"^(?:[A-Za-z]{2,8}|(?:[A-Za-z]{1,8}|[xX])(?:-[A-Za-z0-9]{1,8})+)$"};
 const schema38 = {"type":"string","minLength":1};
-const schema87 = {"type":"string","pattern":"^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"};
-const schema63 = {"type":"string","format":"date-time","pattern":"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"};
+const schema88 = {"type":"string","pattern":"^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"};
+const schema64 = {"type":"string","format":"date-time","pattern":"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"};
 const schema40 = {"type":"object","propertyNames":{"pattern":"^(?:https://|urn:)[^\\s]+$"},"additionalProperties":true};
 const schema32 = {"type":"object","required":["format","version","profiles","specifications"],"properties":{"format":{"const":"manuscript"},"version":{"const":"0.3.0"},"profiles":{"type":"array","minItems":1,"uniqueItems":true,"contains":{"const":"core-snapshot"},"items":{"type":"string","pattern":"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"}},"specifications":{"type":"object","required":["OMI-SPEC-100","OMI-SPEC-120","OMI-SPEC-140"],"properties":{"OMI-SPEC-100":{"$ref":"#/$defs/semanticVersion"},"OMI-SPEC-120":{"$ref":"#/$defs/semanticVersion"},"OMI-SPEC-140":{"$ref":"#/$defs/semanticVersion"}},"propertyNames":{"pattern":"^OMI-SPEC-[0-9]{3}$"},"additionalProperties":{"$ref":"#/$defs/semanticVersion"}},"generator":{"$ref":"#/$defs/generator"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
 const schema33 = {"type":"string","pattern":"^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"};
@@ -577,7 +577,7 @@ const schema44 = {"type":"object","required":["id","title","blocks"],"properties
 const pattern11 = new RegExp("^(?:[A-Za-z]{2,8}|(?:[A-Za-z]{1,8}|[xX])(?:-[A-Za-z0-9]{1,8})+)$", "u");
 const schema47 = {"type":"object","required":["id","type"],"properties":{"id":{"$ref":"#/$defs/identifier"},"type":{"$ref":"#/$defs/nonEmptyString"},"content":true,"data":true,"language":{"$ref":"#/$defs/languageTag"},"children":{"type":"array","items":{"$ref":"#/$defs/block"}},"extensions":{"$ref":"#/$defs/extensions"},"visual":{"type":"object","properties":{"kind":{"type":"string"},"textBoxes":{"type":"array","items":{"$ref":"#/$defs/textBox"}},"textBox":{"$ref":"#/$defs/textBox"}},"allOf":[{"if":{"properties":{"kind":{"const":"text-box"}},"required":["kind"]},"then":{"required":["textBox"],"properties":{"textBox":true}}}],"additionalProperties":true}},"additionalProperties":true};
 const wrapper0 = {validate: validate26};
-const schema52 = {"type":"object","description":"Semantic rich text with graphical coordinates in CSS pixels.","required":["id","content","x","y","width","height"],"properties":{"id":{"$ref":"#/$defs/identifier"},"content":{"type":"string"},"x":{"type":"number","minimum":-100000,"maximum":100000},"y":{"type":"number","minimum":-100000,"maximum":100000},"width":{"type":"number","minimum":1,"maximum":100000},"height":{"type":"number","minimum":1,"maximum":100000},"rotation":{"type":"number"},"background":{"type":"string","pattern":"^(?:#[0-9A-Fa-f]{6}|transparent)$"},"padding":{"type":"array","minItems":4,"maxItems":4,"items":{"type":"number","minimum":0,"maximum":1000}},"verticalAlign":{"enum":["top","center","bottom"]}},"additionalProperties":true};
+const schema52 = {"type":"object","description":"Semantic rich text with graphical coordinates in CSS pixels.","required":["id","content","x","y","width","height"],"properties":{"id":{"$ref":"#/$defs/identifier"},"content":{"type":"string"},"x":{"type":"number","minimum":-100000,"maximum":100000},"y":{"type":"number","minimum":-100000,"maximum":100000},"width":{"type":"number","minimum":1,"maximum":100000},"height":{"type":"number","minimum":1,"maximum":100000},"rotation":{"type":"number"},"background":{"type":"string","pattern":"^(?:#[0-9A-Fa-f]{6}|transparent)$"},"padding":{"type":"array","minItems":4,"maxItems":4,"items":{"type":"number","minimum":0,"maximum":1000}},"verticalAlign":{"enum":["top","center","bottom"]},"contentProfile":{"type":"string","format":"uri","description":"Explicit experimental content profile. Absence is the legacy unprofiled Studio import representation; unknown profiles remain opaque."},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
 const pattern15 = new RegExp("^(?:#[0-9A-Fa-f]{6}|transparent)$", "u");
 
 function validate27(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -960,14 +960,80 @@ vErrors.push(err31);
 errors++;
 }
 }
-}
-else {
-const err32 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(data.contentProfile !== undefined){
+let data11 = data.contentProfile;
+if(typeof data11 === "string"){
+if(!(formats0(data11))){
+const err32 = {instancePath:instancePath+"/contentProfile",schemaPath:"#/properties/contentProfile/format",keyword:"format",params:{format: "uri"},message:"must match format \""+"uri"+"\""};
 if(vErrors === null){
 vErrors = [err32];
 }
 else {
 vErrors.push(err32);
+}
+errors++;
+}
+}
+else {
+const err33 = {instancePath:instancePath+"/contentProfile",schemaPath:"#/properties/contentProfile/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err33];
+}
+else {
+vErrors.push(err33);
+}
+errors++;
+}
+}
+if(data.extensions !== undefined){
+let data12 = data.extensions;
+if(data12 && typeof data12 == "object" && !Array.isArray(data12)){
+for(const key0 in data12){
+const _errs29 = errors;
+if(typeof key0 === "string"){
+if(!pattern10.test(key0)){
+const err34 = {instancePath:instancePath+"/extensions",schemaPath:"#/$defs/extensions/propertyNames/pattern",keyword:"pattern",params:{pattern: "^(?:https://|urn:)[^\\s]+$"},message:"must match pattern \""+"^(?:https://|urn:)[^\\s]+$"+"\"",propertyName:key0};
+if(vErrors === null){
+vErrors = [err34];
+}
+else {
+vErrors.push(err34);
+}
+errors++;
+}
+}
+var valid5 = _errs29 === errors;
+if(!valid5){
+const err35 = {instancePath:instancePath+"/extensions",schemaPath:"#/$defs/extensions/propertyNames",keyword:"propertyNames",params:{propertyName: key0},message:"property name must be valid"};
+if(vErrors === null){
+vErrors = [err35];
+}
+else {
+vErrors.push(err35);
+}
+errors++;
+}
+}
+}
+else {
+const err36 = {instancePath:instancePath+"/extensions",schemaPath:"#/$defs/extensions/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err36];
+}
+else {
+vErrors.push(err36);
+}
+errors++;
+}
+}
+}
+else {
+const err37 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err37];
+}
+else {
+vErrors.push(err37);
 }
 errors++;
 }
@@ -1580,8 +1646,8 @@ return errors === 0;
 }
 validate25.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema55 = {"type":"array","items":{"$ref":"#/$defs/addressableObject"}};
-const schema56 = {"type":"object","required":["id"],"properties":{"id":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
+const schema56 = {"type":"array","items":{"$ref":"#/$defs/addressableObject"}};
+const schema57 = {"type":"object","required":["id"],"properties":{"id":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
 
 function validate33(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -1731,9 +1797,9 @@ return errors === 0;
 }
 validate32.evaluated = {"items":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema59 = {"type":"object","required":["id","targetBlockId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"type":{"type":"string","minLength":1},"targetBlockId":{"$ref":"#/$defs/identifier"},"creatorAgentId":{"$ref":"#/$defs/identifier"},"createdAt":{"$ref":"#/$defs/timestamp"},"modifiedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
-const formats2 = formats["date-time"];
-const pattern18 = new RegExp("[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$", "u");
+const schema60 = {"type":"object","required":["id","targetBlockId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"type":{"type":"string","minLength":1},"targetBlockId":{"$ref":"#/$defs/identifier"},"creatorAgentId":{"$ref":"#/$defs/identifier"},"createdAt":{"$ref":"#/$defs/timestamp"},"modifiedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
+const formats4 = formats["date-time"];
+const pattern19 = new RegExp("[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$", "u");
 
 function validate38(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -1899,7 +1965,7 @@ errors++;
 if(data.createdAt !== undefined){
 let data4 = data.createdAt;
 if(typeof data4 === "string"){
-if(!pattern18.test(data4)){
+if(!pattern19.test(data4)){
 const err13 = {instancePath:instancePath+"/createdAt",schemaPath:"#/$defs/timestamp/pattern",keyword:"pattern",params:{pattern: "[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},message:"must match pattern \""+"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"+"\""};
 if(vErrors === null){
 vErrors = [err13];
@@ -1909,7 +1975,7 @@ vErrors.push(err13);
 }
 errors++;
 }
-if(!(formats2(data4))){
+if(!(formats4(data4))){
 const err14 = {instancePath:instancePath+"/createdAt",schemaPath:"#/$defs/timestamp/format",keyword:"format",params:{format: "date-time"},message:"must match format \""+"date-time"+"\""};
 if(vErrors === null){
 vErrors = [err14];
@@ -1934,7 +2000,7 @@ errors++;
 if(data.modifiedAt !== undefined){
 let data5 = data.modifiedAt;
 if(typeof data5 === "string"){
-if(!pattern18.test(data5)){
+if(!pattern19.test(data5)){
 const err16 = {instancePath:instancePath+"/modifiedAt",schemaPath:"#/$defs/timestamp/pattern",keyword:"pattern",params:{pattern: "[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},message:"must match pattern \""+"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"+"\""};
 if(vErrors === null){
 vErrors = [err16];
@@ -1944,7 +2010,7 @@ vErrors.push(err16);
 }
 errors++;
 }
-if(!(formats2(data5))){
+if(!(formats4(data5))){
 const err17 = {instancePath:instancePath+"/modifiedAt",schemaPath:"#/$defs/timestamp/format",keyword:"format",params:{format: "date-time"},message:"must match format \""+"date-time"+"\""};
 if(vErrors === null){
 vErrors = [err17];
@@ -2023,7 +2089,7 @@ return errors === 0;
 }
 validate38.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema66 = {"type":"object","required":["id","target","anchorId","targetBlockId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"target":{"$ref":"#/$defs/identifier"},"anchorId":{"$ref":"#/$defs/identifier"},"targetBlockId":{"$ref":"#/$defs/identifier"},"clusterId":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
+const schema67 = {"type":"object","required":["id","target","anchorId","targetBlockId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"target":{"$ref":"#/$defs/identifier"},"anchorId":{"$ref":"#/$defs/identifier"},"targetBlockId":{"$ref":"#/$defs/identifier"},"clusterId":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
 
 function validate41(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -2308,7 +2374,7 @@ return errors === 0;
 }
 validate41.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema73 = {"type":"object","required":["id","anchorId","targetBlockId","citationIds"],"properties":{"id":{"$ref":"#/$defs/identifier"},"anchorId":{"$ref":"#/$defs/identifier"},"targetBlockId":{"$ref":"#/$defs/identifier"},"citationIds":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/identifier"}},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
+const schema74 = {"type":"object","required":["id","anchorId","targetBlockId","citationIds"],"properties":{"id":{"$ref":"#/$defs/identifier"},"anchorId":{"$ref":"#/$defs/identifier"},"targetBlockId":{"$ref":"#/$defs/identifier"},"citationIds":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/identifier"}},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
 const func0 = equal;
 
 function validate43(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -2605,7 +2671,7 @@ return errors === 0;
 }
 validate43.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema79 = {"type":"object","required":["id","sourceBlockId","targetId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"sourceBlockId":{"$ref":"#/$defs/identifier"},"targetId":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
+const schema80 = {"type":"object","required":["id","sourceBlockId","targetId"],"properties":{"id":{"$ref":"#/$defs/identifier"},"sourceBlockId":{"$ref":"#/$defs/identifier"},"targetId":{"$ref":"#/$defs/identifier"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
 
 function validate45(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -2810,9 +2876,9 @@ return errors === 0;
 }
 validate45.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema84 = {"type":"object","required":["id","mediaType"],"properties":{"id":{"$ref":"#/$defs/identifier"},"mediaType":{"type":"string","pattern":"^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$"},"role":{"type":"string","minLength":1},"size":{"type":"integer","minimum":0,"maximum":9007199254740991},"uri":{"type":"string","format":"uri-reference"},"checksum":{"type":"object","required":["algorithm","value"],"properties":{"algorithm":{"type":"string","minLength":1},"value":{"type":"string","minLength":1}},"additionalProperties":true},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
-const pattern24 = new RegExp("^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$", "u");
-const formats6 = formats["uri-reference"];
+const schema85 = {"type":"object","required":["id","mediaType"],"properties":{"id":{"$ref":"#/$defs/identifier"},"mediaType":{"type":"string","pattern":"^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$"},"role":{"type":"string","minLength":1},"size":{"type":"integer","minimum":0,"maximum":9007199254740991},"uri":{"type":"string","format":"uri-reference"},"checksum":{"type":"object","required":["algorithm","value"],"properties":{"algorithm":{"type":"string","minLength":1},"value":{"type":"string","minLength":1}},"additionalProperties":true},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
+const pattern25 = new RegExp("^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$", "u");
+const formats8 = formats["uri-reference"];
 
 function validate47(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -2883,7 +2949,7 @@ errors++;
 if(data.mediaType !== undefined){
 let data1 = data.mediaType;
 if(typeof data1 === "string"){
-if(!pattern24.test(data1)){
+if(!pattern25.test(data1)){
 const err5 = {instancePath:instancePath+"/mediaType",schemaPath:"#/properties/mediaType/pattern",keyword:"pattern",params:{pattern: "^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$"},message:"must match pattern \""+"^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$"+"\""};
 if(vErrors === null){
 vErrors = [err5];
@@ -2968,7 +3034,7 @@ errors++;
 if(data.uri !== undefined){
 let data4 = data.uri;
 if(typeof data4 === "string"){
-if(!(formats6(data4))){
+if(!(formats8(data4))){
 const err12 = {instancePath:instancePath+"/uri",schemaPath:"#/properties/uri/format",keyword:"format",params:{format: "uri-reference"},message:"must match format \""+"uri-reference"+"\""};
 if(vErrors === null){
 vErrors = [err12];
@@ -3132,8 +3198,8 @@ return errors === 0;
 }
 validate47.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema90 = {"type":"object","required":["completeness","rootRevisionId","headRevisionId","revisions"],"properties":{"profile":{"type":"string","minLength":1},"completeness":{"enum":["complete","partial","shallow"]},"rootRevisionId":{"$ref":"#/$defs/identifier"},"headRevisionId":{"$ref":"#/$defs/identifier"},"revisions":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/revision"}},"omissionNotice":{"type":"string","minLength":1},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true,"allOf":[{"if":{"type":"object","properties":{"completeness":{"enum":["partial","shallow"]}},"required":["completeness"]},"then":{"type":"object","properties":{"omissionNotice":true},"required":["omissionNotice"]}}]};
-const schema93 = {"type":"object","required":["id","parentRevisionIds","createdAt"],"properties":{"id":{"$ref":"#/$defs/identifier"},"parentRevisionIds":{"type":"array","uniqueItems":true,"items":{"$ref":"#/$defs/identifier"}},"createdAt":{"$ref":"#/$defs/timestamp"},"actorAgentId":{"$ref":"#/$defs/identifier"},"summary":{"type":"string"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
+const schema91 = {"type":"object","required":["completeness","rootRevisionId","headRevisionId","revisions"],"properties":{"profile":{"type":"string","minLength":1},"completeness":{"enum":["complete","partial","shallow"]},"rootRevisionId":{"$ref":"#/$defs/identifier"},"headRevisionId":{"$ref":"#/$defs/identifier"},"revisions":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/revision"}},"omissionNotice":{"type":"string","minLength":1},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true,"allOf":[{"if":{"type":"object","properties":{"completeness":{"enum":["partial","shallow"]}},"required":["completeness"]},"then":{"type":"object","properties":{"omissionNotice":true},"required":["omissionNotice"]}}]};
+const schema94 = {"type":"object","required":["id","parentRevisionIds","createdAt"],"properties":{"id":{"$ref":"#/$defs/identifier"},"parentRevisionIds":{"type":"array","uniqueItems":true,"items":{"$ref":"#/$defs/identifier"}},"createdAt":{"$ref":"#/$defs/timestamp"},"actorAgentId":{"$ref":"#/$defs/identifier"},"summary":{"type":"string"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
 
 function validate50(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -3285,7 +3351,7 @@ errors++;
 if(data.createdAt !== undefined){
 let data3 = data.createdAt;
 if(typeof data3 === "string"){
-if(!pattern18.test(data3)){
+if(!pattern19.test(data3)){
 const err11 = {instancePath:instancePath+"/createdAt",schemaPath:"#/$defs/timestamp/pattern",keyword:"pattern",params:{pattern: "[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},message:"must match pattern \""+"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"+"\""};
 if(vErrors === null){
 vErrors = [err11];
@@ -3295,7 +3361,7 @@ vErrors.push(err11);
 }
 errors++;
 }
-if(!(formats2(data3))){
+if(!(formats4(data3))){
 const err12 = {instancePath:instancePath+"/createdAt",schemaPath:"#/$defs/timestamp/format",keyword:"format",params:{format: "date-time"},message:"must match format \""+"date-time"+"\""};
 if(vErrors === null){
 vErrors = [err12];
@@ -3596,7 +3662,7 @@ errors++;
 if(data.completeness !== undefined){
 let data2 = data.completeness;
 if(!(((data2 === "complete") || (data2 === "partial")) || (data2 === "shallow"))){
-const err12 = {instancePath:instancePath+"/completeness",schemaPath:"#/properties/completeness/enum",keyword:"enum",params:{allowedValues: schema90.properties.completeness.enum},message:"must be equal to one of the allowed values"};
+const err12 = {instancePath:instancePath+"/completeness",schemaPath:"#/properties/completeness/enum",keyword:"enum",params:{allowedValues: schema91.properties.completeness.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err12];
 }
@@ -3790,7 +3856,7 @@ return errors === 0;
 }
 validate49.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const schema103 = {"type":"object","required":["id","sourceObjectId","targetBibliographicRecordId","predicate","assertionStatus"],"properties":{"id":{"$ref":"#/$defs/identifier"},"sourceObjectId":{"$ref":"#/$defs/identifier"},"targetBibliographicRecordId":{"$ref":"#/$defs/identifier"},"predicate":{"const":"prov:wasDerivedFrom"},"role":{"type":"string","minLength":1},"locator":{"type":"object","required":["type","value"],"properties":{"type":{"type":"string","minLength":1},"value":{"type":"string","minLength":1}},"additionalProperties":true},"assertionStatus":{"enum":["machine-inferred","author-declared","author-confirmed"]},"createdAt":{"$ref":"#/$defs/timestamp"},"modifiedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
+const schema104 = {"type":"object","required":["id","sourceObjectId","targetBibliographicRecordId","predicate","assertionStatus"],"properties":{"id":{"$ref":"#/$defs/identifier"},"sourceObjectId":{"$ref":"#/$defs/identifier"},"targetBibliographicRecordId":{"$ref":"#/$defs/identifier"},"predicate":{"const":"prov:wasDerivedFrom"},"role":{"type":"string","minLength":1},"locator":{"type":"object","required":["type","value"],"properties":{"type":{"type":"string","minLength":1},"value":{"type":"string","minLength":1}},"additionalProperties":true},"assertionStatus":{"enum":["machine-inferred","author-declared","author-confirmed"]},"createdAt":{"$ref":"#/$defs/timestamp"},"modifiedAt":{"$ref":"#/$defs/timestamp"},"extensions":{"$ref":"#/$defs/extensions"}},"additionalProperties":true};
 
 function validate53(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -4083,7 +4149,7 @@ errors++;
 if(data.assertionStatus !== undefined){
 let data8 = data.assertionStatus;
 if(!(((data8 === "machine-inferred") || (data8 === "author-declared")) || (data8 === "author-confirmed"))){
-const err24 = {instancePath:instancePath+"/assertionStatus",schemaPath:"#/properties/assertionStatus/enum",keyword:"enum",params:{allowedValues: schema103.properties.assertionStatus.enum},message:"must be equal to one of the allowed values"};
+const err24 = {instancePath:instancePath+"/assertionStatus",schemaPath:"#/properties/assertionStatus/enum",keyword:"enum",params:{allowedValues: schema104.properties.assertionStatus.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err24];
 }
@@ -4096,7 +4162,7 @@ errors++;
 if(data.createdAt !== undefined){
 let data9 = data.createdAt;
 if(typeof data9 === "string"){
-if(!pattern18.test(data9)){
+if(!pattern19.test(data9)){
 const err25 = {instancePath:instancePath+"/createdAt",schemaPath:"#/$defs/timestamp/pattern",keyword:"pattern",params:{pattern: "[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},message:"must match pattern \""+"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"+"\""};
 if(vErrors === null){
 vErrors = [err25];
@@ -4106,7 +4172,7 @@ vErrors.push(err25);
 }
 errors++;
 }
-if(!(formats2(data9))){
+if(!(formats4(data9))){
 const err26 = {instancePath:instancePath+"/createdAt",schemaPath:"#/$defs/timestamp/format",keyword:"format",params:{format: "date-time"},message:"must match format \""+"date-time"+"\""};
 if(vErrors === null){
 vErrors = [err26];
@@ -4131,7 +4197,7 @@ errors++;
 if(data.modifiedAt !== undefined){
 let data10 = data.modifiedAt;
 if(typeof data10 === "string"){
-if(!pattern18.test(data10)){
+if(!pattern19.test(data10)){
 const err28 = {instancePath:instancePath+"/modifiedAt",schemaPath:"#/$defs/timestamp/pattern",keyword:"pattern",params:{pattern: "[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},message:"must match pattern \""+"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"+"\""};
 if(vErrors === null){
 vErrors = [err28];
@@ -4141,7 +4207,7 @@ vErrors.push(err28);
 }
 errors++;
 }
-if(!(formats2(data10))){
+if(!(formats4(data10))){
 const err29 = {instancePath:instancePath+"/modifiedAt",schemaPath:"#/$defs/timestamp/format",keyword:"format",params:{format: "date-time"},message:"must match format \""+"date-time"+"\""};
 if(vErrors === null){
 vErrors = [err29];
@@ -4220,7 +4286,7 @@ return errors === 0;
 }
 validate53.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-const pattern26 = new RegExp("^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$", "u");
+const pattern27 = new RegExp("^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$", "u");
 
 function validate20(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 /*# sourceURL="https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json" */;
@@ -5131,7 +5197,7 @@ errors++;
 if(data.identityModelVersion !== undefined){
 let data34 = data.identityModelVersion;
 if(typeof data34 === "string"){
-if(!pattern26.test(data34)){
+if(!pattern27.test(data34)){
 const err56 = {instancePath:instancePath+"/identityModelVersion",schemaPath:"#/$defs/specificationReference/pattern",keyword:"pattern",params:{pattern: "^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},message:"must match pattern \""+"^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"+"\""};
 if(vErrors === null){
 vErrors = [err56];
@@ -5156,7 +5222,7 @@ errors++;
 if(data.versioningModelVersion !== undefined){
 let data35 = data.versioningModelVersion;
 if(typeof data35 === "string"){
-if(!pattern26.test(data35)){
+if(!pattern27.test(data35)){
 const err58 = {instancePath:instancePath+"/versioningModelVersion",schemaPath:"#/$defs/specificationReference/pattern",keyword:"pattern",params:{pattern: "^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},message:"must match pattern \""+"^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"+"\""};
 if(vErrors === null){
 vErrors = [err58];
@@ -5222,7 +5288,7 @@ errors = vErrors.length;
 if(data.createdAt !== undefined){
 let data38 = data.createdAt;
 if(typeof data38 === "string"){
-if(!pattern18.test(data38)){
+if(!pattern19.test(data38)){
 const err63 = {instancePath:instancePath+"/createdAt",schemaPath:"#/$defs/timestamp/pattern",keyword:"pattern",params:{pattern: "[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},message:"must match pattern \""+"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"+"\""};
 if(vErrors === null){
 vErrors = [err63];
@@ -5232,7 +5298,7 @@ vErrors.push(err63);
 }
 errors++;
 }
-if(!(formats2(data38))){
+if(!(formats4(data38))){
 const err64 = {instancePath:instancePath+"/createdAt",schemaPath:"#/$defs/timestamp/format",keyword:"format",params:{format: "date-time"},message:"must match format \""+"date-time"+"\""};
 if(vErrors === null){
 vErrors = [err64];
@@ -5257,7 +5323,7 @@ errors++;
 if(data.updatedAt !== undefined){
 let data39 = data.updatedAt;
 if(typeof data39 === "string"){
-if(!pattern18.test(data39)){
+if(!pattern19.test(data39)){
 const err66 = {instancePath:instancePath+"/updatedAt",schemaPath:"#/$defs/timestamp/pattern",keyword:"pattern",params:{pattern: "[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"},message:"must match pattern \""+"[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"+"\""};
 if(vErrors === null){
 vErrors = [err66];
@@ -5267,7 +5333,7 @@ vErrors.push(err66);
 }
 errors++;
 }
-if(!(formats2(data39))){
+if(!(formats4(data39))){
 const err67 = {instancePath:instancePath+"/updatedAt",schemaPath:"#/$defs/timestamp/format",keyword:"format",params:{format: "date-time"},message:"must match format \""+"date-time"+"\""};
 if(vErrors === null){
 vErrors = [err67];

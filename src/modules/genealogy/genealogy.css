@@ -160,3 +160,21 @@
     height: 380px;
   }
 }
+
+.genealogy-diagram-review {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #98a2b3;
+  overflow-wrap: anywhere;
+}
+.genealogy-diagram-review > label {
+  display: block;
+  margin: 0.75rem 0;
+}
+.genealogy-diagram-review textarea {
+  display: block;
+  width: 100%;
+  min-height: 5rem;
+  box-sizing: border-box;
+}
+.genealogy-diagram-review img { display: block; max-height: 60vh; object-fit: contain; }

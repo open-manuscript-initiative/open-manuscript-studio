@@ -124,6 +124,14 @@ for (const width of [1440, 390]) {
         exact: true,
       })
       .click();
+    const review = tree.getByRole('region', { name: 'Review diagram and source', exact: true });
+    await expect(review.getByRole('img')).toBeVisible();
+    await expect(review.getByRole('button', { name: 'Confirm diagram insertion', exact: true })).toBeDisabled();
+    const source = review.getByRole('textbox', { name: 'Source / archive reference', exact: true });
+    await expect(source).toHaveValue('synthetic-family.ged');
+    await source.fill('Synthetic GEDCOM dataset');
+    await review.getByRole('checkbox', { name: 'I reviewed this exact diagram and its source or own-work declaration.', exact: true }).check();
+    await review.getByRole('button', { name: 'Confirm diagram insertion', exact: true }).click();
     await expect(
       tree.getByText('Diagram inserted.', { exact: true }),
     ).toBeVisible();

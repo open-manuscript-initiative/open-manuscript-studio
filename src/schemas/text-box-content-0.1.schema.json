@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmanuscript.org/schemas/text-box-content-0.1.schema.json",
+  "title": "Experimental portable text-box content 0.1",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "paragraphs"
+  ],
+  "properties": {
+    "format": {
+      "const": "omi-text-box-content"
+    },
+    "version": {
+      "const": "0.1.0"
+    },
+    "paragraphs": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/paragraph"
+      }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "paragraph": {
+      "type": "object",
+      "required": [
+        "alignment",
+        "lineHeight",
+        "spaceBefore",
+        "spaceAfter",
+        "runs"
+      ],
+      "properties": {
+        "alignment": {
+          "enum": [
+            "left",
+            "center",
+            "right",
+            "justify"
+          ]
+        },
+        "lineHeight": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 10
+        },
+        "spaceBefore": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "spaceAfter": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/run"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "text",
+        "emphasis"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "emphasis": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "strong",
+              "emphasis",
+              "underline",
+              "strike",
+              "superscript",
+              "subscript",
+              "small-caps"
+            ]
+          }
+        },
+        "presentation": {
+          "type": "object",
+          "required": [
+            "fontFamily",
+            "fontSize",
+            "color"
+          ],
+          "properties": {
+            "fontFamily": {
+              "type": "string",
+              "maxLength": 149,
+              "pattern": "^[\\p{L}\\p{N} _,-]+$"
+            },
+            "fontSize": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 400
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

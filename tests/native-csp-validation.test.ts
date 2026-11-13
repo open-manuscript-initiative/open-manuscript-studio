@@ -29,3 +29,11 @@ test('validation report generation, export and reopening work under the native p
   assert.throws(() => parseValidationReport(JSON.stringify({ ...report, createdAt: '2026-02-30T12:00:00Z' })));
   assert.throws(() => parseValidationReport(JSON.stringify({ ...report, exclusions: [...report.exclusions, report.exclusions[0]] })));
 });
+
+
+test('profiled graphical text validates without runtime code generation', async () => {
+  const { createTextBox } = await import('../src/model/textBoxes.ts');
+  const { decodeTextBoxContent, TEXT_BOX_CONTENT_PROFILE } = await import('../src/model/textBoxContent.ts');
+  assert.deepEqual(decodeTextBoxContent(createTextBox('Native Ő').content, TEXT_BOX_CONTENT_PROFILE).diagnostics, []);
+  assert.deepEqual(decodeTextBoxContent('{}', TEXT_BOX_CONTENT_PROFILE).diagnostics, ['text-box-invalid-content']);
+});

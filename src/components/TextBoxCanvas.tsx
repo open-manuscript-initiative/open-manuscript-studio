@@ -1,3 +1,4 @@
+import { editedTextBox, decodeTextBoxContent } from "../model/textBoxContent";
 import {
   useEffect,
   useLayoutEffect,
@@ -319,7 +320,7 @@ function TextBoxProperties({
       TextBoxStyle,
       TextBoxParagraphStyle,
     ],
-    content: textBoxDocument(box.content),
+    content: textBoxDocument(box.content, box.contentProfile),
     editorProps: {
       attributes: {
         class: "omi-text-box-rich-editor",
@@ -348,11 +349,15 @@ function TextBoxProperties({
       },
     },
     onUpdate: ({ editor: e }) => {
-      const content = JSON.stringify(
-        textBoxDocument(JSON.stringify(e.getJSON())),
-      );
-      history.current.record(content);
-      latest.current.onChange({ ...latest.current.box, content });
+      const previous = latest.current.box;
+      const decoded = decodeTextBoxContent(previous.content, previous.contentProfile);
+      if (decoded.diagnostics.length && !window.confirm(copy.lossConfirm)) {
+        e.commands.setContent(textBoxDocument(previous.content, previous.contentProfile), { emitUpdate: false });
+        return;
+      }
+      const updated = editedTextBox(previous, textBoxDocument(JSON.stringify(e.getJSON())));
+      history.current.record(JSON.stringify([updated.contentProfile, updated.content]));
+      latest.current.onChange(updated);
     },
     onSelectionUpdate: () => {
       requestAnimationFrame(() => refresh((n) => n + 1));
@@ -360,11 +365,11 @@ function TextBoxProperties({
   });
   useEffect(() => {
     if (!editor) return;
-    if (history.current.has(box.content)) {
-      history.current.acknowledge(box.content);
+    if (history.current.has(JSON.stringify([box.contentProfile, box.content]))) {
+      history.current.acknowledge(JSON.stringify([box.contentProfile, box.content]));
       return;
     }
-    const incoming = textBoxDocument(box.content);
+    const incoming = textBoxDocument(box.content, box.contentProfile);
     if (
       JSON.stringify(incoming) !==
       JSON.stringify(textBoxDocument(JSON.stringify(editor.getJSON())))
@@ -376,7 +381,7 @@ function TextBoxProperties({
         .setTextSelection({ from, to })
         .run();
     }
-  }, [box.content, editor]);
+  }, [box.content, box.contentProfile, editor]);
   const attrs = editor?.getAttributes("textBoxStyle") ?? {};
   function format(next: Record<string, unknown>) {
     const chain = editor?.chain().setMark("textBoxStyle", next);
@@ -400,6 +405,7 @@ function TextBoxProperties({
           ×
         </button>
       </header>
+      {decodeTextBoxContent(box.content, box.contentProfile).diagnostics.length > 0 && <p role="status">{copy.lossWarning}</p>}
       <div className="omi-text-box-toolbar">
         {(
           ["bold", "italic", "underline", "superscript", "subscript"] as const

@@ -1,3 +1,4 @@
+import { TEXT_BOX_CONTENT_PROFILE, encodeTextBoxContent } from "../model/textBoxContent";
 import { DOMParser as XmlParser, XMLSerializer as XmlSerializer, type Node as XmlNode } from "@xmldom/xmldom";
 import type { DocxImportWarning } from "../model/docxImport";
 import type { OmiImageBlockData, OmiTextBox } from "../types/omi";
@@ -543,7 +544,8 @@ function readTextBox(
   const vertical = body?.getAttribute("anchor");
   return {
     id: crypto.randomUUID(),
-    content: JSON.stringify({ type: "doc", content }),
+    contentProfile: TEXT_BOX_CONTENT_PROFILE,
+    content: encodeTextBoxContent({ type: "doc", content }),
     x: label.x,
     y: label.y,
     width: label.width,

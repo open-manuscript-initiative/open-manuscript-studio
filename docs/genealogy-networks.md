@@ -91,3 +91,25 @@ applications and safe browser downloads on the web.
 The workspace editor has English, Hungarian and German copy. Catalog names are
 also localized in the other primary Studio languages, with English fallback.
 No private manuscripts or genealogy files are included in the test fixtures.
+
+## Reviewed manuscript contribution
+
+**Insert diagram into manuscript** first shows the exact SVG snapshot and an
+editable source suggestion. Sources are suggested from displayed records/relations,
+falling back to imported file names; these labels are not independently verified.
+Confirm the source or explicitly declare own research data, then approve that exact
+snapshot. Changing the source/declaration resets approval. Changes to the project,
+view, active manuscript or section require a new preview.
+
+External data inserts the diagram, adjacent source paragraph, provisional
+bibliographic record and `author-confirmed` derivation relation as one reversible
+manuscript change. The OMI save/history retains these objects; HTML/JATS retain the
+visible source and warn where structured derivation is not supported. An own-work
+declaration hides the visible source while carrying the author's declaration and
+supplied source internally in a semantic annotation. It grants no peer-review or
+verification status. It does not claim the diagram was authored outside OMI.
+
+The full graph, original GEDCOM and private research notes remain in workspace
+storage/backup, separate from the reviewed manuscript snapshot. Insertion does not
+create ongoing synchronization, overwrite later manuscript edits or restrict author
+editing. See [ADR-035](architecture/adr-035-text-box-profile-and-research-diagram-provenance.md).

@@ -1,8 +1,8 @@
 import { saveExportBlob } from '../../services/exportFileDelivery';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { stageInsertBlocks } from '../../app/visualBlockActions';
 import { useStudioStore } from '../../app/useStudioStore';
-import { createImageBlock } from '../../model/visualBlocks';
+import { buildGraphDiagramContribution, diagramSourceSuggestion } from './manuscriptContribution';
 import { newWorkspaceId, safeWorkspaceFileName } from '../disciplineWorkspace';
 import { graphCopy, nodeLabels, relationLabels, type GraphCopy } from './copy';
 import { decodeGedcom, parseGedcom } from './gedcom';
@@ -79,6 +79,11 @@ export function GenealogyNetworkPanel({
   } | null>(null);
   const [focus, setFocus] = useState(false),
     [depth, setDepth] = useState(3);
+  const [diagramReview, setDiagramReview] = useState<{ svg: string; fingerprint: string; manuscriptId: string; sectionId: string } | null>(null);
+  const diagramSourceId = useId();
+  const [diagramSource, setDiagramSource] = useState('');
+  const [diagramOwn, setDiagramOwn] = useState(false);
+  const [diagramApproved, setDiagramApproved] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const people = workspace.nodes.filter(
     (n) => mode === 'network' || n.kind === 'person',
@@ -234,40 +239,30 @@ export function GenealogyNetworkPanel({
     }
   }
   function insertDiagram() {
-    if (!target) {
-      setError(t.insertError);
-      return;
-    }
-    const svg = graphSvg(
-      layout,
-      relations,
-      workspace.title || t[mode === 'tree' ? 'tree' : 'network'],
-    );
-    const bytes = new TextEncoder().encode(svg);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += 0x8000)
-      binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-    const ok = stageInsertBlocks(
-      target.id,
-      target.blocks.length,
-      [
-        createImageBlock({
-          src: `data:image/svg+xml;base64,${btoa(binary)}`,
-          mediaType: 'image/svg+xml',
-          fileName: `${filename}.svg`,
-          alt: workspace.title || t.title,
-          caption: workspace.title || t.title,
-          width: layout.width,
-          height: layout.height,
-        }),
-      ],
-      'Insert research relationship diagram',
-    );
-    if (ok) {
-      setMessage(t.inserted);
-      setError('');
-    } else setError(t.insertError);
+    if (!target) { setError(t.insertError); return; }
+    const svg = graphSvg(layout, relations, workspace.title || t[mode === 'tree' ? 'tree' : 'network']);
+    setDiagramReview({ svg, fingerprint: JSON.stringify({ storageKey, workspace, layout: layout.workspace }), manuscriptId: manuscript.id, sectionId: target.id });
+    setDiagramSource(diagramSourceSuggestion(layout.workspace) || workspace.imports.map(item => item.fileName).join('; ').slice(0,20000));
+    setDiagramOwn(false);
+    setDiagramApproved(false);
+    setError('');
   }
+  function confirmDiagram() {
+    if (!diagramReview || !target || diagramReview.manuscriptId !== manuscript.id || diagramReview.sectionId !== target.id
+      || diagramReview.fingerprint !== JSON.stringify({ storageKey, workspace, layout: layout.workspace })) {
+      setDiagramApproved(false); setError(t.diagramChanged); return;
+    }
+    try {
+      const contribution = buildGraphDiagramContribution({ svg: diagramReview.svg, title: workspace.title || t.title,
+        width: layout.width, height: layout.height, source: diagramSource, selfAuthored: diagramOwn,
+        approved: diagramApproved, sourceLabel: t.source, timestamp: new Date().toISOString(), existingRecords: manuscript.bibliographicRecords ?? [] });
+      if (stageInsertBlocks(target.id, target.blocks.length, contribution.blocks, 'Insert attributed research diagram',
+        contribution.annotations, contribution.sourceAttributions, contribution.bibliographicRecords)) {
+        setDiagramReview(null); setDiagramApproved(false); setMessage(t.inserted); setError('');
+      } else setError(t.insertError);
+    } catch { setError(t.diagramReviewRequired); }
+  }
+
   return (
     <section
       className="genealogy-workspace"
@@ -546,6 +541,17 @@ export function GenealogyNetworkPanel({
           />
         </>
       )}
+      {diagramReview && <section className="genealogy-diagram-review" aria-label={t.diagramReview}>
+        <h3>{t.diagramReview}</h3>
+        <img alt={t.diagramReview} src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(diagramReview.svg)}`} style={{ maxWidth: '100%' }} />
+        <p>{t.diagramSnapshot}</p>
+        <label htmlFor={diagramSourceId}>{t.source}</label>
+        <textarea id={diagramSourceId} maxLength={20000} value={diagramSource} onChange={e => { setDiagramSource(e.target.value); setDiagramApproved(false); }} />
+        <label><input type="checkbox" checked={diagramOwn} onChange={e => { setDiagramOwn(e.target.checked); setDiagramApproved(false); }} />{t.diagramOwn}</label>
+        <label><input type="checkbox" checked={diagramApproved} onChange={e => setDiagramApproved(e.target.checked)} />{t.diagramApprove}</label>
+        <button type="button" disabled={!diagramApproved || (!diagramOwn && !diagramSource.trim())} onClick={confirmDiagram}>{t.diagramConfirm}</button>
+        <button type="button" onClick={() => { setDiagramReview(null); setDiagramApproved(false); }}>{t.cancel}</button>
+      </section>}
       {draft && (
         <form
           className="genealogy-entity-form"

@@ -1,0 +1,21 @@
+{
+  "repository": "open-manuscript-initiative/omi",
+  "revision": "5e435c1dd613fe6ba1d93cba6848859029c68f4a",
+  "schemas": [
+    {
+      "path": "src/schemas/omi-manuscript-0.3.schema.json",
+      "sourcePath": "static/schemas/omi-manuscript-0.3.schema.json",
+      "sha256": "0961f6f3cc67c331696b74f2e4a47fc3f4eb4004e423d3e8e360b8eab5fea5d6"
+    },
+    {
+      "path": "src/schemas/text-box-content-0.1.schema.json",
+      "sourcePath": "static/schemas/text-box-content-0.1.schema.json",
+      "sha256": "2f9a2c745847bbd29d7dced5a810c434055b9c7b507b1b6416a60544efd5da5c"
+    },
+    {
+      "path": "src/schemas/fixtures/text-box-content-0.1.json",
+      "sourcePath": "static/examples/text-box-content/0.1.json",
+      "sha256": "040205c5d8b24f1d30c5e4adc4ea9465b3200b6bb9b71aa71b4360168f09be72"
+    }
+  ]
+}

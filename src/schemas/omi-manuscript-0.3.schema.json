@@ -857,6 +857,14 @@
             "center",
             "bottom"
           ]
+        },
+        "contentProfile": {
+          "type": "string",
+          "format": "uri",
+          "description": "Explicit experimental content profile. Absence is the legacy unprofiled Studio import representation; unknown profiles remain opaque."
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
         }
       },
       "additionalProperties": true

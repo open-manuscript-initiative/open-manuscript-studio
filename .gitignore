@@ -160,3 +160,6 @@ src-tauri/gen/
 *.jks
 *.keystore
 keystore.properties
+
+# Immutable OMI checkout used only for schema conformance.
+omi-schema-source/

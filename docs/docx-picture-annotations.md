@@ -10,12 +10,19 @@ clipboard handling do not interfere with editing its text.
 
 ## Semantic text and presentation
 
-`OmiTextBox.content` stores a constrained Tiptap document with paragraphs, text,
-line breaks and semantic bold, emphasis, underline, strike, small capitals,
-superscript and subscript marks. A separate `textBoxStyle` mark carries font
-family, CSS-pixel size and RGB color. Box geometry and background are independent
-of the text. The main manuscript editor's semantic formatting rules do not change.
-Import keeps the literal source text and does not perform translation.
+New `OmiTextBox.content` values use the experimental, editor-independent
+[text-box content 0.1 profile](https://openmanuscript.org/docs/governance/studio-1.0-architecture/text-box-and-research-provenance-2026-11-13/).
+`contentProfile` identifies it; a JSON string holds versioned paragraphs, semantic
+runs and bounded presentation values. The Tiptap adapter maps the editor vocabulary
+at its boundary. The canonical OMI repository owns both schemas; Studio pins exact
+source bytes and generates the profile validator at build time.
+
+Legacy unprofiled text/Tiptap JSON stays readable without an automatic migration.
+Unknown profiles or fields stay in the OMI document and history; incomplete views
+produce editor and HTML/JATS export warnings. Confirming an explicit edit retains
+the original under the namespaced text-box-source extension. Box geometry and other
+manuscript content remain editable. This bounded experimental profile does not
+freeze the main manuscript ContentCodec. Import preserves literal text without translation.
 
 Images retain an ordered `visual.textBoxes` array. Independent objects use
 `visual.kind = "text-box"` and `visual.textBox`. Both survive OMI JSON and asset-

@@ -1,6 +1,8 @@
 const COPY = {
   en: {
     title: "Text box",
+    lossWarning: "This text box contains unsupported content. Editing creates a supported copy and retains the original in the document.",
+    lossConfirm: "Edit a supported copy? The original content will remain in the document for recovery.",
     add: "Add text box",
     edit: "Edit text box",
     remove: "Delete text box",
@@ -29,6 +31,8 @@ const COPY = {
   },
   hu: {
     title: "Szövegdoboz",
+    lossWarning: "Ez a szövegdoboz nem támogatott tartalmat is hordoz. Szerkesztéskor támogatott másolat készül; az eredeti a dokumentumban megmarad.",
+    lossConfirm: "Szerkeszted a támogatott másolatot? Az eredeti tartalom helyreállításhoz megmarad a dokumentumban.",
     add: "Szövegdoboz hozzáadása",
     edit: "Szövegdoboz szerkesztése",
     remove: "Szövegdoboz törlése",
@@ -57,6 +61,8 @@ const COPY = {
   },
   de: {
     title: "Textfeld",
+    lossWarning: "Dieses Textfeld enthält nicht unterstützte Inhalte. Beim Bearbeiten entsteht eine unterstützte Kopie; das Original bleibt im Dokument erhalten.",
+    lossConfirm: "Unterstützte Kopie bearbeiten? Das Original bleibt zur Wiederherstellung im Dokument erhalten.",
     add: "Textfeld hinzufügen",
     edit: "Textfeld bearbeiten",
     remove: "Textfeld löschen",
