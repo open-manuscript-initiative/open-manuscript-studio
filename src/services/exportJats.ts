@@ -1,4 +1,4 @@
-import { visualTextBoxText } from '../model/textBoxes';
+import { visualTextBoxText, visualTextBoxDiagnostics } from '../model/textBoxes';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
@@ -438,6 +438,9 @@ function renderBlockTree(block: OmiBlock, state: RenderState): string {
 }
 
 function renderBlock(block: OmiBlock, state: RenderState): string {
+  if (block.visual) for (const diagnostic of visualTextBoxDiagnostics(block.visual)) {
+    state.diagnostics.push({ ...diagnostic, severity: 'warning', message: 'This text-box view cannot represent all stored content. Original data remains in OMI; review before publication.' });
+  }
   if (block.visual) {
     switch (block.visual.kind) {
       case 'text-box':

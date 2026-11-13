@@ -1,3 +1,4 @@
+import { TEXT_BOX_CONTENT_PROFILE, decodeTextBoxContent } from '../model/textBoxContent';
 import { FRAME_LAYOUT_EXTENSION, validateFrameLayout } from '../model/publicationFrames';
 import {
   OMI_FILE_FORMAT_PROFILES,
@@ -418,6 +419,15 @@ function validateBlock(
   if (value.language !== undefined) requireLanguageTag(value.language, `${path}/language`);
   addAddressable(value, path, indexes.all);
   addAddressable(value, path, indexes.blocks);
+  const visual = isRecord(value.visual) ? value.visual : undefined;
+  const boxes = visual?.kind === 'text-box' ? [visual.textBox] : Array.isArray(visual?.textBoxes) ? visual.textBoxes : [];
+  for (const box of boxes) {
+    if (isRecord(box) && box.contentProfile === TEXT_BOX_CONTENT_PROFILE
+      && decodeTextBoxContent(String(box.content), TEXT_BOX_CONTENT_PROFILE).diagnostics.includes('text-box-invalid-content')) {
+      invalid(`${path}/visual has invalid profiled text-box content.`);
+    }
+  }
+
   optionalArray(value.children, `${path}/children`).forEach((child, index) =>
     validateBlock(child, `${path}/children/${index}`, indexes),
   );

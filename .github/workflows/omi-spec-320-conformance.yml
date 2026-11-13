@@ -19,4 +19,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify vendored schema checksums
+        id: schema_source
+        run: node scripts/check-omi-schema-source.mjs --github-output
+      - name: Check out immutable canonical OMI source
+        uses: actions/checkout@v4
+        with:
+          repository: open-manuscript-initiative/omi
+          ref: ${{ steps.schema_source.outputs.revision }}
+          path: omi-schema-source
+          persist-credentials: false
+      - name: Verify canonical byte parity and generated validators
+        run: |
+          node scripts/check-omi-schema-source.mjs --source=omi-schema-source
+          npm run schemas:check
       - run: npm run test:file-format

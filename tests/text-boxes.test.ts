@@ -17,8 +17,10 @@ import { renderJatsArticle } from "../src/services/exportJats.ts";
 import { blockPlainText } from "../src/services/exportTextUtils.ts";
 import { createVersionedTestManuscript } from "./testManuscriptFixture.ts";
 function formattedBox() {
+  const legacy = createTextBox();
+  delete legacy.contentProfile;
   return {
-    ...createTextBox(),
+    ...legacy,
     x: 20,
     y: 30,
     width: 210,
@@ -133,6 +135,7 @@ test("text box rendering escapes scholarly text and rejects executable HTML and 
 test("empty and legacy plain text remain editable safe paragraphs", () => {
   const box = createTextBox();
   assert.equal(textBoxPlainText(box), "");
+  delete box.contentProfile;
   box.content = "Literal <b>text</b> & Ő";
   assert.equal(textBoxPlainText(box), box.content);
   assert.match(
@@ -177,6 +180,9 @@ test("portable asset containers retain editable labels independently of image by
     await import("../src/services/omiContainerImport.ts");
   const m = createVersionedTestManuscript(),
     box = formattedBox();
+  const { encodeTextBoxContent, decodeTextBoxContent, TEXT_BOX_CONTENT_PROFILE } = await import('../src/model/textBoxContent.ts');
+  box.content = encodeTextBoxContent(decodeTextBoxContent(box.content).document);
+  box.contentProfile = TEXT_BOX_CONTENT_PROFILE;
   const image = await externalizeImageBlock(
     createImageBlock({
       src: "data:image/png;base64,ZmFrZS1wbmctcGF5bG9hZA==",

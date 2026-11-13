@@ -1,4 +1,4 @@
-import type { JSONContent } from "@tiptap/core";
+import { TEXT_BOX_CONTENT_PROFILE, encodeTextBoxContent, decodeTextBoxContent, type TextBoxEditorNode as JSONContent } from "./textBoxContent";
 import type { OmiTextBox, OmiVisualBlockData } from "../types/omi";
 
 export function createTextBox(text = ""): OmiTextBox {
@@ -10,7 +10,8 @@ export function createTextBox(text = ""): OmiTextBox {
     height: 90,
     background: "#ffffff",
     padding: [4, 4, 4, 4],
-    content: JSON.stringify({
+    contentProfile: TEXT_BOX_CONTENT_PROFILE,
+    content: encodeTextBoxContent({
       type: "doc",
       content: [
         { type: "paragraph", content: text ? [{ type: "text", text }] : [] },
@@ -61,7 +62,9 @@ const marks = new Set([
   "omiSmallCaps",
 ]);
 /** Only a constrained rich-text vocabulary crosses the stored-content trust boundary. */
-export function textBoxDocument(content: string): JSONContent {
+export function textBoxDocument(content: string, profile?: string): JSONContent {
+  const decoded = decodeTextBoxContent(content, profile);
+  content = JSON.stringify(decoded.document);
   let input: JSONContent;
   try {
     input = JSON.parse(content) as JSONContent;
@@ -118,16 +121,16 @@ export function textBoxDocument(content: string): JSONContent {
         const sizes = nodes
           .filter((n) => n.type === "text")
           .map(
-            (n) =>
+            (n) => boxNumber(
               n.marks?.find((m) => m.type === "textBoxStyle")?.attrs
-                ?.fontSize ?? 16,
+                ?.fontSize, 16, 1, 400),
           );
         return {
           type: "paragraph",
           attrs: {
             fontSize: Math.max(1, ...sizes, ...(sizes.length ? [] : [16])),
             textAlign: ["left", "center", "right", "justify"].includes(
-              p.attrs?.textAlign,
+              String(p.attrs?.textAlign),
             )
               ? p.attrs?.textAlign
               : "left",
@@ -141,7 +144,7 @@ export function textBoxDocument(content: string): JSONContent {
   };
 }
 export function textBoxPlainText(box: OmiTextBox): string {
-  return textBoxDocument(box.content)
+  return textBoxDocument(box.content, box.contentProfile)
     .content!.map((p) =>
       p
         .content!.map((n) => (n.type === "hardBreak" ? "\n" : (n.text ?? "")))
@@ -157,7 +160,7 @@ function escape(value: string): string {
     .replace(/"/g, "&quot;");
 }
 export function renderTextBoxContent(box: OmiTextBox): string {
-  return textBoxDocument(box.content)
+  return textBoxDocument(box.content, box.contentProfile)
     .content!.map((p) => {
       const text = p
         .content!.map((n) => {
@@ -258,4 +261,9 @@ export function renderTextBoxGraphic(
     )
     .join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" role="group" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" style="display:block;width:100%;max-width:${width}px;height:auto;overflow:visible">${image ? `<title>${escape(image.alt)}</title><image href="${escape(image.src)}" width="${width}" height="${height}" preserveAspectRatio="none"/>` : ""}${content}</svg>`;
+}
+
+export function visualTextBoxDiagnostics(visual: OmiVisualBlockData): Array<{ code: string; targetId: string }> {
+  const boxes = visual.kind === 'text-box' ? [visual.textBox] : visual.kind === 'image' ? visual.textBoxes ?? [] : [];
+  return boxes.flatMap(box => decodeTextBoxContent(box.content, box.contentProfile).diagnostics.map(code => ({ code, targetId: box.id })));
 }

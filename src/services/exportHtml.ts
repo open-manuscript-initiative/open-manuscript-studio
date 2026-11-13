@@ -1,4 +1,4 @@
-import { renderTextBoxGraphic } from '../model/textBoxes';
+import { renderTextBoxGraphic, visualTextBoxDiagnostics } from '../model/textBoxes';
 import { tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../model/tableLayout';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
@@ -452,6 +452,9 @@ function renderBlockTree(block: OmiBlock, state: RenderState): string {
 }
 
 function renderBlock(block: OmiBlock, state: RenderState): string {
+  if (block.visual) for (const diagnostic of visualTextBoxDiagnostics(block.visual)) {
+    state.diagnostics.push({ ...diagnostic, severity: 'warning', message: 'This text-box view cannot represent all stored content. Original data remains in OMI; review before publication.' });
+  }
   if (block.visual) {
     switch (block.visual.kind) {
       case 'text-box': {

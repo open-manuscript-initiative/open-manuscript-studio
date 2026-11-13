@@ -357,6 +357,9 @@ export interface OmiImportProvenance {
 /** Semantic rich text with independent graphical presentation, in CSS pixels. */
 export interface OmiTextBox {
   id: string;
+  /** Versioned portable profile; absent means the pre-profile Studio import form. */
+  contentProfile?: string;
+  extensions?: Record<string, unknown>;
   content: string;
   x: number;
   y: number;

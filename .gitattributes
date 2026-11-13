@@ -5,3 +5,7 @@
 # Generated validators must compare consistently on Windows, macOS and Linux.
 /src/services/generated/*.js text eol=lf
 /src/services/generated/*.d.ts text eol=lf
+
+# Canonical schema and golden bytes are checksum-pinned across platforms.
+src/schemas/*.json text eol=lf
+src/schemas/fixtures/*.json text eol=lf
