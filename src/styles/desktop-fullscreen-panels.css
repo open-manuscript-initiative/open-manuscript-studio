@@ -162,11 +162,11 @@
 
   /* Keep the same tile navigation visible above the selected desktop workspace. */
   .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-open {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(11rem, min(48dvh, 34rem)) minmax(0, 1fr);
-    overflow: hidden;
-    background: #f5f2ec;
+    display: block;
+    overflow: auto;
+    background-color: #f5f2ec;
+    background-image: radial-gradient(circle, rgba(104, 89, 72, .065) .7px, transparent .8px);
+    background-size: 20px 20px;
   }
 
   .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-collapsed {
@@ -181,17 +181,13 @@
     gap: clamp(.75rem, 1.5vw, 1.25rem);
     width: 100%;
     max-width: 112rem;
-    max-height: 48dvh;
+    max-height: none;
     box-sizing: border-box;
     margin: 0 auto;
     padding: clamp(.75rem, 1.5vw, 1.25rem);
     border: 0;
     overflow: auto;
     background: transparent;
-  }
-
-  .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-navigation:not([hidden]) {
-    grid-row: 1;
   }
 
   .studio-menu-drawer--desktop-tiles .studio-menu-navigation > [data-home-navigation] {
@@ -239,14 +235,6 @@
   .studio-menu-drawer--desktop-tiles .studio-menu-nav-button--active {
     border-color: rgba(109, 33, 48, .3);
     box-shadow: inset 3px 0 0 var(--omi-academic-burgundy, #6d2130);
-  }
-
-  .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-content {
-    grid-row: 2;
-    height: auto;
-    min-height: 0;
-    max-width: none;
-    overflow: auto;
   }
 
   .studio-menu-content .studio-menu-view--document .omi-new-document-actions {
