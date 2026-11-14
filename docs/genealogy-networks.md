@@ -92,6 +92,12 @@ The workspace editor has English, Hungarian and German copy. Catalog names are
 also localized in the other primary Studio languages, with English fallback.
 No private manuscripts or genealogy files are included in the test fixtures.
 
+This section describes the current implementation. The accepted target moves
+the dataset into a portable project resource saved directly to the project's
+selected cloud location, with local storage used only as a cache. See
+[ADR-036](architecture/adr-036-project-owned-research-data.md); provider-direct
+storage and project migration are not implemented yet.
+
 ## Reviewed manuscript contribution
 
 **Insert diagram into manuscript** first shows the exact SVG snapshot and an
