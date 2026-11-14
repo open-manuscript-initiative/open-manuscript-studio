@@ -98,6 +98,129 @@
     box-shadow: inset 3px 0 0 var(--omi-academic-burgundy, #6d2130);
   }
 
+
+  /* Keep the same tile navigation visible above the selected desktop workspace. */
+  .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-open {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(11rem, min(48dvh, 34rem)) minmax(0, 1fr);
+    overflow: hidden;
+    background: #f5f2ec;
+  }
+
+  .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-collapsed {
+    display: block;
+    overflow: auto;
+  }
+
+  .studio-menu-drawer--desktop-tiles .studio-menu-navigation:not([hidden]) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    align-content: start;
+    gap: clamp(.75rem, 1.5vw, 1.25rem);
+    width: 100%;
+    max-width: 112rem;
+    max-height: 48dvh;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: clamp(.75rem, 1.5vw, 1.25rem);
+    border: 0;
+    overflow: auto;
+    background: transparent;
+  }
+
+  .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-navigation:not([hidden]) {
+    grid-row: 1;
+  }
+
+  .studio-menu-drawer--desktop-tiles .studio-menu-navigation > [data-home-navigation] {
+    grid-column: 1 / -1;
+    min-height: calc(var(--omi-menu-nav-min-height-desktop, 2.1rem) * 1.666667);
+    margin: 0;
+  }
+
+  .studio-menu-drawer--desktop-tiles .studio-menu-workflow-role {
+    grid-column: 1 / -1;
+  }
+
+  .studio-menu-drawer--desktop-tiles .studio-menu-nav-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: .5rem;
+    min-width: 0;
+    padding: .65rem;
+    border: 1px solid var(--omi-academic-line, #e2ddd4);
+    border-radius: .7rem;
+    background: rgba(255, 254, 250, .62);
+  }
+
+  .studio-menu-drawer--desktop-tiles .studio-menu-nav-group-label {
+    grid-column: 1 / -1;
+    padding: .3rem .35rem .2rem;
+  }
+
+  .studio-menu-drawer--desktop-tiles .studio-menu-nav-button {
+    min-width: 0;
+    min-height: calc(var(--omi-menu-nav-min-height-desktop, 2.1rem) * 2);
+    height: auto;
+    padding: calc(var(--omi-menu-nav-padding-y, .35rem) * 2)
+      calc(var(--omi-menu-nav-padding-x, .5rem) * 1.5);
+    border: 1px solid var(--omi-academic-line, #e2ddd4);
+    border-radius: .6rem;
+    background: rgba(255, 254, 250, .92);
+    font-size: var(--omi-menu-nav-font-size-desktop, .76rem);
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: none;
+  }
+
+  .studio-menu-drawer--desktop-tiles .studio-menu-nav-button--active {
+    border-color: rgba(109, 33, 48, .3);
+    box-shadow: inset 3px 0 0 var(--omi-academic-burgundy, #6d2130);
+  }
+
+  .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-content {
+    grid-row: 2;
+    height: auto;
+    min-height: 0;
+    max-width: none;
+    overflow: auto;
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-actions {
+    border-color: var(--omi-academic-line, #e2ddd4);
+    border-radius: .7rem;
+    background: #f5f2ec;
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-grid > button {
+    min-height: 5rem;
+    height: 100%;
+    box-sizing: border-box;
+    border-color: var(--omi-academic-line, #e2ddd4);
+    border-radius: .6rem;
+    background: rgba(255, 254, 250, .95);
+    color: var(--omi-academic-ink, #303238);
+    line-height: 1.25;
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-grid > button:hover,
+  .studio-menu-content .studio-menu-view--document .omi-new-document-grid > button:focus-visible {
+    border-color: var(--omi-academic-burgundy, #6d2130);
+    background: #fffefa;
+  }
+
+  .studio-menu-content .studio-menu-view--document .studio-tool-card {
+    border-color: var(--omi-academic-line, #e2ddd4);
+    border-radius: .7rem;
+    background: #fffefa;
+  }
+
   .studio-menu-drawer {
     width: 100vw;
     max-width: none;
