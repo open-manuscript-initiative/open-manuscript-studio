@@ -161,7 +161,7 @@
 
 
   /* Keep the same tile navigation visible above the selected desktop workspace. */
-  .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-open {
+  .studio-menu-drawer:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-open {
     display: block;
     overflow: auto;
     background-color: #f5f2ec;
@@ -169,12 +169,12 @@
     background-size: 20px 20px;
   }
 
-  .studio-menu-drawer--desktop-tiles:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-collapsed {
+  .studio-menu-drawer:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-collapsed {
     display: block;
     overflow: auto;
   }
 
-  .studio-menu-drawer--desktop-tiles .studio-menu-navigation:not([hidden]) {
+  .studio-menu-drawer .studio-menu-navigation:not([hidden]) {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
     align-content: start;
@@ -190,17 +190,17 @@
     background: transparent;
   }
 
-  .studio-menu-drawer--desktop-tiles .studio-menu-navigation > [data-home-navigation] {
+  .studio-menu-drawer .studio-menu-navigation > [data-home-navigation] {
     grid-column: 1 / -1;
     min-height: calc(var(--omi-menu-nav-min-height-desktop, 2.1rem) * 1.666667);
     margin: 0;
   }
 
-  .studio-menu-drawer--desktop-tiles .studio-menu-workflow-role {
+  .studio-menu-drawer .studio-menu-workflow-role {
     grid-column: 1 / -1;
   }
 
-  .studio-menu-drawer--desktop-tiles .studio-menu-nav-group {
+  .studio-menu-drawer .studio-menu-nav-group {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-content: start;
     gap: .5rem;
@@ -211,12 +211,12 @@
     background: rgba(255, 254, 250, .62);
   }
 
-  .studio-menu-drawer--desktop-tiles .studio-menu-nav-group-label {
+  .studio-menu-drawer .studio-menu-nav-group-label {
     grid-column: 1 / -1;
     padding: .3rem .35rem .2rem;
   }
 
-  .studio-menu-drawer--desktop-tiles .studio-menu-nav-button {
+  .studio-menu-drawer .studio-menu-nav-button {
     min-width: 0;
     min-height: calc(var(--omi-menu-nav-min-height-desktop, 2.1rem) * 2);
     height: auto;
@@ -232,7 +232,7 @@
     box-shadow: none;
   }
 
-  .studio-menu-drawer--desktop-tiles .studio-menu-nav-button--active {
+  .studio-menu-drawer .studio-menu-nav-button--active {
     border-color: rgba(109, 33, 48, .3);
     box-shadow: inset 3px 0 0 var(--omi-academic-burgundy, #6d2130);
   }
