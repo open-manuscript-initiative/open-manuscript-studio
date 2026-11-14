@@ -15,6 +15,65 @@
   padding: clamp(.75rem, 1.6vw, 1.4rem);
 }
 
+
+/* Quiet color coding groups related destinations without competing with content. */
+.studio-menu-nav-group[data-tile-category="manuscript"] {
+  --tile-accent: #668b98;
+  --tile-border: #ccdde1;
+  --tile-surface: #f0f6f7;
+  --tile-hover: #e8f1f3;
+}
+
+.studio-menu-nav-group[data-tile-category="editorial"] {
+  --tile-accent: #6f8a68;
+  --tile-border: #d2dfce;
+  --tile-surface: #f2f6ef;
+  --tile-hover: #eaf2e6;
+}
+
+.studio-menu-nav-group[data-tile-category="publication"] {
+  --tile-accent: #9a6870;
+  --tile-border: #e2d0d2;
+  --tile-surface: #f8f1f1;
+  --tile-hover: #f2e7e8;
+}
+
+.studio-menu-nav-group[data-tile-category="tools"] {
+  --tile-accent: #7b7599;
+  --tile-border: #dad7e5;
+  --tile-surface: #f4f2f8;
+  --tile-hover: #ece9f3;
+}
+
+.studio-menu-nav-group[data-tile-category="preferences"] {
+  --tile-accent: #a1834f;
+  --tile-border: #e4dcc8;
+  --tile-surface: #f8f5ed;
+  --tile-hover: #f1ecdf;
+}
+
+.studio-menu-nav-group[data-tile-category] {
+  border-color: var(--tile-border);
+  background: var(--tile-surface);
+}
+
+.studio-menu-nav-group[data-tile-category] .studio-menu-nav-button {
+  border-color: var(--tile-border);
+  border-inline-start: 3px solid var(--tile-accent);
+}
+
+.studio-menu-nav-group[data-tile-category] .studio-menu-nav-button:hover,
+.studio-menu-nav-group[data-tile-category] .studio-menu-nav-button:focus-visible {
+  border-color: var(--tile-accent);
+  background: var(--tile-hover);
+}
+
+.studio-menu-nav-group[data-tile-category] .studio-menu-nav-button--active {
+  border-color: var(--tile-accent);
+  background: var(--tile-hover);
+  box-shadow: inset 3px 0 0 var(--tile-accent);
+}
+
 @media (min-width: 761px) {
   .studio-menu-backdrop {
     background: var(--omi-academic-paper, #fffefa);
@@ -33,7 +92,9 @@
   .studio-menu-drawer--navigation-only .studio-menu-body {
     display: block;
     overflow: auto;
-    background: #f5f2ec;
+    background-color: #f5f2ec;
+    background-image: radial-gradient(circle, rgba(104, 89, 72, .065) .7px, transparent .8px);
+    background-size: 20px 20px;
   }
 
   .studio-menu-drawer--navigation-only .studio-menu-navigation {
@@ -189,9 +250,9 @@
   }
 
   .studio-menu-content .studio-menu-view--document .omi-new-document-actions {
-    border-color: var(--omi-academic-line, #e2ddd4);
+    border-color: #ccdde1;
     border-radius: .7rem;
-    background: #f5f2ec;
+    background: #f0f6f7;
   }
 
   .studio-menu-content .studio-menu-view--document .omi-new-document-grid {
@@ -202,9 +263,10 @@
     min-height: 5rem;
     height: 100%;
     box-sizing: border-box;
-    border-color: var(--omi-academic-line, #e2ddd4);
+    border-color: #ccdde1;
+    border-inline-start: 3px solid #668b98;
     border-radius: .6rem;
-    background: rgba(255, 254, 250, .95);
+    background: #fbfdfd;
     color: var(--omi-academic-ink, #303238);
     line-height: 1.25;
   }
@@ -216,9 +278,9 @@
   }
 
   .studio-menu-content .studio-menu-view--document .studio-tool-card {
-    border-color: var(--omi-academic-line, #e2ddd4);
+    border-color: #ccdde1;
     border-radius: .7rem;
-    background: #fffefa;
+    background: rgba(255, 254, 250, .96);
   }
 
   .studio-menu-drawer {
@@ -235,6 +297,9 @@
 
   .studio-menu-content {
     overflow: auto;
+    background-color: #fbfaf7;
+    background-image: radial-gradient(circle, rgba(104, 89, 72, .05) .65px, transparent .8px);
+    background-size: 22px 22px;
   }
 
   .studio-menu-view {
