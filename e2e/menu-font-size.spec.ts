@@ -19,55 +19,59 @@ async function openMenuNavigation(
   await expect(navigation).toBeVisible();
 }
 
-test('menu font size can be personalized independently from Settings', async ({ page }) => {
-  await installMockStudioApi(page);
-  await signInToStudio(page);
-  await page.getByRole('button', { name: /^New OMI study/ }).click();
+for (const layout of ['dashboard', 'sidebar'] as const) {
+  test(`menu font size scales ${layout} controls independently from Settings`, async ({ page }) => {
+    await installMockStudioApi(page);
+    await signInToStudio(page);
+    await page.getByRole('button', { name: /^New OMI study/ }).click();
 
-  const dialog = await openStudioMenu(page);
-  const firstMenuItem = dialog.locator('.studio-menu-nav-button').first();
+    const dialog = await openStudioMenu(page);
+    if (layout === 'sidebar') {
+      await dialog.getByRole('button', { name: 'Settings', exact: true }).click();
+      await openMenuNavigation(dialog);
+    }
 
-  const defaultSize = await firstMenuItem.evaluate(
-    (node) => Number.parseFloat(getComputedStyle(node).fontSize),
-  );
-  const defaultHeight = await firstMenuItem.evaluate(
-    (node) => node.getBoundingClientRect().height,
-  );
+    const home = dialog.locator('[data-home-navigation]');
+    const menuItem = dialog.locator('.studio-menu-nav-group .studio-menu-nav-button').first();
+    const readMetrics = async (item: import('@playwright/test').Locator) => item.evaluate(
+      (node) => ({
+        font: Number.parseFloat(getComputedStyle(node).fontSize),
+        height: node.getBoundingClientRect().height,
+      }),
+    );
+    const baseline = { home: await readMetrics(home), item: await readMetrics(menuItem) };
 
-  await dialog.getByRole('button', { name: 'Settings', exact: true }).click();
-  const slider = dialog.getByRole('slider', { name: 'Menu font size' });
-  await expect(slider).toHaveValue('100');
+    for (const scale of [130, 80]) {
+      await dialog.getByRole('button', { name: 'Settings', exact: true }).click();
+      const slider = dialog.getByRole('slider', { name: 'Menu font size' });
+      await expect(slider).toHaveValue(scale === 130 ? '100' : '130');
+      await slider.fill(String(scale));
+      await expect.poll(async () =>
+        page.evaluate(() => localStorage.getItem('omi-studio-menu-font-scale')),
+      ).toBe(String(scale));
+      await openMenuNavigation(dialog);
 
-  await slider.fill('130');
+      if (layout === 'dashboard') {
+        // Home closes the active view; reopening restores the tile dashboard.
+        await home.click();
+        await expect(dialog).toBeHidden();
+        await openStudioMenu(page);
+      }
+      await expect(dialog).toHaveClass(
+        layout === 'dashboard' ? /--navigation-only/ : /^studio-menu-drawer$/,
+      );
 
-  await expect.poll(async () =>
-    page.evaluate(() => localStorage.getItem('omi-studio-menu-font-scale')),
-  ).toBe('130');
-
-  await openMenuNavigation(dialog);
-
-  await expect.poll(async () =>
-    firstMenuItem.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
-  ).toBeGreaterThan(defaultSize);
-
-  await expect.poll(async () =>
-    firstMenuItem.evaluate((node) => node.getBoundingClientRect().height),
-  ).toBeGreaterThan(defaultHeight);
-
-  const enlargedSize = await firstMenuItem.evaluate(
-    (node) => Number.parseFloat(getComputedStyle(node).fontSize),
-  );
-
-  await slider.fill('80');
-
-  await expect.poll(async () =>
-    page.evaluate(() => localStorage.getItem('omi-studio-menu-font-scale')),
-  ).toBe('80');
-
-  await expect.poll(async () =>
-    firstMenuItem.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
-  ).toBeLessThan(enlargedSize);
-});
+      // Compare each control in the same layout before and after scaling.
+      for (const [item, normal] of [[home, baseline.home], [menuItem, baseline.item]] as const) {
+        await expect.poll(async () => (await readMetrics(item)).font / normal.font)
+          .toBeCloseTo(scale / 100, 1);
+        const height = expect.poll(async () => (await readMetrics(item)).height);
+        if (scale > 100) await height.toBeGreaterThan(normal.height);
+        else await height.toBeLessThan(normal.height);
+      }
+    }
+  });
+}
 
 test('interface text size scales controls and live publication editor chrome but not publication content', async ({ page }) => {
   await installMockStudioApi(page);
