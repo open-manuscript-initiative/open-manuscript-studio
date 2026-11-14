@@ -244,7 +244,7 @@ export function StudioMenu({
                 </label>
               </section>
             ) : null}
-            <MenuNavGroup label={supplementalCopy.manuscriptGroup}>
+            <MenuNavGroup category="manuscript" label={supplementalCopy.manuscriptGroup}>
               {canShow('document') ? <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} /> : null}
               {canShow('manuscript') ? <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} /> : null}
               {canShow('contributors') ? <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} /> : null}
@@ -255,20 +255,20 @@ export function StudioMenu({
               {canShow('history') ? <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} /> : null}
               {canShow('validation') ? <MenuButton active={activeView === 'validation'} icon={<ShieldCheck size={18} aria-hidden="true" />} label={translateCatalog(locale, '/uncataloguedUi/validationModel/title')} onClick={() => setActiveView('validation')} /> : null}
             </MenuNavGroup>
-            <MenuNavGroup label={supplementalCopy.editorialGroup} hidden={!['editorial-workflow', 'assignments', 'signatures'].some((view) => canShow(view as StudioMenuView))}>
+            <MenuNavGroup category="editorial" label={supplementalCopy.editorialGroup} hidden={!['editorial-workflow', 'assignments', 'signatures'].some((view) => canShow(view as StudioMenuView))}>
               {canShow('editorial-workflow') ? <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} /> : null}
               {ojsAssignment && canShow('assignments') ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
               {canShow('signatures') ? <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} /> : null}
             </MenuNavGroup>
-            <MenuNavGroup label={supplementalCopy.publicationGroup} hidden={!canShow('publication-editor') && !canShow('publication')}>
+            <MenuNavGroup category="publication" label={supplementalCopy.publicationGroup} hidden={!canShow('publication-editor') && !canShow('publication')}>
               {canShow('publication-editor') ? <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} /> : null}
               {canShow('publication') ? <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} /> : null}
             </MenuNavGroup>
-            <MenuNavGroup label={supplementalCopy.toolsGroup}>
+            <MenuNavGroup category="tools" label={supplementalCopy.toolsGroup}>
               {navigationBeforeTools}
               <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={supplementalCopy.tools} onClick={() => setActiveView('tools')} />
             </MenuNavGroup>
-            <MenuNavGroup label={supplementalCopy.preferencesGroup}>
+            <MenuNavGroup category="preferences" label={supplementalCopy.preferencesGroup}>
               <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
               {navigationAfterSettings}
             </MenuNavGroup>
@@ -307,9 +307,9 @@ function MenuButton({ active, icon, label, onClick }: MenuButtonProps) {
   return <button type="button" className={`studio-menu-nav-button${active ? ' studio-menu-nav-button--active' : ''}`} aria-current={active ? 'page' : undefined} onClick={onClick}>{icon}<span>{label}</span></button>;
 }
 
-function MenuNavGroup({ label, children, hidden = false }: { label: string; children: ReactNode; hidden?: boolean }) {
+function MenuNavGroup({ label, children, hidden = false, category }: { label: string; children: ReactNode; hidden?: boolean; category?: 'manuscript' | 'editorial' | 'publication' | 'tools' | 'preferences' }) {
   if (hidden) return null;
-  return <div className="studio-menu-nav-group" role="group" aria-label={label}>
+  return <div className="studio-menu-nav-group" data-tile-category={category} role="group" aria-label={label}>
     <span className="studio-menu-nav-group-label" aria-hidden="true">{label}</span>
     {children}
   </div>;
