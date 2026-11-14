@@ -75,3 +75,20 @@ and persistence authority.
 
 This ADR records the accepted architecture. It does not claim these
 implementation steps or provider compatibility checks are complete.
+
+## First implementation slice
+
+The genealogy module now has a portable `org.omi.research-project` JSON
+envelope containing the shared `org.omi.genealogy-graph` resource and a stable
+project identifier. Legacy graph JSON remains importable. Existing IndexedDB
+records receive only the additive identifier during load; their graph data and
+storage key remain intact.
+
+The module can export this project file and open it through its existing file
+import control. Native save dialogs can target locations exposed by the
+operating system, including installed cloud document providers; browser builds
+download the file for a separate upload. This first slice is an explicit,
+manual file transfer. It does not provide automatic cloud synchronization,
+provider revision conflict detection, or a provider connection manager. The
+local IndexedDB working copy remains active, and no project payload is sent to
+the Studio API.
