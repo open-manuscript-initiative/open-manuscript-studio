@@ -192,7 +192,7 @@ export function StudioMenu({
       if (!hasActiveContent) onClose();
       else setNavigationOpen(false);
     }}>
-      <aside className={`studio-menu-drawer${!hasActiveContent ? ' studio-menu-drawer--navigation-only' : ''}${!nativeMobile ? ' studio-menu-drawer--desktop-tiles' : ''}`} role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
+      <aside className={`studio-menu-drawer${!hasActiveContent ? ' studio-menu-drawer--navigation-only' : ''}`} role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
         <header className="studio-menu-header">
           <button
             ref={navigationToggleRef}
