@@ -53,7 +53,7 @@
 
   .studio-menu-drawer--navigation-only .studio-menu-navigation > [data-home-navigation] {
     grid-column: 1 / -1;
-    min-height: 3.5rem;
+    min-height: calc(var(--omi-menu-nav-min-height-desktop, 2.1rem) * 1.666667);
     margin: 0;
   }
 
@@ -79,13 +79,14 @@
 
   .studio-menu-drawer--navigation-only .studio-menu-nav-button {
     min-width: 0;
-    min-height: 4.1rem;
+    min-height: calc(var(--omi-menu-nav-min-height-desktop, 2.1rem) * 2);
     height: auto;
-    padding: .7rem .75rem;
+    padding: calc(var(--omi-menu-nav-padding-y, .35rem) * 2)
+      calc(var(--omi-menu-nav-padding-x, .5rem) * 1.5);
     border: 1px solid var(--omi-academic-line, #e2ddd4);
     border-radius: .6rem;
     background: rgba(255, 254, 250, .92);
-    font-size: clamp(.78rem, .9vw, .92rem);
+    font-size: var(--omi-menu-nav-font-size-desktop, .76rem);
     line-height: 1.25;
     white-space: normal;
     overflow-wrap: anywhere;
