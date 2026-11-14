@@ -18,7 +18,6 @@ import {
   newGraphEdge,
   newGraphNode,
   NODE_KINDS,
-  parseGraphJson,
   PEDIGREES,
   putEdge,
   RELATION_KINDS,
@@ -30,6 +29,10 @@ import {
   type GraphWorkspace,
   type NodeKind,
 } from './model';
+import {
+  createResearchProjectFile,
+  parseResearchProjectFile,
+} from './projectFile';
 import { useGraphWorkspace } from './useGraphWorkspace';
 import './genealogy.css';
 
@@ -170,7 +173,7 @@ export function GenealogyNetworkPanel({
         throw new GraphError('limit');
       if (/\.json$/i.test(file.name)) {
         setPending({
-          workspace: parseGraphJson(await file.text()),
+          workspace: parseResearchProjectFile(await file.text()),
           fileName: file.name,
           warnings: {},
         });
@@ -345,6 +348,18 @@ export function GenealogyNetworkPanel({
               e.target.value = '';
             }}
           />
+          <button
+            type="button"
+            onClick={() =>
+              downloadFile(
+                `${filename}.omiproject.json`,
+                JSON.stringify(createResearchProjectFile(workspace), null, 2),
+                'application/json;charset=utf-8',
+              )
+            }
+          >
+            {t.saveProject}
+          </button>
           <button
             type="button"
             onClick={() =>
