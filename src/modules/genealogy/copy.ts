@@ -9,10 +9,11 @@ const en = {
   network: 'Relationship network',
   project: 'Project title',
   save: 'Save',
+  saveProject: 'Save portable project file',
   intro:
     'Create and edit people and relationships. Family-tree and network views share this project.',
   local:
-    'This project is saved on this device. Export JSON to transfer or back it up. An inserted diagram is a snapshot; the editable graph is in the JSON project.',
+    'The working copy is kept on this device. Save or open a portable project file to transfer it. Native apps can use a cloud provider offered by the system file picker; web exports a download for you to upload. This is manual file transfer, not live cloud sync. An inserted diagram is only a snapshot.',
   loading: 'Loading project…',
   saving: 'Saving…',
   saved: 'Saved on this device',
@@ -85,7 +86,7 @@ const en = {
   exportCsv: 'Export relationships CSV',
   original: 'Download original import',
   importHint:
-    'External genealogy programs: export a GEDCOM (.ged) file, preferably UTF-8. Import supports core GEDCOM 5.5, 5.5.1 and 7 records. Media files are not loaded.',
+    'Open a portable OMI research-project file, legacy graph JSON, or GEDCOM (.ged) export from a genealogy program. GEDCOM import supports core 5.5, 5.5.1 and 7 records; media files are not loaded.',
   preview: 'Import preview',
   merge: 'Add to this project',
   replace: 'Replace this project',
@@ -153,10 +154,11 @@ const hu: typeof en = {
   network: 'Kapcsolati háló',
   project: 'Projekt címe',
   save: 'Mentés',
+  saveProject: 'Hordozható projektfájl mentése',
   intro:
     'Személyek és kapcsolatok létrehozása, szerkesztése. A családfa és a kapcsolati háló közös projektet használ.',
   local:
-    'A projekt ezen az eszközön tárolódik. Átvitelhez és biztonsági mentéshez exportálj JSON-fájlt. A kéziratba szúrt ábra pillanatkép; a szerkeszthető adatokat a JSON-projekt őrzi.',
+    'A szerkesztési példány ezen az eszközön marad. Átvitelhez ments vagy nyiss meg hordozható projektfájlt. A natív alkalmazás rendszerfájlválasztójában felhőszolgáltató is választható; a webes változat letölti a fájlt, amelyet külön kell feltölteni. Ez kézi fájlátvitel, nem élő felhőszinkron. A kéziratba szúrt ábra csak pillanatkép.',
   loading: 'Projekt betöltése…',
   saving: 'Mentés…',
   saved: 'Mentve ezen az eszközön',
@@ -230,7 +232,7 @@ const hu: typeof en = {
   exportCsv: 'Kapcsolatok CSV-exportja',
   original: 'Eredeti importfájl letöltése',
   importHint:
-    'Külső családfakutató programból GEDCOM (.ged) fájlt exportálj, lehetőleg UTF-8 kódolással. Az import a GEDCOM 5.5, 5.5.1 és 7 alapadatait kezeli. A médiafájlokat nem tölti be.',
+    'Nyiss meg hordozható OMI kutatásiprojekt-fájlt, korábbi gráf-JSON-t vagy külső családfakutató programból származó GEDCOM (.ged) fájlt. A GEDCOM 5.5, 5.5.1 és 7 alapadatait kezeli; a médiafájlokat nem tölti be.',
   preview: 'Import előnézete',
   merge: 'Hozzáadás a projekthez',
   replace: 'Projekt lecserélése',
@@ -301,10 +303,11 @@ const de: typeof en = {
   network: 'Beziehungsnetz',
   project: 'Projekttitel',
   save: 'Speichern',
+  saveProject: 'Portable Projektdatei speichern',
   intro:
     'Personen und Beziehungen erstellen und bearbeiten. Stammbaum und Netzwerk verwenden ein gemeinsames Projekt.',
   local:
-    'Das Projekt wird auf diesem Gerät gespeichert. JSON für Sicherung und Übertragung exportieren. Eingefügte Diagramme sind Momentaufnahmen; JSON enthält die bearbeitbaren Daten.',
+    'Die Arbeitskopie bleibt auf diesem Gerät. Zum Übertragen eine portable Projektdatei speichern oder öffnen. Native Apps können im Systemdialog einen Cloudanbieter wählen; im Web wird die Datei heruntergeladen und muss separat hochgeladen werden. Das ist manueller Dateiaustausch, keine Live-Synchronisierung. Eingefügte Diagramme sind Momentaufnahmen.',
   loading: 'Projekt wird geladen…',
   saving: 'Wird gespeichert…',
   saved: 'Auf diesem Gerät gespeichert',
@@ -377,7 +380,7 @@ const de: typeof en = {
   exportCsv: 'Beziehungen als CSV',
   original: 'Originalimport herunterladen',
   importHint:
-    'Aus externen Genealogieprogrammen GEDCOM (.ged), möglichst UTF-8, exportieren. Grunddaten aus GEDCOM 5.5, 5.5.1 und 7 werden gelesen; Mediendateien werden nicht geladen.',
+    'Eine portable OMI-Forschungsprojektdatei, älteres Graph-JSON oder einen GEDCOM-Export (.ged) aus einem Genealogieprogramm öffnen. GEDCOM 5.5, 5.5.1 und 7 werden unterstützt; Mediendateien werden nicht geladen.',
   preview: 'Importvorschau',
   merge: 'Zum Projekt hinzufügen',
   replace: 'Projekt ersetzen',

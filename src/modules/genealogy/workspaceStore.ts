@@ -2,6 +2,7 @@ import {
   createGraphWorkspace,
   GraphError,
   isGraphWorkspace,
+  newResearchProjectId,
   type GraphWorkspace,
 } from './model';
 
@@ -91,11 +92,29 @@ export function createGraphStore(storage: GraphStorage) {
           const value = await storage.read(key);
           if (value !== undefined && value !== null && !isGraphWorkspace(value))
             throw new GraphError('invalid');
+          const legacy = value && !(value as GraphWorkspace).projectId;
+          const workspace = value
+            ? {
+                ...(value as GraphWorkspace),
+                projectId:
+                  (value as GraphWorkspace).projectId ?? newResearchProjectId(),
+              }
+            : createGraphWorkspace();
+          // Add only project identity to legacy records in place. All existing
+          // graph content and the original key remain untouched for recovery.
+          let status: GraphSnapshot['status'] = 'saved';
+          if (legacy) {
+            try {
+              await storage.write(key, workspace);
+            } catch {
+              // Keep showing the successfully loaded graph even if only the
+              // additive project-ID migration could not be persisted.
+              status = 'error';
+            }
+          }
           e.snapshot = {
-            workspace: value
-              ? (value as GraphWorkspace)
-              : createGraphWorkspace(),
-            status: 'saved',
+            workspace,
+            status,
             canUndo: false,
           };
         } catch {

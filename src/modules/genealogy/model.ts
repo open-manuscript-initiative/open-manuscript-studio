@@ -76,6 +76,8 @@ export interface GraphImportSource {
 }
 export interface GraphWorkspace {
   schema: typeof GRAPH_SCHEMA;
+  /** Stable identity shared by family-tree and relationship-network views. */
+  projectId?: string;
   title: string;
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -100,7 +102,19 @@ export class GraphError extends Error {
   }
 }
 export function createGraphWorkspace(): GraphWorkspace {
-  return { schema: GRAPH_SCHEMA, title: '', nodes: [], edges: [], imports: [] };
+  return {
+    schema: GRAPH_SCHEMA,
+    projectId: newResearchProjectId(),
+    title: '',
+    nodes: [],
+    edges: [],
+    imports: [],
+  };
+}
+export function newResearchProjectId(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `research-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 export function newGraphNode(id: string, kind: NodeKind = 'person'): GraphNode {
   return {
@@ -165,6 +179,10 @@ export function isGraphWorkspace(value: unknown): value is GraphWorkspace {
   if (
     !record(value) ||
     value.schema !== GRAPH_SCHEMA ||
+    (value.projectId !== undefined &&
+      (typeof value.projectId !== 'string' ||
+        value.projectId.length < 1 ||
+        value.projectId.length > 256)) ||
     typeof value.title !== 'string' ||
     value.title.length > 1000 ||
     !Array.isArray(value.nodes) ||
