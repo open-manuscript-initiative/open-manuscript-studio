@@ -192,7 +192,7 @@ export function StudioMenu({
       if (!hasActiveContent) onClose();
       else setNavigationOpen(false);
     }}>
-      <aside className={`studio-menu-drawer${!hasActiveContent ? ' studio-menu-drawer--navigation-only' : ''}`} role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
+      <aside className={`studio-menu-drawer${!hasActiveContent ? ' studio-menu-drawer--navigation-only' : ''}${!nativeMobile ? ' studio-menu-drawer--desktop-tiles' : ''}`} role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
         <header className="studio-menu-header">
           <button
             ref={navigationToggleRef}
@@ -219,8 +219,13 @@ export function StudioMenu({
             onClick={(event) => {
               const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.studio-menu-nav-button');
               if (!button || button.disabled) return;
-              setNavigationOpen(false);
-              navigationToggleRef.current?.focus({ preventScroll: true });
+              const mobileLayout = typeof window === 'undefined'
+                || typeof window.matchMedia !== 'function'
+                || window.matchMedia('(max-width: 760px)').matches;
+              if (mobileLayout) {
+                setNavigationOpen(false);
+                navigationToggleRef.current?.focus({ preventScroll: true });
+              }
             }}
           >
             <button
