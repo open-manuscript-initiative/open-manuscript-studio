@@ -219,13 +219,8 @@ export function StudioMenu({
             onClick={(event) => {
               const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.studio-menu-nav-button');
               if (!button || button.disabled) return;
-              const mobileLayout = typeof window === 'undefined'
-                || typeof window.matchMedia !== 'function'
-                || window.matchMedia('(max-width: 760px)').matches;
-              if (mobileLayout) {
-                setNavigationOpen(false);
-                navigationToggleRef.current?.focus({ preventScroll: true });
-              }
+              setNavigationOpen(false);
+              navigationToggleRef.current?.focus({ preventScroll: true });
             }}
           >
             <button
