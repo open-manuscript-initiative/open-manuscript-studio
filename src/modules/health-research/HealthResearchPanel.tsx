@@ -10,7 +10,7 @@ export function HealthResearchPanel({ discipline, locale, storageKey, workspaceI
   const t = healthCopy[language];
   const [workspace, setWorkspace] = useLocalWorkspace(storageKey, () => createHealthWorkspace(discipline), value => isHealthWorkspace(value, discipline));
   return <main className="discipline-workspace">
-    <header className="discipline-workspace__header"><h1>{t[discipline]}</h1>
+    <header className="discipline-workspace__header">
       <button type="button" onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.fields.title, discipline) + '.json', workspace)}>{t.export}</button>
     </header>
     <p className="discipline-workspace__hint">{t.notice}</p>
