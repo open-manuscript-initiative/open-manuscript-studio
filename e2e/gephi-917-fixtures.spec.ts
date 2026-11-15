@@ -4,6 +4,7 @@ import {installMockStudioApi, signInToStudio} from './support/mockStudioApi';
 
 const examples = [
   {file: 'gephi-les-miserables.gexf', width: 1440, nodes: 77, edges: 254, label: 'Valjean'},
+  {file: 'gephi-917-dynamic-1.3.gexf', width: 1440, nodes: 2, edges: 3, label: 'Árvíztűrő tükörfúrógép'},
   {file: 'gephi-917-mixed.graphml', width: 390, nodes: 3, edges: 4, label: 'Sárospatak'},
 ] as const;
 
