@@ -63,16 +63,47 @@
 .omi-note-editor-header > div { gap: 0.6rem; }
 
 .omi-note-number {
-  display: inline-flex;
-  width: 1.8rem;
-  height: 1.8rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: #101828;
-  color: #fff;
-  font-size: 0.8rem;
+  color: #344054;
+  font-size: 0.9rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Manuscript note list: conventional numbered notes on all screen sizes. */
+.omi-notes-panel .omi-note-editor-card {
+  text-align: left;
+}
+
+.omi-notes-panel .omi-note-preview-button {
+  width: 100%;
+  margin-top: 0;
+  justify-items: stretch;
+  text-align: left;
+  cursor: pointer;
+}
+
+.omi-notes-panel .omi-note-preview-button .omi-note-editor-header {
+  justify-content: flex-start;
+}
+
+.omi-notes-panel .omi-note-preview-button .omi-note-editor-header > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.omi-notes-panel .omi-note-preview-text {
+  display: block;
+  color: #475467;
+  text-align: left;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.omi-notes-panel .omi-note-preview-button:focus-visible {
+  outline: 2px solid #475467;
+  outline-offset: 2px;
 }
 
 .omi-note-icon-button {
