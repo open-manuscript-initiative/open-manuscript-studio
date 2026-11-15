@@ -56,9 +56,6 @@ test('upstream Gephi Lite Les Misérables GEXF imports editable nodes, edges, po
 });
 
 test('GraphML directed edges, typed metadata and self-loops import without topology loss', () => {
-  const previous = globalThis.DOMParser;
-  Object.assign(globalThis, { DOMParser });
-  try {
     const raw = `<?xml version="1.0"?><graphml xmlns="http://graphml.graphdrawing.org/xmlns">
       <key id="weight" for="edge" attr.name="weight" attr.type="double"/>
       <graph edgedefault="directed"><node id="a"/><node id="b"/>
@@ -70,7 +67,4 @@ test('GraphML directed edges, typed metadata and self-loops import without topol
     assert.equal(graph.edges[0]?.gephi?.attributes?.weight, '2.5');
     assert.equal(graph.edges[0]?.directed, true);
     assert.equal(isGraphWorkspace(graph), true);
-  } finally {
-    Object.assign(globalThis, { DOMParser: previous });
-  }
 });
