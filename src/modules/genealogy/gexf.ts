@@ -8,21 +8,21 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
   if (doc.getElementsByTagName('parsererror').length) throw new GraphError('invalid');
   const root = doc.documentElement;
   if (root.localName !== 'gexf' || !['1.2', '1.3'].includes(root.getAttribute('version') ?? '')) throw new GraphError('version');
-  const graph = Array.from(root.children).find(el => el.localName === 'graph');
+  const graph = Array.from(root.childNodes).filter((n): n is Element => n.nodeType === 1).find(el => el.localName === 'graph');
   if (!graph) throw new GraphError('invalid');
   const workspace = createGraphWorkspace();
   workspace.title = fileName.replace(/\.gexf$/i, '');
   const declarations = (kind: string) => {
     const result = new Map<string, { title: string; type: string }>();
-    for (const block of Array.from(graph.children).filter(el => el.localName === 'attributes' && el.getAttribute('class') === kind))
-      for (const attr of Array.from(block.children).filter(el => el.localName === 'attribute')) {
+    for (const block of Array.from(graph.childNodes).filter((n): n is Element => n.nodeType === 1).filter(el => el.localName === 'attributes' && el.getAttribute('class') === kind))
+      for (const attr of Array.from(block.childNodes).filter((n): n is Element => n.nodeType === 1).filter(el => el.localName === 'attribute')) {
         const id = attr.getAttribute('id');
         if (id) result.set(id, { title: attr.getAttribute('title') || id, type: attr.getAttribute('type') || 'string' });
       }
     return result;
   };
   const nodeAttrs = declarations('node'), edgeAttrs = declarations('edge');
-  const children = (parent: Element, name: string) => Array.from(parent.children).filter(el => el.localName === name);
+  const children = (parent: Element, name: string) => Array.from(parent.childNodes).filter((n): n is Element => n.nodeType === 1).filter(el => el.localName === name);
   const records = (name: string, singular: string) => children(graph, name).flatMap(container => children(container, singular));
   const nodes = records('nodes', 'node'), edges = records('edges', 'edge');
   if (nodes.length > MAX_GRAPH_NODES || edges.length > MAX_GRAPH_EDGES) throw new GraphError('limit');
@@ -47,11 +47,11 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     node.externalId = id;
     const { data, types } = attrValues(el, nodeAttrs);
     node.gephi = { attributes: data, attributeTypes: types, visual: {}, rawId: id };
-    const temporal = Array.from(el.children).filter(child => ['spells', 'slices'].includes(child.localName));
+    const temporal = Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => ['spells', 'slices'].includes(child.localName));
     if (temporal.length) node.gephi.temporal = temporal.map(child => child.outerHTML).join('');
-    const position = Array.from(el.children).find(child => child.localName === 'position');
-    for (const child of Array.from(el.children).filter(child => ['position', 'color', 'size', 'shape'].includes(child.localName))) {
-      for (const attr of Array.from(child.attributes)) node.gephi!.visual![`${child.localName}.${attr.localName}`] = attr.value;
+    const position = Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).find(child => child.localName === 'position');
+    for (const child of Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => ['position', 'color', 'size', 'shape'].includes(child.localName))) {
+      for (const attr of Array.from({ length: child.attributes.length }, (_, i) => child.attributes.item(i)!).filter(Boolean)) node.gephi!.visual![`${child.localName}.${attr.localName}`] = attr.value;
     }
     if (position) {
       const x = Number(position.getAttribute('x')), y = Number(position.getAttribute('y'));
@@ -77,10 +77,10 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     if (weight !== null) data.weight = weight;
     if (el.hasAttribute('kind')) data.kind = el.getAttribute('kind')!;
     edge.gephi = { attributes: data, attributeTypes: types, visual: {}, rawId: id };
-    const temporal = Array.from(el.children).filter(child => ['spells', 'slices'].includes(child.localName));
+    const temporal = Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => ['spells', 'slices'].includes(child.localName));
     if (temporal.length) edge.gephi.temporal = temporal.map(child => child.outerHTML).join('');
-    for (const child of Array.from(el.children).filter(child => ['color', 'thickness', 'shape'].includes(child.localName)))
-      for (const attr of Array.from(child.attributes)) edge.gephi.visual![`${child.localName}.${attr.localName}`] = attr.value;
+    for (const child of Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => ['color', 'thickness', 'shape'].includes(child.localName)))
+      for (const attr of Array.from({ length: child.attributes.length }, (_, i) => child.attributes.item(i)!).filter(Boolean)) edge.gephi.visual![`${child.localName}.${attr.localName}`] = attr.value;
     workspace.edges.push(edge);
   }
   // Preserve the original source for unsupported dynamic features and round-trip recovery.
