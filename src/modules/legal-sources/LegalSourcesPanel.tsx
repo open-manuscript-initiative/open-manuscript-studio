@@ -42,7 +42,7 @@ export function LegalSourcesPanel({ locale = 'en', storageKey = 'legal-sources' 
   const updateVersion = (source: LegalSource, versionId: string, changes: Partial<Version>) => updateSource(source.id, { versions: source.versions.map(version => version.id === versionId ? { ...version, ...changes } : version) });
   const options = (sourceId: string): [string, string] => compare[sourceId] ?? ['', ''];
   return <main className="discipline-workspace">
-    <header className="discipline-workspace__header"><div><h1>{t.title}</h1><p>{t.subtitle}</p></div><button type="button" onClick={() => downloadWorkspaceJson('legal-sources.json', workspace)}>{t.export}</button></header>
+    <header className="discipline-workspace__header"><button type="button" onClick={() => downloadWorkspaceJson('legal-sources.json', workspace)}>{t.export}</button></header>
     <section className="discipline-workspace__section">
       <h2>{t.databases}</h2><p className="discipline-workspace__hint">{t.databasesHelp}</p>
       <label>{t.databaseQuery}<input value={providerQuery} onChange={e => setProviderQuery(e.target.value)} /></label>

@@ -34,7 +34,7 @@ export function ResearchReproducibilityPanel({ locale = 'en', storageKey = 'rese
     } finally { setBusy(null); }
   };
   return <main className="discipline-workspace">
-    <header className="discipline-workspace__header"><div><h1>{t.title}</h1><p>{t.subtitle}</p></div><button type="button" onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.project, 'reproducibility') + '.json', workspace)}>{t.export}</button></header>
+    <header className="discipline-workspace__header"><button type="button" onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.project, 'reproducibility') + '.json', workspace)}>{t.export}</button></header>
     <section className="discipline-workspace__section"><label>{t.project}<input value={workspace.project} onChange={e => setWorkspace(current => ({ ...current, project: e.target.value }))} /></label><p className="discipline-workspace__hint">{t.local}</p></section>
     <section className="discipline-workspace__section"><div className="discipline-workspace__section-title"><h2>{t.outputs}</h2><button type="button" onClick={() => setWorkspace(current => ({ ...current, outputs: [...current.outputs, newOutput()] }))}>{t.add}</button></div>
       {workspace.outputs.map(output => <article className="discipline-workspace__card" key={output.id}>

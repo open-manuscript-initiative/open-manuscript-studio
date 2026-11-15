@@ -152,7 +152,7 @@ export function StatisticalAnalysisPanel({ locale = 'en', storageKey = 'statisti
 
   return <main className="discipline-workspace">
     <header className="discipline-workspace__header">
-      <div><h1>{t.title}</h1><p>{t.intro}</p></div>
+      
       <div><button type="button" onClick={() => jsonRef.current?.click()} disabled={!storageReady}>{t.importJson}</button> <button type="button" disabled={!dataset} onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.analysisTitle || dataset?.title || '', 'statistical-analysis') + '.json', report)}>{t.export}</button></div>
       <input ref={jsonRef} className="discipline-file" type="file" accept=".json,application/json" onChange={event => { void importJson(event.target.files?.[0]); event.currentTarget.value = ''; }} />
     </header>
