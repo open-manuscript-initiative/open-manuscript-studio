@@ -193,7 +193,7 @@ export function LiteraryStudiesPanel({ locale = 'en', storageKey = 'literary-stu
 
   return <main className="discipline-workspace">
     <header className="discipline-workspace__header">
-      <div><p className="discipline-workspace__eyebrow">OMI Studio</p><h1>{t.project}</h1><p>{t.subtitle}</p></div>
+      <div><h1>{t.project}</h1><p>{t.subtitle}</p></div>
       <div>
         <button type="button" onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.title, 'literary-studies') + '.json', workspace)}>{t.exportJson}</button>{' '}
         <button type="button" onClick={() => downloadWorkspaceFile('literary-annotations.csv', '\uFEFF' + annotationsCsv(workspace), 'text/csv;charset=utf-8')}>{t.exportCsv}</button>{' '}

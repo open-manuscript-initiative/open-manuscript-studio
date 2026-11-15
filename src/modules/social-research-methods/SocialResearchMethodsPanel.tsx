@@ -32,7 +32,7 @@ export function SocialResearchMethodsPanel({ locale = 'en', storageKey = 'social
     setPendingCode(''); setPendingNote(''); setSelected(null);
   };
   return <main className="discipline-workspace">
-    <header className="discipline-workspace__header"><div><p className="discipline-workspace__eyebrow">OMI Studio</p><h1>{t.title}</h1><p>{t.subtitle}</p></div><button type="button" onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(project.title, 'social-research-project') + '.json', project)}>{t.export}</button></header>
+    <header className="discipline-workspace__header"><div><h1>{t.title}</h1><p>{t.subtitle}</p></div><button type="button" onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(project.title, 'social-research-project') + '.json', project)}>{t.export}</button></header>
     <section className="discipline-workspace__section"><h2>{t.project}</h2><div className="discipline-workspace__grid">
       <label>{t.name}<input value={project.title} onChange={e => patch({ title: e.target.value })} /></label>
       <label>{t.question}<textarea value={project.question} onChange={e => patch({ question: e.target.value })} rows={3} /></label>
