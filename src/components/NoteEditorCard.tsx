@@ -72,7 +72,7 @@ export function NoteEditorCard({
     >
       <header className="omi-note-editor-header">
         <div>
-          <span className="omi-note-number">{noteNumber ?? '?'}</span>
+          <span className="omi-note-number">{noteNumber ?? '?'}.</span>
           <strong>{noteKindLabel(noteKind, t)}</strong>
         </div>
 
