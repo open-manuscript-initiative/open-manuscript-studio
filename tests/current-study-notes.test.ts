@@ -105,7 +105,7 @@ test('the Studio UI exposes a viewport-scoped list for visible note anchors', ()
   assert.match(footerSource, /omi-current-study-notes__count[\s\S]*?\{visibleNotes\.length\}/);
   assert.match(
     continuousStyles,
-    /\.omi-current-study-notes \{[\s\S]*?position: fixed;[\s\S]*?bottom: max\([^;]+;[\s\S]*?max-height: calc\(50dvh - 3\.75rem\);[\s\S]*?overflow-y: auto;/,
+    /\.omi-current-study-notes \{[\s\S]*?position: fixed;[\s\S]*?bottom: env\(safe-area-inset-bottom, 0px\);[\s\S]*?max-height: calc\(50dvh - 3\.75rem\);[\s\S]*?overflow-y: auto;/,
   );
   assert.match(
     continuousStyles,
