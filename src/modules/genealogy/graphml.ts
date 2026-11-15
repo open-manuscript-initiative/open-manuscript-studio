@@ -7,7 +7,7 @@ export function parseGraphml(raw: string, fileName: string): GraphWorkspace {
   const doc = new DOMParser().parseFromString(raw, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length || doc.documentElement.localName !== 'graphml') throw new GraphError('invalid');
   const root = doc.documentElement;
-  const children = (el: Element, name: string) => Array.from(el.children).filter(child => child.localName === name);
+  const children = (el: Element, name: string) => Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => child.localName === name);
   const graph = children(root, 'graph')[0];
   if (!graph) throw new GraphError('invalid');
   const definitions = new Map<string, { name: string; type: string; scope: string }>();
