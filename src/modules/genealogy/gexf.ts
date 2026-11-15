@@ -13,6 +13,9 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
   if (!graph) throw new GraphError('invalid');
   const workspace = createGraphWorkspace();
   const serializer = new XMLSerializer();
+  // xmldom uses its own DOM Node types, distinct from TypeScript's browser DOM types.
+  const serializeTemporal = (child: Element) =>
+    serializer.serializeToString(child as unknown as Parameters<typeof serializer.serializeToString>[0]);
   workspace.title = fileName.replace(/\.gexf$/i, '');
   const declarations = (kind: string) => {
     const result = new Map<string, { title: string; type: string }>();
@@ -50,7 +53,7 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     const { data, types } = attrValues(el, nodeAttrs);
     node.gephi = { attributes: data, attributeTypes: types, visual: {}, rawId: id };
     const temporal = Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => ['spells', 'slices'].includes(child.localName));
-    if (temporal.length) node.gephi.temporal = temporal.map(child => serializer.serializeToString(child)).join('');
+    if (temporal.length) node.gephi.temporal = temporal.map(serializeTemporal).join('');
     const position = Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).find(child => child.localName === 'position');
     for (const child of Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => ['position', 'color', 'size', 'shape'].includes(child.localName))) {
       for (const attr of Array.from({ length: child.attributes.length }, (_, i) => child.attributes.item(i)!).filter(Boolean)) node.gephi!.visual![`${child.localName}.${attr.localName}`] = attr.value;
@@ -80,7 +83,7 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     if (el.hasAttribute('kind')) data.kind = el.getAttribute('kind')!;
     edge.gephi = { attributes: data, attributeTypes: types, visual: {}, rawId: id };
     const temporal = Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => ['spells', 'slices'].includes(child.localName));
-    if (temporal.length) edge.gephi.temporal = temporal.map(child => serializer.serializeToString(child)).join('');
+    if (temporal.length) edge.gephi.temporal = temporal.map(serializeTemporal).join('');
     for (const child of Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => ['color', 'thickness', 'shape'].includes(child.localName)))
       for (const attr of Array.from({ length: child.attributes.length }, (_, i) => child.attributes.item(i)!).filter(Boolean)) edge.gephi.visual![`${child.localName}.${attr.localName}`] = attr.value;
     workspace.edges.push(edge);
