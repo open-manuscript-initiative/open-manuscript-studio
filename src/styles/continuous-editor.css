@@ -780,6 +780,15 @@
     padding: 0;
   }
 
+  .omi-current-study-notes {
+    right: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
+    left: 0;
+    width: 100%;
+    max-width: none;
+    border-radius: 0;
+  }
+
   .omi-manuscript-page {
     min-height: 100vh;
     padding: 2rem 1.25rem 4rem;
