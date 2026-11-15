@@ -15,6 +15,65 @@
   padding: clamp(.75rem, 1.6vw, 1.4rem);
 }
 
+
+/* Quiet color coding groups related destinations without competing with content. */
+.studio-menu-nav-group[data-tile-category="manuscript"] {
+  --tile-accent: #668b98;
+  --tile-border: #ccdde1;
+  --tile-surface: #f0f6f7;
+  --tile-hover: #e8f1f3;
+}
+
+.studio-menu-nav-group[data-tile-category="editorial"] {
+  --tile-accent: #6f8a68;
+  --tile-border: #d2dfce;
+  --tile-surface: #f2f6ef;
+  --tile-hover: #eaf2e6;
+}
+
+.studio-menu-nav-group[data-tile-category="publication"] {
+  --tile-accent: #9a6870;
+  --tile-border: #e2d0d2;
+  --tile-surface: #f8f1f1;
+  --tile-hover: #f2e7e8;
+}
+
+.studio-menu-nav-group[data-tile-category="tools"] {
+  --tile-accent: #7b7599;
+  --tile-border: #dad7e5;
+  --tile-surface: #f4f2f8;
+  --tile-hover: #ece9f3;
+}
+
+.studio-menu-nav-group[data-tile-category="preferences"] {
+  --tile-accent: #a1834f;
+  --tile-border: #e4dcc8;
+  --tile-surface: #f8f5ed;
+  --tile-hover: #f1ecdf;
+}
+
+.studio-menu-nav-group[data-tile-category] {
+  border-color: var(--tile-border);
+  background: var(--tile-surface);
+}
+
+.studio-menu-nav-group[data-tile-category] .studio-menu-nav-button {
+  border-color: var(--tile-border);
+  border-inline-start: 3px solid var(--tile-accent);
+}
+
+.studio-menu-nav-group[data-tile-category] .studio-menu-nav-button:hover,
+.studio-menu-nav-group[data-tile-category] .studio-menu-nav-button:focus-visible {
+  border-color: var(--tile-accent);
+  background: var(--tile-hover);
+}
+
+.studio-menu-nav-group[data-tile-category] .studio-menu-nav-button--active {
+  border-color: var(--tile-accent);
+  background: var(--tile-hover);
+  box-shadow: inset 3px 0 0 var(--tile-accent);
+}
+
 @media (min-width: 761px) {
   .studio-menu-backdrop {
     background: var(--omi-academic-paper, #fffefa);
@@ -33,7 +92,9 @@
   .studio-menu-drawer--navigation-only .studio-menu-body {
     display: block;
     overflow: auto;
-    background: #f5f2ec;
+    background-color: #f5f2ec;
+    background-image: radial-gradient(circle, rgba(104, 89, 72, .065) .7px, transparent .8px);
+    background-size: 20px 20px;
   }
 
   .studio-menu-drawer--navigation-only .studio-menu-navigation {
@@ -98,6 +159,118 @@
     box-shadow: inset 3px 0 0 var(--omi-academic-burgundy, #6d2130);
   }
 
+
+  /* Keep the same tile navigation visible above the selected desktop workspace. */
+  .studio-menu-drawer:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-open {
+    display: block;
+    overflow: auto;
+    background-color: #f5f2ec;
+    background-image: radial-gradient(circle, rgba(104, 89, 72, .065) .7px, transparent .8px);
+    background-size: 20px 20px;
+  }
+
+  .studio-menu-drawer:not(.studio-menu-drawer--navigation-only) .studio-menu-body--navigation-collapsed {
+    display: block;
+    overflow: auto;
+  }
+
+  .studio-menu-drawer .studio-menu-navigation:not([hidden]) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    align-content: start;
+    gap: clamp(.75rem, 1.5vw, 1.25rem);
+    width: 100%;
+    max-width: 112rem;
+    max-height: none;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: clamp(.75rem, 1.5vw, 1.25rem);
+    border: 0;
+    overflow: auto;
+    background: transparent;
+  }
+
+  .studio-menu-drawer .studio-menu-navigation > [data-home-navigation] {
+    grid-column: 1 / -1;
+    min-height: calc(var(--omi-menu-nav-min-height-desktop, 2.1rem) * 1.666667);
+    margin: 0;
+  }
+
+  .studio-menu-drawer .studio-menu-workflow-role {
+    grid-column: 1 / -1;
+  }
+
+  .studio-menu-drawer .studio-menu-nav-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: .5rem;
+    min-width: 0;
+    padding: .65rem;
+    border: 1px solid var(--omi-academic-line, #e2ddd4);
+    border-radius: .7rem;
+    background: rgba(255, 254, 250, .62);
+  }
+
+  .studio-menu-drawer .studio-menu-nav-group-label {
+    grid-column: 1 / -1;
+    padding: .3rem .35rem .2rem;
+  }
+
+  .studio-menu-drawer .studio-menu-nav-button {
+    min-width: 0;
+    min-height: calc(var(--omi-menu-nav-min-height-desktop, 2.1rem) * 2);
+    height: auto;
+    padding: calc(var(--omi-menu-nav-padding-y, .35rem) * 2)
+      calc(var(--omi-menu-nav-padding-x, .5rem) * 1.5);
+    border: 1px solid var(--omi-academic-line, #e2ddd4);
+    border-radius: .6rem;
+    background: rgba(255, 254, 250, .92);
+    font-size: var(--omi-menu-nav-font-size-desktop, .76rem);
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: none;
+  }
+
+  .studio-menu-drawer .studio-menu-nav-button--active {
+    border-color: rgba(109, 33, 48, .3);
+    box-shadow: inset 3px 0 0 var(--omi-academic-burgundy, #6d2130);
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-actions {
+    border-color: #ccdde1;
+    border-radius: .7rem;
+    background: #f0f6f7;
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-grid > button {
+    min-height: 5rem;
+    height: 100%;
+    box-sizing: border-box;
+    border-color: #ccdde1;
+    border-inline-start: 3px solid #668b98;
+    border-radius: .6rem;
+    background: #fbfdfd;
+    color: var(--omi-academic-ink, #303238);
+    line-height: 1.25;
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-grid > button:hover,
+  .studio-menu-content .studio-menu-view--document .omi-new-document-grid > button:focus-visible {
+    border-color: var(--omi-academic-burgundy, #6d2130);
+    background: #fffefa;
+  }
+
+  .studio-menu-content .studio-menu-view--document .studio-tool-card {
+    border-color: #ccdde1;
+    border-radius: .7rem;
+    background: rgba(255, 254, 250, .96);
+  }
+
   .studio-menu-drawer {
     width: 100vw;
     max-width: none;
@@ -112,6 +285,9 @@
 
   .studio-menu-content {
     overflow: auto;
+    background-color: #fbfaf7;
+    background-image: radial-gradient(circle, rgba(104, 89, 72, .05) .65px, transparent .8px);
+    background-size: 22px 22px;
   }
 
   .studio-menu-view {
