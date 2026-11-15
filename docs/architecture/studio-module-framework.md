@@ -7,6 +7,8 @@ The module system is separate from OMI manuscript semantics: modules may use
 Studio services and external providers, but must not change the OMI document
 model merely to store module-specific state.
 
+The built-in modules are Studio features, opened through Studio's navigation; we do not maintain them as standalone apps or independently deployable interfaces. Module project data remains separate from manuscript content and may still be exported where documented.
+
 The framework provides provider-neutral manifests, a validated in-process
 registry, contribution slots, capability declarations, and two-level activation.
 The Studio menu opens a module manager and hosts the built-in discipline
