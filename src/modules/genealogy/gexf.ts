@@ -5,9 +5,10 @@ import { GraphError, MAX_GRAPH_EDGES, MAX_GRAPH_NODES, MAX_IMPORT_BYTES, createG
 export function parseGexf(raw: string, fileName: string): GraphWorkspace {
   if (new TextEncoder().encode(raw).byteLength > MAX_IMPORT_BYTES) throw new GraphError('limit');
   if (/<!DOCTYPE|<!ENTITY/i.test(raw)) throw new GraphError('invalid');
-  const doc = new DOMParser({ errorHandler: { warning: () => {}, error: () => { throw new GraphError('invalid'); }, fatalError: () => { throw new GraphError('invalid'); } } }).parseFromString(raw, 'application/xml');
+  const doc = new DOMParser().parseFromString(raw, 'application/xml') as unknown as Document;
   if (doc.getElementsByTagName('parsererror').length) throw new GraphError('invalid');
   const root = doc.documentElement;
+  if (!root) throw new GraphError('invalid');
   if (root.localName !== 'gexf' || !['1.2', '1.3'].includes(root.getAttribute('version') ?? '')) throw new GraphError('version');
   const graph = Array.from(root.childNodes).filter((n): n is Element => n.nodeType === 1).find(el => el.localName === 'graph');
   if (!graph) throw new GraphError('invalid');
