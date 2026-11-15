@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { DOMParser } from '@xmldom/xmldom';
 import { parseGexf } from '../src/modules/genealogy/gexf.ts';
 import { parseGraphml } from '../src/modules/genealogy/graphml.ts';
 import assert from 'node:assert/strict';
@@ -46,9 +45,6 @@ test('invalid Gephi metadata is rejected', () => {
 });
 
 test('upstream Gephi Lite Les Misérables GEXF imports editable nodes, edges, positions and visual attributes', () => {
-  const previous = globalThis.DOMParser;
-  Object.assign(globalThis, { DOMParser });
-  try {
     const raw = readFileSync(new URL('./fixtures/gephi-les-miserables.gexf', import.meta.url), 'utf8');
     const graph = parseGexf(raw, 'Les Miserables.gexf');
     assert.ok(graph.nodes.length > 50);
@@ -57,9 +53,6 @@ test('upstream Gephi Lite Les Misérables GEXF imports editable nodes, edges, po
     assert.ok(graph.nodes.some(node => Object.keys(node.gephi?.visual || {}).length > 0));
     assert.equal(isGraphWorkspace(graph), true);
     assert.deepEqual(parseGraphJson(JSON.stringify(graph)).nodes, graph.nodes);
-  } finally {
-    Object.assign(globalThis, { DOMParser: previous });
-  }
 });
 
 test('GraphML directed edges, typed metadata and self-loops import without topology loss', () => {
