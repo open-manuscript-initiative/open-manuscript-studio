@@ -1,10 +1,11 @@
+import { DOMParser } from '@xmldom/xmldom';
 import { GraphError, MAX_GRAPH_EDGES, MAX_GRAPH_NODES, MAX_IMPORT_BYTES, createGraphWorkspace, newGraphEdge, newGraphNode, type GraphWorkspace } from './model';
 
 /** Strict, bounded GEXF reader. No network fetches or external XML entities. */
 export function parseGexf(raw: string, fileName: string): GraphWorkspace {
   if (new TextEncoder().encode(raw).byteLength > MAX_IMPORT_BYTES) throw new GraphError('limit');
   if (/<!DOCTYPE|<!ENTITY/i.test(raw)) throw new GraphError('invalid');
-  const doc = new DOMParser().parseFromString(raw, 'application/xml');
+  const doc = new DOMParser({ errorHandler: { warning: () => {}, error: () => { throw new GraphError('invalid'); }, fatalError: () => { throw new GraphError('invalid'); } } }).parseFromString(raw, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length) throw new GraphError('invalid');
   const root = doc.documentElement;
   if (root.localName !== 'gexf' || !['1.2', '1.3'].includes(root.getAttribute('version') ?? '')) throw new GraphError('version');
