@@ -7004,7 +7004,7 @@ msgstr "Compiti"
 #. OMI translation key: /uncataloguedUi/components-editorreviewmode/round-988748a
 msgctxt "/uncataloguedUi/components-editorreviewmode/round-988748a"
 msgid "· Round"
-msgstr "· Round"
+msgstr "· Turno"
 
 #. OMI translation key: /uncataloguedUi/components-editorreviewmode/no-editorial-assignments-450981b
 msgctxt "/uncataloguedUi/components-editorreviewmode/no-editorial-assignments-450981b"
@@ -7109,7 +7109,7 @@ msgstr "Sponsor GitHub"
 #. OMI translation key: /uncataloguedUi/components-footer/wiki-4f983a6
 msgctxt "/uncataloguedUi/components-footer/wiki-4f983a6"
 msgid "Wiki"
-msgstr "Wiki"
+msgstr "wiki"
 
 #. OMI translation key: /uncataloguedUi/components-footer/project-f6f4da8
 msgctxt "/uncataloguedUi/components-footer/project-f6f4da8"

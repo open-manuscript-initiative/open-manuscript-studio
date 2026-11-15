@@ -7074,7 +7074,7 @@ msgstr "No se ha seleccionado ninguna asignación editorial."
 #. OMI translation key: /uncataloguedUi/components-footer/vision-40b0906
 msgctxt "/uncataloguedUi/components-footer/vision-40b0906"
 msgid "Vision"
-msgstr "Vision"
+msgstr "Visión"
 
 #. OMI translation key: /uncataloguedUi/components-footer/documentation-9e9cf32
 msgctxt "/uncataloguedUi/components-footer/documentation-9e9cf32"
@@ -7109,7 +7109,7 @@ msgstr "Patrocinadores de GitHub"
 #. OMI translation key: /uncataloguedUi/components-footer/wiki-4f983a6
 msgctxt "/uncataloguedUi/components-footer/wiki-4f983a6"
 msgid "Wiki"
-msgstr "Wiki"
+msgstr "wiki"
 
 #. OMI translation key: /uncataloguedUi/components-footer/project-f6f4da8
 msgctxt "/uncataloguedUi/components-footer/project-f6f4da8"

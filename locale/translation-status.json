@@ -9,7 +9,9 @@
     "fr",
     "es",
     "nl",
-    "pl"
+    "pl",
+    "de",
+    "sk"
   ],
   "identicalAllowlist": [],
   "identicalAllowlistByLocale": {
@@ -77,7 +79,19 @@
       "/modules/publicationProfile/profileVersion",
       "/modules/publicationProfile/layout",
       "/modules/richText/linkPlaceholder",
-      "/researchModules/shell/translations/nara/attribution"
+      "/researchModules/shell/translations/nara/attribution",
+      "/uncataloguedUi/components-footer/vision-40b0906",
+      "/uncataloguedUi/components-footer/studio-5b23bd7",
+      "/uncataloguedUi/components-footer/community-bfd58ee",
+      "/uncataloguedUi/components-footer/support-f32d5a3",
+      "/uncataloguedUi/components-footer/wiki-4f983a6",
+      "/uncataloguedUi/components-footer/omi-studio-9672390",
+      "/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae",
+      "/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f",
+      "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd",
+      "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e",
+      "/researchModules/transkribus/copy/modelMaterial",
+      "/translationModel/block"
     ],
     "bg": [
       "/contributors/orcid",
@@ -238,7 +252,8 @@
       "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd",
       "/uncataloguedUi/components-referencelookuppanel/web-ca84d13",
       "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e",
-      "/researchModules/transkribus/copy/source"
+      "/researchModules/transkribus/copy/source",
+      "/uncataloguedUi/validationModel/title"
     ],
     "it": [
       "/citations/volume",
@@ -271,7 +286,13 @@
       "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma",
       "/researchModules/legal-sources-legal-sources-panel/copy/open",
       "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software",
-      "/researchModules/musicology-musicology-panel/words/tempo"
+      "/researchModules/musicology-musicology-panel/words/tempo",
+      "/uncataloguedUi/components-footer/studio-5b23bd7",
+      "/uncataloguedUi/components-footer/omi-studio-9672390",
+      "/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae",
+      "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd",
+      "/uncataloguedUi/components-referencelookuppanel/web-ca84d13",
+      "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e"
     ],
     "es": [
       "/citations/locators/folio",
@@ -307,7 +328,12 @@
       "/researchModules/statistical-analysis-statistical-analysis-panel/copy/column",
       "/researchModules/statistical-analysis-statistical-analysis-panel/copy/columns",
       "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dataset",
-      "/researchModules/transkribus/copy/modelMaterial"
+      "/researchModules/transkribus/copy/modelMaterial",
+      "/uncataloguedUi/components-footer/omi-studio-9672390",
+      "/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae",
+      "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd",
+      "/uncataloguedUi/components-referencelookuppanel/web-ca84d13",
+      "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e"
     ],
     "nl": [
       "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma",
@@ -347,6 +373,19 @@
       "/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae",
       "/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f",
       "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd",
+      "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e"
+    ],
+    "sk": [
+      "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/text",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum",
+      "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/model",
+      "/researchModules/musicology-musicology-panel/words/tempo",
+      "/uncataloguedUi/components-footer/wiki-4f983a6",
+      "/uncataloguedUi/components-footer/omi-studio-9672390",
+      "/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae",
+      "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd",
+      "/uncataloguedUi/components-referencelookuppanel/web-ca84d13",
       "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e"
     ]
   }
