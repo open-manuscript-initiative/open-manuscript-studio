@@ -29,6 +29,8 @@ jobs:
       - run: npm ci
       - name: Run GEXF and GraphML example-file tests
         run: npm run test:genealogy
+      - name: Typecheck Gephi import integration
+        run: npx tsc -b
       - name: Install Playwright Chromium
         run: npx playwright install --only-shell chromium
       - name: Verify import, edit, export and reopen in browser
