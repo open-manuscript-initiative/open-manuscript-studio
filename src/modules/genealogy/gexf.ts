@@ -13,11 +13,11 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
   const workspace = createGraphWorkspace();
   workspace.title = fileName.replace(/\.gexf$/i, '');
   const declarations = (kind: string) => {
-    const result = new Map<string, string>();
+    const result = new Map<string, { title: string; type: string }>();
     for (const block of Array.from(graph.children).filter(el => el.localName === 'attributes' && el.getAttribute('class') === kind))
       for (const attr of Array.from(block.children).filter(el => el.localName === 'attribute')) {
         const id = attr.getAttribute('id');
-        if (id) result.set(id, attr.getAttribute('title') || id);
+        if (id) result.set(id, { title: attr.getAttribute('title') || id, type: attr.getAttribute('type') || 'string' });
       }
     return result;
   };
@@ -27,14 +27,16 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
   const nodes = records('nodes', 'node'), edges = records('edges', 'edge');
   if (nodes.length > MAX_GRAPH_NODES || edges.length > MAX_GRAPH_EDGES) throw new GraphError('limit');
   const nodeIds = new Set<string>(), edgeIds = new Set<string>();
-  const attrValues = (el: Element, definitions: Map<string, string>) => {
-    const data: Record<string, string> = {};
+  const attrValues = (el: Element, definitions: Map<string, { title: string; type: string }>) => {
+    const data: Record<string, string> = {}, types: Record<string, string> = {};
     for (const block of children(el, 'attvalues'))
       for (const item of children(block, 'attvalue')) {
         const key = item.getAttribute('for') ?? '';
-        data[definitions.get(key) ?? key] = item.getAttribute('value') ?? '';
+        const def = definitions.get(key);
+        data[def?.title ?? key] = item.getAttribute('value') ?? '';
+        types[def?.title ?? key] = def?.type ?? 'string';
       }
-    return data;
+    return { data, types };
   };
   for (const el of nodes) {
     const id = el.getAttribute('id');
@@ -43,9 +45,12 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     const node = newGraphNode(id, 'organization');
     node.label = el.getAttribute('label') || id;
     node.externalId = id;
-    const data = attrValues(el, nodeAttrs);
-    node.notes = Object.entries(data).map(([key, value]) => `${key}: ${value}`).join('\n');
+    const { data, types } = attrValues(el, nodeAttrs);
+    node.gephi = { attributes: data, attributeTypes: types, visual: {} };
     const position = Array.from(el.children).find(child => child.localName === 'position');
+    for (const child of Array.from(el.children).filter(child => ['position', 'color', 'size', 'shape'].includes(child.localName))) {
+      for (const attr of Array.from(child.attributes)) node.gephi!.visual![`${child.localName}.${attr.localName}`] = attr.value;
+    }
     if (position) {
       const x = Number(position.getAttribute('x')), y = Number(position.getAttribute('y'));
       if (Number.isFinite(x) && Number.isFinite(y) && Math.abs(x) <= 1000000 && Math.abs(y) <= 1000000)
@@ -59,18 +64,20 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     const from = el.getAttribute('source'), to = el.getAttribute('target');
     if (!from || !to || !nodeIds.has(from) || !nodeIds.has(to)) throw new GraphError('reference');
     // The current research-graph schema rejects self-loops. Refuse rather than silently lose topology.
-    if (from === to) throw new GraphError('self');
+    // Gephi self-loops are supported as generic network relationships.
     const id = el.getAttribute('id') || `gexf-edge-${index}`;
     if (edgeIds.has(id)) throw new GraphError('duplicate');
     edgeIds.add(id);
     const edge = newGraphEdge(id, from, to, 'other');
     edge.directed = el.getAttribute('type') === 'directed' || (el.getAttribute('type') !== 'undirected' && directed);
     edge.label = el.getAttribute('label') || '';
-    const data = attrValues(el, edgeAttrs);
+    const { data, types } = attrValues(el, edgeAttrs);
     const weight = el.getAttribute('weight');
     if (weight !== null) data.weight = weight;
     if (el.hasAttribute('kind')) data.kind = el.getAttribute('kind')!;
-    edge.notes = Object.entries(data).map(([key, value]) => `${key}: ${value}`).join('\n');
+    edge.gephi = { attributes: data, attributeTypes: types, visual: {} };
+    for (const child of Array.from(el.children).filter(child => ['color', 'thickness', 'shape'].includes(child.localName)))
+      for (const attr of Array.from(child.attributes)) edge.gephi.visual![`${child.localName}.${attr.localName}`] = attr.value;
     workspace.edges.push(edge);
   }
   workspace.imports.push({ id: 'gexf-source', fileName, format: 'gexf', originalText: raw });
