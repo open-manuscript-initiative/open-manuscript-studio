@@ -46,7 +46,9 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     node.label = el.getAttribute('label') || id;
     node.externalId = id;
     const { data, types } = attrValues(el, nodeAttrs);
-    node.gephi = { attributes: data, attributeTypes: types, visual: {} };
+    node.gephi = { attributes: data, attributeTypes: types, visual: {}, rawId: id };
+    const temporal = Array.from(el.children).filter(child => ['spells', 'slices'].includes(child.localName));
+    if (temporal.length) node.gephi.temporal = temporal.map(child => child.outerHTML).join('');
     const position = Array.from(el.children).find(child => child.localName === 'position');
     for (const child of Array.from(el.children).filter(child => ['position', 'color', 'size', 'shape'].includes(child.localName))) {
       for (const attr of Array.from(child.attributes)) node.gephi!.visual![`${child.localName}.${attr.localName}`] = attr.value;
@@ -63,7 +65,6 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     const el = edges[index]!;
     const from = el.getAttribute('source'), to = el.getAttribute('target');
     if (!from || !to || !nodeIds.has(from) || !nodeIds.has(to)) throw new GraphError('reference');
-    // The current research-graph schema rejects self-loops. Refuse rather than silently lose topology.
     // Gephi self-loops are supported as generic network relationships.
     const id = el.getAttribute('id') || `gexf-edge-${index}`;
     if (edgeIds.has(id)) throw new GraphError('duplicate');
@@ -75,11 +76,14 @@ export function parseGexf(raw: string, fileName: string): GraphWorkspace {
     const weight = el.getAttribute('weight');
     if (weight !== null) data.weight = weight;
     if (el.hasAttribute('kind')) data.kind = el.getAttribute('kind')!;
-    edge.gephi = { attributes: data, attributeTypes: types, visual: {} };
+    edge.gephi = { attributes: data, attributeTypes: types, visual: {}, rawId: id };
+    const temporal = Array.from(el.children).filter(child => ['spells', 'slices'].includes(child.localName));
+    if (temporal.length) edge.gephi.temporal = temporal.map(child => child.outerHTML).join('');
     for (const child of Array.from(el.children).filter(child => ['color', 'thickness', 'shape'].includes(child.localName)))
       for (const attr of Array.from(child.attributes)) edge.gephi.visual![`${child.localName}.${attr.localName}`] = attr.value;
     workspace.edges.push(edge);
   }
+  // Preserve the original source for unsupported dynamic features and round-trip recovery.
   workspace.imports.push({ id: 'gexf-source', fileName, format: 'gexf', originalText: raw });
   return workspace;
 }
