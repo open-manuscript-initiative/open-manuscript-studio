@@ -1,5 +1,5 @@
 import { saveExportBlob } from '../../services/exportFileDelivery';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { stageInsertBlocks } from '../../app/visualBlockActions';
 import { useStudioStore } from '../../app/useStudioStore';
 import { buildGraphDiagramContribution, diagramSourceSuggestion } from './manuscriptContribution';
@@ -35,6 +35,16 @@ import {
   type ResearchProjectFile,
 } from './projectFile';
 import { useGraphWorkspace } from './useGraphWorkspace';
+import {
+  connectSyncedProjectFile,
+  createSyncedProjectFile,
+  disconnectProjectCloudSync,
+  getProjectCloudSyncSnapshot,
+  reauthorizeProjectCloudFile,
+  resolveProjectCloudConflict,
+  startProjectCloudSync,
+  subscribeProjectCloudSync,
+} from './projectCloudSync';
 import './genealogy.css';
 
 function errorMessage(error: unknown, t: GraphCopy): string {
@@ -67,6 +77,11 @@ export function GenealogyNetworkPanel({
     relations = relationLabels(t);
   const { workspace, project, status, canUndo, update, openProject, undo } =
     useGraphWorkspace(storageKey);
+  const cloudSnapshot = useSyncExternalStore(
+    (listener) => subscribeProjectCloudSync(storageKey, listener),
+    () => getProjectCloudSyncSnapshot(storageKey),
+    () => getProjectCloudSyncSnapshot(storageKey),
+  );
   const [selectedId, setSelectedId] = useState(''),
     [search, setSearch] = useState(''),
     [nodeKind, setNodeKind] = useState<NodeKind>('person');
@@ -107,6 +122,7 @@ export function GenealogyNetworkPanel({
   const target =
     manuscript.sections.find((s) => s.id === sectionId) ??
     manuscript.sections[0];
+  useEffect(() => startProjectCloudSync(storageKey), [storageKey]);
   const filename = safeWorkspaceFileName(workspace.title, 'research-graph');
   const related = workspace.edges.filter(
     (e) =>
@@ -206,6 +222,26 @@ export function GenealogyNetworkPanel({
     if ((workspace.nodes.length || workspace.imports.length || project.resources.length > 1) && !window.confirm(t.openProjectConfirm)) return;
     try { openProject(pending.project); setPending(null); setSelectedId(''); setSearch(''); setError(''); }
     catch (e) { setError(errorMessage(e, t)); }
+  }
+  async function connectCloudProject() {
+    setBusy(true); setError('');
+    try {
+      const remote = await connectSyncedProjectFile(storageKey, () => window.confirm(t.cloudReplaceConfirm));
+      if (remote) openProject(remote);
+    } catch (e) { setError(e instanceof Error ? e.message : t.cloudError); }
+    finally { setBusy(false); }
+  }
+  async function createCloudProject() {
+    setBusy(true); setError('');
+    try { await createSyncedProjectFile(storageKey, project, () => window.confirm(t.cloudOverwriteConfirm)); }
+    catch (e) { setError(e instanceof Error ? e.message : t.cloudError); }
+    finally { setBusy(false); }
+  }
+  async function resolveCloudConflict(resolution: 'remote' | 'local') {
+    setBusy(true); setError('');
+    try { await resolveProjectCloudConflict(storageKey, resolution); }
+    catch (e) { setError(e instanceof Error ? e.message : t.cloudError); }
+    finally { setBusy(false); }
   }
   function acceptImport(replace = false) {
     if (!pending) return;
@@ -323,6 +359,28 @@ export function GenealogyNetworkPanel({
               ? t.storageError
               : t.saved}
       </p>
+      <fieldset className="genealogy-cloud-sync">
+        <legend>{t.cloudHeading}</legend>
+        <p>{t.cloudInfo}</p>
+        <div className="genealogy-toolbar">
+          <button type="button" disabled={busy || status === 'loading'} onClick={() => void connectCloudProject()}>{t.cloudConnect}</button>
+          <button type="button" disabled={busy || status === 'loading'} onClick={() => void createCloudProject()}>{t.cloudCreate}</button>
+          {cloudSnapshot.status !== 'disconnected' && <button type="button" disabled={busy || cloudSnapshot.status === 'syncing'} onClick={() => void disconnectProjectCloudSync(storageKey).catch((e) => setError(e instanceof Error ? e.message : t.cloudError))}>{t.cloudDisconnect}</button>}
+          {cloudSnapshot.status === 'permission' && <button type="button" disabled={busy} onClick={() => void reauthorizeProjectCloudFile(storageKey).catch((e) => setError(e instanceof Error ? e.message : t.cloudError))}>{t.cloudReconnect}</button>}
+        </div>
+        <p role={cloudSnapshot.status === 'error' || cloudSnapshot.status === 'conflict' ? 'alert' : 'status'}>
+          {cloudSnapshot.status === 'disconnected' ? t.cloudDisconnected
+            : cloudSnapshot.status === 'syncing' ? t.cloudSyncing
+              : cloudSnapshot.status === 'synced' ? `${t.cloudSynced}${cloudSnapshot.fileName ? ` · ${cloudSnapshot.fileName}` : ''}`
+                : cloudSnapshot.status === 'conflict' ? t.cloudConflict
+                  : cloudSnapshot.status === 'permission' ? t.cloudPermission : t.cloudError}
+        </p>
+        {cloudSnapshot.error && <p role="alert">{cloudSnapshot.error}</p>}
+        {cloudSnapshot.status === 'conflict' && <div className="genealogy-toolbar">
+          <button type="button" disabled={busy} onClick={() => void resolveCloudConflict('remote')}>{t.cloudUseRemote}</button>
+          <button type="button" disabled={busy} onClick={() => void resolveCloudConflict('local')}>{t.cloudKeepLocal}</button>
+        </div>}
+      </fieldset>
       <fieldset
         disabled={status === 'loading' || busy}
         className="genealogy-import"
