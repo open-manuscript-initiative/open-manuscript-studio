@@ -81,24 +81,31 @@ Controls remain disabled until the initial read completes. Failed writes leave
 in-memory work intact and show a backup warning. A bounded local undo history
 is available during the session.
 
-The research dataset is not a shared server database, is not synchronized across
-devices or browser tabs, and is not automatically included in an OMI manuscript.
-Use Save portable project file for a complete inline-project backup/transfer.
-Export editable JSON is the graph-only legacy backup; it does not include other
-project resources. Preview the selected file before opening it on another device. An OMI file containing the inserted SVG retains the diagram image, not
-the graph editor dataset. Exports use the shared native save mechanism in Tauri
-applications and safe browser downloads on the web.
+The research dataset is not a shared server database and is not automatically
+included in an OMI manuscript. Use **Project cloud file** to connect one project
+file in a cloud-synchronized folder or OS file provider. While the module is
+open, local changes are written after a short debounce and the file is checked
+every three seconds for updates from another device. Reopen the same file on
+each device; the provider may take time to propagate it. Export editable JSON
+remains the graph-only legacy backup and does not include other project
+resources. An OMI file containing the inserted SVG retains the diagram image,
+not the graph editor dataset.
+
+If both local and cloud copies change, automatic writes pause and the user
+chooses which copy to keep. The native/browser file APIs do not expose atomic
+provider revision checks, so a narrow simultaneous-write race remains; avoid
+editing the same project on two devices at the same time. File payloads move
+directly between Studio and the selected file, never through the Studio API.
+This adapter uses OS file providers and synchronized folders, not the separate
+OAuth cloud-backup accounts in Settings. Provider-specific direct integrations
+with revision-based compare-and-swap remain future work.
 
 The workspace editor has English, Hungarian and German copy. Catalog names are
 also localized in the other primary Studio languages, with English fallback.
 No private manuscripts or genealogy files are included in the test fixtures.
 
-This section describes the active local working copy. The module now exports
-and opens a portable project resource that can be transferred through native
-system file providers; browser builds download the file for a separate upload.
-This is manual transfer, not automatic cloud persistence. See
-[ADR-036](architecture/adr-036-project-owned-research-data.md) for the accepted
-provider-direct storage target and implementation status.
+See [ADR-036](architecture/adr-036-project-owned-research-data.md) for the
+project-owned storage decision and the boundary of this synchronization adapter.
 
 ## Reviewed manuscript contribution
 

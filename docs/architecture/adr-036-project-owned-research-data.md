@@ -119,13 +119,18 @@ retain the original file and legacy browser record. Unknown opaque canonical
 resources survive current graph edits and save/reopen. Failed/oversized conversions
 leave the active project unchanged. No bulk background rewrite is performed.
 
-Native file dialogs may target OS-managed provider locations; browsers download
-files for separate upload. This remains **manual file transfer**. Direct cloud
-OAuth/transfer, ETag conflict detection, provider-confirmed byte/digest receipts,
-provider selection UI and reviewed searchable public projections are not implemented.
-The cloud-authority decision is conditional on an explicitly configured and tested
-storage adapter. A local cache write or file download must never claim provider
-confirmation or automatic synchronization.
+The genealogy module connects a selected OS-managed file or cloud-synchronized
+folder and keeps a permissioned file handle while the module is open. It writes
+debounced local edits, polls for changes on a three-second interval and reads
+back writes for content verification. Conflicts pause automatic writes and offer
+an explicit local/cloud choice. Payloads move between client and selected file;
+they do not pass through the Studio API. This adapter does not use Settings'
+OAuth cloud-backup accounts. OS/browser file APIs expose no atomic provider
+revision check, leaving a narrow race for truly simultaneous writes; avoid
+editing the same project on multiple devices at once. Provider-specific direct
+OAuth adapters with compare-and-swap and provider-confirmed receipts remain
+future work. A local cache write alone never claims provider confirmation.
+Reviewed searchable public projections are also not implemented.
 
 ## Alternatives, acceptance and revisit
 

@@ -16,7 +16,13 @@ const en = {
   intro:
     'Create and edit people and relationships. Family-tree and network views share this project.',
   local:
-    'The working copy is kept on this device. Save or open a portable project file to transfer it. Native apps can use a cloud provider offered by the system file picker; web exports a download for you to upload. This is manual file transfer, not live cloud sync. An inserted diagram is only a snapshot.',
+    'Choose a project file in a cloud-synchronized folder or a file provider exposed by your device. Changes synchronize while Studio is open. Provider propagation can take time; conflicting edits are shown before either copy is replaced. Project data moves directly between Studio and the selected file, not through the Studio server. An inserted diagram is only a snapshot.',
+  cloudHeading: 'Project cloud file',
+  cloudInfo: 'Choose an existing OMI research-project file or create one in a cloud-backed location. Select the same file on other devices to share the project.',
+  cloudConnect: 'Connect existing cloud project', cloudReconnect: 'Reconnect cloud file', cloudCreate: 'Create project in cloud storage', cloudDisconnect: 'Disconnect cloud file',
+  cloudDisconnected: 'No cloud project file connected. This device keeps a local working copy.', cloudSyncing: 'Synchronizing project file…', cloudSynced: 'Project file synchronized',
+  cloudConflict: 'This project changed on this device and in cloud storage. Choose which copy to keep.', cloudPermission: 'Cloud-file access needs approval again. Reconnect the file to continue synchronization.', cloudError: 'Cloud synchronization needs attention.',
+  cloudUseRemote: 'Use cloud copy', cloudKeepLocal: 'Keep this copy and replace cloud file', cloudOverwriteConfirm: 'This file already contains a different project. Replace it with the current project?', cloudReplaceConfirm: 'Open this cloud project and replace the current local project?',
   loading: 'Loading project…',
   saving: 'Saving…',
   saved: 'Saved on this device',
@@ -164,7 +170,12 @@ const hu: typeof en = {
   intro:
     'Személyek és kapcsolatok létrehozása, szerkesztése. A családfa és a kapcsolati háló közös projektet használ.',
   local:
-    'A szerkesztési példány ezen az eszközön marad. Átvitelhez ments vagy nyiss meg hordozható projektfájlt. A natív alkalmazás rendszerfájlválasztójában felhőszolgáltató is választható; a webes változat letölti a fájlt, amelyet külön kell feltölteni. Ez kézi fájlátvitel, nem élő felhőszinkron. A kéziratba szúrt ábra csak pillanatkép.',
+    'Válassz felhővel szinkronizált mappában vagy az eszköz fájlszolgáltatójánál lévő projektfájlt. A módosítások a Stúdió megnyitásakor szinkronizálódnak. A szolgáltató szinkronja késhet; az ütköző módosításokat a rendszer jelzi, és egyik példányt sem írja felül csendben. A projektadat közvetlenül a Stúdió és a kiválasztott fájl között mozog, nem a Stúdió szerverén keresztül. A kéziratba szúrt ábra pillanatkép.',
+  cloudHeading: 'Projekt felhőfájlja', cloudInfo: 'Válassz meglévő OMI kutatásiprojekt-fájlt, vagy hozz létre egyet felhőtárhelyen. Más eszközökön is ugyanazt a fájlt válaszd ki a projekt megosztásához.',
+  cloudConnect: 'Meglévő felhőprojekt csatlakoztatása', cloudReconnect: 'Felhőfájl újracsatlakoztatása', cloudCreate: 'Projekt létrehozása a felhőtárhelyen', cloudDisconnect: 'Felhőfájl leválasztása',
+  cloudDisconnected: 'Nincs felhőprojekt-fájl csatlakoztatva. Ezen az eszközön helyi munkapéldány marad.', cloudSyncing: 'Projektfájl szinkronizálása…', cloudSynced: 'A projektfájl szinkronizálva',
+  cloudConflict: 'A projekt ezen az eszközön és a felhőtárhelyen is módosult. Válaszd ki, melyik példány maradjon meg.', cloudPermission: 'A felhőfájl eléréséhez ismét engedély szükséges. A szinkron folytatásához csatlakoztasd újra a fájlt.', cloudError: 'A felhőszinkron figyelmet igényel.',
+  cloudUseRemote: 'Felhőpéldány használata', cloudKeepLocal: 'Ezen példány megtartása és a felhőfájl cseréje', cloudOverwriteConfirm: 'A fájl már egy másik projektet tartalmaz. Lecseréled a jelenlegi projektre?', cloudReplaceConfirm: 'Megnyitod ezt a felhőprojektet, és lecseréled a jelenlegi helyi projektet?',
   loading: 'Projekt betöltése…',
   saving: 'Mentés…',
   saved: 'Mentve ezen az eszközön',
@@ -316,7 +327,12 @@ const de: typeof en = {
   intro:
     'Personen und Beziehungen erstellen und bearbeiten. Stammbaum und Netzwerk verwenden ein gemeinsames Projekt.',
   local:
-    'Die Arbeitskopie bleibt auf diesem Gerät. Zum Übertragen eine portable Projektdatei speichern oder öffnen. Native Apps können im Systemdialog einen Cloudanbieter wählen; im Web wird die Datei heruntergeladen und muss separat hochgeladen werden. Das ist manueller Dateiaustausch, keine Live-Synchronisierung. Eingefügte Diagramme sind Momentaufnahmen.',
+    'Wählen Sie eine Projektdatei in einem synchronisierten Cloudordner oder bei einem Dateianbieter Ihres Geräts aus. Änderungen werden synchronisiert, solange Studio geöffnet ist. Die Anbietersynchronisierung kann dauern; Konflikte werden angezeigt, bevor eine Version ersetzt wird. Projektdaten bewegen sich direkt zwischen Studio und der ausgewählten Datei, nicht über den Studio-Server. Eingefügte Diagramme bleiben Momentaufnahmen.',
+  cloudHeading: 'Cloud-Projektdatei', cloudInfo: 'Wählen Sie eine vorhandene OMI-Forschungsprojektdatei oder erstellen Sie eine Datei an einem Cloud-Speicherort. Wählen Sie auf anderen Geräten dieselbe Datei aus, um das Projekt gemeinsam zu verwenden.',
+  cloudConnect: 'Vorhandenes Cloud-Projekt verbinden', cloudReconnect: 'Cloud-Datei erneut verbinden', cloudCreate: 'Projekt im Cloud-Speicher erstellen', cloudDisconnect: 'Cloud-Datei trennen',
+  cloudDisconnected: 'Keine Cloud-Projektdatei verbunden. Auf diesem Gerät bleibt eine lokale Arbeitskopie.', cloudSyncing: 'Projektdatei wird synchronisiert…', cloudSynced: 'Projektdatei synchronisiert',
+  cloudConflict: 'Dieses Projekt wurde auf diesem Gerät und im Cloud-Speicher geändert. Wählen Sie die Version aus, die erhalten bleiben soll.', cloudPermission: 'Der Zugriff auf die Cloud-Datei muss erneut bestätigt werden. Verbinden Sie die Datei erneut, um die Synchronisierung fortzusetzen.', cloudError: 'Für die Cloud-Synchronisierung ist eine Aktion erforderlich.',
+  cloudUseRemote: 'Cloud-Version verwenden', cloudKeepLocal: 'Diese Version behalten und Cloud-Datei ersetzen', cloudOverwriteConfirm: 'Diese Datei enthält bereits ein anderes Projekt. Soll sie durch das aktuelle Projekt ersetzt werden?', cloudReplaceConfirm: 'Dieses Cloud-Projekt öffnen und das aktuelle lokale Projekt ersetzen?',
   loading: 'Projekt wird geladen…',
   saving: 'Wird gespeichert…',
   saved: 'Auf diesem Gerät gespeichert',
