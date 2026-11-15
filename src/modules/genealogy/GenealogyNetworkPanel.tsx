@@ -6,6 +6,8 @@ import { buildGraphDiagramContribution, diagramSourceSuggestion } from './manusc
 import { newWorkspaceId, safeWorkspaceFileName } from '../disciplineWorkspace';
 import { graphCopy, nodeLabels, relationLabels, type GraphCopy } from './copy';
 import { decodeGedcom, parseGedcom } from './gedcom';
+import { parseGexf } from './gexf';
+import { parseGraphml } from './graphml';
 import { GraphCanvas } from './GraphCanvas';
 import { graphLayout, graphSvg } from './layout';
 import {
@@ -197,6 +199,10 @@ export function GenealogyNetworkPanel({
           fileName: file.name,
           warnings: {},
         });
+      } else if (/\.(gexf|graphml)$/i.test(file.name)) {
+        const raw = await file.text();
+        const imported = /\.gexf$/i.test(file.name) ? parseGexf(raw, file.name) : parseGraphml(raw, file.name);
+        setPending({ workspace: imported, fileName: file.name, warnings: {} });
       } else {
         const bytes = new Uint8Array(await file.arrayBuffer()),
           raw = decodeGedcom(bytes, encoding),
@@ -409,7 +415,7 @@ export function GenealogyNetworkPanel({
           <input
             ref={input}
             type="file"
-            accept=".ged,.gedcom,.json"
+            accept=".ged,.gedcom,.json,.gexf,.graphml"
             aria-label={t.import}
             onChange={(e) => {
               void importFile(e.target.files?.[0]);
