@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { DOMParser } from '@xmldom/xmldom';
+import { parseGexf } from '../src/modules/genealogy/gexf.ts';
+import { parseGraphml } from '../src/modules/genealogy/graphml.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createGraphWorkspace, isGraphWorkspace, newGraphNode, newGraphEdge, parseGraphJson } from '../src/modules/genealogy/model.ts';
@@ -39,4 +43,41 @@ test('invalid Gephi metadata is rejected', () => {
   node.gephi = { attributes: { unexpected: 12 as unknown as string } };
   graph.nodes.push(node);
   assert.equal(isGraphWorkspace(graph), false);
+});
+
+test('upstream Gephi Lite Les Misérables GEXF imports editable nodes, edges, positions and visual attributes', () => {
+  const previous = globalThis.DOMParser;
+  Object.assign(globalThis, { DOMParser });
+  try {
+    const raw = readFileSync(new URL('./fixtures/gephi-les-miserables.gexf', import.meta.url), 'utf8');
+    const graph = parseGexf(raw, 'Les Miserables.gexf');
+    assert.ok(graph.nodes.length > 50);
+    assert.ok(graph.edges.length > 100);
+    assert.ok(graph.nodes.some(node => node.networkPosition));
+    assert.ok(graph.nodes.some(node => Object.keys(node.gephi?.visual || {}).length > 0));
+    assert.equal(isGraphWorkspace(graph), true);
+    assert.deepEqual(parseGraphJson(JSON.stringify(graph)).nodes, graph.nodes);
+  } finally {
+    Object.assign(globalThis, { DOMParser: previous });
+  }
+});
+
+test('GraphML directed edges, typed metadata and self-loops import without topology loss', () => {
+  const previous = globalThis.DOMParser;
+  Object.assign(globalThis, { DOMParser });
+  try {
+    const raw = `<?xml version="1.0"?><graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+      <key id="weight" for="edge" attr.name="weight" attr.type="double"/>
+      <graph edgedefault="directed"><node id="a"/><node id="b"/>
+      <edge id="loop" source="a" target="a"><data key="weight">2.5</data></edge>
+      <edge id="other" source="a" target="b"/></graph></graphml>`;
+    const graph = parseGraphml(raw, 'sample.graphml');
+    assert.equal(graph.nodes.length, 2);
+    assert.equal(graph.edges.length, 2);
+    assert.equal(graph.edges[0]?.gephi?.attributes?.weight, '2.5');
+    assert.equal(graph.edges[0]?.directed, true);
+    assert.equal(isGraphWorkspace(graph), true);
+  } finally {
+    Object.assign(globalThis, { DOMParser: previous });
+  }
 });
