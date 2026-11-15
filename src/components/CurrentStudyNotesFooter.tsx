@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { EDITOR_ZOOM_EVENT } from '../editor/editorZoom';
 import {
   RENDERED_MANUSCRIPT_CHANGE_EVENT,
   findRenderedNoteElement,
@@ -40,6 +42,7 @@ export function CurrentStudyNotesFooter({
   const noteIdsKey = notes.map((note) => note.id).join('\u0000');
   const visibleNoteIds = useVisibleNoteIds(noteIdsKey);
   const visibleNotes = notes.filter((note) => visibleNoteIds.has(note.id));
+  const { anchorRef, dock } = useManuscriptNotesDock();
 
   function navigateToNote(note: OmiAnnotation): void {
     const section = findStudySectionForBlock(study, note.targetBlockId);
@@ -53,11 +56,15 @@ export function CurrentStudyNotesFooter({
     });
   }
 
-  return (
+  const footer = (
     <section
       id="omi-current-study-notes"
       className="omi-current-study-notes"
       aria-labelledby="omi-current-study-notes-title"
+      style={dock ? {
+        '--omi-notes-left': `${dock.left}px`,
+        '--omi-notes-width': `${dock.width}px`,
+      } as CSSProperties : undefined}
     >
       <header className="omi-current-study-notes__header">
         <div>
@@ -113,6 +120,62 @@ export function CurrentStudyNotesFooter({
       ) : null}
     </section>
   );
+
+  return (
+    <>
+      <span ref={anchorRef} hidden />
+      {dock ? createPortal(footer, dock.container) : null}
+    </>
+  );
+}
+
+function useManuscriptNotesDock() {
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const [dock, setDock] = useState<{
+    container: HTMLElement;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    const page = anchorRef.current?.closest<HTMLElement>('.omi-manuscript-page');
+    const container = page?.parentElement;
+    if (!page || !container) return;
+
+    // Keep the fixed panel outside the zoomed page and follow its rendered edges.
+    const measure = () => {
+      const { left, width } = page.getBoundingClientRect();
+      setDock((current) => current?.container === container
+        && current.left === left && current.width === width
+        ? current
+        : { container, left, width });
+    };
+    let frame: number | null = null;
+    const scheduleMeasure = () => {
+      if (frame !== null) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = null;
+        measure();
+      });
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(page);
+    observer.observe(container);
+    window.addEventListener('resize', scheduleMeasure);
+    window.addEventListener('scroll', scheduleMeasure, true);
+    window.addEventListener(EDITOR_ZOOM_EVENT, scheduleMeasure);
+    measure();
+
+    return () => {
+      observer.disconnect();
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', scheduleMeasure);
+      window.removeEventListener('scroll', scheduleMeasure, true);
+      window.removeEventListener(EDITOR_ZOOM_EVENT, scheduleMeasure);
+    };
+  }, []);
+
+  return { anchorRef, dock };
 }
 
 function useVisibleNoteIds(
