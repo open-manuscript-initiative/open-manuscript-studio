@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { graphStore } from './workspaceStore';
+import type { ResearchProjectFile } from './projectFile';
 import type { GraphWorkspace } from './model';
 export function useGraphWorkspace(key: string) {
   const subscribe = useCallback(
@@ -16,5 +17,6 @@ export function useGraphWorkspace(key: string) {
       graphStore.update(key, change),
     [key],
   );
-  return { ...snapshot, update, undo: () => graphStore.undo(key) };
+  const openProject = useCallback((project: ResearchProjectFile) => graphStore.openProject(key, project), [key]);
+  return { ...snapshot, update, openProject, undo: () => graphStore.undo(key) };
 }

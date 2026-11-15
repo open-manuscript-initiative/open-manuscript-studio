@@ -30,8 +30,9 @@ import {
   type NodeKind,
 } from './model';
 import {
-  createResearchProjectFile,
   parseResearchProjectFile,
+  researchProjectGraph,
+  type ResearchProjectFile,
 } from './projectFile';
 import { useGraphWorkspace } from './useGraphWorkspace';
 import './genealogy.css';
@@ -64,7 +65,7 @@ export function GenealogyNetworkPanel({
   const t = graphCopy(locale),
     types = nodeLabels(t),
     relations = relationLabels(t);
-  const { workspace, status, canUndo, update, undo } =
+  const { workspace, project, status, canUndo, update, openProject, undo } =
     useGraphWorkspace(storageKey);
   const [selectedId, setSelectedId] = useState(''),
     [search, setSearch] = useState(''),
@@ -77,6 +78,7 @@ export function GenealogyNetworkPanel({
     [encoding, setEncoding] = useState('auto');
   const [pending, setPending] = useState<{
     workspace: GraphWorkspace;
+    project?: ResearchProjectFile;
     fileName: string;
     warnings: Record<string, number>;
   } | null>(null);
@@ -172,8 +174,10 @@ export function GenealogyNetworkPanel({
       )
         throw new GraphError('limit');
       if (/\.json$/i.test(file.name)) {
+        const imported = parseResearchProjectFile(await file.text());
         setPending({
-          workspace: parseResearchProjectFile(await file.text()),
+          workspace: researchProjectGraph(imported),
+          project: imported,
           fileName: file.name,
           warnings: {},
         });
@@ -197,13 +201,19 @@ export function GenealogyNetworkPanel({
       setBusy(false);
     }
   }
+  function openImportedProject() {
+    if (!pending?.project) return;
+    if ((workspace.nodes.length || workspace.imports.length || project.resources.length > 1) && !window.confirm(t.openProjectConfirm)) return;
+    try { openProject(pending.project); setPending(null); setSelectedId(''); setSearch(''); setError(''); }
+    catch (e) { setError(errorMessage(e, t)); }
+  }
   function acceptImport(replace = false) {
     if (!pending) return;
     if (replace && workspace.nodes.length && !window.confirm(t.replaceConfirm))
       return;
     try {
       const next = replace
-        ? pending.workspace
+        ? { ...pending.workspace, projectId: workspace.projectId }
         : mergeGraphs(workspace, pending.workspace, newWorkspaceId);
       if (apply(next)) {
         setPending(null);
@@ -353,7 +363,7 @@ export function GenealogyNetworkPanel({
             onClick={() =>
               downloadFile(
                 `${filename}.omiproject.json`,
-                JSON.stringify(createResearchProjectFile(workspace), null, 2),
+                JSON.stringify(project, null, 2),
                 'application/json;charset=utf-8',
               )
             }
@@ -427,9 +437,9 @@ export function GenealogyNetworkPanel({
               <button type="button" onClick={() => acceptImport()}>
                 {t.merge}
               </button>
-              <button type="button" onClick={() => acceptImport(true)}>
-                {t.replace}
-              </button>
+              {pending.project ? <button type="button" onClick={openImportedProject}>{t.openProject}</button> :
+                <button type="button" onClick={() => acceptImport(true)}>{t.replace}</button>}
+              {pending.project && <p>{t.projectImportHint}</p>}
               <button type="button" onClick={() => setPending(null)}>
                 {t.cancel}
               </button>

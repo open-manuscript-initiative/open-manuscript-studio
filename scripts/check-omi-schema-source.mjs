@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(resolve(root, 'src/schemas/omi-schema-source.json'), 'utf8'));
 if (manifest.repository !== 'open-manuscript-initiative/omi' || !/^[a-f0-9]{40}$/.test(manifest.revision)
-  || !Array.isArray(manifest.schemas) || manifest.schemas.length !== 3) throw new Error('Invalid immutable OMI schema source manifest.');
+  || !Array.isArray(manifest.schemas) || manifest.schemas.length !== 5) throw new Error('Invalid immutable OMI schema source manifest.');
 const sourceArgument = process.argv.find(arg => arg.startsWith('--source='));
 const sourceRoot = sourceArgument ? resolve(sourceArgument.slice('--source='.length)) : null;
 if (sourceRoot && execFileSync('git', ['-C', sourceRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== manifest.revision) {

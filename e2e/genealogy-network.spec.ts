@@ -144,6 +144,21 @@ for (const width of [1440, 390]) {
     expect(data.nodes).toHaveLength(3);
     expect(data.edges).toHaveLength(3);
     expect(data.nodes[0].treePosition).toBeDefined();
+    const projectDownload = page.waitForEvent('download');
+    await tree.getByRole('button', { name: 'Save portable project file', exact: true }).click();
+    const portable = JSON.parse(await readFile((await (await projectDownload).path())!, 'utf8'));
+    expect(portable.format).toBe('omi-research-project');
+    expect(portable.version).toBe('0.1.0');
+    const importedId = 'urn:uuid:ef10f88e-d122-4793-af86-8bb3e54e8f38';
+    portable.projectId = importedId;
+    portable.resources[0].inline.projectId = importedId;
+    portable.resources.push({ resourceId: 'urn:example:opaque', resourceType: 'org.example.future', schemaVersion: '2', mediaType: 'application/json', inline: { preserve: 'Synthetic opaque data' } });
+    await tree.getByLabel('Import GEDCOM / JSON', { exact: true }).setInputFiles({ name: 'project.omiproject.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(portable)) });
+    await expect(tree.getByRole('button', { name: 'Open as project', exact: true })).toBeVisible();
+    page.once('dialog', dialog => dialog.accept());
+    await tree.getByRole('button', { name: 'Open as project', exact: true }).click();
+    await expect(tree.getByRole('heading', { name: /Import preview/ })).toHaveCount(0);
+    await expect(tree.getByText('Saved on this device', { exact: true })).toBeVisible();
     expect(
       Buffer.from(data.imports[0].originalBase64, 'base64').toString('utf8'),
     ).toBe(gedcom);
@@ -175,6 +190,11 @@ for (const width of [1440, 390]) {
     await expect(tree.getByLabel('Display name', { exact: true })).toHaveValue(
       'János Varga edited',
     );
+    const reopenedDownload = page.waitForEvent('download');
+    await tree.getByRole('button', { name: 'Save portable project file', exact: true }).click();
+    const reopenedProject = JSON.parse(await readFile((await (await reopenedDownload).path())!, 'utf8'));
+    expect(reopenedProject.projectId).toBe(importedId);
+    expect(reopenedProject.resources[1]).toEqual(portable.resources[1]);
     await tree
       .getByLabel('Import GEDCOM / JSON', { exact: true })
       .setInputFiles({
