@@ -41,12 +41,14 @@ const GENERATED_TAURI_THEMES = Object.freeze([
 const MODERN_THEME = 'Theme.AppCompat.DayNight.NoActionBar';
 const LEGACY_ACTIVITY_IMPORT = 'import androidx.activity.enableEdgeToEdge';
 const MODERN_ACTIVITY_IMPORT = `import android.os.Build
+import android.graphics.Color
 import android.view.WindowManager
 import android.view.View
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat`;
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat`;
 const LEGACY_ACTIVITY_CALL = '    enableEdgeToEdge()';
 const MODERN_ACTIVITY_CALL = `    WindowCompat.setDecorFitsSystemWindows(window, false)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -55,7 +57,27 @@ const MODERN_ACTIVITY_CALL = `    WindowCompat.setDecorFitsSystemWindows(window,
           WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
       window.attributes = attributes
     }`;
-const ANDROID_INSETS_CALL = `    val content = findViewById<View>(android.R.id.content)
+const ANDROID_CONTENT_INSETS_CALL = `    val content = findViewById<View>(android.R.id.content)
+    val contentPaddingBottom = content.paddingBottom
+    ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+      val navigationBarBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+      view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, contentPaddingBottom + navigationBarBottom)
+      WindowInsetsCompat.Builder(insets)
+        .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.NONE)
+        .build()
+    }
+    ViewCompat.requestApplyInsets(content)`;
+const ANDROID_INSETS_CALL = `    window.statusBarColor = Color.rgb(255, 254, 250)
+    window.navigationBarColor = Color.rgb(255, 254, 250)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      window.isStatusBarContrastEnforced = false
+      window.isNavigationBarContrastEnforced = false
+    }
+    WindowInsetsControllerCompat(window, window.decorView).apply {
+      isAppearanceLightStatusBars = true
+      isAppearanceLightNavigationBars = true
+    }
+    val content = findViewById<View>(android.R.id.content)
     val contentPaddingBottom = content.paddingBottom
     ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
       val navigationBarBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
@@ -149,7 +171,7 @@ export function patchAndroidActivity(source) {
   } else if (result.includes('import androidx.core.view.WindowCompat')) {
     result = result.replace(
       'import android.view.WindowManager',
-      'import android.view.WindowManager\nimport android.view.View\nimport androidx.core.graphics.Insets\nimport androidx.core.view.ViewCompat\nimport androidx.core.view.WindowInsetsCompat',
+      'import android.graphics.Color\nimport android.view.WindowManager\nimport android.view.View\nimport androidx.core.graphics.Insets\nimport androidx.core.view.ViewCompat\nimport androidx.core.view.WindowInsetsCompat\nimport androidx.core.view.WindowInsetsControllerCompat',
     );
   } else if (!result.includes(MODERN_ACTIVITY_IMPORT)) {
     throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
@@ -163,6 +185,12 @@ export function patchAndroidActivity(source) {
   }
   if (!result.includes(MODERN_ACTIVITY_CALL)) {
     throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
+  }
+
+  // Upgrade projects previously patched by this script without duplicating the
+  // content view or registering a second window-insets listener.
+  if (result.includes(ANDROID_CONTENT_INSETS_CALL)) {
+    return result.replace(ANDROID_CONTENT_INSETS_CALL, ANDROID_INSETS_CALL);
   }
 
   if (!result.includes(superCall)) {
