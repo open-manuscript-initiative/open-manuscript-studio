@@ -8,6 +8,7 @@ For the primary Studio interface locales, the PO catalogs are the editable sourc
 - `fr/studio.po` — French
 - `it/studio.po` — Italian
 - `es/studio.po` — Spanish
+- `sk/studio.po` — Slovak
 - `nl/studio.po` — Dutch
 - `pl/studio.po` — Polish
 
