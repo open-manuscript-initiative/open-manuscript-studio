@@ -1,149 +1,91 @@
-import {
-  createGraphWorkspace,
-  GraphError,
-  isGraphWorkspace,
-  newResearchProjectId,
-  type GraphWorkspace,
-} from './model';
+import { createGraphWorkspace, GraphError, isGraphWorkspace, type GraphWorkspace } from './model';
+import { createResearchProjectFile, researchProjectGraph, validateResearchProject, type ResearchProjectFile } from './projectFile';
 
 export interface GraphStorage {
   read(key: string): Promise<unknown>;
-  write(key: string, workspace: GraphWorkspace): Promise<void>;
+  write(key: string, value: unknown): Promise<void>;
 }
 export interface GraphSnapshot {
   workspace: GraphWorkspace;
+  project: ResearchProjectFile;
   status: 'loading' | 'saving' | 'saved' | 'error';
   canUndo: boolean;
 }
-/** One store per user/workspace, so both open module views edit the same data. */
+const bindingKey = (key: string) => `${key}:project-binding-v1`;
+const projectKey = (key: string, projectId: string) => `${key}:project-v1:${encodeURIComponent(projectId)}`;
+/** Account/workspace scopes access to a selected project; project-ID keys own cached package data. */
 export function createGraphStore(storage: GraphStorage) {
-  const entries = new Map<
-    string,
-    {
-      snapshot: GraphSnapshot;
-      listeners: Set<() => void>;
-      history: GraphWorkspace[];
-      loaded?: Promise<void>;
-      saves: Promise<void>;
-      revision: number;
-    }
-  >();
+  const entries = new Map<string, { snapshot: GraphSnapshot; listeners: Set<() => void>;
+    history: GraphSnapshot[]; loaded?: Promise<void>; saves: Promise<void>; revision: number }>();
   const entry = (key: string) => {
     let e = entries.get(key);
     if (!e) {
-      e = {
-        snapshot: {
-          workspace: createGraphWorkspace(),
-          status: 'loading',
-          canUndo: false,
-        },
-        listeners: new Set(),
-        history: [],
-        saves: Promise.resolve(),
-        revision: 0,
-      };
+      const workspace = createGraphWorkspace();
+      e = { snapshot: { workspace, project: createResearchProjectFile(workspace), status: 'loading', canUndo: false },
+        listeners: new Set(), history: [], saves: Promise.resolve(), revision: 0 };
       entries.set(key, e);
     }
     return e;
   };
-  const emit = (key: string) =>
-    entry(key).listeners.forEach((listener) => listener());
+  const emit = (key: string) => entry(key).listeners.forEach(listener => listener());
   const persist = (key: string) => {
-    const e = entry(key),
-      revision = ++e.revision,
-      workspace = e.snapshot.workspace;
-    e.snapshot = {
-      ...e.snapshot,
-      status: 'saving',
-      canUndo: e.history.length > 0,
-    };
-    emit(key);
-    e.saves = e.saves
-      .catch(() => undefined)
-      .then(() => storage.write(key, workspace))
-      .then(
-        () => {
-          if (e.revision === revision) {
-            e.snapshot = { ...e.snapshot, status: 'saved' };
-            emit(key);
-          }
-        },
-        () => {
-          if (e.revision === revision) {
-            e.snapshot = { ...e.snapshot, status: 'error' };
-            emit(key);
-          }
-        },
-      );
+    const e = entry(key), revision = ++e.revision, project = structuredClone(e.snapshot.project);
+    e.snapshot = { ...e.snapshot, status: 'saving', canUndo: e.history.length > 0 }; emit(key);
+    e.saves = e.saves.catch(() => undefined).then(async () => {
+      // Keep the old binding until the complete project cache write succeeds.
+      await storage.write(projectKey(key, project.projectId), project);
+      await storage.write(bindingKey(key), { format: 'studio-research-project-binding', version: 1, projectId: project.projectId });
+    }).then(() => {
+      if (e.revision === revision) { e.snapshot = { ...e.snapshot, status: 'saved' }; emit(key); }
+    }, () => {
+      if (e.revision === revision) { e.snapshot = { ...e.snapshot, status: 'error' }; emit(key); }
+    });
   };
+  function setProject(key: string, project: ResearchProjectFile) {
+    const e = entry(key);
+    if (e.snapshot.status === 'loading') return;
+    const workspace = researchProjectGraph(project);
+    e.history.push(e.snapshot); if (e.history.length > 30) e.history.shift();
+    e.snapshot = { ...e.snapshot, workspace, project: structuredClone(project) }; persist(key);
+  }
   return {
     snapshot: (key: string): GraphSnapshot => entry(key).snapshot,
-    subscribe(key: string, listener: () => void) {
-      const e = entry(key);
-      e.listeners.add(listener);
-      return () => {
-        e.listeners.delete(listener);
-      };
-    },
+    subscribe(key: string, listener: () => void) { const e = entry(key); e.listeners.add(listener); return () => { e.listeners.delete(listener); }; },
     load(key: string): Promise<void> {
       const e = entry(key);
       return (e.loaded ??= (async () => {
         try {
-          const value = await storage.read(key);
-          if (value !== undefined && value !== null && !isGraphWorkspace(value))
-            throw new GraphError('invalid');
-          const legacy = value && !(value as GraphWorkspace).projectId;
-          const workspace = value
-            ? {
-                ...(value as GraphWorkspace),
-                projectId:
-                  (value as GraphWorkspace).projectId ?? newResearchProjectId(),
-              }
-            : createGraphWorkspace();
-          // Add only project identity to legacy records in place. All existing
-          // graph content and the original key remain untouched for recovery.
-          let status: GraphSnapshot['status'] = 'saved';
-          if (legacy) {
-            try {
-              await storage.write(key, workspace);
-            } catch {
-              // Keep showing the successfully loaded graph even if only the
-              // additive project-ID migration could not be persisted.
-              status = 'error';
-            }
+          const binding = await storage.read(bindingKey(key));
+          let project: ResearchProjectFile;
+          if (binding !== undefined && binding !== null) {
+            if (typeof binding !== 'object' || !('format' in binding) || binding.format !== 'studio-research-project-binding'
+              || !('version' in binding) || binding.version !== 1 || !('projectId' in binding) || typeof binding.projectId !== 'string'
+              || !binding.projectId || binding.projectId.length > 256) throw new GraphError('invalid');
+            const value = await storage.read(projectKey(key, binding.projectId));
+            validateResearchProject(value);
+            if (value.projectId !== binding.projectId) throw new GraphError('invalid');
+            project = value;
+          } else {
+            const value = await storage.read(key);
+            if (value !== undefined && value !== null && !isGraphWorkspace(value)) throw new GraphError('invalid');
+            // Reading never overwrites legacy storage. A subsequent confirmed edit/open writes separate project keys.
+            project = createResearchProjectFile(value ? value as GraphWorkspace : e.snapshot.workspace);
           }
-          e.snapshot = {
-            workspace,
-            status,
-            canUndo: false,
-          };
-        } catch {
-          e.snapshot = { ...e.snapshot, status: 'error' };
-        }
+          e.snapshot = { workspace: researchProjectGraph(project), project: structuredClone(project), status: 'saved', canUndo: false };
+        } catch { e.snapshot = { ...e.snapshot, status: 'error' }; }
         emit(key);
       })());
     },
-    update(
-      key: string,
-      change: GraphWorkspace | ((current: GraphWorkspace) => GraphWorkspace),
-    ) {
-      const e = entry(key);
-      if (e.snapshot.status === 'loading') return;
-      const next =
-        typeof change === 'function' ? change(e.snapshot.workspace) : change;
+    update(key: string, change: GraphWorkspace | ((current: GraphWorkspace) => GraphWorkspace)) {
+      const e = entry(key); if (e.snapshot.status === 'loading') return;
+      const next = typeof change === 'function' ? change(e.snapshot.workspace) : change;
       if (!isGraphWorkspace(next)) throw new GraphError('invalid');
-      e.history.push(e.snapshot.workspace);
-      if (e.history.length > 30) e.history.shift();
-      e.snapshot = { ...e.snapshot, workspace: next };
-      persist(key);
+      setProject(key, createResearchProjectFile(next, new Date().toISOString(), e.snapshot.project));
     },
+    openProject: setProject,
     undo(key: string) {
-      const e = entry(key),
-        previous = e.history.pop();
-      if (previous) {
-        e.snapshot = { ...e.snapshot, workspace: previous };
-        persist(key);
-      }
+      const e = entry(key), previous = e.history.pop();
+      if (previous) { e.snapshot = { ...previous, canUndo: e.history.length > 0 }; persist(key); }
     },
     flush: (key: string) => entry(key).saves,
   };
@@ -164,7 +106,7 @@ function database(): Promise<IDBDatabase> {
 }
 async function transaction(
   key: string,
-  workspace?: GraphWorkspace,
+  workspace?: unknown,
 ): Promise<unknown> {
   const db = await database();
   return new Promise((resolve, reject) => {

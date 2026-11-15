@@ -264,3 +264,15 @@ installation allow-lists and persisted activation preferences are unchanged.
 ## Psychology and Medical / Health Sciences
 
 See [health research modules](health-research-modules.md) for structured protocols, instrument descriptions, ethics metadata, local-storage limits and allowlisted manuscript summary insertion. Both modules use the shared statistics workspace rather than introducing another computation engine.
+
+
+## Research-project ownership reconciliation — 2026-11-15
+
+Genealogy and relationship networks now use the canonical OMI-SPEC-360 Draft 0.1.0
+inline-project adapter and an account-scoped selection binding to a project-ID
+cache. Other modules retain their documented local formats pending explicit
+migration. Opening retains source identity and opaque inline resources; adding
+copies only graph records into the destination. Canonical project packages remain
+separate from OMI manuscript snapshots. See [ADR-036](adr-036-project-owned-research-data.md)
+for legacy recovery, cache failure/undo and the still-planned provider-direct storage
+and public projection work. Local writes/downloads are not remote-save evidence.

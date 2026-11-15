@@ -26,6 +26,7 @@ for (const [name, schemaFile, formats] of [
   ['manuscript', 'omi-manuscript-0.3.schema.json', manuscriptFormats],
   ['report', 'studio-validation-report-0.1.schema.json', reportFormats],
   ['textBoxContent', 'text-box-content-0.1.schema.json', {}],
+  ['researchProject', 'research-project-0.1.schema.json', reportFormats],
 ]) {
   const schema = JSON.parse(readFileSync(new URL(`../src/schemas/${schemaFile}`, import.meta.url), 'utf8'));
   const ajv = new Ajv2020({
@@ -34,8 +35,9 @@ for (const [name, schemaFile, formats] of [
   });
   for (const [format, validate] of Object.entries(formats)) ajv.addFormat(format, validate);
   let code = standaloneCode(ajv, ajv.compile(schema));
-  const outputDirectory = name === 'textBoxContent' ? new URL('../src/schemas/generated/', import.meta.url) : directory;
+  const outputDirectory = ['textBoxContent', 'researchProject'].includes(name) ? new URL('../src/schemas/generated/', import.meta.url) : directory;
   let imports = name === 'textBoxContent' ? '' : `import { ${name === 'manuscript' ? 'manuscriptFormats' : 'reportFormats'} as formats } from '../schemaFormats';\n`;
+  if (name === 'researchProject') imports = "import { reportFormats as formats } from '../../services/schemaFormats';\n";
   // Ajv emits CommonJS references for its two pure runtime helpers even in ESM
   // mode. Import those helpers through our npm alias without shipping the compiler.
   for (const helper of ['ucs2length', 'equal']) {

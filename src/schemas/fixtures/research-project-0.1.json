@@ -1,0 +1,45 @@
+{
+  "format": "omi-research-project",
+  "version": "0.1.0",
+  "projectId": "urn:uuid:65dcc608-f196-48db-a53c-c6ad05e63664",
+  "title": "Synthetic Ő project",
+  "createdAt": "2026-11-15T07:00:00.000Z",
+  "updatedAt": "2026-11-15T07:00:00.000Z",
+  "resources": [
+    {
+      "resourceId": "urn:uuid:47e047d9-e0be-4f27-9309-ef3becb74e37",
+      "resourceType": "org.omi.genealogy",
+      "schemaVersion": "omi-research-graph/1",
+      "mediaType": "application/json",
+      "inline": {
+        "schema": "omi-research-graph/1",
+        "title": "Synthetic Ő project",
+        "nodes": [],
+        "edges": [],
+        "imports": []
+      },
+      "extensions": {
+        "urn:example:descriptor": {
+          "keep": true
+        }
+      }
+    },
+    {
+      "resourceId": "urn:uuid:edb74d28-a6bc-472d-b9be-f403c5bd41c8",
+      "resourceType": "org.example.future",
+      "schemaVersion": "2",
+      "mediaType": "application/json",
+      "inline": {
+        "unrecognized": [
+          "keep",
+          "α"
+        ]
+      }
+    }
+  ],
+  "extensions": {
+    "urn:example:project": {
+      "keep": true
+    }
+  }
+}

@@ -37,3 +37,11 @@ test('profiled graphical text validates without runtime code generation', async 
   assert.deepEqual(decodeTextBoxContent(createTextBox('Native Ő').content, TEXT_BOX_CONTENT_PROFILE).diagnostics, []);
   assert.deepEqual(decodeTextBoxContent('{}', TEXT_BOX_CONTENT_PROFILE).diagnostics, ['text-box-invalid-content']);
 });
+
+
+test('research project envelope validates and round-trips with dynamic code generation forbidden', async () => {
+  const { createGraphWorkspace } = await import('../src/modules/genealogy/model.ts');
+  const { createResearchProjectFile, parseResearchProjectFile } = await import('../src/modules/genealogy/projectFile.ts');
+  const project = createResearchProjectFile(createGraphWorkspace());
+  assert.deepEqual(parseResearchProjectFile(JSON.stringify(project)), project);
+});

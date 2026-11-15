@@ -10,6 +10,9 @@ const en = {
   project: 'Project title',
   save: 'Save',
   saveProject: 'Save portable project file',
+  openProject: 'Open as project',
+  openProjectConfirm: 'Open the imported project? The current working copy remains cached separately; Undo can return to it. Save a portable backup first if needed.',
+  projectImportHint: 'Open keeps the source project identity and all inline resources. Add copies graph records into the current project and keeps its identity; other resources stay in the source file.',
   intro:
     'Create and edit people and relationships. Family-tree and network views share this project.',
   local:
@@ -155,6 +158,9 @@ const hu: typeof en = {
   project: 'Projekt címe',
   save: 'Mentés',
   saveProject: 'Hordozható projektfájl mentése',
+  openProject: 'Megnyitás projektként',
+  openProjectConfirm: 'Megnyitod az importált projektet? A jelenlegi munkapéldány külön gyorsítótárban megmarad; a Visszavonás visszatérhet hozzá. Szükség esetén előbb ments hordozható másolatot.',
+  projectImportHint: 'A megnyitás megtartja a forrásprojekt azonosítóját és összes beágyazott erőforrását. A hozzáadás csak a gráf rekordjait másolja a jelenlegi projektbe; a többi erőforrás a forrásfájlban marad.',
   intro:
     'Személyek és kapcsolatok létrehozása, szerkesztése. A családfa és a kapcsolati háló közös projektet használ.',
   local:
@@ -304,6 +310,9 @@ const de: typeof en = {
   project: 'Projekttitel',
   save: 'Speichern',
   saveProject: 'Portable Projektdatei speichern',
+  openProject: 'Als Projekt öffnen',
+  openProjectConfirm: 'Importiertes Projekt öffnen? Die aktuelle Arbeitskopie bleibt separat zwischengespeichert; Rückgängig kann sie wiederherstellen. Bei Bedarf zuerst eine portable Sicherung speichern.',
+  projectImportHint: 'Öffnen erhält die Projektidentität und alle eingebetteten Ressourcen. Hinzufügen kopiert nur Graphdatensätze in das aktuelle Projekt; andere Ressourcen bleiben in der Quelldatei.',
   intro:
     'Personen und Beziehungen erstellen und bearbeiten. Stammbaum und Netzwerk verwenden ein gemeinsames Projekt.',
   local:

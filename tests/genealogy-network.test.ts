@@ -409,7 +409,7 @@ test('loading cannot overwrite an edit because updates remain blocked until init
   let resolve: (value: unknown) => void = () => undefined;
   let writes = 0;
   const store = createGraphStore({
-    read: () =>
+    read: (key) => key.endsWith(':project-binding-v1') ? Promise.resolve(undefined) :
       new Promise((r) => {
         resolve = r;
       }),
@@ -418,6 +418,7 @@ test('loading cannot overwrite an edit because updates remain blocked until init
     },
   });
   const loading = store.load('key');
+  await Promise.resolve();
   store.update('key', graphWithPeople());
   assert.equal(writes, 0);
   resolve(graphWithPeople());

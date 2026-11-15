@@ -74,8 +74,8 @@ including [the version 7 specification](https://gedcom.io/specifications/FamilyS
 
 ## Storage and portability
 
-Projects are stored in IndexedDB on the current device, keyed by user ID and
-workspace ID. Both mounted module views use one observable store and serialized
+Projects are cached in IndexedDB on the current device under project-ID keys,
+within the user/workspace access scope. A separate binding selects the active project. Both mounted module views use one observable store and serialized
 transactional writes, so one view cannot overwrite the other's current edits.
 Controls remain disabled until the initial read completes. Failed writes leave
 in-memory work intact and show a backup warning. A bounded local undo history
@@ -83,8 +83,9 @@ is available during the session.
 
 The research dataset is not a shared server database, is not synchronized across
 devices or browser tabs, and is not automatically included in an OMI manuscript.
-Use Export editable JSON for a full backup/transfer, then import it on the other
-device. An OMI file containing the inserted SVG retains the diagram image, not
+Use Save portable project file for a complete inline-project backup/transfer.
+Export editable JSON is the graph-only legacy backup; it does not include other
+project resources. Preview the selected file before opening it on another device. An OMI file containing the inserted SVG retains the diagram image, not
 the graph editor dataset. Exports use the shared native save mechanism in Tauri
 applications and safe browser downloads on the web.
 
@@ -120,3 +121,25 @@ The full graph, original GEDCOM and private research notes remain in workspace
 storage/backup, separate from the reviewed manuscript snapshot. Insertion does not
 create ongoing synchronization, overwrite later manuscript edits or restrict author
 editing. See [ADR-035](architecture/adr-035-text-box-profile-and-research-diagram-provenance.md).
+
+## Portable project compatibility and local ownership
+
+The project file uses the canonical experimental OMI-SPEC-360 Draft 0.1.0 envelope.
+Opening a project preserves its identity, creation timestamp and opaque inline
+resources. Adding to the current project copies graph records only and keeps the
+current identity; the preview explains the distinction. GEDCOM dataset replacement
+also keeps the current identity. The two views always share the selected project.
+
+Old bare graph JSON and the released numeric-version-1 project prototype remain
+importable. Conversion requires preview acceptance; the original prototype is kept
+inside the migration extension, and original files/legacy browser keys are left
+untouched. Unsupported versions/path resources are refused before changing data.
+Only single-JSON inline projects are currently supported, up to 64 MiB, 1,000
+resources and JSON depth 64, alongside existing graph quotas.
+
+Local package caches are keyed by project identity within the account/workspace
+access scope, with a separate selected-project binding. Successful cache writes
+precede changing that binding; errors keep the working data and report a local
+failure. Other project caches remain retained, and in-session Undo can restore
+previous project state. Keep portable backups for cross-device recovery. Local
+save/download is not automatic cloud sync or a provider integrity receipt.
