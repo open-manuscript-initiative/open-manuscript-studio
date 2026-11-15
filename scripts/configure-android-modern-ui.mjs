@@ -67,7 +67,7 @@ const ANDROID_CONTENT_INSETS_CALL = `    val content = findViewById<View>(androi
         .build()
     }
     ViewCompat.requestApplyInsets(content)`;
-const ANDROID_INSETS_CALL = `    window.statusBarColor = Color.rgb(255, 254, 250)
+const ANDROID_SYSTEM_BARS_CALL = `    window.statusBarColor = Color.rgb(255, 254, 250)
     window.navigationBarColor = Color.rgb(255, 254, 250)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       window.isStatusBarContrastEnforced = false
@@ -76,7 +76,8 @@ const ANDROID_INSETS_CALL = `    window.statusBarColor = Color.rgb(255, 254, 250
     WindowInsetsControllerCompat(window, window.decorView).apply {
       isAppearanceLightStatusBars = true
       isAppearanceLightNavigationBars = true
-    }
+    }`;
+const ANDROID_INSETS_CALL = `${ANDROID_SYSTEM_BARS_CALL}
     val content = findViewById<View>(android.R.id.content)
     val contentPaddingBottom = content.paddingBottom
     ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
@@ -169,10 +170,22 @@ export function patchAndroidActivity(source) {
   if (result.includes(LEGACY_ACTIVITY_IMPORT)) {
     result = result.replace(LEGACY_ACTIVITY_IMPORT, MODERN_ACTIVITY_IMPORT);
   } else if (result.includes('import androidx.core.view.WindowCompat')) {
-    result = result.replace(
-      'import android.view.WindowManager',
-      'import android.graphics.Color\nimport android.view.WindowManager\nimport android.view.View\nimport androidx.core.graphics.Insets\nimport androidx.core.view.ViewCompat\nimport androidx.core.view.WindowInsetsCompat\nimport androidx.core.view.WindowInsetsControllerCompat',
-    );
+    const requiredImports = [
+      'import android.graphics.Color',
+      'import android.view.View',
+      'import androidx.core.graphics.Insets',
+      'import androidx.core.view.ViewCompat',
+      'import androidx.core.view.WindowInsetsCompat',
+      'import androidx.core.view.WindowInsetsControllerCompat',
+    ];
+    for (const importLine of requiredImports) {
+      if (!result.includes(importLine)) {
+        result = result.replace(
+          'import androidx.core.view.WindowCompat',
+          `${importLine}\nimport androidx.core.view.WindowCompat`,
+        );
+      }
+    }
   } else if (!result.includes(MODERN_ACTIVITY_IMPORT)) {
     throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
   }
@@ -190,7 +203,13 @@ export function patchAndroidActivity(source) {
   // Upgrade projects previously patched by this script without duplicating the
   // content view or registering a second window-insets listener.
   if (result.includes(ANDROID_CONTENT_INSETS_CALL)) {
-    return result.replace(ANDROID_CONTENT_INSETS_CALL, ANDROID_INSETS_CALL);
+    result = result
+      .split(ANDROID_SYSTEM_BARS_CALL).join('')
+      .split(ANDROID_CONTENT_INSETS_CALL).join('');
+    if (!result.includes(superCall)) {
+      throw new Error('Expected generated Android Activity onCreate call is missing.');
+    }
+    return result.replace(superCall, `${superCall}\n${ANDROID_INSETS_CALL}`);
   }
 
   if (!result.includes(superCall)) {
