@@ -172,7 +172,7 @@
       "conference-paper": "Konferenčný príspevok",
       "thesis": "Diplomová práca",
       "dissertation": "Dizertačná práca",
-      "report": "Report",
+      "report": "Správa",
       "preprint": "Predtlač",
       "dataset": "Súbor údajov",
       "software": "Softvér",
@@ -189,7 +189,7 @@
       "paragraph": "Text odseku",
       "figure": "Obrázok",
       "table": "Tabuľka",
-      "folio": "Folio",
+      "folio": "fólio",
       "line": "Riadok",
       "timestamp": "Časová pečiatka"
     }
@@ -315,7 +315,7 @@
       },
       "email": {
         "label": "E-mail",
-        "placeholder": "name@example.com"
+        "placeholder": "meno@example.com"
       },
       "password": {
         "label": "Heslo",
@@ -1011,7 +1011,7 @@
         "saved": "Automaticky uložené v tomto zariadení.",
         "segments": "Textové pasáže a kolácia",
         "shelfmark": "Signatúra",
-        "siglum": "Siglum",
+        "siglum": "Sigla",
         "title": "Názov vydania",
         "untitled": "Kritické vydanie bez názvu",
         "witnessDesc": "Popis",
@@ -1090,7 +1090,7 @@
         "fraction": "Zlomok",
         "hint": "Zadajte výraz bez úplného dokumentu v LaTeXu alebo bez ohraničovacích znakov $. Šablóny nahradia vybraný text.",
         "integral": "Integrál",
-        "matrix": "Matrix",
+        "matrix": "Matica",
         "preview": "Náhľad rovnice",
         "root": "Koreňová",
         "scripts": "Skripty",
@@ -1102,7 +1102,7 @@
     "religious-texts-religious-texts-panel": {
       "copyByLocale": {
         "count": "{count} výsledkov",
-        "editions": "Edition",
+        "editions": "Vydanie",
         "empty": "Toto vyhľadávanie nenašlo žiadne výsledky.",
         "failed": "Vyhľadávanie sa nepodarilo dokončiť. Skúste to neskôr.",
         "heading": "Sefaria – židovské texty a komentáre",
@@ -1238,7 +1238,7 @@
         "groupsPlan": "Skupiny (oddelené čiarkami)",
         "histogram": "Rozdelenie (histogram)",
         "hypothesis": "Hypotéza",
-        "importCsv": "Import CSV / TSV",
+        "importCsv": "Importovať CSV / TSV",
         "importJson": "Importovať analýzu vo formáte JSON",
         "importLab": "Import laboratórneho projektu",
         "inclusion": "Kritériá zaradenia (jedno na riadok)",
@@ -1579,7 +1579,7 @@
       "words": {
         "add": "Pridať udalosť",
         "annotation": "Analýza / varianta",
-        "beat": "Beat",
+        "beat": "Takt",
         "composer": "Skladateľ / tvorca",
         "duration": "Trvanie",
         "empty": "Zatiaľ nie sú k dispozícii žiadne hudobné udalosti. Načítajte súbor MusicXML alebo MIDI, alebo pridajte udalosť.",
