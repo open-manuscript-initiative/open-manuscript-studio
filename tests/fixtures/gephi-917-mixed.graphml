@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <key id="name" for="node" attr.name="label" attr.type="string"/>
+  <key id="population" for="node" attr.name="population" attr.type="int"/>
+  <key id="weight" for="edge" attr.name="weight" attr.type="double"/>
+  <key id="note" for="edge" attr.name="note" attr.type="string"/>
+  <graph id="fixture-917" edgedefault="directed">
+    <node id="a"><data key="name">Sárospatak</data><data key="population">100</data></node>
+    <node id="b"><data key="name">Miskolc</data></node>
+    <node id="c"><data key="name">Árvíztűrő hely</data></node>
+    <edge id="self" source="a" target="a"><data key="weight">2.75</data></edge>
+    <edge id="parallel-1" source="a" target="b" directed="false">
+      <data key="weight">1.25</data><data key="note">kutatási kapcsolat</data>
+    </edge>
+    <edge id="parallel-2" source="a" target="b" directed="true"><data key="weight">3.5</data></edge>
+    <edge id="third" source="c" target="a"/>
+  </graph>
+</graphml>
