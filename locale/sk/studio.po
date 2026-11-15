@@ -759,7 +759,7 @@ msgstr "Dizertačná práca"
 #. OMI translation key: /citations/resourceTypes/report
 msgctxt "/citations/resourceTypes/report"
 msgid "Report"
-msgstr "Report"
+msgstr "Správa"
 
 #. OMI translation key: /citations/resourceTypes/preprint
 msgctxt "/citations/resourceTypes/preprint"
@@ -834,7 +834,7 @@ msgstr "Tabuľka"
 #. OMI translation key: /citations/locators/folio
 msgctxt "/citations/locators/folio"
 msgid "Folio"
-msgstr "Folio"
+msgstr "fólio"
 
 #. OMI translation key: /citations/locators/line
 msgctxt "/citations/locators/line"
@@ -1319,7 +1319,7 @@ msgstr "E-mail"
 #. OMI translation key: /auth/fields/email/placeholder
 msgctxt "/auth/fields/email/placeholder"
 msgid "name@example.com"
-msgstr "name@example.com"
+msgstr "meno@example.com"
 
 #. OMI translation key: /auth/fields/password/label
 msgctxt "/auth/fields/password/label"
@@ -4109,7 +4109,7 @@ msgstr "Stiahnuť súbor TEI XML"
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/import
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/import"
 msgid "Import"
-msgstr "Import"
+msgstr "Importovať"
 
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importJson
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importJson"
@@ -4249,7 +4249,7 @@ msgstr "Signatúra"
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum"
 msgid "Siglum"
-msgstr "Siglum"
+msgstr "Sigla"
 
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title"
@@ -4544,7 +4544,7 @@ msgstr "Integrál"
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/matrix
 msgctxt "/researchModules/mathematics-equation-editor/labels/matrix"
 msgid "Matrix"
-msgstr "Matrix"
+msgstr "Matica"
 
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/preview
 msgctxt "/researchModules/mathematics-equation-editor/labels/preview"
@@ -4584,7 +4584,7 @@ msgstr "{count} výsledkov"
 #. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/editions
 msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/editions"
 msgid "Edition"
-msgstr "Edition"
+msgstr "Vydanie"
 
 #. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/empty
 msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/empty"
@@ -5164,7 +5164,7 @@ msgstr "Hypotéza"
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/importCsv
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/importCsv"
 msgid "Import CSV / TSV"
-msgstr "Import CSV / TSV"
+msgstr "Importovať CSV / TSV"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/importJson
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/importJson"
@@ -6499,7 +6499,7 @@ msgstr "Analýza / varianta"
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/beat
 msgctxt "/researchModules/musicology-musicology-panel/words/beat"
 msgid "Beat"
-msgstr "Beat"
+msgstr "Takt"
 
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/composer
 msgctxt "/researchModules/musicology-musicology-panel/words/composer"
