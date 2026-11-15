@@ -310,7 +310,7 @@ async function syncLocal(value: Manager): Promise<void> {
     value.busy = false;
     // A local edit can arrive while a write is in progress. Its store event
     // cannot start a second writer while `busy` is true, so check once more.
-    if (value.snapshot.status !== 'conflict' && value.snapshot.status !== 'error') {
+    if (canWriteLocalCopy(value)) {
       const localDigest = await digestProject(graphStore.snapshot(value.key).project);
       if (localDigest !== value.baseDigest) scheduleWrite(value);
     }
@@ -355,11 +355,15 @@ async function pollRemote(value: Manager): Promise<void> {
     value.busy = false;
     // A local edit can arrive during the remote poll and its store event will
     // have been ignored while busy. Start a write after the poll releases.
-    if (value.snapshot.status !== 'conflict' && value.snapshot.status !== 'error') {
+    if (canWriteLocalCopy(value)) {
       const localDigest = await digestProject(graphStore.snapshot(value.key).project);
       if (localDigest !== value.baseDigest) scheduleWrite(value);
     }
   }
+}
+
+function canWriteLocalCopy(value: Manager): boolean {
+  return value.snapshot.status !== 'conflict' && value.snapshot.status !== 'error';
 }
 
 async function writeWorkspace(
