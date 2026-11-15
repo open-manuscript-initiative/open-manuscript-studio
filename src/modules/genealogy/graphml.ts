@@ -5,9 +5,10 @@ import { GraphError, MAX_GRAPH_EDGES, MAX_GRAPH_NODES, MAX_IMPORT_BYTES, createG
 export function parseGraphml(raw: string, fileName: string): GraphWorkspace {
   if (new TextEncoder().encode(raw).byteLength > MAX_IMPORT_BYTES) throw new GraphError('limit');
   if (/<!DOCTYPE|<!ENTITY/i.test(raw)) throw new GraphError('invalid');
-  const doc = new DOMParser({ errorHandler: { warning: () => {}, error: () => { throw new GraphError('invalid'); }, fatalError: () => { throw new GraphError('invalid'); } } }).parseFromString(raw, 'application/xml');
-  if (doc.getElementsByTagName('parsererror').length || doc.documentElement.localName !== 'graphml') throw new GraphError('invalid');
+  const doc = new DOMParser().parseFromString(raw, 'application/xml') as unknown as Document;
+  if (doc.getElementsByTagName('parsererror').length || doc.documentElement?.localName !== 'graphml') throw new GraphError('invalid');
   const root = doc.documentElement;
+  if (!root) throw new GraphError('invalid');
   const children = (el: Element, name: string) => Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1).filter(child => child.localName === name);
   const graph = children(root, 'graph')[0];
   if (!graph) throw new GraphError('invalid');
