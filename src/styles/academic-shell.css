@@ -854,14 +854,45 @@ body {
   .studio-menu-backdrop--native-mobile .studio-menu-close {
     width: 44px;
     height: 44px;
-    border: 0;
-    border-radius: 10px;
-    background: transparent;
-    box-shadow: none;
+    border: 1px solid var(--omi-academic-line);
+    border-radius: .42rem;
+    background: var(--omi-academic-paper);
+    color: #434950;
+    box-shadow: 0 1px 2px rgba(45, 40, 35, .035);
   }
 
   .studio-menu-backdrop--native-mobile .studio-menu-header-spacer {
     width: 44px;
+  }
+
+  /* The native app shares the web menu's category colors and tile treatment. */
+  .studio-menu-backdrop--native-mobile {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  .studio-menu-backdrop--native-mobile .studio-menu-navigation {
+    background: #f5f2ec;
+  }
+
+  .studio-menu-backdrop--native-mobile .studio-menu-nav-group[data-tile-category] {
+    padding: .3rem;
+    border: 1px solid var(--tile-border);
+    border-radius: .65rem;
+    background: var(--tile-surface);
+  }
+
+  .studio-menu-backdrop--native-mobile .studio-menu-nav-group[data-tile-category] .studio-menu-nav-button {
+    border-color: var(--tile-border);
+    border-inline-start: 3px solid var(--tile-accent);
+    background: rgba(255, 254, 250, .9);
+  }
+
+  .studio-menu-backdrop--native-mobile .studio-menu-nav-group[data-tile-category] .studio-menu-nav-button:hover,
+  .studio-menu-backdrop--native-mobile .studio-menu-nav-group[data-tile-category] .studio-menu-nav-button:focus-visible,
+  .studio-menu-backdrop--native-mobile .studio-menu-nav-group[data-tile-category] .studio-menu-nav-button--active {
+    border-color: var(--tile-accent);
+    background: var(--tile-hover);
   }
 
   .studio-menu-body {
