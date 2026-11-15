@@ -1,0 +1,46 @@
+name: "#917 Gephi fixture acceptance"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gephi-917-fixtures.yml'
+      - 'tests/gephi-import.test.ts'
+      - 'tests/gephi-917-fixtures.test.ts'
+      - 'tests/fixtures/gephi-*.gexf'
+      - 'tests/fixtures/gephi-*.graphml'
+      - 'e2e/gephi-917-fixtures.spec.ts'
+      - 'src/modules/genealogy/**'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixture-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run GEXF and GraphML example-file tests
+        run: npm run test:genealogy
+      - name: Typecheck Gephi import integration
+        run: npx tsc -b
+      - name: Install Playwright Chromium
+        run: npx playwright install --only-shell chromium
+      - name: Verify import, edit, export and reopen in browser
+        run: npx playwright test e2e/gephi-917-fixtures.spec.ts --project=desktop-chromium
+      - name: Upload browser evidence
+        if: ${{ failure() && !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: gephi-917-playwright-diagnostics
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
