@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { parseGexf } from '../src/modules/genealogy/gexf.ts';
 import { parseGraphml } from '../src/modules/genealogy/graphml.ts';
-import { GraphError, MAX_IMPORT_BYTES, createGraphWorkspace, isGraphWorkspace, mergeGraphs, parseGraphJson } from '../src/modules/genealogy/model.ts';
+import { GraphError, MAX_IMPORT_BYTES, isGraphWorkspace, mergeGraphs, parseGraphJson } from '../src/modules/genealogy/model.ts';
 import { createResearchProjectFile, parseResearchProjectFile, researchProjectGraph } from '../src/modules/genealogy/projectFile.ts';
 
 const fixture = (name: string) => readFileSync(new URL('./fixtures/' + name, import.meta.url), 'utf8');
@@ -117,6 +117,8 @@ test('#917 XXE/DTD/entity and unsupported versions are rejected in both XML form
     assert.throws(() => parse('not an xml graph', 'bad.xml'), graphError('invalid'));
   }
   assert.throws(() => parseGexf('<gexf version="1.1"><graph/></gexf>', 'old.gexf'), graphError('version'));
+  assert.throws(() => parseGexf('<gexf version="1.2"><graph><nodes><node id="a"></nodes></graph></gexf>', 'malformed.gexf'), graphError('invalid'));
+  assert.throws(() => parseGraphml('<graphml><graph><node id="a"></graph></graphml>', 'malformed.graphml'), graphError('invalid'));
 });
 
 test('#917 invalid endpoints and duplicate node/edge IDs fail before import commit', () => {
