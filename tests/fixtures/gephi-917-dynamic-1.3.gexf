@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gexf xmlns="http://gexf.net/1.3" xmlns:viz="http://gexf.net/1.3/viz" version="1.3">
+  <graph mode="dynamic" timeformat="date" defaultedgetype="undirected">
+    <attributes class="node" mode="dynamic">
+      <attribute id="score" title="pontszám" type="double"/>
+      <attribute id="archive" title="levéltár" type="string"/>
+    </attributes>
+    <attributes class="edge"><attribute id="relation" title="kapcsolat" type="string"/></attributes>
+    <nodes>
+      <node id="Á" label="Árvíztűrő tükörfúrógép">
+        <attvalues>
+          <attvalue for="score" value="2.5" start="2020-01-01" end="2021-12-31"/>
+          <attvalue for="archive" value="Sárospatak"/>
+        </attvalues>
+        <spells><spell start="2020-01-01" end="2021-12-31"/></spells>
+        <viz:position x="12.5" y="-8" z="0"/>
+        <viz:color r="21" g="80" b="200" a="0.5"/>
+        <viz:size value="13"/>
+        <viz:shape value="diamond"/>
+      </node>
+      <node id="b" label="Második csomópont"/>
+    </nodes>
+    <edges>
+      <edge id="loop" source="Á" target="Á" type="directed" weight="1.5">
+        <spells><spell start="2021-01-01" end="2021-06-01"/></spells>
+        <viz:thickness value="2"/>
+      </edge>
+      <edge id="parallel-1" source="Á" target="b" type="undirected">
+        <attvalues><attvalue for="relation" value="barátság"/></attvalues>
+      </edge>
+      <edge id="parallel-2" source="Á" target="b" type="directed"/>
+    </edges>
+  </graph>
+</gexf>
