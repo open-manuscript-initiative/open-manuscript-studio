@@ -33,6 +33,25 @@ export interface Point {
   x: number;
   y: number;
 }
+/** Lossless Gephi data, independent of the genealogy-specific semantic fields. */
+export interface GephiMetadata {
+  attributes?: Record<string, string>;
+  attributeTypes?: Record<string, string>;
+  visual?: Record<string, string>;
+  temporal?: string;
+  rawId?: string;
+}
+function validGephiMetadata(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!record(value)) return false;
+  const dictionary = (input: unknown) => input === undefined || (record(input) &&
+    Object.keys(input).length <= 256 &&
+    Object.entries(input).every(([key, val]) => key.length <= 256 && typeof val === 'string' && val.length <= 10000));
+  return dictionary(value.attributes) && dictionary(value.attributeTypes) &&
+    dictionary(value.visual) &&
+    (value.temporal === undefined || (typeof value.temporal === 'string' && value.temporal.length <= 100000)) &&
+    (value.rawId === undefined || (typeof value.rawId === 'string' && value.rawId.length <= 256));
+}
 export interface GraphNode {
   id: string;
   kind: NodeKind;
@@ -50,6 +69,7 @@ export interface GraphNode {
   alternateNames: string[];
   treePosition?: Point;
   networkPosition?: Point;
+  gephi?: GephiMetadata;
 }
 export interface GraphEdge {
   id: string;
@@ -66,6 +86,7 @@ export interface GraphEdge {
   source: string;
   notes: string;
   familyId: string;
+  gephi?: GephiMetadata;
 }
 export interface GraphImportSource {
   id: string;
@@ -220,7 +241,8 @@ export function isGraphWorkspace(value: unknown): value is GraphWorkspace {
           (s) => typeof s === 'string' && s.length <= 10000,
         ) &&
         point(n.treePosition) &&
-        point(n.networkPosition),
+        point(n.networkPosition) &&
+        validGephiMetadata(n.gephi),
     ) ||
     !unique(nodes)
   )
@@ -248,7 +270,8 @@ export function isGraphWorkspace(value: unknown): value is GraphWorkspace {
         typeof e.directed === 'boolean' &&
         byId.has(e.from) &&
         byId.has(e.to) &&
-        e.from !== e.to &&
+        (e.from !== e.to || e.gephi !== undefined) &&
+        validGephiMetadata(e.gephi) &&
         (!['parent', 'partner'].includes(e.kind) ||
           (byId.get(e.from)?.kind === 'person' &&
             byId.get(e.to)?.kind === 'person')) &&
@@ -314,7 +337,7 @@ export function putEdge(
   workspace: GraphWorkspace,
   edge: GraphEdge,
 ): GraphWorkspace {
-  if (edge.from === edge.to) throw new GraphError('self');
+  if (edge.from === edge.to && !edge.gephi) throw new GraphError('self');
   if (
     !workspace.nodes.some((n) => n.id === edge.from) ||
     !workspace.nodes.some((n) => n.id === edge.to)
