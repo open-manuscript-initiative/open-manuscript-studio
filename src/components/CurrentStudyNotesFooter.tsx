@@ -161,6 +161,11 @@ function useManuscriptNotesDock() {
     const observer = new ResizeObserver(measure);
     observer.observe(page);
     observer.observe(container);
+    const workspace = container.closest('.focus-workspace');
+    const layoutObserver = new MutationObserver(scheduleMeasure);
+    if (workspace) layoutObserver.observe(workspace, {
+      childList: true, attributes: true, attributeFilter: ['class'],
+    });
     window.addEventListener('resize', scheduleMeasure);
     window.addEventListener('scroll', scheduleMeasure, true);
     window.addEventListener(EDITOR_ZOOM_EVENT, scheduleMeasure);
@@ -168,6 +173,7 @@ function useManuscriptNotesDock() {
 
     return () => {
       observer.disconnect();
+      layoutObserver.disconnect();
       if (frame !== null) window.cancelAnimationFrame(frame);
       window.removeEventListener('resize', scheduleMeasure);
       window.removeEventListener('scroll', scheduleMeasure, true);

@@ -77,9 +77,13 @@ test('desktop notes follow manuscript edges while resizing and zooming', async (
     await expectAlignedNotes(page);
   }
 
-  await page.setViewportSize({ width: 1440, height: 908 });
+  await page.setViewportSize({ width: 1916, height: 908 });
   await page.getByRole('button', { name: 'Show document outline', exact: true }).click();
   await expect(page.locator('.desktop-document-outline')).toBeVisible();
+  await expectAlignedNotes(page);
+  await page.setViewportSize({ width: 1440, height: 908 });
+  await expectAlignedNotes(page);
+  await page.getByRole('button', { name: 'Hide document outline', exact: true }).first().click();
   await expectAlignedNotes(page);
 
   const anchor = page.locator('[data-omi-note][data-note-id="layout-note"]').first();
