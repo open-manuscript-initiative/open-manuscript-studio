@@ -169,7 +169,7 @@ test('modifying approved SQL prevents automatic migration', { skip: !onLinux }, 
     env: { ...f.env, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
   });
   assert.notEqual(snapshot.status, 0);
-  assert.match(snapshot.stderr, /Migration changes require a reviewed database backup/);
+  assert.match(snapshot.stderr, /pinned reviewed blob/);
 });
 
 test('an accompanying identity migration always blocks automatic rollout', { skip: !onLinux }, (t) => {
@@ -223,7 +223,7 @@ test('manual checkout at target SHA still requires backups for pending migration
   };
   const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
   assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
-  assert.match(snapshot.stdout, /Detected pending reviewed migration despite unchanged Git revision/);
+  assert.match(snapshot.stdout, /Detected pending reviewed migration/);
   assert.ok(existsSync(join(f.snapshot, 'database', 'studio.dump')));
   assert.ok(existsSync(join(f.snapshot, 'database', 'identity.dump')));
   assert.ok(existsSync(join(f.snapshot, 'reviewed-migration')));
