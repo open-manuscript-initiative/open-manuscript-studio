@@ -4,6 +4,8 @@ import { ExternalLink, Trash2, X } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { getAccountDeletionCopy } from '../i18n/accountDeletionTranslations';
 import { deleteCurrentAccount } from '../services/accountDeletionApi';
+import { fetchAccountData } from '../services/privacyApi';
+import { saveExportBlob } from '../services/exportFileDelivery';
 import { useAuthStore } from '../store/authStore';
 import '../styles/account-deletion.css';
 
@@ -13,13 +15,32 @@ export function AccountDeletionSection({ email }: { email: string }) {
   const resetAuthStore = useAuthStore((state) => state.resetAuthStore);
   const [expanded, setExpanded] = useState(false);
   const [confirmation, setConfirmation] = useState('');
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [backupWorking, setBackupWorking] = useState(false);
+  const [backupDone, setBackupDone] = useState(false);
+  const [backupError, setBackupError] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const confirmed = confirmation.trim().toLowerCase() === email.trim().toLowerCase();
 
+  const downloadBackup = async () => {
+    if (backupWorking || deleting) return;
+    setBackupWorking(true);
+    setBackupError(false);
+    setBackupDone(false);
+    try {
+      await saveExportBlob(await fetchAccountData(), 'omi-account-data.json');
+      setBackupDone(true);
+    } catch {
+      setBackupError(true);
+    } finally {
+      setBackupWorking(false);
+    }
+  };
+
   const deleteAccount = async () => {
-    if (!confirmed || deleting) return;
+    if (!confirmed || !acknowledged || deleting) return;
     setDeleting(true);
     setError(null);
     try {
@@ -66,6 +87,56 @@ export function AccountDeletionSection({ email }: { email: string }) {
         </button>
       ) : (
         <div className="account-deletion-confirmation">
+          <div className="account-deletion-review" aria-labelledby="account-deletion-review-title">
+            <h4 id="account-deletion-review-title">{labels.reviewTitle}</h4>
+            <p>{labels.reviewLead}</p>
+            <section aria-labelledby="account-deletion-removed-title">
+              <h5 id="account-deletion-removed-title">{labels.deletedTitle}</h5>
+              <ul>
+                <li>{labels.deletedAccount}</li>
+                <li>{labels.deletedConnections}</li>
+                <li>{labels.deletedPrivate}</li>
+              </ul>
+            </section>
+            <section aria-labelledby="account-deletion-retained-title">
+              <h5 id="account-deletion-retained-title">{labels.retainedTitle}</h5>
+              <ul>
+                <li>{labels.retainedShared}</li>
+                <li>{labels.retainedIdentity}</li>
+              </ul>
+            </section>
+            <section aria-labelledby="account-deletion-external-title">
+              <h5 id="account-deletion-external-title">{labels.externalTitle}</h5>
+              <p>{labels.external}</p>
+              <p>{labels.backups}</p>
+            </section>
+            <section className="account-deletion-backup" aria-labelledby="account-deletion-backup-title">
+              <h5 id="account-deletion-backup-title">{labels.backupTitle}</h5>
+              <p>{labels.backupDescription}</p>
+              <button
+                type="button"
+                className="account-delete-cancel"
+                disabled={backupWorking || deleting}
+                onClick={() => { void downloadBackup(); }}
+              >
+                {backupWorking ? labels.backupWorking : labels.backupAction}
+              </button>
+              <p>{labels.backupRestore}</p>
+              {backupDone ? <p role="status">{labels.backupReady}</p> : null}
+              {backupError ? <p role="alert">{labels.backupError}</p> : null}
+            </section>
+            <p className="account-deletion-export-note">{labels.beforeDeleting}</p>
+            <p>{labels.rights}</p>
+          </div>
+          <label className="account-deletion-acknowledgement">
+            <input
+              type="checkbox"
+              checked={acknowledged}
+              onChange={(event) => setAcknowledged(event.target.checked)}
+              disabled={deleting}
+            />
+            <span>{labels.acknowledge}</span>
+          </label>
           <label>
             <span>{labels.confirmLabel}</span>
             <input
@@ -86,6 +157,7 @@ export function AccountDeletionSection({ email }: { email: string }) {
               onClick={() => {
                 setExpanded(false);
                 setConfirmation('');
+                setAcknowledged(false);
                 setError(null);
               }}
               disabled={deleting}
@@ -97,7 +169,7 @@ export function AccountDeletionSection({ email }: { email: string }) {
               type="button"
               className="account-delete-confirm"
               onClick={() => void deleteAccount()}
-              disabled={!confirmed || deleting}
+              disabled={!confirmed || !acknowledged || deleting}
             >
               <Trash2 size={16} aria-hidden="true" />
               {deleting ? labels.deleting : labels.delete}

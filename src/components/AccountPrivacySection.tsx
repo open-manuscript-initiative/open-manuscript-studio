@@ -4,6 +4,7 @@ import { getPrivacyCopy } from '../i18n/privacyTranslations';
 import { fetchAccountData } from '../services/privacyApi';
 import { saveExportBlob } from '../services/exportFileDelivery';
 import { PrivacyNotice } from './PrivacyNotice';
+import { AccountProfileRestoreSection } from './AccountProfileRestoreSection';
 
 export function AccountPrivacySection() {
   const { locale } = useTranslation();
@@ -22,5 +23,6 @@ export function AccountPrivacySection() {
     <p>{text.exportHint}</p>
     <button type="button" onClick={() => void download()} disabled={busy}>{busy ? text.exporting : text.export}</button>
     {error ? <p role="alert">{text.exportError}</p> : null}
+    <AccountProfileRestoreSection />
   </section>;
 }

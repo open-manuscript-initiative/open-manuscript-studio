@@ -1,0 +1,12 @@
+# Install/enable only after accepted dry-run and legal-retention review.
+[Unit]
+Description=Daily OMI Studio privacy retention cleanup
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+RandomizedDelaySec=20m
+Persistent=true
+Unit=omi-privacy-cleanup.service
+
+[Install]
+WantedBy=timers.target

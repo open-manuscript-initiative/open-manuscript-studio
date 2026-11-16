@@ -11,6 +11,10 @@ export function getPrivacyCopy(locale: string) {
     contactHint: 'Hozzáférést, helyesbítést, törlést, korlátozást, tiltakozást vagy – feltételeinek fennállásakor – adathordozhatóságot kérhet. A kérelmekre főszabály szerint egy hónapon belül kell válaszolni. A hivatkozás a levelezőprogramot nyitja meg; az üzenetet Ön küldi el.',
     export: 'Fiókadatok másolatának letöltése', exporting: 'Másolat készítése…',
     exportHint: 'JSON-másolat a profilról, a kapcsolt belépési azonosítókról, az intézményi tagságról és a belépési metaadatokról. A kéziratok, bírálatok és naplók teljes körű adatigényléséhez forduljon az adatkezelőhöz.',
+    externalIdentityTitle: 'Külső azonosítószolgáltatók',
+    externalIdentityInfo: 'Választható ORCID-, Google-, Microsoft- vagy intézményi belépésnél a Stúdió az azonosítási folyamat során a szolgáltatói azonosítót és a kibocsátót, a Google/Microsoft esetén szükség szerint a nevet és az e-mail-címet használja. Az ORCID-belépés elsődlegesen az ORCID iD-t igazolja. A kapcsolt fiókban az azonosításhoz szükséges adatokat és az ellenőrzés metaadatait tárolja; a jelszót nem kapja meg. A külső szolgáltatók saját rendszereikben önálló feltételek szerint kezelik az adatokat, de ez nem mentesíti a Stúdió adatkezelőjét a saját adatkezeléséért viselt felelőssége alól.',
+    technicalAuditTitle: 'Technikai auditnaplók megőrzése',
+    technicalAuditInfo: 'A program 90 napos integrációs/modulnapló- és 180 napos jogosultsági/együttműködési auditnapló-törlési alapértelmezést támogat. Az automatikus törlés csak akkor valósul meg, ha az üzemeltető az adatbázis-karbantartást valóban ütemezte. A tényleges megőrzési rendet és jogalapot a szerver üzemeltetőjének közzétett tájékoztatója határozza meg; a szervernaplók rotációja ettől független.',
     exportError: 'A fiókadatok másolata nem tölthető le.', back: 'Vissza a Stúdióhoz',
   };
   if (locale === 'de') return {
@@ -25,6 +29,10 @@ export function getPrivacyCopy(locale: string) {
     contactHint: 'Sie können Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch oder gegebenenfalls Datenübertragbarkeit verlangen. Anfragen sind grundsätzlich innerhalb eines Monats zu beantworten. Der Link öffnet Ihr E-Mail-Programm; Sie versenden die Nachricht selbst.',
     export: 'Kopie der Kontodaten herunterladen', exporting: 'Kopie wird erstellt…',
     exportHint: 'JSON-Kopie von Profil, verknüpften Anmeldeidentitäten, institutionellen Mitgliedschaften und Anmeldemetadaten. Für eine vollständige Auskunft einschließlich Manuskripten, Gutachten und Protokollen wenden Sie sich an den Verantwortlichen.',
+    externalIdentityTitle: 'Externe Identitätsanbieter',
+    externalIdentityInfo: 'Bei optionaler Anmeldung mit ORCID, Google, Microsoft oder institutionellem OpenID Connect verarbeitet Studio die Anbieterkennung und den Aussteller, bei Google/Microsoft gegebenenfalls auch Name und E-Mail-Adresse. Der ORCID-Anmeldevorgang bestätigt in erster Linie die ORCID iD. Im verknüpften Konto werden die erforderlichen Identitäts- und Verifikationsmetadaten gespeichert, nicht das Passwort des Anbieters. Die Anbieter verarbeiten Daten in ihren eigenen Diensten nach eigenen Datenschutzbestimmungen; dies entbindet den Verantwortlichen des Studio-Servers nicht von seiner Verantwortung für dessen Verarbeitung.',
+    technicalAuditTitle: 'Aufbewahrung technischer Auditprotokolle',
+    technicalAuditInfo: 'Die Software unterstützt standardmäßige Löschfristen von 90 Tagen für Integrations-/Modulprotokolle und 180 Tagen für Administrator-/Zusammenarbeitsberechtigungen. Die automatische Löschung erfolgt nur bei aktivierter Wartungsplanung durch den Betreiber. Die tatsächlich geltenden Zwecke, Rechtsgrundlagen und Fristen stehen in den Datenschutzhinweisen des gewählten Servers. Systemprotokollrotation ist unabhängig davon.',
     exportError: 'Die Kontodaten konnten nicht heruntergeladen werden.', back: 'Zurück zum Studio',
   };
   return {
@@ -39,6 +47,10 @@ export function getPrivacyCopy(locale: string) {
     contactHint: 'You may request access, rectification, erasure, restriction, objection or, where applicable, portability. Requests normally require a response within one month. The link opens your mail application; you send the message yourself.',
     export: 'Download a copy of account data', exporting: 'Preparing copy…',
     exportHint: 'JSON copy of profile, linked sign-in identities, institution memberships and sign-in metadata. For a full response covering manuscripts, reviews and logs, contact the controller.',
+    externalIdentityTitle: 'External identity providers',
+    externalIdentityInfo: 'Optional ORCID, Google, Microsoft or institutional sign-in involves the provider identifier and issuer, and, for Google/Microsoft when supplied, name and email. ORCID sign-in primarily verifies an ORCID iD. Studio stores the linked identifier and limited verification metadata, not the external account password. Providers separately process data in their own systems under their privacy policies; this does not remove the Studio server controller’s responsibility for data received and used by Studio.',
+    technicalAuditTitle: 'Technical audit log retention',
+    technicalAuditInfo: 'The software supports default purge thresholds of 90 days for integration/module audit events and 180 days for administration/collaboration access events. Automatic deletion takes place only after the server operator activates scheduled cleanup. The controller’s published notice must specify actual purposes, legal bases and retention; systemd/Plesk log rotation does not delete database audit records.',
     exportError: 'The account data copy could not be downloaded.', back: 'Back to Studio',
   };
 }

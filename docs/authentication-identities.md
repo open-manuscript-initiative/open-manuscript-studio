@@ -29,7 +29,7 @@ This lockout protection is enforced by the API, not only by the user interface.
 
 ## ORCID behavior
 
-Studio requests the ORCID `/authenticate` scope. The callback exchanges the one-time authorization code on the server and uses the authenticated ORCID iD returned by ORCID as the external subject.
+Studio currently requests the ORCID OpenID Connect `openid` scope (not the legacy `/authenticate` scope). The callback exchanges the one-time authorization code on the server, cryptographically verifies the returned ID token, and uses the authenticated ORCID iD as the external subject. ORCID may also return a display name; the login flow does **not** request an ORCID email address as a required identity attribute.
 
 Studio supports three ORCID flows:
 
@@ -38,6 +38,40 @@ Studio supports three ORCID flows:
 3. `link`: an authenticated Studio session may link an ORCID identity to the current account. The server rejects an ORCID iD already linked to another account.
 
 OAuth `state` values are random, single-use, stored only as SHA-256 hashes and expire after ten minutes. OAuth access tokens are not persisted by the current ORCID authentication flow.
+
+## Identity-provider data flow and privacy boundaries
+
+The Studio supports optional ORCID, Google, Microsoft, OMI Identity and
+institutional OIDC authentication; only configured providers appear in the UI.
+The real OpenID Connect authorization request for Google/Microsoft and a
+generic institution uses `openid profile email` (OMI Identity additionally
+requests `orcid`). In addition to the verified provider `issuer` and
+stable `subject`, an ID token or a validated UserInfo response may supply
+the account display name, email address and `email_verified` claim.
+Microsoft's `preferred_username` is **not** evidence of a verified mailbox.
+Google and generic institutional auto-registration require the provider's
+verified-email evidence; linked roles and institution ownership are never
+granted based solely on email equivalence.
+
+The Identity database stores provider/issuer/subject, limited display-name,
+email and verification metadata plus last-used timestamps for linked accounts.
+The code exchanges single-use authorization codes server-side and does not
+persist external account passwords or the login exchange access/refresh
+tokens in those identity records. This is not a statement about unrelated
+cloud-drive or publishing integrations, whose scopes and credential retention
+must be audited separately.
+
+The identity provider's own authentication service has its own data-handling
+policies; the selected Studio controller remains responsible for data it
+receives, account linking, protection, rights handling and the lawfulness
+of any international transfers. Do **not** use an unconditional
+“no responsibility for external providers” disclaimer in notices.
+Document the actual activated providers, purposes and lawful basis,
+their role and any necessary transfer arrangements.
+
+See [ORCID Privacy Policy](https://info.orcid.org/privacy-policy/),
+[Google Privacy Policy](https://policies.google.com/privacy) and
+[Microsoft Privacy Statement](https://www.microsoft.com/en-us/privacy/privacystatement).
 
 ## Configuration
 

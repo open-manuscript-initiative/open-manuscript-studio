@@ -40,6 +40,14 @@ export function PrivacyNotice({ expanded = false }: { expanded?: boolean }) {
               {(['rights', 'dataSources', 'requiredData', 'automatedDecisions', 'cookies', 'backups', 'deletion'] as const).map((key) =>
                 <section key={key}><h3>{text[key]}</h3><p lang={notice.language}>{notice[key]}</p></section>)}
             </div>
+            <section>
+              <h3>{text.externalIdentityTitle}</h3>
+              <p>{text.externalIdentityInfo}</p>
+            </section>
+            <section>
+              <h3>{text.technicalAuditTitle}</h3>
+              <p>{text.technicalAuditInfo}</p>
+            </section>
             <p>{text.contactHint}</p>
             {contact ? <p><a href={contact}>{text.contact}</a></p> : null}
             {authority ? <p><a href={authority} target="_blank" rel="noreferrer noopener">{text.authority}: {notice.authority.name}</a></p> : null}

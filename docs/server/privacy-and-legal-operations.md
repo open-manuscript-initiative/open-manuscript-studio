@@ -5,6 +5,32 @@ independently operated server. This implementation is not a legal certification.
 No production settings, notices, mailboxes, retention jobs or firewall rules are
 changed by merging the source. Missing operator facts remain required work.
 
+## Official Studio contact change (16 November 2026)
+
+The official **project contact** for the Open Manuscript Initiative is
+**contact@openmanuscript.org**. Personal Gmail addresses must not appear
+as OMI's publicly advertised project/privacy enquiry address.
+
+The official Studio's public **controller contact** comes from an
+**operator-managed file on the server**, not a repository constant. To make the
+same change in the live data-protection notice, the authorized operator must
+edit the deployed file referenced by `OMI_PRIVACY_CONFIG_PATH` (normally
+`/etc/omi/privacy-notice.json`), set `controller.email` to
+`contact@openmanuscript.org`, preserve the controller's correct legal identity,
+validate using `npm run privacy:check` from `server`, reload the API by the
+normal procedure and verify the public `/api/v1/privacy` endpoint and
+`/?privacy=1`. Test mailbox delivery and handling before publishing this as
+a monitored channel. **Changing GitHub source documentation does not edit the
+live operator-owned file.**
+
+Only apply this address to the central OMI-operated service. Independently
+hosted institutional servers retain their own data controller and contact.
+The outbound transactional sender `MAIL_FROM` (currently exemplified as
+`no-reply@openmanuscript.org`) is a separate operational setting and should
+not be switched just to change the public privacy contact. Search public
+footer, contact pages and published policy copies for former personal
+webmail addresses; do not rewrite historic correspondence or unowned systems.
+
 ## 1. Publish the selected server's controller information
 
 1. Copy `deployment/privacy/privacy-notice.example.json` outside the checkout,
@@ -84,6 +110,15 @@ objection need an actual processing decision; merely disabling login is insuffic
 
 ## 3. Erasure, retained shared history and restoration
 
+### Informed account deletion and purpose separation
+
+The Account deletion panel must present an explicit EN/HU/DE review **before** the irreversible action: (1) live account and credential removal, (2) deletion of account-only server documents, personal reference records, module preferences and recognition job records, (3) possible retention of collaborative manuscripts, reviews, versions and comments, (4) third-party copies/backups and (5) a route for a separate privacy request. It requires both an acknowledgement checkbox and typed email confirmation. This acknowledgement does not create a lawful basis for continued processing or waive GDPR rights.
+
+The Studio cleanup now strips denormalized sender names from collaboration messages and identifying IP/detail fields from the deleted actor's module audit records, while retaining the scholarly event type. Shared manuscript/package snapshots, editorial histories, ORCID/author metadata and exports are **not automatically anonymized** by this process. They require per-purpose assessment, minimization and documented retention decisions.
+
+The Art.6(1)(f) legitimate-interest basis, where applicable, requires an actual documented balancing test; it does not automatically override the Art.17 right to erasure or the Art.21 right to object. Any research exception under Art.17(3)(d) applies only where its necessity threshold and Art.89 safeguards are met. A pseudonymized stable participant reference remains personal data if reasonably identifiable.
+
+
 The existing self-service deletion removes live Identity data and credentials,
 clears account integration records and pseudonymizes the Studio participant.
 A stable participant ID or identifiable shared content can remain personal data.
@@ -117,14 +152,53 @@ processor propagation and evidence of an executed job. Include access/auth logs,
 review history, invitations, OAuth states, exports, support cases, audit events and
 backups. No universal statutory log-retention period is assumed.
 
-From `server`, `npm run privacy:cleanup` is **dry-run** and prints only counts of
-expired authentication records. After reviewing counts and recovery needs,
-`npm run privacy:cleanup -- --apply` deletes only expired sessions, invitations,
-password reset tokens, passkey challenges and OAuth states in the Identity and
-legacy Studio stores. It never removes live accounts, manuscripts or audit history.
-Arrange an operator-reviewed timer/cron only after acceptance; this PR installs none.
-Failures may leave partial progress and a later rerun is safe. Review other data
-classes separately rather than treating this utility as full retention automation.
+The Studio implements a **documented default technical audit schedule**, counted
+from each record's creation (`created_at`):
+
+| Database record | Default maximum age | Purpose |
+| --- | --- | --- |
+| `integration_audit_events` (DeepL/AI and integration operation digests) | **90 days** | Technical troubleshooting, abuse/incident investigation and external-operation traceability |
+| `studio_module_audit_events` (module capability operations, possible IP/details) | **90 days** | Security and module operation diagnostics |
+| `admin_audit_events` (central/institutional privilege and API actions) | **180 days** | Delayed investigation of privileged changes and misuse |
+| `collaboration_audit_events` (access/invitation/role changes) | **180 days** | Investigation of collaboration access and privilege changes |
+
+The 90/180-day values are **project defaults, not GDPR-prescribed periods**.
+Before enablement, each controller must document purpose, legal basis, necessity,
+access restrictions, any longer legal preservation duties and the rationale
+for these limits. Do not assert that a pseudonymized or hashed log is anonymous.
+The generic cleanup deliberately **does not** purge scholarly/editorial
+submission events, review evidence, manuscripts, user-produced translation
+variants or immutable publication provenance: each needs a separate retention
+assessment. Exceptions such as legally necessary incident evidence require
+documented, access-restricted preservation outside the ordinary purge; this
+implementation does not provide an automatic per-record legal-hold switch.
+
+From `server`, `npm run privacy:cleanup` is **dry-run by default** and reports
+counts and cutoff dates for expired authentication records **and technical audit
+events**; it contains no event IDs, email addresses, IP addresses or digests.
+After reviewing the output, `npm run privacy:cleanup -- --apply` purges expired
+authentication credentials and the technical audit classes above in bounded
+batches. The job is safe to rerun; failures may leave partial progress. A
+nonzero exit status with an audit backlog indicates more batches are needed.
+It cannot alter the journal's scholarly records.
+
+Apply the accompanying Prisma migration (created-at indexes) before activating
+the task. Schedule only after an operator-approved dry-run, legal review,
+backup/restore acceptance and access-control check. Sample daily systemd
+service and timer templates are provided at
+`deployment/systemd/omi-privacy-cleanup.service.example` and
+`deployment/systemd/omi-privacy-cleanup.timer.example`. Replace the example
+non-root service user, verify the database/environment and Node executable,
+install both units under `/etc/systemd/system/`, run `systemctl daemon-reload`,
+manually exercise the dry-run, then enable
+`systemctl enable --now omi-privacy-cleanup.timer`. Verify execution with
+`systemctl list-timers` and
+`journalctl -u omi-privacy-cleanup.service --no-pager`.
+**The GitHub PR does not install or activate these units on production.**
+If an incident/legal claim requires a longer term, assess and preserve its
+specific evidence lawfully before turning on the timer. An actual 7-day
+systemd/Plesk rotation requires independent verification on each host, as
+application DB retention is not controlled by either rotation setting.
 
 ## 5. Personal-data breach procedure
 

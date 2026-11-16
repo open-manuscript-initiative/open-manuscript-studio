@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
+import { Prisma } from '../generated/prisma/client.js';
 
 export class AccountDeletionBlockedError extends Error {
   constructor(message: string) {
@@ -99,6 +100,25 @@ async function pseudonymizeStudioPrincipal(userId: string): Promise<void> {
   const unusablePasswordHash = `deleted:${randomBytes(32).toString('hex')}`;
 
   await prisma.$transaction([
+    // Integration operation digests are private technical audit material.
+    // Remove them with the account rather than retaining a link to a deleted user.
+    prisma.$executeRaw`DELETE FROM integration_audit_events WHERE user_id = ${userId}::uuid`,
+    // Private, account-scoped working data is not part of the shared scholarly record.
+    prisma.personalReferenceRecord.deleteMany({ where: { userId } }),
+    prisma.studioModulePreference.deleteMany({ where: { userId } }),
+    prisma.recognitionExecution.deleteMany({ where: { userId } }),
+    prisma.plainDocument.deleteMany({ where: { userId } }),
+    // Collaboration messages must not continue exposing a denormalized sender name.
+    // Keep the contribution text for collaborators but sever its profile identity.
+    prisma.collaborationMessage.updateMany({
+      where: { senderUserId: userId },
+      data: { senderUserId: null, senderName: 'Former contributor' },
+    }),
+    // Preserve the module event type for integrity, not IP/identifying audit details.
+    prisma.studioModuleAuditEvent.updateMany({
+      where: { actorUserId: userId },
+      data: { actorUserId: null, ipAddress: null, details: Prisma.DbNull },
+    }),
     prisma.directSubmission.deleteMany({ where: { userId } }),
     prisma.cloudBackup.deleteMany({ where: { userId } }),
     prisma.cloudConnection.deleteMany({ where: { userId } }),
