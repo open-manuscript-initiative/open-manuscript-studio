@@ -75,9 +75,9 @@ test('account deletion requires an explicit acknowledgement of the detailed cons
   assert.match(accountDeletionUiSource, /labels\.external/);
   assert.match(accountDeletionUiSource, /labels\.backups/);
   assert.match(accountDeletionUiSource, /labels\.rights/);
-  assert.match(accountDeletionUiSource, /labels\\.backupTitle/);
-  assert.match(accountDeletionUiSource, /labels\\.backupRestore/);
-  assert.match(accountDeletionUiSource, /fetchAccountData\\(\\)/);
+  assert.match(accountDeletionUiSource, /labels\.backupTitle/);
+  assert.match(accountDeletionUiSource, /labels\.backupRestore/);
+  assert.match(accountDeletionUiSource, /fetchAccountData\(\)/);
   assert.match(accountDeletionUiSource, /saveExportBlob/);
   assert.match(accountDeletionUiSource, /type="checkbox"/);
   assert.match(accountDeletionUiSource, /checked=\{acknowledged\}/);
