@@ -29,6 +29,14 @@ test('account deletion removes login data while preserving scholarly history thr
   assert.match(serviceSource, /userSession\.deleteMany/);
   assert.match(serviceSource, /userIdentity\.deleteMany/);
   assert.match(serviceSource, /cloudConnection\.deleteMany/);
+  assert.match(serviceSource, /personalReferenceRecord\.deleteMany/);
+  assert.match(serviceSource, /plainDocument\.deleteMany/);
+  assert.match(serviceSource, /studioModulePreference\.deleteMany/);
+  assert.match(serviceSource, /recognitionExecution\.deleteMany/);
+  assert.match(serviceSource, /collaborationMessage\.updateMany/);
+  assert.match(serviceSource, /senderUserId: null, senderName: 'Former contributor'/);
+  assert.match(serviceSource, /studioModuleAuditEvent\.updateMany/);
+  assert.match(serviceSource, /ipAddress: null, details: null/);
   assert.match(serviceSource, /userIntegration\.deleteMany/);
   assert.match(serviceSource, /reviewWorkspaceAccess\.deleteMany/);
   assert.match(serviceSource, /fullName: 'Deleted account'/);
