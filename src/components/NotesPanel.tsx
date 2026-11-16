@@ -67,11 +67,15 @@ export function NotesPanel({ onNavigate }: NotesPanelProps) {
                 type="button"
                 className="omi-note-editor-card omi-note-editor-card--compact omi-note-preview-button"
                 onClick={() => setActiveNoteId(note.id)}
-                aria-label={`${t('notes.note')} ${index + 1}`}
+                aria-label={kind === 'author-note'
+                  ? t('notes.authorNote')
+                  : `${t('notes.note')} ${index + 1}`}
               >
                 <span className="omi-note-editor-header">
                   <span>
-                    <span className="omi-note-number">{index + 1}.</span>
+                    {kind === 'author-note' ? null : (
+                      <span className="omi-note-number">{index + 1}.</span>
+                    )}
                     <strong>{noteKindLabel(kind, t)}</strong>
                   </span>
                 </span>
