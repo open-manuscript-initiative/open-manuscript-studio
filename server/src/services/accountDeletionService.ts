@@ -100,6 +100,9 @@ async function pseudonymizeStudioPrincipal(userId: string): Promise<void> {
   const unusablePasswordHash = `deleted:${randomBytes(32).toString('hex')}`;
 
   await prisma.$transaction([
+    // Integration operation digests are private technical audit material.
+    // Remove them with the account rather than retaining a link to a deleted user.
+    prisma.$executeRaw`DELETE FROM integration_audit_events WHERE user_id = ${userId}::uuid`,
     // Private, account-scoped working data is not part of the shared scholarly record.
     prisma.personalReferenceRecord.deleteMany({ where: { userId } }),
     prisma.studioModulePreference.deleteMany({ where: { userId } }),
