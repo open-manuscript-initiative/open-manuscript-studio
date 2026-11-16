@@ -90,6 +90,10 @@ export function getNoteKind(
   if (annotation.renderingHint === 'endnote') {
     return 'endnote';
   }
+  // Legacy margin annotations without an explicit noteKind retain their role.
+  if (annotation.renderingHint === 'margin') {
+    return 'author-note';
+  }
 
   return 'footnote';
 }
@@ -355,7 +359,8 @@ function normalizeNoteNodes(
           annotation?.anchorId ??
           stringAttribute(node.attrs, 'anchorId') ??
           stableAnchorIdForLegacyNote(noteId),
-        label: String(numberByNoteId.get(noteId) ?? '?'),
+        // Margin notes use a non-numeric reference mark and do not consume a number.
+        label: kind === 'author-note' ? '*' : String(numberByNoteId.get(noteId) ?? '?'),
         noteType: kind,
       };
     }
@@ -426,15 +431,20 @@ function uniqueNoteIdentifiers(
 }
 
 export function buildNoteNumberMap(
-  state: Pick<OmiManuscriptState, 'sections' | 'documentStructure'>,
+  state: Pick<OmiManuscriptState, 'sections' | 'documentStructure'> &
+    Partial<Pick<OmiManuscriptState, 'annotations'>>,
   occurrences: NoteAnchorOccurrence[] = collectNoteAnchors(state),
 ): Map<string, number> {
   const scope = getDocumentStructureProfile(state).noteNumberingScope;
+  const kinds = new Map((state.annotations ?? [])
+    .filter(isNoteAnnotation)
+    .map((annotation) => [annotation.id, getNoteKind(annotation)]));
   const counters = new Map<string, number>();
   const result = new Map<string, number>();
 
   for (const occurrence of occurrences) {
     if (result.has(occurrence.noteId)) continue;
+    if ((kinds.get(occurrence.noteId) ?? occurrence.kind) === 'author-note') continue;
     const scopeKey = scope === 'continuous'
       ? 'document'
       : scope === 'section'
