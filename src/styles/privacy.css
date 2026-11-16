@@ -9,3 +9,13 @@
 .account-privacy { margin-block: 1.5rem; }
 .account-privacy > button { width: fit-content; max-width: 100%; }
 .privacy-page { padding: 1.25rem; max-width: 55rem; margin-inline: auto; }
+
+
+.account-profile-restore{display:grid;gap:9px;margin-top:14px;padding-top:12px;border-top:1px solid #d0d5dd;max-width:100%;overflow-wrap:anywhere}
+.account-profile-restore h3{margin:0;font-size:.85rem}
+.account-profile-restore p{margin:0;font-size:.77rem;line-height:1.5}
+.account-profile-restore label{display:grid;gap:5px;font-size:.78rem;font-weight:600}
+.account-profile-restore input[type=file]{max-width:100%;font:inherit;font-size:.77rem}
+.account-profile-restore button{justify-self:start;min-height:36px;max-width:100%;padding:6px 10px;white-space:normal;font:inherit;cursor:pointer}
+.account-profile-restore button:disabled{opacity:.6;cursor:not-allowed}
+@media(max-width:720px){.account-profile-restore button{justify-self:stretch}}
