@@ -78,7 +78,7 @@ test('English, Hungarian and German notices describe both deletion and lawful re
     const copy = getAccountDeletionCopy(locale);
     for (const key of [
       'reviewTitle', 'reviewLead', 'deletedTitle', 'deletedAccount',
-      'deletedConnections', 'retainedTitle', 'retainedShared', 'retainedIdentity',
+      'deletedConnections', 'deletedPrivate', 'retainedTitle', 'retainedShared', 'retainedIdentity',
       'externalTitle', 'external', 'backups', 'beforeDeleting', 'rights', 'acknowledge',
     ] as const) {
       assert.ok(copy[key].trim().length > 0, `${locale} missing ${key}`);
