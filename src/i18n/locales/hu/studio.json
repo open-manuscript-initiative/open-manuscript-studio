@@ -99,7 +99,7 @@
     "bodyPlaceholder": "Írd meg a jegyzetet…",
     "footnote": "Lábjegyzet",
     "endnote": "Végjegyzet",
-    "authorNote": "A szerző megjegyzése",
+    "authorNote": "Szövegközi jegyzet",
     "delete": "Megjegyzés törlése",
     "confirmDelete": "Töröljük ezt a megjegyzést és a hozzá tartozó beágyazott hivatkozást a kéziratból?",
     "closeEditor": "A jegyzetszerkesztő bezárása",
