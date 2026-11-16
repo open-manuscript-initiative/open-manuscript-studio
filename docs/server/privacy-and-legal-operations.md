@@ -5,6 +5,32 @@ independently operated server. This implementation is not a legal certification.
 No production settings, notices, mailboxes, retention jobs or firewall rules are
 changed by merging the source. Missing operator facts remain required work.
 
+## Official Studio contact change (16 November 2026)
+
+The official **project contact** for the Open Manuscript Initiative is
+**contact@openmanuscript.org**. Personal Gmail addresses must not appear
+as OMI's publicly advertised project/privacy enquiry address.
+
+The official Studio's public **controller contact** comes from an
+**operator-managed file on the server**, not a repository constant. To make the
+same change in the live data-protection notice, the authorized operator must
+edit the deployed file referenced by `OMI_PRIVACY_CONFIG_PATH` (normally
+`/etc/omi/privacy-notice.json`), set `controller.email` to
+`contact@openmanuscript.org`, preserve the controller's correct legal identity,
+validate using `npm run privacy:check` from `server`, reload the API by the
+normal procedure and verify the public `/api/v1/privacy` endpoint and
+`/?privacy=1`. Test mailbox delivery and handling before publishing this as
+a monitored channel. **Changing GitHub source documentation does not edit the
+live operator-owned file.**
+
+Only apply this address to the central OMI-operated service. Independently
+hosted institutional servers retain their own data controller and contact.
+The outbound transactional sender `MAIL_FROM` (currently exemplified as
+`no-reply@openmanuscript.org`) is a separate operational setting and should
+not be switched just to change the public privacy contact. Search public
+footer, contact pages and published policy copies for former personal
+webmail addresses; do not rewrite historic correspondence or unowned systems.
+
 ## 1. Publish the selected server's controller information
 
 1. Copy `deployment/privacy/privacy-notice.example.json` outside the checkout,
