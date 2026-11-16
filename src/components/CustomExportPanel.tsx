@@ -41,7 +41,7 @@ const LABELS: Record<string, Record<string, string>> = {
 };
 
 export function CustomExportPanel() {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const copy = LABELS[locale] ?? LABELS.en;
   const [template, setTemplate] = useState<CustomExportTemplate>(() => defaultCustomExportTemplate(manuscript));
