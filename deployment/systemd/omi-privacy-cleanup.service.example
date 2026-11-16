@@ -1,0 +1,18 @@
+# Operator template: review account, runtime, credentials and storage paths before installation.
+# Example ONLY; does not enable or install a service on any VPS.
+[Unit]
+Description=OMI Studio expired authentication and technical audit retention cleanup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=REPLACE_WITH_NON_ROOT_STUDIO_API_USER
+WorkingDirectory=/var/www/vhosts/openmanuscript.org/studio/repository/server
+# dotenv loads the server's existing .env; verify the live API uses this same database.
+# Adapt Node executable path if the API is deployed with nvm or another toolchain.
+ExecStart=/usr/bin/env npm run privacy:cleanup -- --apply
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+# On failure, systemd records the nonzero exit status; investigate before retry.
