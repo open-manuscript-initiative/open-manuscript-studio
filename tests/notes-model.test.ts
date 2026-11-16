@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  buildNoteNumberMap,
   collectNoteAnchors,
   createNoteAnnotation,
   getNoteNumber,
@@ -102,6 +103,35 @@ test('reconciliation numbers anchors and derives note presentation from annotati
   assert.equal(inline[1]?.attrs?.label, '2');
   assert.equal(inline[1]?.attrs?.noteType, 'endnote');
   assert.ok(result.blockChanges.length >= 1);
+});
+
+test('inline notes are unnumbered while an export style can include them in the numbered sequence', () => {
+  const state = createState();
+  state.sections[0]!.blocks[0]!.content = noteDocument('note-a', 'note-local', 'note-b');
+  state.annotations.push(createNoteAnnotation({
+    id: 'note-local',
+    anchorId: 'anchor-note-local',
+    targetBlockId: 'block-1',
+    kind: 'author-note',
+    body: 'Editorial aside',
+  }));
+
+  assert.equal(getNoteNumber(state, 'note-a'), 1);
+  assert.equal(getNoteNumber(state, 'note-local'), undefined);
+  assert.equal(getNoteNumber(state, 'note-b'), 2);
+  const allNumbered = buildNoteNumberMap(state, undefined, { includeLocalNotes: true });
+  assert.equal(allNumbered.get('note-a'), 1);
+  assert.equal(allNumbered.get('note-local'), 2);
+  assert.equal(allNumbered.get('note-b'), 3);
+
+  const reconciled = reconcileNoteState(state);
+  const content = JSON.parse(reconciled.state.sections[0]!.blocks[0]!.content) as {
+    content: Array<{ content: Array<{ attrs: { label: string; noteType: string } }> }>;
+  };
+  const markers = content.content[0]!.content;
+  assert.deepEqual(markers.map((node) => node.attrs.label), ['1', '', '2']);
+  assert.equal(markers[1]!.attrs.noteType, 'author-note');
+  assert.equal(reconciled.state.annotations.find((note) => note.id === 'note-local')?.body, 'Editorial aside');
 });
 
 test('deleting a note removes its inline anchor and renumbers surviving notes', () => {
