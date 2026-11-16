@@ -36,7 +36,7 @@ test('account deletion removes login data while preserving scholarly history thr
   assert.match(serviceSource, /collaborationMessage\.updateMany/);
   assert.match(serviceSource, /senderUserId: null, senderName: 'Former contributor'/);
   assert.match(serviceSource, /studioModuleAuditEvent\.updateMany/);
-  assert.match(serviceSource, /ipAddress: null, details: null/);
+  assert.match(serviceSource, /ipAddress: null, details: Prisma\\.DbNull/);
   assert.match(serviceSource, /userIntegration\.deleteMany/);
   assert.match(serviceSource, /reviewWorkspaceAccess\.deleteMany/);
   assert.match(serviceSource, /fullName: 'Deleted account'/);
