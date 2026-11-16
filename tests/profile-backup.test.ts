@@ -55,7 +55,8 @@ test('backup import never restores old identity, ORCID binding, credentials, ema
 test('unsupported and malicious profile backups are rejected', () => {
   assert.throws(() => profileFromAccountBackup({ schema: 'other', profile: sample.profile }), /Unsupported/);
   assert.throws(() => profileFromAccountBackup({ ...sample, profile: { ...sample.profile, fullName: '' } }), /profile name/);
-  assert.throws(() => profileFromAccountBackup({ ...sample, profile: { ...sample.profile, country: 'BAD' } }), /country code/);
+  assert.throws(() => profileFromAccountBackup({ ...sample, profile: { ...sample.profile, country: 'BAD' } }), /country field/);
+  assert.throws(() => profileFromAccountBackup({ ...sample, profile: { ...sample.profile, country: 'H1' } }), /country code/);
   assert.throws(() => profileFromAccountBackup({ ...sample, profile: { ...sample.profile, website: 'javascript:alert(1)' } }), /website URL/);
   assert.throws(() => profileFromAccountBackup({ ...sample, profile: { ...sample.profile, workflowRole: 'OWNER' } }), /workflow preference/);
 });
