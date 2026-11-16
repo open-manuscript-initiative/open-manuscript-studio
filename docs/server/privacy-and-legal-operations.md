@@ -84,6 +84,15 @@ objection need an actual processing decision; merely disabling login is insuffic
 
 ## 3. Erasure, retained shared history and restoration
 
+### Informed account deletion and purpose separation
+
+The Account deletion panel must present an explicit EN/HU/DE review **before** the irreversible action: (1) live account and credential removal, (2) deletion of account-only server documents, personal reference records, module preferences and recognition job records, (3) possible retention of collaborative manuscripts, reviews, versions and comments, (4) third-party copies/backups and (5) a route for a separate privacy request. It requires both an acknowledgement checkbox and typed email confirmation. This acknowledgement does not create a lawful basis for continued processing or waive GDPR rights.
+
+The Studio cleanup now strips denormalized sender names from collaboration messages and identifying IP/detail fields from the deleted actor's module audit records, while retaining the scholarly event type. Shared manuscript/package snapshots, editorial histories, ORCID/author metadata and exports are **not automatically anonymized** by this process. They require per-purpose assessment, minimization and documented retention decisions.
+
+The Art.6(1)(f) legitimate-interest basis, where applicable, requires an actual documented balancing test; it does not automatically override the Art.17 right to erasure or the Art.21 right to object. Any research exception under Art.17(3)(d) applies only where its necessity threshold and Art.89 safeguards are met. A pseudonymized stable participant reference remains personal data if reasonably identifiable.
+
+
 The existing self-service deletion removes live Identity data and credentials,
 clears account integration records and pseudonymizes the Studio participant.
 A stable participant ID or identifiable shared content can remain personal data.
