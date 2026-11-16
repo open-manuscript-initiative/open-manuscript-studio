@@ -3,6 +3,8 @@ import test from 'node:test';
 
 import { createAssetMetadata } from '../src/model/assets.ts';
 import { createCrossReference } from '../src/model/crossReferences.ts';
+import { createNoteAnnotation } from '../src/model/notes.ts';
+import { getPublicationProfile } from '../src/model/publicationProfile.ts';
 import {
   commitManuscriptRevision,
   extractManuscriptState,
@@ -42,6 +44,43 @@ test('renders deterministic semantic HTML5 with front matter and traceability me
   );
   assert.match(first.html, /name="omi-head-revision"/);
   assert.match(first.html, /<section id="sec-section-one"/);
+});
+
+test('inline notes remain unnumbered or join note numbering according to export style', () => {
+  const manuscript = createTestManuscript();
+  const block = manuscript.sections[0]!.blocks[0]!;
+  const notes = [
+    createNoteAnnotation({ id: 'foot-a', anchorId: 'anchor-foot-a', targetBlockId: block.id, body: 'First note' }),
+    createNoteAnnotation({ id: 'inline-a', anchorId: 'anchor-inline-a', targetBlockId: block.id, kind: 'author-note', body: 'Editorial side note' }),
+    createNoteAnnotation({ id: 'foot-b', anchorId: 'anchor-foot-b', targetBlockId: block.id, body: 'Last note' }),
+  ];
+  manuscript.annotations = notes;
+  block.content = JSON.stringify({
+    type: 'doc', content: [{ type: 'paragraph', content: notes.flatMap((note) => [
+      { type: 'omiNote', attrs: { noteId: note.id, anchorId: note.anchorId, noteType: note.noteKind, label: '?' } },
+      { type: 'text', text: ' and ' },
+    ]) }],
+  });
+  const profile = structuredClone(getPublicationProfile('omi-generic-scholarly')!);
+
+  profile.rules.notes.localNotePlacement = 'inline';
+  const inline = renderHtmlArticle(manuscript, profile).html;
+  assert.match(inline, /id="note-inline-a" class="omi-local-note-inline"[^>]*> \(Editorial side note\)<\/span>/);
+  assert.doesNotMatch(inline, /id="noteref-inline-a"/);
+  assert.match(inline, /id="note-foot-a"[^>]*value="1"/);
+  assert.match(inline, /id="note-foot-b"[^>]*value="2"/);
+
+  profile.rules.notes.localNotePlacement = 'margin';
+  const margin = renderHtmlArticle(manuscript, profile).html;
+  assert.match(margin, /id="note-inline-a" class="omi-local-note-margin"[^>]*>Editorial side note<\/span>/);
+  assert.doesNotMatch(margin, /id="noteref-inline-a"/);
+
+  profile.rules.notes.localNotePlacement = 'with-notes';
+  const numbered = renderHtmlArticle(manuscript, profile).html;
+  assert.match(numbered, /id="noteref-inline-a"[^>]*>2<\/a>/);
+  assert.match(numbered, /id="note-inline-a"[^>]*value="2"/);
+  assert.match(numbered, /id="note-foot-b"[^>]*value="3"/);
+  assert.doesNotMatch(numbered, /class="omi-local-note-margin"/);
 });
 
 test('preserves given and family author names as separate semantic spans', () => {
