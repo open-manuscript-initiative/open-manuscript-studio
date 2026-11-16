@@ -90,7 +90,7 @@ export function CurrentStudyNotesFooter({
               manuscript.citationStyle ?? 'apa-7',
               manuscript.locale,
             ));
-            const navigationLabel = `${t('notes.goToNote')}: ${noteNumber}`;
+            const navigationLabel = `${t('notes.goToNote')}: ${kind === 'author-note' ? t('notes.authorNote') : noteNumber}`;
 
             return (
               <li key={note.id} className="omi-current-study-note">
@@ -101,7 +101,7 @@ export function CurrentStudyNotesFooter({
                   aria-label={navigationLabel}
                   title={navigationLabel}
                 >
-                  {noteNumber}
+                  {kind === 'author-note' ? '*' : noteNumber}
                 </button>
                 <div className="omi-current-study-note__content">
                   {kind === 'footnote' ? null : (
