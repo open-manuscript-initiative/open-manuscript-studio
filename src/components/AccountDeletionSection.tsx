@@ -13,13 +13,14 @@ export function AccountDeletionSection({ email }: { email: string }) {
   const resetAuthStore = useAuthStore((state) => state.resetAuthStore);
   const [expanded, setExpanded] = useState(false);
   const [confirmation, setConfirmation] = useState('');
+  const [acknowledged, setAcknowledged] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const confirmed = confirmation.trim().toLowerCase() === email.trim().toLowerCase();
 
   const deleteAccount = async () => {
-    if (!confirmed || deleting) return;
+    if (!confirmed || !acknowledged || deleting) return;
     setDeleting(true);
     setError(null);
     try {
@@ -66,6 +67,40 @@ export function AccountDeletionSection({ email }: { email: string }) {
         </button>
       ) : (
         <div className="account-deletion-confirmation">
+          <div className="account-deletion-review" aria-labelledby="account-deletion-review-title">
+            <h4 id="account-deletion-review-title">{labels.reviewTitle}</h4>
+            <p>{labels.reviewLead}</p>
+            <section aria-labelledby="account-deletion-removed-title">
+              <h5 id="account-deletion-removed-title">{labels.deletedTitle}</h5>
+              <ul>
+                <li>{labels.deletedAccount}</li>
+                <li>{labels.deletedConnections}</li>
+              </ul>
+            </section>
+            <section aria-labelledby="account-deletion-retained-title">
+              <h5 id="account-deletion-retained-title">{labels.retainedTitle}</h5>
+              <ul>
+                <li>{labels.retainedShared}</li>
+                <li>{labels.retainedIdentity}</li>
+              </ul>
+            </section>
+            <section aria-labelledby="account-deletion-external-title">
+              <h5 id="account-deletion-external-title">{labels.externalTitle}</h5>
+              <p>{labels.external}</p>
+              <p>{labels.backups}</p>
+            </section>
+            <p className="account-deletion-export-note">{labels.beforeDeleting}</p>
+            <p>{labels.rights}</p>
+          </div>
+          <label className="account-deletion-acknowledgement">
+            <input
+              type="checkbox"
+              checked={acknowledged}
+              onChange={(event) => setAcknowledged(event.target.checked)}
+              disabled={deleting}
+            />
+            <span>{labels.acknowledge}</span>
+          </label>
           <label>
             <span>{labels.confirmLabel}</span>
             <input
@@ -86,6 +121,7 @@ export function AccountDeletionSection({ email }: { email: string }) {
               onClick={() => {
                 setExpanded(false);
                 setConfirmation('');
+                setAcknowledged(false);
                 setError(null);
               }}
               disabled={deleting}
@@ -97,7 +133,7 @@ export function AccountDeletionSection({ email }: { email: string }) {
               type="button"
               className="account-delete-confirm"
               onClick={() => void deleteAccount()}
-              disabled={!confirmed || deleting}
+              disabled={!confirmed || !acknowledged || deleting}
             >
               <Trash2 size={16} aria-hidden="true" />
               {deleting ? labels.deleting : labels.delete}
