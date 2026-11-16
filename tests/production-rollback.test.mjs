@@ -128,6 +128,7 @@ function fakePostgres(f, fail = false) {
 test('reviewed additive migration creates two validated backups before runtime snapshot', { skip: !onLinux }, (t) => {
   const f = fixture(t);
   const target = reviewedMigration(f);
+  fakePrismaStatus(f);
   const env = { ...fakePostgres(f), STUDIO_TARGET_SHA: target };
   const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
   assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
@@ -152,6 +153,7 @@ test('reviewed additive migration creates two validated backups before runtime s
 test('reviewed migration refuses deployment when backup fails', { skip: !onLinux }, (t) => {
   const f = fixture(t);
   const target = reviewedMigration(f);
+  fakePrismaStatus(f);
   const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
     env: { ...fakePostgres(f, true), STUDIO_TARGET_SHA: target }, encoding: 'utf8',
   });
@@ -167,7 +169,7 @@ test('modifying approved SQL prevents automatic migration', { skip: !onLinux }, 
     env: { ...f.env, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
   });
   assert.notEqual(snapshot.status, 0);
-  assert.match(snapshot.stderr, /Migration changes require a reviewed database backup/);
+  assert.match(snapshot.stderr, /pinned reviewed blob/);
 });
 
 test('an accompanying identity migration always blocks automatic rollout', { skip: !onLinux }, (t) => {
@@ -186,7 +188,7 @@ test('an accompanying identity migration always blocks automatic rollout', { ski
 });
 
 
-function fakePrismaStatus(f, { pending = true, identityPending = false, unknown = false } = {}) {
+function fakePrismaStatus(f, { pending = true, identityPending = false, unknown = false, pendingNames = ['20261109060000_android_closed_test_signups'] } = {}) {
   const bin = join(f.repo, 'server', 'node_modules', '.bin');
   mkdirSync(bin, { recursive: true });
   writeFileSync(join(f.repo, 'scripts', 'reviewed-migration-status.mjs'),
@@ -202,7 +204,7 @@ function fakePrismaStatus(f, { pending = true, identityPending = false, unknown 
     unknown
       ? "    echo 'Following migration have not yet been applied:'; echo '20261110_unreviewed'; exit 1 ;;"
       : pending
-        ? "    echo 'Following migration have not yet been applied:'; echo '20261109060000_android_closed_test_signups'; echo 'To apply migrations in production run prisma migrate deploy.'; exit 1 ;;"
+        ? "    echo 'Following migration have not yet been applied:'; " + pendingNames.map((name) => "echo '" + name + "'").join('; ') + "; echo 'To apply migrations in production run prisma migrate deploy.'; exit 1 ;;"
         : "    echo 'Database schema is up to date!'; exit 0 ;;",
     'esac',
   ].join('\n') + '\n';
@@ -221,7 +223,7 @@ test('manual checkout at target SHA still requires backups for pending migration
   };
   const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
   assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
-  assert.match(snapshot.stdout, /Detected pending reviewed migration despite unchanged Git revision/);
+  assert.match(snapshot.stdout, /Detected pending reviewed migration/);
   assert.ok(existsSync(join(f.snapshot, 'database', 'studio.dump')));
   assert.ok(existsSync(join(f.snapshot, 'database', 'identity.dump')));
   assert.ok(existsSync(join(f.snapshot, 'reviewed-migration')));
@@ -260,4 +262,82 @@ test('unapplied identity migration after manual checkout blocks deployment', { s
   });
   assert.notEqual(snapshot.status, 0);
   assert.match(snapshot.stderr, /Pending database migration preflight failed/);
+});
+
+function reviewedAuditIndexMigration(f, sql = readFileSync(
+  new URL('../server/prisma/migrations/20261116110000_audit_retention_created_at_indexes/migration.sql', import.meta.url),
+  'utf8',
+)) {
+  const dir = join(f.repo, 'server/prisma/migrations/20261116110000_audit_retention_created_at_indexes');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'migration.sql'), sql);
+  git(f.repo, 'add', '.');
+  git(f.repo, '-c', 'user.email=ci@example.invalid', '-c', 'user.name=CI', 'commit', '-qm', 'reviewed index migration');
+  return git(f.repo, 'rev-parse', 'HEAD');
+}
+
+test('pinned audit-index migration requires two validated backups before deploy', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedAuditIndexMigration(f);
+  fakePrismaStatus(f, { pendingNames: ['20261116110000_audit_retention_created_at_indexes'] });
+  const env = { ...fakePostgres(f), STUDIO_TARGET_SHA: target };
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
+  assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
+  assert.ok(existsSync(join(f.snapshot, 'snapshot-complete')));
+  assert.ok(existsSync(join(f.snapshot, 'database', 'studio.dump')));
+  assert.ok(existsSync(join(f.snapshot, 'database', 'identity.dump')));
+});
+
+test('changed audit-index migration SQL remains blocked even if additive looking', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const original = readFileSync(new URL('../server/prisma/migrations/20261116110000_audit_retention_created_at_indexes/migration.sql', import.meta.url), 'utf8');
+  const target = reviewedAuditIndexMigration(f, original + '\nCREATE INDEX fake ON users (id);\n');
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /pinned reviewed blob/i);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});
+
+test('additional unapproved migration bundled with audit indexes is blocked', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  reviewedAuditIndexMigration(f);
+  const dir = join(f.repo, 'server/prisma/migrations/20261117_unreviewed');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'migration.sql'), 'DROP TABLE manuscripts;\n');
+  git(f.repo, 'add', '.');
+  git(f.repo, '-c', 'user.email=ci@example.invalid', '-c', 'user.name=CI', 'commit', '-qm', 'unapproved migration');
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_TARGET_SHA: git(f.repo, 'rev-parse', 'HEAD') }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /manual migration rollout/);
+});
+
+test('unexpected pending DB migration still blocks reviewed audit-index deployment', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedAuditIndexMigration(f);
+  fakePrismaStatus(f, { unknown: true });
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...fakePostgres(f), STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /Pending database migration preflight failed/);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});
+
+test('both pinned migrations may be pending only with verified backups', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  reviewedMigration(f);
+  const target = reviewedAuditIndexMigration(f);
+  fakePrismaStatus(f, { pendingNames: [
+    '20261109060000_android_closed_test_signups',
+    '20261116110000_audit_retention_created_at_indexes',
+  ] });
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...fakePostgres(f), STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
+  assert.ok(existsSync(join(f.snapshot, 'database', 'manifest.json')));
 });

@@ -7,7 +7,10 @@ import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const root = process.argv[2] ? resolve(process.argv[2]) : '';
-const approved = '20261109060000_android_closed_test_signups';
+const approved = new Set([
+  '20261109060000_android_closed_test_signups',
+  '20261116110000_audit_retention_created_at_indexes',
+]);
 if (!root) {
   console.error('Usage: node reviewed-migration-status.mjs <repository-root>');
   process.exit(2);
@@ -30,12 +33,12 @@ function status(config) {
   if (result.error) throw new Error('Prisma status check could not complete.');
   const output = (result.stdout || '') + '\n' + (result.stderr || '');
   if (result.status === 0 && /Database schema is up to date/i.test(output)) return 'applied';
-  // Prisma's migration-status command returns nonzero if pending. Only the
-  // explicitly reviewed single migration is allowed through this path.
+  // Prisma's migration-status command returns nonzero if pending. Accept only
+  // a nonempty subset of pinned, independently reviewed additive migrations.
   const match = output.match(/Following migrations? have not yet been applied:\s*\r?\n([\s\S]*?)(?=\r?\n\s*To apply migrations|\r?\n\s*Run \S+|$)/i);
   if (result.status !== 0 && match) {
     const names = match[1].split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-    if (names.length === 1 && names[0] === approved) return 'pending';
+    if (names.length > 0 && names.every((name) => approved.has(name))) return 'pending';
   }
   throw new Error('Migration status is unavailable, divergent or contains unreviewed changes.');
 }

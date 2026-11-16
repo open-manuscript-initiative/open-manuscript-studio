@@ -35,33 +35,50 @@ if [[ "$action" == snapshot ]]; then
   current="${STUDIO_TARGET_SHA:-$(git -C "$repo" rev-parse HEAD)}"
   git -C "$repo" cat-file -e "$current^{commit}"
 
-  # Never allow unreviewed migrations through an automatic code rollback.
-  # Exception: ONE pinned, additive-only Android test applicant table migration.
-  # Its schema is backwards compatible with the previous API (old code simply
-  # ignores the table). Full DB dumps must be created and validated BEFORE
-  # any npm install, Prisma migration or live-file update.
-  approved_migration='server/prisma/migrations/20261109060000_android_closed_test_signups/migration.sql'
-  approved_blob='dfc5ee96dc2cbc9bf2d1622ce494bd5b133e0bba'
+  # Explicitly reviewed, additive-only SQL. Git blob hashes pin the full SQL bytes.
+  # Each deployment also requires verified Studio + Identity DB backups.
+  approved_paths=(
+    'server/prisma/migrations/20261109060000_android_closed_test_signups/migration.sql'
+    'server/prisma/migrations/20261116110000_audit_retention_created_at_indexes/migration.sql'
+  )
+  approved_blobs=(
+    'dfc5ee96dc2cbc9bf2d1622ce494bd5b133e0bba'
+    '34d086111c77bab71b3725ae99f1a531b703ed66'
+  )
   migration_changes="$(git -C "$repo" diff --name-status "$previous" "$current" -- server/prisma/migrations server/prisma/identity/migrations)"
   needs_db_backup=false
+  reviewed_present=false
+  for i in "${!approved_paths[@]}"; do
+    path="${approved_paths[$i]}"
+    if [[ -f "$repo/$path" ]]; then
+      reviewed_present=true
+      if [[ "$(git -C "$repo" hash-object "$repo/$path")" != "${approved_blobs[$i]}" ]]; then
+        echo "Approved migration SQL differs from its pinned reviewed blob: $path" >&2
+        exit 1
+      fi
+    fi
+  done
   if [[ -n "$migration_changes" ]]; then
-    if [[ "$migration_changes" != "$(printf 'A\t%s' "$approved_migration")" ]] ||
-       [[ "$(git -C "$repo" hash-object "$repo/$approved_migration")" != "$approved_blob" ]]; then
-      echo "Migration changes require a reviewed database backup and manual migration rollout:" >&2
-      printf '%s\n' "$migration_changes" >&2
-      exit 1
-    fi
+    while IFS=$'\t' read -r change path rest; do
+      approved=false
+      if [[ "$change" == A && -n "$path" && -z "$rest" ]]; then
+        for approved_path in "${approved_paths[@]}"; do
+          if [[ "$path" == "$approved_path" ]]; then approved=true; break; fi
+        done
+      fi
+      if [[ "$approved" != true ]]; then
+        echo "Migration changes require a reviewed database backup and manual migration rollout:" >&2
+        printf "%s\n" "$migration_changes" >&2
+        exit 1
+      fi
+    done <<< "$migration_changes"
     needs_db_backup=true
-    echo 'Reviewed additive Android test migration verified against pinned Git blob.'
+    echo 'Pinned additive migration delta verified; requiring PostgreSQL backups.'
   fi
-  # A manual deploy.sh may already have reset the checkout to the latest
-  # commit WITHOUT running Prisma migrations. A Git diff alone misses this.
-  # Query the live database read-only before allowing the automatic deploy.
-  if [[ -z "$migration_changes" && -f "$repo/$approved_migration" ]]; then
-    if [[ "$(git -C "$repo" hash-object "$repo/$approved_migration")" != "$approved_blob" ]]; then
-      echo 'Approved migration SQL differs from its pinned reviewed blob.' >&2
-      exit 1
-    fi
+  # A prior manual checkout may have skipped migrations. Check the live Prisma
+  # status even when a reviewed migration is in the Git delta. Unapproved
+  # pending Studio or Identity migrations must always fail closed.
+  if [[ "$reviewed_present" == true ]]; then
     migration_state="$(node "$repo/scripts/reviewed-migration-status.mjs" "$repo")" || {
       echo 'Pending database migration preflight failed; refusing to deploy.' >&2
       exit 1
@@ -69,7 +86,7 @@ if [[ "$action" == snapshot ]]; then
     case "$migration_state" in
       pending)
         needs_db_backup=true
-        echo 'Detected pending reviewed migration despite unchanged Git revision; requiring fresh database backups.'
+        echo 'Detected pending reviewed migration; requiring fresh database backups.'
         ;;
       applied) ;;
       *)
@@ -106,7 +123,7 @@ if [[ "$action" == snapshot ]]; then
       echo 'Pre-migration PostgreSQL backup validation failed.' >&2
       exit 1
     }
-    printf '%s\n' "$approved_migration" > "$snapshot/reviewed-migration"
+    printf '%s\n' "${approved_paths[@]}" > "$snapshot/reviewed-migration"
   fi
   rsync -a "$web/" "$snapshot/web/"
   rsync -a "$repo/server/dist/" "$snapshot/server-dist/"
