@@ -68,11 +68,15 @@ export function NoteEditorCard({
       className={`omi-note-editor-card${
         compact ? ' omi-note-editor-card--compact' : ''
       }`}
-      aria-label={`${t('notes.note')} ${noteNumber ?? '?'}`}
+      aria-label={noteKind === 'author-note'
+        ? t('notes.authorNote')
+        : `${t('notes.note')} ${noteNumber ?? '?'}`}
     >
       <header className="omi-note-editor-header">
         <div>
-          <span className="omi-note-number">{noteNumber ?? '?'}.</span>
+          {noteKind === 'author-note' ? null : (
+            <span className="omi-note-number">{noteNumber ?? '?'}.</span>
+          )}
           <strong>{noteKindLabel(noteKind, t)}</strong>
         </div>
 
