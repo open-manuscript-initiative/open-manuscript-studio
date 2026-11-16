@@ -67,6 +67,8 @@ export interface OmiPublicationProfileCitationRules {
 export interface OmiPublicationProfileNoteRules {
   placement: 'footnotes' | 'endnotes' | 'interactive';
   restartNumbering: 'document' | 'section';
+  /** Export-only placement for local notes. Legacy author-note IDs remain portable. */
+  localNotePlacement?: 'margin' | 'inline' | 'with-notes';
 }
 
 export interface OmiPublicationProfileObjectRules {
