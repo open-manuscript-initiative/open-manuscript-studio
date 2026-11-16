@@ -17,6 +17,7 @@ export interface AccountDeletionCopy {
   deletedTitle: string;
   deletedAccount: string;
   deletedConnections: string;
+  deletedPrivate: string;
   retainedTitle: string;
   retainedShared: string;
   retainedIdentity: string;
@@ -46,6 +47,7 @@ const copy: Record<string, AccountDeletionCopy> = {
     deletedTitle: "Deleted from the active Studio service",
     deletedAccount: "Your sign-in account, profile details (name, email, affiliation, ORCID), password credentials, linked identities and active sessions.",
     deletedConnections: "Stored integration credentials, cloud-connection metadata, cloud-backup index entries and local direct-submission records.",
+    deletedPrivate: "Private server-stored documents, personal reference records, module preferences and account-scoped recognition-job records. Shared manuscripts and publication history are handled separately.",
     retainedTitle: "Shared scholarly materials that may remain",
     retainedShared: "Co-authored manuscripts, versions, reviews, comments and editorial history may be retained where necessary to protect collaborators' work and the integrity of the scholarly record.",
     retainedIdentity: "The account is shown as a deleted participant, but names or identifying information may still appear in manuscript metadata, versions, reviews or comments. Pseudonymization does not guarantee anonymity.",
@@ -73,6 +75,7 @@ const copy: Record<string, AccountDeletionCopy> = {
     deletedTitle: "Az aktív Stúdió-szolgáltatásból törlődő adatok",
     deletedAccount: "A bejelentkezési fiók, a profiladatok (név, e-mail-cím, intézmény, ORCID), a jelszóhoz tartozó hitelesítő adatok, a kapcsolt identitások és az aktív munkamenetek.",
     deletedConnections: "A tárolt integrációs hitelesítő adatok, felhőkapcsolati metaadatok, a felhőmentések indexbejegyzései és a közvetlen beküldések helyi nyilvántartása.",
+    deletedPrivate: "A kizárólag a fiókhoz tartozó szerveres magándokumentumok, személyes hivatkozásrekordok, modulos beállítások és felismerési feladatok nyilvántartásai. A közös kéziratok és a publikálási előzmények kezelése ettől elkülönül.",
     retainedTitle: "A közös tudományos munkából megmaradható adatok",
     retainedShared: "A közös kéziratok, verziók, bírálatok, megjegyzések és szerkesztési előzmények megmaradhatnak, ha ez a szerzőtársak munkájának vagy a tudományos dokumentum hitelességének védelméhez szükséges.",
     retainedIdentity: "A fiók törölt résztvevőként jelenhet meg, de a kéziratok metaadataiban, korábbi verzióiban, bírálataiban vagy megjegyzéseiben név és más azonosító adat is maradhat. Az álnevesítés nem feltétlenül jelent anonimizálást.",
@@ -100,6 +103,7 @@ const copy: Record<string, AccountDeletionCopy> = {
     deletedTitle: "Aus dem aktiven Studio-Dienst gelöschte Daten",
     deletedAccount: "Anmeldekonto, Profildaten (Name, E-Mail, Zugehörigkeit, ORCID), Passwort-Zugangsdaten, verknüpfte Identitäten und aktive Sitzungen.",
     deletedConnections: "Gespeicherte Integrationszugänge, Cloud-Verbindungsmetadaten, Cloud-Backup-Indexeinträge und lokale Einreichungsdatensätze.",
+    deletedPrivate: "Private, auf dem Server gespeicherte Dokumente, persönliche Referenzdatensätze, Moduleinstellungen und kontobezogene Erkennungsaufträge. Gemeinsame Manuskripte und Publikationsverläufe werden getrennt behandelt.",
     retainedTitle: "Gemeinsame wissenschaftliche Inhalte, die erhalten bleiben können",
     retainedShared: "Gemeinsame Manuskripte, Versionen, Gutachten, Kommentare und redaktionelle Verläufe können erhalten bleiben, soweit dies zum Schutz der Arbeit anderer und der wissenschaftlichen Integrität erforderlich ist.",
     retainedIdentity: "Das Konto kann als gelöschte mitwirkende Person erscheinen; Namen und identifizierende Daten können jedoch in Manuskriptmetadaten, Versionen, Gutachten oder Kommentaren verbleiben. Pseudonymisierung garantiert keine Anonymität.",
@@ -116,5 +120,5 @@ export function getAccountDeletionCopy(locale: string): AccountDeletionCopy {
   const translated = applyReturnedSupplementalOverlay(locale, 'accountDeletion', current, copy.en);
   // Historical returned translations predate the retention/legal correction.
   // Keep these statements on the reviewed EN/HU/DE text until retranslated.
-  return { ...translated, retained: current.retained, confirmHint: current.confirmHint, reviewTitle: current.reviewTitle, reviewLead: current.reviewLead, deletedTitle: current.deletedTitle, deletedAccount: current.deletedAccount, deletedConnections: current.deletedConnections, retainedTitle: current.retainedTitle, retainedShared: current.retainedShared, retainedIdentity: current.retainedIdentity, externalTitle: current.externalTitle, backups: current.backups, beforeDeleting: current.beforeDeleting, rights: current.rights, acknowledge: current.acknowledge };
+  return { ...translated, retained: current.retained, confirmHint: current.confirmHint, reviewTitle: current.reviewTitle, reviewLead: current.reviewLead, deletedTitle: current.deletedTitle, deletedAccount: current.deletedAccount, deletedConnections: current.deletedConnections, deletedPrivate: current.deletedPrivate, retainedTitle: current.retainedTitle, retainedShared: current.retainedShared, retainedIdentity: current.retainedIdentity, externalTitle: current.externalTitle, backups: current.backups, beforeDeleting: current.beforeDeleting, rights: current.rights, acknowledge: current.acknowledge };
 }
