@@ -61,6 +61,7 @@ test('retention copy stays on the reviewed text until legal translations are upd
 test('account deletion requires an explicit acknowledgement of the detailed consequences', () => {
   assert.match(accountDeletionUiSource, /labels\.reviewTitle/);
   assert.match(accountDeletionUiSource, /labels\.deletedAccount/);
+  assert.match(accountDeletionUiSource, /labels\.deletedPrivate/);
   assert.match(accountDeletionUiSource, /labels\.retainedShared/);
   assert.match(accountDeletionUiSource, /labels\.retainedIdentity/);
   assert.match(accountDeletionUiSource, /labels\.external/);
