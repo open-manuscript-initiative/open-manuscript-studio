@@ -98,7 +98,7 @@
     "body": "Megjegyzés szövege",
     "bodyPlaceholder": "Írd meg a jegyzetet…",
     "footnote": "Lábjegyzet",
-    "endnote": "Záró megjegyzés",
+    "endnote": "Végjegyzet",
     "authorNote": "A szerző megjegyzése",
     "delete": "Megjegyzés törlése",
     "confirmDelete": "Töröljük ezt a megjegyzést és a hozzá tartozó beágyazott hivatkozást a kéziratból?",
@@ -554,7 +554,7 @@
         },
         {
           "title": "Megjegyzések",
-          "body": "A lábjegyzeteket és a zárójegyzeteket szemantikai jegyzetobjektumokként tárolja a rendszer. Ezeket a „Jegyzetek” menüpont alatt tekintheti át és szerkesztheti."
+          "body": "A lábjegyzeteket és a végjegyzeteket szemantikai jegyzetobjektumokként tárolja a rendszer. Ezeket a „Jegyzetek” menüpont alatt tekintheti át és szerkesztheti."
         },
         {
           "title": "References (Idegen kulcsok létrehozása)",
