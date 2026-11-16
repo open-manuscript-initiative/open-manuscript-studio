@@ -129,9 +129,11 @@ export const OmiNoteExtension = Node.create<OmiNoteOptions>({
 
   renderHTML({ node, HTMLAttributes }) {
     const attributes = node.attrs as OmiNoteAttributes;
+    const isMarginNote = attributes.noteType === 'author-note';
+    const visibleLabel = isMarginNote ? '*' : attributes.label;
     const accessibleLabel =
       this.options.accessibleLabel?.(attributes) ??
-      `Note ${attributes.label}`;
+      (isMarginNote ? 'Margin note' : `Note ${visibleLabel}`);
 
     return [
       'span',
@@ -140,7 +142,7 @@ export const OmiNoteExtension = Node.create<OmiNoteOptions>({
         'data-omi-note': 'true',
         'data-note-id': attributes.noteId,
         'data-anchor-id': attributes.anchorId,
-        'data-note-label': attributes.label,
+        'data-note-label': visibleLabel,
         'data-note-type': attributes.noteType,
         contenteditable: 'false',
         role: 'button',
@@ -148,7 +150,7 @@ export const OmiNoteExtension = Node.create<OmiNoteOptions>({
         title: accessibleLabel,
         'aria-label': accessibleLabel,
       }),
-      attributes.label,
+      visibleLabel,
     ];
   },
 
@@ -162,7 +164,9 @@ export const OmiNoteExtension = Node.create<OmiNoteOptions>({
               attributes.noteId?.trim() || createStableId('note'),
             anchorId:
               attributes.anchorId?.trim() || createStableId('anchor'),
-            label: attributes.label?.trim() || '?',
+            label: attributes.noteType === 'author-note'
+              ? '*'
+              : attributes.label?.trim() || '?',
             noteType: attributes.noteType || 'footnote',
           };
           const { to, empty } = editor.state.selection;
