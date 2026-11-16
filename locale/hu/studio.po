@@ -414,7 +414,7 @@ msgstr "Lábjegyzet"
 #. OMI translation key: /notes/endnote
 msgctxt "/notes/endnote"
 msgid "Endnote"
-msgstr "Záró megjegyzés"
+msgstr "Végjegyzet"
 
 #. OMI translation key: /notes/authorNote
 msgctxt "/notes/authorNote"
@@ -2329,7 +2329,7 @@ msgstr "Megjegyzések"
 #. OMI translation key: /modules/help/topics/2/body
 msgctxt "/modules/help/topics/2/body"
 msgid "Footnotes and endnotes are retained as semantic note objects. Review and edit them under Notes."
-msgstr "A lábjegyzeteket és a zárójegyzeteket szemantikai jegyzetobjektumokként tárolja a rendszer. Ezeket a „Jegyzetek” menüpont alatt tekintheti át és szerkesztheti."
+msgstr "A lábjegyzeteket és a végjegyzeteket szemantikai jegyzetobjektumokként tárolja a rendszer. Ezeket a „Jegyzetek” menüpont alatt tekintheti át és szerkesztheti."
 
 #. OMI translation key: /modules/help/topics/3/title
 msgctxt "/modules/help/topics/3/title"
