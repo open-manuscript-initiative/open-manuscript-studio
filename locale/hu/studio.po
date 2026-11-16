@@ -419,7 +419,7 @@ msgstr "Végjegyzet"
 #. OMI translation key: /notes/authorNote
 msgctxt "/notes/authorNote"
 msgid "Author note"
-msgstr "A szerző megjegyzése"
+msgstr "Szövegközi jegyzet"
 
 #. OMI translation key: /notes/delete
 msgctxt "/notes/delete"
