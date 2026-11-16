@@ -4,6 +4,28 @@ Előkészítve: 2026. november 7. Ez az útmutató az önálló OMI-szerverekre 
 A forráskód beolvasztása nem tölti ki az adatkezelő adatait, nem állítja be a VPS
 mentéseit, és nem jelent jogi megfelelőségi tanúsítást.
 
+## A hivatalos OMI e-mail-cím módosítása (2026. november 16.)
+
+Az Open Manuscript Initiative hivatalos projektkapcsolati e-mail-címe:
+**contact@openmanuscript.org**. A projekt nyilvános kapcsolati és adatvédelmi
+elérhetőségein ne személyes Gmail-cím jelenjen meg.
+
+A hivatalos Studio éles adatvédelmi tájékoztatójának kapcsolati címe nem a
+GitHub-repóból, hanem a VPS-en lévő üzemeltetői JSON-fájlból származik. A
+jogosult üzemeltetőnek az `OMI_PRIVACY_CONFIG_PATH` által megadott fájlban
+(jellemzően `/etc/omi/privacy-notice.json`) a `controller.email` értékét
+`contact@openmanuscript.org` címre kell állítania, miközben a tényleges
+adatkezelő jogi adatai változatlanul helyesek maradnak. Ezt követően a
+`server` könyvtárban `npm run privacy:check`, az API szabályos újraindítása,
+az `/api/v1/privacy` válasz és a `/?privacy=1` oldal ellenőrzése szükséges.
+A postafiók kézbesítését és rendszeres felügyeletét is tesztelni kell.
+
+A forráskódbeli dokumentáció módosítása **önmagában nem írja át az éles
+üzemeltetői konfigurációt**. A független intézményi szervereken továbbra is
+az adott intézmény adatkezelői címét kell használni. A jelszó-visszaállító
+levelek `MAIL_FROM` feladója (például `no-reply@openmanuscript.org`) más
+célú beállítás, azt nem szükséges a kapcsolattartási címmel azonosítani.
+
 ## A szerver tájékoztatójának beállítása
 
 1. Másolja a Studio repó `deployment/privacy/privacy-notice.example.json` fájlját
