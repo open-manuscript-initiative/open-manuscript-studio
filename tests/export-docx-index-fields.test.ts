@@ -6,6 +6,8 @@ import {
   renderWordGeneratedIndexField,
   renderWordIndexEntryFields,
 } from '../src/services/exportDocx.ts';
+import { createNoteAnnotation } from '../src/model/notes.ts';
+import { getPublicationProfile } from '../src/model/publicationProfile.ts';
 import { createTestManuscript } from './testManuscriptFixture.ts';
 
 test('exports semantic OMI index occurrences as Word XE fields', () => {
@@ -131,6 +133,50 @@ test('exports linked OMI notes as native Word footnotes by default and retains e
   assert.doesNotMatch(documentXml, /A default footnote|An explicit endnote/);
   assert.match(documentXml, /Orphaned note content is retained\./);
   assert.match(result.warnings.join('\n'), /no inline anchor/);
+});
+
+test('DOCX local notes are unnumbered inline or numbered with ordinary notes by export style', () => {
+  const manuscript = createTestManuscript();
+  const block = manuscript.sections[0]!.blocks[0]!;
+  const notes = [
+    createNoteAnnotation({ id: 'foot-a', anchorId: 'anchor-foot-a', targetBlockId: block.id, body: 'First numbered note' }),
+    createNoteAnnotation({ id: 'inline-a', anchorId: 'anchor-inline-a', targetBlockId: block.id, kind: 'author-note', body: 'Special local text' }),
+    createNoteAnnotation({ id: 'foot-b', anchorId: 'anchor-foot-b', targetBlockId: block.id, body: 'Second numbered note' }),
+  ];
+  manuscript.annotations = notes;
+  block.content = JSON.stringify({
+    type: 'doc', content: [{ type: 'paragraph', content: notes.map((note) => ({
+      type: 'omiNote', attrs: { noteId: note.id, anchorId: note.anchorId, noteType: note.noteKind, label: '?' },
+    })) }],
+  });
+  const profile = structuredClone(getPublicationProfile('omi-generic-scholarly')!);
+  profile.id = 'test-local-note-style';
+  profile.version = '1';
+  manuscript.publicationProfile = { id: profile.id, version: profile.version };
+  manuscript.embeddedPublicationProfile = profile;
+  const parts = () => {
+    const exported = buildDocxExport(manuscript);
+    const entries = readStoreZipEntries(exported.bytes);
+    return { exported, body: new TextDecoder().decode(entries.get('word/document.xml')), footnotes: new TextDecoder().decode(entries.get('word/footnotes.xml')) };
+  };
+
+  profile.rules.notes.localNotePlacement = 'inline';
+  const inline = parts();
+  assert.match(inline.body, /\(Special local text\)/);
+  assert.match(inline.body, /w:footnoteReference w:id="2"/);
+  assert.doesNotMatch(inline.footnotes, /Special local text/);
+
+  profile.rules.notes.localNotePlacement = 'margin';
+  const margin = parts();
+  assert.match(margin.body, /\(Special local text\)/);
+  assert.match(margin.exported.warnings.join('\n'), /margin placement.*not supported/);
+
+  profile.rules.notes.localNotePlacement = 'with-notes';
+  const together = parts();
+  assert.doesNotMatch(together.body, /\(Special local text\)/);
+  assert.match(together.body, /w:footnoteReference w:id="3"/);
+  assert.match(together.footnotes, /w:footnote w:id="2"/);
+  assert.match(together.footnotes, /Special local text/);
 });
 
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
