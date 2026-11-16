@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
+import { Prisma } from '../generated/prisma/client.js';
 
 export class AccountDeletionBlockedError extends Error {
   constructor(message: string) {
@@ -113,7 +114,7 @@ async function pseudonymizeStudioPrincipal(userId: string): Promise<void> {
     // Preserve the module event type for integrity, not IP/identifying audit details.
     prisma.studioModuleAuditEvent.updateMany({
       where: { actorUserId: userId },
-      data: { actorUserId: null, ipAddress: null, details: null },
+      data: { actorUserId: null, ipAddress: null, details: Prisma.DbNull },
     }),
     prisma.directSubmission.deleteMany({ where: { userId } }),
     prisma.cloudBackup.deleteMany({ where: { userId } }),
