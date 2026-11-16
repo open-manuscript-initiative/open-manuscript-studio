@@ -279,8 +279,9 @@ export function PublicationDocumentCanvas({
     return buildNoteNumberMap({
       sections: manuscriptSections,
       documentStructure: manuscriptDocumentStructure,
+      annotations: manuscriptAnnotations,
     }, occurrences);
-  }, [manuscriptDocumentStructure, manuscriptSections]);
+  }, [manuscriptAnnotations, manuscriptDocumentStructure, manuscriptSections]);
   const semanticNotes = useMemo(() => {
     const cache = noteBodyCacheRef.current;
     const activeIds = new Set<string>();
