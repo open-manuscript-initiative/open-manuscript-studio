@@ -4,6 +4,8 @@ import { ExternalLink, Trash2, X } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { getAccountDeletionCopy } from '../i18n/accountDeletionTranslations';
 import { deleteCurrentAccount } from '../services/accountDeletionApi';
+import { fetchAccountData } from '../services/privacyApi';
+import { saveExportBlob } from '../services/exportFileDelivery';
 import { useAuthStore } from '../store/authStore';
 import '../styles/account-deletion.css';
 
@@ -14,10 +16,28 @@ export function AccountDeletionSection({ email }: { email: string }) {
   const [expanded, setExpanded] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
+  const [backupWorking, setBackupWorking] = useState(false);
+  const [backupDone, setBackupDone] = useState(false);
+  const [backupError, setBackupError] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const confirmed = confirmation.trim().toLowerCase() === email.trim().toLowerCase();
+
+  const downloadBackup = async () => {
+    if (backupWorking || deleting) return;
+    setBackupWorking(true);
+    setBackupError(false);
+    setBackupDone(false);
+    try {
+      await saveExportBlob(await fetchAccountData(), 'omi-account-data.json');
+      setBackupDone(true);
+    } catch {
+      setBackupError(true);
+    } finally {
+      setBackupWorking(false);
+    }
+  };
 
   const deleteAccount = async () => {
     if (!confirmed || !acknowledged || deleting) return;
@@ -89,6 +109,21 @@ export function AccountDeletionSection({ email }: { email: string }) {
               <h5 id="account-deletion-external-title">{labels.externalTitle}</h5>
               <p>{labels.external}</p>
               <p>{labels.backups}</p>
+            </section>
+            <section className="account-deletion-backup" aria-labelledby="account-deletion-backup-title">
+              <h5 id="account-deletion-backup-title">{labels.backupTitle}</h5>
+              <p>{labels.backupDescription}</p>
+              <button
+                type="button"
+                className="account-delete-cancel"
+                disabled={backupWorking || deleting}
+                onClick={() => { void downloadBackup(); }}
+              >
+                {backupWorking ? labels.backupWorking : labels.backupAction}
+              </button>
+              <p>{labels.backupRestore}</p>
+              {backupDone ? <p role="status">{labels.backupReady}</p> : null}
+              {backupError ? <p role="alert">{labels.backupError}</p> : null}
             </section>
             <p className="account-deletion-export-note">{labels.beforeDeleting}</p>
             <p>{labels.rights}</p>
