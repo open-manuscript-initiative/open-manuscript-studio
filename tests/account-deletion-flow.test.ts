@@ -8,6 +8,10 @@ const routeSource = readFileSync(
   new URL('../server/src/routes/accountDeletionRoutes.ts', import.meta.url),
   'utf8',
 );
+const accountDeletionUiSource = readFileSync(
+  new URL('../src/components/AccountDeletionSection.tsx', import.meta.url),
+  'utf8',
+);
 const serviceSource = readFileSync(
   new URL('../server/src/services/accountDeletionService.ts', import.meta.url),
   'utf8',
@@ -52,4 +56,33 @@ test('account deletion copy explains retained and external data', () => {
 test('retention copy stays on the reviewed text until legal translations are updated', () => {
   assert.equal(getAccountDeletionCopy('bg').retained, getAccountDeletionCopy('en').retained);
   assert.match(getAccountDeletionCopy('en').retained, /pseudonymized/);
+});
+
+test('account deletion requires an explicit acknowledgement of the detailed consequences', () => {
+  assert.match(accountDeletionUiSource, /labels\.reviewTitle/);
+  assert.match(accountDeletionUiSource, /labels\.deletedAccount/);
+  assert.match(accountDeletionUiSource, /labels\.retainedShared/);
+  assert.match(accountDeletionUiSource, /labels\.retainedIdentity/);
+  assert.match(accountDeletionUiSource, /labels\.external/);
+  assert.match(accountDeletionUiSource, /labels\.backups/);
+  assert.match(accountDeletionUiSource, /labels\.rights/);
+  assert.match(accountDeletionUiSource, /type="checkbox"/);
+  assert.match(accountDeletionUiSource, /checked=\{acknowledged\}/);
+  assert.match(accountDeletionUiSource, /!confirmed \|\| !acknowledged \|\| deleting/);
+  assert.match(accountDeletionUiSource, /setAcknowledged\(false\)/);
+});
+
+test('English, Hungarian and German notices describe both deletion and lawful retention', () => {
+  for (const locale of ['en', 'hu', 'de']) {
+    const copy = getAccountDeletionCopy(locale);
+    for (const key of [
+      'reviewTitle', 'reviewLead', 'deletedTitle', 'deletedAccount',
+      'deletedConnections', 'retainedTitle', 'retainedShared', 'retainedIdentity',
+      'externalTitle', 'external', 'backups', 'beforeDeleting', 'rights', 'acknowledge',
+    ] as const) {
+      assert.ok(copy[key].trim().length > 0, `${locale} missing ${key}`);
+    }
+  }
+  assert.match(getAccountDeletionCopy('hu').retainedIdentity, /álnevesítés/);
+  assert.match(getAccountDeletionCopy('en').retainedIdentity, /Pseudonymization/);
 });
