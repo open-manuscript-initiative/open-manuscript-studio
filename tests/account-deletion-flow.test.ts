@@ -75,6 +75,10 @@ test('account deletion requires an explicit acknowledgement of the detailed cons
   assert.match(accountDeletionUiSource, /labels\.external/);
   assert.match(accountDeletionUiSource, /labels\.backups/);
   assert.match(accountDeletionUiSource, /labels\.rights/);
+  assert.match(accountDeletionUiSource, /labels\\.backupTitle/);
+  assert.match(accountDeletionUiSource, /labels\\.backupRestore/);
+  assert.match(accountDeletionUiSource, /fetchAccountData\\(\\)/);
+  assert.match(accountDeletionUiSource, /saveExportBlob/);
   assert.match(accountDeletionUiSource, /type="checkbox"/);
   assert.match(accountDeletionUiSource, /checked=\{acknowledged\}/);
   assert.match(accountDeletionUiSource, /!confirmed \|\| !acknowledged \|\| deleting/);
@@ -87,7 +91,7 @@ test('English, Hungarian and German notices describe both deletion and lawful re
     for (const key of [
       'reviewTitle', 'reviewLead', 'deletedTitle', 'deletedAccount',
       'deletedConnections', 'deletedPrivate', 'retainedTitle', 'retainedShared', 'retainedIdentity',
-      'externalTitle', 'external', 'backups', 'beforeDeleting', 'rights', 'acknowledge',
+      'externalTitle', 'external', 'backups', 'beforeDeleting', 'rights', 'acknowledge', 'backupTitle', 'backupDescription', 'backupAction', 'backupWorking', 'backupReady', 'backupError', 'backupRestore',
     ] as const) {
       assert.ok(copy[key].trim().length > 0, `${locale} missing ${key}`);
     }
