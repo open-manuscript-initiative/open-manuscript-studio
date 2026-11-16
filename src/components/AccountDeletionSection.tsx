@@ -75,6 +75,7 @@ export function AccountDeletionSection({ email }: { email: string }) {
               <ul>
                 <li>{labels.deletedAccount}</li>
                 <li>{labels.deletedConnections}</li>
+                <li>{labels.deletedPrivate}</li>
               </ul>
             </section>
             <section aria-labelledby="account-deletion-retained-title">
