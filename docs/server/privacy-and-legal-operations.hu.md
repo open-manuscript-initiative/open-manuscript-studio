@@ -88,11 +88,37 @@ megőrzési idő/kritérium, törlés/anonimizálás, jogszerű zárolás és el
 A mentések minden példányát és szolgáltatóját vegye számba. A korábban vállalt,
 például 30 napos korlátot jogszerű módosításáig teljesíteni kell.
 
-A `server` könyvtárban a `npm run privacy:cleanup` csak előnézetet ad a lejárt
-hitelesítési rekordok darabszámáról. Ellenőrzés után
-`npm run privacy:cleanup -- --apply` törli a lejárt munkameneteket, meghívókat,
-jelszó-visszaállítási tokeneket, passkey-kihívásokat és OAuth-állapotokat.
-Nem töröl kéziratot, élő fiókot vagy auditnaplót. Ütemezést a fejlesztés nem telepít.
+A Stúdió technikai auditnaplóira a rekord létrejöttétől számított
+**90 napos** megőrzési alapértelmezés vonatkozik az integrációs műveletek
+(`integration_audit_events`, pl. DeepL bemeneti/kimeneti lenyomatok) és a
+kutatási modulok műveletei (`studio_module_audit_events`) esetén. A központi
+és intézményi adminisztráció jogosultsági műveletei
+(`admin_audit_events`), továbbá az együttműködési meghívások és szerepkörök
+változásainak naplója (`collaboration_audit_events`) **180 napig** tartható
+meg az elhúzódó biztonsági kivizsgálás érdekében. Ezek nem jogszabályban
+előírt egységes időtartamok: az adatkezelőnek az alkalmazott jogalapot,
+szükségességet és időtartamot külön dokumentálnia kell. A lenyomat és
+álnevesítés nem jelent automatikus anonimitást.
+
+A `server` könyvtár `npm run privacy:cleanup` parancsa alapból csak előnézet:
+a lejárt hitelesítések és a fenti négy auditkategória darabszámát mutatja.
+A `npm run privacy:cleanup -- --apply` korlátozott méretű kötegekben törli az
+időhatáron túli rekordokat. A jelentés nem tartalmaz e-mail-címet, IP-címet,
+felhasználói azonosítót vagy szöveglenyomatot. A rutinnak nincs hatása a
+kéziratokra, a bírálati/tudományos eredetkövetésre, a szerkesztői döntések
+eseményeire vagy a külön tárolt fordítási változatokra; ezekre saját, indokolt
+megőrzési szabály szükséges. Jogi igényhez vagy incidenshez szükséges bizonyíték
+külön, dokumentált és hozzáférés-védett megőrzést igényel: a program nem
+tartalmaz automatikus rekordonkénti zárolást.
+
+A migráció futtatása, a próbaüzem, majd az üzemeltető által jóváhagyott napi
+systemd timer telepítése szükséges. A minták:
+`deployment/systemd/omi-privacy-cleanup.service.example` és
+`deployment/systemd/omi-privacy-cleanup.timer.example`. A nem root felhasználót,
+a Node elérési útját és az API-val azonos adatbázis-konfigurációt előzetesen
+ellenőrizni kell; a GitHub-módosítás **nem telepít és nem indít el éles
+ütemezést**. A 7 napos systemd/Plesk rotáció a DB auditadatait nem törli,
+ezért külön ellenőrizendő.
 
 Mentés visszaállításakor az éles forgalom megnyitása előtt újra kell érvényesíteni
 az időközbeni törléseket és korlátozásokat, és érvényteleníteni az elavult belépéseket.
