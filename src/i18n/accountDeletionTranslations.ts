@@ -12,6 +12,19 @@ export interface AccountDeletionCopy {
   delete: string;
   deleting: string;
   blocked: string;
+  reviewTitle: string;
+  reviewLead: string;
+  deletedTitle: string;
+  deletedAccount: string;
+  deletedConnections: string;
+  retainedTitle: string;
+  retainedShared: string;
+  retainedIdentity: string;
+  externalTitle: string;
+  backups: string;
+  beforeDeleting: string;
+  rights: string;
+  acknowledge: string;
 }
 
 const copy: Record<string, AccountDeletionCopy> = {
@@ -28,6 +41,19 @@ const copy: Record<string, AccountDeletionCopy> = {
     delete: 'Permanently delete account',
     deleting: 'Deleting account…',
     blocked: 'Account deletion could not be completed.',
+    reviewTitle: "Before you permanently delete your account",
+    reviewLead: "Please review the effects on your data and manuscripts. Deleting the account cannot be undone.",
+    deletedTitle: "Deleted from the active Studio service",
+    deletedAccount: "Your sign-in account, profile details (name, email, affiliation, ORCID), password credentials, linked identities and active sessions.",
+    deletedConnections: "Stored integration credentials, cloud-connection metadata, cloud-backup index entries and local direct-submission records.",
+    retainedTitle: "Shared scholarly materials that may remain",
+    retainedShared: "Co-authored manuscripts, versions, reviews, comments and editorial history may be retained where necessary to protect collaborators' work and the integrity of the scholarly record.",
+    retainedIdentity: "The account is shown as a deleted participant, but names or identifying information may still appear in manuscript metadata, versions, reviews or comments. Pseudonymization does not guarantee anonymity.",
+    externalTitle: "Copies outside this Studio server",
+    backups: "Server backups are governed by the operator's published retention schedule; deletion may not remove backup copies immediately. Restored backups must have prior deletions reapplied.",
+    beforeDeleting: "Export any documents you need first. You will lose access to this account and its server-side work after deletion.",
+    rights: "You can contact the selected server's data controller to request a review of retained personal data or exercise applicable erasure, restriction and objection rights. Any exception is assessed individually.",
+    acknowledge: "I have read and understood what will be deleted, what may remain in shared scholarly records, and how to request a further privacy review.",
   },
   hu: {
     title: 'Fiók törlése',
@@ -42,6 +68,19 @@ const copy: Record<string, AccountDeletionCopy> = {
     delete: 'Fiók végleges törlése',
     deleting: 'Fiók törlése…',
     blocked: 'A fiók törlése nem hajtható végre.',
+    reviewTitle: "Mielőtt véglegesen törlöd a fiókodat",
+    reviewLead: "Olvasd át, mi történik az adataiddal és kézirataiddal. A fióktörlés nem vonható vissza.",
+    deletedTitle: "Az aktív Stúdió-szolgáltatásból törlődő adatok",
+    deletedAccount: "A bejelentkezési fiók, a profiladatok (név, e-mail-cím, intézmény, ORCID), a jelszóhoz tartozó hitelesítő adatok, a kapcsolt identitások és az aktív munkamenetek.",
+    deletedConnections: "A tárolt integrációs hitelesítő adatok, felhőkapcsolati metaadatok, a felhőmentések indexbejegyzései és a közvetlen beküldések helyi nyilvántartása.",
+    retainedTitle: "A közös tudományos munkából megmaradható adatok",
+    retainedShared: "A közös kéziratok, verziók, bírálatok, megjegyzések és szerkesztési előzmények megmaradhatnak, ha ez a szerzőtársak munkájának vagy a tudományos dokumentum hitelességének védelméhez szükséges.",
+    retainedIdentity: "A fiók törölt résztvevőként jelenhet meg, de a kéziratok metaadataiban, korábbi verzióiban, bírálataiban vagy megjegyzéseiben név és más azonosító adat is maradhat. Az álnevesítés nem feltétlenül jelent anonimizálást.",
+    externalTitle: "A Stúdió szerverén kívüli példányok",
+    backups: "A szerver biztonsági mentéseire az üzemeltető közzétett megőrzési szabályai vonatkoznak; a törlés nem feltétlenül távolítja el azonnal a mentett példányokat. Visszaállításkor a korábbi törléseket újra érvényesíteni kell.",
+    beforeDeleting: "A megtartani kívánt dokumentumokat előbb exportáld. A törlés után nem férsz hozzá ehhez a fiókhoz és a szerveren tárolt munkáidhoz.",
+    rights: "A kiválasztott szerver adatkezelőjétől külön kérheted a megmaradó személyes adatok felülvizsgálatát, illetve gyakorolhatod a törléshez, korlátozáshoz és tiltakozáshoz való jogaidat. A kivételeket egyedileg kell elbírálni.",
+    acknowledge: "Elolvastam és megértettem, hogy mely adatok törlődnek, melyek maradhatnak meg a közös tudományos munkában, és hogyan kérhetem a további adatvédelmi felülvizsgálatot.",
   },
   de: {
     title: 'Konto löschen',
@@ -56,6 +95,19 @@ const copy: Record<string, AccountDeletionCopy> = {
     delete: 'Konto endgültig löschen',
     deleting: 'Konto wird gelöscht…',
     blocked: 'Das Konto konnte nicht gelöscht werden.',
+    reviewTitle: "Bevor Sie Ihr Konto endgültig löschen",
+    reviewLead: "Bitte lesen Sie, was mit Ihren Daten und Manuskripten geschieht. Die Kontolöschung kann nicht rückgängig gemacht werden.",
+    deletedTitle: "Aus dem aktiven Studio-Dienst gelöschte Daten",
+    deletedAccount: "Anmeldekonto, Profildaten (Name, E-Mail, Zugehörigkeit, ORCID), Passwort-Zugangsdaten, verknüpfte Identitäten und aktive Sitzungen.",
+    deletedConnections: "Gespeicherte Integrationszugänge, Cloud-Verbindungsmetadaten, Cloud-Backup-Indexeinträge und lokale Einreichungsdatensätze.",
+    retainedTitle: "Gemeinsame wissenschaftliche Inhalte, die erhalten bleiben können",
+    retainedShared: "Gemeinsame Manuskripte, Versionen, Gutachten, Kommentare und redaktionelle Verläufe können erhalten bleiben, soweit dies zum Schutz der Arbeit anderer und der wissenschaftlichen Integrität erforderlich ist.",
+    retainedIdentity: "Das Konto kann als gelöschte mitwirkende Person erscheinen; Namen und identifizierende Daten können jedoch in Manuskriptmetadaten, Versionen, Gutachten oder Kommentaren verbleiben. Pseudonymisierung garantiert keine Anonymität.",
+    externalTitle: "Kopien außerhalb dieses Studio-Servers",
+    backups: "Für Server-Backups gelten die veröffentlichten Aufbewahrungsregeln des Betreibers; ihre Löschung erfolgt möglicherweise nicht sofort. Bei einer Wiederherstellung müssen frühere Löschungen erneut angewendet werden.",
+    beforeDeleting: "Exportieren Sie zunächst alle benötigten Dokumente. Nach der Löschung verlieren Sie den Zugriff auf das Konto und dessen serverseitige Arbeiten.",
+    rights: "Sie können beim Verantwortlichen des gewählten Servers die Prüfung verbleibender personenbezogener Daten sowie gegebenenfalls Löschung, Einschränkung und Widerspruch beantragen. Ausnahmen werden einzeln geprüft.",
+    acknowledge: "Ich habe gelesen und verstanden, welche Daten gelöscht werden, was in gemeinsamen wissenschaftlichen Unterlagen verbleiben kann und wie ich eine weitere Datenschutzprüfung beantragen kann.",
   },
 };
 
@@ -64,5 +116,5 @@ export function getAccountDeletionCopy(locale: string): AccountDeletionCopy {
   const translated = applyReturnedSupplementalOverlay(locale, 'accountDeletion', current, copy.en);
   // Historical returned translations predate the retention/legal correction.
   // Keep these statements on the reviewed EN/HU/DE text until retranslated.
-  return { ...translated, retained: current.retained, confirmHint: current.confirmHint };
+  return { ...translated, retained: current.retained, confirmHint: current.confirmHint, reviewTitle: current.reviewTitle, reviewLead: current.reviewLead, deletedTitle: current.deletedTitle, deletedAccount: current.deletedAccount, deletedConnections: current.deletedConnections, retainedTitle: current.retainedTitle, retainedShared: current.retainedShared, retainedIdentity: current.retainedIdentity, externalTitle: current.externalTitle, backups: current.backups, beforeDeleting: current.beforeDeleting, rights: current.rights, acknowledge: current.acknowledge };
 }
