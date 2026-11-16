@@ -126,6 +126,32 @@ Ehhez minimális, hozzáférés-védett és határidővel törlendő nyilvántar
 A próbát szintetikus fiókkal végezze. Külső OJS/OMP- és felhőpéldányokat a megfelelő
 adatkezelő eljárásában kell rendezni.
 
+### Igazolt központi üzemeltetési állapot (2026. november 16.)
+
+A `studio.openmanuscript.org` központi szerveren az üzemeltető
+2026. november 16-án **sikeresen futtatta** a
+`omi-privacy-cleanup.service` szolgáltatást `apply` módban
+(12:20:49 UTC / 13:20:49 CET). A systemd naplóban
+`Deactivated successfully` szerepel. A négy technikai auditkategóriában
+nem volt lejárt rekord, ezért **`backlog: false`**; lejárt hitelesítési
+rekordok feldolgozása megtörtént.
+
+A `omi-privacy-cleanup.timer` állapota igazoltan **`enabled`** és
+**`active`**. A következő előre jelzett futás
+**2026. november 17., 03:24:13 UTC / 04:24:13 CET**.
+A képernyőképeken a `LAST` mező még `-`:
+az **első önálló, timer által indított futás sikeressége
+külön ellenőrzendő**. A systemd/Plesk naplórotációt ettől
+függetlenül kell értékelni.
+
+A hitelesített üzemeltetési jegyzőkönyv:
+[Adatvédelmi takarítás – 2026-11-16](privacy-retention-production-activation-2026-11-16.md).
+A jegyzőkönyv az üzemeltető képernyőképein alapul;
+a PostgreSQL-mentések külön visszaállítási próbája,
+az éles adatkezelői JSON megőrzési szövege és az első
+ütemezett futás még **nem igazolt**. A dokumentálás nem
+módosítja az éles rendszer konfigurációját.
+
 ## Adatvédelmi incidens
 
 Legyen kijelölt felelős és helyettes. Minden személyesadat-incidenst dokumentálni

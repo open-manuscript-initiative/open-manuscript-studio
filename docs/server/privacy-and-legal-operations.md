@@ -200,6 +200,27 @@ specific evidence lawfully before turning on the timer. An actual 7-day
 systemd/Plesk rotation requires independent verification on each host, as
 application DB retention is not controlled by either rotation setting.
 
+### Verified central Studio activation (16 November 2026)
+
+The operator supplied terminal evidence that the central
+`studio.openmanuscript.org` installation ran
+`omi-privacy-cleanup.service` successfully in destructive
+`apply` mode at **2026-11-16 12:20:49 UTC**. No expired technical
+audit records remained (`backlog: false`); expired authentication
+records were processed. The `omi-privacy-cleanup.timer` was
+confirmed **enabled** and **active**, with its next scheduled start
+at **2026-11-17 03:24:13 UTC** (**04:24:13 CET**).
+
+The operator evidence is recorded in
+[Central Studio privacy retention activation](privacy-retention-production-activation-2026-11-16.md).
+The screenshot's `LAST=-` means the **first unattended
+timer-triggered run has not yet been observed**. Likewise,
+a verified full database restore, backup/retention register and
+live controller notice review are not established by these
+screenshots. This status pertains only to the central service;
+the general installation instructions above still require
+separate operator activation for each institutional deployment.
+
 ## 5. Personal-data breach procedure
 
 Assign an incident owner, deputy and monitored security/privacy contacts. Detect,
