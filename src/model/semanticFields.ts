@@ -173,6 +173,22 @@ export function validateSemanticFields(
   return issues;
 }
 
+/**
+ * The canonical manuscript-level funding statement. Its meaning and content
+ * remain independent of the publication profile's display preference.
+ */
+export function getManuscriptFundingStatement(
+  manuscript: Pick<OmiManuscriptState, 'semanticFields'>,
+): string {
+  const field = (manuscript.semanticFields ?? []).find((item) =>
+    item.role === 'funding-statement' &&
+    (item.scope ?? 'manuscript') === 'manuscript' &&
+    typeof item.value === 'string' &&
+    item.value.trim().length > 0,
+  );
+  return typeof field?.value === 'string' ? field.value.trim() : '';
+}
+
 export function normalizeSemanticRole(value: string): string {
   return value
     .trim()
