@@ -99,6 +99,22 @@ async function pseudonymizeStudioPrincipal(userId: string): Promise<void> {
   const unusablePasswordHash = `deleted:${randomBytes(32).toString('hex')}`;
 
   await prisma.$transaction([
+    // Private, account-scoped working data is not part of the shared scholarly record.
+    prisma.personalReferenceRecord.deleteMany({ where: { userId } }),
+    prisma.studioModulePreference.deleteMany({ where: { userId } }),
+    prisma.recognitionExecution.deleteMany({ where: { userId } }),
+    prisma.plainDocument.deleteMany({ where: { userId } }),
+    // Collaboration messages must not continue exposing a denormalized sender name.
+    // Keep the contribution text for collaborators but sever its profile identity.
+    prisma.collaborationMessage.updateMany({
+      where: { senderUserId: userId },
+      data: { senderUserId: null, senderName: 'Former contributor' },
+    }),
+    // Preserve the module event type for integrity, not IP/identifying audit details.
+    prisma.studioModuleAuditEvent.updateMany({
+      where: { actorUserId: userId },
+      data: { actorUserId: null, ipAddress: null, details: null },
+    }),
     prisma.directSubmission.deleteMany({ where: { userId } }),
     prisma.cloudBackup.deleteMany({ where: { userId } }),
     prisma.cloudConnection.deleteMany({ where: { userId } }),
