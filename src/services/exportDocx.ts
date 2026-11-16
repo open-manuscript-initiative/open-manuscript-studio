@@ -44,6 +44,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'DOCX');
   const warnings: string[] = [...metadataConversionWarnings(metadataConversion), ...semanticLossWarnings(semanticLosses)];
   const body: string[] = [];
+  const localNoteLayout = profile.rules.notes.localNotePlacement ?? 'inline';
   const indexEntriesByBlock = collectIndexEntriesByBlock(manuscript.indexEntries ?? []);
   const annotationsById = new Map(
     manuscript.annotations.filter(isNoteAnnotation).map((annotation) => [annotation.id, annotation]),
@@ -85,7 +86,15 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
             warnings.push(`DOCX note anchor ${noteId} has no matching OMI note.`);
             return undefined;
           }
-          const kind = getNoteKind(note) === 'endnote' ? 'endnote' : 'footnote';
+          const semanticKind = getNoteKind(note);
+          if (semanticKind === 'author-note' && localNoteLayout !== 'with-notes') {
+            referencedNoteIds.add(noteId);
+            if (localNoteLayout === 'margin') {
+              warnings.push(`DOCX margin placement for local note ${noteId} is not supported; the note is preserved inline in parentheses.`);
+            }
+            return { text: ` (${note.body})`, semantics: [] };
+          }
+          const kind = semanticKind === 'endnote' ? 'endnote' : 'footnote';
           let id = noteReferenceIds[kind].get(noteId);
           if (id === undefined) {
             id = noteReferenceIds[kind].size + 1;
@@ -224,7 +233,7 @@ function richParagraph(runs: readonly WordInlinePart[], suffix = ''): string {
 
 type WordNoteKind = 'footnote' | 'endnote';
 type WordInlinePart = OmiInlineRun | { kind: WordNoteKind; id: number };
-type WordNoteReference = { kind: WordNoteKind; id: number };
+type WordNoteReference = { kind: WordNoteKind; id: number } | OmiInlineRun;
 
 function wordNoteReference(kind: WordNoteKind, id: number): string {
   const element = kind === 'footnote' ? 'footnoteReference' : 'endnoteReference';
