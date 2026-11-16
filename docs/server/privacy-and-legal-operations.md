@@ -152,14 +152,53 @@ processor propagation and evidence of an executed job. Include access/auth logs,
 review history, invitations, OAuth states, exports, support cases, audit events and
 backups. No universal statutory log-retention period is assumed.
 
-From `server`, `npm run privacy:cleanup` is **dry-run** and prints only counts of
-expired authentication records. After reviewing counts and recovery needs,
-`npm run privacy:cleanup -- --apply` deletes only expired sessions, invitations,
-password reset tokens, passkey challenges and OAuth states in the Identity and
-legacy Studio stores. It never removes live accounts, manuscripts or audit history.
-Arrange an operator-reviewed timer/cron only after acceptance; this PR installs none.
-Failures may leave partial progress and a later rerun is safe. Review other data
-classes separately rather than treating this utility as full retention automation.
+The Studio implements a **documented default technical audit schedule**, counted
+from each record's creation (`created_at`):
+
+| Database record | Default maximum age | Purpose |
+| --- | --- | --- |
+| `integration_audit_events` (DeepL/AI and integration operation digests) | **90 days** | Technical troubleshooting, abuse/incident investigation and external-operation traceability |
+| `studio_module_audit_events` (module capability operations, possible IP/details) | **90 days** | Security and module operation diagnostics |
+| `admin_audit_events` (central/institutional privilege and API actions) | **180 days** | Delayed investigation of privileged changes and misuse |
+| `collaboration_audit_events` (access/invitation/role changes) | **180 days** | Investigation of collaboration access and privilege changes |
+
+The 90/180-day values are **project defaults, not GDPR-prescribed periods**.
+Before enablement, each controller must document purpose, legal basis, necessity,
+access restrictions, any longer legal preservation duties and the rationale
+for these limits. Do not assert that a pseudonymized or hashed log is anonymous.
+The generic cleanup deliberately **does not** purge scholarly/editorial
+submission events, review evidence, manuscripts, user-produced translation
+variants or immutable publication provenance: each needs a separate retention
+assessment. Exceptions such as legally necessary incident evidence require
+documented, access-restricted preservation outside the ordinary purge; this
+implementation does not provide an automatic per-record legal-hold switch.
+
+From `server`, `npm run privacy:cleanup` is **dry-run by default** and reports
+counts and cutoff dates for expired authentication records **and technical audit
+events**; it contains no event IDs, email addresses, IP addresses or digests.
+After reviewing the output, `npm run privacy:cleanup -- --apply` purges expired
+authentication credentials and the technical audit classes above in bounded
+batches. The job is safe to rerun; failures may leave partial progress. A
+nonzero exit status with an audit backlog indicates more batches are needed.
+It cannot alter the journal's scholarly records.
+
+Apply the accompanying Prisma migration (created-at indexes) before activating
+the task. Schedule only after an operator-approved dry-run, legal review,
+backup/restore acceptance and access-control check. Sample daily systemd
+service and timer templates are provided at
+`deployment/systemd/omi-privacy-cleanup.service.example` and
+`deployment/systemd/omi-privacy-cleanup.timer.example`. Replace the example
+non-root service user, verify the database/environment and Node executable,
+install both units under `/etc/systemd/system/`, run `systemctl daemon-reload`,
+manually exercise the dry-run, then enable
+`systemctl enable --now omi-privacy-cleanup.timer`. Verify execution with
+`systemctl list-timers` and
+`journalctl -u omi-privacy-cleanup.service --no-pager`.
+**The GitHub PR does not install or activate these units on production.**
+If an incident/legal claim requires a longer term, assess and preserve its
+specific evidence lawfully before turning on the timer. An actual 7-day
+systemd/Plesk rotation requires independent verification on each host, as
+application DB retention is not controlled by either rotation setting.
 
 ## 5. Personal-data breach procedure
 
