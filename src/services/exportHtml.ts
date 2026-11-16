@@ -10,6 +10,7 @@ import {
 } from '../model/crossReferences.ts';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering.ts';
 import { getBibliographyRecords } from '../model/citations.ts';
+import { getManuscriptFundingStatement } from '../model/semanticFields.ts';
 import { buildNoteNumberMap, getNoteKind, sortNotesByDocumentOrder } from '../model/notes.ts';
 import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText.ts';
 import { contributorNameParts } from '../model/contributorName.ts';
@@ -285,6 +286,15 @@ function renderFront(
   labels: ReturnType<typeof localizedLabels>,
 ): string {
   const { context } = state;
+  const funding = context.profile.rules.notes.fundingStarNote
+    ? getManuscriptFundingStatement(state.manuscript)
+    : '';
+  const starReference = funding
+    ? '<sup class="funding-star-reference"><a href="#funding-star-note" role="doc-noteref" aria-label="Funding statement">*</a></sup>'
+    : '';
+  const fundingNote = funding
+    ? `<aside id="funding-star-note" class="article-funding-star-note" role="doc-footnote"><span class="funding-star-marker" aria-hidden="true">*</span> ${escapeHtml(funding)}</aside>`
+    : '';
   const motto = context.motto
     ? `<blockquote class="article-motto motto-${escapeAttribute(
         context.frontMatterRules.motto.alignment,
@@ -311,10 +321,11 @@ function renderFront(
 
   return `<header class="article-front">\n${indent(
     [
-      `<h1 id="article-title">${escapeHtml(context.title)}</h1>`,
+      `<h1 id="article-title">${escapeHtml(context.title)}${starReference}</h1>`,
       subtitle,
       motto,
       contributors,
+      fundingNote,
       abstract,
       keywords,
     ]
@@ -944,6 +955,9 @@ a { color: inherit; text-decoration-thickness: .08em; text-underline-offset: .12
 .omi-scholarly-article { max-width: 76rem; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
 .article-front { text-align: center; border-bottom: 1px solid #bbb; padding-bottom: 2rem; margin-bottom: 2rem; }
 .article-front h1 { font-size: 2.15em; line-height: 1.15; margin: 0 0 .55em; }
+.funding-star-reference { font-size: 0.55em; margin-left: 0.15em; vertical-align: super; }
+.article-funding-star-note { max-width: 58rem; margin: 0.9rem auto 1.25rem; text-align: left; font-size: 0.85em; line-height: 1.5; }
+.funding-star-marker { margin-right: 0.4em; font-weight: bold; }
 .article-subtitle { font-size: 1.28em; margin: -.2em 0 1.2em; }
 .article-motto { max-width: 38rem; margin: 1.4rem auto; border: 0; padding: 0; }
 .motto-left { text-align: left; } .motto-center { text-align: center; } .motto-right { text-align: right; }
