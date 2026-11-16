@@ -83,6 +83,14 @@ export function PublisherProfileEditor({
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
+  function updateLocalNotePlacement(value: NonNullable<OmiPublicationProfile['rules']['notes']['localNotePlacement']>) {
+    if (protectedProfile) return;
+    setDraft((current) => ({
+      ...current,
+      rules: { ...current.rules, notes: { ...current.rules.notes, localNotePlacement: value } },
+    }));
+  }
+
   function updateCitationRule(key: 'bibliographyStyle' | 'noteFirstStyle' | 'noteSubsequentStyle', value: string) {
     if (protectedProfile) return;
     setDraft((current) => ({
@@ -352,6 +360,17 @@ export function PublisherProfileEditor({
           <label><span>{labels.bibliographyStyle}</span><select value={draft.rules.citations.bibliographyStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('bibliographyStyle', e.target.value)}>{citationStyles.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
           <label><span>{labels.firstNoteStyle}</span><select value={draft.rules.citations.noteFirstStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('noteFirstStyle', e.target.value)}>{CITATION_STYLE_CATALOG.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
           <label><span>{labels.subsequentNoteStyle}</span><select value={draft.rules.citations.noteSubsequentStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('noteSubsequentStyle', e.target.value)}>{CITATION_STYLE_CATALOG.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
+          <label>
+            <span>{locale === 'hu' ? 'Szövegközi jegyzet tördelése' : 'Local note layout'}</span>
+            <select
+              value={draft.rules.notes.localNotePlacement ?? 'inline'}
+              onChange={(e) => updateLocalNotePlacement(e.target.value as NonNullable<OmiPublicationProfile['rules']['notes']['localNotePlacement']>)}
+            >
+              <option value="margin">{locale === 'hu' ? 'Lapszélen (számozatlan)' : 'Margin (unnumbered)'}</option>
+              <option value="inline">{locale === 'hu' ? 'Zárójelben (számozatlan)' : 'Inline parentheses (unnumbered)'}</option>
+              <option value="with-notes">{locale === 'hu' ? 'Láb-/végjegyzetek között (számozott)' : 'With footnotes/endnotes (numbered)'}</option>
+            </select>
+          </label>
           <label><span>{labels.website}</span><input type="url" value={draft.branding?.website ?? ''} onChange={(e) => updateBranding('website', e.target.value)} /></label>
           <label><span>{labels.logoAlt}</span><input value={draft.branding?.logoAlt ?? ''} onChange={(e) => updateBranding('logoAlt', e.target.value)} /></label>
           <label><span>{labels.primaryColor}</span><input type="color" value={draft.branding?.primaryColor ?? '#6d2130'} onChange={(e) => updateBranding('primaryColor', e.target.value)} /></label>
