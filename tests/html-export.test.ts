@@ -3,6 +3,8 @@ import test from 'node:test';
 
 import { createAssetMetadata } from '../src/model/assets.ts';
 import { createCrossReference } from '../src/model/crossReferences.ts';
+import { getPublicationProfile } from '../src/model/publicationProfile.ts';
+import { createSemanticField } from '../src/model/semanticFields.ts';
 import {
   commitManuscriptRevision,
   extractManuscriptState,
@@ -42,6 +44,31 @@ test('renders deterministic semantic HTML5 with front matter and traceability me
   );
   assert.match(first.html, /name="omi-head-revision"/);
   assert.match(first.html, /<section id="sec-section-one"/);
+});
+
+test('publisher style selectively projects funding as a nonnumeric opening star note', () => {
+  const manuscript = createTestManuscript();
+  manuscript.semanticFields = [createSemanticField({
+    role: 'funding-statement',
+    label: 'Funding statement',
+    valueType: 'rich-text',
+    value: 'Grant <42> & Research Fund',
+  })];
+  const profile = structuredClone(getPublicationProfile('omi-generic-scholarly')!);
+
+  const disabled = renderHtmlArticle(manuscript, profile).html;
+  assert.doesNotMatch(disabled, /<sup class="funding-star-reference"|<aside id="funding-star-note"/);
+
+  profile.rules.notes.fundingStarNote = true;
+  const enabled = renderHtmlArticle(manuscript, profile).html;
+  assert.match(enabled, /id="article-title">[^<]+<sup class="funding-star-reference">/);
+  assert.match(enabled, /role="doc-noteref" aria-label="Funding statement">\*<\/a>/);
+  assert.match(enabled, /id="funding-star-note"[^>]*role="doc-footnote"/);
+  assert.match(enabled, /Grant &lt;42&gt; &amp; Research Fund/);
+  assert.equal((enabled.match(/id="funding-star-note"/g) ?? []).length, 1);
+
+  manuscript.semanticFields = [];
+  assert.doesNotMatch(renderHtmlArticle(manuscript, profile).html, /<sup class="funding-star-reference"|<aside id="funding-star-note"/);
 });
 
 test('preserves given and family author names as separate semantic spans', () => {

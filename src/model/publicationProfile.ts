@@ -67,6 +67,8 @@ export interface OmiPublicationProfileCitationRules {
 export interface OmiPublicationProfileNoteRules {
   placement: 'footnotes' | 'endnotes' | 'interactive';
   restartNumbering: 'document' | 'section';
+  /** Present a non-numbered * funding note in the exported front matter. */
+  fundingStarNote?: boolean;
 }
 
 export interface OmiPublicationProfileObjectRules {

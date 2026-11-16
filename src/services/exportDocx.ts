@@ -11,6 +11,7 @@ import {
 } from '../model/inlineSemantics';
 import type { OmiIndexEntry } from '../model/indexing';
 import { getNoteKind, isNoteAnnotation } from '../model/notes';
+import { getManuscriptFundingStatement } from '../model/semanticFields';
 import { createNoteBodyDocument, type NoteJsonNode } from '../model/noteRichText';
 import { contributorNameParts } from '../model/contributorName';
 import { buildPublicationRenderingContext, type OmiRenderedContributor } from '../model/publicationRendering';
@@ -44,6 +45,9 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'DOCX');
   const warnings: string[] = [...metadataConversionWarnings(metadataConversion), ...semanticLossWarnings(semanticLosses)];
   const body: string[] = [];
+  const fundingStatement = profile.rules.notes.fundingStarNote
+    ? getManuscriptFundingStatement(manuscript)
+    : '';
   const indexEntriesByBlock = collectIndexEntriesByBlock(manuscript.indexEntries ?? []);
   const annotationsById = new Map(
     manuscript.annotations.filter(isNoteAnnotation).map((annotation) => [annotation.id, annotation]),
@@ -53,10 +57,17 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const noteReferenceIds = { footnote: new Map<string, number>(), endnote: new Map<string, number>() };
   const referencedNoteIds = new Set<string>();
 
-  body.push(paragraph(context.title, 'Title'));
+  body.push(paragraph(
+    context.title, 'Title',
+    fundingStatement ? '<w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:t>*</w:t></w:r>' : '',
+  ));
   if (context.subtitle) body.push(paragraph(context.subtitle, 'Subtitle'));
   if (context.contributors.length) {
     body.push(authorParagraph(context.contributors));
+  }
+  // Kept outside native Word footnotes: the following numbered footnote remains 1.
+  if (fundingStatement) {
+    body.push(paragraph(`* ${fundingStatement}`, 'FundingNote'));
   }
   if (context.abstract) {
     body.push(paragraph(localizedLabel(context.locale, 'abstract'), 'Heading1'));
@@ -149,7 +160,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
 <w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/><w:unhideWhenUsed/></w:style>
-${style('Title', 'Title', 32, true)}${style('Subtitle', 'Subtitle', 24, false)}${style('Author', 'Author', 22, false)}
+${style('Title', 'Title', 32, true)}${style('Subtitle', 'Subtitle', 24, false)}${style('Author', 'Author', 22, false)}${noteParagraphStyle('FundingNote', 'funding note')}
 ${noteParagraphStyle('FootnoteText', 'footnote text')}${noteParagraphStyle('EndnoteText', 'endnote text')}
 ${characterStyle('FootnoteReference', 'footnote reference', '<w:vertAlign w:val="superscript"/>')}${characterStyle('EndnoteReference', 'endnote reference', '<w:vertAlign w:val="superscript"/>')}
 ${[1,2,3,4,5,6].map((level) => headingStyle(level)).join('')}
