@@ -41,7 +41,7 @@ const LABELS: Record<string, Record<string, string>> = {
 };
 
 export function CustomExportPanel() {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const copy = LABELS[locale] ?? LABELS.en;
   const [template, setTemplate] = useState<CustomExportTemplate>(() => defaultCustomExportTemplate(manuscript));
@@ -114,7 +114,7 @@ export function CustomExportPanel() {
       <div className="studio-settings-card-header"><label><input type="checkbox" checked={block.enabled} onChange={(event) => updateBlock(block.id, { enabled: event.target.checked })} /> <strong>{blockLabel(copy, block.kind)}{block.language ? ` (${block.language})` : ''}</strong></label><div className="studio-tool-actions"><button type="button" disabled={index === 0} onClick={() => moveBlock(block.id, -1)}>↑ {copy.moveUp}</button><button type="button" disabled={index === template.blocks.length - 1} onClick={() => moveBlock(block.id, 1)}>↓ {copy.moveDown}</button>{(block.kind === 'abstract' || block.kind === 'keywords') ? <button type="button" onClick={() => removeBlock(block.id)}>{copy.remove}</button> : null}</div></div>
       <div className="studio-manuscript-fields"><TypographyEditor typography={block.typography} copy={copy} onChange={(typography) => updateBlock(block.id, { typography })} />
         {(block.kind === 'abstract' || block.kind === 'keywords') ? <label><span>{copy.language}</span><select value={block.language ?? manuscript.locale} onChange={(event) => updateBlock(block.id, { language: event.target.value })}>{languages.map((language) => <option key={language} value={language}>{language}</option>)}</select></label> : null}
-        {block.kind === 'notes' ? <label><span>{copy.noteMode}</span><select value={block.noteMode ?? 'all'} onChange={(event) => updateBlock(block.id, { noteMode: event.target.value as CustomExportNoteMode })}><option value="all">{tCatalog("/uncataloguedUi/components-customexportpanel/all-6a72085")}</option><option value="footnote">Footnote</option><option value="endnote">Endnote</option><option value="author-note">Author note</option></select></label> : null}
+        {block.kind === 'notes' ? <label><span>{copy.noteMode}</span><select value={block.noteMode ?? 'all'} onChange={(event) => updateBlock(block.id, { noteMode: event.target.value as CustomExportNoteMode })}><option value="all">{tCatalog("/uncataloguedUi/components-customexportpanel/all-6a72085")}</option><option value="footnote">Footnote</option><option value="endnote">Endnote</option><option value="author-note">{t('notes.authorNote')}</option></select></label> : null}
         {block.kind === 'bibliography' ? <label><span>{copy.bibliographyStyle}</span><select value={block.bibliographyStyle ?? manuscript.citationStyle ?? 'apa-7'} onChange={(event) => updateBlock(block.id, { bibliographyStyle: event.target.value as CustomExportBlock['bibliographyStyle'] })}>{CITATION_STYLE_CATALOG.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label> : null}
       </div>
     </div>)}</div>

@@ -16,7 +16,7 @@ import { renderBibliography, renderCitationCluster } from '../model/cslRendering
 import { getBibliographyRecords } from '../model/citations';
 import { getManuscriptFundingStatement } from '../model/semanticFields';
 import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText';
-import { buildNoteNumberMap } from '../model/notes';
+import { buildNoteNumberMap, getNoteKind } from '../model/notes';
 import { renderLatexMath } from '../model/equationRendering';
 import {
   buildPublicationRenderingContext,
@@ -137,7 +137,7 @@ export function renderJatsArticle(
     annotationMap: new Map(
       manuscript.annotations.map((annotation) => [annotation.id, annotation]),
     ),
-    noteLabels: collectNoteLabels(manuscript),
+    noteLabels: collectNoteLabels(manuscript, profile.rules.notes.localNotePlacement === 'with-notes'),
     assetMap: new Map((manuscript.assets ?? []).map((asset) => [asset.id, asset])),
   };
 
@@ -717,7 +717,11 @@ function renderNoteMarker(node: JsonNode, state: RenderState): string {
     return '<named-content content-type="unresolved-note">[note]</named-content>';
   }
 
-  const label = stringAttr(node.attrs, 'label') || state.noteLabels.get(annotation.id) || '';
+  const unnumberedLocal = getNoteKind(annotation) === 'author-note' &&
+    state.context.profile.rules.notes.localNotePlacement !== 'with-notes';
+  const label = unnumberedLocal
+    ? '✧'
+    : (state.noteLabels.get(annotation.id) || stringAttr(node.attrs, 'label') || '');
   return `<xref ref-type="fn" rid="${xmlId('fn', annotation.id)}">${escapeXml(label)}</xref>`;
 }
 
@@ -910,9 +914,11 @@ function renderFootnoteGroup(state: RenderState): string {
         );
         for (const citation of annotation.noteCitations ?? []) previouslyCitedTargets.add(citation.target);
         const noteBody = noteBodyPlainText(noteDocument) || annotation.body;
-        const label = state.noteLabels.get(annotation.id) || String(index + 1);
-        const fnType = annotation.noteKind === 'author-note' ? 'author' : 'other';
-        return `<fn id="${xmlId('fn', annotation.id)}" fn-type="${fnType}"><label>${escapeXml(label)}</label><p>${escapeXml(noteBody)}</p></fn>`;
+        const unnumberedLocal = getNoteKind(annotation) === 'author-note' &&
+          state.context.profile.rules.notes.localNotePlacement !== 'with-notes';
+        const label = unnumberedLocal ? '' : (state.noteLabels.get(annotation.id) || String(index + 1));
+        const fnType = getNoteKind(annotation) === 'author-note' ? 'author' : 'other';
+        return `<fn id="${xmlId('fn', annotation.id)}" fn-type="${fnType}">${label ? `<label>${escapeXml(label)}</label>` : ''}<p>${escapeXml(noteBody)}</p></fn>`;
       })
       .join('\n'),
     1,
@@ -1052,9 +1058,9 @@ function xmlIdForTarget(target: OmiCrossReferenceTarget): string {
   return xmlId('fig', target.id);
 }
 
-function collectNoteLabels(manuscript: OmiManuscript): Map<string, string> {
+function collectNoteLabels(manuscript: OmiManuscript, includeLocalNotes: boolean): Map<string, string> {
   return new Map(
-    [...buildNoteNumberMap(manuscript)].map(([noteId, number]) => [
+    [...buildNoteNumberMap(manuscript, undefined, { includeLocalNotes })].map(([noteId, number]) => [
       noteId,
       String(number),
     ]),

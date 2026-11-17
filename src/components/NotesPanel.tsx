@@ -5,6 +5,7 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import {
   getNoteKind,
+  getNoteNumber,
   sortNotesByDocumentOrder,
 } from '../model/notes';
 import { NoteEditorCard } from './NoteEditorCard';
@@ -46,7 +47,7 @@ export function NotesPanel({ onNavigate }: NotesPanelProps) {
         </div>
       ) : (
         <div className="omi-notes-list">
-          {notes.map((note, index) => {
+          {notes.map((note) => {
             if (note.id === activeNoteId) {
               return (
                 <NoteEditorCard
@@ -60,6 +61,7 @@ export function NotesPanel({ onNavigate }: NotesPanelProps) {
 
             const preview = createNotePreview(note.body ?? '');
             const kind = getNoteKind(note);
+            const number = getNoteNumber(manuscript, note.id);
 
             return (
               <button
@@ -67,11 +69,11 @@ export function NotesPanel({ onNavigate }: NotesPanelProps) {
                 type="button"
                 className="omi-note-editor-card omi-note-editor-card--compact omi-note-preview-button"
                 onClick={() => setActiveNoteId(note.id)}
-                aria-label={`${t('notes.note')} ${index + 1}`}
+                aria-label={kind === 'author-note' ? t('notes.authorNote') : `${t('notes.note')} ${number ?? '?'}`}
               >
                 <span className="omi-note-editor-header">
                   <span>
-                    <span className="omi-note-number">{index + 1}.</span>
+                    {kind === 'author-note' ? null : <span className="omi-note-number">{number ?? '?'}.</span>}
                     <strong>{noteKindLabel(kind, t)}</strong>
                   </span>
                 </span>

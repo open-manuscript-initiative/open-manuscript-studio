@@ -101,8 +101,8 @@ export const OmiNoteExtension = Node.create<OmiNoteOptions>({
       label: {
         default: '?',
         parseHTML: (element: HTMLElement) =>
-          element.getAttribute('data-note-label') ||
-          element.textContent ||
+          element.getAttribute('data-note-label') ??
+          element.textContent ??
           '?',
         renderHTML: (attributes: Record<string, unknown>) => ({
           'data-note-label': String(attributes.label || '?'),
@@ -131,7 +131,8 @@ export const OmiNoteExtension = Node.create<OmiNoteOptions>({
     const attributes = node.attrs as OmiNoteAttributes;
     const accessibleLabel =
       this.options.accessibleLabel?.(attributes) ??
-      `Note ${attributes.label}`;
+      (attributes.noteType === 'author-note' ? 'Inline note' : `Note ${attributes.label}`);
+    const visibleLabel = attributes.noteType === 'author-note' ? '✧' : attributes.label;
 
     return [
       'span',
@@ -148,7 +149,7 @@ export const OmiNoteExtension = Node.create<OmiNoteOptions>({
         title: accessibleLabel,
         'aria-label': accessibleLabel,
       }),
-      attributes.label,
+      visibleLabel,
     ];
   },
 

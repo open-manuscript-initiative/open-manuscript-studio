@@ -355,7 +355,7 @@ function normalizeNoteNodes(
           annotation?.anchorId ??
           stringAttribute(node.attrs, 'anchorId') ??
           stableAnchorIdForLegacyNote(noteId),
-        label: String(numberByNoteId.get(noteId) ?? '?'),
+        label: kind === 'author-note' ? '' : String(numberByNoteId.get(noteId) ?? '?'),
         noteType: kind,
       };
     }
@@ -426,15 +426,20 @@ function uniqueNoteIdentifiers(
 }
 
 export function buildNoteNumberMap(
-  state: Pick<OmiManuscriptState, 'sections' | 'documentStructure'>,
+  state: Pick<OmiManuscriptState, 'sections' | 'documentStructure'> & Partial<Pick<OmiManuscriptState, 'annotations'>>,
   occurrences: NoteAnchorOccurrence[] = collectNoteAnchors(state),
+  options: { includeLocalNotes?: boolean } = {},
 ): Map<string, number> {
   const scope = getDocumentStructureProfile(state).noteNumberingScope;
   const counters = new Map<string, number>();
   const result = new Map<string, number>();
+  const kindById = new Map(
+    (state.annotations ?? []).filter(isNoteAnnotation).map((note) => [note.id, getNoteKind(note)]),
+  );
 
   for (const occurrence of occurrences) {
     if (result.has(occurrence.noteId)) continue;
+    if (!options.includeLocalNotes && (kindById.get(occurrence.noteId) ?? occurrence.kind) === 'author-note') continue;
     const scopeKey = scope === 'continuous'
       ? 'document'
       : scope === 'section'

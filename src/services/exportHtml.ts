@@ -85,6 +85,7 @@ interface RenderState {
   assetPrefix: string;
   pagedNotes: boolean;
   emittedFootnotes: Set<string>;
+  emittedLocalNotes: Set<string>;
   noteBodies: Map<string, string>;
 }
 
@@ -139,11 +140,12 @@ export function renderHtmlArticle(
       (manuscript.bibliographicRecords ?? []).map((record) => [record.id, record]),
     ),
     annotationMap: new Map(manuscript.annotations.map((annotation) => [annotation.id, annotation])),
-    noteLabels: collectNoteLabels(manuscript),
+    noteLabels: collectNoteLabels(manuscript, profile.rules.notes.localNotePlacement === 'with-notes'),
     assetMap: new Map((manuscript.assets ?? []).map((asset) => [asset.id, asset])),
     assetPrefix: options.assetPrefix ?? '',
     pagedNotes: options.noteLayout === 'paged',
     emittedFootnotes: new Set(),
+    emittedLocalNotes: new Set(),
     noteBodies: new Map(),
   };
   state.noteBodies = collectNoteBodies(state);
@@ -792,6 +794,17 @@ function renderNoteMarker(node: JsonNode, state: RenderState): string {
     });
     return '<sup class="note-ref note-ref-unresolved">?</sup>';
   }
+  const localLayout = state.context.profile.rules.notes.localNotePlacement ?? 'inline';
+  if (getNoteKind(annotation) === 'author-note' && localLayout !== 'with-notes') {
+    if (state.emittedLocalNotes.has(annotation.id)) return '';
+    state.emittedLocalNotes.add(annotation.id);
+    const body = escapeHtml(state.noteBodies.get(annotation.id) ?? annotation.body);
+    const id = htmlId('note', annotation.id);
+    if (localLayout === 'margin') {
+      return `<span id="${id}" class="omi-local-note-margin" role="note" data-note-kind="local">${body}</span>`;
+    }
+    return `<span id="${id}" class="omi-local-note-inline" role="note" data-note-kind="local"> (${body})</span>`;
+  }
   const label = state.noteLabels.get(annotation.id) ?? '?';
   const reference = `<sup class="note-ref"><a id="${htmlId('noteref', annotation.id)}" role="doc-noteref" href="#${htmlId(
     'note',
@@ -854,14 +867,19 @@ function renderNotes(
   state: RenderState,
   labels: ReturnType<typeof localizedLabels>,
 ): string {
-  const notes = state.manuscript.annotations.filter(
-    (annotation) => annotation.type === 'note' && !state.emittedFootnotes.has(annotation.id),
+  const notes = sortNotesByDocumentOrder(state.manuscript).filter(
+    (annotation) => annotation.type === 'note' && !state.emittedFootnotes.has(annotation.id) && !state.emittedLocalNotes.has(annotation.id),
   );
   if (!notes.length) return '';
   const placement = state.pagedNotes ? 'endnotes' : state.context.profile.rules.notes.placement;
 
   const noteItems = notes.map((note, index) => {
     const body = state.noteBodies.get(note.id) ?? note.body;
+    const unnumberedLocal = getNoteKind(note) === 'author-note' &&
+      (state.context.profile.rules.notes.localNotePlacement ?? 'inline') !== 'with-notes';
+    if (unnumberedLocal) {
+      return `<li id="${htmlId('note', note.id)}" role="note" class="omi-local-note-unanchored">${escapeHtml(body)}</li>`;
+    }
     return `<li id="${htmlId('note', note.id)}" role="doc-endnote" value="${escapeAttribute(
       state.noteLabels.get(note.id) ?? String(index + 1),
     )}">${escapeHtml(
@@ -984,6 +1002,10 @@ th, td { border: 1px solid #999; padding: .35rem .5rem; vertical-align: top; }
 th { text-align: left; }
 ${TABLE_LAYOUT_CSS}
 math { overflow-x: auto; max-width: 100%; }
+.omi-local-note-inline { font-style: normal; }
+.omi-local-note-unanchored { list-style: none; margin-inline-start: -1.25em; }
+.omi-local-note-margin { float: right; clear: right; box-sizing: border-box; width: min(12rem, 32%); margin: 0 0 0.65rem 0.8rem; padding: 0.3rem 0.45rem; border-inline-start: 1px solid #bbb; font-size: 0.84em; line-height: 1.4; }
+@media print { .omi-local-note-margin { width: 5rem; margin-right: -5.3rem; font-size: 0.72em; } }
 .article-notes, .article-bibliography { margin-top: 2.5rem; text-align: left; }
 .article-bibliography li, .article-notes li { margin-bottom: .65em; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -1002,9 +1024,9 @@ function parseStructuredContent(value: string): JsonNode | null {
   }
 }
 
-function collectNoteLabels(manuscript: OmiManuscript): Map<string, string> {
+function collectNoteLabels(manuscript: OmiManuscript, includeLocalNotes: boolean): Map<string, string> {
   return new Map(
-    [...buildNoteNumberMap(manuscript)].map(([noteId, number]) => [
+    [...buildNoteNumberMap(manuscript, undefined, { includeLocalNotes })].map(([noteId, number]) => [
       noteId,
       String(number),
     ]),
