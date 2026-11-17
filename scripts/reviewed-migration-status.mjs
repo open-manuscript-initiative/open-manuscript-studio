@@ -10,6 +10,7 @@ const root = process.argv[2] ? resolve(process.argv[2]) : '';
 const approved = new Set([
   '20261109060000_android_closed_test_signups',
   '20261116110000_audit_retention_created_at_indexes',
+  '20261116010000_add_editorial_production',
 ]);
 if (!root) {
   console.error('Usage: node reviewed-migration-status.mjs <repository-root>');
