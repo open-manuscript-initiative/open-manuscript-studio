@@ -341,3 +341,120 @@ test('both pinned migrations may be pending only with verified backups', { skip:
   assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
   assert.ok(existsSync(join(f.snapshot, 'database', 'manifest.json')));
 });
+
+const productionMigrationName = '20261116010000_add_editorial_production';
+function reviewedProductionMigration(f, sql = readFileSync(
+  new URL('../server/prisma/migrations/' + productionMigrationName + '/migration.sql', import.meta.url), 'utf8',
+)) {
+  const dir = join(f.repo, 'server/prisma/migrations', productionMigrationName);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'migration.sql'), sql);
+  git(f.repo, 'add', '.');
+  git(f.repo, '-c', 'user.email=ci@example.invalid', '-c', 'user.name=CI', 'commit', '-qm', 'reviewed production migration');
+  return git(f.repo, 'rev-parse', 'HEAD');
+}
+
+test('editorial production deploy requires validated Studio and Identity backups and preserves them on rollback', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedProductionMigration(f);
+  fakePrismaStatus(f, { pendingNames: [productionMigrationName] });
+  const env = { ...fakePostgres(f), STUDIO_TARGET_SHA: target };
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
+  assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
+  const manifest = JSON.parse(readFileSync(join(f.snapshot, 'database/manifest.json'), 'utf8'));
+  assert.deepEqual(manifest.archives.map(({ name }) => name), ['studio', 'identity']);
+  assert.match(readFileSync(join(f.snapshot, 'reviewed-migration'), 'utf8'), /20261116010000_add_editorial_production/);
+  writeFileSync(join(f.repo, 'server/dist/server.js'), 'failed API');
+  const restore = spawnSync('bash', [join(f.snapshot, 'rollback.sh'), 'restore', f.snapshot], { env, encoding: 'utf8' });
+  assert.equal(restore.status, 0, restore.stderr || restore.stdout);
+  assert.equal(readFileSync(join(f.repo, 'server/dist/server.js'), 'utf8'), 'previous compiled API');
+  for (const db of ['studio', 'identity']) assert.ok(existsSync(join(f.snapshot, 'database', db + '.dump')));
+});
+
+test('editorial production deploy stops before runtime snapshot when backup fails', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedProductionMigration(f);
+  fakePrismaStatus(f, { pendingNames: [productionMigrationName] });
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...fakePostgres(f, true), STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /backup blocked/i);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+  assert.equal(readFileSync(join(f.repo, 'server/dist/server.js'), 'utf8'), 'previous compiled API');
+});
+
+test('edited editorial production SQL is rejected despite using the reviewed name', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const original = readFileSync(new URL('../server/prisma/migrations/' + productionMigrationName + '/migration.sql', import.meta.url), 'utf8');
+  const target = reviewedProductionMigration(f, original + '\nDROP TABLE users;\n');
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /pinned reviewed blob/i);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});
+
+test('pending editorial production after manual checkout still requires fresh backups', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = reviewedProductionMigration(f);
+  fakePrismaStatus(f, { pendingNames: [productionMigrationName] });
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...fakePostgres(f), STUDIO_TARGET_SHA: target, STUDIO_PREVIOUS_SHA: target }, encoding: 'utf8',
+  });
+  assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
+  assert.match(snapshot.stdout, /Detected pending reviewed migration/);
+  assert.ok(existsSync(join(f.snapshot, 'database/manifest.json')));
+});
+
+test('all three reviewed migrations can be pending with fresh backups', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  reviewedMigration(f);
+  reviewedAuditIndexMigration(f);
+  const target = reviewedProductionMigration(f);
+  fakePrismaStatus(f, { pendingNames: [
+    '20261109060000_android_closed_test_signups',
+    '20261116110000_audit_retention_created_at_indexes',
+    productionMigrationName,
+  ] });
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...fakePostgres(f), STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.equal(snapshot.status, 0, snapshot.stderr || snapshot.stdout);
+  assert.ok(existsSync(join(f.snapshot, 'database/manifest.json')));
+});
+
+for (const [label, status] of [
+  ['unrecognized Studio migration', { unknown: true }],
+  ['unapplied Identity migration', { identityPending: true }],
+]) {
+  test('editorial production deploy rejects ' + label, { skip: !onLinux }, (t) => {
+    const f = fixture(t);
+    const target = reviewedProductionMigration(f);
+    fakePrismaStatus(f, { pendingNames: [productionMigrationName], ...status });
+    const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+      env: { ...fakePostgres(f), STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+    });
+    assert.notEqual(snapshot.status, 0);
+    assert.match(snapshot.stderr, /Pending database migration preflight failed/);
+    assert.equal(existsSync(join(f.snapshot, 'database')), false);
+    assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+  });
+}
+
+test('an unrelated SQL change bundled with editorial production stays blocked', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  reviewedProductionMigration(f);
+  const dir = join(f.repo, 'server/prisma/migrations/20261117_unreviewed');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'migration.sql'), 'DROP TABLE users;\n');
+  git(f.repo, 'add', '.');
+  git(f.repo, '-c', 'user.email=ci@example.invalid', '-c', 'user.name=CI', 'commit', '-qm', 'unreviewed SQL');
+  const snapshot = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_TARGET_SHA: git(f.repo, 'rev-parse', 'HEAD') }, encoding: 'utf8',
+  });
+  assert.notEqual(snapshot.status, 0);
+  assert.match(snapshot.stderr, /manual migration rollout/);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});

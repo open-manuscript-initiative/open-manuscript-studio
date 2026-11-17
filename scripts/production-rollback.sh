@@ -40,10 +40,12 @@ if [[ "$action" == snapshot ]]; then
   approved_paths=(
     'server/prisma/migrations/20261109060000_android_closed_test_signups/migration.sql'
     'server/prisma/migrations/20261116110000_audit_retention_created_at_indexes/migration.sql'
+    'server/prisma/migrations/20261116010000_add_editorial_production/migration.sql'
   )
   approved_blobs=(
     'dfc5ee96dc2cbc9bf2d1622ce494bd5b133e0bba'
     '34d086111c77bab71b3725ae99f1a531b703ed66'
+    '421438c437b4000c083614b795567fde5813515d'
   )
   migration_changes="$(git -C "$repo" diff --name-status "$previous" "$current" -- server/prisma/migrations server/prisma/identity/migrations)"
   needs_db_backup=false
