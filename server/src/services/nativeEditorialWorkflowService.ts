@@ -584,7 +584,10 @@ export async function markNativeEditorialSubmissionPublished(
     throw conflict('Publisher-verified editorial acceptance is required before publication.');
   }
   assertPublicationUrlMatchesVenue(externalUrl, submission.publicationVenueDomain);
-  const updated = await prisma.$transaction(async (transaction) => {
+  const { withNativeProductionReady } = await import('./editorialProductionService.js');
+  const updated = await withNativeProductionReady(
+    { userId: editorUserId, submissionId, manuscriptId: submission.manuscriptId, revisionId, stateDigest: submission.stateDigest },
+    async (transaction) => {
     const next = await transaction.nativeEditorialSubmission.update({
       where: { id: submission.id },
       data: {
@@ -640,7 +643,7 @@ function assertPublicationUrlMatchesVenue(
   }
 }
 
-async function ensureSubmissionEditorAccess(
+export async function ensureSubmissionEditorAccess(
   editorUserId: string,
   submission: {
     workspaceId: string;
@@ -738,7 +741,7 @@ async function loadSubmission(submissionId: string) {
   return submission;
 }
 
-function validateRevisionInput(input: NativeEditorialRevisionInput) {
+export function validateRevisionInput(input: NativeEditorialRevisionInput) {
   const manuscriptId = input.manuscriptId.trim();
   const title = input.title.trim().slice(0, 500);
   const revisionId = input.revisionId.trim();

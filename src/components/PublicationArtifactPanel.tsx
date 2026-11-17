@@ -1,3 +1,4 @@
+import { OjsWorkflowStatusPanel } from './OjsWorkflowStatusPanel';
 import { useEffect, useMemo, useState } from 'react';
 
 import { externalizeActiveManuscriptAssets } from '../app/assetActions';
@@ -356,6 +357,7 @@ function PublicationArtifactForm({
         artifactBase64: artifact.artifactBase64,
         build: artifact.build,
         confirmed: true,
+        ...(target.workflowToken ? { expectedWorkflowToken: target.workflowToken } : {}),
       });
       if (!result.receipt) {
         throw new Error(
@@ -447,6 +449,7 @@ function PublicationArtifactForm({
           </>
         ) : null}
 
+        {provider === 'ojs' && validSubmissionId && connectionId ? <OjsWorkflowStatusPanel key={`${connectionId}:${submissionId}`} connectionId={connectionId} submissionId={Number(submissionId)} /> : null}
         {target && provider ? (
           <>
             <p>

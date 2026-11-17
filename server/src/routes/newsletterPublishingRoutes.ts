@@ -1,3 +1,4 @@
+import { ProductionError } from '../domain/editorialProduction.js';
 import { Router, type Response } from 'express';
 import { z } from 'zod';
 
@@ -195,6 +196,7 @@ function sendServiceError(
   error: unknown,
   fallback: string,
 ): void {
+  if (error instanceof ProductionError) { response.status(error.status).json({ error: { code: 'PRODUCTION_APPROVAL_REQUIRED', message: error.message } }); return; }
   if (error instanceof WebPublicationServiceError) {
     response.status(error.httpStatus).json({
       error: { code: error.code, message: error.message },

@@ -139,6 +139,19 @@ const prisma = {
   }),
 };
 
+let productionGateCalls = [];
+let productionReady = true;
+mock.module(new URL('../server/dist/services/editorialProductionService.js', import.meta.url).href, {
+  namedExports: { withNativeProductionReady: async (input, operation) => {
+    productionGateCalls.push(input);
+    if (!productionReady) throw new Error('Production proof is not approved');
+    return operation(prisma);
+  }, assertNativeProductionReady: async (input) => {
+    productionGateCalls.push(input);
+    if (!productionReady) throw new Error('Production proof is not approved');
+  } },
+});
+
 mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, {
   namedExports: { prisma },
 });
@@ -523,3 +536,19 @@ function canonicalJson(value) {
     `${JSON.stringify(key)}:${canonicalJson(value[key])}`
   ).join(',')}}`;
 }
+
+test('live web publication checks the exact proof at approval and again at execution', async () => {
+  reset(); productionGateCalls = []; productionReady = true;
+  const input = approvalInput();
+  input.status = 'publish';
+  const approved = await issueWebPublicationApproval(userId, input);
+  assert.equal(productionGateCalls.length, 1);
+  assert.equal(productionGateCalls[0].artifactSha256, input.artifact.build.output.digest.value);
+  productionReady = false;
+  const before = remoteCalls.length;
+  await assert.rejects(executeWebPublicationDelivery(userId, approved.grant.deliveryId, approved.grant.executionToken), /not approved/);
+  assert.equal(productionGateCalls.length, 2);
+  assert.equal(remoteCalls.length, before, 'No remote write after proof approval was invalidated');
+  assert.equal(delivery.state, 'PENDING');
+  productionReady = true;
+});

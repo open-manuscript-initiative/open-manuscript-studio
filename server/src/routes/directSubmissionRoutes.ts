@@ -28,7 +28,7 @@ function publicReceipt(row: { id: string; status: string; externalId: number | n
 }
 function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
   return async (method, path, body) => {
-    if (!/^(omi-integration\/(?:submission-options|publication-artifact)|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
+    if (!/^(omi-integration\/(?:submission-options|publication-artifact|workflow-status\?submissionId=\d+)|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
       throw new Error('Invalid publishing operation.');
     }
     const url = await assertTrustedIntegrationUrl(`${baseUrl}/api/v1/${path}`, baseUrl);
@@ -76,6 +76,7 @@ const publicationArtifactSchema = z.object({
   artifactBase64: z.string().max(46 * 1024 * 1024).optional(),
   build: z.record(z.string(), z.unknown()).optional(),
   confirmed: z.literal(true).optional(),
+  expectedWorkflowToken: z.string().regex(/^[0-9a-f]{64}$/).optional(),
 });
 
 directSubmissionRouter.post('/integrations/connections/:connectionId/publication-artifact', requireSession, async (request: AuthenticatedRequest, response) => {
@@ -178,6 +179,26 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
         ? error.message
         : 'Publication artifact transfer failed.';
     response.status(status).json({ error: { message } });
+  }
+});
+
+directSubmissionRouter.post('/integrations/connections/:connectionId/workflow-status', requireSession, async (request: AuthenticatedRequest, response) => {
+  response.setHeader('Cache-Control', 'no-store');
+  const input = z.object({ submissionId: z.number().int().positive() }).strict().safeParse(request.body);
+  const connectionId = z.string().uuid().safeParse(request.params.connectionId);
+  if (!input.success || !connectionId.success) { response.status(400).json({ error: { message: 'Invalid workflow request.' } }); return; }
+  try {
+    const connection = await prisma.userIntegration.findFirst({ where: { id: connectionId.data, userId: request.authUserId!, enabled: true, providerId: 'ojs' } });
+    const configuredBase = record(connection?.config).baseUrl;
+    if (!connection || typeof configuredBase !== 'string') { response.status(404).json({ error: { message: 'Enabled personal OJS connection not found.' } }); return; }
+    const baseUrl = (await assertTrustedIntegrationUrl(configuredBase, configuredBase)).toString().replace(/\/+$/, '');
+    const credential = await resolvePersonalOjsCredential(request.authUserId!, baseUrl);
+    if (!credential) { response.status(400).json({ error: { message: 'Save your personal OJS API key for this installation first.' } }); return; }
+    const snapshot = record(await nativeClient(baseUrl, credential.apiKey)('GET', `omi-integration/workflow-status?submissionId=${input.data.submissionId}`));
+    if (snapshot.protocol !== 'omi-ojs-workflow/1' || snapshot.authority !== 'OJS' || snapshot.submissionId !== input.data.submissionId || typeof snapshot.stateToken !== 'string' || !/^[0-9a-f]{64}$/.test(snapshot.stateToken)) throw new Error('Update the OJS Studio Integration plugin to 1.7.0.0 or newer.');
+    response.json({ snapshot });
+  } catch (error) {
+    response.status(error instanceof RemoteError && [403, 404, 409, 422].includes(error.status) ? error.status : 502).json({ error: { message: error instanceof Error ? error.message : 'OJS workflow refresh failed.' } });
   }
 });
 

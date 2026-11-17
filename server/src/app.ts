@@ -40,6 +40,7 @@ import { institutionalProfileRouter } from './routes/institutionalProfileRoutes.
 import { integrationExecutionRouter } from './routes/integrationExecutionRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { linkedIdentityRouter } from './routes/linkedIdentityRoutes.js';
+import { editorialProductionRouter } from './routes/editorialProductionRoutes.js';
 import { nativeEditorialWorkflowRouter } from './routes/nativeEditorialWorkflowRoutes.js';
 import {
   newsletterPublishingRouter,
@@ -101,6 +102,7 @@ app.use(cookieOriginGuard(allowedOrigins));
 // excluded from this browser-session gate.
 app.use('/api/integrations/connections/:connectionId/direct-submission', requireSession, express.json({ limit: '25mb' }));
 app.use('/api/integrations/connections/:connectionId/publication-artifact', requireSession, express.json({ limit: '48mb' }));
+app.use('/api/native-editorial/production', requireSession, express.json({ limit: '68mb' }));
 app.use('/api/native-editorial/submissions', requireSession, express.json({ limit: '68mb' }));
 app.use('/integrations/omp/native/author/:contextId/revision', express.json({ limit: '36mb' }));
 app.use('/api/publication/render/pdf', requireSession, express.json({ limit: '64mb' }));
@@ -170,6 +172,7 @@ app.use('/api', directSubmissionRouter);
 app.use('/api', agentReviewRouter);
 app.use(['/api/v1', '/api'], extensionRegistryRouter); // Shared extension contract and legacy facade.
 app.use('/api', integrationExecutionRouter); // Extension compatibility facade; shared handlers.
+app.use('/api/native-editorial/production', editorialProductionRouter);
 app.use('/api/native-editorial', nativeEditorialWorkflowRouter);
 app.use('/api', proofreadingRouter);
 app.use('/api', publishingConnectionRouter);
