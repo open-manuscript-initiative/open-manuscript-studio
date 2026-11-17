@@ -1,3 +1,9 @@
+## Unreleased — Selective OJS metadata reconciliation
+
+- Compare and transfer selected title, subtitle, abstract and keyword fields by language with OJS Integration plugin 1.8.0.0. Import license and copyright explicitly.
+- Retain OJS control over contributor identity, DOI, issue assignment, publication date and status. Recheck native permissions and snapshot tokens before writes; record imports as revertible OMI revisions.
+- Add model, revision history, proxy and native PHP contract coverage. See [operator notes](docs/ojs-metadata-reconciliation.md).
+
 ## 1.0.0-rc.2 — 2026-11-11 (prepared; publication acceptance pending)
 
 - Fix the desktop Document menu: local/shared-device saving and cloud backup

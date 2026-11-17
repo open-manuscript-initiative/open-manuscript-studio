@@ -1,3 +1,4 @@
+import { ojsMetadataSnapshot } from './fixtures/ojsMetadataSnapshot.mjs';
 import assert from 'node:assert/strict';
 import { after, mock, test } from 'node:test';
 import express from '../server/node_modules/express/index.js';
@@ -9,6 +10,8 @@ let provider = 'ojs';
 let remoteStatus = 200;
 let trusted = true;
 let calls = [];
+let invalidMetadataReceipt = false;
+let invalidMetadataTarget = false;
 
 mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, {
   namedExports: {
@@ -105,7 +108,8 @@ mock.method(globalThis, 'fetch', async (url, init) => {
 
   const body = init.body ? JSON.parse(init.body) : {};
   const omp = provider === 'omp';
-  const success = String(url).includes('/workflow-status?') ? { protocol: 'omi-ojs-workflow/1', authority: 'OJS', stateToken: 'd'.repeat(64), submissionId: 12, stage: 'copyediting', metadata: { title: { hu: 'Cikk' } } } :
+  const metadataResult = { snapshot: { ...ojsMetadataSnapshot(), ...(invalidMetadataTarget ? { submissionId: 99 } : {}) }, ...(body.action === 'apply' ? { receipt: { protocol: 'omi-ojs-metadata/1', submissionId: 12, publicationId: 13, locale: body.locale, fields: Object.keys(body.fields), previousStateToken: invalidMetadataReceipt ? 'invalid' : body.expectedStateToken, published: false } } : {}) };
+  const success = String(url).endsWith('/omi-integration/metadata') ? metadataResult : String(url).includes('/workflow-status?') ? { protocol: 'omi-ojs-workflow/1', authority: 'OJS', stateToken: 'd'.repeat(64), submissionId: 12, stage: 'copyediting', metadata: { title: { hu: 'Cikk' } } } :
     body.action === 'inspect'
       ? {
           protocol: 'omi-publication-artifact/1',
@@ -392,4 +396,45 @@ test('OJS workflow refresh is read-only, scoped to an owned OJS connection, and 
   const denied = await send({ submissionId: 12 });
   assert.equal(denied.status, 403);
   assert.ok(!(await denied.text()).includes('ojs-editorial-test-key'));
+});
+
+test('OJS metadata proposals are scoped, selective, validated and private', async () => {
+  enabled = true; provider = 'ojs'; remoteStatus = 200; trusted = true; calls = [];
+  const url = `http://127.0.0.1:${server.address().port}/integrations/connections/${connectionId}/metadata`;
+  const send = (body, user = 'editor') => originalFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(user ? { 'x-test-user': user } : {}) }, body: JSON.stringify(body) });
+  const inspectMetadata = { action: 'inspect', submissionId: 12 };
+  assert.equal((await send(inspectMetadata, null)).status, 401);
+  assert.equal((await send(inspectMetadata, 'other')).status, 404);
+  const inspected = await send(inspectMetadata);
+  assert.equal(inspected.status, 200);
+  const result = await inspected.json();
+  assert.equal(result.snapshot.metadata.title.hu, 'OJS cím');
+  assert.equal(result.snapshot.contributors[0].email, undefined, 'proxy must not forward private contributor fields');
+  assert.equal(calls.at(-1).init.method, 'POST');
+  assert.equal(calls.at(-1).init.headers.get('Authorization'), 'Bearer ojs-editorial-test-key');
+  const proposal = { action: 'apply', submissionId: 12, publicationId: 13, locale: 'hu', expectedStateToken: 'a'.repeat(64), confirmed: true, fields: { title: 'Selected title' } };
+  assert.equal((await send(proposal)).status, 200);
+  assert.deepEqual(calls.at(-1).body.fields, { title: 'Selected title' });
+  const before = calls.length;
+  assert.equal((await send({ ...proposal, confirmed: false })).status, 400);
+  assert.equal((await send({ ...proposal, fields: { doi: 'forged' } })).status, 400);
+  assert.equal((await send({ ...proposal, fields: {} })).status, 400);
+  assert.equal((await send({ ...proposal, fields: { title: { en: 'wrong shape' } } })).status, 400);
+  assert.equal(calls.length, before, 'invalid proposals must not reach OJS');
+  invalidMetadataReceipt = true;
+  assert.equal((await send(proposal)).status, 502);
+  invalidMetadataReceipt = false; invalidMetadataTarget = true;
+  assert.equal((await send(inspectMetadata)).status, 502);
+  invalidMetadataTarget = false;
+  for (const status of [403, 409, 422]) {
+    remoteStatus = status;
+    const rejected = await send(proposal);
+    assert.equal(rejected.status, status);
+    assert.ok(!(await rejected.text()).includes('ojs-editorial-test-key'));
+  }
+  remoteStatus = 200; provider = 'omp';
+  assert.equal((await send(inspectMetadata)).status, 404);
+  provider = 'ojs'; trusted = false;
+  assert.equal((await send(inspectMetadata)).status, 502);
+  trusted = true;
 });
