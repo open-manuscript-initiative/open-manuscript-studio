@@ -40,7 +40,7 @@ or starts a new scientific review round
         ↓
 Editorial ACCEPT decision
         ↓
-Publishable
+Copyediting → Layout → Proofreading → Ready
         ↓
 Publication
 ```
@@ -124,7 +124,7 @@ Changing the manuscript after acceptance creates a different state/content diges
 
 ## Publication
 
-An accepted native submission becomes **publishable**. Acceptance does not itself publish anything.
+An accepted native submission can enter **production**. It becomes publishable only after copyediting, layout and exact-proof approvals reach READY. Acceptance does not itself publish anything.
 
 The web publication panel consumes the existing editorial decision. For a Studio-native DNS venue it does not create the acceptance as part of the publication action.
 
@@ -169,3 +169,11 @@ For integrated venues, Studio remains the structured authoring/review client and
 - [Publication venue registry and DNS authority](./publication-venue-registry.md)
 - [Website publication assurance](./newsletter-web-publishing.md)
 - [Editorial assignment roles](./server/editorial-assignment-roles.md)
+
+## Post-acceptance production (Preview)
+
+Editorial acceptance now starts a separate copyediting/layout/proof workflow.
+Native live publication requires its final exact-file approvals. See
+[Editorial production](editorial-production.md) for API, migration and rollout
+requirements and [ordered compatibility work](editorial-workflow-priorities.md)
+for the explicitly remaining OJS and native-issue work.

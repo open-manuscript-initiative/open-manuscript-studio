@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mock, test } from 'node:test';
+import { after, mock, test } from 'node:test';
 import express from '../server/node_modules/express/index.js';
 
 const connectionId = '20000000-0000-4000-8000-000000000003';
@@ -89,6 +89,7 @@ app.use(directSubmissionRouter);
 const server = await new Promise((resolve) => {
   const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
 });
+after(() => server.close());
 const originalFetch = globalThis.fetch;
 
 mock.method(globalThis, 'fetch', async (url, init) => {
@@ -99,12 +100,12 @@ mock.method(globalThis, 'fetch', async (url, init) => {
   calls.push({
     url: String(url),
     init,
-    body: JSON.parse(init.body),
+    body: init.body ? JSON.parse(init.body) : null,
   });
 
-  const body = JSON.parse(init.body);
+  const body = init.body ? JSON.parse(init.body) : {};
   const omp = provider === 'omp';
-  const success =
+  const success = String(url).includes('/workflow-status?') ? { protocol: 'omi-ojs-workflow/1', authority: 'OJS', stateToken: 'd'.repeat(64), submissionId: 12, stage: 'copyediting', metadata: { title: { hu: 'Cikk' } } } :
     body.action === 'inspect'
       ? {
           protocol: 'omi-publication-artifact/1',
@@ -276,7 +277,7 @@ async function request(body = inspect, user = 'editor') {
 }
 
 test('publication artifact proxy authorization and OJS/OMP protocol', async (t) => {
-  t.after(() => server.close());
+
 
   await t.test('requires a session and an owned enabled publishing connection', async () => {
     assert.equal((await request(inspect, null)).status, 401);
@@ -370,4 +371,25 @@ test('publication artifact proxy authorization and OJS/OMP protocol', async (t) 
     remoteStatus = 200;
     provider = 'ojs';
   });
+});
+
+test('OJS workflow refresh is read-only, scoped to an owned OJS connection, and uses its own credential', async () => {
+  enabled = true; provider = 'ojs'; remoteStatus = 200; trusted = true; calls = [];
+  const url = `http://127.0.0.1:${server.address().port}/integrations/connections/${connectionId}/workflow-status`;
+  const send = (body, user = 'editor') => originalFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(user ? { 'x-test-user': user } : {}) }, body: JSON.stringify(body) });
+  assert.equal((await send({ submissionId: 12 }, null)).status, 401);
+  assert.equal((await send({ submissionId: 12 }, 'other')).status, 404);
+  assert.equal((await send({ submissionId: 12, baseUrl: 'https://untrusted.test' })).status, 400);
+  const response = await send({ submissionId: 12 });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).snapshot.authority, 'OJS');
+  assert.equal(calls.at(-1).init.method, 'GET');
+  assert.equal(calls.at(-1).init.headers.get('Authorization'), 'Bearer ojs-editorial-test-key');
+  assert.ok(calls.at(-1).url.endsWith('/api/v1/omi-integration/workflow-status?submissionId=12'));
+  provider = 'omp';
+  assert.equal((await send({ submissionId: 12 })).status, 404);
+  provider = 'ojs'; remoteStatus = 403;
+  const denied = await send({ submissionId: 12 });
+  assert.equal(denied.status, 403);
+  assert.ok(!(await denied.text()).includes('ojs-editorial-test-key'));
 });

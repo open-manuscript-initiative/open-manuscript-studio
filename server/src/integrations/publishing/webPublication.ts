@@ -8,6 +8,7 @@ import {
 
 import { Prisma } from '../../generated/prisma/client.js';
 import { prisma } from '../../lib/prisma.js';
+import { assertNativeProductionReady, withNativeProductionReady } from '../../services/editorialProductionService.js';
 import { assertEditorialDecisionEvidence } from '../../services/editorialDecisionService.js';
 import { writeIntegrationAuditEvent } from '../integrationAudit.js';
 import { decryptSecret, type EncryptedSecret } from '../secretCrypto.js';
@@ -232,6 +233,7 @@ export async function issueWebPublicationApproval(
     publicationContentDigest,
   );
   const contentDigest = digest(input.artifact.html);
+  if (input.status === 'publish') await assertNativeProductionReady({ userId, manuscriptId: input.manuscriptId, revisionId: build.manuscript.revisionId, stateDigest: build.manuscript.stateDigest.value, artifactSha256: contentDigest, ...(input.assurance.reviewStatus === 'peer-reviewed' && input.assurance.evidence.authority ? { publicationVenueId: input.assurance.evidence.authority.venueId } : {}) });
   const requestDigest = digest(canonicalJson({
     connectionId: input.connectionId,
     connectionVersion: input.connectionVersion,
@@ -486,7 +488,7 @@ export async function executeWebPublicationDelivery(
     digestPublicationArticle(artifactHtmlForVerification),
   );
 
-  const acquired = await prisma.webPublicationDelivery.updateMany({
+  const claimDelivery = (tx: Pick<Prisma.TransactionClient, 'webPublicationDelivery'>) => tx.webPublicationDelivery.updateMany({
     where: {
       id: initial.id,
       userId,
@@ -498,6 +500,13 @@ export async function executeWebPublicationDelivery(
       lastError: null,
     },
   });
+  const acquired = initial.targetStatus === 'PUBLISH'
+    ? await withNativeProductionReady({ userId, manuscriptId: initial.manuscriptId, revisionId: initial.revisionId,
+        stateDigest: parsePublicationBuild(initial.artifactBuild).manuscript.stateDigest.value,
+        artifactSha256: initial.contentDigest,
+        ...(storedAssurance.reviewStatus === 'peer-reviewed' && storedAssurance.evidence.authority ? { publicationVenueId: storedAssurance.evidence.authority.venueId } : {}),
+      }, claimDelivery)
+    : await claimDelivery(prisma);
   if (!acquired.count) {
     throw new WebPublicationServiceError(
       'WEB_PUBLICATION_DELIVERY_BUSY',

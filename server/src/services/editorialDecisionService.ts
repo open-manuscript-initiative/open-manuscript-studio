@@ -44,7 +44,9 @@ export interface EligibleEditorialReviewRound {
 export async function createEditorialAcceptance(
   editorUserId: string,
   input: CreateEditorialAcceptanceInput,
+  transaction?: Prisma.TransactionClient,
 ): Promise<EditorialDecisionEvidence> {
+  const database = transaction ?? prisma;
   assertDigest(input.stateDigest);
   assertDigest(input.publicationContentDigest);
   if (!input.revisionId.trim()) throw new Error('A committed revision is required.');
@@ -75,7 +77,7 @@ export async function createEditorialAcceptance(
     editorUserId,
     ...(authority ? { authority } : {}),
   }, assignments);
-  const existing = await prisma.editorialDecision.findUnique({
+  const existing = await database.editorialDecision.findUnique({
     where: {
       workspaceId_manuscriptId_revisionId: {
         workspaceId: input.workspaceId,
@@ -99,7 +101,7 @@ export async function createEditorialAcceptance(
     return serializeEvidence(existing);
   }
 
-  const decision = await prisma.editorialDecision.create({
+  const decision = await database.editorialDecision.create({
     data: {
       workspaceId: input.workspaceId,
       manuscriptId: input.manuscriptId,

@@ -68,6 +68,7 @@ export interface PublicationArtifactTarget {
   };
   authority?: PublicationArtifactAuthority;
   published: false;
+  workflowToken?: string;
 }
 
 export interface PublicationArtifactReceipt {
@@ -108,6 +109,7 @@ export type PublicationArtifactRequest = {
       artifactBase64: string;
       build: OmiPublicationBuild;
       confirmed: true;
+      expectedWorkflowToken?: string;
     }
 );
 

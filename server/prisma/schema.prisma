@@ -531,6 +531,7 @@ model NativeEditorialSubmission {
   updatedAt                DateTime                       @updatedAt @map("updated_at") @db.Timestamptz(6)
   author                   User                           @relation("NativeEditorialSubmissionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
   editor                   User?                          @relation("NativeEditorialSubmissionEditor", fields: [editorUserId], references: [id], onDelete: SetNull)
+  production               EditorialProduction?
   events                   NativeEditorialSubmissionEvent[]
   assets                   NativeEditorialSubmissionAsset[]
 
@@ -943,4 +944,34 @@ model AndroidClosedTestSignup {
 
   @@index([verifiedAt], map: "android_closed_test_signups_verified_at_idx")
   @@map("android_closed_test_signups")
+}
+
+/// Production authority is server state; immutable source/proof bytes are never portable manuscript fields.
+model EditorialProduction {
+  id           String @id @default(uuid()) @db.Uuid
+  submissionId String @unique @map("submission_id") @db.Uuid
+  version      Int @default(1)
+  state        Json @db.JsonB
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  submission   NativeEditorialSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  files        EditorialProductionFile[]
+  @@map("editorial_productions")
+}
+
+model EditorialProductionFile {
+  id           String @id @default(uuid()) @db.Uuid
+  productionId String @map("production_id") @db.Uuid
+  kind         String @db.VarChar(16)
+  revisionId   String @map("revision_id") @db.VarChar(128)
+  stateDigest  String @map("state_digest") @db.VarChar(64)
+  sha256       String @db.VarChar(64)
+  fileName     String @map("file_name") @db.VarChar(255)
+  mediaType    String @map("media_type") @db.VarChar(128)
+  build        Json? @db.JsonB
+  bytes        Bytes
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  production   EditorialProduction @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  @@index([productionId, kind, createdAt])
+  @@map("editorial_production_files")
 }

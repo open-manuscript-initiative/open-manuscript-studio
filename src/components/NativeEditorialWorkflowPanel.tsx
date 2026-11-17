@@ -1,3 +1,5 @@
+import { EditorialProductionPanel } from './EditorialProductionPanel';
+import { getProductionTasks } from '../services/editorialProductionApi';
 import { CheckCircle2, FileCheck2, Inbox, RefreshCw, RotateCcw, Send, UserPlus, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -29,6 +31,9 @@ export function NativeEditorialWorkflowPanel() {
   const manuscript = useStudioStore((state) => state.manuscript);
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const checkpoint = useStudioStore((state) => state.checkpoint);
+  const [productionTasks, setProductionTasks] = useState<Array<{ submissionId: string; title: string; venueName: string }>>([]);
+  const [productionTaskId, setProductionTaskId] = useState('');
+  useEffect(() => { let cancelled = false; void getProductionTasks().then((tasks) => { if (!cancelled) setProductionTasks(tasks); }).catch((reason) => { if (!cancelled) setError(errorMessage(reason)); }); return () => { cancelled = true; }; }, []);
   const [mine, setMine] = useState<NativeEditorialSubmissionSummary[]>([]);
   const [inbox, setInbox] = useState<NativeEditorialSubmissionSummary[]>([]);
   const [selectedId, setSelectedId] = useState('');
@@ -278,6 +283,7 @@ export function NativeEditorialWorkflowPanel() {
                 ))}
               </div>
             ) : null}
+            {['accepted', 'published'].includes(currentSubmission.status) ? <EditorialProductionPanel key={currentSubmission.id} submissionId={currentSubmission.id} /> : null}
             {currentSubmission.status === 'accepted' ? <p className="publication-ready"><CheckCircle2 size={16} aria-hidden="true" /> {copy.publishable}</p> : null}
           </div>
         ) : (
@@ -326,6 +332,15 @@ export function NativeEditorialWorkflowPanel() {
         ) : null}
       </section>
 
+      {detail?.actorMode === 'editor' && ['accepted', 'published'].includes(detail.submission.status) ? <EditorialProductionPanel key={detail.submission.id} submissionId={detail.submission.id} /> : null}
+      {productionTasks.length ? <section className="studio-settings-card">
+        <label>{locale === 'hu' ? 'Kiadvány-előkészítési megbízásaim' : locale === 'de' ? 'Meine Produktionsaufträge' : 'My production assignments'}
+          <select value={productionTaskId} onChange={(event) => setProductionTaskId(event.target.value)}>
+            <option value="">—</option>{productionTasks.map((task) => <option key={task.submissionId} value={task.submissionId}>{task.venueName} · {task.title}</option>)}
+          </select>
+        </label>
+        {productionTaskId ? <EditorialProductionPanel key={productionTaskId} submissionId={productionTaskId} /> : null}
+      </section> : null}
       {message ? <p className="publication-profile-status" role="status">{message}</p> : null}
       {error ? <p className="publication-profile-error" role="alert">{error}</p> : null}
     </section>
@@ -471,7 +486,7 @@ const enCopy = {
   completeReview: 'Complete review assignment', reviewCompleted: 'The submitted review assignment was completed.',
   editorialMessage: 'Editorial message', requestRevision: 'Request revision', revisionRequested: 'The revision request was sent to the author.',
   accept: 'Accept manuscript', accepted: 'The editorial acceptance was recorded for this exact revision.',
-  reject: 'Reject', rejected: 'The manuscript was rejected.', publishable: 'This revision is editorially accepted and publishable.',
+  reject: 'Reject', rejected: 'The manuscript was rejected.', publishable: 'This revision is accepted. Complete copyediting and proof approval before publication.',
   openRevision: 'Open submitted revision', openConfirm: 'Open the submitted revision in Studio? It will replace the currently open document.',
   opened: 'The submitted revision was opened in Studio.', history: 'Workflow history',
   statuses: { submitted: 'submitted', in_review: 'in review', revision_requested: 'revision required', revision_submitted: 'revision submitted', accepted: 'accepted', rejected: 'rejected', published: 'published' } as Record<NativeEditorialSubmissionSummary['status'], string>,
@@ -498,7 +513,7 @@ const huCopy = {
   recommendation: 'javaslat', completeReview: 'Lektori feladat lezárása', reviewCompleted: 'A beadott lektori feladat lezárult.',
   editorialMessage: 'Szerkesztői üzenet', requestRevision: 'Javítás kérése', revisionRequested: 'A szerző megkapta a javítási kérést.',
   accept: 'Kézirat elfogadása', accepted: 'A szerkesztői elfogadó döntés rögzült ehhez a pontos revízióhoz.',
-  reject: 'Elutasítás', rejected: 'A kézirat elutasított állapotba került.', publishable: 'A revízió szerkesztőileg elfogadott és publikálható.',
+  reject: 'Elutasítás', rejected: 'A kézirat elutasított állapotba került.', publishable: 'A kézirat elfogadott. Megjelenés előtt szöveggondozás és a korrektúrapéldány jóváhagyása szükséges.',
   openRevision: 'Beküldött revízió megnyitása', openConfirm: 'Megnyitja a beküldött revíziót a Studioban? Az aktuális dokumentum helyére kerül.',
   opened: 'A beküldött revízió megnyílt a Studioban.', history: 'Munkafolyamat előzményei',
   statuses: { submitted: 'beküldve', in_review: 'lektorálás alatt', revision_requested: 'javítás szükséges', revision_submitted: 'javított változat beérkezett', accepted: 'elfogadva', rejected: 'elutasítva', published: 'publikálva' } as Record<NativeEditorialSubmissionSummary['status'], string>,
@@ -524,7 +539,7 @@ const deCopy = {
   recommendation: 'Empfehlung', completeReview: 'Begutachtung abschließen', reviewCompleted: 'Die eingereichte Begutachtung wurde abgeschlossen.',
   editorialMessage: 'Redaktionelle Nachricht', requestRevision: 'Überarbeitung anfordern', revisionRequested: 'Die Überarbeitungsanforderung wurde an den Autor übermittelt.',
   accept: 'Manuskript annehmen', accepted: 'Die redaktionelle Annahme wurde an diese exakte Revision gebunden.',
-  reject: 'Ablehnen', rejected: 'Das Manuskript wurde abgelehnt.', publishable: 'Diese Revision ist redaktionell angenommen und publizierbar.',
+  reject: 'Ablehnen', rejected: 'Das Manuskript wurde abgelehnt.', publishable: 'Diese Revision ist angenommen. Vor der Veröffentlichung sind Lektorat und Korrekturfreigabe erforderlich.',
   openRevision: 'Eingereichte Revision öffnen', openConfirm: 'Eingereichte Revision in Studio öffnen? Sie ersetzt das aktuell geöffnete Dokument.',
   opened: 'Die eingereichte Revision wurde in Studio geöffnet.', history: 'Workflow-Verlauf',
   statuses: { submitted: 'eingereicht', in_review: 'in Begutachtung', revision_requested: 'Überarbeitung erforderlich', revision_submitted: 'Überarbeitung eingereicht', accepted: 'angenommen', rejected: 'abgelehnt', published: 'publiziert' } as Record<NativeEditorialSubmissionSummary['status'], string>,
