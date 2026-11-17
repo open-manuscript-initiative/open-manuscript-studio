@@ -65,7 +65,7 @@ const db = {
       files.push({ ...data, createdAt: new Date() });
       return data;
     },
-    findMany: async () => files.map(({ bytes, build, ...file }) => file),
+    findMany: async () => files.map(({ bytes: _bytes, build: _build, ...file }) => file),
     findFirst: async ({ where }) =>
       files.find((f) => Object.entries(where).every(([k, v]) => f[k] === v)) ??
       null,
@@ -267,7 +267,7 @@ test('native production API protects persisted transitions, exact proof bytes, a
     409,
     'stale tab cannot overwrite newer approvals',
   );
-  data = await change(editorId, {
+  await change(editorId, {
     type: 'APPROVE_SOURCE',
     role: 'EDITOR',
     fileId: data.state.source.fileId,
@@ -405,7 +405,7 @@ test('proof validator rejects malformed encoding, wrong identity, format and uns
 test('proof validation checks complete provenance, safe names and PDF structure after identity verification', () => {
   const state = submission.production.state;
   const p = artifact();
-  const resign = (build) => { const { id, createdAt, ...identity } = build; return { ...build, id: `urn:omi:publication-build:sha256:${hash(canonical(identity))}` }; };
+  const resign = (build) => { const { id: _id, createdAt: _createdAt, ...identity } = build; return { ...build, id: `urn:omi:publication-build:sha256:${hash(canonical(identity))}` }; };
   assert.equal(validateProductionProof(p.artifactBase64, p.build, 'manuscript', state).sha256, p.build.output.digest.value);
   assert.throws(() => validateProductionProof(p.artifactBase64, resign({ ...p.build, output: { ...p.build.output, fileName: '../article.html' } }), 'manuscript', state), /filename/);
   assert.throws(() => validateProductionProof(p.artifactBase64, { ...p.build, generator: undefined }, 'manuscript', state), /complete publication-build/);
