@@ -130,9 +130,10 @@ every OJS object or a proof-approval assertion.
 
 ## Rollout and verification
 
-1. Review migration `20261116010000_add_editorial_production`, back up PostgreSQL,
-   and apply it with the existing migration rollout procedure before deploying
-   the updated API. It adds two tables and does not rewrite existing submissions.
+1. Follow the [reviewed production migration rollout](server/approved-editorial-production-migration-rollout-2026-11-17.md).
+   Migration `20261116010000_add_editorial_production` is pinned to its reviewed
+   SQL bytes. The deploy requires verified private PostgreSQL backups before
+   applying it. It adds two tables and does not rewrite existing submissions.
 2. Generate both Prisma clients and deploy server and client together.
 3. Install the matching OJS plugin before using workflow inspection. Existing
    OJS submission/review/publication authority is retained.
@@ -144,6 +145,7 @@ every OJS object or a proof-approval assertion.
 6. Run `e2e/editorial-production.spec.ts` and the real OJS two-round and production
    acceptance protocol in `editorial-workflow-priorities.md`.
 
-The existing deployment scripts deliberately stop on an unreviewed migration.
-This change does not add itself to their reviewed-SQL allowlist or apply a live
-migration. Do not treat mocked HTTP tests as evidence of a live OJS installation.
+The deployment scripts deliberately stop on any unreviewed or modified migration,
+unrecognized pending database change, or failed backup. Adding this exact SQL to
+the reviewed list does not itself apply a live migration. Do not treat mocked
+HTTP tests as evidence of a live OJS installation.
