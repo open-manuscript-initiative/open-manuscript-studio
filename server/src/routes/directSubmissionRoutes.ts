@@ -1,3 +1,4 @@
+import { ojsMetadataRequest, ojsMetadataResponse } from '../integrations/publishing/ojsMetadata.js';
 import { fetchPinnedPublicUrl } from '../cloud/security/connectionPinnedHttp.js';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -28,7 +29,7 @@ function publicReceipt(row: { id: string; status: string; externalId: number | n
 }
 function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
   return async (method, path, body) => {
-    if (!/^(omi-integration\/(?:submission-options|publication-artifact|workflow-status\?submissionId=\d+)|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
+    if (!/^(omi-integration\/(?:submission-options|publication-artifact|metadata|workflow-status\?submissionId=\d+)|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
       throw new Error('Invalid publishing operation.');
     }
     const url = await assertTrustedIntegrationUrl(`${baseUrl}/api/v1/${path}`, baseUrl);
@@ -179,6 +180,31 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
         ? error.message
         : 'Publication artifact transfer failed.';
     response.status(status).json({ error: { message } });
+  }
+});
+
+directSubmissionRouter.post('/integrations/connections/:connectionId/metadata', requireSession, async (request: AuthenticatedRequest, response) => {
+  response.setHeader('Cache-Control', 'no-store');
+  const input = ojsMetadataRequest.safeParse(request.body);
+  const connectionId = z.string().uuid().safeParse(request.params.connectionId);
+  if (!input.success || !connectionId.success) { response.status(400).json({ error: { message: 'Invalid OJS metadata proposal.' } }); return; }
+  try {
+    const connection = await prisma.userIntegration.findFirst({ where: { id: connectionId.data, userId: request.authUserId!, enabled: true, providerId: 'ojs' } });
+    const configuredBase = record(connection?.config).baseUrl;
+    if (!connection || typeof configuredBase !== 'string') { response.status(404).json({ error: { message: 'Enabled personal OJS connection not found.' } }); return; }
+    const baseUrl = (await assertTrustedIntegrationUrl(configuredBase, configuredBase)).toString().replace(/\/+$/, '');
+    const credential = await resolvePersonalOjsCredential(request.authUserId!, baseUrl);
+    if (!credential) { response.status(400).json({ error: { message: 'Save your personal OJS API key for this installation first.' } }); return; }
+    const remote = await nativeClient(baseUrl, credential.apiKey)('POST', 'omi-integration/metadata', input.data);
+    const parsed = ojsMetadataResponse.safeParse(remote);
+    if (!parsed.success || parsed.data.snapshot.submissionId !== input.data.submissionId) throw new Error('The OJS metadata response is incompatible. Install OJS Studio Integration 1.8.0.0 or newer.');
+    if (input.data.action === 'apply') {
+      const receipt = parsed.data.receipt;
+      if (!receipt || parsed.data.snapshot.publicationId !== input.data.publicationId || receipt.publicationId !== input.data.publicationId || receipt.submissionId !== input.data.submissionId || receipt.previousStateToken !== input.data.expectedStateToken || receipt.locale !== input.data.locale || JSON.stringify([...receipt.fields].sort()) !== JSON.stringify(Object.keys(input.data.fields).sort())) throw new Error('OJS returned a mismatched metadata receipt. Refresh the destination before retrying.');
+    }
+    response.json(parsed.data);
+  } catch (error) {
+    response.status(error instanceof RemoteError && [400, 403, 404, 409, 422].includes(error.status) ? error.status : 502).json({ error: { message: error instanceof Error ? error.message : 'OJS metadata reconciliation failed.' } });
   }
 });
 

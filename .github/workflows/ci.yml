@@ -219,6 +219,9 @@ jobs:
       - name: Test website publication assurance and delivery
         run: npm run test:web-publication
 
+      - name: Test selective OJS metadata reconciliation
+        run: npm run test:ojs-metadata
+
       - name: Test revision-bound editorial production
         run: npm run test:editorial-production
 

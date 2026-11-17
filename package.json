@@ -134,7 +134,8 @@
     "test:workflow-role-persistence": "tsc -p server/tsconfig.json && node --test --experimental-test-module-mocks tests/workflow-role-persistence.test.mjs tests/workflow-role-login-compatibility.test.mjs tests/workflow-role-prisma-projection.test.mjs",
     "test:core-remaining": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/core-remaining.test.ts",
     "evidence:core-remaining": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/verify-core-remaining.ts",
-    "test:editorial-production": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/editorial-production.test.ts tests/native-editorial-workflow.test.ts && node --test --experimental-test-module-mocks tests/editorial-production-routes.test.mjs tests/web-publication-service.test.mjs tests/publication-artifact-routes.test.mjs"
+    "test:editorial-production": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/editorial-production.test.ts tests/native-editorial-workflow.test.ts && node --test --experimental-test-module-mocks tests/editorial-production-routes.test.mjs tests/web-publication-service.test.mjs tests/publication-artifact-routes.test.mjs",
+    "test:ojs-metadata": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/ojs-metadata-reconciliation.test.ts tests/ojs-metadata-actions.test.ts && node --test --experimental-test-module-mocks tests/publication-artifact-routes.test.mjs"
   },
   "dependencies": {
     "@hocuspocus/provider": "^4.7.0",

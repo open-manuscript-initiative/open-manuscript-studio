@@ -496,3 +496,15 @@ export async function executeWebPublication(
   }
   return payload.receipt;
 }
+
+/** Per-installation native credentials stay on the Studio server. */
+export async function requestOjsMetadata(connectionId: string, input: import('./ojsMetadataTypes').OjsMetadataRequest): Promise<import('./ojsMetadataTypes').OjsMetadataResponse> {
+  const response = await fetch(`${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/metadata`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: integrationHeaders({ Accept: 'application/json', 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input),
+  });
+  const result = await parseJsonResponse<import('./ojsMetadataTypes').OjsMetadataResponse & { error?: { message?: string } }>(response);
+  if (!response.ok || result.error) throw new Error(result.error?.message ?? `OJS metadata request failed: HTTP ${response.status}.`);
+  return result;
+}

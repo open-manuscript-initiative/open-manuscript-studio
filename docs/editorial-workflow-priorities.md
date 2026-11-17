@@ -11,7 +11,7 @@ retaining OJS as the authority for connected journals.
 | 1 | Revision lineage and copyediting | Native production archives the accepted source; edited source requires author/editor approval and a new exact editorial acceptance. Verify on PostgreSQL and with distinct native author/editor accounts. |
 | 2 | Proof correction and final approval | Native located corrections, recorded dispositions, immutable proofs and exact-file approvals are implemented. HTML/PDF use the existing renderers. Verify browser/native delivery and approval invalidation. |
 | 3 | Stage-scoped permissions | Native COPYEDITOR/LAYOUT_EDITOR/PROOFREADER tasks are implemented. OJS task mapping and native copyediting/proof writeback remain separate connector work; broad Assistant role names are insufficient. |
-| 4 | OJS state and metadata reconciliation | Read-only stage/selected-metadata refresh and stale-transfer protection are implemented. Full author/DOI/keyword mapping, two-way metadata proposals and event updates remain to be implemented. |
+| 4 | OJS state and metadata reconciliation | Stage refresh, stale-transfer protection and selective two-way title/subtitle/abstract/keyword reconciliation are implemented. License/copyright can be explicitly imported. Contributor identity reconciliation, identifier mapping and automatic event updates remain separate work. See `ojs-metadata-reconciliation.md`. |
 | 5 | Complete acceptance evidence | Unit/HTTP/PHP contracts and PostgreSQL/browser CI tests are supplied. A disposable real OJS 3.5 workflow run is still required before operational certification. |
 | 6 | External editorial evidence | The contract below is specified; OJS acceptance must not be treated as a Studio-native decision. No external reviewed seal is enabled by this change. |
 | 7 | Native issue management | Design below; OJS already provides this for connected journals. Native volumes/issues, article ordering, issue publication and reader/archive services are not implemented here. |
@@ -53,7 +53,7 @@ Submission ID + publication ID + locale + expected revision token are required
 for applying a proposal. An intervening change returns 409 with a refreshed
 comparison. Publication callbacks/webhooks may invalidate a cached projection;
 the client must then re-read native state. A callback is not authority to make an
-editorial decision. The current read-only refresh is the safe first increment.
+editorial decision. The current increment uses explicit refresh and per-field proposals, documented in `ojs-metadata-reconciliation.md`. Contributor/reference writes and event-driven refresh remain unimplemented.
 
 ## Real OJS acceptance run (priority 5)
 
