@@ -6,8 +6,9 @@ import {
   renderWordGeneratedIndexField,
   renderWordIndexEntryFields,
 } from '../src/services/exportDocx.ts';
-import { createNoteAnnotation } from '../src/model/notes.ts';
 import { getPublicationProfile } from '../src/model/publicationProfile.ts';
+import { createSemanticField } from '../src/model/semanticFields.ts';
+import { createNoteAnnotation } from '../src/model/notes.ts';
 import { createTestManuscript } from './testManuscriptFixture.ts';
 
 test('exports semantic OMI index occurrences as Word XE fields', () => {
@@ -133,6 +134,49 @@ test('exports linked OMI notes as native Word footnotes by default and retains e
   assert.doesNotMatch(documentXml, /A default footnote|An explicit endnote/);
   assert.match(documentXml, /Orphaned note content is retained\./);
   assert.match(result.warnings.join('\n'), /no inline anchor/);
+});
+
+test('exports opt-in starred funding without shifting first numbered footnote', () => {
+  const manuscript = createTestManuscript();
+  manuscript.semanticFields = [createSemanticField({
+    role: 'funding-statement',
+    label: 'Funding',
+    value: 'Fund <42> & Institute',
+  })];
+  const profile = structuredClone(getPublicationProfile('omi-generic-scholarly')!);
+  profile.id = 'test-funding-style';
+  profile.version = '1';
+  manuscript.publicationProfile = { id: profile.id, version: profile.version };
+  manuscript.embeddedPublicationProfile = profile;
+
+  const block = manuscript.sections[0]!.blocks[0]!;
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [
+      { type: 'text', text: 'Main text ' },
+      { type: 'omiNote', attrs: { noteId: 'n1', anchorId: 'a1', label: '1', noteType: 'footnote' } },
+    ] }],
+  });
+  manuscript.annotations = [{
+    id: 'n1', type: 'note', noteKind: 'footnote',
+    anchorId: 'a1', targetBlockId: block.id,
+    body: 'Ordinary numbered note', renderingHint: 'footnote',
+  }];
+
+  const disabled = readStoreZipEntries(buildDocxExport(manuscript).bytes);
+  const disabledDocument = new TextDecoder().decode(disabled.get('word/document.xml'));
+  assert.doesNotMatch(disabledDocument, /w:pStyle w:val="FundingNote"/);
+
+  profile.rules.notes.fundingStarNote = true;
+  const enabled = readStoreZipEntries(buildDocxExport(manuscript).bytes);
+  const documentXml = new TextDecoder().decode(enabled.get('word/document.xml'));
+  const footnotesXml = new TextDecoder().decode(enabled.get('word/footnotes.xml'));
+  assert.match(documentXml, /w:vertAlign w:val="superscript"\/><\/w:rPr><w:t>\*<\/w:t>/);
+  assert.match(documentXml, /w:pStyle w:val="FundingNote"/);
+  assert.match(documentXml, /Fund &lt;42&gt; &amp; Institute/);
+  assert.match(documentXml, /w:footnoteReference w:id="1"/);
+  assert.match(footnotesXml, /w:footnote w:id="1"/);
+  assert.doesNotMatch(footnotesXml, /Fund &lt;42&gt;/);
 });
 
 test('DOCX local notes are unnumbered inline or numbered with ordinary notes by export style', () => {

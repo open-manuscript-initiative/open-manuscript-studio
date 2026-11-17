@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   createSemanticField,
+  getManuscriptFundingStatement,
   normalizeSemanticRole,
   updateSemanticField,
   validateSemanticFields,
@@ -25,6 +26,15 @@ test('creates typed semantic fields with stable machine roles', () => {
   assert.equal(field.valueType, 'rich-text');
   assert.equal(field.value, '');
   assert.equal(field.required, true);
+});
+
+test('resolves only nonempty manuscript-level funding without duplicate notes', () => {
+  const emptyFunding = createSemanticField({ role: 'funding-statement', label: 'Funding', value: '  ' });
+  const sectionFunding = createSemanticField({ role: 'funding-statement', label: 'Section funding', scope: 'section', sectionId: 's1', value: 'Local grant' });
+  const funding = createSemanticField({ role: 'funding-statement', label: 'Finanszírozás', value: '  Supported by Grant & Fund  <42>.  ' });
+  assert.equal(getManuscriptFundingStatement({ semanticFields: [emptyFunding, sectionFunding, funding] }), 'Supported by Grant & Fund  <42>.');
+  assert.equal(getManuscriptFundingStatement({ semanticFields: [sectionFunding] }), '');
+  assert.equal(getManuscriptFundingStatement({}), '');
 });
 
 test('semantic role normalization is portable and independent from UI labels', () => {

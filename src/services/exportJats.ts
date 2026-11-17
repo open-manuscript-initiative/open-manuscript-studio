@@ -14,6 +14,7 @@ import {
 } from '../model/crossReferences';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering';
 import { getBibliographyRecords } from '../model/citations';
+import { getManuscriptFundingStatement } from '../model/semanticFields';
 import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText';
 import { buildNoteNumberMap, getNoteKind } from '../model/notes';
 import { renderLatexMath } from '../model/equationRendering';
@@ -279,6 +280,11 @@ function renderFront(state: RenderState): string {
         .map((keyword) => `<kwd>${escapeXml(keyword)}</kwd>`)
         .join('')}</kwd-group>`
     : '';
+  // Funding metadata is retained independently of page-oriented style choices.
+  const funding = getManuscriptFundingStatement(manuscript);
+  const fundingGroup = funding
+    ? `<funding-group><funding-statement>${escapeXml(funding)}</funding-statement></funding-group>`
+    : '';
 
   const articleMeta = [
     `<title-group>\n${indent(titleGroup, 1)}\n</title-group>`,
@@ -287,6 +293,7 @@ function renderFront(state: RenderState): string {
     renderPermissions(state),
     abstract,
     keywords,
+    fundingGroup,
   ]
     .filter(Boolean)
     .join('\n');

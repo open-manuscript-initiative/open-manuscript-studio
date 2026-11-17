@@ -83,6 +83,14 @@ export function PublisherProfileEditor({
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
+  function updateFundingStarNote(enabled: boolean) {
+    if (protectedProfile) return;
+    setDraft((current) => ({
+      ...current,
+      rules: { ...current.rules, notes: { ...current.rules.notes, fundingStarNote: enabled } },
+    }));
+  }
+
   function updateLocalNotePlacement(value: NonNullable<OmiPublicationProfile['rules']['notes']['localNotePlacement']>) {
     if (protectedProfile) return;
     setDraft((current) => ({
@@ -360,6 +368,18 @@ export function PublisherProfileEditor({
           <label><span>{labels.bibliographyStyle}</span><select value={draft.rules.citations.bibliographyStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('bibliographyStyle', e.target.value)}>{citationStyles.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
           <label><span>{labels.firstNoteStyle}</span><select value={draft.rules.citations.noteFirstStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('noteFirstStyle', e.target.value)}>{CITATION_STYLE_CATALOG.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
           <label><span>{labels.subsequentNoteStyle}</span><select value={draft.rules.citations.noteSubsequentStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('noteSubsequentStyle', e.target.value)}>{CITATION_STYLE_CATALOG.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
+          <label className="publisher-profile-wide">
+            <span>{locale.startsWith('hu')
+              ? 'Finanszírozási nyilatkozat csillagos kezdőjegyzetként'
+              : locale.startsWith('de')
+                ? 'Finanzierung als Sternchen-Anmerkung am Anfang'
+                : 'Show funding as a starred opening note'}</span>
+            <input
+              type="checkbox"
+              checked={draft.rules.notes.fundingStarNote === true}
+              onChange={(event) => updateFundingStarNote(event.target.checked)}
+            />
+          </label>
           <label>
             <span>{locale === 'hu' ? 'Szövegközi jegyzet tördelése' : 'Local note layout'}</span>
             <select

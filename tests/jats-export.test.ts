@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { createCrossReference } from '../src/model/crossReferences.ts';
 import { getPublicationProfile } from '../src/model/publicationProfile.ts';
+import { createSemanticField } from '../src/model/semanticFields.ts';
 import {
   renderJatsArticle,
   validateJatsStructure,
@@ -34,6 +35,22 @@ test('renders deterministic JATS 1.4 authoring XML with title block and traceabi
       manuscript.headRevisionId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
     ),
   );
+});
+
+test('preserves funding as structured JATS metadata independently of display style', () => {
+  const manuscript = createTestManuscript();
+  manuscript.semanticFields = [createSemanticField({
+    role: 'funding-statement',
+    label: 'Funding',
+    value: 'Grant <42> & Institute',
+  })];
+  const profile = structuredClone(getPublicationProfile('omi-generic-scholarly')!);
+  const first = renderJatsArticle(manuscript, profile);
+  assert.match(first.xml, /<funding-group><funding-statement>Grant &lt;42&gt; &amp; Institute<\/funding-statement><\/funding-group>/);
+  profile.rules.notes.fundingStarNote = true;
+  assert.match(renderJatsArticle(manuscript, profile).xml, /<funding-group><funding-statement>/);
+  manuscript.semanticFields = [];
+  assert.doesNotMatch(renderJatsArticle(manuscript, profile).xml, /<funding-group>/);
 });
 
 test('renders semantic citation, note and internal cross-reference markers as JATS xrefs', () => {
