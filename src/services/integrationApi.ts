@@ -104,7 +104,7 @@ export async function getIntegrationStatus(
 }
 
 export async function getIntegrationCatalog(): Promise<IntegrationCatalogProvider[]> {
-  const response = await fetch(`${API_BASE_URL}/integrations/catalog`, {
+  const response = await studioApiFetch('/api/integrations/catalog', {
     credentials: 'include',
     headers: integrationHeaders({ Accept: 'application/json' }),
   });
@@ -347,8 +347,8 @@ export async function requestPublicationArtifact(
   target?: import('./publicationArtifact').PublicationArtifactTarget;
   receipt?: import('./publicationArtifact').PublicationArtifactReceipt;
 }> {
-  const response = await fetch(
-    `${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/publication-artifact`,
+  const response = await studioApiFetch(
+    `/api/integrations/connections/${encodeURIComponent(connectionId)}/publication-artifact`,
     {
       method: 'POST',
       credentials: 'include',
