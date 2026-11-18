@@ -97,7 +97,7 @@ test('all user-controlled PKP, publishing and AI outbound calls use pinned trans
     'server/src/integrations/omp/reviewForm.ts',
     'server/src/integrations/ojs/reviewRecommendations.ts',
     'server/src/integrations/ojs/ojsAssignmentContext.ts',
-    'server/src/routes/directSubmissionRoutes.ts',
+    'server/src/integrations/publishing/nativePublishingClient.ts',
     'server/src/routes/publicationVenueRoutes.ts',
     'server/src/integrations/publishing/webPublication.ts',
     'server/src/integrations/aiProviderClient.ts',
@@ -105,5 +105,12 @@ test('all user-controlled PKP, publishing and AI outbound calls use pinned trans
     const source = readFileSync(new URL('../' + path, import.meta.url), 'utf8');
     assert.match(source, /fetchPinnedPublicUrl\(/, path);
     assert.doesNotMatch(source, /\bawait fetch\(/, path);
+  }
+  // The extracted transport owns socket pinning; callers must not reintroduce a direct fetch.
+  for (const path of ['server/src/routes/directSubmissionRoutes.ts', 'server/src/services/editorialConnectorService.ts']) {
+    const source = readFileSync(new URL('../' + path, import.meta.url), 'utf8');
+    assert.match(source, /from ['"].*nativePublishingClient\.js['"]/, path);
+    assert.match(source, /nativeClient\(/, path);
+    assert.doesNotMatch(source, /\bfetch\(/, path);
   }
 });
