@@ -119,3 +119,8 @@ merely because the issue can be exported as JSON or HTML.
 
 This layer must reject an authoritative OJS binding so there cannot be two
 competing issue schedules for the same journal.
+
+
+## 2026-11-18 boundary checkpoint
+
+Use the common `omi-publishing-editorial/1` capability projection and the canonical v1 connection endpoints. OJS profile snapshots remain versioned extensions; OMP explicitly lacks these two new operations until a tested adapter exists. New endpoint availability does not imply native task writeback, proof approval or external reviewed-seal authority. [ADR-037](architecture/adr-037-editorial-production-and-connector-contract.md) and the generated OpenAPI describe the bounded implementation. The existing exact-candidate OJS manual gates must exercise these operations with exact Studio/plugin/package identities; helper tests and native package installation alone do not certify the editorial workflow.

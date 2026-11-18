@@ -66,6 +66,7 @@ import { publicationPdfRouter } from './routes/publicationPdfRoutes.js';
 import { publicationValidationRouter } from './routes/publicationValidationRoutes.js';
 import { referenceManagerRouter } from './routes/referenceManagerRoutes.js';
 import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
+import { editorialConnectorRouter } from './routes/editorialConnectorRoutes.js';
 import { directSubmissionRouter } from './routes/directSubmissionRoutes.js';
 import { euroOfficeRouter } from './routes/euroOfficeRoutes.js';
 import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
@@ -102,7 +103,7 @@ app.use(cookieOriginGuard(allowedOrigins));
 // excluded from this browser-session gate.
 app.use('/api/integrations/connections/:connectionId/direct-submission', requireSession, express.json({ limit: '25mb' }));
 app.use('/api/integrations/connections/:connectionId/publication-artifact', requireSession, express.json({ limit: '48mb' }));
-app.use('/api/native-editorial/production', requireSession, express.json({ limit: '68mb' }));
+app.use(['/api/v1/native-editorial/production', '/api/native-editorial/production'], requireSession, express.json({ limit: '68mb' }));
 app.use('/api/native-editorial/submissions', requireSession, express.json({ limit: '68mb' }));
 app.use('/integrations/omp/native/author/:contextId/revision', express.json({ limit: '36mb' }));
 app.use('/api/publication/render/pdf', requireSession, express.json({ limit: '64mb' }));
@@ -168,11 +169,12 @@ app.use('/api', referenceManagerRouter);
 app.use('/api/v1', transkribusRouter);
 app.use('/api', transkribusRouter); // Legacy compatibility facade.
 app.use('/api', personalReferenceLibraryRouter);
+app.use('/api/v1', editorialConnectorRouter);
 app.use('/api', directSubmissionRouter);
 app.use('/api', agentReviewRouter);
 app.use(['/api/v1', '/api'], extensionRegistryRouter); // Shared extension contract and legacy facade.
 app.use('/api', integrationExecutionRouter); // Extension compatibility facade; shared handlers.
-app.use('/api/native-editorial/production', editorialProductionRouter);
+app.use(['/api/v1/native-editorial/production', '/api/native-editorial/production'], editorialProductionRouter);
 app.use('/api/native-editorial', nativeEditorialWorkflowRouter);
 app.use('/api', proofreadingRouter);
 app.use('/api', publishingConnectionRouter);

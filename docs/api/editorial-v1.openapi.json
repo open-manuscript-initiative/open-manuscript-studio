@@ -1,0 +1,2523 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Studio editorial production and publishing profile APIs",
+    "version": "1.0.0-draft.1"
+  },
+  "paths": {
+    "/api/v1/native-editorial/production/tasks": {
+      "get": {
+        "operationId": "listEditorialProductionTasks",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductionTasks"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/native-editorial/production/{submissionId}": {
+      "parameters": [
+        {
+          "name": "submissionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getEditorialProduction",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "changeEditorialProduction",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductionCommand"
+              }
+            }
+          }
+        },
+        "description": "version is mandatory; immutable file IDs, dual source/proof approvals and READY gate remain server authority. No automatic retry after an unknown result: reload state and files. No document editing lock."
+      }
+    },
+    "/api/v1/native-editorial/production/{submissionId}/files/{fileId}": {
+      "parameters": [
+        {
+          "name": "submissionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "fileId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "downloadEditorialProductionFile",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Participant-only immutable source JSON or exact HTML/PDF proof. Attachment; no-store; sandbox CSP.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not a current participant."
+          },
+          "404": {
+            "description": "File not in this production."
+          }
+        }
+      }
+    },
+    "/api/v1/integrations/connections/{connectionId}/editorial-capabilities": {
+      "parameters": [
+        {
+          "name": "connectionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getEditorialConnectorCapabilities",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialCapabilities"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/integrations/connections/{connectionId}/workflow-status": {
+      "parameters": [
+        {
+          "name": "connectionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "inspectEditorialWorkflow",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/integrations/connections/{connectionId}/metadata": {
+      "parameters": [
+        {
+          "name": "connectionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "reconcileEditorialMetadata",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetadataRequest"
+              }
+            }
+          }
+        },
+        "description": "OJS profile only. Inspect before apply; exact publicationId/locale/expectedStateToken and confirmed are required. Only selected fields are written. An unknown remote outcome requires reinspection; no automatic replay or distributed transaction is claimed."
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "omi_session"
+      },
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "ProductionCommand": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "command": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "START"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "ASSIGN"
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 320,
+                    "format": "email",
+                    "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "COPYEDITOR",
+                      "LAYOUT_EDITOR",
+                      "PROOFREADER"
+                    ]
+                  },
+                  "dueAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "email",
+                  "role"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "REVOKE"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "COPYEDITOR",
+                      "LAYOUT_EDITOR",
+                      "PROOFREADER"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "userId",
+                  "role"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "SOURCE"
+                  },
+                  "source": {
+                    "type": "object",
+                    "properties": {
+                      "manuscriptId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "revisionId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "stateDigest": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "publicationContentDigest": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "manuscriptStateSnapshot": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      },
+                      "reviewSnapshot": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      },
+                      "assets": {
+                        "maxItems": 2000,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "assetId": {
+                              "type": "string",
+                              "maxLength": 128
+                            },
+                            "mediaType": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "checksum": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "bytesBase64": {
+                              "type": "string",
+                              "maxLength": 70000000
+                            }
+                          },
+                          "required": [
+                            "assetId",
+                            "mediaType",
+                            "checksum",
+                            "bytesBase64"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "manuscriptId",
+                      "title",
+                      "revisionId",
+                      "stateDigest",
+                      "publicationContentDigest",
+                      "manuscriptStateSnapshot",
+                      "reviewSnapshot",
+                      "assets"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "APPROVE_SOURCE"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "AUTHOR",
+                      "EDITOR"
+                    ]
+                  },
+                  "fileId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "role",
+                  "fileId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "LAYOUT"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "PROOF"
+                  },
+                  "artifactBase64": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 46000000
+                  },
+                  "build": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "type",
+                  "artifactBase64",
+                  "build"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "CORRECTION"
+                  },
+                  "fileId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "locator": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000
+                  }
+                },
+                "required": [
+                  "type",
+                  "fileId",
+                  "locator",
+                  "note"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "RESOLVE"
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000
+                  }
+                },
+                "required": [
+                  "type",
+                  "id",
+                  "note"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "APPROVE_PROOF"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "AUTHOR",
+                      "EDITOR"
+                    ]
+                  },
+                  "fileId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "role",
+                  "fileId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "READY"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "command"
+        ],
+        "additionalProperties": false
+      },
+      "ProductionResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "const": "omi-editorial-production/1"
+                  },
+                  "stage": {
+                    "type": "string",
+                    "enum": [
+                      "COPYEDITING",
+                      "LAYOUT",
+                      "PROOFREADING",
+                      "READY"
+                    ]
+                  },
+                  "acceptedSource": {
+                    "type": "object",
+                    "properties": {
+                      "fileId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "revisionId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "stateDigest": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "publicationContentDigest": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    },
+                    "required": [
+                      "fileId",
+                      "revisionId",
+                      "stateDigest",
+                      "publicationContentDigest"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "source": {
+                    "type": "object",
+                    "properties": {
+                      "fileId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "revisionId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "stateDigest": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "publicationContentDigest": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    },
+                    "required": [
+                      "fileId",
+                      "revisionId",
+                      "stateDigest",
+                      "publicationContentDigest"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceApprovals": {
+                    "type": "object",
+                    "properties": {
+                      "AUTHOR": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "at"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "EDITOR": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "at"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "assignments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "userId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "COPYEDITOR",
+                            "LAYOUT_EDITOR",
+                            "PROOFREADER"
+                          ]
+                        },
+                        "dueAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        }
+                      },
+                      "required": [
+                        "userId",
+                        "role"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "proof": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "fileId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "revisionId": {
+                            "type": "string"
+                          },
+                          "stateDigest": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          },
+                          "buildId": {
+                            "type": "string"
+                          },
+                          "fileName": {
+                            "type": "string"
+                          },
+                          "mediaType": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fileId",
+                          "revisionId",
+                          "stateDigest",
+                          "sha256",
+                          "buildId",
+                          "fileName",
+                          "mediaType"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "proofApprovals": {
+                    "type": "object",
+                    "properties": {
+                      "AUTHOR": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "at"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "EDITOR": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "at"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "corrections": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "proofFileId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "locator": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "type": "string"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "resolution": {
+                          "type": "object",
+                          "properties": {
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "note": {
+                              "type": "string"
+                            },
+                            "at": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            }
+                          },
+                          "required": [
+                            "userId",
+                            "note",
+                            "at"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "proofFileId",
+                        "locator",
+                        "note",
+                        "userId",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "reference": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "userId",
+                        "at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "model",
+                  "stage",
+                  "acceptedSource",
+                  "source",
+                  "sourceApprovals",
+                  "assignments",
+                  "proof",
+                  "proofApprovals",
+                  "corrections",
+                  "events"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actor": {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "author": {
+                "type": "boolean"
+              },
+              "editor": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "userId",
+              "author",
+              "editor"
+            ],
+            "additionalProperties": false
+          },
+          "published": {
+            "type": "boolean"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "SOURCE",
+                    "PROOF"
+                  ]
+                },
+                "revisionId": {
+                  "type": "string"
+                },
+                "stateDigest": {
+                  "type": "string"
+                },
+                "sha256": {
+                  "type": "string"
+                },
+                "fileName": {
+                  "type": "string"
+                },
+                "mediaType": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "revisionId",
+                "stateDigest",
+                "sha256",
+                "fileName",
+                "mediaType",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "version",
+          "state",
+          "actor",
+          "published",
+          "files"
+        ],
+        "additionalProperties": false
+      },
+      "ProductionTasks": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "submissionId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "venueName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "submissionId",
+                "title",
+                "venueName"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "tasks"
+        ],
+        "additionalProperties": false
+      },
+      "MetadataRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "const": "inspect"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "action",
+              "submissionId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "const": "apply"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "locale": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$"
+              },
+              "expectedStateToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "confirmed": {
+                "type": "boolean",
+                "const": true
+              },
+              "fields": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "subtitle": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "abstract": {
+                    "type": "string",
+                    "maxLength": 100000
+                  },
+                  "keywords": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "action",
+              "submissionId",
+              "publicationId",
+              "locale",
+              "expectedStateToken",
+              "confirmed",
+              "fields"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "MetadataResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "const": "omi-ojs-metadata/1"
+              },
+              "authority": {
+                "type": "string",
+                "const": "OJS"
+              },
+              "stateToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "workflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "stage": {
+                "type": "string"
+              },
+              "publicationStatus": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "locales": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32
+                }
+              },
+              "writableFields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "title",
+                    "subtitle",
+                    "abstract",
+                    "keywords"
+                  ]
+                }
+              },
+              "abstractRepresentation": {
+                "type": "string",
+                "const": "plain-text"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "subtitle": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "abstract": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "keywords": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    }
+                  },
+                  "doi": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "references": {
+                    "type": "string"
+                  },
+                  "pages": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "issueId": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "datePublished": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "licenseUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "copyrightHolder": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "maxLength": 32
+                        },
+                        "additionalProperties": {
+                          "type": "string",
+                          "maxLength": 100000
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "copyrightYear": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "subtitle",
+                  "abstract",
+                  "keywords",
+                  "doi",
+                  "references",
+                  "pages",
+                  "issueId",
+                  "datePublished",
+                  "licenseUrl",
+                  "copyrightHolder",
+                  "copyrightYear"
+                ],
+                "additionalProperties": false
+              },
+              "contributors": {
+                "maxItems": 500,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "externalId": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "object",
+                      "properties": {
+                        "given": {
+                          "type": "string"
+                        },
+                        "family": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "given",
+                        "family"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "preferredPublicName": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "maxLength": 32
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "maxLength": 100000
+                      }
+                    },
+                    "affiliation": {
+                      "type": "string"
+                    },
+                    "affiliations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string",
+                              "maxLength": 32
+                            },
+                            "additionalProperties": {
+                              "type": "string",
+                              "maxLength": 100000
+                            }
+                          },
+                          "ror": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "ror"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "identifiers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "scheme": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "scheme",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "sequence": {
+                      "type": "number"
+                    },
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "includeInBrowse": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "externalId",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "protocol",
+              "authority",
+              "stateToken",
+              "workflowToken",
+              "submissionId",
+              "publicationId",
+              "stage",
+              "publicationStatus",
+              "locales",
+              "writableFields",
+              "abstractRepresentation",
+              "metadata",
+              "contributors"
+            ],
+            "additionalProperties": false
+          },
+          "receipt": {
+            "type": "object",
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "const": "omi-ojs-metadata/1"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "locale": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "previousStateToken": {
+                "type": "string"
+              },
+              "published": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "protocol",
+              "submissionId",
+              "publicationId",
+              "locale",
+              "fields",
+              "previousStateToken",
+              "published"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "snapshot"
+        ],
+        "additionalProperties": false
+      },
+      "WorkflowRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "submissionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "submissionId"
+        ],
+        "additionalProperties": false
+      },
+      "WorkflowResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "const": "omi-ojs-workflow/1"
+              },
+              "authority": {
+                "type": "string",
+                "const": "OJS"
+              },
+              "stateToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "stageId": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "stage": {
+                "type": "string"
+              },
+              "submissionStatus": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "publicationStatus": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "lastModified": {},
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "subtitle": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "abstract": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "pages": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "issueId": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "datePublished": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "licenseUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "copyrightHolder": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "maxLength": 32
+                        },
+                        "additionalProperties": {
+                          "type": "string",
+                          "maxLength": 100000
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "copyrightYear": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "subtitle",
+                  "abstract",
+                  "pages",
+                  "issueId",
+                  "datePublished",
+                  "licenseUrl",
+                  "copyrightHolder",
+                  "copyrightYear"
+                ],
+                "additionalProperties": false
+              },
+              "editorialDecisionsWritable": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "protocol",
+              "authority",
+              "stateToken",
+              "submissionId",
+              "publicationId",
+              "stageId",
+              "stage",
+              "submissionStatus",
+              "publicationStatus",
+              "lastModified",
+              "metadata",
+              "editorialDecisionsWritable"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "snapshot"
+        ],
+        "additionalProperties": false
+      },
+      "EditorialCapabilities": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "protocol": {
+            "type": "string",
+            "const": "omi-publishing-editorial/1"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "ojs",
+              "omp"
+            ]
+          },
+          "authority": {
+            "type": "string",
+            "enum": [
+              "OJS",
+              "OMP"
+            ]
+          },
+          "features": {
+            "type": "object",
+            "properties": {
+              "workflowRead": {
+                "type": "boolean"
+              },
+              "metadataReconcile": {
+                "type": "boolean"
+              },
+              "nativeCopyeditingWrite": {
+                "type": "boolean",
+                "const": false
+              },
+              "nativeProofApproval": {
+                "type": "boolean",
+                "const": false
+              },
+              "externalReviewAssurance": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "workflowRead",
+              "metadataReconcile",
+              "nativeCopyeditingWrite",
+              "nativeProofApproval",
+              "externalReviewAssurance"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "protocol",
+          "provider",
+          "authority",
+          "features"
+        ],
+        "additionalProperties": false
+      },
+      "EditorialError": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

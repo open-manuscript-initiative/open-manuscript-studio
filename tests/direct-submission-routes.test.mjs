@@ -53,6 +53,7 @@ mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, { nam
   directSubmission: table,
   userIntegration: { findFirst: async ({ where }) => where.userId === owner && where.id === connectionId ? { id: connectionId, providerId: 'ojs', config: { baseUrl: destination } } : null },
 } } });
+mock.module(new URL('../server/dist/services/personalPublishingCredentialService.js', import.meta.url).href, { namedExports: { resolvePersonalOjsCredential: async () => null, resolvePersonalOmpCredential: async () => null } });
 mock.module(new URL('../server/dist/middleware/requireSession.js', import.meta.url).href, { namedExports: {
   requireSession: (req, res, next) => { const id = req.headers['x-test-user']; if (!id) { res.sendStatus(401); return; } req.authUserId = id; next(); },
 } });

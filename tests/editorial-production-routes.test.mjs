@@ -10,6 +10,7 @@ let editorEnabled = true;
 let acceptanceFailure = false;
 const acceptanceInputs = [];
 let liveDelivery = false;
+let revokeEditorAtLock = false;
 let submission = {
   id: submissionId,
   workspaceId: 'native:test',
@@ -65,7 +66,7 @@ const db = {
       files.push({ ...data, createdAt: new Date() });
       return data;
     },
-    findMany: async () => files.map(({ bytes: _bytes, build: _build, ...file }) => file),
+    findMany: async () => files.map(({ id, kind, revisionId, stateDigest, sha256, fileName, mediaType, createdAt }) => ({ id, kind, revisionId, stateDigest, sha256, fileName, mediaType, createdAt })),
     findFirst: async ({ where }) =>
       files.find((f) => Object.entries(where).every(([k, v]) => f[k] === v)) ??
       null,
@@ -78,7 +79,7 @@ const db = {
     },
   },
   user: { findFirst: async () => ({ id: workerId }) },
-  $queryRaw: async () => [],
+  $queryRaw: async () => { if (revokeEditorAtLock) editorEnabled = false; return []; },
 };
 db.$transaction = async (callback) => {
   const before = structuredClone({ submission, files });
@@ -160,6 +161,7 @@ const { assertNativeProductionReady, validateProductionProof } = await import(
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 app.use('/production', editorialProductionRouter);
+app.use(['/api/v1/native-editorial/production','/api/native-editorial/production'], editorialProductionRouter);
 const server = await new Promise((resolve) => {
   const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
 });
@@ -411,4 +413,38 @@ test('proof validation checks complete provenance, safe names and PDF structure 
   assert.throws(() => validateProductionProof(p.artifactBase64, { ...p.build, generator: undefined }, 'manuscript', state), /complete publication-build/);
   const pdf = resign({ ...p.build, output: { ...p.build.output, format: 'pdf-print', fileName: 'article.pdf', mediaType: 'application/pdf' }, rendererInput: { mediaType: 'text/html', byteLength: 1, digest: { algorithm: 'sha256', value: '1'.repeat(64) } } });
   assert.throws(() => validateProductionProof(p.artifactBase64, pdf, 'manuscript', state), /Invalid PDF/);
+});
+
+
+test('v1 and legacy production use the same authorization and state, with deprecation only on legacy', async () => {
+  const root = `http://127.0.0.1:${server.address().port}`;
+  const v1 = await fetch(`${root}/api/v1/native-editorial/production/${submissionId}`, { headers: { 'x-user': editorId } });
+  const old = await fetch(`${root}/api/native-editorial/production/${submissionId}`, { headers: { 'x-user': editorId } });
+  assert.equal(v1.status, old.status);
+  assert.equal(v1.headers.has('Deprecation'), false);
+  assert.equal(old.headers.has('Deprecation'), true);
+  assert.match(old.headers.get('Link'), /\/api\/v1\/native-editorial\/production/);
+  assert.equal(v1.headers.get('Cache-Control'), 'no-store');
+  assert.ok(v1.headers.get('X-Request-Id'));
+  assert.deepEqual(await v1.json(), await old.json());
+  const invalid = await fetch(`${root}/api/v1/native-editorial/production/${submissionId}`, { method:'POST', headers:{'x-user':editorId,'Content-Type':'application/json'}, body: JSON.stringify({version:0,command:{type:'READY',unexpected:true}}) });
+  assert.equal(invalid.status, 400);
+  assert.equal((await invalid.json()).error.code, 'INVALID_REQUEST');
+});
+
+
+test('editor authority revoked while waiting for the row lock cannot start production', async () => {
+  const saved = structuredClone(submission);
+  const savedFiles = structuredClone(files);
+  try {
+    submission.status = 'ACCEPTED'; submission.production = null;
+    editorEnabled = true; revokeEditorAtLock = true;
+    const before = files.length;
+    const denied = await request(editorId, {type:'START'},0);
+    assert.equal(denied.status,403);
+    assert.equal(submission.production,null);
+    assert.equal(files.length,before);
+  } finally {
+    revokeEditorAtLock = false; editorEnabled = true; submission = saved; files = savedFiles;
+  }
 });

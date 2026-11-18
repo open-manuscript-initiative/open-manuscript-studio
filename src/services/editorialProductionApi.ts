@@ -1,42 +1,17 @@
-import type {
-  ProductionActor,
-  ProductionState,
-  ProductionAction,
-} from '../../server/src/domain/editorialProduction';
-import type { NativeEditorialRevisionPayload } from './nativeEditorialWorkflowApi';
+import type { ProductionState } from '../../server/src/domain/editorialProduction';
+import { studioApiFetch } from '../platform/studioApiTransport';
+type WireCommand =
+  import('../../server/src/contracts/editorialProductionContract').ProductionCommandRequest['command'];
 export type ProductionCommand =
-  | { type: 'START' }
-  | Exclude<
-      ProductionAction,
-      | { type: 'SOURCE' }
-      | { type: 'PROOF' }
-      | { type: 'CORRECTION' }
-      | { type: 'ASSIGN' }
-    >
-  | { type: 'SOURCE'; source: NativeEditorialRevisionPayload }
-  | { type: 'PROOF'; artifactBase64: string; build: Record<string, unknown> }
-  | { type: 'CORRECTION'; fileId: string; locator: string; note: string }
+  | Exclude<WireCommand, { type: 'SOURCE' }>
   | {
-      type: 'ASSIGN';
-      email: string;
-      role: 'COPYEDITOR' | 'LAYOUT_EDITOR' | 'PROOFREADER';
-      dueAt?: string;
+      type: 'SOURCE';
+      source: import('./nativeEditorialWorkflowApi').NativeEditorialRevisionPayload;
     };
-import { getStudioApiBaseUrl } from './studioServer';
+export type EditorialProduction =
+  import('../../server/src/contracts/editorialProductionContract').EditorialProductionResponse;
 export type { ProductionState };
-export interface EditorialProduction {
-  version: number;
-  state: ProductionState | null;
-  actor: ProductionActor;
-  published: boolean;
-  files: Array<{
-    id: string;
-    kind: 'SOURCE' | 'PROOF';
-    fileName: string;
-    createdAt: string;
-  }>;
-}
-const base = () => `${getStudioApiBaseUrl()}/api/native-editorial/production`;
+const base = () => '/api/v1/native-editorial/production';
 async function read<T>(response: Response): Promise<T> {
   const payload = await response.json();
   if (!response.ok)
@@ -47,7 +22,7 @@ export async function getProduction(
   submissionId: string,
 ): Promise<EditorialProduction> {
   return read(
-    await fetch(`${base()}/${encodeURIComponent(submissionId)}`, {
+    await studioApiFetch(`${base()}/${encodeURIComponent(submissionId)}`, {
       credentials: 'include',
       cache: 'no-store',
     }),
@@ -59,7 +34,7 @@ export async function changeProduction(
   command: ProductionCommand,
 ): Promise<EditorialProduction> {
   return read(
-    await fetch(`${base()}/${encodeURIComponent(submissionId)}`, {
+    await studioApiFetch(`${base()}/${encodeURIComponent(submissionId)}`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -71,7 +46,7 @@ export async function getProductionFile(
   submissionId: string,
   fileId: string,
 ): Promise<Blob> {
-  const response = await fetch(
+  const response = await studioApiFetch(
     `${base()}/${encodeURIComponent(submissionId)}/files/${encodeURIComponent(fileId)}`,
     { credentials: 'include', cache: 'no-store' },
   );
@@ -85,7 +60,7 @@ export async function getProductionTasks(): Promise<
     await read<{
       tasks: Array<{ submissionId: string; title: string; venueName: string }>;
     }>(
-      await fetch(`${base()}/tasks`, {
+      await studioApiFetch(`${base()}/tasks`, {
         credentials: 'include',
         cache: 'no-store',
       }),
