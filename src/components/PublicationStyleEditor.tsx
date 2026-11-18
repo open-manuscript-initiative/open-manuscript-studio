@@ -709,6 +709,17 @@ export function PublicationStyleEditor() {
       </div>
 
       {previewOnly ? <p className="publication-mobile-preview-note">{getVisualElementsCopy(locale).mobilePreviewNote}</p> : null}
+      {previewOnly ? (
+        <button
+          type="button"
+          className="studio-menu-secondary-action"
+          aria-expanded={ojsTransferOpen}
+          onClick={() => setOjsTransferOpen(current => !current)}
+        >
+          <FileCode2 size={18} aria-hidden="true" />
+          {ojsPublicationCopy(locale).title}
+        </button>
+      ) : null}
       <div className="publication-frame-inspector-actions">
         <button
           type="button"
@@ -1191,10 +1202,8 @@ export function PublicationStyleEditor() {
         ) : null}
       </div> : null}
 
-      {!previewOnly ? <>
-        {ojsTransferOpen ? <button type="button" className="studio-menu-secondary-action" onClick={() => setOjsTransferOpen(false)}>{ojsPublicationCopy(locale).close}</button> : null}
-        <OjsPublicationTransferPanel key={manuscript.id} style={style} active={ojsTransferOpen} />
-      </> : null}
+      {ojsTransferOpen ? <button type="button" className="studio-menu-secondary-action" onClick={() => setOjsTransferOpen(false)}>{ojsPublicationCopy(locale).close}</button> : null}
+      <OjsPublicationTransferPanel key={manuscript.id} style={style} active={ojsTransferOpen} />
       <div className="publication-style-editor-layout">
         <PublicationDocumentCanvas
           style={style}
