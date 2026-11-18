@@ -107,9 +107,10 @@ test('personal credential API exposes e-mail binding without returning API key m
 });
 
 test('credential resolution defaults to the primary e-mail and supports an explicit address', () => {
-  assert.match(authRoutes, /email\?: string/);
-  assert.match(authRoutes, /profileEmail: normalizedEmail/);
-  assert.match(authRoutes, /\{ isPrimary: true \}/);
+  const resolver = readFileSync(new URL('../server/src/services/personalPublishingCredentialService.ts', import.meta.url), 'utf8');
+  assert.match(resolver, /email\?: string/);
+  assert.match(resolver, /profileEmail: normalizedEmail/);
+  assert.match(resolver, /\{ isPrimary: true \}/);
   assert.match(
     directSubmissionRoutes,
     /resolvePersonalOmpCredential\(request\.authUserId!, baseUrl\)/,

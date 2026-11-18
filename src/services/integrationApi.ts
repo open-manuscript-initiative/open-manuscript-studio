@@ -1,3 +1,4 @@
+import { studioApiFetch } from '../platform/studioApiTransport';
 import { getStudioIntegrationApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
@@ -499,12 +500,20 @@ export async function executeWebPublication(
 
 /** Per-installation native credentials stay on the Studio server. */
 export async function requestOjsMetadata(connectionId: string, input: import('./ojsMetadataTypes').OjsMetadataRequest): Promise<import('./ojsMetadataTypes').OjsMetadataResponse> {
-  const response = await fetch(`${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/metadata`, {
+  const response = await studioApiFetch(`/api/v1/integrations/connections/${encodeURIComponent(connectionId)}/metadata`, {
     method: 'POST', credentials: 'include', cache: 'no-store',
     headers: integrationHeaders({ Accept: 'application/json', 'Content-Type': 'application/json' }),
     body: JSON.stringify(input),
   });
   const result = await parseJsonResponse<import('./ojsMetadataTypes').OjsMetadataResponse & { error?: { message?: string } }>(response);
   if (!response.ok || result.error) throw new Error(result.error?.message ?? `OJS metadata request failed: HTTP ${response.status}.`);
+  return result;
+}
+
+/** Common editorial capability projection. Unsupported OMP features remain false. */
+export async function getEditorialConnectorCapabilities(connectionId: string): Promise<import('../../server/src/contracts/editorialConnectorContract').EditorialConnectorCapabilities> {
+  const response = await studioApiFetch(`/api/v1/integrations/connections/${encodeURIComponent(connectionId)}/editorial-capabilities`);
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error?.message ?? 'Editorial capability lookup failed.');
   return result;
 }

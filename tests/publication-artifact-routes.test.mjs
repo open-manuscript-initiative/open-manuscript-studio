@@ -12,6 +12,8 @@ let trusted = true;
 let calls = [];
 let invalidMetadataReceipt = false;
 let invalidMetadataTarget = false;
+let editorialSupported = true;
+let wrongCapabilityProfile = false;
 
 mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, {
   namedExports: {
@@ -78,6 +80,19 @@ mock.module(new URL('../server/dist/routes/authRoutes.js', import.meta.url).href
   },
 });
 
+mock.module(new URL('../server/dist/services/personalPublishingCredentialService.js', import.meta.url).href, {
+  namedExports: {
+    resolvePersonalOjsCredential: async () => ({
+      apiKey: 'ojs-editorial-test-key',
+      baseUrl: destination,
+    }),
+    resolvePersonalOmpCredential: async () => ({
+      apiKey: 'omp-editorial-test-key',
+      baseUrl: destination,
+    }),
+  },
+});
+
 // Keep the route/service fixture transport mock at the pinned HTTP boundary.
  // Actual DNS and socket pinning are exercised in ssrf-outbound-transport.test.ts.
  mock.module(new URL('../server/dist/cloud/security/connectionPinnedHttp.js', import.meta.url).href, {
@@ -89,6 +104,7 @@ mock.module(new URL('../server/dist/routes/authRoutes.js', import.meta.url).href
 const app = express();
 app.use(express.json({ limit: '48mb' }));
 app.use(directSubmissionRouter);
+app.use(['/api/v1','/api'], directSubmissionRouter);
 const server = await new Promise((resolve) => {
   const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
 });
@@ -109,7 +125,7 @@ mock.method(globalThis, 'fetch', async (url, init) => {
   const body = init.body ? JSON.parse(init.body) : {};
   const omp = provider === 'omp';
   const metadataResult = { snapshot: { ...ojsMetadataSnapshot(), ...(invalidMetadataTarget ? { submissionId: 99 } : {}) }, ...(body.action === 'apply' ? { receipt: { protocol: 'omi-ojs-metadata/1', submissionId: 12, publicationId: 13, locale: body.locale, fields: Object.keys(body.fields), previousStateToken: invalidMetadataReceipt ? 'invalid' : body.expectedStateToken, published: false } } : {}) };
-  const success = String(url).endsWith('/omi-integration/metadata') ? metadataResult : String(url).includes('/workflow-status?') ? { protocol: 'omi-ojs-workflow/1', authority: 'OJS', stateToken: 'd'.repeat(64), submissionId: 12, stage: 'copyediting', metadata: { title: { hu: 'Cikk' } } } :
+  const success = String(url).endsWith('/omi-integration') ? { protocol:'omi-integration/1', profile:wrongCapabilityProfile ? 'omi-integration/1/foreign' : `omi-integration/1/${provider}`, capabilities: editorialSupported && provider === 'ojs' ? ['editor.workflow.read','editor.metadata.reconcile'] : [] } : String(url).endsWith('/omi-integration/metadata') ? metadataResult : String(url).includes('/workflow-status?') ? { protocol: 'omi-ojs-workflow/1', authority: 'OJS', stateToken: 'd'.repeat(64), submissionId: 12, publicationId:13, stageId:4, stage: 'copyediting', submissionStatus:1, publicationStatus:1, lastModified:null, editorialDecisionsWritable:false, metadata: { title: { hu: 'Cikk' }, subtitle:{}, abstract:{}, pages:null, issueId:null, datePublished:null, licenseUrl:null, copyrightHolder:null, copyrightYear:null } } :
     body.action === 'inspect'
       ? {
           protocol: 'omi-publication-artifact/1',
@@ -391,7 +407,7 @@ test('OJS workflow refresh is read-only, scoped to an owned OJS connection, and 
   assert.equal(calls.at(-1).init.headers.get('Authorization'), 'Bearer ojs-editorial-test-key');
   assert.ok(calls.at(-1).url.endsWith('/api/v1/omi-integration/workflow-status?submissionId=12'));
   provider = 'omp';
-  assert.equal((await send({ submissionId: 12 })).status, 404);
+  assert.equal((await send({ submissionId: 12 })).status, 409);
   provider = 'ojs'; remoteStatus = 403;
   const denied = await send({ submissionId: 12 });
   assert.equal(denied.status, 403);
@@ -433,8 +449,56 @@ test('OJS metadata proposals are scoped, selective, validated and private', asyn
     assert.ok(!(await rejected.text()).includes('ojs-editorial-test-key'));
   }
   remoteStatus = 200; provider = 'omp';
-  assert.equal((await send(inspectMetadata)).status, 404);
+  assert.equal((await send(inspectMetadata)).status, 409);
   provider = 'ojs'; trusted = false;
   assert.equal((await send(inspectMetadata)).status, 502);
   trusted = true;
+});
+
+
+test('common editorial capabilities and metadata share v1/legacy handlers without claiming OMP support', async () => {
+  enabled = true; provider = 'ojs'; remoteStatus = 200; trusted = true;
+  const root = `http://127.0.0.1:${server.address().port}`;
+  const suffix = `/integrations/connections/${connectionId}`;
+  for (const current of ['ojs','omp']) {
+    provider = current;
+    const caps = await originalFetch(`${root}/api/v1${suffix}/editorial-capabilities`, { headers: {'x-test-user':'editor'} });
+    assert.equal(caps.status,200);
+    const payload = await caps.json();
+    assert.equal(payload.protocol,'omi-publishing-editorial/1');
+    assert.equal(payload.authority,current.toUpperCase());
+    assert.equal(payload.features.metadataReconcile,current === 'ojs');
+    assert.equal(payload.features.nativeCopyeditingWrite,false);
+    assert.equal(payload.features.externalReviewAssurance,false);
+  }
+  provider = 'ojs';
+  const init = { method:'POST', headers:{'x-test-user':'editor','Content-Type':'application/json'},body:JSON.stringify({action:'inspect',submissionId:12}) };
+  const newer = await originalFetch(`${root}/api/v1${suffix}/metadata`,init);
+  const older = await originalFetch(`${root}/api${suffix}/metadata`,init);
+  assert.equal(newer.status,200);
+  assert.equal(older.status,200);
+  assert.equal(newer.headers.has('deprecation'),false);
+  assert.equal(older.headers.has('deprecation'),true);
+  assert.equal(newer.headers.get('cache-control'),'no-store');
+  assert.deepEqual(await newer.json(),await older.json());
+  const before = calls.length;
+  assert.equal((await originalFetch(`${root}/api/v1${suffix}/metadata`,{...init, headers:{'Content-Type':'application/json'}})).status,401);
+  assert.equal(calls.length,before);
+});
+
+
+test('missing or mismatched native capability blocks metadata mutation before dispatch', async () => {
+  provider = 'ojs'; enabled = true; remoteStatus = 200; trusted = true;
+  const url = `http://127.0.0.1:${server.address().port}/api/v1/integrations/connections/${connectionId}/metadata`;
+  const init = {method:'POST',headers:{'x-test-user':'editor','Content-Type':'application/json'},body:JSON.stringify({action:'apply',submissionId:12,publicationId:13,locale:'hu',expectedStateToken:'a'.repeat(64),confirmed:true,fields:{title:'Proposed'}})};
+  try {
+    for (const mode of ['unsupported','wrong-profile']) {
+      editorialSupported = mode !== 'unsupported'; wrongCapabilityProfile = mode === 'wrong-profile'; calls = [];
+      const response = await originalFetch(url,init);
+      assert.equal(response.status, mode === 'unsupported' ? 409 : 502);
+      assert.equal(calls.length,1);
+      assert.ok(calls[0].url.endsWith('/omi-integration'));
+      assert.equal(calls[0].init.method,'GET');
+    }
+  } finally { editorialSupported = true; wrongCapabilityProfile = false; }
 });

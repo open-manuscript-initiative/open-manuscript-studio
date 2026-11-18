@@ -86,6 +86,8 @@ jobs:
           npm run test:direct-submission
           npm run test:publication-artifact
           npm run test:web-publication
+          npm run test:editorial-production
+          npm run test:ojs-metadata
 
       - name: Install PDF text extraction tools
         run: |

@@ -1,17 +1,18 @@
-import { ojsMetadataRequest, ojsMetadataResponse } from '../integrations/publishing/ojsMetadata.js';
-import { fetchPinnedPublicUrl } from '../cloud/security/connectionPinnedHttp.js';
+import { nativeClient, RemoteError } from '../integrations/publishing/nativePublishingClient.js';
+import { editorialConnectorRouter } from './editorialConnectorRoutes.js';
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 import { assertTrustedIntegrationUrl } from '../integrations/security/trustedRemoteUrl.js';
-import { createRemoteSubmission, directSubmissionInput, finalizeRemoteSubmission, prepareRemoteSubmission, record, submissionDigest, type RemoteRequest } from '../integrations/publishing/directSubmission.js';
+import { createRemoteSubmission, directSubmissionInput, finalizeRemoteSubmission, prepareRemoteSubmission, record, submissionDigest } from '../integrations/publishing/directSubmission.js';
 import {
   resolvePersonalOjsCredential,
   resolvePersonalOmpCredential,
-} from './authRoutes.js';
+} from '../services/personalPublishingCredentialService.js';
 
 export const directSubmissionRouter = Router();
+directSubmissionRouter.use(editorialConnectorRouter);
 const requestSchema = z.object({
   action: z.enum(['options', 'status', 'prepare', 'submit']),
   manuscriptId: z.string().min(1).max(128),
@@ -20,42 +21,9 @@ const requestSchema = z.object({
   digest: z.string().length(64).optional(),
   confirmed: z.literal(true).optional(),
 });
-class RemoteError extends Error {
-  constructor(public readonly status: number, message: string) { super(message); }
-}
 function publicReceipt(row: { id: string; status: string; externalId: number | null; digest: string; baseUrl: string }) {
   return { id: row.id, status: row.status, externalId: row.externalId, digest: row.digest,
     url: row.externalId ? `${row.baseUrl}/authorDashboard/submission/${row.externalId}` : null };
-}
-function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
-  return async (method, path, body) => {
-    if (!/^(omi-integration\/(?:submission-options|publication-artifact|metadata|workflow-status\?submissionId=\d+)|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
-      throw new Error('Invalid publishing operation.');
-    }
-    const url = await assertTrustedIntegrationUrl(`${baseUrl}/api/v1/${path}`, baseUrl);
-    const headers = new Headers({ Accept: 'application/json' });
-    if (apiKey) headers.set('Authorization', `Bearer ${apiKey}`);
-    const timeoutMs =
-      path === 'omi-integration/publication-artifact' ? 120000 : 30000;
-    const init: RequestInit = {
-      method,
-      headers,
-      redirect: 'error',
-      signal: AbortSignal.timeout(timeoutMs),
-    };
-    if (body instanceof FormData) init.body = body;
-    else if (body) { headers.set('Content-Type', 'application/json'); init.body = JSON.stringify(body); }
-    const response = await fetchPinnedPublicUrl(url, init);
-    const text = await response.text();
-    if (text.length > 4000000) throw new Error('The publishing response is too large.');
-    let result: unknown;
-    try { result = JSON.parse(text); } catch { throw new RemoteError(response.status, `Publishing API returned HTTP ${response.status} without JSON. Check the plugin and API URL.`); }
-    if (!response.ok) {
-      const detail = JSON.stringify(result).slice(0, 3000).split(apiKey || '\u0000').join('[redacted]');
-      throw new RemoteError(response.status, `Publishing API: HTTP ${response.status}. ${detail}`);
-    }
-    return result;
-  };
 }
 
 const publicationArtifactFormatSchema = z.enum([
@@ -180,51 +148,6 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
         ? error.message
         : 'Publication artifact transfer failed.';
     response.status(status).json({ error: { message } });
-  }
-});
-
-directSubmissionRouter.post('/integrations/connections/:connectionId/metadata', requireSession, async (request: AuthenticatedRequest, response) => {
-  response.setHeader('Cache-Control', 'no-store');
-  const input = ojsMetadataRequest.safeParse(request.body);
-  const connectionId = z.string().uuid().safeParse(request.params.connectionId);
-  if (!input.success || !connectionId.success) { response.status(400).json({ error: { message: 'Invalid OJS metadata proposal.' } }); return; }
-  try {
-    const connection = await prisma.userIntegration.findFirst({ where: { id: connectionId.data, userId: request.authUserId!, enabled: true, providerId: 'ojs' } });
-    const configuredBase = record(connection?.config).baseUrl;
-    if (!connection || typeof configuredBase !== 'string') { response.status(404).json({ error: { message: 'Enabled personal OJS connection not found.' } }); return; }
-    const baseUrl = (await assertTrustedIntegrationUrl(configuredBase, configuredBase)).toString().replace(/\/+$/, '');
-    const credential = await resolvePersonalOjsCredential(request.authUserId!, baseUrl);
-    if (!credential) { response.status(400).json({ error: { message: 'Save your personal OJS API key for this installation first.' } }); return; }
-    const remote = await nativeClient(baseUrl, credential.apiKey)('POST', 'omi-integration/metadata', input.data);
-    const parsed = ojsMetadataResponse.safeParse(remote);
-    if (!parsed.success || parsed.data.snapshot.submissionId !== input.data.submissionId) throw new Error('The OJS metadata response is incompatible. Install OJS Studio Integration 1.8.0.0 or newer.');
-    if (input.data.action === 'apply') {
-      const receipt = parsed.data.receipt;
-      if (!receipt || parsed.data.snapshot.publicationId !== input.data.publicationId || receipt.publicationId !== input.data.publicationId || receipt.submissionId !== input.data.submissionId || receipt.previousStateToken !== input.data.expectedStateToken || receipt.locale !== input.data.locale || JSON.stringify([...receipt.fields].sort()) !== JSON.stringify(Object.keys(input.data.fields).sort())) throw new Error('OJS returned a mismatched metadata receipt. Refresh the destination before retrying.');
-    }
-    response.json(parsed.data);
-  } catch (error) {
-    response.status(error instanceof RemoteError && [400, 403, 404, 409, 422].includes(error.status) ? error.status : 502).json({ error: { message: error instanceof Error ? error.message : 'OJS metadata reconciliation failed.' } });
-  }
-});
-
-directSubmissionRouter.post('/integrations/connections/:connectionId/workflow-status', requireSession, async (request: AuthenticatedRequest, response) => {
-  response.setHeader('Cache-Control', 'no-store');
-  const input = z.object({ submissionId: z.number().int().positive() }).strict().safeParse(request.body);
-  const connectionId = z.string().uuid().safeParse(request.params.connectionId);
-  if (!input.success || !connectionId.success) { response.status(400).json({ error: { message: 'Invalid workflow request.' } }); return; }
-  try {
-    const connection = await prisma.userIntegration.findFirst({ where: { id: connectionId.data, userId: request.authUserId!, enabled: true, providerId: 'ojs' } });
-    const configuredBase = record(connection?.config).baseUrl;
-    if (!connection || typeof configuredBase !== 'string') { response.status(404).json({ error: { message: 'Enabled personal OJS connection not found.' } }); return; }
-    const baseUrl = (await assertTrustedIntegrationUrl(configuredBase, configuredBase)).toString().replace(/\/+$/, '');
-    const credential = await resolvePersonalOjsCredential(request.authUserId!, baseUrl);
-    if (!credential) { response.status(400).json({ error: { message: 'Save your personal OJS API key for this installation first.' } }); return; }
-    const snapshot = record(await nativeClient(baseUrl, credential.apiKey)('GET', `omi-integration/workflow-status?submissionId=${input.data.submissionId}`));
-    if (snapshot.protocol !== 'omi-ojs-workflow/1' || snapshot.authority !== 'OJS' || snapshot.submissionId !== input.data.submissionId || typeof snapshot.stateToken !== 'string' || !/^[0-9a-f]{64}$/.test(snapshot.stateToken)) throw new Error('Update the OJS Studio Integration plugin to 1.7.0.0 or newer.');
-    response.json({ snapshot });
-  } catch (error) {
-    response.status(error instanceof RemoteError && [403, 404, 409, 422].includes(error.status) ? error.status : 502).json({ error: { message: error instanceof Error ? error.message : 'OJS workflow refresh failed.' } });
   }
 });
 

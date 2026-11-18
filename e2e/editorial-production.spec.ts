@@ -16,6 +16,7 @@ test('production task exposes an isolated proof and requires opening it before a
   const proofId = '20000000-0000-4000-8000-000000000002';
   const sourceId = '30000000-0000-4000-8000-000000000003';
   const commands: unknown[] = [];
+  const productionUrls: string[] = [];
   const production = {
     version: 4,
     actor: { userId: 'author', author: true, editor: false },
@@ -52,8 +53,9 @@ test('production task exposes an isolated proof and requires opening it before a
       proofApprovals: {} as Record<string, { userId: string; at: string }>,
     },
   };
-  await page.route('**/api/native-editorial/**', async (route) => {
+  await page.route(/\/api\/(?:v1\/)?native-editorial\//, async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path.includes('/production/')) productionUrls.push(path);
     if (path.endsWith('/production/tasks'))
       return route.fulfill({
         json: {
@@ -122,6 +124,8 @@ test('production task exposes an isolated proof and requires opening it before a
   await expect(approve).toBeEnabled();
   await approve.click();
   await expect(approve).toBeDisabled();
+  expect(productionUrls.length).toBeGreaterThan(0);
+  expect(productionUrls.every(path => path.startsWith('/api/v1/native-editorial/production/'))).toBe(true);
   expect(commands).toEqual([
     {
       version: 4,

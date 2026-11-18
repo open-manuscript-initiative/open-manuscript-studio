@@ -1,5 +1,9 @@
 # Editorial production: copyediting, layout and proof approval
 
+## Architecture reconciliation — 2026-11-18
+
+Canonical Studio routes now use `/api/v1`; matching old routes are compatibility facades over the same handlers. See [ADR-037](architecture/adr-037-editorial-production-and-connector-contract.md) for authority, repository/CAS, connector capabilities, exact proof gate, compatibility and rollout decisions. The checked transport contract is [editorial-v1.openapi.json](api/editorial-v1.openapi.json). This proposed repair is not a new migration, full connector freeze or deployment acceptance.
+
 Status: **Preview**. Implementation and automated contract tests are present;
 real PostgreSQL and browser CI gates plus real PKP acceptance evidence are
 required before describing the complete workflow as production-verified.

@@ -1,7 +1,14 @@
 import { z } from 'zod';
 import { createHash, randomUUID } from 'node:crypto';
-import { Prisma } from '../generated/prisma/client.js';
-import { prisma } from '../lib/prisma.js';
+import type {
+  ProductionSubmission,
+  EditorialProductionRepository,
+} from '../ports/editorialProductionRepository.js';
+import {
+  editorialProductionRepository as repository,
+  productionTransaction,
+  productionDeliveryTransaction,
+} from '../repositories/editorialProductionRepository.js';
 import {
   createProductionState,
   isProductionParticipant,
@@ -15,7 +22,6 @@ import {
   assertStudioNativePublicationVenue,
   assertStudioNativePublicationVenueEditorAuthority,
 } from './publicationVenueAuthorityService.js';
-import { createEditorialAcceptance } from './editorialDecisionService.js';
 import {
   ensureSubmissionEditorAccess,
   validateRevisionInput,
@@ -96,11 +102,12 @@ function stateOf(value: unknown): ProductionState {
     throw new ProductionError('Unsupported production state.');
   return state;
 }
-async function access(userId: string, submissionId: string) {
-  const submission = await prisma.nativeEditorialSubmission.findUnique({
-    where: { id: submissionId },
-    include: { production: true },
-  });
+async function access(
+  userId: string,
+  submissionId: string,
+  current?: ProductionSubmission,
+) {
+  const submission = current ?? (await repository.loadSubmission(submissionId));
   if (!submission) throw new ProductionError('Submission not found.', 404);
   await assertStudioNativePublicationVenue(submission.publicationVenueId);
   let editor = false;
@@ -141,22 +148,7 @@ export async function getEditorialProduction(
     state: row ? stateOf(row.state) : null,
     actor,
     published: submission.status === 'PUBLISHED',
-    files: row
-      ? await prisma.editorialProductionFile.findMany({
-          where: { productionId: row.id },
-          orderBy: { createdAt: 'asc' },
-          select: {
-            id: true,
-            kind: true,
-            revisionId: true,
-            stateDigest: true,
-            sha256: true,
-            fileName: true,
-            mediaType: true,
-            createdAt: true,
-          },
-        })
-      : [],
+    files: row ? await repository.listFiles(row.id) : [],
   };
 }
 export async function getEditorialProductionFile(
@@ -167,26 +159,18 @@ export async function getEditorialProductionFile(
   const { submission } = await access(userId, submissionId);
   if (!submission.production)
     throw new ProductionError('Production has not started.', 404);
-  const file = await prisma.editorialProductionFile.findFirst({
-    where: { id: fileId, productionId: submission.production.id },
-  });
+  const file = await repository.findFile(submission.production.id, fileId);
   if (!file) throw new ProductionError('Production file not found.', 404);
   return file;
 }
 export async function listProductionTasks(userId: string) {
-  // JSON containment is evaluated in PostgreSQL: do not enumerate other venues' submissions.
-  const rows = await prisma.$queryRaw<Array<{ submission_id: string }>>`
-    SELECT p.submission_id FROM editorial_productions p
-    JOIN native_editorial_submissions s ON s.id = p.submission_id
-    WHERE s.status = 'ACCEPTED'
-      AND p.state->'assignments' @> ${JSON.stringify([{ userId }])}::jsonb
-    ORDER BY p.updated_at DESC LIMIT 100`;
+  const ids = await repository.listAssignedSubmissionIds(userId);
   const tasks = [];
-  for (const row of rows) {
+  for (const submissionId of ids) {
     try {
-      const result = await access(userId, row.submission_id);
+      const result = await access(userId, submissionId);
       tasks.push({
-        submissionId: row.submission_id,
+        submissionId,
         title: result.submission.title,
         venueName: result.submission.publicationVenueName,
       });
@@ -218,291 +202,228 @@ export async function changeEditorialProduction(
   if (command.type === 'ASSIGN') {
     if (!actor.editor)
       throw new ProductionError('Editorial authority is required.', 403);
-    const assignee = await prisma.user.findFirst({
-      where: {
-        email: { equals: command.email.trim(), mode: 'insensitive' },
-        status: 'ACTIVE',
-      },
-      select: { id: true },
-    });
+    const assignee = await repository.findActiveAssignee(command.email);
     if (!assignee)
       throw new ProductionError(
         'An active Studio account is required for the assignment.',
         400,
       );
-    assigneeId = assignee.id;
+    assigneeId = assignee;
   }
-  await prisma.$transaction(
-    async (tx) => {
-      // Serialize production changes and native publication transitions on the same parent row.
-      await tx.$queryRaw`SELECT id FROM native_editorial_submissions WHERE id = ${submissionId}::uuid FOR UPDATE`;
-      const submission = await tx.nativeEditorialSubmission.findUniqueOrThrow({
-        where: { id: submissionId },
-        include: { production: true, assets: true },
-      });
-      if (submission.status !== 'ACCEPTED')
-        throw new ProductionError(
-          'This submission is no longer in unpublished production.',
-        );
-      const delivered = await tx.webPublicationDelivery.findFirst({
-        where: {
+  await productionTransaction(async (tx) => {
+    const submission = await tx.lockSubmission(submissionId);
+    const { actor } = await access(userId, submissionId, submission);
+    if (submission.status !== 'ACCEPTED')
+      throw new ProductionError(
+        'This submission is no longer in unpublished production.',
+      );
+    const delivered = await tx.deliveryStarted(
+      submission.manuscriptId,
+      submission.revisionId,
+    );
+    if (delivered)
+      throw new ProductionError(
+        'Publication delivery has started. Reconcile that delivery before changing production.',
+      );
+    const row = submission.production;
+    if ((row?.version ?? 0) !== version)
+      throw new ProductionError(
+        'The production workflow changed. Reload before trying again.',
+      );
+    const at = new Date().toISOString();
+    if (command.type === 'START') {
+      if (row) throw new ProductionError('Production has already started.');
+      const productionId = randomUUID();
+      const fileId = randomUUID();
+      const source = {
+        fileId,
+        revisionId: submission.revisionId,
+        stateDigest: submission.stateDigest,
+        publicationContentDigest: submission.publicationContentDigest,
+      };
+      const state = createProductionState(source, actor, at);
+      await tx.createProduction(productionId, submissionId, state);
+      const bytes = Buffer.from(
+        JSON.stringify({
           manuscriptId: submission.manuscriptId,
-          revisionId: submission.revisionId,
-          targetStatus: 'PUBLISH',
-          state: { in: ['IN_FLIGHT', 'UNKNOWN', 'SUCCEEDED'] },
-        },
-        select: { id: true },
-      });
-      if (delivered)
-        throw new ProductionError(
-          'Publication delivery has started. Reconcile that delivery before changing production.',
-        );
-      const row = submission.production;
-      if ((row?.version ?? 0) !== version)
-        throw new ProductionError(
-          'The production workflow changed. Reload before trying again.',
-        );
-      const at = new Date().toISOString();
-      if (command.type === 'START') {
-        if (row) throw new ProductionError('Production has already started.');
-        const productionId = randomUUID();
-        const fileId = randomUUID();
-        const source = {
-          fileId,
+          title: submission.title,
           revisionId: submission.revisionId,
           stateDigest: submission.stateDigest,
           publicationContentDigest: submission.publicationContentDigest,
-        };
-        const state = createProductionState(source, actor, at);
-        await tx.editorialProduction.create({
-          data: { id: productionId, submissionId, state: json(state) },
-        });
-        const bytes = Buffer.from(
-          JSON.stringify({
-            manuscriptId: submission.manuscriptId,
-            title: submission.title,
-            revisionId: submission.revisionId,
-            stateDigest: submission.stateDigest,
-            publicationContentDigest: submission.publicationContentDigest,
-            manuscriptStateSnapshot: submission.manuscriptStateSnapshot,
-            reviewSnapshot: submission.reviewSnapshot,
-            assets: submission.assets.map((asset) => ({
-              assetId: asset.assetId,
-              mediaType: asset.mediaType,
-              checksum: asset.checksum,
-              bytesBase64: Buffer.from(asset.bytes).toString('base64'),
-            })),
-          }),
-        );
-        await tx.editorialProductionFile.create({
-          data: {
-            id: fileId,
-            productionId,
-            kind: 'SOURCE',
-            revisionId: source.revisionId,
-            stateDigest: source.stateDigest,
-            sha256: sha256(bytes),
-            fileName: 'accepted-source.json',
-            mediaType: 'application/json',
-            bytes,
-          },
-        });
-        return;
-      }
-      if (!row) throw new ProductionError('Start production first.');
-      const state = stateOf(row.state);
-      // Re-evaluate current assignments after taking the lock (revocation is immediate).
-      if (!isProductionParticipant(state, actor))
-        throw new ProductionError(
-          'The production assignment was revoked.',
-          403,
-        );
-      let action: ProductionAction;
-      if (command.type === 'ASSIGN') {
-        action = {
-          type: 'ASSIGN',
-          userId: assigneeId!,
-          role: command.role,
-          ...(command.dueAt ? { dueAt: command.dueAt } : {}),
-        };
-      } else if (command.type === 'SOURCE') {
-        const checked = validateRevisionInput(command.source);
-        const metadata = checked.manuscriptStateSnapshot.metadata as
-          | { publicationVenue?: { id?: string } }
-          | undefined;
-        if (
-          checked.manuscriptId !== submission.manuscriptId ||
-          metadata?.publicationVenue?.id !== submission.publicationVenueId
-        )
-          throw new ProductionError(
-            'The copyedited source belongs to a different manuscript or venue.',
-          );
-        if (
-          typeof checked.manuscriptStateSnapshot.title !== 'string' ||
-          checked.title !== checked.manuscriptStateSnapshot.title.trim()
-        )
-          throw new ProductionError(
-            'The source title does not match its committed manuscript state.',
-          );
-        const knownRevision = await tx.editorialProductionFile.findFirst({
-          where: {
-            productionId: row.id,
-            kind: 'SOURCE',
-            revisionId: checked.revisionId,
-          },
-        });
-        if (knownRevision && knownRevision.stateDigest !== checked.stateDigest)
-          throw new ProductionError(
-            'A committed revision cannot identify two different manuscript states.',
-          );
-        const bytes = Buffer.from(JSON.stringify(command.source));
-        const fileId = knownRevision?.id ?? randomUUID();
-        action = {
-          type: 'SOURCE',
-          source: {
-            fileId,
-            revisionId: checked.revisionId,
-            stateDigest: checked.stateDigest,
-            publicationContentDigest: checked.publicationContentDigest,
-          },
-        };
-        // Authorize the transition before storing bytes.
-        transitionProduction(state, action, actor, at);
-        if (!knownRevision)
-          await tx.editorialProductionFile.create({
-            data: {
-              id: fileId,
-              productionId: row.id,
-              kind: 'SOURCE',
-              revisionId: checked.revisionId,
-              stateDigest: checked.stateDigest,
-              sha256: sha256(bytes),
-              fileName: 'copyedited-source.json',
-              mediaType: 'application/json',
-              bytes,
-            },
-          });
-      } else if (command.type === 'PROOF') {
-        const proof = validateProductionProof(
-          command.artifactBase64,
-          command.build,
-          submission.manuscriptId,
-          state,
-        );
-        const same =
-          state.proof?.buildId === proof.buildId &&
-          state.proof.sha256 === proof.sha256;
-        const fileId = same ? state.proof!.fileId : randomUUID();
-        action = {
-          type: 'PROOF',
-          proof: {
-            fileId,
-            revisionId: state.source.revisionId,
-            stateDigest: state.source.stateDigest,
-            sha256: proof.sha256,
-            buildId: proof.buildId,
-            fileName: proof.fileName,
-            mediaType: proof.mediaType,
-          },
-        };
-        transitionProduction(state, action, actor, at);
-        if (!same)
-          await tx.editorialProductionFile.create({
-            data: {
-              id: fileId,
-              productionId: row.id,
-              kind: 'PROOF',
-              revisionId: state.source.revisionId,
-              stateDigest: state.source.stateDigest,
-              sha256: proof.sha256,
-              fileName: proof.fileName,
-              mediaType: proof.mediaType,
-              bytes: proof.bytes,
-              build: json(command.build),
-            },
-          });
-      } else if (command.type === 'CORRECTION') {
-        action = { ...command, id: randomUUID() };
-      } else action = command;
-      const next = transitionProduction(state, action, actor, at);
-      if (command.type === 'LAYOUT') {
-        const file = await tx.editorialProductionFile.findFirstOrThrow({
-          where: {
-            id: state.source.fileId,
-            productionId: row.id,
-            kind: 'SOURCE',
-          },
-        });
-        const source = JSON.parse(
-          Buffer.from(file.bytes).toString('utf8'),
-        ) as NativeEditorialRevisionInput;
-        const checked = validateRevisionInput(source);
-        if (
-          source.revisionId !== submission.revisionId ||
-          source.stateDigest !== submission.stateDigest
-        ) {
-          const original = await tx.editorialDecision.findUniqueOrThrow({
-            where: {
-              workspaceId_manuscriptId_revisionId: {
-                workspaceId: submission.workspaceId,
-                manuscriptId: submission.manuscriptId,
-                revisionId: state.acceptedSource.revisionId,
-              },
-            },
-          });
-          // A copyeditor cannot inherit acceptance. The editor explicitly accepts this exact new source.
-          await createEditorialAcceptance(
-            userId,
-            {
-              workspaceId: submission.workspaceId,
-              manuscriptId: submission.manuscriptId,
-              revisionId: source.revisionId,
-              stateDigest: source.stateDigest,
-              publicationContentDigest: source.publicationContentDigest,
-              publicationVenueId: submission.publicationVenueId,
-              reviewRound: original.reviewRound,
-              basisAssignmentIds: original.basisAssignmentIds as string[],
-            },
-            tx,
-          );
-          await tx.nativeEditorialSubmission.update({
-            where: { id: submissionId },
-            data: {
-              title: checked.title,
-              revisionId: checked.revisionId,
-              stateDigest: checked.stateDigest,
-              publicationContentDigest: checked.publicationContentDigest,
-              manuscriptStateSnapshot: json(checked.manuscriptStateSnapshot),
-              reviewSnapshot: json(checked.reviewSnapshot),
-            },
-          });
-          await tx.nativeEditorialSubmissionAsset.deleteMany({
-            where: { submissionId },
-          });
-          if (checked.assets.length)
-            await tx.nativeEditorialSubmissionAsset.createMany({
-              data: checked.assets.map((a) => ({
-                submissionId,
-                assetId: a.assetId,
-                mediaType: a.mediaType,
-                checksum: a.checksum,
-                size: a.bytes.byteLength,
-                bytes: a.bytes,
-              })),
-            });
-        }
-      }
-      const changed = await tx.editorialProduction.updateMany({
-        where: { id: row.id, version },
-        data: { state: json(next), version: { increment: 1 } },
+          manuscriptStateSnapshot: submission.manuscriptStateSnapshot,
+          reviewSnapshot: submission.reviewSnapshot,
+          assets: submission.assets.map((asset) => ({
+            assetId: asset.assetId,
+            mediaType: asset.mediaType,
+            checksum: asset.checksum,
+            bytesBase64: Buffer.from(asset.bytes).toString('base64'),
+          })),
+        }),
+      );
+      await tx.addFile({
+        id: fileId,
+        productionId,
+        kind: 'SOURCE',
+        revisionId: source.revisionId,
+        stateDigest: source.stateDigest,
+        sha256: sha256(bytes),
+        fileName: 'accepted-source.json',
+        mediaType: 'application/json',
+        bytes,
       });
-      if (changed.count !== 1)
+      return;
+    }
+    if (!row) throw new ProductionError('Start production first.');
+    const state = stateOf(row.state);
+    // Re-evaluate current assignments after taking the lock (revocation is immediate).
+    if (!isProductionParticipant(state, actor))
+      throw new ProductionError('The production assignment was revoked.', 403);
+    let action: ProductionAction;
+    if (command.type === 'ASSIGN') {
+      action = {
+        type: 'ASSIGN',
+        userId: assigneeId!,
+        role: command.role,
+        ...(command.dueAt ? { dueAt: command.dueAt } : {}),
+      };
+    } else if (command.type === 'SOURCE') {
+      const checked = validateRevisionInput(command.source);
+      const metadata = checked.manuscriptStateSnapshot.metadata as
+        | { publicationVenue?: { id?: string } }
+        | undefined;
+      if (
+        checked.manuscriptId !== submission.manuscriptId ||
+        metadata?.publicationVenue?.id !== submission.publicationVenueId
+      )
         throw new ProductionError(
-          'The production workflow changed. Reload before trying again.',
+          'The copyedited source belongs to a different manuscript or venue.',
         );
-    },
-    { timeout: 30_000 },
-  );
+      if (
+        typeof checked.manuscriptStateSnapshot.title !== 'string' ||
+        checked.title !== checked.manuscriptStateSnapshot.title.trim()
+      )
+        throw new ProductionError(
+          'The source title does not match its committed manuscript state.',
+        );
+      const knownRevision = await tx.findSourceRevision(
+        row.id,
+        checked.revisionId,
+      );
+      if (knownRevision && knownRevision.stateDigest !== checked.stateDigest)
+        throw new ProductionError(
+          'A committed revision cannot identify two different manuscript states.',
+        );
+      const bytes = Buffer.from(JSON.stringify(command.source));
+      const fileId = knownRevision?.id ?? randomUUID();
+      action = {
+        type: 'SOURCE',
+        source: {
+          fileId,
+          revisionId: checked.revisionId,
+          stateDigest: checked.stateDigest,
+          publicationContentDigest: checked.publicationContentDigest,
+        },
+      };
+      // Authorize the transition before storing bytes.
+      transitionProduction(state, action, actor, at);
+      if (!knownRevision)
+        await tx.addFile({
+          id: fileId,
+          productionId: row.id,
+          kind: 'SOURCE',
+          revisionId: checked.revisionId,
+          stateDigest: checked.stateDigest,
+          sha256: sha256(bytes),
+          fileName: 'copyedited-source.json',
+          mediaType: 'application/json',
+          bytes,
+        });
+    } else if (command.type === 'PROOF') {
+      const proof = validateProductionProof(
+        command.artifactBase64,
+        command.build,
+        submission.manuscriptId,
+        state,
+      );
+      const same =
+        state.proof?.buildId === proof.buildId &&
+        state.proof.sha256 === proof.sha256;
+      const fileId = same ? state.proof!.fileId : randomUUID();
+      action = {
+        type: 'PROOF',
+        proof: {
+          fileId,
+          revisionId: state.source.revisionId,
+          stateDigest: state.source.stateDigest,
+          sha256: proof.sha256,
+          buildId: proof.buildId,
+          fileName: proof.fileName,
+          mediaType: proof.mediaType,
+        },
+      };
+      transitionProduction(state, action, actor, at);
+      if (!same)
+        await tx.addFile({
+          id: fileId,
+          productionId: row.id,
+          kind: 'PROOF',
+          revisionId: state.source.revisionId,
+          stateDigest: state.source.stateDigest,
+          sha256: proof.sha256,
+          fileName: proof.fileName,
+          mediaType: proof.mediaType,
+          bytes: proof.bytes,
+          build: command.build,
+        });
+    } else if (command.type === 'CORRECTION') {
+      action = { ...command, id: randomUUID() };
+    } else action = command;
+    const next = transitionProduction(state, action, actor, at);
+    if (command.type === 'LAYOUT') {
+      const file = await tx.findFile(row.id, state.source.fileId);
+      if (!file || file.kind !== 'SOURCE')
+        throw new ProductionError('Production source not found.', 404);
+      const source = JSON.parse(
+        Buffer.from(file.bytes).toString('utf8'),
+      ) as NativeEditorialRevisionInput;
+      const checked = validateRevisionInput(source);
+      if (
+        source.revisionId !== submission.revisionId ||
+        source.stateDigest !== submission.stateDigest
+      ) {
+        const original = await tx.acceptanceBasis(
+          submission.workspaceId,
+          submission.manuscriptId,
+          state.acceptedSource.revisionId,
+        );
+        // A copyeditor cannot inherit acceptance. The editor explicitly accepts this exact new source.
+        await tx.acceptSource(userId, {
+          workspaceId: submission.workspaceId,
+          manuscriptId: submission.manuscriptId,
+          revisionId: source.revisionId,
+          stateDigest: source.stateDigest,
+          publicationContentDigest: source.publicationContentDigest,
+          publicationVenueId: submission.publicationVenueId,
+          reviewRound: original.reviewRound,
+          basisAssignmentIds: original.basisAssignmentIds as string[],
+        });
+        await tx.replaceAcceptedSource(submissionId, {
+          title: checked.title,
+          revisionId: checked.revisionId,
+          stateDigest: checked.stateDigest,
+          publicationContentDigest: checked.publicationContentDigest,
+          manuscriptStateSnapshot: checked.manuscriptStateSnapshot,
+          reviewSnapshot: checked.reviewSnapshot,
+          assets: checked.assets,
+        });
+      }
+    }
+    const changed = await tx.compareAndSave(row.id, version, next);
+    if (!changed)
+      throw new ProductionError(
+        'The production workflow changed. Reload before trying again.',
+      );
+  });
   return getEditorialProduction(userId, submissionId);
 }
 
@@ -597,19 +518,13 @@ export interface ProductionReadinessInput {
 }
 async function checkNativeProductionReady(
   input: ProductionReadinessInput,
-  db: Pick<Prisma.TransactionClient, 'nativeEditorialSubmission'> = prisma,
+  db: EditorialProductionRepository = repository,
 ) {
-  const submissions = await db.nativeEditorialSubmission.findMany({
-    where: {
-      manuscriptId: input.manuscriptId,
-      ...(input.submissionId ? { id: input.submissionId } : {}),
-      ...(input.publicationVenueId
-        ? { publicationVenueId: input.publicationVenueId }
-        : {}),
-      status: { in: ['ACCEPTED', 'PUBLISHED'] },
-    },
-    include: { production: true },
-  });
+  const submissions = await db.findPublicationSubmissions(
+    input.manuscriptId,
+    input.submissionId,
+    input.publicationVenueId,
+  );
   if (submissions.length > 1)
     throw new ProductionError(
       'Select the exact native publication venue before publishing.',
@@ -647,18 +562,15 @@ export async function assertNativeProductionReady(
 /** Lock production and claim the durable delivery in one transaction. */
 export async function withNativeProductionReady<T>(
   input: ProductionReadinessInput,
-  operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  operation: Parameters<typeof productionDeliveryTransaction<T>>[2],
 ): Promise<T> {
-  return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM native_editorial_submissions WHERE manuscript_id = ${input.manuscriptId} ORDER BY id FOR UPDATE`;
-    await checkNativeProductionReady(input, tx);
-    return operation(tx);
-  });
+  return productionDeliveryTransaction(
+    input.manuscriptId,
+    (tx) => checkNativeProductionReady(input, tx),
+    operation,
+  );
 }
 
-function json(value: unknown): Prisma.InputJsonValue {
-  return value as Prisma.InputJsonValue;
-}
 function sha256(bytes: Uint8Array) {
   return createHash('sha256').update(bytes).digest('hex');
 }

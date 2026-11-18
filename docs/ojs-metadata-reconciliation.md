@@ -1,5 +1,9 @@
 # Selective OJS metadata reconciliation
 
+## Architecture reconciliation — 2026-11-18
+
+Canonical Studio routes now use `/api/v1`; matching old routes are compatibility facades over the same handlers. See [ADR-037](architecture/adr-037-editorial-production-and-connector-contract.md) for authority, repository/CAS, connector capabilities, exact proof gate, compatibility and rollout decisions. The checked transport contract is [editorial-v1.openapi.json](api/editorial-v1.openapi.json). This proposed repair is not a new migration, full connector freeze or deployment acceptance.
+
 This increment requires OJS 3.5 with Studio Integration **1.8.0.0**. It uses the
 existing registered publishing connection and the current user's personal OJS
 editor API credential. It is OJS-only; OMP continues to use its existing workflow.
