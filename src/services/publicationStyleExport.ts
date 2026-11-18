@@ -1,7 +1,7 @@
+import { inlinePublicationArtifactImages } from './publicationHtmlArtifact';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
-import publisherJson from '../document/publicationStyles/egyhaztorteneti-szemle.publisher.json';
-import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
-import { assetPath } from '../model/assets';
+import publisherJson from '../document/publicationStyles/egyhaztorteneti-szemle.publisher.json' with { type: 'json' };
+import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json' with { type: 'json' };
 import {
   applyPublicationCorrectionsToStoredContent,
   applyTextPublicationCorrections,
@@ -12,7 +12,6 @@ import type {
   OmiManuscript,
   OmiPublicationCorrection,
 } from '../types/omi';
-import { getAssetPayload } from './assetRepository';
 import { cssStringLiteral } from './embeddedCss';
 import { renderPublisherHtmlArticle } from './exportPublisherHtmlPackage';
 import { hyphenatePrintHtml } from './printHyphenation';
@@ -911,15 +910,18 @@ export async function renderStyleBasedHtml(
   manuscript: OmiManuscript,
   profile: OmiPublicationProfile,
   target: PublicationStyleTarget,
+  context?: { style: PublicationStyle; identity: PublicationPublisherIdentity; embedAssets?: boolean },
 ): Promise<string> {
-  const style = loadPublicationStyle();
-  const identity = loadPublicationPublisherIdentity();
+  const style = context?.style ?? loadPublicationStyle();
+  const identity = context?.identity ?? loadPublicationPublisherIdentity();
   const renderingManuscript = target === 'print'
     ? applyPublicationCorrectionsForRendering(manuscript)
     : manuscript;
   const rendered = renderPublisherHtmlArticle(renderingManuscript, profile, {
     noteLayout: target === 'print' ? 'paged' : undefined,
   });
+  const fatal = rendered.diagnostics.filter(item => item.severity === 'error' && (target !== 'print' || item.code !== 'profile-does-not-support-html'));
+  if (fatal.length) throw new Error(fatal.map(item => item.message).join('\n'));
   // Keep DOM parsing confined to the semantic article produced by our HTML
   // renderer. Publication-style and publisher values can originate in local
   // storage or an imported IDML package, so add them only after hyphenation.
@@ -936,7 +938,9 @@ export async function renderStyleBasedHtml(
   }
   html = withPublisherIdentity(html, manuscript, target, identity);
   if (target === 'print') html = withPrintRunningHeader(html, manuscript, style, identity);
-  return target === 'print' ? inlineManuscriptAssets(html, manuscript) : html;
+  return target === 'print' || context?.embedAssets
+    ? inlinePublicationArtifactImages(html, manuscript, target === 'print' ? 48 * 1024 * 1024 : 8 * 1024 * 1024, target === 'print')
+    : html;
 }
 
 /** Returns a print-only clone containing inline correction characters. */
@@ -1002,27 +1006,6 @@ export function withPublicationCorrectionCss(
     '</head>',
     `  <style data-omi-publication-corrections>\n${rules.join('\n')}\n  </style>\n</head>`,
   );
-}
-
-async function inlineManuscriptAssets(html: string, manuscript: OmiManuscript): Promise<string> {
-  let result = html;
-  for (const asset of manuscript.assets ?? []) {
-    const bytes = await getAssetPayload(manuscript.id, asset.id);
-    if (!bytes) continue;
-    const dataUrl = `data:${asset.mediaType};base64,${bytesToBase64(bytes)}`;
-    const path = assetPath(asset).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    result = result.replace(new RegExp(`(["'])${path}\\1`, 'g'), (_match, quote: string) => `${quote}${dataUrl}${quote}`);
-  }
-  return result;
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const chunk = 0x8000;
-  for (let offset = 0; offset < bytes.length; offset += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunk));
-  }
-  return window.btoa(binary);
 }
 
 function cssFontFamily(family: string, fallback: string): string {

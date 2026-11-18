@@ -3,7 +3,6 @@ import {
   sha256Hex,
 } from '../model/assets';
 import { getDocumentStructureProfile } from '../model/documentProfile';
-import { walkManuscriptStructure } from '../model/manuscriptTreeTraversal';
 import {
   resolvePublicationProfile,
   type OmiPublicationProfile,
@@ -53,55 +52,35 @@ export async function buildPublicationHtmlArtifact(
     );
   }
 
-  let html = result.html;
-  // A standalone HTML publication must inline assets from *every* nested
-  // section and child block; root-only traversal silently dropped figures.
-  const imageIds = new Set<string>();
-  for (const entry of walkManuscriptStructure(manuscript.sections)) {
-    if (entry.kind === 'block' && entry.block.visual?.kind === 'image' && entry.block.visual.assetId) {
-      imageIds.add(entry.block.visual.assetId);
-    }
-  }
-  for (const id of imageIds) {
-    const asset = manuscript.assets?.find((item) => item.id === id);
-    if (
-      !asset ||
-      !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(
-        asset.mediaType,
-      )
-    ) {
-      throw new Error(`Unsupported or missing image: ${id}`);
-    }
+  return inlinePublicationArtifactImages(result.html, manuscript);
+}
 
-    const bytes = await getAssetPayload(manuscript.id, id);
-    if (
-      !bytes ||
-      bytes.byteLength !== asset.size ||
-      (await sha256Hex(bytes)) !== asset.checksum.value.toLowerCase()
-    ) {
-      throw new Error(`Image integrity check failed: ${id}`);
+/** Validate only referenced resources and inline exact registered bytes; never fetch remotely. */
+export async function inlinePublicationArtifactImages(
+  input: string,
+  manuscript: OmiManuscript,
+  maxBytes = 8 * 1024 * 1024,
+  allowSvg = false,
+): Promise<string> {
+  let html = input;
+  for (const asset of manuscript.assets ?? []) {
+    const escaped = assetPath(asset).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    if (!html.includes(`src="${escaped}"`)) continue;
+    if (![ 'image/png','image/jpeg','image/gif','image/webp', ...(allowSvg ? ['image/svg+xml'] : []) ].includes(asset.mediaType)) {
+      throw new Error(`Unsupported publication image: ${asset.id}`);
     }
-
+    const bytes = await getAssetPayload(manuscript.id, asset.id);
+    if (!bytes || bytes.byteLength !== asset.size || (await sha256Hex(bytes)) !== asset.checksum.value.toLowerCase()) {
+      throw new Error(`Image integrity check failed: ${asset.id}`);
+    }
     let binary = '';
-    for (let offset = 0; offset < bytes.length; offset += 8192) {
-      binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
-    }
-
-    const escaped = assetPath(asset)
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    html = html.replaceAll(
-      `src="${escaped}"`,
-      `src="data:${asset.mediaType};base64,${btoa(binary)}"`,
-    );
+    for (let offset = 0; offset < bytes.length; offset += 8192) binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+    html = html.replaceAll(`src="${escaped}"`, `src="data:${asset.mediaType};base64,${btoa(binary)}"`);
   }
 
   for (const image of html.matchAll(/<img\b[^>]*\bsrc="([^"]*)"/g)) {
     if (
-      !/^data:image\/(png|jpeg|gif|webp);base64,[a-zA-Z0-9+/=]+$/.test(
+      !(allowSvg ? /^data:image\/(png|jpeg|gif|webp|svg\+xml);base64,[a-zA-Z0-9+/=]+$/ : /^data:image\/(png|jpeg|gif|webp);base64,[a-zA-Z0-9+/=]+$/).test(
         image[1] ?? '',
       )
     ) {
@@ -111,8 +90,8 @@ export async function buildPublicationHtmlArtifact(
     }
   }
 
-  if (new TextEncoder().encode(html).length > 8 * 1024 * 1024) {
-    throw new Error('The HTML publication artifact exceeds the 8 MiB limit.');
+  if (new TextEncoder().encode(html).length > maxBytes) {
+    throw new Error(`The publication input exceeds the ${Math.floor(maxBytes / 1024 / 1024)} MiB limit.`);
   }
 
   return html;

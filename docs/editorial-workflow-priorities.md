@@ -124,3 +124,7 @@ competing issue schedules for the same journal.
 ## 2026-11-18 boundary checkpoint
 
 Use the common `omi-publishing-editorial/1` capability projection and the canonical v1 connection endpoints. OJS profile snapshots remain versioned extensions; OMP explicitly lacks these two new operations until a tested adapter exists. New endpoint availability does not imply native task writeback, proof approval or external reviewed-seal authority. [ADR-037](architecture/adr-037-editorial-production-and-connector-contract.md) and the generated OpenAPI describe the bounded implementation. The existing exact-candidate OJS manual gates must exercise these operations with exact Studio/plugin/package identities; helper tests and native package installation alone do not certify the editorial workflow.
+
+## Live Studio typesetting → OJS — 2026-11-18
+
+The proposed live-editor handoff applies the publisher style before generating selected HTML/PDF outputs, previews exact bytes, and transfers them only to an inspected unpublished OJS Production target. It reuses the artifact adapter; native task writeback and final OJS publication remain separate. See [operator workflow](ojs-live-publication.md) and [ADR-038](architecture/adr-038-live-publication-ojs-handoff.md).

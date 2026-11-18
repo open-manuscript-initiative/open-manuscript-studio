@@ -1,3 +1,5 @@
+import { OjsPublicationTransferPanel } from './OjsPublicationTransferPanel';
+import { ojsPublicationCopy } from '../i18n/ojsPublication';
 import { PublicationFrameEditor } from './PublicationFrameEditor';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
 import { usePublicationPreview } from './PublicationPreviewContext';
@@ -194,6 +196,7 @@ export function PublicationStyleEditor() {
   const copy = copyFor(locale);
   const previewOnly = usePublicationPreview();
   const [frameToolsOpen, setFrameToolsOpen] = useState(false);
+  const [ojsTransferOpen, setOjsTransferOpen] = useState(false);
   const frameCopy = getPublicationFramesCopy(locale);
   const initial = useMemo(loadInitialState, []);
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
@@ -706,6 +709,17 @@ export function PublicationStyleEditor() {
       </div>
 
       {previewOnly ? <p className="publication-mobile-preview-note">{getVisualElementsCopy(locale).mobilePreviewNote}</p> : null}
+      {previewOnly ? (
+        <button
+          type="button"
+          className="studio-menu-secondary-action"
+          aria-expanded={ojsTransferOpen}
+          onClick={() => setOjsTransferOpen(current => !current)}
+        >
+          <FileCode2 size={18} aria-hidden="true" />
+          {ojsPublicationCopy(locale).title}
+        </button>
+      ) : null}
       <div className="publication-frame-inspector-actions">
         <button
           type="button"
@@ -780,6 +794,9 @@ export function PublicationStyleEditor() {
               open={openPanel === 'export'}
               onToggle={() => setOpenPanel((current) => current === 'export' ? null : 'export')}
             />
+            <PublicationRibbonActionButton label={ojsPublicationCopy(locale).title} onClick={() => { setOjsTransferOpen(current => !current); setOpenPanel(null); }}>
+              <FileCode2 size={18} aria-hidden="true" />
+            </PublicationRibbonActionButton>
             <PublicationRibbonActionButton label={copy.reset} onClick={() => { reset(); setOpenPanel(null); }}>
               <RotateCcw size={18} aria-hidden="true" />
             </PublicationRibbonActionButton>
@@ -1185,6 +1202,8 @@ export function PublicationStyleEditor() {
         ) : null}
       </div> : null}
 
+      {ojsTransferOpen ? <button type="button" className="studio-menu-secondary-action" onClick={() => setOjsTransferOpen(false)}>{ojsPublicationCopy(locale).close}</button> : null}
+      <OjsPublicationTransferPanel key={manuscript.id} style={style} active={ojsTransferOpen} />
       <div className="publication-style-editor-layout">
         <PublicationDocumentCanvas
           style={style}
