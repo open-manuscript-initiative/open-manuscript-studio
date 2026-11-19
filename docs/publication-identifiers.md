@@ -1,6 +1,6 @@
 # Volumes, journal issues and publication identifiers
 
-Choose **New OMI edited volume or journal issue**, then choose **Volume** or
+Choose **New volume or issue**, then choose **Volume** or
 **Journal issue** in the creation form. Monographs also use the publication
 metadata form. A journal issue uses independent studies and per-study notes.
 

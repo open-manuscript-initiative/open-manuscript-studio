@@ -143,7 +143,7 @@ test('the UI mounts one Tiptap host per study and supports multiple focus target
   assert.match(closedWorkspaceSource, /<NewDocumentActions variant="empty-workspace" \/>/);
   assert.match(newDocumentSource, /Új OMI tanulmány/);
   assert.match(newDocumentSource, /Új OMI monográfia/);
-  assert.match(newDocumentSource, /Új OMI tanulmánykötet/);
+  assert.match(newDocumentSource, /Új kötet \/ folyóiratszám/);
   assert.match(newDocumentSource, /Önálló tanulmány saját címmel, metaadatokkal és tartalommal/);
   assert.doesNotMatch(newDocumentSource, /Tiptap-szerkesztő|Tiptap-Editor|Tiptap editor/);
 });

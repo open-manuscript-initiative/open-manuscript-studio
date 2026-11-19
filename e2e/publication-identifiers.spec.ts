@@ -6,7 +6,7 @@ for (const width of [1440, 393]) {
     await page.setViewportSize({ width, height: 900 });
     await installMockStudioApi(page);
     await signInToStudio(page);
-    await page.getByRole('button', { name: /^New OMI edited volume/ }).click();
+    await page.getByRole('button', { name: /^New volume or issue/ }).click();
     const form = page.locator('.omi-new-publication-form');
     await form.getByLabel('Publication type').selectOption('journal-issue');
     await form.getByLabel('Volume or journal issue title').fill('Special issue');
@@ -16,7 +16,10 @@ for (const width of [1440, 393]) {
     await form.getByLabel('ISSN (electronic, eISSN)', { exact: true }).fill('2049-3630');
     await form.getByLabel('DOI of the whole publication').fill('10.1234/whole-issue');
     await form.getByLabel('Publication type').selectOption('volume');
+    await expect(form).toBeVisible();
     await expect(form.getByLabel('ISSN (print)', { exact: true })).toHaveValue('1234-5679');
+    expect(await form.getByLabel('ISSN (print)', { exact: true }).evaluate((input) =>
+      (input as HTMLTextAreaElement).labels?.[0]?.textContent)).toBe('ISSN (print)');
     await form.getByLabel('Publication type').selectOption('journal-issue');
     await expect(form.getByLabel('ISBN (print)', { exact: true })).toHaveValue('978-0-306-40615-7');
     expect(await form.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
