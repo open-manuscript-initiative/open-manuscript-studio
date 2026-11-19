@@ -1,5 +1,6 @@
 import { getDocumentStructureProfile } from './documentProfile';
 import type { OmiManuscriptState } from '../types/omi';
+import { publicationIdentifierLines } from './publicationIdentifiers';
 
 export const PUBLICATION_MATTER_EXTENSION = 'urn:omi:studio:publication-matter:1';
 export const PUBLICATION_MATTER_PAGES = [
@@ -29,7 +30,7 @@ export function publicationMatterTemplate(kind: PublicationMatterPageKind, manus
   const texts = kind === 'front-cover' || kind === 'title-page'
     ? [metadata?.responsibilityStatement, manuscript.title, manuscript.subtitle, metadata?.editionStatement, publisher]
     : kind === 'half-title' ? [metadata?.halfTitle || manuscript.title]
-      : kind === 'imprint-page' ? [metadata?.copyrightStatement, metadata?.colophon, metadata?.isbn ? `ISBN ${metadata.isbn}` : undefined, publisher]
+      : kind === 'imprint-page' ? [metadata?.copyrightStatement, metadata?.colophon, ...publicationIdentifierLines(metadata), publisher]
         : [];
   const content = texts.filter(Boolean).map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] }));
   return JSON.stringify({ type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] });

@@ -28,6 +28,8 @@ import { partitionManuscriptStudies } from '../model/sectionStructure';
 import { ContributorEditor } from './ContributorEditor';
 import { PublicationMatterEditor } from './PublicationMatterEditor';
 import { getPublicationMatterCopy } from '../i18n/publicationMatter';
+import { getPublicationMatter } from '../model/publicationMatter';
+import { PublicationIdentifierFields } from './PublicationIdentifierFields';
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
 type VolumeFrontMatterTab = 'title-matter' | 'contributors' | 'structure' | 'publication';
@@ -238,10 +240,14 @@ export function VolumeFrontMatterEditor({
           />
 
           {structure.kind === 'volume' ? (
-            <TitleMatterFields
-              values={manuscript.titleMatter ?? {}}
-              copy={copy}
-            />
+            <>
+              <TitleMatterFields
+                values={manuscript.titleMatter ?? {}}
+                copy={copy}
+              />
+              <PublicationIdentifierFields locale={locale} kind={getPublicationMatter(manuscript)?.publicationKind ?? 'volume'}
+                values={manuscript.titleMatter ?? {}} onChange={stageTitleMatterChange} />
+            </>
           ) : null}
         </header>
       ) : activeTab === 'contributors' ? (
@@ -280,7 +286,6 @@ function TitleMatterFields({
     { key: 'halfTitle', label: copy.halfTitle, wide: true },
     { key: 'responsibilityStatement', label: copy.responsibility, wide: true },
     { key: 'editionStatement', label: copy.edition },
-    { key: 'isbn', label: copy.isbn },
     { key: 'publisherName', label: copy.publisher },
     { key: 'publicationPlace', label: copy.place },
     { key: 'publicationYear', label: copy.year },

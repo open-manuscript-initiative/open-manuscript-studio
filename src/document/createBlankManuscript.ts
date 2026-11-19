@@ -13,12 +13,16 @@ import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity
 import { createEmptyStudy } from '../model/sectionStructure';
 import { createInitialVersioningEnvelope } from '../model/versioning';
 import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
+import { normalizeTitleMatter, type OmiTitleMatter } from '../model/frontMatter';
+import { createPublicationMatter, PUBLICATION_MATTER_EXTENSION, type PublicationMatter } from '../model/publicationMatter';
 
 export interface CreateBlankManuscriptInput {
   kind: OmiDocumentKind;
   volumeKind?: OmiVolumeKind;
   locale?: string;
   title?: string;
+  publicationKind?: PublicationMatter['publicationKind'];
+  titleMatter?: OmiTitleMatter;
   author?: {
     displayName: string;
     givenName?: string;
@@ -63,13 +67,14 @@ export function createBlankManuscript(
     identityModelVersion: OMI_IDENTITY_MODEL_VERSION,
     locale: input.locale?.trim() || 'en',
     title: input.title ?? '',
+    titleMatter: normalizeTitleMatter(input.titleMatter),
     subtitle: undefined,
     abstract: '',
     keywords: [],
     citationStyle: 'apa-7',
     documentStructure: createDocumentStructureProfile(
       input.kind,
-      input.volumeKind,
+      input.publicationKind === 'journal-issue' ? 'edited-volume' : input.volumeKind,
     ),
     agents: author ? [author] : [],
     contributions: author
@@ -101,11 +106,19 @@ export function createBlankManuscript(
     updatedAt: now,
   };
 
+  if (input.kind === 'volume' && input.publicationKind) {
+    state.extensions = { ...state.extensions, [PUBLICATION_MATTER_EXTENSION]: {
+      ...createPublicationMatter(state), publicationKind: input.publicationKind,
+    } };
+  }
+
   const summary = input.kind === 'study'
     ? 'Created blank OMI study'
-    : input.volumeKind === 'monograph'
-      ? 'Created blank OMI monograph'
-      : 'Created blank OMI edited volume';
+    : input.publicationKind === 'journal-issue'
+      ? 'Created blank OMI journal issue'
+      : input.volumeKind === 'monograph'
+        ? 'Created blank OMI monograph'
+        : 'Created blank OMI edited volume';
 
   return ensureManuscriptRevisionStateDigests({
     ...state,

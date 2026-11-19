@@ -12,6 +12,12 @@ import {
 import { normalizeTitleMatter } from '../src/model/frontMatter.ts';
 import { useAuthStore } from '../src/store/authStore.ts';
 
+import { getPublicationMatter, publicationMatterTemplate } from '../src/model/publicationMatter.ts';
+import { publicationIdentifierFields, publicationIdentifierLines } from '../src/model/publicationIdentifiers.ts';
+import { inspectRevisionStateIntegrity } from '../src/model/revisionIntegrity.ts';
+import { serializeOmiJson } from '../src/services/exportOmi.ts';
+import { parseOmiJson } from '../src/services/omiPortableFormat.ts';
+
 test('creates a standalone OMI study with one independent editor root', () => {
   const manuscript = createBlankManuscript({
     kind: 'study',
@@ -171,4 +177,37 @@ test('empty title-matter fields are removed without affecting populated fields',
   }), {
     publisherName: 'OMI Press',
   });
+});
+
+test('periodicals retain ISBN and both ISSNs together in the initial revision and imprint', () => {
+  const manuscript = createBlankManuscript({
+    kind: 'volume', volumeKind: 'edited-volume', publicationKind: 'journal-issue', locale: 'hu', title: 'Special issue',
+    titleMatter: { isbn: ' 978-0-306-40615-7 ', electronicIsbn: '978-3-16-148410-0', issn: '1234-5679', eissn: '2049-3630',
+      doi: '10.1234/whole-issue', otherIdentifiers: 'ark:/41386/example\nurn:example:issue' },
+  });
+  assert.equal(getPublicationMatter(manuscript)?.publicationKind, 'journal-issue');
+  assert.equal(manuscript.titleMatter?.isbn, '978-0-306-40615-7');
+  const snapshot = manuscript.revisionHistory.revisions[0]!.snapshot.state;
+  assert.deepEqual(snapshot.titleMatter, manuscript.titleMatter);
+  assert.equal(getPublicationMatter(snapshot)?.publicationKind, 'journal-issue');
+  const reopened = parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(reopened.titleMatter, manuscript.titleMatter);
+  assert.equal(getPublicationMatter(reopened)?.publicationKind, 'journal-issue');
+  assert.equal(inspectRevisionStateIntegrity(manuscript.revisionHistory.revisions[0]!).status, 'verified');
+  const imprint = publicationMatterTemplate('imprint-page', manuscript);
+  for (const line of publicationIdentifierLines(manuscript.titleMatter)) assert.ok(imprint.includes(line), line);
+  assert.equal(publicationIdentifierLines(manuscript.titleMatter).length, 7);
+});
+
+test('publication kind changes identifier order without hiding ISBN or ISSN', () => {
+  assert.equal(publicationIdentifierFields('journal-issue')[0], 'issn');
+  assert.equal(publicationIdentifierFields('volume')[0], 'isbn');
+  assert.deepEqual(new Set(publicationIdentifierFields('journal-issue')), new Set(publicationIdentifierFields('volume')));
+});
+
+test('identifiers are optional and multiple identifiers keep separate imprint lines', () => {
+  const manuscript = createBlankManuscript({ kind: 'volume', publicationKind: 'journal-issue', titleMatter: { isbn: '  ', issn: '' } });
+  assert.equal(manuscript.titleMatter, undefined);
+  assert.deepEqual(publicationIdentifierLines(undefined), []);
+  assert.deepEqual(publicationIdentifierLines({ isbn: '111\n222', issn: '333' }), ['ISBN 111', 'ISBN 222', 'ISSN 333']);
 });

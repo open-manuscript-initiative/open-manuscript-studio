@@ -23,6 +23,11 @@ export interface OmiTitleMatter {
   publicationPlace?: string;
   publicationYear?: string;
   isbn?: string;
+  electronicIsbn?: string;
+  issn?: string;
+  eissn?: string;
+  doi?: string;
+  otherIdentifiers?: string;
   copyrightStatement?: string;
   colophon?: string;
 }
