@@ -1,5 +1,6 @@
 ## Unreleased — Publication editor, cover frames and spine
 
+- Save numeric measurements only after actual input in the current unit; unit/focus changes cannot write an outdated displayed value back to frame geometry.
 - Keep selected frame handles above overlapping artwork without changing its saved layer order. Give publication selectors unambiguous accessible labels and update browser navigation checks for the Publishing workspace.
 - Move cover/title-matter typography out of the author-facing volume metadata into Publishing → Publication editor. Provide integrated content and cover workspaces, preserve the active manuscript canvas, and retain mobile cover editing.
 - Rename the live publication editor to Publication editor throughout navigation and controls; share measurement units and layer-order tools with the content-frame inspector.

@@ -129,7 +129,7 @@ for (const width of [1440, 393]) {
     await expect(settings.getByRole('button', { name: 'Send backward', exact: true })).toBeDisabled();
     await settings.getByRole('button', { name: 'Bring forward', exact: true }).click();
     await expect(settings.getByLabel('Layer (1 = bottom)', { exact: true })).toHaveValue('1');
-    expect(await settings.getByLabel('Layer (1 = bottom)', { exact: true }).selectOption('2')).toEqual(['2']);
+    expect(await settings.getByLabel('Layer (1 = bottom)', { exact: true }).selectOption({ value: '2' })).toEqual(['2']);
     await expect(settings.getByLabel('Layer (1 = bottom)', { exact: true })).toHaveValue('2');
     await expect(settings.getByRole('button', { name: 'Bring to front', exact: true })).toBeDisabled();
     await expect.poll(topFrameAtOverlayCenter).toBe(overlayId);
@@ -217,6 +217,8 @@ for (const width of [1440, 393]) {
     });
     const before = await snapshot();
     const units = panel.getByLabel('Measurement units', { exact: true });
+    // Tab leaves the adjacent Height field focused. Unit changes must never
+    // commit its old display text as if it had been typed in the new unit.
     for (const unit of ['pc', 'pt', 'mm', 'pc', 'pt', 'mm']) {
       await units.selectOption(unit);
       const input = settings.getByRole('spinbutton', { name: `Width (${unit})`, exact: true });
