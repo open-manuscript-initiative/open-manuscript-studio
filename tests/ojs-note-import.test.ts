@@ -1,3 +1,4 @@
+import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { readDocxNotes } from '../src/services/docxNoteImport.ts';
 import { OdtZip } from '../src/services/odtZip.ts';
 import { parseDocxSource } from '../server/src/integrations/ojs/docxSource.ts';
@@ -253,6 +254,7 @@ test('preserves rich OJS DOCX notes through server integrity, both launch paths 
     const restored = parseOmiJson(serializeOmiJson(manuscript));
     assert.equal(restored.annotations[0]?.bodyContent, note.bodyContent);
     assert.deepEqual(createNoteBodyDocument(note, [], 'chicago-notes-bibliography', 'hu'), doc);
+    assert.match(renderHtmlArticle(manuscript).html, /<strong><em>Styled<\/em><\/strong>/);
   }
 });
 

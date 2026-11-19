@@ -40,3 +40,14 @@ Deploy both the updated Studio frontend and API. This change does not require an
 OJS plugin update. Older launch payloads remain readable as plain-text notes.
 Previously flattened Studio documents must be reopened from the original OJS
 source to recover formatting; local edits are not silently overwritten.
+
+
+### Rich notes in publication previews
+
+The live publication editor uses the stored rich note body in both print and HTML
+views. Print footnotes are measured using the same styled markup displayed on
+each page, including continuation fragments. Formatting-only changes invalidate
+the preview cache. Endnotes and exported HTML/PDF input use the same renderer.
+Legacy plain-text notes still work; generated citation labels follow the
+publication profile and document order. Opening a new preview is sufficient for
+notes whose `bodyContent` was already imported; no reimport is needed.

@@ -178,9 +178,15 @@ test('live pages place each footnote below its anchor and reflow after zoom and 
     useStudioStore.getState().loadManuscript({
       ...manuscript, title: 'Page footnotes',
       sections: [{ id: 'footnote-section', title: '', blocks }],
-      annotations: blocks.map((block, index) => createNoteAnnotation({
-        id: `note-${index}`, anchorId: `anchor-${index}`, targetBlockId: block.id,
-        body: `Footnote ${index + 1}. ` + 'A note belonging to the referenced page. '.repeat(index === 17 ? 120 : 3),
+      annotations: blocks.map((block, index) => ({
+        ...createNoteAnnotation({
+          id: `note-${index}`, anchorId: `anchor-${index}`, targetBlockId: block.id,
+          body: `Footnote ${index + 1}. ` + 'A note belonging to the referenced page. '.repeat(index === 17 ? 120 : 3),
+        }),
+        bodyContent: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+          { type: 'text', text: `Footnote ${index + 1}. `, marks: [{ type: 'bold' }] },
+          { type: 'text', text: 'A note belonging to the referenced page. '.repeat(index === 17 ? 120 : 3), marks: [{ type: 'italic' }] },
+        ] }] }),
       })),
     });
   });
@@ -221,6 +227,25 @@ test('live pages place each footnote below its anchor and reflow after zoom and 
     return failures;
   });
   await expect.poll(audit).toEqual([]);
+  const measuredNote = canvas.locator('.publication-page-footnotes--measure [data-publication-note-id="note-0"]');
+  const printedNote = canvas.locator('[data-footnote-page] [data-publication-note-id="note-0"]');
+  await expect(measuredNote.locator('strong')).toHaveText('Footnote 1. ');
+  await expect(printedNote.locator('strong')).toHaveText('Footnote 1. ');
+  // The plain body is identical: a formatting-only edit must invalidate the preview cache.
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    useStudioStore.setState((state) => ({ manuscript: {
+      ...state.manuscript, annotations: state.manuscript.annotations.map((note) => {
+        if (note.id !== 'note-0') return note;
+        const content = JSON.parse(note.bodyContent!);
+        content.content[0].content[0].marks = [{ type: 'omiUnderline' }];
+        return { ...note, bodyContent: JSON.stringify(content) };
+      }),
+    } }));
+  });
+  await expect(measuredNote.locator('u')).toHaveText('Footnote 1. ');
+  await expect(printedNote.locator('u')).toHaveText('Footnote 1. ');
+  await expect.poll(audit).toEqual([]);
   await canvas.getByRole('combobox', { name: 'Zoom', exact: true }).selectOption('50');
   await expect.poll(audit).toEqual([]);
   await canvas.getByRole('combobox', { name: 'Zoom', exact: true }).selectOption('100');
@@ -235,4 +260,7 @@ test('live pages place each footnote below its anchor and reflow after zoom and 
     .toBeGreaterThan(firstNoteAnchorTopBeforeEdit);
   await expect.poll(audit).toEqual([]);
   await expect(canvas.locator('[data-note-continuation]')).not.toHaveCount(0);
+  await expect(canvas.locator('[data-note-continuation] .omi-publication-note-body em').first()).toContainText('A note belonging');
+  await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
+  await expect(canvas.locator('.publication-document-html-notes u')).toHaveText('Footnote 1. ');
 });

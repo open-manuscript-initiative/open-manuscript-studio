@@ -12,7 +12,7 @@ import { renderBibliography, renderCitationCluster } from '../model/cslRendering
 import { getBibliographyRecords } from '../model/citations.ts';
 import { getManuscriptFundingStatement } from '../model/semanticFields.ts';
 import { buildNoteNumberMap, getNoteKind, sortNotesByDocumentOrder } from '../model/notes.ts';
-import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText.ts';
+import { renderPublicationNoteBody } from './publicationNoteBody';
 import { contributorNameParts } from '../model/contributorName.ts';
 import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
@@ -89,7 +89,7 @@ interface RenderState {
   pagedNotes: boolean;
   emittedFootnotes: Set<string>;
   emittedLocalNotes: Set<string>;
-  noteBodies: Map<string, string>;
+  noteHtmlBodies: Map<string, string>;
 }
 
 /**
@@ -149,9 +149,9 @@ export function renderHtmlArticle(
     pagedNotes: options.noteLayout === 'paged',
     emittedFootnotes: new Set(),
     emittedLocalNotes: new Set(),
-    noteBodies: new Map(),
+    noteHtmlBodies: new Map(),
   };
-  state.noteBodies = collectNoteBodies(state);
+  state.noteHtmlBodies = collectNoteHtmlBodies(state);
 
   const labels = localizedLabels(context.locale);
   const stateDigest = currentStateDigest(manuscript);
@@ -838,7 +838,7 @@ function renderNoteMarker(node: JsonNode, state: RenderState): string {
   if (getNoteKind(annotation) === 'author-note' && localLayout !== 'with-notes') {
     if (state.emittedLocalNotes.has(annotation.id)) return '';
     state.emittedLocalNotes.add(annotation.id);
-    const body = escapeHtml(state.noteBodies.get(annotation.id) ?? annotation.body);
+    const body = state.noteHtmlBodies.get(annotation.id) ?? escapeHtml(annotation.body);
     const id = htmlId('note', annotation.id);
     if (localLayout === 'margin') {
       return `<span id="${id}" class="omi-local-note-margin" role="note" data-note-kind="local">${body}</span>`;
@@ -858,7 +858,7 @@ function renderNoteMarker(node: JsonNode, state: RenderState): string {
   // Keep the float at its anchor, even when the enclosing paragraph is split.
   // Explicit labels preserve OMI numbering across chapters and repeated calls.
   // Encode line breaks so HTML source indentation cannot change note content.
-  const body = escapeHtml(state.noteBodies.get(annotation.id) ?? annotation.body)
+  const body = (state.noteHtmlBodies.get(annotation.id) ?? escapeHtml(annotation.body))
     .replace(/\r\n?|\n/g, '&#10;');
   return `${reference}<span class="omi-page-footnote" id="${htmlId('note', annotation.id)}" role="doc-footnote"><sup class="omi-page-footnote-label">${escapeHtml(label)}</sup> ${body}</span>`;
 }
@@ -881,14 +881,12 @@ const PAGED_NOTE_CSS = `
 .omi-page-footnote-label { font-size: .75em; line-height: 0; }
 `.trim();
 
-function collectNoteBodies(state: RenderState): Map<string, string> {
+function collectNoteHtmlBodies(state: RenderState): Map<string, string> {
   const citationRules = state.context.profile.rules.citations;
   const previouslyCitedTargets = new Set<string>();
-  const notes = state.pagedNotes
-    ? sortNotesByDocumentOrder(state.manuscript)
-    : state.manuscript.annotations.filter((annotation) => annotation.type === 'note');
+  const notes = sortNotesByDocumentOrder(state.manuscript);
   return new Map(notes.map((note) => {
-    const noteDocument = createNoteBodyDocument(
+    const noteBody = renderPublicationNoteBody(
       note,
       state.manuscript.bibliographicRecords ?? [],
       citationRules.noteFirstStyle ?? citationRules.style,
@@ -899,7 +897,7 @@ function collectNoteBodies(state: RenderState): Map<string, string> {
       },
     );
     for (const citation of note.noteCitations ?? []) previouslyCitedTargets.add(citation.target);
-    return [note.id, noteBodyPlainText(noteDocument) || note.body];
+    return [note.id, noteBody.html];
   }));
 }
 
@@ -914,17 +912,15 @@ function renderNotes(
   const placement = state.pagedNotes ? 'endnotes' : state.context.profile.rules.notes.placement;
 
   const noteItems = notes.map((note, index) => {
-    const body = state.noteBodies.get(note.id) ?? note.body;
+    const body = state.noteHtmlBodies.get(note.id) ?? escapeHtml(note.body);
     const unnumberedLocal = getNoteKind(note) === 'author-note' &&
       (state.context.profile.rules.notes.localNotePlacement ?? 'inline') !== 'with-notes';
     if (unnumberedLocal) {
-      return `<li id="${htmlId('note', note.id)}" role="note" class="omi-local-note-unanchored">${escapeHtml(body)}</li>`;
+      return `<li id="${htmlId('note', note.id)}" role="note" class="omi-local-note-unanchored">${body}</li>`;
     }
     return `<li id="${htmlId('note', note.id)}" role="doc-endnote" value="${escapeAttribute(
       state.noteLabels.get(note.id) ?? String(index + 1),
-    )}">${escapeHtml(
-      body,
-    )} <a class="note-backref" href="#${htmlId('noteref', note.id)}" aria-label="Back to note reference">↩</a></li>`;
+    )}">${body} <a class="note-backref" href="#${htmlId('noteref', note.id)}" aria-label="Back to note reference">↩</a></li>`;
   });
 
   return `<section class="article-notes" role="doc-endnotes" data-note-placement="${escapeAttribute(
@@ -1052,6 +1048,7 @@ math { overflow-x: auto; max-width: 100%; }
 @media print { .omi-local-note-margin { width: 5rem; margin-right: -5.3rem; font-size: 0.72em; } }
 .article-notes, .article-bibliography { margin-top: 2.5rem; text-align: left; }
 .article-bibliography li, .article-notes li { margin-bottom: .65em; }
+.article-notes li, .omi-local-note-inline, .omi-local-note-margin { white-space: pre-wrap; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 760px) { .omi-scholarly-article { padding: 1.25rem 1rem 2rem; } .article-body { column-count: 1; } }
 @media print { .omi-scholarly-article { max-width: none; padding: 0; } a { text-decoration: none; } }`;

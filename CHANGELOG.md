@@ -1,3 +1,11 @@
+## Unreleased — Rich notes in live publication pages
+
+- Render stored footnote/endnote formatting in the live print and HTML layouts,
+  including page continuations. Measure the same styled content used on screen
+  and refresh cached notes after formatting-only or citation changes.
+- Preserve the same rich note content in publication HTML and PDF input, while
+  retaining legacy plain-text notes and generated citation labels.
+
 ## Unreleased — Rich notes from OJS
 
 - Preserve footnote/endnote rich text when opening a DOCX source from OJS/OMP,

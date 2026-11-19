@@ -1,3 +1,5 @@
+import { resolvePublicationProfile } from '../model/publicationProfile';
+import { renderPublicationNoteBody, type PublicationNoteBody } from '../services/publicationNoteBody';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import type { JSONContent } from '@tiptap/core';
 import { FileCode2, FileText } from 'lucide-react';
@@ -34,12 +36,13 @@ import {
   buildNoteNumberMap,
   collectNoteAnchorsInBlock,
   getNoteKind,
+  sortNotesByDocumentOrder,
   type NoteAnchorOccurrence,
 } from '../model/notes';
 import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
-import type { OmiSection } from '../types/omi';
+import type { OmiBibliographicRecord, OmiSection } from '../types/omi';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
@@ -65,6 +68,7 @@ const PIXELS_PER_POINT = 96 / 72;
 type PublicationZoom = 'fit' | 50 | 75 | 100;
 export type PublicationDocumentViewMode = 'print' | 'html';
 const EMPTY_PUBLICATION_CORRECTIONS = [] as const;
+const EMPTY_BIBLIOGRAPHIC_RECORDS: readonly OmiBibliographicRecord[] = [];
 const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
 const LARGE_PUBLICATION_DOCUMENT_NODE_COUNT = 400;
 const LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS = 120;
@@ -76,8 +80,9 @@ interface NoteAnchorCacheEntry {
 }
 
 interface NoteBodyCacheEntry {
-  body: string;
-  text: string;
+  key: string;
+  records: readonly OmiBibliographicRecord[];
+  body: PublicationNoteBody;
 }
 
 interface PublicationPaginationState {
@@ -282,20 +287,35 @@ export function PublicationDocumentCanvas({
       annotations: manuscriptAnnotations,
     }, occurrences);
   }, [manuscriptAnnotations, manuscriptDocumentStructure, manuscriptSections]);
+  const citationRules = useMemo(() => resolvePublicationProfile({
+    publicationProfile: manuscript.publicationProfile,
+    embeddedPublicationProfile: manuscript.embeddedPublicationProfile,
+  }).rules.citations, [manuscript.publicationProfile, manuscript.embeddedPublicationProfile]);
+  const noteLocale = manuscript.locale;
+  const records = manuscript.bibliographicRecords ?? EMPTY_BIBLIOGRAPHIC_RECORDS;
   const semanticNotes = useMemo(() => {
     const cache = noteBodyCacheRef.current;
     const activeIds = new Set<string>();
-    const result = manuscriptAnnotations
-      .filter((annotation) => annotation.type === 'note')
+    const previousTargets = new Set<string>();
+    const occurrences = manuscriptSections.flatMap((section) => section.blocks.flatMap((block) =>
+      noteAnchorCacheRef.current.get(block.id)?.occurrences ?? [],
+    ));
+    const result = sortNotesByDocumentOrder({ sections: manuscriptSections, annotations: manuscriptAnnotations }, occurrences)
       .map((annotation, index) => {
         activeIds.add(annotation.id);
+        const key = JSON.stringify([annotation.body, annotation.bodyContent, annotation.noteCitations,
+          citationRules, noteLocale, [...previousTargets]]);
         const cached = cache.get(annotation.id);
-        const text = cached?.body === annotation.body ? cached.text : plainText(annotation.body);
-        cache.set(annotation.id, { body: annotation.body, text });
+        const body = cached?.key === key && cached.records === records ? cached.body : renderPublicationNoteBody(
+          annotation, records, citationRules.noteFirstStyle ?? citationRules.style, noteLocale,
+          { subsequentStyle: citationRules.noteSubsequentStyle, previouslyCitedTargets: [...previousTargets] },
+        );
+        for (const citation of annotation.noteCitations ?? []) previousTargets.add(citation.target);
+        cache.set(annotation.id, { key, records, body });
         return {
           id: annotation.id,
           label: getNoteKind(annotation) === 'author-note' ? '✧' : (noteNumbers.get(annotation.id) ?? index + 1),
-          text,
+          ...body,
           kind: getNoteKind(annotation),
         };
       });
@@ -303,14 +323,14 @@ export function PublicationDocumentCanvas({
       if (!activeIds.has(id)) cache.delete(id);
     }
     return result;
-  }, [manuscriptAnnotations, noteNumbers]);
+  }, [manuscriptAnnotations, manuscriptSections, noteNumbers, citationRules, noteLocale, records]);
   const notes = useMemo(() => semanticNotes.filter(
     (note) => note.kind === 'footnote' && noteNumbers.has(note.id),
   ), [semanticNotes, noteNumbers]);
   const noteById = useMemo(() => new Map(notes.map((note) => [note.id, note])), [notes]);
-  const endnotes = useMemo(() => manuscript.annotations.filter(
-    (annotation) => getNoteKind(annotation) === 'endnote',
-  ), [manuscript.annotations]);
+  const endnotes = useMemo(() => semanticNotes.filter(
+    (note) => note.kind === 'endnote',
+  ), [semanticNotes]);
   const noteLineHeight = positive(style.styles.footnote.lineHeight * PIXELS_PER_POINT * scale, 1);
   const noteSeparatorHeight = 8 * scale + 1;
   const firstVisiblePage = Math.max(0, Math.min(pageCount - 1, visiblePageRange.start));
@@ -413,7 +433,7 @@ export function PublicationDocumentCanvas({
             element.dataset.publicationNoteId!,
             Math.max(
               noteLineHeight,
-              Math.round(element.getBoundingClientRect().height / noteLineHeight) * noteLineHeight,
+              Math.ceil((element.getBoundingClientRect().height - 0.01) / noteLineHeight) * noteLineHeight,
             ),
           );
           noteIndex += 1;
@@ -986,7 +1006,7 @@ export function PublicationDocumentCanvas({
                       value={annotation.label}
                       key={annotation.id}
                     >
-                      {annotation.text}
+                      <span className="omi-publication-note-body" dangerouslySetInnerHTML={{ __html: annotation.html }} />
                     </li>
                   ))}
                 </ol>
@@ -995,7 +1015,7 @@ export function PublicationDocumentCanvas({
               <section className="publication-document-notes" aria-label={copy.notes}>
                 <ol>
                   {endnotes.map((annotation) => (
-                    <li key={annotation.id}>{plainText(annotation.body)}</li>
+                    <li key={annotation.id} value={annotation.label}><span className="omi-publication-note-body" dangerouslySetInnerHTML={{ __html: annotation.html }} /></li>
                   ))}
                 </ol>
               </section>
@@ -1005,7 +1025,7 @@ export function PublicationDocumentCanvas({
             <div ref={noteMeasureRef} className="publication-page-footnotes publication-page-footnotes--measure" aria-hidden="true" style={{ width: contentWidth }}>
               {notes.map((note) => (
                 <div className="publication-page-note" data-publication-note-id={note.id} key={note.id}>
-                  <span className="publication-page-note-label">{note.label}</span>{note.text}
+                  <span className="publication-page-note-label">{note.label}</span><span className="omi-publication-note-body" dangerouslySetInnerHTML={{ __html: note.html }} />
                 </div>
               ))}
             </div>
@@ -1029,7 +1049,7 @@ export function PublicationDocumentCanvas({
                       data-publication-note-id={note.id} data-note-continuation={fragment.offset > 0 || undefined}
                       style={{ height: fragment.height }}>
                       <div className="publication-page-note" style={{ transform: `translateY(-${fragment.offset}px)` }}>
-                        <span className="publication-page-note-label">{note.label}</span>{note.text}
+                        <span className="publication-page-note-label">{note.label}</span><span className="omi-publication-note-body" dangerouslySetInnerHTML={{ __html: note.html }} />
                       </div>
                     </div>
                   ) : null;
@@ -1101,24 +1121,6 @@ function positive(value: number | undefined, fallback: number): number {
 
 function nonNegative(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) && Number(value) >= 0 ? Number(value) : fallback;
-}
-
-function plainText(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-  try {
-    return collectJsonText(JSON.parse(trimmed) as unknown).replace(/\s+/g, ' ').trim();
-  } catch {
-    return trimmed.replace(/\s+/g, ' ');
-  }
-}
-
-function collectJsonText(value: unknown): string {
-  if (!value || typeof value !== 'object') return '';
-  const node = value as { text?: unknown; content?: unknown[] };
-  const text = typeof node.text === 'string' ? node.text : '';
-  const children = (node.content ?? []).map(collectJsonText).join(' ');
-  return [text, children].filter(Boolean).join(' ');
 }
 
 function fillRunningHeaderTemplate(
