@@ -210,7 +210,6 @@ export function renderHtmlArticle(
     )}" data-omi-head-revision="${escapeAttribute(context.headRevisionId)}">`,
     indent(article, 2),
     '  </article>',
-
     '</body>',
     '</html>',
     '',

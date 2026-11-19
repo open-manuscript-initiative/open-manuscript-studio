@@ -94,7 +94,7 @@ export function PublicationMatterEditor({ widthMm, heightMm, bodyPageCount, read
       }}>{copy.template}</button> : null}
       {sheet ? <><PublicationSpineControls model={model} insidePageCount={bodyPageCount ? publicationInsidePageCount(model, bodyPageCount) : undefined} unit={unit} readOnly={readOnly} onChange={stagePublicationMatter} /><p>{copy.sheetHelp}</p>
         <p className="omi-cover-sheet-dimensions">{copy.sheetSize}: {formatPublicationMeasurement(paperWidth, unit)} × {formatPublicationMeasurement(trimHeight, unit)} {unit}</p>
-        <label>{copy.frameArea}<select aria-label={copy.frameArea} value={area} onChange={(event) => setArea(event.target.value as PublicationMatterPageKind)}>
+        <label>{copy.frameArea}<select aria-label={copy.frameArea} value={isPublicationCoverSheet(selected) && publicationCoverPanels(selected, trimWidth, spineWidth).some((panel) => panel.kind === area && panel.widthMm > 0) ? area : selected} onChange={(event) => setArea(event.target.value as PublicationMatterPageKind)}>
           <option value={selected}>{copy.wholeSheet}</option>
           {isPublicationCoverSheet(selected) ? publicationCoverPanels(selected, trimWidth, spineWidth).filter((panel) => panel.widthMm > 0).map((panel) => <option key={panel.kind} value={panel.kind}>{copy.pages[panel.kind]}</option>) : null}
         </select></label>
