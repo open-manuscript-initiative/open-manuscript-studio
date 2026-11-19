@@ -169,11 +169,22 @@ for (const mobile of [false, true]) {
 
     // The same header controls now act on the main text instead of the note.
     const main = page.locator('.omi-continuous-tiptap-editor[contenteditable="true"]').first();
-    await main.click();
-    await main.press('ControlOrMeta+Home');
-    await main.press('ControlOrMeta+Shift+ArrowRight');
+    await main.focus();
+    // The document starts with an empty section heading. Ctrl+Home followed
+    // by Ctrl+Shift+Right selects only its boundary, leaving no text to mark.
+    const paragraph = main.locator('p').filter({ hasText: 'A manuscript paragraph with a note' }).first();
+    await paragraph.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await expect.poll(() => page.evaluate(() => document.getSelection()?.toString()))
+      .toContain('A manuscript paragraph with a note');
     await formatting.getByRole('button', { name: 'Underline', exact: true }).click();
-    await expect(main.locator('u')).not.toHaveCount(0);
+    await expect.poll(async () => (await main.locator('u').allTextContents()).join(''))
+      .toContain('A manuscript paragraph with a note');
     await expect(body.locator('u')).toHaveCount(0);
     await body.click();
     await body.press('ControlOrMeta+a');
