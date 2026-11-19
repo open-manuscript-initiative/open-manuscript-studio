@@ -62,7 +62,7 @@ for (const width of [1440, 393]) {
       const { useStudioStore } = await import('/src/app/useStudioStore.ts');
       const { createDocumentStructureProfile } = await import('/src/model/documentProfile.ts');
       const state = useStudioStore.getState();
-      state.loadManuscript({ ...state.manuscript, documentStructure: createDocumentStructureProfile('volume') });
+      state.loadManuscript({ ...state.manuscript, title: 'Publication frame fixture', documentStructure: createDocumentStructureProfile('volume') });
     });
     await openPublicationMatter(page);
     const panel = page.locator('.omi-publication-matter-editor');
@@ -200,7 +200,7 @@ for (const width of [1440, 393]) {
       const { useStudioStore } = await import('/src/app/useStudioStore.ts');
       const { createDocumentStructureProfile } = await import('/src/model/documentProfile.ts');
       const state = useStudioStore.getState();
-      state.loadManuscript({ ...state.manuscript, documentStructure: createDocumentStructureProfile('volume') });
+      state.loadManuscript({ ...state.manuscript, title: 'Publication measurement fixture', documentStructure: createDocumentStructureProfile('volume') });
     });
     await openPublicationMatter(page);
     const panel = page.locator('.omi-publication-matter-editor');
