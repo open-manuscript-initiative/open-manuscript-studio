@@ -23,6 +23,8 @@ import { getCurrentStudyNotesCopy } from '../../i18n/currentStudyNotes';
 import { getHeaderSupplementalCopy } from '../../i18n/headerSupplementalTranslations';
 import { Footer } from '../../components/Footer';
 import { HeaderInsertMenu } from '../../components/HeaderInsertMenu';
+import { HeaderFormattingButton, HeaderFormattingPanel } from '../../components/HeaderFormattingPanel';
+import { useFormattingStore } from '../../editor/useFormattingEditor';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import {
   getCloseSearchLabel,
@@ -60,6 +62,7 @@ const navLabels: Record<
 
 export function MobileLayout({ children, documentTabs, onOpenMenu, onHome }: MobileLayoutProps) {
   const { t, locale } = useTranslation();
+  const formattingOpen = useFormattingStore((state) => state.open);
   const menuCopy = getStudioMenuSupplementalCopy(locale);
   const headerCopy = getHeaderSupplementalCopy(locale);
   const notesCopy = getCurrentStudyNotesCopy(locale);
@@ -166,6 +169,7 @@ export function MobileLayout({ children, documentTabs, onOpenMenu, onHome }: Mob
       </header>
 
       {view === 'editor' ? (
+        <div className="mobile-editor-tools">
         <div className="mobile-action-bar">
           <button
             type="button"
@@ -222,6 +226,7 @@ export function MobileLayout({ children, documentTabs, onOpenMenu, onHome }: Mob
             )}
             <span>{searchButtonText}</span>
           </button>
+          <HeaderFormattingButton className="mobile-action-button mobile-icon-action" />
           <div className="mobile-insert-action">
             <HeaderInsertMenu />
           </div>
@@ -230,6 +235,8 @@ export function MobileLayout({ children, documentTabs, onOpenMenu, onHome }: Mob
             title={pendingChanges ? t('studio.pending') : t('studio.saved')}>
             {pendingChanges ? <Clock3 size={18} aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
           </div>
+        </div>
+        {formattingOpen ? <HeaderFormattingPanel manuscriptLanguage={manuscript.locale} /> : null}
         </div>
       ) : (
         <div className="mobile-account-bar">

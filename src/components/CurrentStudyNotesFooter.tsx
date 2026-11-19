@@ -44,6 +44,16 @@ export function CurrentStudyNotesFooter({
   const { anchorRef, dock } = useManuscriptNotesDock();
   const citationRules = manuscript.embeddedPublicationProfile?.rules.citations;
 
+  useEffect(() => {
+    const releaseInactiveNote = (event: FocusEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('#omi-current-study-notes, [data-editor-formatting-controls]')) return;
+      setActiveNoteId(null);
+    };
+    document.addEventListener('focusin', releaseInactiveNote);
+    return () => document.removeEventListener('focusin', releaseInactiveNote);
+  }, []);
+
   function navigateToNote(note: OmiAnnotation): void {
     const section = findStudySectionForBlock(study, note.targetBlockId);
     if (section) selectSection(section.id);
@@ -62,7 +72,9 @@ export function CurrentStudyNotesFooter({
       className="omi-current-study-notes"
       aria-labelledby="omi-current-study-notes-title"
       onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActiveNoteId(null);
+        const target = event.relatedTarget;
+        if (target instanceof Element && target.closest('[data-editor-formatting-controls]')) return;
+        if (!event.currentTarget.contains(target as Node | null)) setActiveNoteId(null);
       }}
       style={dock ? {
         '--omi-notes-left': `${dock.left}px`,

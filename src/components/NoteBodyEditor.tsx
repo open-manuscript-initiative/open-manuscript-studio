@@ -1,15 +1,13 @@
-import { BookOpen } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tiptap/react';
+import { EditorContent, useEditor, type JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
 import { stageAddNoteCitations } from '../app/noteCitationActions';
 import { stageUpdateNoteRichText } from '../app/noteRichTextActions';
 import { OmiCitationExtension } from '../editor/extensions/OmiCitationExtension';
 import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
+import { useFormattingEditor } from '../editor/useFormattingEditor';
 import { useTranslation } from '../i18n';
-import { getNoteCitationCopy } from '../i18n/noteCitations';
-import { getRichTextCopy } from '../i18n/richText';
 import { createNoteCitation } from '../model/noteCitations';
 import {
   collectNoteCitationIds,
@@ -38,9 +36,7 @@ export function NoteBodyEditor({
   subsequentCitationStyle,
   previouslyCitedTargets,
 }: NoteBodyEditorProps) {
-  const { locale, t } = useTranslation();
-  const copy = getNoteCitationCopy(locale);
-  const formatCopy = getRichTextCopy(locale);
+  const { t } = useTranslation();
   const previousTargetsKey = (previouslyCitedTargets ?? []).join('\u0000');
   const styleOptions = useMemo<NoteCitationStyleOptions>(() => ({
     subsequentStyle: subsequentCitationStyle,
@@ -61,7 +57,7 @@ export function NoteBodyEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false, horizontalRule: false }),
-      ...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS,
+      ...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter((extension) => extension.name !== 'omiBlockTypeMenu'),
       OmiCitationExtension,
     ],
     content: initial,
@@ -85,19 +81,7 @@ export function NoteBodyEditor({
     },
   });
 
-  const formats = [
-    { mark: 'bold', label: formatCopy.bold, icon: <strong>B</strong> },
-    { mark: 'italic', label: formatCopy.italic, icon: <em>I</em> },
-    { mark: 'omiUnderline', label: formatCopy.underline, icon: <u>U</u> },
-    { mark: 'strike', label: formatCopy.strike, icon: <s>S</s> },
-    { mark: 'omiSmallCaps', label: formatCopy.smallCaps, icon: <span style={{ fontVariant: 'small-caps' }}>Aa</span> },
-    { mark: 'omiSuperscript', label: formatCopy.superscript, icon: <span>x²</span> },
-    { mark: 'omiSubscript', label: formatCopy.subscript, icon: <span>x₂</span> },
-  ];
-  const activeMarks = useEditorState({
-    editor,
-    selector: ({ editor: current }) => formats.map(({ mark }) => current?.isActive(mark) ?? false),
-  });
+  useFormattingEditor(editor, { noteId: note.id, onCitation: togglePicker });
 
   useEffect(() => {
     if (!editor) return;
@@ -150,33 +134,7 @@ export function NoteBodyEditor({
 
   return (
     <div className="omi-note-rich-body">
-      <div className="omi-note-formatting" role="group" aria-label={formatCopy.toolbar}>
-        {formats.map(({ mark, label, icon }, index) => (
-          <button key={mark} type="button" aria-label={label} title={label}
-            aria-pressed={activeMarks?.[index] ?? false}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => editor.chain().focus().toggleMark(mark).run()}>
-            {icon}
-          </button>
-        ))}
-        <button type="button" aria-label={formatCopy.clearMarks} title={formatCopy.clearMarks}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => editor.chain().focus().unsetAllMarks().run()}>
-          Tx
-        </button>
-      </div>
       <EditorContent editor={editor} />
-      <div className="omi-note-rich-actions">
-        <button
-          type="button"
-          className="studio-menu-secondary-action"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={togglePicker}
-        >
-          <BookOpen size={15} aria-hidden="true" />
-          {copy.addCitation}
-        </button>
-      </div>
       {pickerOpen ? (
         <CitationPicker
           onInsert={insertCitations}

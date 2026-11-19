@@ -16,6 +16,7 @@ test('browser mobile exposes the manuscript tab strip and real editorial tools',
   await expect(toolbar.getByRole('button', { name: 'Show document outline' })).toBeVisible();
   await expect(toolbar.getByRole('button', { name: 'Proofing and tracked changes' })).toBeVisible();
   await expect(toolbar.getByRole('button', { name: 'Search' })).toBeVisible();
+  await expect(toolbar.locator('.focus-formatting-button')).toBeVisible();
   await expect(page.locator('.desktop-document-tabs')).toBeVisible();
   await expect(page.locator('.desktop-document-tabs').getByRole('tab')).toHaveCount(1);
   await toolbar.getByRole('button', { name: 'Show document outline' }).click();
@@ -37,6 +38,7 @@ test('Android mobile exposes the same outline, proofing, notes, search and save 
   await expect(search).toBeVisible();
   await expect(toolbar.locator('.mobile-notes-count')).toBeAttached();
   await expect(toolbar.locator('.mobile-save-state')).toBeVisible();
+  await expect(toolbar.locator('.focus-formatting-button')).toBeVisible();
   await expect(page.locator('.mobile-document-tab-strip').getByRole('tab')).toHaveCount(1);
 
   await outline.click();
@@ -55,5 +57,13 @@ test('Android mobile exposes the same outline, proofing, notes, search and save 
   await expect(page.getByRole('search', { name: 'Find' })).toBeVisible();
   await toolbar.getByRole('button', { name: 'Close search' }).click();
   await expect(page.getByRole('search', { name: 'Find' })).toBeHidden();
+  const editor = page.locator('.omi-continuous-tiptap-editor[contenteditable="true"]').first();
+  await editor.fill('Native formatting');
+  await editor.press('ControlOrMeta+a');
+  await toolbar.locator('.focus-formatting-button').click();
+  const formatting = page.locator('#omi-header-formatting');
+  await formatting.getByRole('button', { name: 'Bold / strong', exact: true }).click();
+  await expect(editor.locator('strong')).toHaveText('Native formatting');
+  await expect(page.locator('.mobile-editor-tools .focus-header-formatting')).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

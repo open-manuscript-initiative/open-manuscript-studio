@@ -6,6 +6,17 @@
   include enabled pages before/after publication HTML and PDF content. Existing
   manuscripts and editorial PDFs remain unchanged. See [page-editor details](docs/publication-covers-title-pages.md).
 
+## Unreleased — Shared header formatting
+
+- Provide one header formatting panel for the active main-text or note editor.
+  Remove repeated formatting and reference-insertion bars from individual notes.
+- Retain the selected text when operating header controls, including link and
+  language fields, and preserve the existing contextual tools when the header
+  panel is closed.
+- Pin the desktop panel to keep it visible; remember that preference across
+  reloads and document changes. Expose the same tools in the native mobile
+  header and within the Notes dialog.
+
 ## Unreleased — Editable manuscript notes
 
 - Edit and format notes directly in the bottom manuscript panel, with automatic

@@ -118,11 +118,20 @@ for (const mobile of [false, true]) {
     const footer = page.locator('#omi-current-study-notes');
     const body = footer.getByRole('textbox');
     await body.fill('Editable note');
+    await expect(footer.locator('.omi-note-formatting, .omi-note-rich-actions')).toHaveCount(0);
+    await page.locator('.focus-formatting-button').click();
+    const formatting = page.locator('#omi-header-formatting');
+    if (!mobile) {
+      const pin = formatting.getByRole('button', { name: 'Pin toolbar position', exact: true });
+      await pin.click();
+      await expect(pin).toHaveAttribute('aria-pressed', 'true');
+      await expect.poll(() => page.evaluate(() => localStorage.getItem('omi.headerFormattingPinned.v1'))).toBe('true');
+    }
     await body.press('ControlOrMeta+a');
-    await footer.getByRole('button', { name: 'Bold / strong', exact: true }).click();
+    await formatting.getByRole('button', { name: 'Bold / strong', exact: true }).click();
     await expect(body.locator('strong')).toHaveText('Editable note');
-    await expect(footer.getByRole('button', { name: 'Bold / strong', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await footer.getByRole('button', { name: 'Italic / emphasis', exact: true }).click();
+    await expect(formatting.getByRole('button', { name: 'Bold / strong', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await formatting.getByRole('button', { name: 'Italic / emphasis', exact: true }).click();
     await expect(body.locator('em')).toHaveText('Editable note');
     await expect.poll(() => page.evaluate(async () => {
       const { useStudioStore } = await import('/src/app/useStudioStore.ts');
@@ -157,5 +166,42 @@ for (const mobile of [false, true]) {
       }), 'Updated elsewhere', []);
     });
     await expect(body).toHaveText('Updated elsewhere');
+
+    // The same header controls now act on the main text instead of the note.
+    const main = page.locator('.omi-continuous-tiptap-editor[contenteditable="true"]').first();
+    await main.focus();
+    // The document starts with an empty section heading. Ctrl+Home followed
+    // by Ctrl+Shift+Right selects only its boundary, leaving no text to mark.
+    const paragraph = main.locator('p').filter({ hasText: 'A manuscript paragraph with a note' }).first();
+    await paragraph.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await expect.poll(() => page.evaluate(() => document.getSelection()?.toString()))
+      .toContain('A manuscript paragraph with a note');
+    await formatting.getByRole('button', { name: 'Underline', exact: true }).click();
+    await expect.poll(async () => (await main.locator('u').allTextContents()).join(''))
+      .toContain('A manuscript paragraph with a note');
+    await expect(body.locator('u')).toHaveCount(0);
+    await body.click();
+    await body.press('ControlOrMeta+a');
+    await formatting.getByRole('button', { name: 'Underline', exact: true }).click();
+    await expect(body.locator('u')).toHaveText('Updated elsewhere');
+    await expect(page.locator('.omi-rich-text-toolbar')).toHaveCount(1);
+
+    // Moving focus to a header URL field must keep the note and its selection.
+    await formatting.getByRole('button', { name: 'External link', exact: true }).click();
+    const url = formatting.locator('input[type="url"]');
+    await expect(url).toBeFocused();
+    await url.fill('https://source.example/note');
+    await formatting.getByRole('button', { name: 'Apply', exact: true }).click();
+    await expect(body.locator('a')).toHaveText('Updated elsewhere');
+    await expect(body.locator('a')).toHaveAttribute('href', 'https://source.example/note');
+
+    await formatting.getByRole('button', { name: 'Insert reference', exact: true }).click();
+    await expect(footer.locator('.omi-citation-picker')).toBeVisible();
   });
 }
