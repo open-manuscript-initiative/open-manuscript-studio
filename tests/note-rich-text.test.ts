@@ -63,7 +63,7 @@ test('collects citations in exact note-body order', () => {
 test('publication note markup preserves rich runs, breaks and lists without trusting source HTML', () => {
   const note = { id: 'formatted', type: 'note', body: 'stale plain text', bodyContent: JSON.stringify({ type: 'doc', content: [
     { type: 'paragraph', content: [
-      { type: 'text', text: '<script>unsafe</script> & ', marks: [{ type: 'bold' }, { type: 'italic' }] },
+      { type: 'text', text: '<script>unsafe</script> <SCRIPT data-mode="x">unsafe</SCRIPT> & ', marks: [{ type: 'bold' }, { type: 'italic' }] },
       { type: 'text', text: 'styled', marks: [{ type: 'omiUnderline' }, { type: 'strike' }, { type: 'omiSmallCaps' }] },
       { type: 'text', text: '2', marks: [{ type: 'omiSuperscript' }] },
       { type: 'text', text: 'n', marks: [{ type: 'omiSubscript' }] },
@@ -74,12 +74,12 @@ test('publication note markup preserves rich runs, breaks and lists without trus
   ] }) } as OmiAnnotation;
   const before = JSON.stringify(note);
   const rendered = renderPublicationNoteBody(note, [], 'apa-7', 'en');
-  assert.match(rendered.html, /<em><strong>&lt;script&gt;unsafe&lt;\/script&gt; &amp; <\/strong><\/em>/);
-  assert.match(rendered.html, /font-variant:small-caps/);
-  assert.match(rendered.html, /<del><u>styled<\/u><\/del>/);
-  assert.match(rendered.html, /<sup>2<\/sup><sub>n<\/sub><br>Line\ttab<br>/);
-  assert.match(rendered.html, /<span lang="de"><a href="https:\/\/source.example\/\?a=1&amp;b=2%22" rel="external">link<\/a><\/span><br>• Item/);
-  assert.doesNotMatch(rendered.html, /<script>|<p>|<div>|stale plain text/);
+  assert.equal(rendered.html, [
+    '<em><strong>&lt;script&gt;unsafe&lt;/script&gt; &lt;SCRIPT data-mode=&quot;x&quot;&gt;unsafe&lt;/SCRIPT&gt; &amp; </strong></em>',
+    '<span style="font-variant:small-caps"><del><u>styled</u></del></span>',
+    '<sup>2</sup><sub>n</sub><br>Line\ttab<br>',
+    '<span lang="de"><a href="https://source.example/?a=1&amp;b=2%22" rel="external">link</a></span><br>• Item',
+  ].join(''));
   assert.equal(JSON.stringify(note), before);
 });
 
