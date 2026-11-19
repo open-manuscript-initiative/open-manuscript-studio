@@ -84,7 +84,7 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   await editor.getByRole('spinbutton', { name: 'Y 2 (%)', exact: true }).fill('20');
   await expect(editor.locator(`[data-frame-id="${first}"]`)).toHaveCSS('transform', /matrix/);
   await expect.poll(async () => (await model()).frames[0]!.points[1]!.x).toBe(75);
-  const outlinePoint = editor.locator(`[data-frame-id="${first}"] .omi-frame-point`).nth(1);
+  const outlinePoint = editor.locator(`[data-frame-selection-id="${first}"] .omi-frame-point`).nth(1);
   const pointBox = await outlinePoint.boundingBox(); expect(pointBox).not.toBeNull();
   await page.mouse.move(pointBox!.x + 5, pointBox!.y + 5); await page.mouse.down();
   await page.mouse.move(pointBox!.x + 10, pointBox!.y + 10, { steps: 3 }); await page.mouse.up();

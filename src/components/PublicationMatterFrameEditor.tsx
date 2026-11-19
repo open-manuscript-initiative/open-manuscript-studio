@@ -148,7 +148,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
           <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'cover') })}>{copy.fillFrame}</button>
         </> : null}
       </>}
-      <label>{labels.layer}<select aria-label={labels.layer} value={selectedIndex} onChange={(event) => reorder(Number(event.target.value))}>{frames.map((frame, index) => <option key={frame.id} value={index}>{index + 1}</option>)}</select></label>
+      <label>{labels.layer}<select aria-label={labels.layer} value={selectedIndex} onChange={(event) => reorder(Number(event.target.value))}>{Array.from({ length: frames.length }, (_, index) => <option key={index} value={index}>{index + 1}</option>)}</select></label>
       <div className="omi-matter-frame-layer-actions" role="group" aria-label={labels.order}>
         <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(frames.length - 1)}>{labels.front}</button>
         <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(selectedIndex + 1)}>{labels.forward}</button>

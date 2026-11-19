@@ -129,7 +129,8 @@ for (const width of [1440, 393]) {
     await expect(settings.getByRole('button', { name: 'Send backward', exact: true })).toBeDisabled();
     await settings.getByRole('button', { name: 'Bring forward', exact: true }).click();
     await expect(settings.getByLabel('Layer (1 = bottom)', { exact: true })).toHaveValue('1');
-    await settings.getByLabel('Layer (1 = bottom)', { exact: true }).selectOption('2');
+    expect(await settings.getByLabel('Layer (1 = bottom)', { exact: true }).selectOption('2')).toEqual(['2']);
+    await expect(settings.getByLabel('Layer (1 = bottom)', { exact: true })).toHaveValue('2');
     await expect(settings.getByRole('button', { name: 'Bring to front', exact: true })).toBeDisabled();
     await expect.poll(topFrameAtOverlayCenter).toBe(overlayId);
     await settings.getByRole('button', { name: 'Delete frame', exact: true }).click();

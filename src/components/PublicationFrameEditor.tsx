@@ -237,7 +237,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
         <PublicationFramePagePanel layout={layout} pageIndex={activePage} onChange={commit} onSelect={(index) => { setPageSelection(index); setSelectedId(''); }} />
         <label>{copy.selectFrame}<select aria-label={copy.selectFrame} value={selected?.id ?? ''} onChange={(event) => { setSelectedId(event.target.value); const frame = layout.frames.find((item) => item.id === event.target.value); if (frame) setPageSelection(frame.page); }}><option value="" disabled>{copy.selectFrame}</option>{layout.frames.map((frame) => <option key={frame.id} value={frame.id}>{frame.name}</option>)}</select></label>
         {selected && shared && effective ? <>
-          <label>{layersCopy.layer}<select aria-label={layersCopy.layer} value={layerIndex} onChange={(event) => reorderLayer(Number(event.target.value))}>{pageFrames.map((frame, index) => <option key={frame.id} value={index}>{index + 1}</option>)}</select></label>
+          <label>{layersCopy.layer}<select aria-label={layersCopy.layer} value={layerIndex} onChange={(event) => reorderLayer(Number(event.target.value))}>{Array.from({ length: pageFrames.length }, (_, index) => <option key={index} value={index}>{index + 1}</option>)}</select></label>
           <div className="omi-frame-layer-actions" role="group" aria-label={layersCopy.order}>
             <button type="button" disabled={layerIndex === pageFrames.length - 1} onClick={() => reorderLayer(pageFrames.length - 1)}>{layersCopy.front}</button>
             <button type="button" disabled={layerIndex === pageFrames.length - 1} onClick={() => reorderLayer(layerIndex + 1)}>{layersCopy.forward}</button>
