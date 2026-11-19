@@ -103,6 +103,7 @@ import { CrossReferencePicker } from './CrossReferencePicker';
 import { NoteEditorCard } from './NoteEditorCard';
 import { ProofreadingSuggestionCard } from './ProofreadingSuggestionCard';
 import { RichTextToolbar } from './RichTextToolbar';
+import { useFormattingEditor } from '../editor/useFormattingEditor';
 import { SelectionActionToolbar } from './SelectionActionToolbar';
 import { SelectionIntegrationDialog } from './SelectionIntegrationDialog';
 
@@ -815,15 +816,7 @@ function BlockEditorComponent({
     }
   }
 
-  if (!editor) {
-    return (
-      <div className="omi-block-editor omi-block-editor--loading" aria-live="polite">
-        {t('editor.loading')}
-      </div>
-    );
-  }
-
-  const showSelectionActions = effectiveEditable && (
+  const showSelectionActions = Boolean(editor) && effectiveEditable && (
     proofingMode !== 'none' && (
     (continuous && capabilities.editStructure) ||
     capabilities.editCitations ||
@@ -832,6 +825,33 @@ function BlockEditorComponent({
     externalIntegrationsAllowed
     )
   );
+
+  const selectionActions = editor && showSelectionActions ? (
+    <SelectionActionToolbar
+      editor={editor}
+      citationLabel={t('editor.addCitation')}
+      noteLabel={t('editor.addNote')}
+      crossReferenceLabel={crossReferenceCopy.insert}
+      translateLabel={integrationLabels.translate}
+      assistantLabel={integrationLabels.assistant}
+      textToTableLabel={textToTableLabel(locale)}
+      onTextToTable={continuous && capabilities.editStructure ? convertSelectionToTable : undefined}
+      onCitation={capabilities.editCitations ? openCitationPicker : undefined}
+      onNote={capabilities.insertNotes ? insertNote : undefined}
+      onCrossReference={capabilities.editCrossReferences ? openCrossReferencePicker : undefined}
+      onTranslate={externalIntegrationsAllowed ? () => openIntegrationAction('translate') : undefined}
+      onAssistant={externalIntegrationsAllowed ? () => openIntegrationAction('agent') : undefined}
+    />
+  ) : null;
+  useFormattingEditor(editor, { actions: selectionActions });
+
+  if (!editor) {
+    return (
+      <div className="omi-block-editor omi-block-editor--loading" aria-live="polite">
+        {t('editor.loading')}
+      </div>
+    );
+  }
 
   return (
     <article
@@ -858,23 +878,7 @@ function BlockEditorComponent({
           locale={locale}
           manuscriptLanguage={manuscriptLanguage ?? manuscriptLocale}
         >
-          {showSelectionActions ? (
-            <SelectionActionToolbar
-              editor={editor}
-              citationLabel={t('editor.addCitation')}
-              noteLabel={t('editor.addNote')}
-              crossReferenceLabel={crossReferenceCopy.insert}
-              translateLabel={integrationLabels.translate}
-              assistantLabel={integrationLabels.assistant}
-              textToTableLabel={textToTableLabel(locale)}
-              onTextToTable={continuous && capabilities.editStructure ? convertSelectionToTable : undefined}
-              onCitation={capabilities.editCitations ? openCitationPicker : undefined}
-              onNote={capabilities.insertNotes ? insertNote : undefined}
-              onCrossReference={capabilities.editCrossReferences ? openCrossReferencePicker : undefined}
-              onTranslate={externalIntegrationsAllowed ? () => openIntegrationAction('translate') : undefined}
-              onAssistant={externalIntegrationsAllowed ? () => openIntegrationAction('agent') : undefined}
-            />
-          ) : null}
+          {selectionActions}
         </RichTextToolbar>
       ) : null}
 

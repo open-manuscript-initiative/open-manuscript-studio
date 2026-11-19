@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { useFormattingStore } from '../editor/useFormattingEditor';
 import { getCurrentStudyNotesCopy } from '../i18n/currentStudyNotes';
 import { getHeaderSupplementalCopy } from '../i18n/headerSupplementalTranslations';
 import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
@@ -27,6 +28,7 @@ import { useAuthStore } from '../store/authStore';
 import { AccountPanel } from './AccountPanel';
 import { DesktopDocumentOutline } from './DesktopDocumentOutline';
 import { HeaderInsertMenu } from './HeaderInsertMenu';
+import { HeaderFormattingButton, HeaderFormattingPanel } from './HeaderFormattingPanel';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProofingPanel } from './ProofingPanel';
 import {
@@ -42,6 +44,7 @@ interface HeaderProps {
 
 export function Header({ onOpenMenu, onHome }: HeaderProps) {
   const { t, locale } = useTranslation();
+  const formattingOpen = useFormattingStore((state) => state.open);
   const headerCopy = getHeaderSupplementalCopy(locale);
   const menuCopy = getStudioMenuSupplementalCopy(locale);
   const currentNotesCopy = getCurrentStudyNotesCopy(locale);
@@ -235,6 +238,7 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
                 <Search size={18} aria-hidden="true" />
               )}
             </button>
+            <HeaderFormattingButton />
           </div>
 
           <div className="focus-header-primary-action">
@@ -252,6 +256,7 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
             </div>
           </div>
         </div>
+        {formattingOpen ? <HeaderFormattingPanel manuscriptLanguage={manuscript.locale} /> : null}
       </header>
 
       {outlineOpen && outlineHost

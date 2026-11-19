@@ -34,6 +34,7 @@ import {
 } from '../app/documentCloseState';
 import { closeCurrentDocument } from '../app/documentLifecycle';
 import { useStudioStore } from '../app/useStudioStore';
+import { HeaderFormattingButton } from './HeaderFormattingPanel';
 import { translateCatalog, useTranslation } from '../i18n';
 import { getLocalFileLabels, type LocalFileLabels } from '../i18n/nativeStorageTranslations';
 import { getCloudStorageCopy } from '../i18n/cloudStorageTranslations';
@@ -211,8 +212,9 @@ export function StudioMenu({
             }}
           ><Menu size={20} aria-hidden="true" /></button>
           <div className="studio-menu-heading"><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
-          <span className="studio-menu-header-spacer" aria-hidden="true" />
+          {activeView === 'notes' ? <HeaderFormattingButton /> : <span className="studio-menu-header-spacer" aria-hidden="true" />}
         </header>
+        <div data-shared-formatting-host="true" />
         <div className={`studio-menu-body${navigationOpen ? ' studio-menu-body--navigation-open' : ' studio-menu-body--navigation-collapsed'}`}>
           <nav id="studio-menu-navigation" className="studio-menu-navigation" aria-label={t('studio.menu')}
             hidden={!navigationOpen}

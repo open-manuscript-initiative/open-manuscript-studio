@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import { useSelectionToolbarLayout } from './useSelectionToolbarLayout';
+import { useFormattingStore } from '../editor/useFormattingEditor';
 
 import { getRichTextCopy } from '../i18n/richText';
 import type { SupportedLocale } from '../i18n/types';
@@ -25,6 +26,8 @@ interface RichTextToolbarProps {
   locale: SupportedLocale;
   manuscriptLanguage: string;
   children?: ReactNode;
+  placement?: 'floating' | 'header';
+  renderActions?: () => ReactNode;
 }
 
 interface ToolbarPosition {
@@ -72,7 +75,11 @@ export function RichTextToolbar({
   locale,
   manuscriptLanguage,
   children,
+  placement = 'floating',
+  renderActions,
 }: RichTextToolbarProps) {
+  const headerOpen = useFormattingStore((state) => state.open);
+  const inHeader = placement === 'header';
   const copy = getRichTextCopy(locale);
   const { manuscriptLanguages } = useContentLanguagePreferences();
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
@@ -90,6 +97,15 @@ export function RichTextToolbar({
   const { interactionRef } = floating;
 
   useEffect(() => {
+    if (inHeader) {
+      const update = () => setRevision((value) => value + 1);
+      editor.on('transaction', update);
+      return () => { editor.off('transaction', update); };
+    }
+    if (headerOpen) {
+      setPosition(null);
+      return;
+    }
     const editorDom = editor.view.dom;
     const previousTouchCallout = editorDom.style.getPropertyValue('-webkit-touch-callout');
     let longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -284,7 +300,7 @@ export function RichTextToolbar({
         editorDom.style.removeProperty('-webkit-touch-callout');
       }
     };
-  }, [editor, interactionRef]);
+  }, [editor, interactionRef, inHeader, headerOpen]);
 
   const currentLanguage = useMemo(() => {
     void revision;
@@ -307,7 +323,7 @@ export function RichTextToolbar({
     }));
   }, [currentLanguage, locale, manuscriptLanguage, manuscriptLanguages]);
 
-  if (!position) {
+  if ((!inHeader && (!position || headerOpen)) || editor.isDestroyed) {
     return null;
   }
 
@@ -394,19 +410,19 @@ export function RichTextToolbar({
 
   const expanded = moreOpen || linkOpen;
 
-  return createPortal(
+  const toolbar = (
     <div
       ref={toolbarRef}
       className={`omi-rich-text-toolbar${
-        position.below ? ' omi-rich-text-toolbar--below' : ''
-      }${expanded ? ' omi-rich-text-toolbar--expanded' : ''}`}
-      style={floating.style}
+        position?.below && !inHeader ? ' omi-rich-text-toolbar--below' : ''
+      }${expanded ? ' omi-rich-text-toolbar--expanded' : ''}${inHeader ? ' omi-rich-text-toolbar--header' : ''}`}
+      style={inHeader ? undefined : floating.style}
       role="toolbar"
       aria-label={copy.toolbar}
       data-selection-length={editor.state.selection.to - editor.state.selection.from}
       data-pinned={floating.desktop && floating.pinned}
     >
-      {floating.desktop ? (
+      {floating.desktop && !inHeader ? (
         <div className="omi-rich-text-toolbar-placement">
           <button
             type="button"
@@ -456,6 +472,17 @@ export function RichTextToolbar({
         >
           <em>I</em>
         </ToolbarButton>
+        {inHeader ? <>
+          <ToolbarButton label={copy.underline} active={editor.isActive('omiUnderline')}
+            onMouseDown={keepEditorSelection}
+            onClick={() => editor.chain().focus().toggleMark('omiUnderline').run()}><u>U</u></ToolbarButton>
+          <ToolbarButton label={copy.strike} active={editor.isActive('strike')}
+            onMouseDown={keepEditorSelection}
+            onClick={() => editor.chain().focus().toggleStrike().run()}><s>S</s></ToolbarButton>
+          <ToolbarButton label={copy.smallCaps} active={editor.isActive('omiSmallCaps')}
+            onMouseDown={keepEditorSelection}
+            onClick={() => editor.chain().focus().toggleMark('omiSmallCaps').run()}><span style={{ fontVariant: 'small-caps' }}>Aa</span></ToolbarButton>
+        </> : null}
         <ToolbarButton
           label={copy.superscript}
           active={editor.isActive('omiSuperscript')}
@@ -508,6 +535,7 @@ export function RichTextToolbar({
       </div>
 
       {children}
+      {renderActions?.()}
 
       {linkOpen ? (
         <div className="omi-rich-text-popover omi-rich-text-link-editor">
@@ -634,7 +662,7 @@ export function RichTextToolbar({
           </div>
         </div>
       ) : null}
-      {floating.desktop ? (
+      {floating.desktop && !inHeader ? (
         <div className="omi-rich-text-toolbar-resize-row">
           <button
             type="button"
@@ -647,7 +675,10 @@ export function RichTextToolbar({
           </button>
         </div>
       ) : null}
-    </div>,
+    </div>
+  );
+  if (inHeader) return toolbar;
+  return createPortal(toolbar,
     // Keep the panel in the active modal's accessibility/focus scope, outside
     // the zoomed publication canvas that otherwise changes fixed coordinates.
     editor.view.dom.closest('[role="dialog"], dialog') ?? document.body,

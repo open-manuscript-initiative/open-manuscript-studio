@@ -372,3 +372,97 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
+
+/* One shared formatting surface in the application header. */
+.focus-header-formatting {
+  min-width: 0;
+  max-height: min(45dvh, 26rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--omi-academic-line, #dcd6cc);
+}
+
+.focus-header-formatting .omi-rich-text-toolbar--header {
+  position: static;
+  inset: auto !important;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  box-sizing: border-box;
+  transform: none !important;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.omi-rich-text-toolbar--header .omi-rich-text-toolbar-row {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.omi-rich-text-toolbar--header .omi-rich-text-toolbar-row > button {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  font-size: 1rem;
+}
+
+.focus-formatting-citation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 0.4rem;
+  background: var(--omi-editor-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.focus-header-formatting__hint {
+  margin: 0.55rem 0;
+  font-size: 0.875rem;
+  color: var(--omi-academic-muted, #69717c);
+}
+
+.focus-header-formatting__placement {
+  display: none;
+}
+
+@media (min-width: 761px) {
+  .focus-header-formatting__placement {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.25rem;
+  }
+
+  .focus-header-formatting__placement button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--omi-editor-border);
+    border-radius: 0.35rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .focus-header-formatting__placement button[aria-pressed="true"] {
+    background: var(--omi-academic-burgundy-soft, #f6ecee);
+    color: var(--omi-academic-burgundy, #6d2130);
+  }
+}
+
+[data-shared-formatting-host] {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding-inline: 0.75rem;
+}
