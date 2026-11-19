@@ -4,7 +4,7 @@ import { getPublicationMatterFramesCopy } from '../i18n/publicationMatterFrames'
 import { PublicationFramePagePanel } from './PublicationFramePagePanel';
 import { createDefaultFlowFrameLayout, paginateAutomaticFrameLayout } from '../model/publicationAutoFlow';
 import { framePages, framePageStyle, frameGraphicTransform, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader, updateFrameGraphicSize, type FrameGraphicTransform } from '../model/publicationFramePages';
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { stageFrameLayout } from '../app/publicationFrameActions';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
@@ -190,7 +190,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
     {!preview ? <div className="omi-frame-tools">
       <button type="button" onClick={() => addFrame('text')}>{copy.addText}</button>
       <button type="button" disabled={!graphics.length} title={!graphics.length ? copy.missingGraphic : undefined} onClick={() => addFrame('graphic')}>{copy.addGraphic}</button>
-      {layout.stories.some((item) => !layout.frames.some((frame) => frame.storyId === item.id)) ? <label>{copy.unusedStory}<select value={reuseStory} onChange={(event) => setReuseStory(event.target.value)}><option value="">{copy.freshStory}</option>{layout.stories.filter((item) => !layout.frames.some((frame) => frame.storyId === item.id)).map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label> : null}
+      {layout.stories.some((item) => !layout.frames.some((frame) => frame.storyId === item.id)) ? <label>{copy.unusedStory}<select aria-label={copy.unusedStory} value={reuseStory} onChange={(event) => setReuseStory(event.target.value)}><option value="">{copy.freshStory}</option>{layout.stories.filter((item) => !layout.frames.some((frame) => frame.storyId === item.id)).map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label> : null}
       <button type="button" disabled={exporting || !!flow.overflow.length || missingSources} onClick={() => void exportLayout(true)}>{copy.print}</button>
       <button type="button" disabled={exporting || !!flow.overflow.length || missingSources} onClick={() => void exportLayout(false)}>{copy.exportHtml}</button>
     </div> : null}
@@ -208,7 +208,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
           {layout.frames.filter((frame) => frame.page === pageIndex).map((frame, layer) => {
             const properties = frameStyle(layout, frame), placed = flow.frames.find((item) => item.frameId === frame.id);
             const graphic = graphics.find((block) => block.id === frame.sourceBlockId);
-            return <div key={frame.id} className={`omi-frame-object${selected?.id === frame.id && !preview ? ' omi-frame-object--selected' : ''}`} data-frame-id={frame.id}
+            return <Fragment key={frame.id}><div className={`omi-frame-object${selected?.id === frame.id && !preview ? ' omi-frame-object--selected' : ''}`} data-frame-id={frame.id}
               style={{ position: 'absolute', left: `${frame.xMm}mm`, top: `${frame.yMm}mm`, width: `${frame.widthMm}mm`, height: `${frame.heightMm}mm`, transform: `rotate(${frame.rotation}deg)`, ...frameTypography(properties), zIndex: layer + 1 }}
               onPointerDown={() => { if (!preview) { setSelectedId(frame.id); setPageSelection(frame.page); } }}>
               <div className="omi-frame-shape" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, properties) }} />
@@ -220,23 +220,24 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
                     setGraphicAspects((current) => current[frame.sourceBlockId!] === ratio ? current : { ...current, [frame.sourceBlockId!]: ratio });
                   }
                 }}><div className="omi-frame-graphic-position" style={frameGraphicContentStyle(frame)}><div className="omi-frame-graphic-inner" style={frameGraphicInnerStyle(frame)}><PublicationPreviewContext.Provider value={true}>{graphic?.visual ? <VisualBlockEditor block={graphic as OmiBlock & { visual: OmiVisualBlockData }} sectionId="" blockIndex={0} /> : null}</PublicationPreviewContext.Provider></div></div></div>}
-              {!preview && selected?.id === frame.id ? <>
+              </div>
+              {!preview && selected?.id === frame.id ? <div className="omi-frame-selection" data-frame-selection-id={frame.id} style={{ position: 'absolute', left: `${frame.xMm}mm`, top: `${frame.yMm}mm`, width: `${frame.widthMm}mm`, height: `${frame.heightMm}mm`, transform: `rotate(${frame.rotation}deg)`, zIndex: 10000 }}>
                 <button type="button" className="omi-frame-move" aria-label={`${copy.name}: ${frame.name}`} onPointerDown={(event) => startDrag(event, frame, 'move')} {...dragEvents}
                   onKeyDown={(event) => { const moves: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }; const delta = moves[event.key]; if (delta) { event.preventDefault(); updateFrame({ xMm: frame.xMm + delta[0], yMm: frame.yMm + delta[1] }); } }}>{frame.name}</button>
                 <button type="button" className="omi-frame-resize" aria-label={`${copy.width} / ${copy.height}`} onPointerDown={(event) => startDrag(event, frame, 'resize')} {...dragEvents} />
                 {frame.kind === 'graphic' ? <><button type="button" className="omi-frame-graphic-pan" aria-label={copy.moveGraphic} onPointerDown={(event) => startDrag(event, frame, 'graphic-move')} {...dragEvents}>{copy.moveGraphic}</button><button type="button" className="omi-frame-graphic-resize" aria-label={copy.resizeGraphic} onPointerDown={(event) => startDrag(event, frame, 'graphic-resize')} {...dragEvents} /></> : null}
                 {frame.shape === 'polygon' ? frame.points.map((point, index) => <button key={index} type="button" className="omi-frame-point" aria-label={`${copy.points} ${index + 1}`} style={{ left: `${point.x}%`, top: `${point.y}%` }} onPointerDown={(event) => startDrag(event, frame, 'point', index)} {...dragEvents} />) : null}
-              </> : null}
-            </div>;
+              </div> : null}
+            </Fragment>;
           })}
         </div>;
         })}
       </div>
       {!preview ? <aside className="omi-frame-inspector" aria-label={copy.mode}>
         <PublicationFramePagePanel layout={layout} pageIndex={activePage} onChange={commit} onSelect={(index) => { setPageSelection(index); setSelectedId(''); }} />
-        <label>{copy.selectFrame}<select value={selected?.id ?? ''} onChange={(event) => { setSelectedId(event.target.value); const frame = layout.frames.find((item) => item.id === event.target.value); if (frame) setPageSelection(frame.page); }}><option value="" disabled>{copy.selectFrame}</option>{layout.frames.map((frame) => <option key={frame.id} value={frame.id}>{frame.name}</option>)}</select></label>
+        <label>{copy.selectFrame}<select aria-label={copy.selectFrame} value={selected?.id ?? ''} onChange={(event) => { setSelectedId(event.target.value); const frame = layout.frames.find((item) => item.id === event.target.value); if (frame) setPageSelection(frame.page); }}><option value="" disabled>{copy.selectFrame}</option>{layout.frames.map((frame) => <option key={frame.id} value={frame.id}>{frame.name}</option>)}</select></label>
         {selected && shared && effective ? <>
-          <label>{layersCopy.layer}<select value={layerIndex} onChange={(event) => reorderLayer(Number(event.target.value))}>{pageFrames.map((frame, index) => <option key={frame.id} value={index}>{index + 1}</option>)}</select></label>
+          <label>{layersCopy.layer}<select aria-label={layersCopy.layer} value={layerIndex} onChange={(event) => reorderLayer(Number(event.target.value))}>{pageFrames.map((frame, index) => <option key={frame.id} value={index}>{index + 1}</option>)}</select></label>
           <div className="omi-frame-layer-actions" role="group" aria-label={layersCopy.order}>
             <button type="button" disabled={layerIndex === pageFrames.length - 1} onClick={() => reorderLayer(pageFrames.length - 1)}>{layersCopy.front}</button>
             <button type="button" disabled={layerIndex === pageFrames.length - 1} onClick={() => reorderLayer(layerIndex + 1)}>{layersCopy.forward}</button>
@@ -246,9 +247,9 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
           <label>{copy.name}<input value={selected.name} onChange={(event) => updateFrame({ name: event.target.value })} /></label>
           <NumberInput label={copy.page} value={selected.page + 1} min={1} max={layout.page.count} onChange={(value) => updateFrame({ page: Math.round(value) - 1 })} />
           <div className="omi-frame-fields">{(['xMm', 'yMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key) => <NumberInput key={key} label={copy[({ xMm: 'x', yMm: 'y', widthMm: 'width', heightMm: 'height', rotation: 'rotation' } as const)[key]]} value={selected[key]} min={key === 'rotation' ? -36000 : key === 'xMm' || key === 'yMm' ? -1200 : 5} max={key === 'rotation' ? 36000 : 2000} onChange={(value) => updateFrame({ [key]: value })} />)}</div>
-          <label>{copy.shape}<select value={selected.shape} onChange={(event) => updateFrame({ shape: event.target.value as PublicationFrame['shape'] })}>{(['rectangle', 'ellipse', 'polygon'] as const).map((shape) => <option key={shape} value={shape}>{copy[shape]}</option>)}</select></label>
+          <label>{copy.shape}<select aria-label={copy.shape} value={selected.shape} onChange={(event) => updateFrame({ shape: event.target.value as PublicationFrame['shape'] })}>{(['rectangle', 'ellipse', 'polygon'] as const).map((shape) => <option key={shape} value={shape}>{copy[shape]}</option>)}</select></label>
           {selected.shape === 'polygon' ? <details open><summary>{copy.points}</summary>{selected.points.map((point, index) => <div className="omi-frame-point-fields" key={index}><NumberInput label={`X ${index + 1} (%)`} value={point.x} min={0} max={100} onChange={(x) => updateFrame({ points: selected.points.map((p, i) => i === index ? { ...p, x } : p) })} /><NumberInput label={`Y ${index + 1} (%)`} value={point.y} min={0} max={100} onChange={(y) => updateFrame({ points: selected.points.map((p, i) => i === index ? { ...p, y } : p) })} /><button type="button" disabled={selected.points.length <= 3} onClick={() => updateFrame({ points: selected.points.filter((_, i) => i !== index) })}>{copy.removePoint}</button></div>)}<button type="button" disabled={selected.points.length >= 128} onClick={() => { const a = selected.points.at(-1)!, b = selected.points[0]!; updateFrame({ points: [...selected.points, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }] }); }}>{copy.addPoint}</button></details> : null}
-          <label>{copy.style}<select value={selected.styleId} onChange={(event) => updateFrame({ styleId: event.target.value })}>{layout.styles.map((style) => <option value={style.id} key={style.id}>{style.name}</option>)}</select></label>
+          <label>{copy.style}<select aria-label={copy.style} value={selected.styleId} onChange={(event) => updateFrame({ styleId: event.target.value })}>{layout.styles.map((style) => <option value={style.id} key={style.id}>{style.name}</option>)}</select></label>
           <button type="button" onClick={() => { const id = crypto.randomUUID(); const next = { ...layout, styles: [...layout.styles, { id, name: `${copy.style} ${layout.styles.length + 1}`, properties: { ...effective } }], frames: layout.frames.map((frame) => frame.id === selected.id ? { ...frame, styleId: id, overrides: undefined } : frame) }; commit(next); }}>{copy.newStyle}</button>
           <details><summary>{copy.editShared}</summary><label>{copy.styleName}<input value={shared.name} onChange={(event) => commit({ ...layout, styles: layout.styles.map((style) => style.id === shared.id ? { ...style, name: event.target.value } : style) })} /></label><StyleFields copy={copy} value={shared.properties} onChange={(patch) => changeStyle(patch, false)} /></details>
           <label className="omi-frame-checkbox"><input type="checkbox" checked={!!selected.overrides} onChange={(event) => updateFrame({ overrides: event.target.checked ? {} : undefined })} />{copy.local}</label>
@@ -257,9 +258,9 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
             <label>{copy.text}<textarea rows={7} value={story.text} onChange={(event) => commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? { ...item, text: event.target.value } : item) })} /></label>
             <button type="button" onClick={() => commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? { ...item, text: item.text + blocks.filter((block) => !block.visual).map((block) => storedContentText(block.content)).filter(Boolean).join('\n\n') } : item) })}>{copy.importText}</button><small>{copy.importHelp}</small>
             {selected.nextFrameId ? <><p>{copy.linked}: {layout.frames.find((frame) => frame.id === selected.nextFrameId)?.name}</p><button type="button" onClick={() => { try { commit(unlinkFrames(layout, selected.id, flow.frames.find((item) => item.frameId === selected.id)?.end ?? 0, crypto.randomUUID())); } catch (error) { setMessage(String(error)); } }}>{copy.unlink}</button></> : <>
-              <label>{copy.next}<select value={targetId} onChange={(event) => setTargetId(event.target.value)}><option value="">—</option>{layout.frames.filter((frame) => frame.kind === 'text' && frame.storyId !== story.id && !layout.frames.some((other) => other.nextFrameId === frame.id)).map((frame) => <option key={frame.id} value={frame.id}>{frame.name}</option>)}</select></label><button type="button" disabled={!targetId} onClick={() => { try { commit(linkFrames(layout, selected.id, targetId)); setTargetId(''); } catch (error) { setMessage(String(error)); } }}>{copy.link}</button>
+              <label>{copy.next}<select aria-label={copy.next} value={targetId} onChange={(event) => setTargetId(event.target.value)}><option value="">—</option>{layout.frames.filter((frame) => frame.kind === 'text' && frame.storyId !== story.id && !layout.frames.some((other) => other.nextFrameId === frame.id)).map((frame) => <option key={frame.id} value={frame.id}>{frame.name}</option>)}</select></label><button type="button" disabled={!targetId} onClick={() => { try { commit(linkFrames(layout, selected.id, targetId)); setTargetId(''); } catch (error) { setMessage(String(error)); } }}>{copy.link}</button>
             </>}
-          </> : <><label>{copy.source}<select value={selected.sourceBlockId} onChange={(event) => updateFrame({ sourceBlockId: event.target.value, graphicTransform: undefined })}>{graphics.map((block) => <option value={block.id} key={block.id}>{block.visual?.kind}: {block.visual && 'caption' in block.visual ? block.visual.caption || block.id : block.id}</option>)}</select></label>
+          </> : <><label>{copy.source}<select aria-label={copy.source} value={selected.sourceBlockId} onChange={(event) => updateFrame({ sourceBlockId: event.target.value, graphicTransform: undefined })}>{graphics.map((block) => <option value={block.id} key={block.id}>{block.visual?.kind}: {block.visual && 'caption' in block.visual ? block.visual.caption || block.id : block.id}</option>)}</select></label>
             {graphicSettings ? <details open><summary>{copy.graphicSettings}</summary>
               <label className="omi-frame-checkbox"><input type="checkbox" checked={graphicSettings.keepAspectRatio} onChange={(event) => updateGraphic({ keepAspectRatio: event.target.checked })} />{copy.keepAspectRatio}</label>
               <NumberInput label={copy.graphicX} value={graphicSettings.offsetXMm} min={-20000} max={20000} onChange={(offsetXMm) => updateGraphic({ offsetXMm })} />
@@ -290,7 +291,7 @@ function StyleFields({ copy, value, onChange }: { copy: Copy; value: FrameTextSt
     <NumberInput label={copy.size} min={1} max={300} value={value.fontSizePt} onChange={(fontSizePt) => onChange({ fontSizePt })} />
     <NumberInput label={copy.leading} min={value.fontSizePt} max={600} value={value.lineHeightPt} onChange={(lineHeightPt) => onChange({ lineHeightPt })} />
     <NumberInput label={copy.padding} min={0} max={100} value={value.paddingMm} onChange={(paddingMm) => onChange({ paddingMm })} />
-    <label>{copy.alignment}<select value={value.alignment} onChange={(event) => onChange({ alignment: event.target.value as FrameTextStyle['alignment'] })}>{(['left', 'center', 'right'] as const).map((alignment) => <option key={alignment} value={alignment}>{copy[alignment]}</option>)}</select></label>
+    <label>{copy.alignment}<select aria-label={copy.alignment} value={value.alignment} onChange={(event) => onChange({ alignment: event.target.value as FrameTextStyle['alignment'] })}>{(['left', 'center', 'right'] as const).map((alignment) => <option key={alignment} value={alignment}>{copy[alignment]}</option>)}</select></label>
     <label className="omi-frame-checkbox"><input type="checkbox" checked={value.fontWeight === 700} onChange={(event) => onChange({ fontWeight: event.target.checked ? 700 : 400 })} />{copy.weight}</label>
     <label className="omi-frame-checkbox"><input type="checkbox" checked={value.fontStyle === 'italic'} onChange={(event) => onChange({ fontStyle: event.target.checked ? 'italic' : 'normal' })} />{copy.italic}</label>
     {(['color', 'fill', 'stroke'] as const).map((key) => <label key={key}>{copy[key]}<input type="color" value={value[key]} onChange={(event) => onChange({ [key]: event.target.value })} /></label>)}

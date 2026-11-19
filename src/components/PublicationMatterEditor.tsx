@@ -63,7 +63,7 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
 
   return <section className="omi-publication-matter-editor" aria-label={copy.title}>
     <h2>{copy.title}</h2><p>{copy.description}</p>
-    <label>{copy.kind}<select disabled={readOnly} value={model.publicationKind}
+    <label>{copy.kind}<select aria-label={copy.kind} disabled={readOnly} value={model.publicationKind}
       onChange={(event) => stagePublicationMatter({ ...model, publicationKind: event.target.value as 'volume' | 'journal-issue' })}>
       <option value="volume">{copy.volume}</option><option value="journal-issue">{copy.journal}</option>
     </select></label>
@@ -82,16 +82,16 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
         <label>{copy.color}<input type="color" value={page.appearance.color} disabled={readOnly} onChange={(event) => appearance({ color: event.target.value })} /></label>
         <label>{copy.background}<input type="color" value={page.appearance.background} disabled={readOnly} onChange={(event) => appearance({ background: event.target.value })} /></label>
         <MatterNumber unit={unit} label={copy.padding} min={0} max={60} value={page.appearance.paddingMm} disabled={readOnly} onCommit={(value) => appearance({ paddingMm: value })} />
-        <label>{copy.alignment}<select value={page.appearance.alignment} disabled={readOnly} onChange={(event) => appearance({ alignment: event.target.value as 'left' | 'center' | 'right' })}>
+        <label>{copy.alignment}<select aria-label={copy.alignment} value={page.appearance.alignment} disabled={readOnly} onChange={(event) => appearance({ alignment: event.target.value as 'left' | 'center' | 'right' })}>
           <option value="left">{copy.left}</option><option value="center">{copy.center}</option><option value="right">{copy.right}</option>
         </select></label>
-        <label>{copy.vertical}<select value={page.appearance.vertical} disabled={readOnly} onChange={(event) => appearance({ vertical: event.target.value as 'top' | 'center' | 'bottom' })}>
+        <label>{copy.vertical}<select aria-label={copy.vertical} value={page.appearance.vertical} disabled={readOnly} onChange={(event) => appearance({ vertical: event.target.value as 'top' | 'center' | 'bottom' })}>
           <option value="top">{copy.top}</option><option value="center">{copy.middle}</option><option value="bottom">{copy.bottom}</option>
         </select></label>
         {!readOnly ? <label>{copy.image}<input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ''; }} /></label> : null}
         {page.image ? <>
           <label>{copy.alt}<input value={page.image.alt} disabled={readOnly} onChange={(event) => update({ image: { ...page.image!, alt: event.target.value } })} /></label>
-          <label>{copy.fit}<select value={page.image.fit} disabled={readOnly} onChange={(event) => update({ image: { ...page.image!, fit: event.target.value as 'cover' | 'contain' } })}><option value="cover">{copy.cover}</option><option value="contain">{copy.contain}</option></select></label>
+          <label>{copy.fit}<select aria-label={copy.fit} value={page.image.fit} disabled={readOnly} onChange={(event) => update({ image: { ...page.image!, fit: event.target.value as 'cover' | 'contain' } })}><option value="cover">{copy.cover}</option><option value="contain">{copy.contain}</option></select></label>
           {!readOnly ? <button type="button" onClick={() => update({ image: undefined })}>{copy.removeImage}</button> : null}
         </> : null}
       </div>

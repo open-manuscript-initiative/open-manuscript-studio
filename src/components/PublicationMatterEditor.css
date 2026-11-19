@@ -20,7 +20,8 @@
 .omi-matter-frame-settings p { margin:0; }
 .omi-matter-frame-actions button,.omi-matter-frame-settings button { min-height:2.5rem; }
 .omi-matter-frame { outline:1px dashed transparent; }
-.omi-matter-frame.is-selected { outline-color:#276b9a; }
+.omi-matter-frame-selection { outline:1px dashed #276b9a; pointer-events:none; }
+.omi-matter-frame-selection button { pointer-events:auto; }
 .omi-matter-frame-outline,.omi-matter-frame-content { position:absolute; inset:0; box-sizing:border-box; }
 .omi-matter-frame-outline { pointer-events:none; }
 .omi-matter-frame-outline svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }

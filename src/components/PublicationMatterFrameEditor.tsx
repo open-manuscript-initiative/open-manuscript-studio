@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { importPublicationMatterImage, stagePublicationMatter } from '../app/publicationMatterActions';
 import { useTranslation } from '../i18n';
@@ -120,13 +120,13 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
     <div className="omi-matter-frame-actions">
       <button type="button" disabled={readOnly || frames.length >= 128} onClick={() => add('text')}>{copy.addText}</button>
       <button type="button" disabled={readOnly || frames.length >= 128} onClick={() => add('graphic')}>{copy.addGraphic}</button>
-      <label>{copy.selectFrame}<select value={selected?.id ?? ''} onChange={(event) => choose(event.target.value)}><option value="">{labels.base}</option>{frames.map((frame, index) => <option key={frame.id} value={frame.id}>{frame.name || `${copy.frame} ${index + 1}`}</option>)}</select></label>
+      <label>{copy.selectFrame}<select aria-label={copy.selectFrame} value={selected?.id ?? ''} onChange={(event) => choose(event.target.value)}><option value="">{labels.base}</option>{frames.map((frame, index) => <option key={frame.id} value={frame.id}>{frame.name || `${copy.frame} ${index + 1}`}</option>)}</select></label>
     </div>
     {selected ? <fieldset className="omi-matter-frame-settings" disabled={readOnly}>
       <legend>{copy.frame}</legend>
       <label>{copy.name}<input value={selected.name} maxLength={256} onChange={(event) => patchFrame(selected.id, { name: event.target.value })} /></label>
       {(['xMm', 'yMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber unit={key === 'rotation' ? undefined : unit} key={key} label={[copy.x, copy.y, copy.width, copy.height, copy.rotation][index]!} value={selected[key]} min={key === 'rotation' ? -360 : key.endsWith('Mm') && !key.startsWith('width') && !key.startsWith('height') ? -2000 : 1} max={key === 'rotation' ? 360 : 2000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { [key]: value })} />)}
-      <label>{copy.shape}<select value={selected.shape} onChange={(event) => patchFrame(selected.id, { shape: event.target.value as PublicationMatterFrame['shape'] })}><option value="rectangle">{copy.rectangle}</option><option value="ellipse">{copy.ellipse}</option><option value="polygon">{copy.polygon}</option></select></label>
+      <label>{copy.shape}<select aria-label={copy.shape} value={selected.shape} onChange={(event) => patchFrame(selected.id, { shape: event.target.value as PublicationMatterFrame['shape'] })}><option value="rectangle">{copy.rectangle}</option><option value="ellipse">{copy.ellipse}</option><option value="polygon">{copy.polygon}</option></select></label>
       {selected.shape === 'polygon' ? <div><button type="button" disabled={selected.points.length >= 32} onClick={() => patchFrame(selected.id, { points: [...selected.points, { x: 50, y: 50 }] })}>{copy.addPoint}</button><button type="button" disabled={selected.points.length <= 3} onClick={() => patchFrame(selected.id, { points: selected.points.slice(0, -1) })}>{copy.removePoint}</button></div> : null}
       <label>{labels.transparent}<input type="checkbox" checked={selected.style.fill === 'none'} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, fill: event.target.checked ? 'none' : '#ffffff' } })} /></label>
       {(['fill', 'stroke', 'color'] as const).map((key) => <label key={key}>{copy[key]}<input type="color" value={selected.style[key] === 'none' ? '#ffffff' : selected.style[key]} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, [key]: event.target.value } })} /></label>)}
@@ -134,7 +134,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
       {selected.kind === 'text' ? <>
         <label>{copy.font}<input value={selected.style.fontFamily} maxLength={128} onChange={(event) => { if (event.target.value.trim()) patchFrame(selected.id, { style: { ...selected.style, fontFamily: event.target.value } }); }} /></label>
         {(['fontSizePt', 'lineHeightPt', 'paddingMm'] as const).map((key, index) => <MatterNumber unit={key === 'paddingMm' ? unit : undefined} key={key} label={[copy.size, copy.leading, copy.padding][index]!} value={selected.style[key]} min={key === 'paddingMm' ? 0 : 6} max={key === 'fontSizePt' ? 120 : key === 'paddingMm' ? 60 : 240} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, [key]: value } })} />)}
-        <label>{copy.alignment}<select value={selected.style.alignment} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, alignment: event.target.value as 'left' | 'center' | 'right' } })}>{(['left', 'center', 'right'] as const).map((value) => <option key={value} value={value}>{copy[value]}</option>)}</select></label>
+        <label>{copy.alignment}<select aria-label={copy.alignment} value={selected.style.alignment} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, alignment: event.target.value as 'left' | 'center' | 'right' } })}>{(['left', 'center', 'right'] as const).map((value) => <option key={value} value={value}>{copy[value]}</option>)}</select></label>
       </> : <>
         <label>{labels.image}<input type="file" disabled={busy} accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ''; }} /></label>
         <p>{labels.paste}</p>
@@ -148,7 +148,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
           <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'cover') })}>{copy.fillFrame}</button>
         </> : null}
       </>}
-      <label>{labels.layer}<select value={selectedIndex} onChange={(event) => reorder(Number(event.target.value))}>{frames.map((frame, index) => <option key={frame.id} value={index}>{index + 1}</option>)}</select></label>
+      <label>{labels.layer}<select aria-label={labels.layer} value={selectedIndex} onChange={(event) => reorder(Number(event.target.value))}>{frames.map((frame, index) => <option key={frame.id} value={index}>{index + 1}</option>)}</select></label>
       <div className="omi-matter-frame-layer-actions" role="group" aria-label={labels.order}>
         <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(frames.length - 1)}>{labels.front}</button>
         <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(selectedIndex + 1)}>{labels.forward}</button>
@@ -163,7 +163,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
     <div ref={paper} className="omi-publication-matter-paper" style={previewStyle}>
       {imageUrl ? <img src={imageUrl} alt={page.image?.alt ?? ''} style={{ objectFit: page.image?.fit }} /> : null}
       <div className="omi-matter-base-text">{!selected && !readOnly ? <MatterRichText key="base" content={page.content} onChange={(content) => onChange({ content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={page.content} />}</div>
-      {frames.map((frame, index) => <div key={frame.id} className={`omi-matter-frame${selected?.id === frame.id ? ' is-selected' : ''}`} data-matter-frame-id={frame.id} data-frame-kind={frame.kind}
+      {frames.map((frame, index) => <Fragment key={frame.id}><div className={`omi-matter-frame${selected?.id === frame.id ? ' is-selected' : ''}`} data-matter-frame-id={frame.id} data-frame-kind={frame.kind}
         style={{ ...matterFrameBoxStyle(frame, widthMm, heightMm), zIndex: index + 2 }} tabIndex={readOnly ? undefined : 0} aria-label={frame.name || `${copy.frame} ${index + 1}`}
         onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); choose(frame.id); } }}
         onPointerDown={(event) => { event.stopPropagation(); if (selected?.id !== frame.id) choose(frame.id); }}>
@@ -173,12 +173,13 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
             : frame.image ? <div className="omi-matter-frame-image" style={matterImageStyle(frame)} {...pointer} onPointerDown={(event) => { if (selected?.id === frame.id && editImage) start(event, frame, 'image-move'); }}><MatterAssetImage manuscriptId={manuscript.id} assetId={frame.image.assetId} alt={frame.image.alt} />{selected?.id === frame.id && editImage && !readOnly ? <button type="button" className="omi-matter-frame-resize" aria-label={copy.resizeGraphic} {...pointer} onPointerDown={(event) => start(event, frame, 'image-resize')}>↘</button> : null}</div> : <span>{labels.emptyImage}</span>}
         </div>
         {frame.style.strokeWidthMm > 0 ? <div className="omi-matter-frame-outline" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, { ...frame.style, fill: 'none' }) }} /> : null}
-        {selected?.id === frame.id && !readOnly ? <>
+        </div>
+        {selected?.id === frame.id && !readOnly ? <div className="omi-matter-frame-selection" data-matter-frame-selection-id={frame.id} style={{ ...matterFrameBoxStyle(frame, widthMm, heightMm), zIndex: 10000 }}>
           <button type="button" className="omi-matter-frame-move" aria-label={labels.move} {...pointer} onPointerDown={(event) => start(event, frame, 'move')}>↔</button>
           <button type="button" className="omi-matter-frame-resize" aria-label={labels.resize} {...pointer} onPointerDown={(event) => start(event, frame, 'resize')}>↘</button>
           {frame.shape === 'polygon' ? frame.points.map((point, i) => <button type="button" key={i} className="omi-matter-frame-point" aria-label={`${copy.points} ${i + 1}`} style={{ left: `${point.x}%`, top: `${point.y}%` }} {...pointer} onPointerDown={(event) => start(event, frame, 'point', i)} />) : null}
-        </> : null}
-      </div>)}
+        </div> : null}
+      </Fragment>)}
     </div>
   </section>;
 }

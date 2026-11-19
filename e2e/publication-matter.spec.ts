@@ -101,6 +101,7 @@ for (const width of [1440, 393]) {
     await settings.getByRole('textbox', { name: 'Frame name', exact: true }).fill('Overlay');
     await panel.getByRole('textbox', { name: 'Text frame content', exact: true }).fill('Overlay text');
     const overlayId = (await panel.locator('.omi-matter-frame.is-selected').getAttribute('data-matter-frame-id'))!;
+    await numeric('Width (mm)', '60'); await numeric('Height (mm)', '40');
     const topFrameAtOverlayCenter = async () => {
       const overlay = panel.locator('.omi-matter-frame').filter({ has: page.getByRole('textbox', { name: 'Text frame content', exact: true }) });
       await overlay.evaluate((element) => element.scrollIntoView({ block: 'center' }));
@@ -113,6 +114,17 @@ for (const width of [1440, 393]) {
     await settings.getByRole('button', { name: 'Send backward', exact: true }).click();
     await expect(panel.locator('[data-matter-frame-id]').nth(1)).toHaveAttribute('data-matter-frame-id', overlayId);
     await expect.poll(topFrameAtOverlayCenter).toBe(artworkId);
+    const layerOrderBeforeResize = await panel.locator('[data-matter-frame-id]').evaluateAll((elements) => elements.map((element) => element.getAttribute('data-matter-frame-id')));
+    const resize = panel.getByRole('button', { name: 'Resize frame', exact: true });
+    await resize.scrollIntoViewIfNeeded();
+    const resizeBox = (await resize.boundingBox())!;
+    await page.mouse.move(resizeBox.x + resizeBox.width / 2, resizeBox.y + resizeBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(resizeBox.x + resizeBox.width / 2 + 10, resizeBox.y + resizeBox.height / 2 + 4, { steps: 3 });
+    await page.mouse.up();
+    await expect.poll(async () => Number(await settings.getByRole('spinbutton', { name: 'Width (mm)', exact: true }).inputValue())).toBeGreaterThan(60);
+    expect(await panel.locator('[data-matter-frame-id]').evaluateAll((elements) => elements.map((element) => element.getAttribute('data-matter-frame-id')))).toEqual(layerOrderBeforeResize);
+
     await settings.getByRole('button', { name: 'Send backward', exact: true }).click();
     await expect(settings.getByRole('button', { name: 'Send backward', exact: true })).toBeDisabled();
     await settings.getByRole('button', { name: 'Bring forward', exact: true }).click();

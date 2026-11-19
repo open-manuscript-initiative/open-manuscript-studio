@@ -29,7 +29,7 @@ export function PublicationMeasurementSelector() {
   const { locale } = useTranslation();
   const copy = getPublicationMatterCopy(locale);
   const [unit, changeUnit] = usePublicationMeasurementUnit();
-  return <label>{copy.units}<select value={unit} onChange={(event) => { if (isPublicationMeasurementUnit(event.target.value)) changeUnit(event.target.value); }}>
+  return <label>{copy.units}<select aria-label={copy.units} value={unit} onChange={(event) => { if (isPublicationMeasurementUnit(event.target.value)) changeUnit(event.target.value); }}>
     <option value="mm">{copy.unitMm}</option><option value="pc">{copy.unitPica}</option><option value="pt">{copy.unitPoint}</option>
   </select></label>;
 }

@@ -34,7 +34,10 @@ for (const width of [1440, 393]) {
     await isbn.pressSequentially('978-1-4028-9462-6');
     await isbn.press('Tab');
     await expect(isbn).toHaveValue('978-0-306-40615-7\n978-1-4028-9462-6');
-    await page.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+    await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+    const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+    await menu.getByRole('group', { name: 'Publishing', exact: true }).getByRole('button', { name: 'Publication editor', exact: true }).click();
+    await menu.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
     await expect(page.getByLabel('Publication type')).toHaveValue('journal-issue');
     await page.evaluate(async () => {
       const { useStudioStore } = await import('/src/app/useStudioStore.ts');
