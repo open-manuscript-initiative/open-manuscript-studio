@@ -1979,3 +1979,15 @@
     padding: 0.5rem;
   }
 }
+
+/* The measured note and every page fragment use exactly the same rich markup. */
+.omi-publication-note-body {
+  white-space: pre-wrap;
+}
+.omi-publication-note-body sup,
+.omi-publication-note-body sub {
+  line-height: 0;
+}
+.publication-page-note-label {
+  top: 0;
+}

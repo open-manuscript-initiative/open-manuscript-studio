@@ -1,3 +1,4 @@
+import { buildPdfPrintDocument } from '../src/services/exportPdf.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -518,4 +519,33 @@ test('HTML bibliography includes explicitly selected uncited records only', () =
 
   assert.match(result.html, /data-omi-record-id="bib-selected"/);
   assert.doesNotMatch(result.html, /data-omi-record-id="bib-unused"/);
+});
+
+test('renders stored rich note bodies in HTML, paged PDF input and local notes', () => {
+  const manuscript = createTestManuscript();
+  const block = manuscript.sections[0]!.blocks[0]!;
+  manuscript.annotations = ['footnote', 'endnote', 'author-note'].map((kind, index) => ({
+    ...createNoteAnnotation({ id: `rich-${index}`, anchorId: `anchor-${index}`, targetBlockId: block.id, kind: kind as 'footnote' | 'endnote' | 'author-note', body: 'stale projection' }),
+    bodyContent: JSON.stringify({ type: 'doc', content: [
+      { type: 'paragraph', content: [
+        { type: 'text', text: `Formatted ${index}`, marks: [{ type: 'italic' }, { type: 'bold' }] },
+        { type: 'text', text: '<unsafe>', marks: [{ type: 'omiUnderline' }] },
+        { type: 'hardBreak' }, { type: 'text', text: 'Next line' },
+      ] },
+      { type: 'paragraph', content: [{ type: 'text', text: 'Second paragraph' }] },
+    ] }),
+  }));
+  block.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: manuscript.annotations.map((note) => ({
+    type: 'omiNote', attrs: { noteId: note.id, anchorId: note.anchorId, noteType: note.noteKind },
+  })) }] });
+  const before = JSON.stringify(manuscript);
+  for (const html of [renderHtmlArticle(manuscript).html, buildPdfPrintDocument(manuscript)]) {
+    for (let index = 0; index < 3; index++) assert.match(html, new RegExp(`<strong><em>Formatted ${index}</em></strong><u>&lt;unsafe&gt;</u><br>Next line<br>Second paragraph`));
+    assert.doesNotMatch(html, /stale projection|<unsafe>|&lt;strong&gt;/);
+    assert.deepEqual(validateHtmlStructure(html).filter((issue) => issue.severity === 'error'), []);
+  }
+  const paged = buildPdfPrintDocument(manuscript);
+  assert.match(paged, /class="omi-page-footnote"[^>]*role="doc-footnote"[^>]*>[\s\S]*?<strong><em>Formatted 0/);
+  assert.match(paged, /id="note-rich-1" role="doc-endnote"/);
+  assert.equal(JSON.stringify(manuscript), before);
 });
