@@ -1,7 +1,12 @@
 # Covers and title pages
 
 Volumes and journal issues have a separate **Covers and title pages** workspace.
-Open it from the volume's metadata tabs or the live publication editor's ribbon.
+Open **Manuscript menu → Publishing → Publication editor → Covers and title pages**.
+The author's volume workspace contains title metadata, contributors and structure;
+edition typography is edited in Publishing. **Publication content** returns to
+the structured print/HTML manuscript editor. Switching workspaces preserves both
+the manuscript content and the independently edited publication pages. The cover
+workspace remains editable on narrow screens and native mobile devices.
 The manuscript chapters/articles, citations, note numbering and structured title
 metadata remain separate from these publication pages.
 

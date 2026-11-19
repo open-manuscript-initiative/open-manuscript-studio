@@ -15,7 +15,7 @@ async function openEditor(page: Page, image = false, legacy = true) {
   }, image);
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
-  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
   await menu.getByRole('button', { name: 'Frames and page styles', exact: true }).click();
   // This suite verifies backwards compatibility for documents created before
   // automatic A4 frames. New-document behaviour is covered separately below.

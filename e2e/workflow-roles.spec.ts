@@ -27,12 +27,12 @@ test('saving a working role focuses the menu and all tools remain available on m
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await expect(menu.locator('.studio-menu-workflow-role')).toContainText('Translator');
-  await expect(menu.getByRole('button', { name: 'Live publication editor', exact: true })).toHaveCount(0);
+  await expect(menu.getByRole('button', { name: 'Publication editor', exact: true })).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 900 });
   await menu.getByRole('checkbox', { name: 'Show all tools' }).check();
-  await expect(menu.getByRole('button', { name: 'Live publication editor', exact: true })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Publication editor', exact: true })).toBeVisible();
   await menu.getByRole('checkbox', { name: 'Show all tools' }).uncheck();
-  await expect(menu.getByRole('button', { name: 'Live publication editor', exact: true })).toHaveCount(0);
+  await expect(menu.getByRole('button', { name: 'Publication editor', exact: true })).toHaveCount(0);
 });
 
 for (const [source, actorMode, label] of [['ojs', 'author', 'Author'], ['omp', 'editor', 'Editor']] as const) {

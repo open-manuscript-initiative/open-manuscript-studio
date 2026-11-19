@@ -1,6 +1,6 @@
 # Responsive manuscript tables
 
-Tables in the manuscript and live publication editors use the available content
+Tables in the manuscript and publication editors use the available content
 width. Cell text wraps and accepts explicit line breaks. Drag a boundary in the
 first row to resize its two neighboring columns; focus the boundary and use the
 left/right arrow keys to resize with a keyboard. Relative column widths survive
@@ -38,7 +38,7 @@ writing mode with sideways glyphs so row height includes the rotated text.
 
 ## Mobile publication preview
 
-The live publication editor shows the current print or HTML layout on native
+The publication editor shows the current print or HTML layout on native
 Android/iOS and narrow screens (720 CSS pixels or less). Its menu includes a note
 that full editing is available on desktop. View switching, scrolling and print
 zoom remain available. Typography/page/proofing ribbons, cell-formatting controls

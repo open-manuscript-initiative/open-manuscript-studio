@@ -24,7 +24,7 @@ for (const width of [1440, 393]) {
     await expect(form.getByLabel('ISBN (print)', { exact: true })).toHaveValue('978-0-306-40615-7');
     expect(await form.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await form.getByRole('button', { name: 'Create', exact: true }).click();
-    await page.getByRole('tab', { name: 'Title matter', exact: true }).click();
+    await page.getByRole('tab', { name: 'Title data', exact: true }).click();
     const isbn = page.getByLabel('ISBN (print)', { exact: true });
     await expect(isbn).toHaveValue('978-0-306-40615-7');
     await expect(page.getByLabel('ISSN (print)', { exact: true })).toHaveValue('1234-5679');
@@ -43,7 +43,7 @@ for (const width of [1440, 393]) {
       await resumeLastSessionPersistence();
     });
     await page.reload();
-    await page.getByRole('tab', { name: 'Title matter', exact: true }).click();
+    await page.getByRole('tab', { name: 'Title data', exact: true }).click();
     await expect(page.getByLabel('ISBN (print)', { exact: true })).toHaveValue('978-0-306-40615-7\n978-1-4028-9462-6');
     await expect(page.getByLabel('ISSN (electronic, eISSN)', { exact: true })).toHaveValue('2049-3630');
   });

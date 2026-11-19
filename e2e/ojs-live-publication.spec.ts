@@ -127,12 +127,12 @@ for (const width of [1440, 393]) {
       .click();
     const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
     await menu
-      .getByRole('button', { name: 'Live publication editor', exact: true })
+      .getByRole('button', { name: 'Publication editor', exact: true })
       .click();
-    await expect(menu.getByRole('heading', { name: 'Live publication editor' })).toBeVisible();
+    await expect(menu.getByRole('heading', { name: 'Publication editor' })).toBeVisible();
     if (width < 600) {
       await expect(menu.locator('.publication-mobile-preview-note')).toBeVisible();
-      await expect(menu.getByRole('toolbar', { name: 'Live publication editor' })).toHaveCount(0);
+      await expect(menu.getByRole('toolbar', { name: 'Publication editor' })).toHaveCount(0);
     }
     await menu
       .getByRole('button', {

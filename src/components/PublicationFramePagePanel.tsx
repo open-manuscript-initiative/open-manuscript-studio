@@ -1,3 +1,5 @@
+import { usePublicationMeasurementUnit } from './PublicationMeasurementControls';
+import { MatterNumber } from './PublicationMatterControls';
 import { useState } from 'react';
 import { useTranslation } from '../i18n';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
@@ -62,5 +64,7 @@ export function PublicationFramePagePanel({ layout, pageIndex, onChange, onSelec
   </fieldset>;
 }
 function NumberField({ label, value, min, max, step = 0.1, onChange }: { label: string; value: number; min: number; max: number; step?: number; onChange: (value: number) => void }) {
+  const [unit] = usePublicationMeasurementUnit();
+  if (label.endsWith('(mm)')) return <MatterNumber label={label} value={value} min={min} max={max} disabled={false} unit={unit} commitOnChange onCommit={onChange} />;
   return <label>{label}<input type="number" min={min} max={max} step={step} value={value} onChange={(event) => { const next = event.target.valueAsNumber; if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, next))); }} /></label>;
 }

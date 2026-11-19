@@ -1,4 +1,4 @@
-import { isPublicationMeasurementUnit, type PublicationMeasurementUnit } from '../model/publicationMeasurementUnits';
+import { PublicationMeasurementSelector, usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
 import { useEffect, useState } from 'react';
 import { PublicationMatterFrameEditor } from './PublicationMatterFrameEditor';
@@ -16,13 +16,7 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
   const copy = getPublicationMatterCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const [defaultStyle] = useState(loadPublicationStyle);
-  const [unit, setUnit] = useState<PublicationMeasurementUnit>(() => {
-    try { const saved = localStorage.getItem('omi-publication-matter-measurement-unit-v1'); return isPublicationMeasurementUnit(saved) ? saved : 'mm'; }
-    catch { return 'mm'; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem('omi-publication-matter-measurement-unit-v1', unit); } catch { /* Device preferences are optional. */ }
-  }, [unit]);
+  const [unit] = usePublicationMeasurementUnit();
   const model = getPublicationMatter(manuscript) ?? createPublicationMatter(manuscript);
   const [selected, setSelected] = useState<PublicationMatterPageKind>('front-cover');
   const [error, setError] = useState('');
@@ -73,9 +67,7 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
       onChange={(event) => stagePublicationMatter({ ...model, publicationKind: event.target.value as 'volume' | 'journal-issue' })}>
       <option value="volume">{copy.volume}</option><option value="journal-issue">{copy.journal}</option>
     </select></label>
-    <label>{copy.units}<select value={unit} onChange={(event) => { if (isPublicationMeasurementUnit(event.target.value)) setUnit(event.target.value); }}>
-      <option value="mm">{copy.unitMm}</option><option value="pc">{copy.unitPica}</option><option value="pt">{copy.unitPoint}</option>
-    </select></label><p>{copy.unitHelp}</p>
+    <PublicationMeasurementSelector /><p>{copy.unitHelp}</p>
     <div className="omi-publication-matter-tabs" role="tablist" aria-label={copy.title}>
       {Object.entries(copy.pages).map(([kind, label]) => <button type="button" role="tab" key={kind}
         aria-selected={selected === kind} aria-controls="omi-publication-matter-selected" onClick={() => setSelected(kind as PublicationMatterPageKind)}>{label}</button>)}

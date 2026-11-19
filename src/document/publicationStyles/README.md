@@ -62,7 +62,7 @@ Editable typography groups include:
 - first-page metadata;
 - semantic-to-visual mappings.
 
-## Live publication editor
+## Publication editor
 
 The Publication menu renders the complete current manuscript inside the selected publication style instead of showing placeholder preview text. The surface remains a normal rich-text editor: changing a paragraph into a heading, quotation or list updates the structured OMI manuscript immediately, while visual changes update the active export style without rewriting manuscript semantics.
 

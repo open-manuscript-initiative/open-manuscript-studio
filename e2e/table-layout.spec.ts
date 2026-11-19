@@ -19,7 +19,7 @@ async function openTables(page: Page, rows: number) {
   }, rows);
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
-  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
   return menu.locator('.publication-document-canvas');
 }
 

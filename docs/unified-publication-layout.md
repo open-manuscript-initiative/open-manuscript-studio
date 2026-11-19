@@ -24,8 +24,24 @@ The first migration must keep existing manual frame documents usable. Existing l
 
 ## One publication workspace (UI consolidation)
 
-The two mutually exclusive *Continuous layout* / *Frame layout* buttons have been removed from the live publication editor. The canonical rich-text print/HTML5 canvas stays mounted and visible; `Frames and page styles` opens a closeable inspector over the same workspace on desktop and mobile. It retains access to historical manual frame chains and automatic A4 frame continuations.
+The two mutually exclusive *Continuous layout* / *Frame layout* buttons have been removed from the publication editor. Within **Publication content**, the canonical rich-text print/HTML5 canvas stays mounted and visible; `Frames and page styles` opens a closeable inspector over the same workspace on desktop and mobile. It retains access to historical manual frame chains and automatic A4 frame continuations.
 
 **Semantic boundary remains:** This is not yet a single typesetting engine. Frame stories are stored as editable publication text separately from the structured source manuscript. The frame inspector explicitly warns not to use frame-only HTML/PDF as the complete manuscript export when inline formatting, tables and notes are present. The main canvas and rich-content export pipeline remain available; source-to-rendition lineage and full semantic mapping are outstanding work.
 
 The remaining architectural tasks listed above must be completed before declaring full underlying unification. The single UI deliberately avoids describing continuous text and frames as competing editing modes.
+
+
+## Publishing and author workspace
+
+Edition typography now belongs to **Publishing → Publication editor**. The author
+workspace contains title/publication metadata, contributors and manuscript
+structure. Volumes and journal issues expose **Publication content** and
+**Covers and title pages** in the publication editor. Cover/title-matter/spine
+pages support independently editable rich text and image frames, stacking order,
+a configurable spine and mm/pica/point geometry; they remain editable on mobile.
+Returning to publication content preserves the active rich-text canvas.
+
+The shared measurement preference also drives the print-page/margin controls and
+the content-frame inspector, including its page styles and independent graphic
+transforms. Content-frame layers change painting order on the selected page;
+linked-story reading order and structured manuscript text remain independent.

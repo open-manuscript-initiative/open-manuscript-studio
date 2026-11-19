@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
 for (const width of [1440, 393]) {
@@ -17,7 +17,7 @@ for (const width of [1440, 393]) {
       const { useStudioStore } = await import('/src/app/useStudioStore.ts');
       return JSON.stringify(useStudioStore.getState().manuscript.sections);
     });
-    await page.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+    await openPublicationMatter(page);
     const panel = page.locator('.omi-publication-matter-editor');
     const include = panel.getByRole('checkbox', { name: 'Include in publication' });
     const content = panel.getByRole('textbox', { name: 'Page text', exact: true });
@@ -64,7 +64,7 @@ for (const width of [1440, 393]) {
       const state = useStudioStore.getState();
       state.loadManuscript({ ...state.manuscript, documentStructure: createDocumentStructureProfile('volume') });
     });
-    await page.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+    await openPublicationMatter(page);
     const panel = page.locator('.omi-publication-matter-editor');
     await panel.getByRole('tab', { name: 'Title page', exact: true }).click();
     await panel.getByRole('checkbox', { name: 'Include in publication' }).check();
@@ -189,7 +189,7 @@ for (const width of [1440, 393]) {
       const state = useStudioStore.getState();
       state.loadManuscript({ ...state.manuscript, documentStructure: createDocumentStructureProfile('volume') });
     });
-    await page.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+    await openPublicationMatter(page);
     const panel = page.locator('.omi-publication-matter-editor');
     await panel.getByRole('tab', { name: 'Title page', exact: true }).click();
     await panel.getByRole('checkbox', { name: 'Include in publication' }).check();
@@ -232,4 +232,13 @@ for (const width of [1440, 393]) {
     expect(JSON.parse(await snapshot()).spineWidthMm).toBe(12.7);
     expect(await page.evaluate(() => localStorage.getItem('omi-publication-matter-measurement-unit-v1'))).toBe('mm');
   });
+}
+
+
+async function openPublicationMatter(page: Page) {
+  await expect(page.locator('.omi-volume-workspace-tabs').getByRole('tab', { name: 'Covers and title pages', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('group', { name: 'Publishing', exact: true }).getByRole('button', { name: 'Publication editor', exact: true }).click();
+  await menu.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
 }

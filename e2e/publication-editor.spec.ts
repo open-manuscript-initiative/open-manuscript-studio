@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
-test('the full-screen menu opens the live publication editor', async ({ page }) => {
+test('the full-screen menu opens the publication editor', async ({ page }) => {
   const api = await installMockStudioApi(page);
   await signInToStudio(page);
   await page.getByRole('button', { name: /^New OMI study/ }).click();
@@ -20,10 +20,10 @@ test('the full-screen menu opens the live publication editor', async ({ page }) 
   expect(menuBox?.height).toBeGreaterThanOrEqual((viewport?.height ?? 0) - 1);
 
   await expect(menu.getByRole('navigation', { name: 'Manuscript menu' })).toBeVisible();
-  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
 
-  await expect(menu.getByRole('heading', { name: 'Live publication editor' })).toBeVisible();
-  await expect(menu.getByRole('toolbar', { name: 'Live publication editor' })).toBeVisible();
+  await expect(menu.getByRole('heading', { name: 'Publication editor' })).toBeVisible();
+  await expect(menu.getByRole('toolbar', { name: 'Publication editor' })).toBeVisible();
   await expect(menu.getByRole('button', { name: 'Paragraph styles', exact: true })).toBeVisible();
   await expect(menu.getByRole('button', { name: 'Typesetting proofing', exact: true })).toBeVisible();
   await expect(menu.getByRole('button', { name: 'HTML5 visual editor', exact: true })).toBeVisible();
@@ -38,7 +38,7 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
 
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
-  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
   const canvas = menu.locator('.publication-document-canvas');
   const printView = canvas.getByRole('button', { name: 'Print layout', exact: true });
   const htmlView = canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true });
@@ -192,7 +192,7 @@ test('live pages place each footnote below its anchor and reflow after zoom and 
   });
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
-  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
   const canvas = menu.locator('.publication-document-canvas');
   const audit = () => canvas.evaluate((root) => {
     const paper = root.querySelector<HTMLElement>('.publication-document-paper');

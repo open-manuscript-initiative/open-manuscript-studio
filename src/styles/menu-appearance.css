@@ -234,7 +234,7 @@
   font-size: var(--omi-interface-font-sm, .7rem);
 }
 
-/* Live publication editor UI --------------------------------------------- */
+/* Publication editor UI --------------------------------------------- */
 /* Do not target .publication-document-canvas-stage or its document content. */
 .publication-style-editor-heading,
 .publication-style-ribbon,
