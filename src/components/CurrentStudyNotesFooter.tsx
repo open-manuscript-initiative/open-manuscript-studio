@@ -11,12 +11,10 @@ import { useTranslation } from '../i18n';
 import { getCurrentStudyNotesCopy } from '../i18n/currentStudyNotes';
 import {
   getNoteKind,
+  isNoteAnnotation,
   type OmiNoteKind,
 } from '../model/notes';
-import {
-  createNoteBodyDocument,
-  noteBodyPlainText,
-} from '../model/noteRichText';
+import { NoteBodyEditor } from './NoteBodyEditor';
 import type { ManuscriptStudy } from '../model/sectionStructure';
 import type { OmiAnnotation, OmiBlock, OmiSection } from '../types/omi';
 
@@ -41,8 +39,10 @@ export function CurrentStudyNotesFooter({
   const studyTitle = root?.title.trim() || manuscript.title || t('notes.title');
   const noteIdsKey = notes.map((note) => note.id).join('\u0000');
   const visibleNoteIds = useVisibleNoteIds(noteIdsKey);
-  const visibleNotes = notes.filter((note) => visibleNoteIds.has(note.id));
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
+  const visibleNotes = notes.filter((note) => visibleNoteIds.has(note.id) || note.id === activeNoteId);
   const { anchorRef, dock } = useManuscriptNotesDock();
+  const citationRules = manuscript.embeddedPublicationProfile?.rules.citations;
 
   function navigateToNote(note: OmiAnnotation): void {
     const section = findStudySectionForBlock(study, note.targetBlockId);
@@ -61,9 +61,13 @@ export function CurrentStudyNotesFooter({
       id="omi-current-study-notes"
       className="omi-current-study-notes"
       aria-labelledby="omi-current-study-notes-title"
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActiveNoteId(null);
+      }}
       style={dock ? {
         '--omi-notes-left': `${dock.left}px`,
         '--omi-notes-width': `${dock.width}px`,
+        '--omi-notes-bottom': `${dock.bottom}px`,
       } as CSSProperties : undefined}
     >
       <header className="omi-current-study-notes__header">
@@ -84,16 +88,15 @@ export function CurrentStudyNotesFooter({
           {visibleNotes.map((note) => {
             const noteNumber = numberByNoteId.get(note.id) ?? '?';
             const kind = getNoteKind(note);
-            const body = noteBodyPlainText(createNoteBodyDocument(
-              note,
-              manuscript.bibliographicRecords ?? [],
-              manuscript.citationStyle ?? 'apa-7',
-              manuscript.locale,
-            ));
+            const previouslyCitedTargets = manuscript.annotations
+              .slice(0, manuscript.annotations.indexOf(note))
+              .filter(isNoteAnnotation)
+              .flatMap((item) => (item.noteCitations ?? []).map((citation) => citation.target));
             const navigationLabel = `${t('notes.goToNote')}: ${kind === 'author-note' ? t('notes.authorNote') : noteNumber}`;
 
             return (
-              <li key={note.id} className="omi-current-study-note">
+              <li key={note.id} className="omi-current-study-note"
+                onFocusCapture={() => setActiveNoteId(note.id)}>
                 <button
                   type="button"
                   className="omi-current-study-note__number"
@@ -109,7 +112,14 @@ export function CurrentStudyNotesFooter({
                       {noteKindLabel(kind, t)}
                     </span>
                   )}
-                  <p>{body || '—'}</p>
+                  <NoteBodyEditor
+                    note={note}
+                    records={manuscript.bibliographicRecords ?? []}
+                    citationStyle={citationRules?.noteFirstStyle ?? manuscript.citationStyle ?? 'apa-7'}
+                    subsequentCitationStyle={citationRules?.noteSubsequentStyle ?? citationRules?.noteFirstStyle ?? manuscript.citationStyle ?? 'apa-7'}
+                    previouslyCitedTargets={previouslyCitedTargets}
+                    manuscriptLocale={manuscript.locale}
+                  />
                 </div>
               </li>
             );
@@ -135,6 +145,7 @@ function useManuscriptNotesDock() {
     container: HTMLElement;
     left: number;
     width: number;
+    bottom: number;
   } | null>(null);
 
   useLayoutEffect(() => {
@@ -145,10 +156,14 @@ function useManuscriptNotesDock() {
     // Keep the fixed panel outside the zoomed page and follow its rendered edges.
     const measure = () => {
       const { left, width } = page.getBoundingClientRect();
+      const viewport = window.visualViewport;
+      const bottom = viewport
+        ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+        : 0;
       setDock((current) => current?.container === container
-        && current.left === left && current.width === width
+        && current.left === left && current.width === width && current.bottom === bottom
         ? current
-        : { container, left, width });
+        : { container, left, width, bottom });
     };
     let frame: number | null = null;
     const scheduleMeasure = () => {
@@ -169,6 +184,8 @@ function useManuscriptNotesDock() {
     window.addEventListener('resize', scheduleMeasure);
     window.addEventListener('scroll', scheduleMeasure, true);
     window.addEventListener(EDITOR_ZOOM_EVENT, scheduleMeasure);
+    window.visualViewport?.addEventListener('resize', scheduleMeasure);
+    window.visualViewport?.addEventListener('scroll', scheduleMeasure);
     measure();
 
     return () => {
@@ -178,6 +195,8 @@ function useManuscriptNotesDock() {
       window.removeEventListener('resize', scheduleMeasure);
       window.removeEventListener('scroll', scheduleMeasure, true);
       window.removeEventListener(EDITOR_ZOOM_EVENT, scheduleMeasure);
+      window.visualViewport?.removeEventListener('resize', scheduleMeasure);
+      window.visualViewport?.removeEventListener('scroll', scheduleMeasure);
     };
   }, []);
 

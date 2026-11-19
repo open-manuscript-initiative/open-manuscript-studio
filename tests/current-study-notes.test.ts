@@ -101,7 +101,7 @@ test('the Studio UI exposes a viewport-scoped list for visible note anchors', ()
   assert.match(footerSource, /new IntersectionObserver/);
   assert.match(footerSource, /rect\.bottom > headerBottom[\s\S]*?rect\.top < viewportBottom/);
   assert.match(footerSource, /data-omi-note\]\[data-note-id\]/);
-  assert.match(footerSource, /notes\.filter\(\(note\) => visibleNoteIds\.has\(note\.id\)\)/);
+  assert.match(footerSource, /notes\.filter\(\(note\) => visibleNoteIds\.has\(note\.id\) \|\| note\.id === activeNoteId\)/);
   assert.match(footerSource, /omi-current-study-notes__count[\s\S]*?\{visibleNotes\.length\}/);
   assert.match(
     continuousStyles,

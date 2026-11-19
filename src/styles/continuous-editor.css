@@ -338,6 +338,7 @@
   top: auto;
   right: auto;
   bottom: env(safe-area-inset-bottom, 0px);
+  bottom: max(var(--omi-notes-bottom, 0px), env(safe-area-inset-bottom, 0px));
   left: var(--omi-notes-left, 0px);
   width: var(--omi-notes-width, 100%);
   max-width: none;
@@ -459,6 +460,17 @@
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.omi-current-study-note .omi-note-rich-editor {
+  min-height: 2.5rem;
+  padding: 0.35rem;
+  border-radius: 0.25rem;
+  font: inherit;
+}
+
+.omi-current-study-note .omi-note-rich-editor p + p {
+  margin-top: 0.65rem;
 }
 
 .omi-current-study-note__kind {
@@ -782,7 +794,6 @@
 
   .omi-current-study-notes {
     right: 0;
-    bottom: env(safe-area-inset-bottom, 0px);
     left: 0;
     width: 100%;
     max-width: none;

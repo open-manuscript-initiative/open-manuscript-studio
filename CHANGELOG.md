@@ -1,3 +1,10 @@
+## Unreleased — Editable manuscript notes
+
+- Edit and format notes directly in the bottom manuscript panel, with automatic
+  saving, bold, italic, underline, strikethrough, small caps and super/subscript.
+- Keep the focused note visible while its source anchor scrolls out of view;
+  follow the mobile keyboard viewport and synchronize edits with note cards.
+
 ## Unreleased — Selective OJS metadata reconciliation
 
 - Compare and transfer selected title, subtitle, abstract and keyword fields by language with OJS Integration plugin 1.8.0.0. Import license and copyright explicitly.

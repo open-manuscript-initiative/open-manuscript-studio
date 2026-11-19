@@ -110,3 +110,52 @@ test('notes retain the full mobile width and realign when returning to desktop',
   await page.setViewportSize({ width: 1916, height: 908 });
   await expectAlignedNotes(page);
 });
+
+for (const mobile of [false, true]) {
+  test(`notes can be edited and formatted in the footer (${mobile ? 'mobile' : 'desktop'})`, async ({ page }) => {
+    if (mobile) await page.setViewportSize({ width: 393, height: 851 });
+    await openNotes(page);
+    const footer = page.locator('#omi-current-study-notes');
+    const body = footer.getByRole('textbox');
+    await body.fill('Editable note');
+    await body.press('ControlOrMeta+a');
+    await footer.getByRole('button', { name: 'Bold / strong', exact: true }).click();
+    await expect(body.locator('strong')).toHaveText('Editable note');
+    await expect(footer.getByRole('button', { name: 'Bold / strong', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await footer.getByRole('button', { name: 'Italic / emphasis', exact: true }).click();
+    await expect(body.locator('em')).toHaveText('Editable note');
+    await expect.poll(() => page.evaluate(async () => {
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+      const note = useStudioStore.getState().manuscript.annotations.find((item) => item.id === 'layout-note')!;
+      const content = JSON.parse(note.bodyContent!);
+      return { body: note.body, marks: content.content[0].content[0].marks.map((mark: { type: string }) => mark.type) };
+    })).toEqual({ body: 'Editable note', marks: ['bold', 'italic'] });
+
+    // Resizing/scrolling can hide the source anchor while the keyboard is open.
+    // A focused note must remain mounted, retaining its selection and text.
+    await page.locator('[data-omi-note][data-note-id="layout-note"]').first().evaluate((anchor) => {
+      (anchor as HTMLElement).style.visibility = 'hidden';
+      (anchor as HTMLElement).style.transform = 'translateY(-10000px)';
+      window.dispatchEvent(new Event('resize'));
+    });
+    await expect(body).toBeFocused();
+    await expect(body).toHaveText('Editable note');
+    await page.locator('[data-omi-note][data-note-id="layout-note"]').first().evaluate((anchor) => {
+      (anchor as HTMLElement).style.visibility = '';
+      (anchor as HTMLElement).style.transform = '';
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    await page.locator('.focus-current-notes-button').click();
+    await page.locator('.focus-current-notes-button').click();
+    await expect(body.locator('strong em')).toHaveText('Editable note');
+    // Changes made in another note surface/undo must update the mounted footer.
+    await page.evaluate(async () => {
+      const { stageUpdateNoteRichText } = await import('/src/app/noteRichTextActions.ts');
+      stageUpdateNoteRichText('layout-note', JSON.stringify({
+        type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Updated elsewhere' }] }],
+      }), 'Updated elsewhere', []);
+    });
+    await expect(body).toHaveText('Updated elsewhere');
+  });
+}

@@ -1,21 +1,21 @@
 import { BookOpen } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EditorContent, useEditor, type JSONContent } from '@tiptap/react';
+import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
 import { stageAddNoteCitations } from '../app/noteCitationActions';
 import { stageUpdateNoteRichText } from '../app/noteRichTextActions';
 import { OmiCitationExtension } from '../editor/extensions/OmiCitationExtension';
-import { OMI_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
+import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
 import { useTranslation } from '../i18n';
 import { getNoteCitationCopy } from '../i18n/noteCitations';
+import { getRichTextCopy } from '../i18n/richText';
 import { createNoteCitation } from '../model/noteCitations';
 import {
   collectNoteCitationIds,
   createNoteBodyDocument,
   noteBodyPlainText,
   noteCitationNode,
-  synchronizeNoteCitationLabels,
   type NoteCitationStyleOptions,
 } from '../model/noteRichText';
 import type { OmiAnnotation, OmiBibliographicRecord, OmiCitationStyleId } from '../types/omi';
@@ -38,8 +38,9 @@ export function NoteBodyEditor({
   subsequentCitationStyle,
   previouslyCitedTargets,
 }: NoteBodyEditorProps) {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const copy = getNoteCitationCopy(locale);
+  const formatCopy = getRichTextCopy(locale);
   const previousTargetsKey = (previouslyCitedTargets ?? []).join('\u0000');
   const styleOptions = useMemo<NoteCitationStyleOptions>(() => ({
     subsequentStyle: subsequentCitationStyle,
@@ -60,14 +61,16 @@ export function NoteBodyEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false, horizontalRule: false }),
-      ...OMI_RICH_TEXT_EXTENSIONS,
+      ...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS,
       OmiCitationExtension,
     ],
     content: initial,
     editorProps: {
       attributes: {
         class: 'omi-note-rich-editor',
-        'aria-label': copy.citations,
+        role: 'textbox',
+        'aria-multiline': 'true',
+        'aria-label': t('notes.body'),
         spellcheck: 'true',
       },
     },
@@ -82,18 +85,32 @@ export function NoteBodyEditor({
     },
   });
 
+  const formats = [
+    { mark: 'bold', label: formatCopy.bold, icon: <strong>B</strong> },
+    { mark: 'italic', label: formatCopy.italic, icon: <em>I</em> },
+    { mark: 'omiUnderline', label: formatCopy.underline, icon: <u>U</u> },
+    { mark: 'strike', label: formatCopy.strike, icon: <s>S</s> },
+    { mark: 'omiSmallCaps', label: formatCopy.smallCaps, icon: <span style={{ fontVariant: 'small-caps' }}>Aa</span> },
+    { mark: 'omiSuperscript', label: formatCopy.superscript, icon: <span>x²</span> },
+    { mark: 'omiSubscript', label: formatCopy.subscript, icon: <span>x₂</span> },
+  ];
+  const activeMarks = useEditorState({
+    editor,
+    selector: ({ editor: current }) => formats.map(({ mark }) => current?.isActive(mark) ?? false),
+  });
+
   useEffect(() => {
     if (!editor) return;
-    const synchronized = synchronizeNoteCitationLabels(
-      editor.getJSON(),
-      note,
-      records,
-      citationStyle,
-      manuscriptLocale,
-      styleOptions,
-    ) as JSONContent;
+    // Both the footer and the note card edit the same annotation. Apply external
+    // edits without writing them back or moving the current text selection.
+    const synchronized = editor.schema.nodeFromJSON(createNoteBodyDocument(
+      note, records, citationStyle, manuscriptLocale, styleOptions,
+    )).toJSON() as JSONContent;
     if (JSON.stringify(synchronized) === JSON.stringify(editor.getJSON())) return;
-    editor.commands.setContent(synchronized, { emitUpdate: true });
+    const { from, to } = editor.state.selection;
+    editor.commands.setContent(synchronized, { emitUpdate: false });
+    const max = editor.state.doc.content.size;
+    editor.commands.setTextSelection({ from: Math.min(from, max), to: Math.min(to, max) });
   }, [citationStyle, editor, manuscriptLocale, note, records, styleOptions]);
 
   function togglePicker(): void {
@@ -133,6 +150,21 @@ export function NoteBodyEditor({
 
   return (
     <div className="omi-note-rich-body">
+      <div className="omi-note-formatting" role="group" aria-label={formatCopy.toolbar}>
+        {formats.map(({ mark, label, icon }, index) => (
+          <button key={mark} type="button" aria-label={label} title={label}
+            aria-pressed={activeMarks?.[index] ?? false}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => editor.chain().focus().toggleMark(mark).run()}>
+            {icon}
+          </button>
+        ))}
+        <button type="button" aria-label={formatCopy.clearMarks} title={formatCopy.clearMarks}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => editor.chain().focus().unsetAllMarks().run()}>
+          Tx
+        </button>
+      </div>
       <EditorContent editor={editor} />
       <div className="omi-note-rich-actions">
         <button
