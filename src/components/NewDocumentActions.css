@@ -1,0 +1,37 @@
+.omi-new-publication-form {
+  display: grid;
+  gap: .75rem;
+  margin-top: 1rem;
+  min-width: 0;
+}
+
+.omi-new-publication-form > label {
+  display: grid;
+  gap: .3rem;
+}
+
+.omi-new-publication-form input,
+.omi-new-publication-form select,
+.omi-new-publication-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: .5rem;
+  font: inherit;
+}
+
+.omi-new-publication-form fieldset {
+  min-width: 0;
+  margin: 0;
+}
+
+.omi-new-publication-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.omi-new-publication-form-actions button {
+  min-height: 2.75rem;
+  padding: .5rem 1rem;
+}
