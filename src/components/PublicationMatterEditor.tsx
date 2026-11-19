@@ -1,3 +1,4 @@
+import { isPublicationMeasurementUnit, type PublicationMeasurementUnit } from '../model/publicationMeasurementUnits';
 import { MatterNumber } from './PublicationMatterControls';
 import { useEffect, useState } from 'react';
 import { PublicationMatterFrameEditor } from './PublicationMatterFrameEditor';
@@ -15,6 +16,13 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
   const copy = getPublicationMatterCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const [defaultStyle] = useState(loadPublicationStyle);
+  const [unit, setUnit] = useState<PublicationMeasurementUnit>(() => {
+    try { const saved = localStorage.getItem('omi-publication-matter-measurement-unit-v1'); return isPublicationMeasurementUnit(saved) ? saved : 'mm'; }
+    catch { return 'mm'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('omi-publication-matter-measurement-unit-v1', unit); } catch { /* Device preferences are optional. */ }
+  }, [unit]);
   const model = getPublicationMatter(manuscript) ?? createPublicationMatter(manuscript);
   const [selected, setSelected] = useState<PublicationMatterPageKind>('front-cover');
   const [error, setError] = useState('');
@@ -65,6 +73,9 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
       onChange={(event) => stagePublicationMatter({ ...model, publicationKind: event.target.value as 'volume' | 'journal-issue' })}>
       <option value="volume">{copy.volume}</option><option value="journal-issue">{copy.journal}</option>
     </select></label>
+    <label>{copy.units}<select value={unit} onChange={(event) => { if (isPublicationMeasurementUnit(event.target.value)) setUnit(event.target.value); }}>
+      <option value="mm">{copy.unitMm}</option><option value="pc">{copy.unitPica}</option><option value="pt">{copy.unitPoint}</option>
+    </select></label><p>{copy.unitHelp}</p>
     <div className="omi-publication-matter-tabs" role="tablist" aria-label={copy.title}>
       {Object.entries(copy.pages).map(([kind, label]) => <button type="button" role="tab" key={kind}
         aria-selected={selected === kind} aria-controls="omi-publication-matter-selected" onClick={() => setSelected(kind as PublicationMatterPageKind)}>{label}</button>)}
@@ -72,13 +83,13 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
     <div id="omi-publication-matter-selected" role="tabpanel">
       <label className="omi-publication-matter-include"><input type="checkbox" checked={page.enabled} disabled={readOnly} onChange={(event) => update({ enabled: event.target.checked })} />{copy.include}</label>
       {!readOnly ? <button type="button" className="studio-menu-secondary-action" onClick={() => update({ content: publicationMatterTemplate(selected, manuscript) })}>{copy.template}</button> : null}
-      {selected === 'spine' ? <><MatterNumber label={copy.spineWidth} min={1} max={100} value={model.spineWidthMm ?? 10} disabled={readOnly} onCommit={(value) => stagePublicationMatter({ ...model, spineWidthMm: value })} /><p>{copy.spineHelp}</p></> : null}
+      {selected === 'spine' ? <><MatterNumber unit={unit} label={copy.spineWidth} min={1} max={100} value={model.spineWidthMm ?? 10} disabled={readOnly} onCommit={(value) => stagePublicationMatter({ ...model, spineWidthMm: value })} /><p>{copy.spineHelp}</p></> : null}
       <div className="omi-publication-matter-settings">
         <label>{copy.font}<input value={page.appearance.fontFamily} disabled={readOnly} maxLength={128} onChange={(event) => { if (event.target.value.trim()) appearance({ fontFamily: event.target.value }); }} /></label>
         <MatterNumber label={copy.size} min={6} max={120} value={page.appearance.fontSizePt} disabled={readOnly} onCommit={(value) => appearance({ fontSizePt: value })} />
         <label>{copy.color}<input type="color" value={page.appearance.color} disabled={readOnly} onChange={(event) => appearance({ color: event.target.value })} /></label>
         <label>{copy.background}<input type="color" value={page.appearance.background} disabled={readOnly} onChange={(event) => appearance({ background: event.target.value })} /></label>
-        <MatterNumber label={copy.padding} min={0} max={60} value={page.appearance.paddingMm} disabled={readOnly} onCommit={(value) => appearance({ paddingMm: value })} />
+        <MatterNumber unit={unit} label={copy.padding} min={0} max={60} value={page.appearance.paddingMm} disabled={readOnly} onCommit={(value) => appearance({ paddingMm: value })} />
         <label>{copy.alignment}<select value={page.appearance.alignment} disabled={readOnly} onChange={(event) => appearance({ alignment: event.target.value as 'left' | 'center' | 'right' })}>
           <option value="left">{copy.left}</option><option value="center">{copy.center}</option><option value="right">{copy.right}</option>
         </select></label>
@@ -94,7 +105,7 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
       </div>
       {error ? <p role="alert">{error}</p> : null}
       <PublicationMatterFrameEditor key={`${manuscript.id}:${selected}`} page={page} widthMm={selected === 'spine' ? model.spineWidthMm ?? 10 : widthMm ?? defaultStyle.page.width} heightMm={heightMm ?? defaultStyle.page.height}
-        imageUrl={imageUrl} onChange={update} readOnly={readOnly} />
+        imageUrl={imageUrl} unit={unit} onChange={update} readOnly={readOnly} />
     </div>
   </section>;
 }

@@ -26,7 +26,17 @@ it does not silently restructure the manuscript's articles.
 
 Add independent **text frames** and **graphic frames** to any cover, title-matter
 page or spine. Select a frame on the page or in **Select frame**. Move and resize
-its handles, or enter X/Y, width, height and rotation in millimetres/degrees.
+its handles, or enter exact X/Y, width, height and rotation. **Measurement units**
+selects millimetres (mm), picas (pc) or DTP points (pt) for frame/image geometry,
+offsets, strokes, insets, page padding and spine width. It applies across page
+tabs and is remembered on the device. Font size/leading remain labelled in points,
+and rotation in degrees. Unit changes only change the displayed values; physical
+sizes, stored millimetres, artwork and exported geometry stay intact. Unedited
+converted fields do not round and rewrite the stored dimensions.
+
+The DTP/CSS definitions are exact: 1 in = 25.4 mm = 72 pt = 6 pc, so 1 pc = 12 pt
+([W3C absolute lengths](https://www.w3.org/TR/css-values-4/#absolute-lengths)).
+Decimal values and negative offsets are supported.
 Choose a rectangle, ellipse or custom polygon; polygon points can be dragged,
 added and removed. Each frame has its own fill, stroke, typography and inset.
 Frames may overlap freely. Use **Bring forward** / **Send backward** for one

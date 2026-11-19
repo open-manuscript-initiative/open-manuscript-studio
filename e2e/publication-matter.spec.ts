@@ -175,3 +175,61 @@ for (const width of [1440, 393]) {
 
   });
 }
+
+
+for (const width of [1440, 393]) {
+  test(`cover measurement units convert input and preserve dimensions at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await installMockStudioApi(page);
+    await signInToStudio(page);
+    await page.getByRole('button', { name: /^New OMI study/ }).click();
+    await page.evaluate(async () => {
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+      const { createDocumentStructureProfile } = await import('/src/model/documentProfile.ts');
+      const state = useStudioStore.getState();
+      state.loadManuscript({ ...state.manuscript, documentStructure: createDocumentStructureProfile('volume') });
+    });
+    await page.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+    const panel = page.locator('.omi-publication-matter-editor');
+    await panel.getByRole('tab', { name: 'Title page', exact: true }).click();
+    await panel.getByRole('checkbox', { name: 'Include in publication' }).check();
+    await panel.getByRole('button', { name: 'Add graphic frame', exact: true }).click();
+    const settings = panel.locator('.omi-matter-frame-settings');
+    await settings.getByLabel('Insert image in frame', { exact: true }).setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j8C8AAAAASUVORK5CYII=', 'base64') });
+    await expect(panel.locator('.omi-matter-frame-image > img')).toBeVisible();
+    const snapshot = () => page.evaluate(async () => {
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+      const { getPublicationMatter } = await import('/src/model/publicationMatter.ts');
+      return JSON.stringify(getPublicationMatter(useStudioStore.getState().manuscript));
+    });
+    const before = await snapshot();
+    const units = panel.getByLabel('Measurement units', { exact: true });
+    for (const unit of ['pc', 'pt', 'mm', 'pc', 'pt', 'mm']) {
+      await units.selectOption(unit);
+      const input = settings.getByRole('spinbutton', { name: `Width (${unit})`, exact: true });
+      await input.focus(); await input.press('Tab');
+    }
+    expect(await snapshot()).toBe(before);
+    await units.selectOption('pc');
+    const frameWidth = settings.getByRole('spinbutton', { name: 'Width (pc)', exact: true });
+    await frameWidth.fill('6'); await frameWidth.press('Tab');
+    await units.selectOption('pt');
+    await expect(settings.getByRole('spinbutton', { name: 'Width (pt)', exact: true })).toHaveValue('72');
+    const imageX = settings.getByRole('spinbutton', { name: 'Graphic X (pt)', exact: true });
+    await imageX.fill('-12'); await imageX.press('Tab');
+    await units.selectOption('mm');
+    await expect(settings.getByRole('spinbutton', { name: 'Width (mm)', exact: true })).toHaveValue('25.4');
+    const edited = JSON.parse(await snapshot()).pages.find((item: { kind: string }) => item.kind === 'title-page').frames[0];
+    expect(edited.widthMm).toBe(25.4);
+    expect(edited.graphicTransform.offsetXMm).toBeCloseTo(-25.4 / 6, 10);
+    await units.selectOption('pc');
+    await panel.getByRole('tab', { name: 'Spine', exact: true }).click();
+    await expect(units).toHaveValue('pc');
+    const spine = panel.getByRole('spinbutton', { name: 'Spine width (pc)', exact: true });
+    await spine.fill('3'); await spine.press('Tab');
+    await units.selectOption('mm');
+    await expect(panel.getByRole('spinbutton', { name: 'Spine width (mm)', exact: true })).toHaveValue('12.7');
+    expect(JSON.parse(await snapshot()).spineWidthMm).toBe(12.7);
+    expect(await page.evaluate(() => localStorage.getItem('omi-publication-matter-measurement-unit-v1'))).toBe('mm');
+  });
+}

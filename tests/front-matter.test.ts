@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createPublicationMatterFrame, fitPublicationMatterImage, matterFrameBoxStyle, matterImageStyle, reorderPublicationMatterFrame, resizePublicationMatterImage } from '../src/model/publicationMatterFrames.ts';
+import { PUBLICATION_MEASUREMENT_UNITS, formatPublicationMeasurement, isPublicationMeasurementUnit, parsePublicationMeasurement, publicationMeasurementFromMm, publicationMeasurementToMm } from '../src/model/publicationMeasurementUnits.ts';
 import { frameGraphicTransform } from '../src/model/publicationFramePages.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 import { createDocumentStructureProfile } from '../src/model/documentProfile.ts';
@@ -363,4 +364,30 @@ test('overlapping frame layers reorder without changing content or geometry and 
   assert.deepEqual(layerOrder(buildPdfPrintDocument(restored)), page.frames.map((frame) => frame.id));
   assert.throws(() => reorderPublicationMatterFrame(frames, 'unknown-frame', 0));
   assert.throws(() => reorderPublicationMatterFrame(frames, frames[0]!.id, frames.length));
+});
+
+
+test('publication measurement units use DTP points and picas with physical round trips', () => {
+  assert.equal(publicationMeasurementToMm(72, 'pt'), 25.4);
+  assert.equal(publicationMeasurementToMm(6, 'pc'), 25.4);
+  assert.ok(Math.abs(publicationMeasurementFromMm(publicationMeasurementToMm(1, 'pc'), 'pt') - 12) < 1e-12);
+  for (const unit of PUBLICATION_MEASUREMENT_UNITS) {
+    assert.equal(isPublicationMeasurementUnit(unit), true);
+    for (const mm of [-20000, -25.4, -0.25, 0, .000001, 1, 12.7, 210, 20000]) {
+      const converted = publicationMeasurementFromMm(mm, unit);
+      assert.ok(Math.abs(publicationMeasurementToMm(converted, unit) - mm) < 1e-10);
+      const displayed = formatPublicationMeasurement(mm, unit);
+      const parsed = parsePublicationMeasurement(displayed, unit, -20000, 20000);
+      assert.ok(parsed !== undefined && Math.abs(parsed - mm) <= Math.max(1, Math.abs(mm)) * 1e-11);
+    }
+  }
+  assert.equal(isPublicationMeasurementUnit('px'), false);
+  assert.equal(isPublicationMeasurementUnit(null), false);
+  assert.equal(parsePublicationMeasurement('6', 'pc', 1, 2000), 25.4);
+  assert.ok(Math.abs(parsePublicationMeasurement('-12', 'pt', -20000, 20000)! + 25.4 / 6) < 1e-12);
+  for (const invalid of ['', ' ', 'not-a-size', 'Infinity', 'NaN', '-1', '100000']) {
+    assert.equal(parsePublicationMeasurement(invalid, 'pc', 1, 2000), undefined);
+  }
+  assert.equal(parsePublicationMeasurement(formatPublicationMeasurement(1, 'pc'), 'pc', 1, 2000), 1);
+  assert.equal(parsePublicationMeasurement('0.0000001', 'mm', .000001, 20000), undefined);
 });

@@ -7,6 +7,7 @@ import { getPublicationFramesCopy } from '../i18n/publicationFrames';
 import { getPublicationMatterFramesCopy } from '../i18n/publicationMatterFrames';
 import { createPublicationMatter, getPublicationMatter, type PublicationMatterPage } from '../model/publicationMatter';
 import { createPublicationMatterFrame, fitPublicationMatterImage, matterFrameBoxStyle, matterImageStyle, reorderPublicationMatterFrame, resizePublicationMatterImage, type PublicationMatterFrame } from '../model/publicationMatterFrames';
+import type { PublicationMeasurementUnit } from '../model/publicationMeasurementUnits';
 import { frameGraphicTransform } from '../model/publicationFramePages';
 import { frameClipPath, frameShapeSvg } from '../services/publicationFrameShapes';
 import { getAssetPayload } from '../services/assetRepository';
@@ -14,8 +15,8 @@ import { MatterNumber } from './PublicationMatterControls';
 import { MatterRichText, matterPreviewHtml } from './PublicationMatterRichText';
 
 interface Drag { kind: 'move' | 'resize' | 'image-move' | 'image-resize' | 'point'; frame: PublicationMatterFrame; point: number; x: number; y: number; pixelsPerMm: number }
-export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl, onChange, readOnly }: {
-  page: PublicationMatterPage; widthMm: number; heightMm: number; imageUrl: string; onChange(patch: Partial<PublicationMatterPage>): void; readOnly: boolean;
+export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl, onChange, readOnly, unit }: {
+  page: PublicationMatterPage; widthMm: number; heightMm: number; imageUrl: string; onChange(patch: Partial<PublicationMatterPage>): void; readOnly: boolean; unit: PublicationMeasurementUnit;
 }) {
   const { locale } = useTranslation();
   const pageCopy = getPublicationMatterCopy(locale);
@@ -124,15 +125,15 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
     {selected ? <fieldset className="omi-matter-frame-settings" disabled={readOnly}>
       <legend>{copy.frame}</legend>
       <label>{copy.name}<input value={selected.name} maxLength={256} onChange={(event) => patchFrame(selected.id, { name: event.target.value })} /></label>
-      {(['xMm', 'yMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber key={key} label={[copy.x, copy.y, copy.width, copy.height, copy.rotation][index]!} value={selected[key]} min={key === 'rotation' ? -360 : key.endsWith('Mm') && !key.startsWith('width') && !key.startsWith('height') ? -2000 : 1} max={key === 'rotation' ? 360 : 2000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { [key]: value })} />)}
+      {(['xMm', 'yMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber unit={key === 'rotation' ? undefined : unit} key={key} label={[copy.x, copy.y, copy.width, copy.height, copy.rotation][index]!} value={selected[key]} min={key === 'rotation' ? -360 : key.endsWith('Mm') && !key.startsWith('width') && !key.startsWith('height') ? -2000 : 1} max={key === 'rotation' ? 360 : 2000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { [key]: value })} />)}
       <label>{copy.shape}<select value={selected.shape} onChange={(event) => patchFrame(selected.id, { shape: event.target.value as PublicationMatterFrame['shape'] })}><option value="rectangle">{copy.rectangle}</option><option value="ellipse">{copy.ellipse}</option><option value="polygon">{copy.polygon}</option></select></label>
       {selected.shape === 'polygon' ? <div><button type="button" disabled={selected.points.length >= 32} onClick={() => patchFrame(selected.id, { points: [...selected.points, { x: 50, y: 50 }] })}>{copy.addPoint}</button><button type="button" disabled={selected.points.length <= 3} onClick={() => patchFrame(selected.id, { points: selected.points.slice(0, -1) })}>{copy.removePoint}</button></div> : null}
       <label>{labels.transparent}<input type="checkbox" checked={selected.style.fill === 'none'} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, fill: event.target.checked ? 'none' : '#ffffff' } })} /></label>
       {(['fill', 'stroke', 'color'] as const).map((key) => <label key={key}>{copy[key]}<input type="color" value={selected.style[key] === 'none' ? '#ffffff' : selected.style[key]} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, [key]: event.target.value } })} /></label>)}
-      <MatterNumber label={copy.strokeWidth} value={selected.style.strokeWidthMm} min={0} max={20} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, strokeWidthMm: value } })} />
+      <MatterNumber unit={unit} label={copy.strokeWidth} value={selected.style.strokeWidthMm} min={0} max={20} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, strokeWidthMm: value } })} />
       {selected.kind === 'text' ? <>
         <label>{copy.font}<input value={selected.style.fontFamily} maxLength={128} onChange={(event) => { if (event.target.value.trim()) patchFrame(selected.id, { style: { ...selected.style, fontFamily: event.target.value } }); }} /></label>
-        {(['fontSizePt', 'lineHeightPt', 'paddingMm'] as const).map((key, index) => <MatterNumber key={key} label={[copy.size, copy.leading, copy.padding][index]!} value={selected.style[key]} min={key === 'paddingMm' ? 0 : 6} max={key === 'fontSizePt' ? 120 : key === 'paddingMm' ? 60 : 240} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, [key]: value } })} />)}
+        {(['fontSizePt', 'lineHeightPt', 'paddingMm'] as const).map((key, index) => <MatterNumber unit={key === 'paddingMm' ? unit : undefined} key={key} label={[copy.size, copy.leading, copy.padding][index]!} value={selected.style[key]} min={key === 'paddingMm' ? 0 : 6} max={key === 'fontSizePt' ? 120 : key === 'paddingMm' ? 60 : 240} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, [key]: value } })} />)}
         <label>{copy.alignment}<select value={selected.style.alignment} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, alignment: event.target.value as 'left' | 'center' | 'right' } })}>{(['left', 'center', 'right'] as const).map((value) => <option key={value} value={value}>{copy[value]}</option>)}</select></label>
       </> : <>
         <label>{labels.image}<input type="file" disabled={busy} accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ''; }} /></label>
@@ -142,7 +143,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
           <button type="button" onClick={() => { patchFrame(selected.id, { image: undefined, graphicTransform: undefined }); setEditImage(false); }}>{pageCopy.removeImage}</button>
           <button type="button" aria-pressed={editImage} onClick={() => setEditImage(!editImage)}>{editImage ? labels.editFrame : labels.editImage}</button>
           <label>{copy.keepAspectRatio}<input type="checkbox" checked={graphic!.keepAspectRatio} onChange={(event) => patchFrame(selected.id, { graphicTransform: { ...graphic!, keepAspectRatio: event.target.checked } })} /></label>
-          {(['offsetXMm', 'offsetYMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber key={key} label={[copy.graphicX, copy.graphicY, copy.graphicWidth, copy.graphicHeight, copy.graphicRotation][index]!} value={graphic![key]} min={key === 'rotation' ? -360 : key.startsWith('offset') ? -20000 : .000001} max={key === 'rotation' ? 360 : 20000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { graphicTransform: key === 'widthMm' || key === 'heightMm' ? resizePublicationMatterImage(graphic!, key, value) : { ...graphic!, [key]: value } })} />)}
+          {(['offsetXMm', 'offsetYMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber unit={key === 'rotation' ? undefined : unit} key={key} label={[copy.graphicX, copy.graphicY, copy.graphicWidth, copy.graphicHeight, copy.graphicRotation][index]!} value={graphic![key]} min={key === 'rotation' ? -360 : key.startsWith('offset') ? -20000 : .000001} max={key === 'rotation' ? 360 : 20000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { graphicTransform: key === 'widthMm' || key === 'heightMm' ? resizePublicationMatterImage(graphic!, key, value) : { ...graphic!, [key]: value } })} />)}
           <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'contain') })}>{copy.resetGraphic}</button>
           <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'cover') })}>{copy.fillFrame}</button>
         </> : null}

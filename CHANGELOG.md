@@ -1,5 +1,6 @@
 ## Unreleased — Frames and spine for publication covers
 
+- Choose millimetres, picas or DTP points for cover/title-matter frame and image measurements, page padding and spine width; remember the device preference and preserve physical dimensions across unit changes.
 - Reorder overlapping frames one layer at a time or by exact layer number, as well as bringing them to the front/back; retain the same stacking order in OMI and HTML/PDF output.
 - Add rich text and image frames to covers, title-matter pages and the spine, with independent frame geometry, shapes, fill, stroke and stacking order.
 - Keep image dimensions, offsets, proportions and rotation separate from their clipping frame; support upload, clipboard image files and drag-and-drop.

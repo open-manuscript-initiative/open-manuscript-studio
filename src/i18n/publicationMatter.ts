@@ -4,6 +4,7 @@ const labels = {
   hu: {
     title: 'Borító és címnegyed', description: 'A kiadvány önálló oldalai, a tanulmányoktól elkülönítve. A bekapcsolt oldalak a HTML- és PDF-kiadás elejére vagy végére kerülnek.',
     spineWidth: 'Gerinc szélessége (mm)', spineHelp: 'A gerinc bekapcsolásakor a külső hátsó borító, a gerinc és a külső első borító egy közös borítóíven kerül a HTML/PDF-kiadásba. A gerinc szövegkeretei külön forgathatók.',
+    units: 'Méretezés egysége', unitMm: 'Milliméter (mm)', unitPica: 'Pica (pc)', unitPoint: 'DTP pont (pt)', unitHelp: '1 pica = 12 pont; 72 pont = 25,4 mm. Egységváltáskor a tényleges méret megmarad.',
     kind: 'Kiadvány típusa', volume: 'Kötet', journal: 'Folyóiratszám', include: 'Szerepeljen a kiadásban',
     template: 'Kitöltés a kiadvány adataiból', image: 'Borítókép feltöltése', removeImage: 'Kép eltávolítása', alt: 'Kép szöveges leírása',
     fit: 'Kép illesztése', contain: 'Teljes kép', cover: 'Oldal kitöltése', font: 'Betűcsalád', size: 'Betűméret (pt)',
@@ -17,6 +18,7 @@ const labels = {
   en: {
     title: 'Covers and title pages', description: 'Independent publication pages, separate from individual studies. Enabled pages appear before or after the content in HTML and PDF publication output.',
     spineWidth: 'Spine width (mm)', spineHelp: 'Enabling the spine combines the outside back cover, spine and outside front cover into one cover spread in HTML/PDF output. Spine text frames can be rotated independently.',
+    units: 'Measurement units', unitMm: 'Millimetres (mm)', unitPica: 'Picas (pc)', unitPoint: 'DTP points (pt)', unitHelp: '1 pica = 12 points; 72 points = 25.4 mm. Switching units preserves physical dimensions.',
     kind: 'Publication type', volume: 'Volume', journal: 'Journal issue', include: 'Include in publication',
     template: 'Fill from publication metadata', image: 'Upload cover image', removeImage: 'Remove image', alt: 'Image description',
     fit: 'Image fit', contain: 'Entire image', cover: 'Fill page', font: 'Font family', size: 'Font size (pt)',
@@ -30,6 +32,7 @@ const labels = {
   de: {
     title: 'Umschlag und Titelei', description: 'Eigenständige Publikationsseiten, getrennt von den einzelnen Beiträgen. Aktivierte Seiten erscheinen vor oder nach dem Inhalt in der HTML- und PDF-Ausgabe.',
     spineWidth: 'Rückenbreite (mm)', spineHelp: 'Bei aktiviertem Rücken bilden hinterer Umschlag, Rücken und vorderer Umschlag eine gemeinsame Außenseite in der HTML/PDF-Ausgabe. Textrahmen auf dem Rücken sind frei drehbar.',
+    units: 'Maßeinheit', unitMm: 'Millimeter (mm)', unitPica: 'Pica (pc)', unitPoint: 'DTP-Punkt (pt)', unitHelp: '1 Pica = 12 Punkt; 72 Punkt = 25,4 mm. Einheitenwechsel erhalten die tatsächlichen Abmessungen.',
     kind: 'Publikationstyp', volume: 'Band', journal: 'Zeitschriftenheft', include: 'In die Ausgabe aufnehmen',
     template: 'Aus Publikationsmetadaten ausfüllen', image: 'Umschlagbild hochladen', removeImage: 'Bild entfernen', alt: 'Bildbeschreibung',
     fit: 'Bildanpassung', contain: 'Gesamtes Bild', cover: 'Seite ausfüllen', font: 'Schriftfamilie', size: 'Schriftgröße (pt)',
