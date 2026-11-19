@@ -294,16 +294,23 @@ for (const width of [1440, 393]) {
     await expect(spine).toHaveValue('15.35');
     await panel.getByLabel('Inside paper', { exact: true }).selectOption('munken-80-1.5');
     await expect(spine).toHaveValue('18.5');
+    const sheetDimensions = await panel.locator('[data-cover-sheet="cover-outside"]').evaluate((element) => {
+      const [width, height] = (element as HTMLElement).style.aspectRatio.split('/').map(Number);
+      return { width: width!, height: height! };
+    });
     await panel.getByRole('button', { name: 'Add text frame', exact: true }).click();
     const settings = panel.locator('.omi-matter-frame-settings');
-    for (const [name, value] of [['X (mm)', '100'], ['Width (mm)', '300']] as const) {
+    for (const [name, value] of [['X (mm)', '10'], ['Width (mm)', String(sheetDimensions.width - 20)]] as const) {
       const input = settings.getByRole('spinbutton', { name, exact: true });
       await input.fill(value); await input.press('Tab');
     }
     await panel.getByRole('textbox', { name: 'Text frame content', exact: true }).fill('One frame across both folds');
     const bounds = await panel.locator('.omi-matter-frame.is-selected').boundingBox();
-    const paperBounds = await panel.locator('[data-cover-sheet="cover-outside"]').boundingBox();
-    expect(bounds!.width / paperBounds!.width).toBeCloseTo(300 / 438.5, 2);
+    const paperInnerWidth = await panel.locator('[data-cover-sheet="cover-outside"]').evaluate((element) => {
+      const style = getComputedStyle(element);
+      return element.getBoundingClientRect().width - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+    });
+    expect(bounds!.width / paperInnerWidth).toBeCloseTo((sheetDimensions.width - 20) / sheetDimensions.width, 2);
     await expect(panel.locator('.omi-cover-fold')).toHaveCount(2);
     await panel.getByRole('tab', { name: 'Cover – inside', exact: true }).click();
     await include.check();
@@ -324,7 +331,7 @@ for (const width of [1440, 393]) {
       return { model: getPublicationMatter(manuscript), html: renderHtmlArticle(manuscript).html };
     });
     expect(persisted.model!.spineCalculation).toMatchObject({ pageCount: 300, paperId: 'munken-80-1.5', mode: 'manual', allowanceMm: .5 });
-    expect(persisted.html).toContain('width:440mm;height:297mm');
+    expect(persisted.html).toContain(`width:${sheetDimensions.width - 18.5 + 20}mm;height:${sheetDimensions.height}mm`);
     expect(persisted.html.match(/data-cover-sheet=/g)).toHaveLength(2);
     expect(persisted.html).not.toContain('omi-cover-fold');
     // Enabling a title page changes the live inside count while covers stay excluded.
