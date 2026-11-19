@@ -1,6 +1,9 @@
 import { OjsPublicationTransferPanel } from './OjsPublicationTransferPanel';
 import { ojsPublicationCopy } from '../i18n/ojsPublication';
 import { PublicationFrameEditor } from './PublicationFrameEditor';
+import { PublicationMatterEditor } from './PublicationMatterEditor';
+import { getPublicationMatterCopy } from '../i18n/publicationMatter';
+import { getDocumentStructureProfile } from '../model/documentProfile';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
 import { usePublicationPreview } from './PublicationPreviewContext';
 import { getVisualElementsCopy } from '../i18n/visualElements';
@@ -196,6 +199,7 @@ export function PublicationStyleEditor() {
   const copy = copyFor(locale);
   const previewOnly = usePublicationPreview();
   const [frameToolsOpen, setFrameToolsOpen] = useState(false);
+  const [matterToolsOpen, setMatterToolsOpen] = useState(false);
   const [ojsTransferOpen, setOjsTransferOpen] = useState(false);
   const frameCopy = getPublicationFramesCopy(locale);
   const initial = useMemo(loadInitialState, []);
@@ -735,6 +739,10 @@ export function PublicationStyleEditor() {
       {!previewOnly ? <div className="publication-style-ribbon" ref={ribbonRef}>
         <div className="publication-style-ribbon-row">
           <div className="publication-style-ribbon-actions" role="toolbar" aria-label={copy.title}>
+            {getDocumentStructureProfile(manuscript).kind === 'volume' ? <PublicationRibbonActionButton
+              label={getPublicationMatterCopy(locale).title} onClick={() => { setMatterToolsOpen((current) => !current); setOpenPanel(null); }}>
+              <FileText size={18} aria-hidden="true" />
+            </PublicationRibbonActionButton> : null}
             <PublicationRibbonMenuButton
               panelId="styles"
               label={copy.styles}
@@ -1204,6 +1212,7 @@ export function PublicationStyleEditor() {
 
       {ojsTransferOpen ? <button type="button" className="studio-menu-secondary-action" onClick={() => setOjsTransferOpen(false)}>{ojsPublicationCopy(locale).close}</button> : null}
       <OjsPublicationTransferPanel key={manuscript.id} style={style} active={ojsTransferOpen} />
+      {matterToolsOpen ? <PublicationMatterEditor widthMm={style.page.width} heightMm={style.page.height} readOnly={previewOnly} /> : null}
       <div className="publication-style-editor-layout">
         <PublicationDocumentCanvas
           style={style}

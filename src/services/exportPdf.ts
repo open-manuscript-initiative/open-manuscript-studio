@@ -39,7 +39,7 @@ export function buildPdfPrintDocument(
     );
   }
 
-  const result = renderHtmlArticle(manuscript, profile, { noteLayout: 'paged' });
+  const result = renderHtmlArticle(manuscript, profile, { noteLayout: 'paged', publicationMatter: normalizedContentMode === 'publication' });
   const fatalDiagnostics = result.diagnostics.filter(
     (item) =>
       item.severity === 'error' &&

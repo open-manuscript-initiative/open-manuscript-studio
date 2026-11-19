@@ -9,6 +9,7 @@ import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { renderJatsArticle } from '../src/services/exportJats.ts';
 import { buildPublicationHtmlArtifact } from '../src/services/publicationHtmlArtifact.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
+import { createDocumentStructureProfile } from '../src/model/documentProfile.ts';
 
 test('nested sections and child blocks survive HTML/JATS rendering without manuscript mutation', () => {
   const manuscript = createVersionedTestManuscript();
@@ -76,6 +77,7 @@ test('profile readiness checks deep image/table accessibility and target kind, n
 test('standalone HTML publication embeds nested-section figure bytes, never a broken package-local link', async () => {
   clearMemoryAssetCache();
   const manuscript = createVersionedTestManuscript();
+  manuscript.documentStructure = createDocumentStructureProfile('study');
   const bytes = new TextEncoder().encode('synthetic-image-data');
   const asset = await createAssetMetadata(bytes, {
     id: 'nested-figure-asset', mediaType: 'image/png', fileName: 'nested.png',

@@ -917,7 +917,7 @@ export async function renderStyleBasedHtml(
   const renderingManuscript = target === 'print'
     ? applyPublicationCorrectionsForRendering(manuscript)
     : manuscript;
-  const rendered = renderPublisherHtmlArticle(renderingManuscript, profile, {
+  const rendered = renderPublisherHtmlArticle(renderingManuscript, { ...profile, publicationStyle: style }, {
     noteLayout: target === 'print' ? 'paged' : undefined,
   });
   const fatal = rendered.diagnostics.filter(item => item.severity === 'error' && (target !== 'print' || item.code !== 'profile-does-not-support-html'));
