@@ -16,6 +16,8 @@ import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText
 import { contributorNameParts } from '../model/contributorName.ts';
 import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
+import { publicationMatterPages, type PublicationMatterPage } from '../model/publicationMatter';
+import { cssStringLiteral } from './embeddedCss';
 import {
   buildPublicationRenderingContext,
   type OmiPublicationRenderingContext,
@@ -54,6 +56,7 @@ export interface HtmlRenderOptions {
   assetPrefix?: string;
   /** Move semantic footnotes to their anchors for a paged-media renderer. */
   noteLayout?: 'paged';
+  publicationMatter?: boolean;
 }
 
 export interface HtmlExportResult {
@@ -155,6 +158,8 @@ export function renderHtmlArticle(
   const title = context.subtitle
     ? `${context.title}: ${context.subtitle}`
     : context.title;
+  const matterBefore = options.publicationMatter === false ? [] : publicationMatterPages(manuscript, 'before');
+  const matterAfter = options.publicationMatter === false ? [] : publicationMatterPages(manuscript, 'after');
   const article = [
     renderFront(state, labels),
     context.sections.length
@@ -188,13 +193,16 @@ export function renderHtmlArticle(
     indent(renderProfileCss(profile), 2),
     '  </style>',
     state.pagedNotes ? `<style data-omi-paged-notes>\n${PAGED_NOTE_CSS}\n</style>` : '',
+    matterBefore.length || matterAfter.length ? `<style data-omi-publication-matter>\n${publicationMatterCss(profile)}\n</style>` : '',
     '</head>',
     '<body>',
+    matterBefore.map((page) => renderPublicationMatterPage(page, state)).join('\n'),
     `  <article class="omi-scholarly-article" data-omi-manuscript-id="${escapeAttribute(
       context.manuscriptId,
     )}" data-omi-head-revision="${escapeAttribute(context.headRevisionId)}">`,
     indent(article, 2),
     '  </article>',
+    matterAfter.map((page) => renderPublicationMatterPage(page, state)).join('\n'),
     '</body>',
     '</html>',
     '',
@@ -675,6 +683,38 @@ function renderMusicScore(block: OmiBlock, state: RenderState): string {
   return `<figure id="${htmlId('music', block.id)}" class="scholarly-music-score" data-omi-block-id="${escapeAttribute(block.id)}"><div class="music-score-data" data-format="${escapeAttribute(visual.format)}">${escapeHtml(notes)}</div>${title ? `<figcaption>${escapeHtml(title)}</figcaption>` : ''}</figure>`;
 }
 
+function renderPublicationMatterPage(page: PublicationMatterPage, state: RenderState): string {
+  const appearance = page.appearance;
+  const justify = { top: 'flex-start', center: 'center', bottom: 'flex-end' }[appearance.vertical];
+  const styles = `font-family:${cssStringLiteral(appearance.fontFamily)},serif;font-size:${appearance.fontSizePt}pt;color:${appearance.color};background:${appearance.background};text-align:${appearance.alignment};justify-content:${justify};padding:${appearance.paddingMm}mm`;
+  let image = '';
+  if (page.image) {
+    const asset = state.assetMap.get(page.image.assetId);
+    if (!asset || !['image/png', 'image/jpeg', 'image/webp'].includes(asset.mediaType)) {
+      state.diagnostics.push({ code: 'publication-matter-image-missing', severity: 'error', message: 'A publication cover image is missing or unsupported.', targetId: page.kind });
+    } else image = `<img class="omi-publication-matter-image" src="${escapeAttribute(state.assetPrefix + assetPath(asset))}" alt="${escapeAttribute(page.image.alt)}" style="object-fit:${page.image.fit}">`;
+  }
+  return `<section class="omi-publication-matter-page" data-publication-matter="${page.kind}" aria-label="${page.kind}" style="${escapeAttribute(styles)}">${image}<div class="omi-publication-matter-text">${renderJsonNode(JSON.parse(page.content) as JsonNode, state)}</div></section>`;
+}
+
+function publicationMatterCss(profile: OmiPublicationProfile): string {
+  const width = profile.publicationStyle?.page.width ?? (profile.rules.layout.pageSize === 'Letter' ? 215.9 : 210);
+  const height = profile.publicationStyle?.page.height ?? (profile.rules.layout.pageSize === 'Letter' ? 279.4 : 297);
+  return `
+@page omi_publication_matter { size:${width}mm ${height}mm; margin:0; counter-increment:page 0;
+  @top-left { content:none } @top-center { content:none } @top-right { content:none }
+  @bottom-left { content:none } @bottom-center { content:none } @bottom-right { content:none }
+}
+.omi-publication-matter-page { page:omi_publication_matter; break-before:page; break-after:page; break-inside:avoid;
+  box-sizing:border-box; width:${width}mm; min-height:${height}mm; position:relative; display:flex; flex-direction:column; isolation:isolate;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact; overflow-wrap:anywhere; }
+.omi-publication-matter-image { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+.omi-publication-matter-text { position:relative; z-index:1; } .omi-publication-matter-text p { white-space:pre-wrap; }
+@media screen { .omi-publication-matter-page { margin:1rem auto; max-width:100%; box-shadow:0 2px 10px #0002; } }
+@media print { .omi-publication-matter-page { margin:0; } }
+`;
+}
+
 function renderJsonNode(node: JsonNode, state: RenderState): string {
   const children = () => (node.content ?? []).map((child) => renderJsonNode(child, state)).join('');
 
@@ -935,6 +975,10 @@ function applyMarks(
         return `<strong>${output}</strong>`;
       case 'italic':
         return `<em>${output}</em>`;
+      case 'omiUnderline':
+        return `<u>${output}</u>`;
+      case 'omiSmallCaps':
+        return `<span style="font-variant:small-caps">${output}</span>`;
       case 'strike':
         return `<del>${output}</del>`;
       case 'code':

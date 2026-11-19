@@ -1,4 +1,4 @@
-import { collectReferencedAssetIdsInSections, sha256Hex } from '../model/assets';
+import { collectReferencedManuscriptAssetIds, sha256Hex } from '../model/assets';
 import type { OmiManuscript } from '../types/omi';
 import { getAssetPayload, putAssetPayload } from './assetRepository';
 import { inspectOmiContainer } from './omiContainerImport';
@@ -14,7 +14,7 @@ export async function inspectMissingManuscriptAssets(
 ): Promise<MissingManuscriptAsset[]> {
   const assets = new Map((manuscript.assets ?? []).map((asset) => [asset.id, asset]));
   const missing: MissingManuscriptAsset[] = [];
-  for (const id of collectReferencedAssetIdsInSections(manuscript.sections)) {
+  for (const id of collectReferencedManuscriptAssetIds(manuscript)) {
     const asset = assets.get(id);
     if (!asset) {
       missing.push({ id, fileName: id, reason: 'metadata-missing' });

@@ -1,6 +1,6 @@
 import {
   assetPath,
-  collectReferencedAssetIds,
+  collectReferencedManuscriptAssetIds,
   sha256Hex,
 } from '../model/assets.ts';
 import {
@@ -77,9 +77,7 @@ export async function buildHtmlPackage(
   const assetMap = new Map(
     (manuscript.assets ?? []).map((asset) => [asset.id, asset]),
   );
-  const referencedAssetIds = collectReferencedAssetIds(
-    manuscript.sections.flatMap((section) => section.blocks),
-  );
+  const referencedAssetIds = collectReferencedManuscriptAssetIds(manuscript);
   const entries: PackageEntry[] = [];
 
   for (const assetId of referencedAssetIds) {

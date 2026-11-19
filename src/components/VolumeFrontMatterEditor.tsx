@@ -26,9 +26,11 @@ import {
 import type { OmiTitleMatterField } from '../model/frontMatter';
 import { partitionManuscriptStudies } from '../model/sectionStructure';
 import { ContributorEditor } from './ContributorEditor';
+import { PublicationMatterEditor } from './PublicationMatterEditor';
+import { getPublicationMatterCopy } from '../i18n/publicationMatter';
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
-type VolumeFrontMatterTab = 'title-matter' | 'contributors' | 'structure';
+type VolumeFrontMatterTab = 'title-matter' | 'contributors' | 'structure' | 'publication';
 
 interface VolumeFrontMatterEditorProps {
   ojsContributors?: OjsContributors;
@@ -138,7 +140,7 @@ export function VolumeFrontMatterEditor({
   const [activeTab, setActiveTab] = useState<VolumeFrontMatterTab>('title-matter');
 
   useEffect(() => {
-    if (structure.kind === 'study' && activeTab === 'structure') {
+    if (structure.kind === 'study' && (activeTab === 'structure' || activeTab === 'publication')) {
       setActiveTab('title-matter');
     }
   }, [activeTab, structure.kind]);
@@ -153,6 +155,11 @@ export function VolumeFrontMatterEditor({
         </div>
 
         <div className="omi-volume-workspace-tabs" role="tablist" aria-label={copy.title}>
+          {structure.kind === 'volume' ? <button type="button" role="tab"
+            aria-selected={activeTab === 'publication'} aria-controls="omi-volume-publication-panel"
+            className={activeTab === 'publication' ? 'is-active' : ''} onClick={() => setActiveTab('publication')}>
+            {getPublicationMatterCopy(locale).title}
+          </button> : null}
           <button
             type="button"
             role="tab"
@@ -188,7 +195,7 @@ export function VolumeFrontMatterEditor({
         </div>
       </div>
 
-      {activeTab === 'title-matter' ? (
+      {activeTab === 'publication' ? <div id="omi-volume-publication-panel" role="tabpanel"><PublicationMatterEditor /></div> : activeTab === 'title-matter' ? (
         <header
           id="omi-title-matter-panel"
           role="tabpanel"

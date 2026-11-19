@@ -1,3 +1,11 @@
+## Unreleased — Publication covers and title pages
+
+- Add a separate volume/journal-issue workspace for four cover sides and four
+  title-matter pages, with independent rich text, artwork and appearance.
+- Preserve drafts and cover assets through OMI save/reopen and revision history;
+  include enabled pages before/after publication HTML and PDF content. Existing
+  manuscripts and editorial PDFs remain unchanged. See [page-editor details](docs/publication-covers-title-pages.md).
+
 ## Unreleased — Shared header formatting
 
 - Provide one header formatting panel for the active main-text or note editor.

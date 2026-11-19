@@ -1,4 +1,5 @@
-import type { OmiBlock, OmiImageBlockData, OmiSection } from '../types/omi';
+import type { OmiBlock, OmiImageBlockData, OmiSection, OmiManuscriptState } from '../types/omi';
+import { publicationMatterAssetIds } from './publicationMatter';
 import { walkManuscriptStructure } from './manuscriptTreeTraversal';
 import type { OmiAsset, OmiAssetRole } from '../types/assets';
 
@@ -195,4 +196,9 @@ function extensionForMediaType(mediaType: string): string {
     case 'application/pdf': return '.pdf';
     default: return '.bin';
   }
+}
+
+/** All working-document resources, including unpublished cover/title pages. */
+export function collectReferencedManuscriptAssetIds(manuscript: Pick<OmiManuscriptState, 'sections' | 'extensions'>): Set<string> {
+  return new Set([...collectReferencedAssetIdsInSections(manuscript.sections), ...publicationMatterAssetIds(manuscript)]);
 }

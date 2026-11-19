@@ -1,4 +1,4 @@
-import { collectReferencedAssetIdsInSections, sha256Hex } from '../model/assets';
+import { collectReferencedManuscriptAssetIds, sha256Hex } from '../model/assets';
 import { mapManuscriptBlocks } from '../model/manuscriptTreeTraversal';
 import { isValidLinearRevisionHistory } from '../model/versioning';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
@@ -592,7 +592,7 @@ async function collectImportedAssets(
 ): Promise<OmiContainerImportedAsset[]> {
   const assets = manuscript.assets ?? [];
   const assetMap = new Map(assets.map((asset) => [asset.id, asset]));
-  const referenced = collectReferencedAssetIdsInSections(manuscript.sections);
+  const referenced = collectReferencedManuscriptAssetIds(manuscript);
   const result: OmiContainerImportedAsset[] = [];
 
   for (const assetId of referenced) {

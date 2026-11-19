@@ -1,4 +1,4 @@
-import { assetPath, collectReferencedAssetIdsInSections, sha256Hex } from '../model/assets';
+import { assetPath, collectReferencedManuscriptAssetIds, sha256Hex } from '../model/assets';
 import { mapManuscriptBlocks } from '../model/manuscriptTreeTraversal';
 import { OMI_FILE_FORMAT_SPECIFICATION } from '../model/omiFormatConstants';
 import { extractManuscriptState } from '../model/versioning';
@@ -73,7 +73,7 @@ export async function buildOmiContainer(
   const diagnostics: OmiContainerDiagnostic[] = [];
   const profile = resolvePublicationProfile(manuscript);
   const assetMap = new Map((manuscript.assets ?? []).map((asset) => [asset.id, asset]));
-  const referencedAssetIds = collectReferencedAssetIdsInSections(manuscript.sections);
+  const referencedAssetIds = collectReferencedManuscriptAssetIds(manuscript);
 
   const assetEntries: PackageEntry[] = [];
   for (const assetId of referencedAssetIds) {
