@@ -152,6 +152,53 @@ test('preserves a paragraph that contains only a footnote reference', async () =
   assert.ok(findNodeTypes(content).includes('omiNote'));
 });
 
+test('preserves rich footnotes and endnotes in both Word import modes and OMI files', async () => {
+  const formatted = `<w:p><w:r><w:footnoteRef/></w:r>
+    <w:r><w:rPr><w:rStyle w:val="NoteEmphasis"/><w:b/></w:rPr><w:t>Styled note</w:t></w:r>
+    <w:r><w:rPr><w:rStyle w:val="NoteEmphasis"/><w:i w:val="0"/></w:rPr><w:t xml:space="preserve"> plain</w:t></w:r>
+    <w:r><w:rPr><w:u w:val="single"/><w:smallCaps/><w:strike/></w:rPr><w:t xml:space="preserve"> underlined</w:t></w:r>
+    <w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:t>2</w:t></w:r>
+    <w:r><w:br/><w:t>New line</w:t><w:tab/><w:t>tab</w:t></w:r>
+    <w:fldSimple w:instr='HYPERLINK "https://source.example/simple"'><w:r><w:t>Simple link</w:t></w:r></w:fldSimple>
+    <w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText>HYPERLINK "https://source.example/complex"</w:instrText></w:r>
+    <w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>Complex link</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>
+    <w:del><w:r><w:delText>Deleted text</w:delText></w:r></w:del>
+    <w:r><w:instrText>HIDDEN INSTRUCTION</w:instrText></w:r>
+    </w:p><w:p><w:hyperlink r:id="note-link"><w:r><w:t>Source link</w:t></w:r></w:hyperlink></w:p>`;
+  const file = makeDocx('<w:p><w:r><w:t>Body</w:t><w:footnoteReference w:id="1"/><w:endnoteReference w:id="2"/></w:r></w:p>', {
+    relationships: '<Relationship Id="note-link" Target="https://wrong-document-link.example/"/>',
+    footnotes: `<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:footnote w:id="1">${formatted}</w:footnote></w:footnotes>`,
+    entries: [
+      textZipEntry('word/styles.xml', '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:styleId="BaseNote"><w:rPr><w:i/></w:rPr></w:style><w:style w:styleId="NoteEmphasis"><w:basedOn w:val="BaseNote"/></w:style></w:styles>'),
+      textZipEntry('word/endnotes.xml', '<w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:endnote w:id="2"><w:p><w:r><w:rPr><w:vertAlign w:val="subscript"/></w:rPr><w:t>End note</w:t></w:r></w:p></w:endnote></w:endnotes>'),
+      textZipEntry('word/_rels/footnotes.xml.rels', '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="note-link" Target="https://source.example/note" TargetMode="External"/></Relationships>'),
+    ],
+  });
+  for (const parse of [parseDocxManuscript, parseDocxMonograph, parseDocxForStudio]) {
+    const plan = await parse(file);
+    assert.equal(plan.annotations.length, 2);
+    const note = plan.annotations.find((item) => item.noteKind === 'footnote')!;
+    const doc = JSON.parse(note.bodyContent!);
+    const textNodes = findNodes(doc, 'text') as Array<{ text: string; marks?: Array<{ type: string; attrs?: Record<string, unknown> }> }>;
+    const marksFor = (text: string) => textNodes.find((item) => item.text === text)?.marks ?? [];
+    assert.deepEqual(marksFor('Styled note').map((mark) => mark.type), ['italic', 'bold']);
+    assert.deepEqual(marksFor(' plain'), []);
+    assert.deepEqual(marksFor(' underlined').map((mark) => mark.type), ['omiUnderline', 'strike', 'omiSmallCaps']);
+    assert.equal(marksFor('2')[0]?.type, 'omiSuperscript');
+    assert.deepEqual(marksFor('Source link'), [{ type: 'omiLink', attrs: { href: 'https://source.example/note' } }]);
+    assert.deepEqual(marksFor('Simple link'), [{ type: 'omiLink', attrs: { href: 'https://source.example/simple' } }]);
+    assert.deepEqual(marksFor('Complex link'), [{ type: 'omiLink', attrs: { href: 'https://source.example/complex' } }]);
+    assert.equal(doc.content.length, 2);
+    assert.ok(findNodeTypes(doc).includes('hardBreak'));
+    assert.match(note.body, /New line\ttabSimple linkComplex link\nSource link$/);
+    assert.doesNotMatch(note.body, /Deleted|HIDDEN/);
+    assert.equal(JSON.parse(plan.annotations.find((item) => item.noteKind === 'endnote')!.bodyContent!).content[0].content[0].marks[0].type, 'omiSubscript');
+    const manuscript = { ...useStudioStore.getState().manuscript, title: plan.title, sections: plan.sections, annotations: plan.annotations };
+    const restored = parseOmiJson(serializeOmiJson(manuscript));
+    assert.equal(restored.annotations[0]?.bodyContent, note.bodyContent);
+  }
+});
+
 test('keeps Word footnote IDs and marker order across an XE field', async () => {
   const file = makeDocx(`
     <w:p>

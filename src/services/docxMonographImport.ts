@@ -1,3 +1,4 @@
+import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
 import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
 import {
   createEmptyDocxImportStats,
@@ -81,12 +82,7 @@ export async function parseDocxMonograph(
   const relationships = archive.has('word/_rels/document.xml.rels')
     ? parseRelationships(await archive.text('word/_rels/document.xml.rels'))
     : new Map<string, Relationship>();
-  const footnotes = archive.has('word/footnotes.xml')
-    ? parseNotes(await archive.text('word/footnotes.xml'), 'footnote')
-    : new Map<string, string>();
-  const endnotes = archive.has('word/endnotes.xml')
-    ? parseNotes(await archive.text('word/endnotes.xml'), 'endnote')
-    : new Map<string, string>();
+  const { footnotes, endnotes } = await readDocxNotes(archive);
   const core = archive.has('docProps/core.xml')
     ? parseCoreProperties(await archive.text('docProps/core.xml'))
     : {};
@@ -281,8 +277,8 @@ export async function parseDocxMonograph(
 function parseInline(
   paragraphXml: string,
   blockId: string,
-  footnotes: ReadonlyMap<string, string>,
-  endnotes: ReadonlyMap<string, string>,
+  footnotes: ReadonlyMap<string, ImportedNoteBody>,
+  endnotes: ReadonlyMap<string, ImportedNoteBody>,
   annotations: OmiAnnotation[],
   relationships: ReadonlyMap<string, Relationship>,
   stats: ReturnType<typeof createEmptyDocxImportStats>,
@@ -300,10 +296,10 @@ function parseInline(
     const runs = hyperlink ? Array.from(token.matchAll(/<w:r\b[\s\S]*?<\/w:r>/gi), (item) => item[0]) : [token];
     for (const run of runs) {
       if (/<w:instrText\b/i.test(run)) continue;
-      const noteMatch = /<w:(footnoteReference|endnoteReference)\b[^>]*\bw:id="(-?\d+)"[^>]*\/?\s*>/i.exec(run);
-      if (noteMatch?.[2] && Number(noteMatch[2]) >= 1) {
+      for (const noteMatch of run.matchAll(/<w:(footnoteReference|endnoteReference)\b[^>]*\bw:id="(-?\d+)"[^>]*\/?\s*>/gi)) {
+        if (!noteMatch[2] || Number(noteMatch[2]) < 1) continue;
         const noteKind = noteMatch[1] === 'endnoteReference' ? 'endnote' : 'footnote';
-        const body = (noteKind === 'endnote' ? endnotes : footnotes).get(noteMatch[2]) ?? '';
+        const noteBody = (noteKind === 'endnote' ? endnotes : footnotes).get(noteMatch[2]);
         const annotationId = `note-${crypto.randomUUID()}`;
         const anchorId = `anchor-${crypto.randomUUID()}`;
         annotations.push({
@@ -312,7 +308,8 @@ function parseInline(
           noteKind,
           anchorId,
           targetBlockId: blockId,
-          body,
+          body: noteBody?.body ?? '',
+          ...(noteBody ? { bodyContent: noteBody.bodyContent } : {}),
           renderingHint: noteKind,
           createdAt: new Date().toISOString(),
           modifiedAt: new Date().toISOString(),
@@ -433,18 +430,6 @@ function parseRelationships(xml: string): Map<string, Relationship> {
       target: decodeXml(target),
       targetMode: /\bTargetMode="([^"]+)"/i.exec(attrs)?.[1],
     });
-  }
-  return result;
-}
-
-function parseNotes(xml: string, localName: 'footnote' | 'endnote'): Map<string, string> {
-  const result = new Map<string, string>();
-  const pattern = new RegExp(`<w:${localName}\\b([^>]*)>([\\s\\S]*?)<\\/w:${localName}>`, 'gi');
-  for (const match of xml.matchAll(pattern)) {
-    const id = /\bw:id="(-?\d+)"/i.exec(match[1] ?? '')?.[1];
-    if (!id || Number(id) < 0) continue;
-    const text = extractVisibleText(match[2] ?? '').trim();
-    if (text) result.set(id, text);
   }
   return result;
 }

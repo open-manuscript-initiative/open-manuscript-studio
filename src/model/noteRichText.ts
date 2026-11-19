@@ -138,6 +138,7 @@ function textFromNode(node: NoteJsonNode): string {
     return typeof label === 'string' ? label : '';
   }
   if (node.type === 'hardBreak') return '\n';
+  if (node.type === 'omiTab') return '\t';
   const separator = node.type === 'paragraph' || node.type === 'blockquote' ? '\n' : '';
   return (node.content ?? []).map(textFromNode).join('') + separator;
 }

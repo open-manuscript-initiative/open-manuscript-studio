@@ -3,7 +3,8 @@ import { DOMParser as XmlParser, type Document as XmlDocument, type Element as X
 import { materializeSectionHeadingBlocks } from '../model/atomicTextBlocks';
 import { createNoteAnnotation } from '../model/notes';
 import { createImageBlock, createTableBlock } from '../model/visualBlocks';
-import { normalizeInlineLanguageTag } from '../model/richText';
+import { noteBodyPlainText, type NoteJsonNode } from '../model/noteRichText';
+import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import { withParentSectionId } from '../model/sectionStructure';
 import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection } from '../types/omi';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
@@ -26,8 +27,13 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
   if (!textRoot) throw new Error('The ODT package does not contain an office:text document body.');
   const metadata = zip.has('meta.xml') ? parseMetadata(parseXml(await zip.text('meta.xml'))) : {};
   const listStyleTypes = new Map<string, boolean>();
+  const textStyles = new Map<string, XmlElement>();
   for (const part of ['styles.xml', 'content.xml']) if (zip.has(part)) {
     const styleDoc = part === 'content.xml' ? contentDoc : parseXml(await zip.text(part));
+    for (const style of descendants(documentElement(styleDoc), 'style')) {
+      const name = style.getAttribute('style:name');
+      if (name) textStyles.set(name, style);
+    }
     for (const style of descendants(documentElement(styleDoc), 'list-style')) {
       const name = style.getAttribute('style:name') ?? style.getAttribute('text:name') ?? '';
       if (name) listStyleTypes.set(name, descendants(style, 'list-level-style-number').length > 0);
@@ -73,7 +79,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
     if (child.localName === 'list') {
       const blockId = crypto.randomUUID();
       const ordered = listStyleTypes.get(child.getAttribute('text:style-name') ?? '') ?? false;
-      const nodes = parseOdtList(child, ordered, blockId, annotations, stats, provenance, warnings, listStyleTypes);
+      const nodes = parseOdtList(child, ordered, blockId, annotations, stats, provenance, warnings, listStyleTypes, textStyles);
       if (nodes.length) {
         ensureSection(sections).blocks.push({ id: blockId, type: 'paragraph', content: JSON.stringify({ type: 'doc', content: nodes }) });
         stats.paragraphs += countListParagraphs(nodes);
@@ -98,7 +104,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
     }
     const section = ensureSection(sections);
     const blockId = crypto.randomUUID();
-    const inline = parseInlineChildren(child, blockId, annotations, stats, provenance, warnings);
+    const inline = parseInlineChildren(child, blockId, annotations, stats, provenance, warnings, textStyles, listStyleTypes);
     if (inline.length) {
       section.blocks.push({ id: blockId, type: 'paragraph', content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: inline }] }) });
       stats.paragraphs += 1;
@@ -137,13 +143,13 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
   };
 }
 
-function parseInlineChildren(root: XmlElement, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[]): Array<Record<string, unknown>> {
+function parseInlineChildren(root: XmlElement, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[], textStyles: Map<string, XmlElement>, listStyleTypes: Map<string, boolean>): Array<Record<string, unknown>> {
   const output: Array<Record<string, unknown>> = [];
   const visit = (node: XmlNode, marks: Array<{ type: string; attrs?: Record<string, unknown> }> = []): void => {
     if (node.nodeType === 3) { if (node.nodeValue) output.push({ type: 'text', text: node.nodeValue, ...(marks.length ? { marks } : {}) }); return; }
     if (node.nodeType !== 1) return;
     const element = node as XmlElement;
-    const next = [...marks];
+    let next = [...marks];
     if (element.localName === 'span') {
       const style = (element.getAttribute('text:style-name') ?? '').toLowerCase();
       if (/bold|strong|félkövér/.test(style)) next.push({ type: 'bold' });
@@ -151,9 +157,10 @@ function parseInlineChildren(root: XmlElement, blockId: string, annotations: Omi
       if (/underline/.test(style)) next.push({ type: 'omiUnderline' });
       if (/strike/.test(style)) next.push({ type: 'strike' });
     }
+    next = applyOdtTextStyle(element.getAttribute('text:style-name') ?? '', textStyles, next);
     if (element.localName === 'a') {
-      const href = element.getAttribute('xlink:href') ?? '';
-      if (/^(https?:|mailto:|#)/i.test(href)) next.push({ type: 'link', attrs: { href } });
+      const href = normalizeExternalHref(element.getAttribute('xlink:href') ?? undefined);
+      if (href) next.push({ type: 'omiLink', attrs: { href } });
     }
     if (element.localName === 'line-break') { output.push({ type: 'hardBreak' }); return; }
     if (element.localName === 'tab') { output.push({ type: 'omiTab' }); return; }
@@ -161,21 +168,26 @@ function parseInlineChildren(root: XmlElement, blockId: string, annotations: Omi
       const noteId = crypto.randomUUID();
       const anchorId = crypto.randomUUID();
       const body = element.getElementsByTagNameNS('*', 'note-body').item(0);
-      const bodyText = body ? plainText(body).trim() : '';
+      const bodyContent: NoteJsonNode = { type: 'doc', content: body ? Array.from(body.children).flatMap((paragraph) => {
+        if (paragraph.localName === 'list') return parseOdtList(paragraph, listStyleTypes.get(paragraph.getAttribute('text:style-name') ?? '') ?? false, blockId, annotations, stats, provenance, warnings, listStyleTypes, textStyles) as NoteJsonNode[];
+        if (paragraph.localName !== 'p' && paragraph.localName !== 'h') return [];
+        return [{ type: 'paragraph', content: parseInlineChildren(paragraph, blockId, annotations, stats, provenance, warnings, textStyles, listStyleTypes) as NoteJsonNode[] }];
+      }) : [{ type: 'paragraph' }] };
+      const bodyText = noteBodyPlainText(bodyContent);
       const kind = element.getAttribute('text:note-class') === 'endnote' ? 'endnote' : 'footnote';
-      annotations.push(createNoteAnnotation({ id: noteId, anchorId, targetBlockId: blockId, kind, body: bodyText }));
+      annotations.push({ ...createNoteAnnotation({ id: noteId, anchorId, targetBlockId: blockId, kind, body: bodyText }), bodyContent: JSON.stringify(bodyContent) });
       output.push({ type: 'omiNote', attrs: { noteId, anchorId, label: String(annotations.length), noteType: kind } });
       stats.notes += 1;
       return;
     }
     for (const child of Array.from(element.childNodes)) visit(child, next);
   };
-  for (const child of Array.from(root.childNodes)) visit(child);
+  for (const child of Array.from(root.childNodes)) visit(child, applyOdtTextStyle(root.getAttribute('text:style-name') ?? '', textStyles, []));
   void provenance; void warnings;
   return output;
 }
 
-function parseOdtList(root: XmlElement, ordered: boolean, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[], listStyleTypes: Map<string, boolean>): Array<Record<string, unknown>> {
+function parseOdtList(root: XmlElement, ordered: boolean, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[], listStyleTypes: Map<string, boolean>, textStyles: Map<string, XmlElement>): Array<Record<string, unknown>> {
   const listItems = Array.from(root.children).filter((node) => node.localName === 'list-item' || node.localName === 'list-header');
   if (!listItems.length) return [];
   return [{
@@ -183,10 +195,10 @@ function parseOdtList(root: XmlElement, ordered: boolean, blockId: string, annot
     content: listItems.map((item) => ({
       type: 'listItem',
       content: Array.from(item.children).flatMap((child) => {
-        if (child.localName === 'p' || child.localName === 'h') return [{ type: 'paragraph', content: parseInlineChildren(child, blockId, annotations, stats, provenance, warnings) }];
+        if (child.localName === 'p' || child.localName === 'h') return [{ type: 'paragraph', content: parseInlineChildren(child, blockId, annotations, stats, provenance, warnings, textStyles, listStyleTypes) }];
         if (child.localName === 'list') {
           const styleName = child.getAttribute('text:style-name') ?? '';
-          return parseOdtList(child, listStyleTypes.get(styleName) ?? false, blockId, annotations, stats, provenance, warnings, listStyleTypes);
+          return parseOdtList(child, listStyleTypes.get(styleName) ?? false, blockId, annotations, stats, provenance, warnings, listStyleTypes, textStyles);
         }
         return [];
       }),
@@ -212,6 +224,40 @@ function countListNodes(nodes: Array<Record<string, unknown>>): number {
     for (const child of item.content ?? []) walk(child);
   };
   nodes.forEach(walk); return count;
+}
+
+function applyOdtTextStyle(
+  name: string,
+  styles: Map<string, XmlElement>,
+  inherited: Array<{ type: string; attrs?: Record<string, unknown> }>,
+  visited = new Set<string>(),
+): Array<{ type: string; attrs?: Record<string, unknown> }> {
+  if (!name || visited.has(name)) return inherited;
+  visited.add(name);
+  const style = styles.get(name);
+  if (!style) return inherited;
+  let marks = applyOdtTextStyle(style.getAttribute('style:parent-style-name') ?? '', styles, inherited, visited);
+  const properties = Array.from(style.children).find((item) => item.localName === 'text-properties');
+  if (!properties) return marks;
+  for (const [attribute, type, enabled] of [
+    ['fo:font-weight', 'bold', /^(?:bold|[6-9]00)$/i],
+    ['fo:font-style', 'italic', /^(?:italic|oblique)$/i],
+    ['fo:font-variant', 'omiSmallCaps', /^small-caps$/i],
+    ['style:text-underline-style', 'omiUnderline', /^(?!none$).+/i],
+    ['style:text-line-through-style', 'strike', /^(?!none$).+/i],
+  ] as const) {
+    const value = properties.getAttribute(attribute);
+    if (!value) continue;
+    marks = marks.filter((mark) => mark.type !== type);
+    if (enabled.test(value)) marks.push({ type });
+  }
+  const position = properties.getAttribute('style:text-position');
+  if (position) {
+    marks = marks.filter((mark) => !['omiSuperscript', 'omiSubscript'].includes(mark.type));
+    if (/^super\b/.test(position) || parseFloat(position) > 0) marks.push({ type: 'omiSuperscript' });
+    else if (/^sub\b/.test(position) || parseFloat(position) < 0) marks.push({ type: 'omiSubscript' });
+  }
+  return [...new Map(marks.map((mark) => [mark.type, mark])).values()];
 }
 
 function parseMetadata(doc: XmlDocument): { title?: string; creator?: string; language?: string; abstract?: string; keywords?: string[] } {
