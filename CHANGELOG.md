@@ -1,3 +1,16 @@
+## Unreleased — Publication editor, cover frames and spine
+
+- Save numeric measurements only after actual input in the current unit; unit/focus changes cannot write an outdated displayed value back to frame geometry.
+- Keep selected frame handles above overlapping artwork without changing its saved layer order. Give publication selectors unambiguous accessible labels and update browser navigation checks for the Publishing workspace.
+- Move cover/title-matter typography out of the author-facing volume metadata into Publishing → Publication editor. Provide integrated content and cover workspaces, preserve the active manuscript canvas, and retain mobile cover editing.
+- Rename the live publication editor to Publication editor throughout navigation and controls; share measurement units and layer-order tools with the content-frame inspector.
+- Choose millimetres, picas or DTP points for cover/title-matter frame and image measurements, page padding and spine width; remember the device preference and preserve physical dimensions across unit changes.
+- Reorder overlapping frames one layer at a time or by exact layer number, as well as bringing them to the front/back; retain the same stacking order in OMI and HTML/PDF output.
+- Add rich text and image frames to covers, title-matter pages and the spine, with independent frame geometry, shapes, fill, stroke and stacking order.
+- Keep image dimensions, offsets, proportions and rotation separate from their clipping frame; support upload, clipboard image files and drag-and-drop.
+- Set the spine width and rotate its text frames. An enabled spine combines the outside back cover, spine and outside front cover into one correctly sized HTML/PDF cover spread.
+- Retain frame drafts and image assets through OMI save/reopen and revision history; include the same rich text, shapes and image transforms in HTML/PDF output.
+
 ## Unreleased — Rich notes in live publication pages
 
 - Render stored footnote/endnote formatting in the live print and HTML layouts,

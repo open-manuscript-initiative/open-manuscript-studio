@@ -1434,7 +1434,7 @@ function cssPixel(value: number): string {
 function canvasCopy(locale: string): PublicationCanvasCopy {
   if (locale === 'hu') {
     return {
-      editor: 'Élő kiadványszerkesztő',
+      editor: 'Kiadványszerkesztő',
       printDescription: 'A kézirat tartalma és a nyomtatási stílus ugyanazon a szerkeszthető oldalon látható.',
       htmlDescription: 'A szemantikus HTML5-kiadvány folyamatos, reszponzív nézete közvetlenül szerkeszthető.',
       view: 'Vizuális szerkesztő nézete',
@@ -1456,7 +1456,7 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
   }
   if (locale === 'de') {
     return {
-      editor: 'Live-Publikationseditor',
+      editor: 'Publikationseditor',
       printDescription: 'Manuskriptinhalt und Druckstil erscheinen gemeinsam auf einer bearbeitbaren Seite.',
       htmlDescription: 'Die fortlaufende, responsive Ansicht der semantischen HTML5-Publikation ist direkt bearbeitbar.',
       view: 'Ansicht des visuellen Editors',
@@ -1477,7 +1477,7 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
     };
   }
   return {
-    editor: 'Live publication editor',
+    editor: 'Publication editor',
     printDescription: 'Manuscript content and print styling appear together on the same editable page.',
     htmlDescription: 'The continuous, responsive semantic HTML5 publication view is directly editable.',
     view: 'Visual editor view',

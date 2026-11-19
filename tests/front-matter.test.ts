@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createPublicationMatterFrame, fitPublicationMatterImage, matterFrameBoxStyle, matterImageStyle, reorderPublicationMatterFrame, resizePublicationMatterImage } from '../src/model/publicationMatterFrames.ts';
+import { PUBLICATION_MEASUREMENT_UNITS, formatPublicationMeasurement, isPublicationMeasurementUnit, parsePublicationMeasurement, publicationMeasurementFromMm, publicationMeasurementToMm } from '../src/model/publicationMeasurementUnits.ts';
+import { frameGraphicTransform } from '../src/model/publicationFramePages.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 import { createDocumentStructureProfile } from '../src/model/documentProfile.ts';
 import { createPublicationMatter, getPublicationMatter, PUBLICATION_MATTER_EXTENSION, PUBLICATION_MATTER_PAGES, publicationMatterPages, validatePublicationMatter } from '../src/model/publicationMatter.ts';
@@ -68,14 +71,14 @@ test('publication pages stay independent, opt in individually and keep canonical
   manuscript.documentStructure = createDocumentStructureProfile('volume');
   manuscript.titleMatter = { halfTitle: 'Short title', publisherName: 'Example Press', colophon: 'Edited independently' };
   const model = createPublicationMatter(manuscript);
-  assert.equal(model.pages.length, 8);
+  assert.equal(model.pages.length, 9);
   assert.ok(model.pages.every((page) => !page.enabled));
   assert.match(model.pages.find((page) => page.kind === 'half-title')!.content, /Short title/);
   const sectionsBefore = JSON.stringify(manuscript.sections);
-  model.pages.forEach((page) => { page.enabled = true; });
+  model.pages.forEach((page) => { page.enabled = page.kind !== 'spine'; });
   model.pages.reverse();
   manuscript.extensions = { [PUBLICATION_MATTER_EXTENSION]: model };
-  assert.deepEqual([...publicationMatterPages(manuscript, 'before'), ...publicationMatterPages(manuscript, 'after')].map((page) => page.kind), [...PUBLICATION_MATTER_PAGES]);
+  assert.deepEqual([...publicationMatterPages(manuscript, 'before'), ...publicationMatterPages(manuscript, 'after')].map((page) => page.kind), PUBLICATION_MATTER_PAGES.filter((kind) => kind !== 'spine'));
   const html = renderHtmlArticle(manuscript).html;
   assert.ok(html.indexOf('data-publication-matter="front-cover"') < html.indexOf('<article class="omi-scholarly-article"'));
   assert.ok(html.indexOf('data-publication-matter="inside-back-cover"') > html.indexOf('</article>'));
@@ -146,6 +149,11 @@ test('publisher-styled covers follow the selected trim size', async () => {
     style, identity: clonePublicationPublisherTemplate(),
   });
   assert.match(html, /@page omi_publication_matter \{ size:148mm 210mm/);
+  model.pages.find((page) => page.kind === 'spine')!.enabled = true;
+  model.spineWidthMm = 12;
+  const spreadHtml = await renderStyleBasedHtml(manuscript, resolvePublicationProfile(manuscript), 'html', { style, identity: clonePublicationPublisherTemplate() });
+  assert.ok(spreadHtml.includes('@page omi_publication_cover { size:308mm 210mm'));
+
 });
 
 test('publication-page validation rejects duplicate slots, invalid styles and scholarly anchor nodes', () => {
@@ -159,4 +167,227 @@ test('publication-page validation rejects duplicate slots, invalid styles and sc
   assert.throws(() => validatePublicationMatter(anchor));
   manuscript.extensions = { [PUBLICATION_MATTER_EXTENSION]: anchor };
   assert.throws(() => serializeOmiJson(manuscript));
+});
+
+
+test('page-frame and image transforms remain independent, with contain/cover and proportion controls', () => {
+  const frame = createPublicationMatterFrame('graphic', 200, 300);
+  frame.widthMm = 100; frame.heightMm = 80;
+  frame.graphicTransform = frameGraphicTransform(frame, 2);
+  const contained = fitPublicationMatterImage(frame, 'contain');
+  assert.deepEqual([contained.widthMm, contained.heightMm, contained.offsetXMm, contained.offsetYMm], [100, 50, 0, 15]);
+  const covered = fitPublicationMatterImage(frame, 'cover');
+  assert.deepEqual([covered.widthMm, covered.heightMm, covered.offsetXMm, covered.offsetYMm], [160, 80, -30, 0]);
+  const before = structuredClone(frame);
+  frame.xMm = 40; frame.widthMm = 90; frame.rotation = 30;
+  assert.deepEqual(frame.graphicTransform, before.graphicTransform);
+  const box = matterFrameBoxStyle(frame, 200, 300);
+  assert.equal(box.left, '20%'); assert.equal(box.width, '45%'); assert.equal(box.transform, 'rotate(30deg)');
+  const geometry = [frame.xMm, frame.yMm, frame.widthMm, frame.heightMm, frame.rotation];
+  frame.graphicTransform = { ...contained, offsetXMm: -12, rotation: -20 };
+  assert.equal(matterImageStyle(frame).transform, 'rotate(-20deg)');
+  assert.deepEqual([frame.xMm, frame.yMm, frame.widthMm, frame.heightMm, frame.rotation], geometry);
+  const proportional = resizePublicationMatterImage(contained, 'widthMm', 200);
+  assert.deepEqual([proportional.widthMm, proportional.heightMm], [200, 100]);
+  const stretched = resizePublicationMatterImage({ ...contained, keepAspectRatio: false }, 'heightMm', 120);
+  assert.deepEqual([stretched.widthMm, stretched.heightMm], [100, 120]);
+  const bounded = resizePublicationMatterImage({ ...contained, widthMm: 100, heightMm: 1000 }, 'widthMm', 20000);
+  assert.deepEqual([bounded.widthMm, bounded.heightMm], [2000, 20000]);
+  assert.throws(() => resizePublicationMatterImage(contained, 'widthMm', NaN));
+});
+
+test('rich title-page frames render with shapes, independent transforms and ordered layers', () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.documentStructure = createDocumentStructureProfile('volume');
+  const model = createPublicationMatter(manuscript), page = model.pages[4]!;
+  page.enabled = true;
+  const text = createPublicationMatterFrame('text', 210, 297);
+  Object.assign(text, { id: 'title-text', xMm: 21, yMm: 29.7, widthMm: 105, heightMm: 59.4, rotation: 15, shape: 'ellipse' });
+  text.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'A <Title> & author', marks: [{ type: 'italic' }, { type: 'omiSmallCaps' }] }] }] });
+  const graphic = createPublicationMatterFrame('graphic', 210, 297);
+  graphic.id = 'title-image'; graphic.image = { assetId: 'missing-artwork', alt: 'Logo' };
+  graphic.shape = 'polygon'; graphic.points = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 100 }];
+  graphic.graphicTransform = { ...frameGraphicTransform(graphic, 2), offsetXMm: -8, rotation: -25 };
+  page.frames = [graphic, text];
+  manuscript.extensions = { [PUBLICATION_MATTER_EXTENSION]: model };
+  const sectionsBefore = JSON.stringify(manuscript.sections);
+  const result = renderHtmlArticle(manuscript);
+  assert.ok(result.html.includes('<em>A &lt;Title&gt; &amp; author</em>'));
+  assert.ok(result.html.includes('font-variant:small-caps'));
+  assert.ok(result.html.includes('left:10%;top:10%;width:50%;height:20%;transform:rotate(15deg)'));
+  assert.ok(result.html.includes('clip-path:ellipse(50% 50% at 50% 50%)'));
+  assert.ok(result.html.includes('clip-path:polygon(evenodd, 0% 0%, 100% 0%, 50% 100%)'));
+  assert.ok(result.html.indexOf('data-matter-frame-id="title-image"') < result.html.indexOf('data-matter-frame-id="title-text"'));
+  assert.ok(result.diagnostics.some((item) => item.code === 'publication-matter-frame-image-missing' && item.targetId === graphic.id));
+  assert.equal(JSON.stringify(manuscript.sections), sectionsBefore);
+  assert.deepEqual(getPublicationMatter(parseOmiJson(serializeOmiJson(manuscript))), model);
+  assert.throws(() => buildPdfPrintDocument(manuscript), /missing or unsupported/);
+  delete graphic.image;
+  assert.ok(buildPdfPrintDocument(manuscript).includes('data-matter-frame-id="title-text"'));
+  assert.equal(buildPdfPrintDocument(manuscript, undefined, 'print', 'editorial').includes('data-matter-frame-id='), false);
+  page.enabled = false;
+  assert.equal(renderHtmlArticle(manuscript).html.includes('data-matter-frame-id='), false);
+});
+
+test('frame-only images survive OMI/HTML packaging and self-contained PDF with their independent crop', async () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.documentStructure = createDocumentStructureProfile('volume');
+  const bytes = new Uint8Array([137, 80, 78, 71, 1, 2, 3]);
+  const asset = await createAssetMetadata(bytes, { mediaType: 'image/png', fileName: 'title-frame.png' });
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const model = createPublicationMatter(manuscript), page = model.pages[4]!;
+  page.enabled = true;
+  const frame = createPublicationMatterFrame('graphic', 210, 297);
+  frame.image = { assetId: asset.id, alt: 'Frame image & description' };
+  frame.rotation = 10;
+  frame.graphicTransform = { ...frameGraphicTransform(frame, 2), offsetXMm: -10, rotation: -30 };
+  page.frames = [frame];
+  manuscript.assets = [asset]; manuscript.extensions = { [PUBLICATION_MATTER_EXTENSION]: model };
+  manuscript.updatedAt = '2026-11-19T08:00:00.000Z';
+  Object.assign(manuscript, createInitialVersioningEnvelope(extractManuscriptState(manuscript), { summary: 'Title frame artwork', timestamp: manuscript.updatedAt, completeness: 'complete' }));
+  assert.ok(collectReferencedManuscriptAssetIds(manuscript).has(asset.id));
+  const container = await buildOmiContainer(manuscript);
+  assert.equal(container.validForExport, true, JSON.stringify(container.diagnostics));
+  const imported = await inspectOmiContainer(container.bytes);
+  assert.equal(imported.validForImport, true, JSON.stringify(imported.diagnostics));
+  assert.deepEqual(imported.assets[0]?.bytes, bytes);
+  assert.deepEqual(getPublicationMatter(imported.manuscript!), model);
+  const htmlPackage = await buildHtmlPackage(manuscript);
+  assert.equal(htmlPackage.validForExport, true, JSON.stringify(htmlPackage.diagnostics));
+  assert.ok(htmlPackage.manifest.entries.some((entry) => entry.assetId === asset.id));
+  const pdf = await buildPdfArtifactDocument(manuscript);
+  assert.ok(pdf.includes('src="data:image/png;base64,'));
+  assert.ok(pdf.includes('transform:rotate(10deg)'));
+  assert.ok(pdf.includes('transform:rotate(-30deg)'));
+  assert.ok(pdf.includes('Frame image &amp; description'));
+  page.enabled = false;
+  assert.ok(collectReferencedManuscriptAssetIds(manuscript).has(asset.id));
+});
+
+test('page-frame validation accepts legacy pages and rejects malformed frames and scholarly atoms', () => {
+  const model = createPublicationMatter(createVersionedTestManuscript());
+  assert.doesNotThrow(() => validatePublicationMatter(model));
+  const frame = createPublicationMatterFrame('text', 210, 297);
+  model.pages[0]!.frames = [frame];
+  assert.doesNotThrow(() => validatePublicationMatter(model));
+  const invalid = [
+    { widthMm: NaN }, { xMm: Infinity }, { heightMm: -1 }, { rotation: 361 },
+    { shape: 'script' }, { points: [{ x: 101, y: 0 }, { x: 0, y: 0 }, { x: 1, y: 1 }] },
+    { style: { ...frame.style, fill: 'url(https://example.org)' } },
+    { content: JSON.stringify({ type: 'doc', content: [{ type: 'omiNote' }] }) },
+    { image: { assetId: 'image', alt: '' } },
+  ];
+  for (const patch of invalid) {
+    const next = structuredClone(model);
+    Object.assign(next.pages[0]!.frames![0]!, patch);
+    assert.throws(() => validatePublicationMatter(next), JSON.stringify(patch));
+  }
+  const duplicate = structuredClone(model); duplicate.pages[0]!.frames!.push(structuredClone(frame));
+  assert.throws(() => validatePublicationMatter(duplicate));
+  const graphic = createPublicationMatterFrame('graphic', 210, 297);
+  model.pages[0]!.frames = [graphic];
+  for (const transform of [null, { ...frameGraphicTransform(graphic), rotation: Infinity }, { ...frameGraphicTransform(graphic), widthMm: 0 }]) {
+    const next = structuredClone(model); Object.assign(next.pages[0]!.frames![0]!, { graphicTransform: transform });
+    assert.throws(() => validatePublicationMatter(next));
+  }
+});
+
+
+test('an enabled spine joins the exterior covers into one correctly sized printable spread', () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.documentStructure = createDocumentStructureProfile('volume');
+  const model = createPublicationMatter(manuscript);
+  model.spineWidthMm = 18;
+  const front = model.pages.find((page) => page.kind === 'front-cover')!;
+  const back = model.pages.find((page) => page.kind === 'back-cover')!;
+  const spine = model.pages.find((page) => page.kind === 'spine')!;
+  for (const page of [front, back, spine]) page.enabled = true;
+  const frame = createPublicationMatterFrame('text', model.spineWidthMm, 297);
+  frame.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'A rotated spine title' }] }] });
+  assert.equal(frame.rotation, 90);
+  frame.rotation = -90;
+  spine.frames = [frame];
+  manuscript.extensions = { [PUBLICATION_MATTER_EXTENSION]: model };
+  validatePublicationMatter(model);
+  const result = renderHtmlArticle(manuscript).html;
+  assert.ok(result.includes('@page omi_publication_cover { size:438mm 297mm'));
+  assert.ok(result.includes('data-spine-width-mm="18" style="width:438mm;height:297mm"'));
+  assert.ok(result.indexOf('data-publication-matter="back-cover"') < result.indexOf('data-publication-matter="spine"'));
+  assert.ok(result.indexOf('data-publication-matter="spine"') < result.indexOf('data-publication-matter="front-cover"'));
+  assert.equal((result.match(/data-publication-matter="back-cover"/g) ?? []).length, 1);
+  assert.ok(result.includes('width:18mm;min-height:297mm;position:absolute;left:210mm'));
+  assert.ok(result.includes('position:absolute;left:228mm'));
+  assert.ok(result.includes('transform:rotate(-90deg)'));
+  assert.ok(buildPdfPrintDocument(manuscript).includes('data-spine-width-mm="18"'));
+  assert.deepEqual(getPublicationMatter(parseOmiJson(serializeOmiJson(manuscript))), model);
+  const geometry = structuredClone(frame);
+  model.spineWidthMm = 8;
+  assert.deepEqual(frame, geometry);
+  assert.ok(renderHtmlArticle(manuscript).html.includes('size:428mm 297mm'));
+  // A disabled outside cover leaves a blank panel instead of leaking its retained draft.
+  back.enabled = false;
+  assert.equal(renderHtmlArticle(manuscript).html.includes('data-publication-matter="back-cover"'), false);
+  assert.ok(renderHtmlArticle(manuscript).html.includes('width:428mm;height:297mm'));
+  spine.enabled = false;
+  assert.equal(renderHtmlArticle(manuscript).html.includes('data-spine-width-mm='), false);
+  assert.throws(() => validatePublicationMatter({ ...model, spineWidthMm: NaN }));
+  assert.throws(() => validatePublicationMatter({ ...model, spineWidthMm: 0 }));
+  assert.throws(() => validatePublicationMatter({ ...model, spineWidthMm: 101 }));
+  const legacy = { ...model, spineWidthMm: undefined, pages: model.pages.filter((page) => page.kind !== 'spine') };
+  assert.doesNotThrow(() => validatePublicationMatter(legacy));
+});
+
+
+test('overlapping frame layers reorder without changing content or geometry and survive OMI/HTML/PDF', () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.documentStructure = createDocumentStructureProfile('volume');
+  const model = createPublicationMatter(manuscript), page = model.pages[4]!;
+  page.enabled = true;
+  const frames = ['Bottom', 'Middle', 'Top'].map((name) => {
+    const frame = createPublicationMatterFrame('text', 210, 297);
+    frame.name = name; frame.xMm = 30; frame.yMm = 40;
+    frame.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: name }] }] });
+    return frame;
+  });
+  const original = structuredClone(frames);
+  page.frames = reorderPublicationMatterFrame(frames, frames[0]!.id, 1);
+  assert.deepEqual(page.frames.map((frame) => frame.name), ['Middle', 'Bottom', 'Top']);
+  page.frames = reorderPublicationMatterFrame(page.frames, frames[2]!.id, 0);
+  assert.deepEqual(page.frames.map((frame) => frame.name), ['Top', 'Middle', 'Bottom']);
+  assert.deepEqual(frames, original);
+  for (const frame of page.frames) assert.deepEqual(frame, original.find((item) => item.id === frame.id));
+  manuscript.extensions = { [PUBLICATION_MATTER_EXTENSION]: model };
+  const restored = parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(getPublicationMatter(restored)!.pages[4]!.frames, page.frames);
+  const layerOrder = (html: string) => [...html.matchAll(/data-matter-frame-id="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(layerOrder(renderHtmlArticle(restored).html), page.frames.map((frame) => frame.id));
+  assert.deepEqual(layerOrder(buildPdfPrintDocument(restored)), page.frames.map((frame) => frame.id));
+  assert.throws(() => reorderPublicationMatterFrame(frames, 'unknown-frame', 0));
+  assert.throws(() => reorderPublicationMatterFrame(frames, frames[0]!.id, frames.length));
+});
+
+
+test('publication measurement units use DTP points and picas with physical round trips', () => {
+  assert.equal(publicationMeasurementToMm(72, 'pt'), 25.4);
+  assert.equal(publicationMeasurementToMm(6, 'pc'), 25.4);
+  assert.ok(Math.abs(publicationMeasurementFromMm(publicationMeasurementToMm(1, 'pc'), 'pt') - 12) < 1e-12);
+  for (const unit of PUBLICATION_MEASUREMENT_UNITS) {
+    assert.equal(isPublicationMeasurementUnit(unit), true);
+    for (const mm of [-20000, -25.4, -0.25, 0, .000001, 1, 12.7, 210, 20000]) {
+      const converted = publicationMeasurementFromMm(mm, unit);
+      assert.ok(Math.abs(publicationMeasurementToMm(converted, unit) - mm) < 1e-10);
+      const displayed = formatPublicationMeasurement(mm, unit);
+      const parsed = parsePublicationMeasurement(displayed, unit, -20000, 20000);
+      assert.ok(parsed !== undefined && Math.abs(parsed - mm) <= Math.max(1, Math.abs(mm)) * 1e-11);
+    }
+  }
+  assert.equal(isPublicationMeasurementUnit('px'), false);
+  assert.equal(isPublicationMeasurementUnit(null), false);
+  assert.equal(parsePublicationMeasurement('6', 'pc', 1, 2000), 25.4);
+  assert.ok(Math.abs(parsePublicationMeasurement('-12', 'pt', -20000, 20000)! + 25.4 / 6) < 1e-12);
+  for (const invalid of ['', ' ', 'not-a-size', 'Infinity', 'NaN', '-1', '100000']) {
+    assert.equal(parsePublicationMeasurement(invalid, 'pc', 1, 2000), undefined);
+  }
+  assert.equal(parsePublicationMeasurement(formatPublicationMeasurement(1, 'pc'), 'pc', 1, 2000), 1);
+  assert.equal(parsePublicationMeasurement('0.0000001', 'mm', .000001, 20000), undefined);
 });

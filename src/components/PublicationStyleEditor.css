@@ -1991,3 +1991,13 @@
 .publication-page-note-label {
   top: 0;
 }
+
+.publication-workspace-tabs { display:flex; flex-wrap:wrap; gap:.4rem; padding:.5rem; }
+.publication-workspace-tabs button { min-height:2.5rem; padding:.45rem .7rem; border:1px solid #c5bfb5; border-radius:.35rem; background:#fff; color:inherit; font:inherit; }
+.publication-workspace-tabs button[aria-selected="true"] { background:#f6ecee; border-color:#6d2130; }
+.publication-style-editor-layout[hidden] { display:none; }
+.publication-style-editor > .publication-matter-workspace { flex:1; min-height:0; overflow:auto; }
+
+.publication-frame-inspector-actions { gap:.6rem; flex-wrap:wrap; }
+.publication-frame-inspector-actions > label { display:flex; align-items:center; gap:.4rem; font-size:.85rem; }
+.publication-frame-inspector-actions select { min-height:2.4rem; padding:.3rem; border:1px solid #c5bfb5; border-radius:.35rem; background:#fff; color:inherit; font:inherit; }

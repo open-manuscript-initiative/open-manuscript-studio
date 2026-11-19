@@ -16,7 +16,7 @@ Document opening, Settings and Tools remain available in every role.
 | Scientific reviewer | Notes, references, editorial tasks, history |
 | Translator | Translation workspaces, notes, references, history |
 | Language reviewer | Manuscript data, notes, references, validation, editorial tasks |
-| Layout editor | Live publication editor, publication profile, validation |
+| Layout editor | Publication editor, publication profile, validation |
 
 ## Opening from OJS or OMP
 

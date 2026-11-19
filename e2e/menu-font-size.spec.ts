@@ -73,14 +73,14 @@ for (const layout of ['dashboard', 'sidebar'] as const) {
   });
 }
 
-test('interface text size scales controls and live publication editor chrome but not publication content', async ({ page }) => {
+test('interface text size scales controls and publication editor chrome but not publication content', async ({ page }) => {
   await installMockStudioApi(page);
   await signInToStudio(page);
   await page.getByRole('button', { name: /^New OMI study/ }).click();
 
   const dialog = await openStudioMenu(page);
 
-  await dialog.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Publication editor', exact: true }).click();
   const ribbonButton = dialog.getByRole('button', { name: 'Paragraph styles', exact: true });
   const canvasToolbar = dialog.locator('.publication-document-canvas-toolbar');
   const documentTitle = dialog.locator('.publication-document-title');
@@ -127,7 +127,7 @@ test('interface text size scales controls and live publication editor chrome but
   ).toBeGreaterThan(baselineControlHeight);
 
   await openMenuNavigation(dialog);
-  await dialog.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Publication editor', exact: true }).click();
 
   await expect.poll(async () =>
     ribbonButton.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),

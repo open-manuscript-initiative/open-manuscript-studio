@@ -90,6 +90,18 @@ export function unlinkFrames(layout: PublicationFrameLayout, sourceId: string, s
   for (const frame of frameChain(next, source.nextFrameId)) frame.storyId = newStory.id;
   delete source.nextFrameId; validateFrameLayout(next); return next;
 }
+/** Change paint order only within a frame's page, independently of its story chain. */
+export function reorderFrameLayer(layout: PublicationFrameLayout, id: string, destination: number): PublicationFrameLayout {
+  const selected = layout.frames.find((frame) => frame.id === id);
+  if (!selected) throw new Error('Unknown frame.');
+  const pageFrames = layout.frames.filter((frame) => frame.page === selected.page);
+  if (!Number.isInteger(destination) || destination < 0 || destination >= pageFrames.length) throw new Error('Invalid frame layer.');
+  const source = pageFrames.findIndex((frame) => frame.id === id);
+  pageFrames.splice(destination, 0, pageFrames.splice(source, 1)[0]!);
+  let index = 0;
+  return { ...layout, frames: layout.frames.map((frame) => frame.page === selected.page ? pageFrames[index++]! : frame) };
+}
+
 export function removeFrame(layout: PublicationFrameLayout, id: string): PublicationFrameLayout {
   const next = structuredClone(layout); const removed = next.frames.find((frame) => frame.id === id);
   for (const frame of next.frames) if (frame.nextFrameId === id) frame.nextFrameId = removed?.nextFrameId;

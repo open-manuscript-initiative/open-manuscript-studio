@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   createFrameLayout, DEFAULT_FRAME_STYLE, FRAME_LAYOUT_EXTENSION, flowFrameStories, frameLineIntervals,
-  frameStyle, frameDisplayText, getFrameLayout, linkFrames, RECTANGLE_POINTS, removeFrame, unlinkFrames, validateFrameLayout,
+  frameStyle, frameDisplayText, getFrameLayout, linkFrames, RECTANGLE_POINTS, removeFrame, reorderFrameLayer, unlinkFrames, validateFrameLayout,
   type PublicationFrame, type PublicationFrameLayout,
 } from '../src/model/publicationFrames.ts';
 import { renderFrameDocument } from '../src/services/publicationFrameRendering.ts';
@@ -102,4 +102,31 @@ test('tabs have consistent measured/display width without changing stored story 
   assert.equal(flow.frames[0]!.lines[0]!.text, 'Alpha\tBeta');
   assert.equal(frameDisplayText(flow.frames[0]!.lines[0]!.text), 'Alpha    Beta');
   assert.equal(flow.overflow.length, 0);
+});
+
+
+test('frame layers stay page-local and preserve linked text flow through OMI and print HTML', () => {
+  const layout = linkFrames(fixture(), 'a', 'b');
+  layout.stories[0]!.text = 'A short linked story.';
+  layout.page.count = 2;
+  layout.stories.push({ id: 'other-story', name: 'Other page', text: 'Other page.' });
+  layout.frames.splice(1, 0, { ...frame('other', 'other-story'), page: 1 });
+  const original = structuredClone(layout);
+  const before = flowFrameStories(layout, measure);
+  const reordered = reorderFrameLayer(layout, 'b', 0);
+  assert.deepEqual(reordered.frames.map((frame) => frame.id), ['b', 'other', 'a']);
+  assert.deepEqual(layout, original);
+  assert.deepEqual(reordered.stories, original.stories);
+  for (const item of reordered.frames) assert.deepEqual(item, original.frames.find((frame) => frame.id === item.id));
+  const after = flowFrameStories(reordered, measure);
+  for (const item of before.frames) assert.deepEqual(after.frames.find((frame) => frame.frameId === item.frameId), item);
+  const manuscript = createVersionedTestManuscript();
+  manuscript.extensions = { [FRAME_LAYOUT_EXTENSION]: reordered };
+  const restored = getFrameLayout(parseOmiJson(serializeOmiJson(manuscript)))!;
+  assert.deepEqual(restored, reordered);
+  const html = renderFrameDocument(restored, flowFrameStories(restored, measure), new Map(), 'Layered publication');
+  assert.ok(html.indexOf('data-frame-id="b"') < html.indexOf('data-frame-id="a"'));
+  assert.ok(html.indexOf('data-frame-id="a"') < html.indexOf('data-frame-id="other"'));
+  assert.deepEqual(reorderFrameLayer(reordered, 'b', 1).frames.map((frame) => frame.id), ['a', 'other', 'b']);
+  assert.throws(() => reorderFrameLayer(layout, 'other', 1));
 });

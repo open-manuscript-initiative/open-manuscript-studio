@@ -108,7 +108,7 @@ export function MenuAppearanceSettings() {
           'A kéziratmenü navigációs feliratainak és a menügombok keretének mérete.',
         interfaceLabel: 'Felületi szövegméret',
         interfaceDescription:
-          'Címek, mezőfeliratok, magyarázószövegek, gombok és beviteli mezők mérete a Stúdió minden részén, az élő kiadványszerkesztő kezelőszerveit is beleértve.',
+          'Címek, mezőfeliratok, magyarázószövegek, gombok és beviteli mezők mérete a Stúdió minden részén, az kiadványszerkesztő kezelőszerveit is beleértve.',
         smaller: 'Kisebb',
         larger: 'Nagyobb',
         reset: 'Alapméret',
@@ -125,7 +125,7 @@ export function MenuAppearanceSettings() {
             'Größe der Navigationsbeschriftungen und ihrer Menüschaltflächen.',
           interfaceLabel: 'Oberflächenschriftgröße',
           interfaceDescription:
-            'Überschriften, Feldbezeichnungen, Hilfetexte, Schaltflächen und Eingabefelder in der gesamten Studio-Oberfläche einschließlich der Bedienelemente des Live-Publikationseditors.',
+            'Überschriften, Feldbezeichnungen, Hilfetexte, Schaltflächen und Eingabefelder in der gesamten Studio-Oberfläche einschließlich der Bedienelemente des Publikationseditors.',
           smaller: 'Kleiner',
           larger: 'Größer',
           reset: 'Standardgröße',
@@ -141,7 +141,7 @@ export function MenuAppearanceSettings() {
             'Size of manuscript-menu navigation labels and their button frames.',
           interfaceLabel: 'Interface text size',
           interfaceDescription:
-            'Headings, field labels, explanatory text, buttons and form controls throughout Studio, including the live publication editor controls.',
+            'Headings, field labels, explanatory text, buttons and form controls throughout Studio, including the publication editor controls.',
           smaller: 'Smaller',
           larger: 'Larger',
           reset: 'Default size',

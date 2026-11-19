@@ -1,3 +1,5 @@
+import { usePublicationMeasurementUnit } from './PublicationMeasurementControls';
+import { MatterNumber } from './PublicationMatterControls';
 import { useState } from 'react';
 import { useTranslation } from '../i18n';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
@@ -26,14 +28,14 @@ export function PublicationFramePagePanel({ layout, pageIndex, onChange, onSelec
   const header = current.runningHeader;
   return <fieldset className="omi-frame-page-panel">
     <legend>{copy.pageStyles}</legend>
-    <label>{copy.selectedPage}<select value={pageIndex} onChange={(event) => onSelect(Number(event.target.value))}>{pages.map((page, index) => <option key={page.id} value={index}>{copy.page} {index + 1}</option>)}</select></label>
-    <label>{copy.pageStyle}<select value={current.id} onChange={(event) => { const next = withFramePages(layout); next.pages![pageIndex]!.styleId = event.target.value; onChange(next); }}>{styles.map((style) => <option value={style.id} key={style.id}>{style.name}</option>)}</select></label>
+    <label>{copy.selectedPage}<select aria-label={copy.selectedPage} value={pageIndex} onChange={(event) => onSelect(Number(event.target.value))}>{pages.map((page, index) => <option key={page.id} value={index}>{copy.page} {index + 1}</option>)}</select></label>
+    <label>{copy.pageStyle}<select aria-label={copy.pageStyle} value={current.id} onChange={(event) => { const next = withFramePages(layout); next.pages![pageIndex]!.styleId = event.target.value; onChange(next); }}>{styles.map((style) => <option value={style.id} key={style.id}>{style.name}</option>)}</select></label>
     <button type="button" disabled={styles.length >= 100} onClick={() => {
       const next = withFramePages(layout); const id = crypto.randomUUID();
       next.pageStyles!.push({ ...structuredClone(current), id, name: `${copy.pageStyle} ${styles.length + 1}` });
       next.pages![pageIndex]!.styleId = id; onChange(next); setAddStyle(id);
     }}>{copy.newPageStyle}</button>
-    <label>{copy.addPageStyle}<select value={styles.some((style) => style.id === addStyle) ? addStyle : current.id} onChange={(event) => setAddStyle(event.target.value)}>{styles.map((style) => <option value={style.id} key={style.id}>{style.name}</option>)}</select></label>
+    <label>{copy.addPageStyle}<select aria-label={copy.addPageStyle} value={styles.some((style) => style.id === addStyle) ? addStyle : current.id} onChange={(event) => setAddStyle(event.target.value)}>{styles.map((style) => <option value={style.id} key={style.id}>{style.name}</option>)}</select></label>
     <button type="button" disabled={layout.page.count >= 100} onClick={() => { onChange(insertFramePage(layout, pageIndex, styles.some((style) => style.id === addStyle) ? addStyle : current.id, crypto.randomUUID())); onSelect(pageIndex + 1); }}>{copy.addPage}</button>
     <button type="button" disabled={layout.page.count <= 1} onClick={() => { onChange(deleteFramePage(layout, pageIndex)); onSelect(Math.min(pageIndex, layout.page.count - 2)); }}>{copy.deletePage}</button>
     <details><summary>{copy.editPageStyle}</summary>
@@ -62,5 +64,7 @@ export function PublicationFramePagePanel({ layout, pageIndex, onChange, onSelec
   </fieldset>;
 }
 function NumberField({ label, value, min, max, step = 0.1, onChange }: { label: string; value: number; min: number; max: number; step?: number; onChange: (value: number) => void }) {
+  const [unit] = usePublicationMeasurementUnit();
+  if (label.endsWith('(mm)')) return <MatterNumber label={label} value={value} min={min} max={max} disabled={false} unit={unit} commitOnChange onCommit={onChange} />;
   return <label>{label}<input type="number" min={min} max={max} step={step} value={value} onChange={(event) => { const next = event.target.valueAsNumber; if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, next))); }} /></label>;
 }

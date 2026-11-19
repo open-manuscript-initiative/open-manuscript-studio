@@ -19,7 +19,7 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   });
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
-  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
   await menu.getByRole('button', { name: 'Frames and page styles', exact: true }).click();
   // Exercise the original manual frame-chain model independently of the new
   // default automatic story, so legacy save/reopen behaviour remains tested.
@@ -64,25 +64,27 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   await editor.getByRole('spinbutton', { name: 'Font size (pt)' }).last().fill('9');
   await expect.poll(async () => (await model()).frames[1]!.overrides?.fontSizePt).toBe(9);
   await editor.getByRole('combobox', { name: 'Select frame', exact: true }).selectOption(first);
-  const move = editor.locator(`[data-frame-id="${first}"] .omi-frame-move`);
+  const move = editor.locator(`[data-frame-selection-id="${first}"] .omi-frame-move`);
   const beforeX = (await model()).frames[0]!.xMm;
   const box = await move.boundingBox(); expect(box).not.toBeNull();
   await page.mouse.move(box!.x + 10, box!.y + 5); await page.mouse.down();
   await page.mouse.move(box!.x + 30, box!.y + 10, { steps: 3 }); await page.mouse.up();
   await expect.poll(async () => (await model()).frames[0]!.xMm).toBeGreaterThan(beforeX);
-  const resize = editor.locator(`[data-frame-id="${first}"] .omi-frame-resize`);
+  const resize = editor.locator(`[data-frame-selection-id="${first}"] .omi-frame-resize`);
   const beforeWidth = (await model()).frames[0]!.widthMm;
+  const beforeOrder = (await model()).frames.map((frame) => frame.id);
   const resizeBox = await resize.boundingBox(); expect(resizeBox).not.toBeNull();
   await page.mouse.move(resizeBox!.x + 4, resizeBox!.y + 4); await page.mouse.down();
   await page.mouse.move(resizeBox!.x + 14, resizeBox!.y + 10, { steps: 3 }); await page.mouse.up();
   await expect.poll(async () => (await model()).frames[0]!.widthMm).toBeGreaterThan(beforeWidth);
+  expect((await model()).frames.map((frame) => frame.id)).toEqual(beforeOrder);
   await editor.getByRole('spinbutton', { name: 'Rotation (°)' }).fill('37.5');
   await editor.getByRole('combobox', { name: 'Frame shape' }).selectOption('polygon');
   await editor.getByRole('spinbutton', { name: 'X 2 (%)', exact: true }).fill('75');
   await editor.getByRole('spinbutton', { name: 'Y 2 (%)', exact: true }).fill('20');
   await expect(editor.locator(`[data-frame-id="${first}"]`)).toHaveCSS('transform', /matrix/);
   await expect.poll(async () => (await model()).frames[0]!.points[1]!.x).toBe(75);
-  const outlinePoint = editor.locator(`[data-frame-id="${first}"] .omi-frame-point`).nth(1);
+  const outlinePoint = editor.locator(`[data-frame-selection-id="${first}"] .omi-frame-point`).nth(1);
   const pointBox = await outlinePoint.boundingBox(); expect(pointBox).not.toBeNull();
   await page.mouse.move(pointBox!.x + 5, pointBox!.y + 5); await page.mouse.down();
   await page.mouse.move(pointBox!.x + 10, pointBox!.y + 10, { steps: 3 }); await page.mouse.up();
@@ -130,7 +132,7 @@ test('graphic frame exports retain the rendered vector chart and printable page 
   });
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
-  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
   await menu.getByRole('button', { name: 'Frames and page styles', exact: true }).click();
   const editor = menu.locator('.omi-frame-editor');
   await editor.getByRole('button', { name: 'Add graphic frame' }).click();

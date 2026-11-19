@@ -1,7 +1,7 @@
 # Publication frame layout
 
-Open **Manuscript menu → Live publication editor → Frame layout**. The continuous
-print/HTML editor remains available in the neighboring mode. On desktop, add
+Open **Manuscript menu → Publishing → Publication editor → Frames and page styles**.
+The frame inspector expands alongside the structured print/HTML content editor. On desktop, add
 text frames or graphic frames; native mobile and narrow screens show a read-only
 preview of the same layout.
 
@@ -11,6 +11,13 @@ A frame has a page, millimeter position and dimensions, and an arbitrary numeric
 rotation angle. Drag its name handle to move it, or its corner handle to resize
 it. A focused name handle supports arrow-key movement; the inspector also exposes
 numeric controls for precise geometry. Pages have their own dimensions/count.
+The shared **Measurement units** selector supports mm, picas and DTP points for
+page/frame geometry, margins, insets, strokes and image transforms. It uses the
+same device preference as **Covers and title pages**. Frames can overlap: choose
+an exact layer or move the selected frame forward/backward, to the front/back.
+Selecting a frame does not raise it; the saved order also drives frame HTML/PDF.
+Cover/title-matter/spine pages have directly editable rich text and independent
+image frames in the **Covers and title pages** workspace of this same editor.
 
 Graphic frames reference existing manuscript images, charts, tables, equations
 or scores. Add the graphic to the manuscript first, then select it as the frame

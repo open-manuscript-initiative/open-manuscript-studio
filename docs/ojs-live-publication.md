@@ -5,7 +5,7 @@ Status: proposed implementation, 2026-11-18. Source/CI and real OJS deployment a
 ## Editor workflow
 
 1. In OJS, move the existing article to **Production**. Use an OJS connection and a personal editorial API key for that installation in Studio. The editor needs native production-stage access.
-2. Open the study in Studio → **Live publication editor**. Apply/edit the publisher style, paragraph styles, page size, margins, running headers and print corrections. All manuscript content remains editable.
+2. Open the study in Studio → **Publication editor**. Apply/edit the publisher style, paragraph styles, page size, margins, running headers and print corrections. All manuscript content remains editable.
 3. Choose **Publish the typeset study to OJS** on the editor toolbar. Select the journal connection and submission ID, then **Inspect OJS Production**. Published versions and submissions in earlier stages are rejected by OJS.
 4. Select HTML, PDF, or both. PDF can be print or interactive. HTML uses the responsive semantic layout; PDF uses the print layout and Studio's configured built-in PDF service. The HTML reader plugin must be enabled in OJS to offer HTML.
 5. Choose **Prepare selected outputs**. All selected files are generated from one committed manuscript and one snapshot of the current live publisher style/identity. Review the isolated HTML preview and generated PDF. Preparing does not write anything to OJS.
@@ -44,7 +44,7 @@ source to recover formatting; local edits are not silently overwritten.
 
 ### Rich notes in publication previews
 
-The live publication editor uses the stored rich note body in both print and HTML
+The publication editor uses the stored rich note body in both print and HTML
 views. Print footnotes are measured using the same styled markup displayed on
 each page, including continuation fragments. Formatting-only changes invalidate
 the preview cache. Endnotes and exported HTML/PDF input use the same renderer.

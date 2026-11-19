@@ -250,7 +250,7 @@ export function PublicationStyleExportPanel() {
 function copyFor(locale: string) {
   if (locale === 'hu') return {
     title: 'Nyomtatás és vizuális export',
-    description: 'Nyomtatás előtt kiválasztható a semleges szerkesztői kéziratnézet vagy az Élő kiadványszerkesztőben kialakított tördelt kiadvány.',
+    description: 'Nyomtatás előtt kiválasztható a semleges szerkesztői kéziratnézet vagy a Kiadványszerkesztőben kialakított tördelt kiadvány.',
     print: 'nyomtatás',
     pdfDescription: 'A választott nézetből a Studio Vivliostyle segítségével tényleges, lapozott PDF-fájlt készít.',
     pdfContent: 'Nyomtatási nézet',
@@ -271,7 +271,7 @@ function copyFor(locale: string) {
     note: 'A tördelt változat a mentett kiadványstílus nyomdai geometriáját használja. A nyers/szerkesztői változat csak a dokumentum szemantikai szerkezetét és tartalmát formázza olvasható nyomattá.'
   };
   if (locale === 'de') return {
-    title: 'Drucken und visueller Export', description: 'Vor dem Drucken kann zwischen einer neutralen redaktionellen Manuskriptansicht und der im Live-Publikationseditor gesetzten Publikation gewählt werden.',
+    title: 'Drucken und visueller Export', description: 'Vor dem Drucken kann zwischen einer neutralen redaktionellen Manuskriptansicht und der im Publikationseditor gesetzten Publikation gewählt werden.',
     print: 'Drucken',
     pdfDescription: 'Studio erzeugt aus der gewählten Ansicht mit Vivliostyle eine echte paginierte PDF-Datei.',
     pdfContent: 'Druckansicht', pdfPublication: 'Gesetzte Publikation', pdfEditorial: 'Redaktionell / Manuskript',
@@ -288,7 +288,7 @@ function copyFor(locale: string) {
     note: 'Die gesetzte Variante verwendet die gespeicherte Druckgeometrie des Publikationsstils. Die redaktionelle Variante formatiert nur die semantische Struktur und den Inhalt als lesbaren Ausdruck.'
   };
   return {
-    title: 'Print and visual export', description: 'Before printing, choose either a neutral editorial manuscript view or the typeset publication created in the Live Publication Editor.',
+    title: 'Print and visual export', description: 'Before printing, choose either a neutral editorial manuscript view or the typeset publication created in the Publication Editor.',
     print: 'print',
     pdfDescription: 'Studio uses Vivliostyle to produce a real paginated PDF artifact from the selected view.',
     pdfContent: 'Print view', pdfPublication: 'Typeset publication', pdfEditorial: 'Editorial / manuscript',

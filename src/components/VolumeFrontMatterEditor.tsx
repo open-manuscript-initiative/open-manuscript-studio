@@ -26,13 +26,11 @@ import {
 import type { OmiTitleMatterField } from '../model/frontMatter';
 import { partitionManuscriptStudies } from '../model/sectionStructure';
 import { ContributorEditor } from './ContributorEditor';
-import { PublicationMatterEditor } from './PublicationMatterEditor';
-import { getPublicationMatterCopy } from '../i18n/publicationMatter';
 import { getPublicationMatter } from '../model/publicationMatter';
 import { PublicationIdentifierFields } from './PublicationIdentifierFields';
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
-type VolumeFrontMatterTab = 'title-matter' | 'contributors' | 'structure' | 'publication';
+type VolumeFrontMatterTab = 'title-matter' | 'contributors' | 'structure';
 
 interface VolumeFrontMatterEditorProps {
   ojsContributors?: OjsContributors;
@@ -142,7 +140,7 @@ export function VolumeFrontMatterEditor({
   const [activeTab, setActiveTab] = useState<VolumeFrontMatterTab>('title-matter');
 
   useEffect(() => {
-    if (structure.kind === 'study' && (activeTab === 'structure' || activeTab === 'publication')) {
+    if (structure.kind === 'study' && activeTab === 'structure') {
       setActiveTab('title-matter');
     }
   }, [activeTab, structure.kind]);
@@ -157,11 +155,6 @@ export function VolumeFrontMatterEditor({
         </div>
 
         <div className="omi-volume-workspace-tabs" role="tablist" aria-label={copy.title}>
-          {structure.kind === 'volume' ? <button type="button" role="tab"
-            aria-selected={activeTab === 'publication'} aria-controls="omi-volume-publication-panel"
-            className={activeTab === 'publication' ? 'is-active' : ''} onClick={() => setActiveTab('publication')}>
-            {getPublicationMatterCopy(locale).title}
-          </button> : null}
           <button
             type="button"
             role="tab"
@@ -197,7 +190,7 @@ export function VolumeFrontMatterEditor({
         </div>
       </div>
 
-      {activeTab === 'publication' ? <div id="omi-volume-publication-panel" role="tabpanel"><PublicationMatterEditor /></div> : activeTab === 'title-matter' ? (
+      {activeTab === 'title-matter' ? (
         <header
           id="omi-title-matter-panel"
           role="tabpanel"
@@ -404,9 +397,9 @@ function getVolumeFrontMatterCopy(locale: string, kind: 'study' | 'volume') {
   };
   if (locale === 'hu') return {
     eyebrow: 'Kötetszintű adatok',
-    title: 'A kötet előrésze',
-    description: 'A címnegyed és a kötet közreműködői a tanulmányoktól elkülönítve szerkeszthetők.',
-    titleMatter: 'Címnegyed',
+    title: 'Kötetadatok',
+    description: 'A kötet címadatai és közreműködői a tanulmányoktól elkülönítve szerkeszthetők.',
+    titleMatter: 'Címadatok',
     contributors: 'Szerzők adatai',
     contributorTitle: 'A kötet szerzői és közreműködői',
     contributorDescription: 'Kötetszintű nevek, szerepek, intézmények, ORCID- és ROR-adatok.',
@@ -423,9 +416,9 @@ function getVolumeFrontMatterCopy(locale: string, kind: 'study' | 'volume') {
   };
   if (locale === 'de') return {
     eyebrow: 'Banddaten',
-    title: 'Vorspann des Bandes',
+    title: 'Banddaten',
     description: 'Titelelemente und Mitwirkende des Bandes werden getrennt von den Beiträgen bearbeitet.',
-    titleMatter: 'Titelelemente',
+    titleMatter: 'Titeldaten',
     contributors: 'Autorendaten',
     contributorTitle: 'Autorinnen, Autoren und Mitwirkende des Bandes',
     contributorDescription: 'Namen, Rollen, Einrichtungen sowie ORCID- und ROR-Daten auf Bandebene.',
@@ -442,9 +435,9 @@ function getVolumeFrontMatterCopy(locale: string, kind: 'study' | 'volume') {
   };
   return {
     eyebrow: 'Volume-level data',
-    title: 'Volume front matter',
-    description: 'Edit the title matter and volume contributors separately from the studies.',
-    titleMatter: 'Title matter',
+    title: 'Volume data',
+    description: 'Edit volume title data and contributors separately from the studies.',
+    titleMatter: 'Title data',
     contributors: 'Author data',
     contributorTitle: 'Volume authors and contributors',
     contributorDescription: 'Volume-level names, roles, affiliations, ORCID and ROR data.',
@@ -455,7 +448,7 @@ function getVolumeFrontMatterCopy(locale: string, kind: 'study' | 'volume') {
 
 function sharedCopyHu() {
   return {
-    titleMatterDetails: 'A címnegyed részletes adatai', titleMatterDetailsDescription: 'A félcímlap, impresszum- és kiadási adatok az OMI-struktúrában maradnak.',
+    titleMatterDetails: 'Cím- és kiadási adatok', titleMatterDetailsDescription: 'A kiadvány cím-, impresszum- és kiadási adatai.',
     halfTitle: 'Félcím', responsibility: 'Szerzőségi vagy felelősségi közlés', edition: 'Kiadásjelzés', publisher: 'Kiadó', place: 'Kiadás helye', year: 'Kiadás éve', isbn: 'ISBN', copyright: 'Copyright-közlés', colophon: 'Kolofon vagy impresszum',
     structureTitle: 'A kötet típusa és közös apparátusa', structureDescription: 'Adja meg, hol induljon újra a jegyzetszámozás, és hová kerüljenek a hivatkozás- és egyéb jegyzékek.', volumeKind: 'Kötet típusa', monograph: 'Egyszerzős monográfia', editedVolume: 'Többszerzős tanulmánykötet', noteNumbering: 'Jegyzetszámozás', continuous: 'Folyamatos a teljes kötetben', perSection: 'Újraindul minden szakaszban', referencesPlacement: 'Hivatkozásjegyzék helye', listsPlacement: 'Egyéb jegyzékek helye', atVolumeEnd: 'A kötet végén', chapter: 'fejezet', studyUnit: 'tanulmány', perUnit: (unit: string) => `Újraindul ${unit}onként`, atUnitEnd: (unit: string) => `Minden ${unit} végén`, structureHint: 'A beállítások szemantikai szabályok: a szöveg és az objektumazonosítók változatlanok maradnak.',
   };
@@ -463,7 +456,7 @@ function sharedCopyHu() {
 
 function sharedCopyDe() {
   return {
-    titleMatterDetails: 'Ausführliche Titelelemente', titleMatterDetailsDescription: 'Schmutztitel, Impressum und Publikationsdaten bleiben strukturiert in OMI erhalten.',
+    titleMatterDetails: 'Titel- und Publikationsdaten', titleMatterDetailsDescription: 'Schmutztitel, Impressum und Publikationsdaten bleiben strukturiert in OMI erhalten.',
     halfTitle: 'Schmutztitel', responsibility: 'Verantwortlichkeitsangabe', edition: 'Ausgabebezeichnung', publisher: 'Verlag', place: 'Erscheinungsort', year: 'Erscheinungsjahr', isbn: 'ISBN', copyright: 'Copyright-Vermerk', colophon: 'Kolophon oder Impressum',
     structureTitle: 'Bandtyp und gemeinsamer Apparat', structureDescription: 'Legen Sie die Neunummerierung der Anmerkungen und die Position von Literatur- und anderen Verzeichnissen fest.', volumeKind: 'Bandtyp', monograph: 'Einzelautorenmonografie', editedVolume: 'Mehrfach verfasster Sammelband', noteNumbering: 'Anmerkungsnummerierung', continuous: 'Fortlaufend im gesamten Band', perSection: 'In jedem Abschnitt neu', referencesPlacement: 'Position des Literaturverzeichnisses', listsPlacement: 'Position weiterer Verzeichnisse', atVolumeEnd: 'Am Ende des Bandes', chapter: 'Kapitel', studyUnit: 'Beitrag', perUnit: (unit: string) => `In jedem ${unit} neu`, atUnitEnd: (unit: string) => `Am Ende jedes ${unit}s`, structureHint: 'Diese Einstellungen sind semantische Regeln; Text und Objektidentitäten bleiben unverändert.',
   };

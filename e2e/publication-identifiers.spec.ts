@@ -24,7 +24,7 @@ for (const width of [1440, 393]) {
     await expect(form.getByLabel('ISBN (print)', { exact: true })).toHaveValue('978-0-306-40615-7');
     expect(await form.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await form.getByRole('button', { name: 'Create', exact: true }).click();
-    await page.getByRole('tab', { name: 'Title matter', exact: true }).click();
+    await page.getByRole('tab', { name: 'Title data', exact: true }).click();
     const isbn = page.getByLabel('ISBN (print)', { exact: true });
     await expect(isbn).toHaveValue('978-0-306-40615-7');
     await expect(page.getByLabel('ISSN (print)', { exact: true })).toHaveValue('1234-5679');
@@ -34,7 +34,10 @@ for (const width of [1440, 393]) {
     await isbn.pressSequentially('978-1-4028-9462-6');
     await isbn.press('Tab');
     await expect(isbn).toHaveValue('978-0-306-40615-7\n978-1-4028-9462-6');
-    await page.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+    await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+    const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+    await menu.getByRole('group', { name: 'Publishing', exact: true }).getByRole('button', { name: 'Publication editor', exact: true }).click();
+    await menu.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
     await expect(page.getByLabel('Publication type')).toHaveValue('journal-issue');
     await page.evaluate(async () => {
       const { useStudioStore } = await import('/src/app/useStudioStore.ts');
@@ -43,7 +46,7 @@ for (const width of [1440, 393]) {
       await resumeLastSessionPersistence();
     });
     await page.reload();
-    await page.getByRole('tab', { name: 'Title matter', exact: true }).click();
+    await page.getByRole('tab', { name: 'Title data', exact: true }).click();
     await expect(page.getByLabel('ISBN (print)', { exact: true })).toHaveValue('978-0-306-40615-7\n978-1-4028-9462-6');
     await expect(page.getByLabel('ISSN (electronic, eISSN)', { exact: true })).toHaveValue('2049-3630');
   });
