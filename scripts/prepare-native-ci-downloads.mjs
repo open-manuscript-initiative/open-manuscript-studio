@@ -154,9 +154,12 @@ async function seedKotlinCompiler(destination, version) {
   console.log(`Prepared verified Kotlin ${version} compiler in the Gradle artifact cache.`);
 }
 
-function expandZip(archive, destination) {
-  const result = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command',
-    "$ErrorActionPreference = 'Stop'; Expand-Archive -LiteralPath $env:OMI_TOOL_ARCHIVE -DestinationPath $env:OMI_TOOL_DESTINATION -Force"], {
+export function expandZip(archive, destination, { spawnImpl = spawnSync } = {}) {
+  // Match the workflow's PowerShell 7 runtime. Windows PowerShell can inherit
+  // a newer Archive module through PSModulePath whose .NET overloads it lacks.
+  // Use the modern runtime's ZIP API directly, without module auto-loading.
+  const result = spawnImpl('pwsh', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command',
+    "$ErrorActionPreference = 'Stop'; [System.IO.Compression.ZipFile]::ExtractToDirectory($env:OMI_TOOL_ARCHIVE, $env:OMI_TOOL_DESTINATION, $true)"], {
     stdio: 'inherit', env: { ...process.env, OMI_TOOL_ARCHIVE: archive, OMI_TOOL_DESTINATION: destination },
   });
   if (result.error) throw result.error;

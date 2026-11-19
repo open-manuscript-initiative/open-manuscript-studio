@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { downloadReleaseAsset } from '../scripts/download-github-release-asset.mjs';
-import { gradleRelease, prepareBundledKotlinCompiler, verifiedKotlinCompilerPom } from '../scripts/prepare-native-ci-downloads.mjs';
+import { gradleRelease, prepareBundledKotlinCompiler, verifiedKotlinCompilerPom, expandZip } from '../scripts/prepare-native-ci-downloads.mjs';
 
 const payload = Buffer.from('Synthetic official binary bytes');
 const digest = createHash('sha256').update(payload).digest('hex');
@@ -134,4 +134,42 @@ test('the exact compiler bundled with Gradle seeds its content-addressed cache',
 
 test('unreviewed Kotlin compiler versions cannot reuse pinned local dependency metadata', () => {
   assert.throws(() => verifiedKotlinCompilerPom('2.4.0'), /explicit review/);
+});
+
+
+test('bundler ZIP extraction selects PowerShell 7 and passes literal paths through the environment', () => {
+  const archive = "C:\\runner temp\\tool's archive.zip";
+  const destination = "C:\\runner temp\\tool's cache";
+  let call;
+  expandZip(archive, destination, { spawnImpl: (...args) => { call = args; return { status: 0 }; } });
+  assert.equal(call[0], 'pwsh');
+  assert.ok(call[1].includes('-NoProfile'));
+  assert.match(call[1].at(-1), /ZipFile\]::ExtractToDirectory/);
+  assert.doesNotMatch(call[1].at(-1), /Expand-Archive/);
+  assert.equal(call[2].env.OMI_TOOL_ARCHIVE, archive);
+  assert.equal(call[2].env.OMI_TOOL_DESTINATION, destination);
+  assert.ok(!call[1].some(argument => argument.includes(archive) || argument.includes(destination)));
+});
+
+test('bundler ZIP extraction propagates shell and extraction failures', () => {
+  const error = new Error('pwsh unavailable');
+  assert.throws(() => expandZip('tool.zip', 'cache', { spawnImpl: () => ({ error }) }), exception => exception === error);
+  assert.throws(() => expandZip('tool.zip', 'cache', { spawnImpl: () => ({ status: 1 }) }), /archive extraction failed/);
+});
+
+test('bundler ZIP extracts nested files and overwrites stale cache bytes in the Windows runtime', { skip: process.platform !== 'win32' }, async t => {
+  const root = await mkdtemp(join(tmpdir(), "omi bundler's zip "));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const archive = join(root, 'tool archive.zip');
+  const destination = join(root, 'tool cache');
+  // Small STORE ZIP containing nested/tool.txt; no external downloads required.
+  await writeFile(archive, Buffer.from('UEsDBBQAAAAAAOxWc11xCXDdEwAAABMAAAAPAAAAbmVzdGVkL3Rvb2wudHh0dmVyaWZpZWQgdG9vbCBieXRlc1BLAQIUAxQAAAAAAOxWc11xCXDdEwAAABMAAAAPAAAAAAAAAAAAAACAAQAAAABuZXN0ZWQvdG9vbC50eHRQSwUGAAAAAAEAAQA9AAAAQAAAAAAA', 'base64'));
+  expandZip(archive, destination);
+  const tool = join(destination, 'nested', 'tool.txt');
+  assert.equal(await readFile(tool, 'utf8'), 'verified tool bytes');
+  await writeFile(tool, 'stale cache');
+  expandZip(archive, destination);
+  assert.equal(await readFile(tool, 'utf8'), 'verified tool bytes');
+  await writeFile(archive, 'not a ZIP');
+  assert.throws(() => expandZip(archive, destination), /archive extraction failed/);
 });

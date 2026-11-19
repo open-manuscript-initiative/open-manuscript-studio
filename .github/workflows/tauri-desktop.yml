@@ -170,6 +170,11 @@ jobs:
       - name: Run frontend tests
         run: npm test
 
+      - name: Test Windows bundler ZIP extraction
+        if: matrix.artifact == 'windows-x86_64'
+        shell: pwsh
+        run: node --test --test-name-pattern="bundler ZIP" tests/native-ci-downloads.test.mjs
+
       - name: Prepare verified official bundler tools
         if: matrix.artifact == 'linux-x86_64' || matrix.artifact == 'windows-x86_64'
         run: node scripts/prepare-native-ci-downloads.mjs bundler
