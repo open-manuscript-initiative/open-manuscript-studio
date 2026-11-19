@@ -1,5 +1,9 @@
 import { PublicationMeasurementSelector, usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
+import { createCoverSheetFrame, getPublicationCoverSheet, isPublicationCoverSheet, publicationCoverPanels } from '../model/publicationCoverSheet';
+import { formatPublicationMeasurement } from '../model/publicationMeasurementUnits';
+import { publicationInsidePageCount, publicationSpineWidth } from '../model/publicationSpine';
+import { PublicationSpineControls } from './PublicationSpineControls';
 import { useEffect, useState } from 'react';
 import { PublicationMatterFrameEditor } from './PublicationMatterFrameEditor';
 import { useStudioStore } from '../app/useStudioStore';
@@ -11,17 +15,23 @@ import { getAssetPayload } from '../services/assetRepository';
 import { loadPublicationStyle } from '../services/publicationStyleExport';
 import './PublicationMatterEditor.css';
 
-export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }: { widthMm?: number; heightMm?: number; readOnly?: boolean }) {
+export function PublicationMatterEditor({ widthMm, heightMm, bodyPageCount, readOnly = false }: { widthMm?: number; heightMm?: number; bodyPageCount?: number; readOnly?: boolean }) {
   const { locale } = useTranslation();
   const copy = getPublicationMatterCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const [defaultStyle] = useState(loadPublicationStyle);
   const [unit] = usePublicationMeasurementUnit();
   const model = getPublicationMatter(manuscript) ?? createPublicationMatter(manuscript);
-  const [selected, setSelected] = useState<PublicationMatterPageKind>('front-cover');
+  const [selected, setSelected] = useState<PublicationMatterPageKind>('cover-outside');
+  const [area, setArea] = useState<PublicationMatterPageKind>('front-cover');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const page = model.pages.find((item) => item.kind === selected) ?? createPublicationMatter(manuscript).pages.find((item) => item.kind === selected)!;
+  const trimWidth = widthMm ?? defaultStyle.page.width, trimHeight = heightMm ?? defaultStyle.page.height;
+  const sheet = isPublicationCoverSheet(selected);
+  const spineWidth = publicationSpineWidth(model);
+  const paperWidth = sheet ? 2 * trimWidth + spineWidth : trimWidth;
+  const page = isPublicationCoverSheet(selected) ? getPublicationCoverSheet(model, selected, trimWidth, trimHeight)
+    : model.pages.find((item) => item.kind === selected) ?? createPublicationMatter(manuscript).pages.find((item) => item.kind === selected)!;
   const asset = manuscript.assets?.find((item) => item.id === page.image?.assetId);
   const [imageUrl, setImageUrl] = useState('');
   useEffect(() => {
@@ -53,7 +63,7 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
       const latest = useStudioStore.getState().manuscript;
       if (latest.id !== manuscriptId) return;
       const current = getPublicationMatter(latest) ?? createPublicationMatter(latest);
-      const currentPage = current.pages.find((item) => item.kind === kind) ?? createPublicationMatter(latest).pages.find((item) => item.kind === kind)!;
+      const currentPage = isPublicationCoverSheet(kind) ? getPublicationCoverSheet(current, kind, trimWidth, trimHeight) : current.pages.find((item) => item.kind === kind) ?? createPublicationMatter(latest).pages.find((item) => item.kind === kind)!;
       const nextPage: PublicationMatterPage = { ...currentPage, image: { assetId: uploaded.id, alt: '', fit: 'cover' } };
       stagePublicationMatter({ ...current, pages: current.pages.some((item) => item.kind === kind)
         ? current.pages.map((item) => item.kind === kind ? nextPage : item) : [...current.pages, nextPage] }, uploaded, manuscriptId);
@@ -69,13 +79,26 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
     </select></label>
     <PublicationMeasurementSelector /><p>{copy.unitHelp}</p>
     <div className="omi-publication-matter-tabs" role="tablist" aria-label={copy.title}>
-      {Object.entries(copy.pages).map(([kind, label]) => <button type="button" role="tab" key={kind}
-        aria-selected={selected === kind} aria-controls="omi-publication-matter-selected" onClick={() => setSelected(kind as PublicationMatterPageKind)}>{label}</button>)}
+      {(['cover-outside', 'cover-inside', 'half-title', 'series-page', 'title-page', 'imprint-page'] as const).map((kind) => <button type="button" role="tab" key={kind}
+        aria-selected={selected === kind} aria-controls="omi-publication-matter-selected" onClick={() => { setSelected(kind); setArea(kind === 'cover-outside' ? 'front-cover' : kind === 'cover-inside' ? 'inside-front-cover' : kind); }}>{copy.pages[kind]}</button>)}
     </div>
     <div id="omi-publication-matter-selected" role="tabpanel">
       <label className="omi-publication-matter-include"><input type="checkbox" checked={page.enabled} disabled={readOnly} onChange={(event) => update({ enabled: event.target.checked })} />{copy.include}</label>
-      {!readOnly ? <button type="button" className="studio-menu-secondary-action" onClick={() => update({ content: publicationMatterTemplate(selected, manuscript) })}>{copy.template}</button> : null}
-      {selected === 'spine' ? <><MatterNumber unit={unit} label={copy.spineWidth} min={1} max={100} value={model.spineWidthMm ?? 10} disabled={readOnly} onCommit={(value) => stagePublicationMatter({ ...model, spineWidthMm: value })} /><p>{copy.spineHelp}</p></> : null}
+      {!readOnly ? <button type="button" className="studio-menu-secondary-action" onClick={() => {
+        if (isPublicationCoverSheet(selected)) {
+          if ((page.frames?.length ?? 0) >= 512) return;
+          const frame = createCoverSheetFrame('text', area, selected, trimWidth, trimHeight, spineWidth);
+          frame.content = publicationMatterTemplate(area, manuscript);
+          update({ frames: [...(page.frames ?? []), frame] });
+        } else update({ content: publicationMatterTemplate(selected, manuscript) });
+      }}>{copy.template}</button> : null}
+      {sheet ? <><PublicationSpineControls model={model} insidePageCount={bodyPageCount ? publicationInsidePageCount(model, bodyPageCount) : undefined} unit={unit} readOnly={readOnly} onChange={stagePublicationMatter} /><p>{copy.sheetHelp}</p>
+        <p className="omi-cover-sheet-dimensions">{copy.sheetSize}: {formatPublicationMeasurement(paperWidth, unit)} × {formatPublicationMeasurement(trimHeight, unit)} {unit}</p>
+        <label>{copy.frameArea}<select aria-label={copy.frameArea} value={isPublicationCoverSheet(selected) && publicationCoverPanels(selected, trimWidth, spineWidth).some((panel) => panel.kind === area && panel.widthMm > 0) ? area : selected} onChange={(event) => setArea(event.target.value as PublicationMatterPageKind)}>
+          <option value={selected}>{copy.wholeSheet}</option>
+          {isPublicationCoverSheet(selected) ? publicationCoverPanels(selected, trimWidth, spineWidth).filter((panel) => panel.widthMm > 0).map((panel) => <option key={panel.kind} value={panel.kind}>{copy.pages[panel.kind]}</option>) : null}
+        </select></label>
+      </> : null}
       <div className="omi-publication-matter-settings">
         <label>{copy.font}<input value={page.appearance.fontFamily} disabled={readOnly} maxLength={128} onChange={(event) => { if (event.target.value.trim()) appearance({ fontFamily: event.target.value }); }} /></label>
         <MatterNumber label={copy.size} min={6} max={120} value={page.appearance.fontSizePt} disabled={readOnly} onCommit={(value) => appearance({ fontSizePt: value })} />
@@ -96,7 +119,12 @@ export function PublicationMatterEditor({ widthMm, heightMm, readOnly = false }:
         </> : null}
       </div>
       {error ? <p role="alert">{error}</p> : null}
-      <PublicationMatterFrameEditor key={`${manuscript.id}:${selected}`} page={page} widthMm={selected === 'spine' ? model.spineWidthMm ?? 10 : widthMm ?? defaultStyle.page.width} heightMm={heightMm ?? defaultStyle.page.height}
+      <PublicationMatterFrameEditor key={`${manuscript.id}:${selected}`} page={page} widthMm={paperWidth} heightMm={trimHeight} trimWidthMm={trimWidth}
+        createFrame={isPublicationCoverSheet(selected) ? (kind) => createCoverSheetFrame(kind, area, selected, trimWidth, trimHeight, spineWidth) : undefined}
+        guides={sheet ? <div className="omi-cover-sheet-guides" aria-hidden="true">
+          {[trimWidth, trimWidth + spineWidth].filter((value, index, all) => index === 0 || value !== all[0]).map((value) => <span className="omi-cover-fold" key={value} style={{ left: `${value / paperWidth * 100}%` }} />)}
+          {isPublicationCoverSheet(selected) ? publicationCoverPanels(selected, trimWidth, spineWidth).filter((panel) => panel.widthMm > 0).map((panel) => <span className="omi-cover-region-label" key={panel.kind} style={{ left: `${panel.xMm / paperWidth * 100}%`, width: `${panel.widthMm / paperWidth * 100}%` }}>{copy.pages[panel.kind]}</span>) : null}
+        </div> : undefined}
         imageUrl={imageUrl} unit={unit} onChange={update} readOnly={readOnly} />
     </div>
   </section>;

@@ -66,7 +66,7 @@ test('profile export carries explicit reproducible front-matter rules', () => {
   assert.equal(exported.rules.frontMatter.motto.alignment, 'right');
 });
 
-test('publication pages stay independent, opt in individually and keep canonical front/back order', () => {
+test('title pages remain independent while both cover faces precede the body', () => {
   const manuscript = createVersionedTestManuscript();
   manuscript.documentStructure = createDocumentStructureProfile('volume');
   manuscript.titleMatter = { halfTitle: 'Short title', publisherName: 'Example Press', colophon: 'Edited independently' };
@@ -78,11 +78,11 @@ test('publication pages stay independent, opt in individually and keep canonical
   model.pages.forEach((page) => { page.enabled = page.kind !== 'spine'; });
   model.pages.reverse();
   manuscript.extensions = { [PUBLICATION_MATTER_EXTENSION]: model };
-  assert.deepEqual([...publicationMatterPages(manuscript, 'before'), ...publicationMatterPages(manuscript, 'after')].map((page) => page.kind), PUBLICATION_MATTER_PAGES.filter((kind) => kind !== 'spine'));
+  assert.deepEqual([...publicationMatterPages(manuscript, 'before'), ...publicationMatterPages(manuscript, 'after')].map((page) => page.kind), PUBLICATION_MATTER_PAGES.filter((kind) => kind !== 'spine' && !kind.startsWith('cover-')));
   const html = renderHtmlArticle(manuscript).html;
-  assert.ok(html.indexOf('data-publication-matter="front-cover"') < html.indexOf('<article class="omi-scholarly-article"'));
-  assert.ok(html.indexOf('data-publication-matter="inside-back-cover"') > html.indexOf('</article>'));
-  assert.equal((html.match(/data-publication-matter=/g) ?? []).length, 8);
+  assert.ok(html.indexOf('data-cover-sheet="cover-outside"') < html.indexOf('<article class="omi-scholarly-article"'));
+  assert.ok(html.indexOf('data-cover-sheet="cover-inside"') < html.indexOf('<article class="omi-scholarly-article"'));
+  assert.equal((html.match(/data-publication-matter=/g) ?? []).length, 6);
   assert.match(html, /@page omi_publication_matter/);
   assert.match(html, /counter-increment:page 0/);
   assert.equal(JSON.stringify(manuscript.sections), sectionsBefore);
@@ -104,7 +104,7 @@ test('publication pages preserve rich text in HTML/PDF and OMI while editorial P
   assert.match(html, /<strong>Independent cover &lt;script&gt;<\/strong>/);
   assert.match(html, /font-variant:small-caps/);
   assert.match(html, /<u>/);
-  assert.match(buildPdfPrintDocument(manuscript), /data-publication-matter="front-cover"/);
+  assert.match(buildPdfPrintDocument(manuscript), /data-publication-matter="cover-outside"/);
   assert.doesNotMatch(buildPdfPrintDocument(manuscript, undefined, 'print', 'editorial'), /data-publication-matter=/);
   assert.deepEqual(getPublicationMatter(parseOmiJson(serializeOmiJson(manuscript))), model);
 });
@@ -293,7 +293,7 @@ test('page-frame validation accepts legacy pages and rejects malformed frames an
 });
 
 
-test('an enabled spine joins the exterior covers into one correctly sized printable spread', () => {
+test('legacy exterior panels render on one sheet even when the spine content is disabled', () => {
   const manuscript = createVersionedTestManuscript();
   manuscript.documentStructure = createDocumentStructureProfile('volume');
   const model = createPublicationMatter(manuscript);
@@ -312,11 +312,11 @@ test('an enabled spine joins the exterior covers into one correctly sized printa
   const result = renderHtmlArticle(manuscript).html;
   assert.ok(result.includes('@page omi_publication_cover { size:438mm 297mm'));
   assert.ok(result.includes('data-spine-width-mm="18" style="width:438mm;height:297mm"'));
-  assert.ok(result.indexOf('data-publication-matter="back-cover"') < result.indexOf('data-publication-matter="spine"'));
-  assert.ok(result.indexOf('data-publication-matter="spine"') < result.indexOf('data-publication-matter="front-cover"'));
-  assert.equal((result.match(/data-publication-matter="back-cover"/g) ?? []).length, 1);
-  assert.ok(result.includes('width:18mm;min-height:297mm;position:absolute;left:210mm'));
-  assert.ok(result.includes('position:absolute;left:228mm'));
+  assert.equal((result.match(/data-cover-sheet="cover-outside"/g) ?? []).length, 1);
+  assert.ok(result.includes('cover-back-cover-background'));
+  assert.ok(result.includes('cover-spine-background'));
+  assert.ok(result.includes('cover-front-cover-background'));
+  assert.ok(result.includes('left:47.94520547945205%'));
   assert.ok(result.includes('transform:rotate(-90deg)'));
   assert.ok(buildPdfPrintDocument(manuscript).includes('data-spine-width-mm="18"'));
   assert.deepEqual(getPublicationMatter(parseOmiJson(serializeOmiJson(manuscript))), model);
@@ -326,12 +326,13 @@ test('an enabled spine joins the exterior covers into one correctly sized printa
   assert.ok(renderHtmlArticle(manuscript).html.includes('size:428mm 297mm'));
   // A disabled outside cover leaves a blank panel instead of leaking its retained draft.
   back.enabled = false;
-  assert.equal(renderHtmlArticle(manuscript).html.includes('data-publication-matter="back-cover"'), false);
+  assert.equal(renderHtmlArticle(manuscript).html.includes('cover-back-cover-background'), false);
   assert.ok(renderHtmlArticle(manuscript).html.includes('width:428mm;height:297mm'));
   spine.enabled = false;
-  assert.equal(renderHtmlArticle(manuscript).html.includes('data-spine-width-mm='), false);
+  assert.equal(renderHtmlArticle(manuscript).html.includes('data-spine-width-mm='), true);
   assert.throws(() => validatePublicationMatter({ ...model, spineWidthMm: NaN }));
-  assert.throws(() => validatePublicationMatter({ ...model, spineWidthMm: 0 }));
+  assert.doesNotThrow(() => validatePublicationMatter({ ...model, spineWidthMm: 0 }));
+  assert.throws(() => validatePublicationMatter({ ...model, spineWidthMm: -1 }));
   assert.throws(() => validatePublicationMatter({ ...model, spineWidthMm: 101 }));
   const legacy = { ...model, spineWidthMm: undefined, pages: model.pages.filter((page) => page.kind !== 'spine') };
   assert.doesNotThrow(() => validatePublicationMatter(legacy));

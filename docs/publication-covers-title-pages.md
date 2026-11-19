@@ -10,27 +10,36 @@ workspace remains editable on narrow screens and native mobile devices.
 The manuscript chapters/articles, citations, note numbering and structured title
 metadata remain separate from these publication pages.
 
-Each page has its own content, enabled state, image and appearance:
+The cover is one physical sheet with two independently editable faces. **Cover –
+outside** shows back cover / spine / front cover. **Cover – inside** shows inside
+front cover / binding area / inside back cover. Both use the same trim height and
+width of `2 × trim width + spine width`. Fold lines and region labels are editing
+guides and are omitted from exports. Both enabled faces precede the body in the
+HTML/PDF print package; they are the two sides of one cover sheet, not extra
+single-page covers. Title-matter pages retain their individual trim size.
+
+The workspace has these tabs:
 
 | Position | Page |
 | --- | --- |
-| Before content | Front cover, outside (I) |
-| Outside cover spread, when enabled | Spine, with a configurable 1–100 mm width |
-| Before content | Front cover, inside (II) |
+| Before content | Cover – outside (IV / spine / I) |
+| Before content | Cover – inside (II / binding area / III) |
 | Before content | Half-title |
 | Before content | Series/title-matter page 2 |
 | Before content | Title page |
 | Before content | Imprint/title-matter page 4 |
-| After content | Back cover, inside (III) |
-| After content | Back cover, outside (IV) |
 
 All slots start disabled; old manuscripts therefore gain no extra pages.
 Enabled empty slots remain blank pages. Disabling a page preserves its draft and
 image. Changing the publication type to *Journal issue* is an edition setting;
 it does not silently restructure the manuscript's articles.
 
-Add independent **text frames** and **graphic frames** to any cover, title-matter
-page or spine. Select a frame on the page or in **Select frame**. Move and resize
+Add independent **text frames** and **graphic frames** to either complete cover
+face or a title-matter page. Cover coordinates and layers belong to the entire
+sheet: one image or text frame may cross either or both fold lines without being
+split or clipped at the folds. **New frame placement** supplies an initial
+front/back/spine placement, or use **Whole cover sheet**. A spine text preset starts
+rotated 90°. Select a frame on the sheet or in **Select frame**. Move and resize
 its handles, or enter exact X/Y, width, height and rotation. **Measurement units**
 selects millimetres (mm), picas (pc) or DTP points (pt) for frame/image geometry,
 offsets, strokes, insets, page padding and spine width. It applies across page
@@ -58,15 +67,33 @@ frame. Changing the frame's shape or size clips the image without changing its
 transform. Fit/fill actions explicitly re-fit the image. Frame-only artwork is
 retained in OMI/revision snapshots and embedded in HTML packages and PDF input.
 
-Select **Spine** to set the spine width. New spine text frames start rotated 90°;
-the rotation field supports either direction and arbitrary angles. Enabling the
-spine changes the exterior cover output to one spread: back cover on the left,
-spine in the middle, front cover on the right. Its size is twice the publication
-trim width plus the spine width, by the trim height. Disabled outside panels
-remain blank in that spread. Disabling the spine restores separate cover pages
-and retains its draft. Changing spine width preserves manually placed frames;
-review their positions after changing the binding dimensions. Legacy files
-without a spine remain compatible.
+**Spine and paper** accepts a manual 0–100 mm spine (zero gives a simple fold), or
+**Calculate spine from page count and paper**. The default page source is the last
+measured print layout, when available, plus enabled half-title/series/title/imprint
+pages; cover faces are excluded. The live count updates as the visible body is
+repaginated. Hiding the body to edit the cover retains its last measured count.
+Use a manual **Inside page count** for a printer-confirmed count including any
+additional blank pages or signature padding.
+
+The calculation is `ceil(inside pages / 2) × sheet thickness + binding allowance`.
+Sheet thickness in mm is `grammage (g/m²) × bulk (cm³/g) / 1000`. The paper menu
+offers manufacturer-specific uncoated, matt-coated and high-bulk book-paper
+presets. Grammage, bulk, direct sheet thickness and binding allowance are editable;
+editing paper values creates a custom paper. Preset target calipers come from
+[Amber Graphic](https://www.arcticpaper.com/our-products/our-brands/amber/amber-graphic/),
+[G-Print](https://www.arcticpaper.com/our-products/our-brands/g/g-print/) and
+[Munken Print White](https://www.arcticpaper.com/our-products/our-brands/munken/munken-book-papers/munken-print-white/).
+The selected paper, page-count source and latest count are retained in OMI/history.
+Entering a manual spine width switches calculation off. An excessive calculated
+width is reported instead of silently clamped. Printer binding/cover allowances
+are supplied explicitly; paper presets are estimates rather than a binding specification.
+
+Width changes move right-panel presets and center spine presets without scaling
+their frames or artwork. Whole-sheet frames keep their absolute geometry. Review
+artwork after changing binding dimensions. Old panel-based documents are projected
+onto the complete sheet with rich text, images and transforms retained; the first
+sheet edit saves that composition. Original panel drafts stay in the document,
+and a saved sheet controls its own enabled state without reviving old panels.
 
 Edit the original page text with rich inline formatting. Choose font family, point size, colors,
 alignment, vertical placement and padding for each page. Upload PNG/JPEG/WebP
@@ -74,10 +101,10 @@ artwork and choose full-image or fill-page fitting. **Fill from publication
 metadata** explicitly replaces only the selected page's text with a new snapshot
 of existing title/imprint metadata; it does not invent publisher or copyright data.
 
-Publication HTML and PDF input include enabled pages in the order above, using
+Publication HTML and PDF input include enabled sheets/pages in the order above, using
 the selected publication trim size and unnumbered named pages. Editorial PDF
 omits them. A standalone study does not render volume pages. The page workspace
-previews the selected page separately; the existing live manuscript canvas still
+previews the full selected cover face or title page; the manuscript canvas still
 paginates the body. Proof the complete generated PDF before printing.
 
 The optional versioned extension `urn:omi:studio:publication-matter:1` stores page
@@ -86,4 +113,4 @@ verified binary payloads, including OMI/HTML packaging and recovery checks.
 This is a Studio extension; the canonical OMI file-format version is unchanged.
 These pages do not replace JATS article metadata or the Word/ODT scholarly-text
 export paths. Printer-specific bleed, flaps, binding calculations and imposition remain
-outside this page editor. Enter the spine width supplied by the printer.
+outside this page editor. Use the printer's final binding measurements for production.

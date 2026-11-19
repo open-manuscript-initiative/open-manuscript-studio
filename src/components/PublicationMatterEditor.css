@@ -36,3 +36,11 @@
 .omi-matter-frame-point { min-width:14px; min-height:14px; transform:translate(-50%,-50%); border-radius:50%; background:#dbeefa; }
 .omi-matter-frame-text .tiptap { min-height:1em; }
 .omi-matter-frame-layer-actions { display:flex; flex-wrap:wrap; gap:.35rem; grid-column:1/-1; }
+.omi-cover-sheet-paper { width:min(100%,70rem); }
+.omi-publication-matter-paper > .omi-cover-sheet-guides { position:absolute; inset:0; z-index:20000; pointer-events:none; }
+.omi-cover-fold { position:absolute; top:0; bottom:0; border-left:1px dashed #b65c37; }
+.omi-cover-region-label { position:absolute; top:0; font:11px/1.3 system-ui,sans-serif; color:#51392b; background:#fffD; text-align:center; overflow:hidden; white-space:nowrap; }
+.omi-cover-sheet-dimensions { font-variant-numeric:tabular-nums; }
+.omi-publication-spine-controls { min-inline-size:0; margin-block:1rem; }
+.omi-matter-frame-text > div { flex-shrink:0; }
+@media print { .omi-cover-sheet-guides { display:none; } }

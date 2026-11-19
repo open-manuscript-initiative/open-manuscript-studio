@@ -29,11 +29,11 @@ for (const width of [1440, 393]) {
     await expect(content.locator('strong')).toHaveText('Independent front cover');
     await panel.getByRole('spinbutton', { name: 'Font size (pt)' }).fill('24');
     await panel.getByRole('spinbutton', { name: 'Font size (pt)' }).press('Tab');
-    await panel.getByRole('tab', { name: 'IV. Back cover – outside', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Cover – inside', exact: true }).click();
     await expect(include).not.toBeChecked();
     await include.check();
     await content.fill('Independent back cover');
-    await panel.getByRole('tab', { name: 'I. Front cover – outside', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Cover – outside', exact: true }).click();
     await expect(content.locator('strong')).toHaveText('Independent front cover');
     await panel.getByLabel('Upload cover image').setInputFiles({ name: 'cover.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j8C8AAAAASUVORK5CYII=', 'base64') });
     await expect(panel.locator('.omi-publication-matter-paper > img')).toBeVisible();
@@ -47,7 +47,7 @@ for (const width of [1440, 393]) {
       return renderHtmlArticle(useStudioStore.getState().manuscript).html;
     });
     expect(output.indexOf('Independent front cover')).toBeLessThan(output.indexOf('<article class="omi-scholarly-article"'));
-    expect(output.indexOf('Independent back cover')).toBeGreaterThan(output.indexOf('</article>'));
+    expect(output.indexOf('Independent back cover')).toBeLessThan(output.indexOf('<article class="omi-scholarly-article"'));
   });
 }
 
@@ -169,10 +169,11 @@ for (const width of [1440, 393]) {
     await settings.getByRole('button', { name: 'Delete frame', exact: true }).click();
     await expect(panel.locator('[data-frame-kind]')).toHaveCount(1);
     await expect(panel.locator('.omi-matter-rich-preview strong')).toHaveText('Framed title');
-    await panel.getByRole('tab', { name: 'Spine', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Cover – outside', exact: true }).click();
     await panel.getByRole('checkbox', { name: 'Include in publication' }).check();
     const spineWidth = panel.getByRole('spinbutton', { name: 'Spine width (mm)', exact: true });
     await spineWidth.fill('18'); await spineWidth.press('Tab');
+    await panel.getByLabel('New frame placement', { exact: true }).selectOption('spine');
     await panel.getByRole('button', { name: 'Add text frame', exact: true }).click();
     await expect(settings.getByRole('spinbutton', { name: 'Rotation (°)', exact: true })).toHaveValue('90');
     await panel.getByRole('textbox', { name: 'Text frame content', exact: true }).fill('The book spine');
@@ -238,7 +239,7 @@ for (const width of [1440, 393]) {
     expect(edited.widthMm).toBe(25.4);
     expect(edited.graphicTransform.offsetXMm).toBeCloseTo(-25.4 / 6, 10);
     await units.selectOption('pc');
-    await panel.getByRole('tab', { name: 'Spine', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Cover – outside', exact: true }).click();
     await expect(units).toHaveValue('pc');
     const spine = panel.getByRole('spinbutton', { name: 'Spine width (pc)', exact: true });
     await spine.fill('3'); await spine.press('Tab');
@@ -255,5 +256,92 @@ async function openPublicationMatter(page: Page) {
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await menu.getByRole('group', { name: 'Publishing', exact: true }).getByRole('button', { name: 'Publication editor', exact: true }).click();
+  await expect(page.locator('.publication-style-editor')).toHaveAttribute('data-publication-page-count', /^[1-9]\d*$/);
   await menu.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+}
+
+for (const width of [1440, 393]) {
+  test(`one cover sheet spans both folds and calculates its spine from paper and pages at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await installMockStudioApi(page);
+    await signInToStudio(page);
+    await page.getByRole('button', { name: /^New OMI study/ }).click();
+    await page.evaluate(async () => {
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+      const { createDocumentStructureProfile } = await import('/src/model/documentProfile.ts');
+      const state = useStudioStore.getState();
+      state.loadManuscript({ ...state.manuscript, title: 'One physical cover sheet', documentStructure: createDocumentStructureProfile('volume') });
+    });
+    await openPublicationMatter(page);
+    const panel = page.locator('.omi-publication-matter-editor');
+    const include = panel.getByRole('checkbox', { name: 'Include in publication', exact: true });
+    await include.check();
+    await expect(panel.getByRole('tab', { name: 'Spine', exact: true })).toHaveCount(0);
+    await panel.getByLabel('New frame placement', { exact: true }).selectOption('cover-outside');
+    const livePages = panel.getByRole('checkbox', { name: 'Use publication editor page count', exact: true });
+    const automatic = panel.getByRole('checkbox', { name: 'Calculate spine from page count and paper', exact: true });
+    // The print layout is measured before hiding the mounted manuscript canvas.
+    await expect(livePages).toBeEnabled();
+    await livePages.uncheck();
+    const pages = panel.getByRole('spinbutton', { name: 'Inside page count', exact: true });
+    await pages.fill('300'); await pages.press('Tab');
+    await panel.getByLabel('Inside paper', { exact: true }).selectOption('amber-80');
+    await automatic.check();
+    const spine = panel.getByRole('spinbutton', { name: 'Spine width (mm)', exact: true });
+    await expect(spine).toHaveValue('14.85');
+    const allowance = panel.getByRole('spinbutton', { name: 'Binding allowance (mm)', exact: true });
+    await allowance.fill('0.5'); await allowance.press('Tab');
+    await expect(spine).toHaveValue('15.35');
+    await panel.getByLabel('Inside paper', { exact: true }).selectOption('munken-80-1.5');
+    await expect(spine).toHaveValue('18.5');
+    const sheetDimensions = await panel.locator('[data-cover-sheet="cover-outside"]').evaluate((element) => {
+      const [width, height] = (element as HTMLElement).style.aspectRatio.split('/').map(Number);
+      return { width: width!, height: height! };
+    });
+    await panel.getByRole('button', { name: 'Add text frame', exact: true }).click();
+    const settings = panel.locator('.omi-matter-frame-settings');
+    for (const [name, value] of [['X (mm)', '10'], ['Width (mm)', String(sheetDimensions.width - 20)]] as const) {
+      const input = settings.getByRole('spinbutton', { name, exact: true });
+      await input.fill(value); await input.press('Tab');
+    }
+    await panel.getByRole('textbox', { name: 'Text frame content', exact: true }).fill('One frame across both folds');
+    const bounds = await panel.locator('.omi-matter-frame.is-selected').boundingBox();
+    const paperInnerWidth = await panel.locator('[data-cover-sheet="cover-outside"]').evaluate((element) => {
+      const style = getComputedStyle(element);
+      return element.getBoundingClientRect().width - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+    });
+    expect(bounds!.width / paperInnerWidth).toBeCloseTo((sheetDimensions.width - 20) / sheetDimensions.width, 2);
+    await expect(panel.locator('.omi-cover-fold')).toHaveCount(2);
+    await panel.getByRole('tab', { name: 'Cover – inside', exact: true }).click();
+    await include.check();
+    await expect(panel.locator('[data-matter-frame-id]')).toHaveCount(0);
+    await expect(spine).toHaveValue('18.5');
+    await spine.fill('20'); await spine.press('Tab');
+    await expect(automatic).not.toBeChecked();
+    await panel.getByRole('tab', { name: 'Cover – outside', exact: true }).click();
+    await expect(panel.locator('.omi-matter-rich-preview')).toContainText(['One frame across both folds']);
+    await expect(spine).toHaveValue('20');
+    const persisted = await page.evaluate(async () => {
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+      const { serializeOmiJson } = await import('/src/services/exportOmi.ts');
+      const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
+      const { getPublicationMatter } = await import('/src/model/publicationMatter.ts');
+      const { loadPublicationStyle } = await import('/src/services/publicationStyleExport.ts');
+      const { renderHtmlArticle } = await import('/src/services/exportHtml.ts');
+      const { resolvePublicationProfile } = await import('/src/model/publicationProfile.ts');
+      const manuscript = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+      return { model: getPublicationMatter(manuscript), html: renderHtmlArticle(manuscript, { ...resolvePublicationProfile(manuscript), publicationStyle: loadPublicationStyle() }).html };
+    });
+    expect(persisted.model!.spineCalculation).toMatchObject({ pageCount: 300, paperId: 'munken-80-1.5', mode: 'manual', allowanceMm: .5 });
+    expect(persisted.html).toContain(`width:${sheetDimensions.width - 18.5 + 20}mm;height:${sheetDimensions.height}mm`);
+    expect(persisted.html.match(/data-cover-sheet=/g)).toHaveLength(2);
+    expect(persisted.html).not.toContain('omi-cover-fold');
+    // Enabling a title page changes the live inside count while covers stay excluded.
+    await livePages.check(); await automatic.check();
+    const previousCount = Number(await pages.inputValue());
+    await panel.getByRole('tab', { name: 'Title page', exact: true }).click();
+    await include.check();
+    await panel.getByRole('tab', { name: 'Cover – outside', exact: true }).click();
+    await expect(pages).toHaveValue(String(previousCount + 1));
+  });
 }
