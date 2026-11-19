@@ -1,3 +1,11 @@
+## Unreleased — Rich notes from OJS
+
+- Preserve footnote/endnote rich text when opening a DOCX source from OJS/OMP,
+  including inherited character styles, formatting resets, links and paragraph
+  breaks. Keep rich bodies during the note-integrity repair and OMI save/reopen.
+  Existing plain-text launch payloads remain supported. Reopen from the original
+  OJS source to recover formatting in previously flattened imports.
+
 ## Unreleased — Publication covers and title pages
 
 - Add a separate volume/journal-issue workspace for four cover sides and four

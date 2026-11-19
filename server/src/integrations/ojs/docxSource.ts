@@ -1,3 +1,4 @@
+import { extractRichDocxNotes } from './docxRichNotes.js';
 import { inflateRawSync } from 'node:zlib';
 
 export interface OjsDocxInlineText {
@@ -32,11 +33,13 @@ export interface OjsDocxParagraph {
 export interface OjsDocxFootnote {
   id: string;
   text: string;
+  bodyContent?: string;
 }
 
 export interface OjsDocxEndnote {
   id: string;
   text: string;
+  bodyContent?: string;
 }
 
 export interface OjsSourceDocument {
@@ -90,12 +93,12 @@ export function parseDocxSource(
 
   const footnotesXml = readZipEntry(buffer, footnotesPath);
   const footnotes = footnotesXml
-    ? extractNotes(footnotesXml.toString('utf8'), 'footnote')
+    ? extractRichDocxNotes(footnotesXml.toString('utf8'), 'footnote', stylesXml?.toString('utf8'), readZipEntry(buffer, relationshipPart(footnotesPath))?.toString('utf8'))
     : [];
 
   const endnotesXml = readZipEntry(buffer, endnotesPath);
   const endnotes = endnotesXml
-    ? extractNotes(endnotesXml.toString('utf8'), 'endnote')
+    ? extractRichDocxNotes(endnotesXml.toString('utf8'), 'endnote', stylesXml?.toString('utf8'), readZipEntry(buffer, relationshipPart(endnotesPath))?.toString('utf8'))
     : [];
 
   const xml = documentXml.toString('utf8');
@@ -338,37 +341,9 @@ function normalizePackagePath(value: string): string {
   return parts.join('/');
 }
 
-function extractNotes(
-  xml: string,
-  kind: 'footnote' | 'endnote',
-): Array<{ id: string; text: string }> {
-  const notes: Array<{ id: string; text: string }> = [];
-  const elementName = kind === 'footnote' ? 'footnote' : 'endnote';
-  const pattern = new RegExp(
-    `<(?:[A-Za-z_][\\w.-]*:)?${elementName}\\b([^>]*)>([\\s\\S]*?)<\\/(?:[A-Za-z_][\\w.-]*:)?${elementName}>`,
-    'g',
-  );
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(xml))) {
-    const attributes = match[1] ?? '';
-    const body = match[2] ?? '';
-    const id = /\b(?:[A-Za-z_][\w.-]*:)?id\s*=\s*["'](-?\d+)["']/.exec(attributes)?.[1];
-    if (!id || Number(id) < 1) continue;
-
-    const paragraphs: string[] = [];
-    const paragraphPattern = /<(?:[A-Za-z_][\w.-]*:)?p(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?p>/g;
-    let paragraphMatch: RegExpExecArray | null;
-    while ((paragraphMatch = paragraphPattern.exec(body))) {
-      const text = extractParagraphText(paragraphMatch[1] ?? '').trim();
-      if (text) paragraphs.push(text);
-    }
-
-    const text = paragraphs.join('\n\n').trim();
-    notes.push({ id, text });
-  }
-
-  return notes;
+function relationshipPart(part: string): string {
+  const slash = part.lastIndexOf('/');
+  return `${part.slice(0, slash + 1)}_rels/${part.slice(slash + 1)}.rels`;
 }
 
 function extractParagraphInline(body: string): OjsDocxInline[] {
@@ -412,15 +387,6 @@ function isNoteReference(
   item: OjsDocxInline,
 ): item is OjsDocxFootnoteReference | OjsDocxEndnoteReference {
   return item.kind === 'footnoteReference' || item.kind === 'endnoteReference';
-}
-
-function extractParagraphText(body: string): string {
-  return extractParagraphInline(body)
-    .filter((item): item is OjsDocxInlineText => item.kind === 'text')
-    .map((item) => item.text)
-    .join('')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n[ \t]+/g, '\n');
 }
 
 function stripWordTableElements(xml: string): string {

@@ -226,11 +226,14 @@ function extractNotes(
 }
 
 function mergeNotes(
-  current: Array<{ id: string; text: string }>,
-  recovered: Array<{ id: string; text: string }>,
-): Array<{ id: string; text: string }> {
+  current: Array<{ id: string; text: string; bodyContent?: string }>,
+  recovered: Array<{ id: string; text: string; bodyContent?: string }>,
+): Array<{ id: string; text: string; bodyContent?: string }> {
   const byId = new Map(current.map((note) => [note.id, note]));
-  for (const note of recovered) byId.set(note.id, note);
+  for (const note of recovered) {
+    const existing = byId.get(note.id);
+    byId.set(note.id, existing?.bodyContent ? existing : note);
+  }
   return Array.from(byId.values());
 }
 
