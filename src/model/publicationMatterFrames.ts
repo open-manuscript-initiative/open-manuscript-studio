@@ -4,7 +4,9 @@ import { frameGraphicTransform, type FrameGraphicTransform } from './publication
 export interface PublicationMatterFrame extends Pick<PublicationFrame, 'id' | 'name' | 'kind' | 'xMm' | 'yMm' | 'widthMm' | 'heightMm' | 'rotation' | 'shape' | 'points'> {
   style: FrameTextStyle;
   content?: string;
-  image?: { assetId: string; alt: string };
+  vertical?: 'top' | 'center' | 'bottom';
+  coverAnchor?: 'left' | 'spine' | 'right';
+  image?: { assetId: string; alt: string; fit?: 'contain' | 'cover' };
   graphicTransform?: FrameGraphicTransform;
 }
 
@@ -54,12 +56,12 @@ export function matterFrameBoxStyle(frame: PublicationMatterFrame, widthMm: numb
 export function matterImageStyle(frame: PublicationMatterFrame) {
   const image = frameGraphicTransform(frame);
   return { position: 'absolute' as const, left: `${image.offsetXMm / frame.widthMm * 100}%`, top: `${image.offsetYMm / frame.heightMm * 100}%`,
-    width: `${image.widthMm / frame.widthMm * 100}%`, height: `${image.heightMm / frame.heightMm * 100}%`, transform: `rotate(${image.rotation}deg)`, transformOrigin: 'center', maxWidth: 'none', maxHeight: 'none', margin: 0, objectFit: 'fill' as const };
+    width: `${image.widthMm / frame.widthMm * 100}%`, height: `${image.heightMm / frame.heightMm * 100}%`, transform: `rotate(${image.rotation}deg)`, transformOrigin: 'center', maxWidth: 'none', maxHeight: 'none', margin: 0, objectFit: frame.image?.fit ?? 'fill' as const };
 }
 
-export function validatePublicationMatterFrames(value: unknown, validateContent: (value: unknown) => void): void {
+export function validatePublicationMatterFrames(value: unknown, validateContent: (value: unknown) => void, sheet = false): void {
   const fail = (): never => { throw new Error('Invalid publication page frame.'); };
-  if (!Array.isArray(value) || value.length > 128) fail();
+  if (!Array.isArray(value) || value.length > (sheet ? 512 : 128)) fail();
   const frames = value as PublicationMatterFrame[];
   const ids = new Set<string>();
   const finite = (n: unknown, min: number, max: number) => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
@@ -67,8 +69,10 @@ export function validatePublicationMatterFrames(value: unknown, validateContent:
   for (const frame of frames) {
     if (!frame || typeof frame !== 'object' || typeof frame.id !== 'string' || !frame.id || frame.id.length > 200 || ids.has(frame.id)
       || typeof frame.name !== 'string' || frame.name.length > 256 || !['text', 'graphic'].includes(frame.kind)
-      || !finite(frame.xMm, -2000, 2000) || !finite(frame.yMm, -2000, 2000)
-      || !finite(frame.widthMm, 1, 2000) || !finite(frame.heightMm, 1, 2000) || !finite(frame.rotation, -360, 360)
+      || !finite(frame.xMm, -2000, sheet ? 4000 : 2000) || !finite(frame.yMm, -2000, 2000)
+      || !finite(frame.widthMm, 1, sheet ? 4000 : 2000) || !finite(frame.heightMm, 1, 2000) || !finite(frame.rotation, -360, 360)
+      || (frame.vertical !== undefined && !['top', 'center', 'bottom'].includes(frame.vertical))
+      || (frame.coverAnchor !== undefined && !['left', 'spine', 'right'].includes(frame.coverAnchor))
       || !['rectangle', 'ellipse', 'polygon'].includes(frame.shape) || !Array.isArray(frame.points)
       || frame.points.length < 3 || frame.points.length > 32 || frame.points.some((point: FramePoint) => !point || !finite(point.x, 0, 100) || !finite(point.y, 0, 100))) fail();
     ids.add(frame.id);
@@ -82,7 +86,7 @@ export function validatePublicationMatterFrames(value: unknown, validateContent:
       validateContent(frame.content);
       if (frame.image !== undefined || frame.graphicTransform !== undefined) fail();
     } else if (frame.content !== undefined) fail();
-    if (frame.image !== undefined && (!frame.image || typeof frame.image.assetId !== 'string' || !frame.image.assetId || frame.image.assetId.length > 256 || typeof frame.image.alt !== 'string' || frame.image.alt.length > 10000)) fail();
+    if (frame.image !== undefined && (!frame.image || typeof frame.image.assetId !== 'string' || !frame.image.assetId || frame.image.assetId.length > 256 || typeof frame.image.alt !== 'string' || frame.image.alt.length > 10000 || (frame.image.fit !== undefined && !['contain', 'cover'].includes(frame.image.fit)))) fail();
     const graphic = frame.graphicTransform;
     if (graphic !== undefined && (!graphic || !finite(graphic.offsetXMm, -20000, 20000) || !finite(graphic.offsetYMm, -20000, 20000)
       || !finite(graphic.widthMm, .000001, 20000) || !finite(graphic.heightMm, .000001, 20000) || !finite(graphic.rotation, -360, 360)

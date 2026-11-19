@@ -2,11 +2,13 @@ import { validatePublicationMatterFrames, type PublicationMatterFrame } from './
 import { getDocumentStructureProfile } from './documentProfile';
 import type { OmiManuscriptState } from '../types/omi';
 import { publicationIdentifierLines } from './publicationIdentifiers';
+import { validateSpineCalculation, type PublicationSpineCalculation } from './publicationSpine';
 
 export const PUBLICATION_MATTER_EXTENSION = 'urn:omi:studio:publication-matter:1';
 export const PUBLICATION_MATTER_PAGES = [
   'front-cover', 'inside-front-cover', 'half-title', 'series-page',
   'title-page', 'imprint-page', 'inside-back-cover', 'back-cover', 'spine',
+  'cover-outside', 'cover-inside',
 ] as const;
 export type PublicationMatterPageKind = typeof PUBLICATION_MATTER_PAGES[number];
 export interface PublicationMatterPage {
@@ -24,6 +26,7 @@ export interface PublicationMatter {
   version: 1;
   publicationKind: 'volume' | 'journal-issue';
   spineWidthMm?: number;
+  spineCalculation?: PublicationSpineCalculation;
   pages: PublicationMatterPage[];
 }
 
@@ -40,7 +43,7 @@ export function publicationMatterTemplate(kind: PublicationMatterPageKind, manus
 }
 
 export function createPublicationMatter(manuscript: OmiManuscriptState): PublicationMatter {
-  return { version: 1, publicationKind: 'volume', spineWidthMm: 10, pages: PUBLICATION_MATTER_PAGES.map((kind) => ({
+  return { version: 1, publicationKind: 'volume', spineWidthMm: 10, pages: PUBLICATION_MATTER_PAGES.filter((kind) => !kind.startsWith('cover-')).map((kind) => ({
     kind, enabled: false, content: publicationMatterTemplate(kind, manuscript),
     appearance: { fontFamily: 'Georgia', fontSizePt: kind === 'front-cover' ? 24 : 14,
       color: '#25282d', background: '#ffffff', alignment: kind === 'imprint-page' ? 'left' : 'center',
@@ -72,9 +75,10 @@ export function publicationMatterAssetIds(manuscript: Pick<OmiManuscriptState, '
 export function validatePublicationMatter(value: unknown): asserts value is PublicationMatter {
   const fail = (): never => { throw new Error('Invalid publication cover/title-page data.'); };
   if (!record(value) || value.version !== 1 || !['volume', 'journal-issue'].includes(String(value.publicationKind))
-    || (value.spineWidthMm !== undefined && (typeof value.spineWidthMm !== 'number' || !Number.isFinite(value.spineWidthMm) || value.spineWidthMm < 1 || value.spineWidthMm > 100))
+    || (value.spineWidthMm !== undefined && (typeof value.spineWidthMm !== 'number' || !Number.isFinite(value.spineWidthMm) || value.spineWidthMm < 0 || value.spineWidthMm > 100))
     || !Array.isArray(value.pages) || value.pages.length > PUBLICATION_MATTER_PAGES.length) fail();
   const model = value as unknown as PublicationMatter;
+  if (model.spineCalculation !== undefined) validateSpineCalculation(model.spineCalculation);
   const seen = new Set<string>();
   for (const page of model.pages) {
     if (!record(page) || !PUBLICATION_MATTER_PAGES.includes(page.kind) || seen.has(page.kind)
@@ -89,7 +93,7 @@ export function validatePublicationMatter(value: unknown): asserts value is Publ
     if (page.image !== undefined && (!record(page.image) || typeof page.image.assetId !== 'string' || !page.image.assetId
       || typeof page.image.alt !== 'string' || !['contain', 'cover'].includes(page.image.fit))) fail();
     validatePublicationMatterContent(page.content);
-    if (page.frames !== undefined) validatePublicationMatterFrames(page.frames, validatePublicationMatterContent);
+    if (page.frames !== undefined) validatePublicationMatterFrames(page.frames, validatePublicationMatterContent, page.kind.startsWith('cover-'));
   }
 }
 

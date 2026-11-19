@@ -4,6 +4,10 @@ import { OjsPublicationTransferPanel } from './OjsPublicationTransferPanel';
 import { ojsPublicationCopy } from '../i18n/ojsPublication';
 import { PublicationFrameEditor } from './PublicationFrameEditor';
 import { PublicationMatterEditor } from './PublicationMatterEditor';
+import { getPublicationMatter } from '../model/publicationMatter';
+import { synchronizePublicationSpine } from '../model/publicationSpine';
+import { stagePublicationMatter } from '../app/publicationMatterActions';
+import { getPublicationSpineCopy } from '../i18n/publicationSpine';
 import { getPublicationMatterCopy } from '../i18n/publicationMatter';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
@@ -32,7 +36,7 @@ import {
   Trash2,
   Type,
 } from 'lucide-react';
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
@@ -202,6 +206,19 @@ export function PublicationStyleEditor() {
   const previewOnly = usePublicationPreview();
   const [frameToolsOpen, setFrameToolsOpen] = useState(false);
   const [matterToolsOpen, setMatterToolsOpen] = useState(false);
+  const [paginationSummary, setPaginationSummary] = useState<{ id: string; count: number }>();
+  const [spineCalculationError, setSpineCalculationError] = useState(false);
+  const handlePageCount = useCallback((id: string, count: number) => setPaginationSummary((previous) => previous?.id === id && previous.count === count ? previous : { id, count }), []);
+  const bodyPageCount = paginationSummary?.id === manuscript.id ? paginationSummary.count : undefined;
+  useEffect(() => {
+    const model = getPublicationMatter(manuscript);
+    if (!model || !bodyPageCount) { setSpineCalculationError(false); return; }
+    try {
+      const next = synchronizePublicationSpine(model, bodyPageCount);
+      if (next !== model) stagePublicationMatter(next, undefined, manuscript.id);
+      setSpineCalculationError(false);
+    } catch { setSpineCalculationError(true); }
+  }, [manuscript, bodyPageCount]);
   useEffect(() => { setMatterToolsOpen(false); }, [manuscript.id, manuscript.documentStructure?.kind]);
   const [ojsTransferOpen, setOjsTransferOpen] = useState(false);
   const frameCopy = getPublicationFramesCopy(locale);
@@ -706,6 +723,7 @@ export function PublicationStyleEditor() {
   return (
     <section
       className="publication-style-editor"
+      data-publication-page-count={bodyPageCount}
       aria-labelledby="publication-style-editor-title"
     >
       <div className="publication-profile-section-heading publication-style-editor-heading">
@@ -1222,13 +1240,15 @@ export function PublicationStyleEditor() {
 
       {ojsTransferOpen ? <button type="button" className="studio-menu-secondary-action" onClick={() => setOjsTransferOpen(false)}>{ojsPublicationCopy(locale).close}</button> : null}
       <OjsPublicationTransferPanel key={manuscript.id} style={style} active={ojsTransferOpen} />
-      {matterToolsOpen ? <div id="publication-matter-workspace" className="publication-matter-workspace" role="tabpanel" aria-labelledby="publication-matter-tab"><PublicationMatterEditor widthMm={style.page.width} heightMm={style.page.height} /></div> : null}
+      {spineCalculationError ? <p role="alert">{getPublicationSpineCopy(locale).error}</p> : null}
+      {matterToolsOpen ? <div id="publication-matter-workspace" className="publication-matter-workspace" role="tabpanel" aria-labelledby="publication-matter-tab"><PublicationMatterEditor widthMm={style.page.width} heightMm={style.page.height} bodyPageCount={bodyPageCount} /></div> : null}
       <div id="publication-content-workspace" className="publication-style-editor-layout" role={getDocumentStructureProfile(manuscript).kind === 'volume' ? 'tabpanel' : undefined} aria-labelledby={getDocumentStructureProfile(manuscript).kind === 'volume' ? 'publication-content-tab' : undefined} hidden={matterToolsOpen}>
         <PublicationDocumentCanvas
           style={style}
           viewMode={documentViewMode}
           onViewModeChange={changeDocumentViewMode}
           onProofingSelection={setProofingSelection}
+          onPageCountChange={handlePageCount}
         />
         {frameToolsOpen ? (
           <section

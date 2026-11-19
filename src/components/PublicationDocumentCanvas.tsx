@@ -97,6 +97,7 @@ interface PublicationDocumentCanvasProps {
   viewMode: PublicationDocumentViewMode;
   onViewModeChange: (mode: PublicationDocumentViewMode) => void;
   onProofingSelection?: (selection: ProofingSelection | null) => void;
+  onPageCountChange?: (manuscriptId: string, count: number) => void;
 }
 
 interface PublicationCanvasCopy {
@@ -125,12 +126,14 @@ export function PublicationDocumentCanvas({
   viewMode,
   onViewModeChange,
   onProofingSelection,
+  onPageCountChange,
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
   const previewOnly = usePublicationPreview();
   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
+  const pageCountChange = useRef(onPageCountChange); pageCountChange.current = onPageCountChange;
   const {
     id: manuscriptId,
     agents: manuscriptAgents,
@@ -416,6 +419,7 @@ export function PublicationDocumentCanvas({
     const measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
     const update = () => {
+      if (!content.getClientRects().length) return;
       const flow = collectPublicationFlowElements(content);
       const noteElements = Array.from(
         noteMeasureRef.current?.querySelectorAll<HTMLElement>('[data-publication-note-id]') ?? [],
@@ -424,7 +428,7 @@ export function PublicationDocumentCanvas({
       let noteIndex = 0;
 
       const measureNotesChunk = () => {
-        if (cancelled) return;
+        if (cancelled || !content.getClientRects().length) return;
         const startedAt = performance.now();
         while (noteIndex < noteElements.length
           && (noteIndex === 0 || performance.now() - startedAt < 8)) {
@@ -451,7 +455,7 @@ export function PublicationDocumentCanvas({
       let existingFlowBreakHeight = 0;
 
       const measureBlocksChunk = () => {
-        if (cancelled) return;
+        if (cancelled || !content.getClientRects().length) return;
         const startedAt = performance.now();
         while (flowIndex < flow.length
           && (flowIndex === 0 || performance.now() - startedAt < 8)) {
@@ -568,6 +572,8 @@ export function PublicationDocumentCanvas({
           },
         );
 
+        if (!content.getClientRects().length) return;
+        pageCountChange.current?.(manuscriptId, layout.pageCount);
         setPagination((current) => (
           current.pageCount === layout.pageCount
             && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
@@ -642,6 +648,7 @@ export function PublicationDocumentCanvas({
     };
   }, [
     canvasId,
+    manuscriptId,
     firstPageLeftMargin,
     firstPageNumber,
     innerMargin,

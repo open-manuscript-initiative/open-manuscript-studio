@@ -1,3 +1,9 @@
+## Unreleased — Complete cover sheets and paper-based spine calculation
+
+- Edit the cover as one physical sheet with outside and inside faces, shared full-sheet coordinates and layers, nonprinting fold guides and artwork spanning both folds. Keep title-matter pages separate; retain legacy panel drafts and compose their content into editable sheet frames.
+- Calculate a 0–100 mm spine from inside pages, manufacturer-specific paper caliper and a configurable binding allowance. Support live print-pagination counts plus enabled title pages, manual final counts, custom grammage/bulk/thickness and manual width override; persist the calculation in OMI/history.
+- Move right-panel and spine presets when binding width changes without scaling their artwork. Export each cover face as one correctly sized HTML/PDF sheet. Preserve the last measured body count while its canvas is hidden for cover editing.
+
 ## Unreleased — Publication editor, cover frames and spine
 
 - Save numeric measurements only after actual input in the current unit; unit/focus changes cannot write an outdated displayed value back to frame geometry.
