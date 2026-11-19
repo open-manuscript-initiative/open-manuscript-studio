@@ -15,3 +15,22 @@
 .omi-publication-matter-paper .tiptap { min-height: 2em; outline: none; font: inherit; color: inherit; }
 .omi-publication-matter-paper .tiptap p { margin: 0 0 .8em; font: inherit; color: inherit; white-space: pre-wrap; }
 .omi-publication-matter-editor button:focus-visible { outline: 2px solid #275d70; outline-offset: 2px; }
+.omi-matter-frame-actions { display:flex; align-items:end; flex-wrap:wrap; gap:.5rem; margin:1rem 0; }
+.omi-matter-frame-settings { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr)); gap:.6rem; border:1px solid #c8c0b5; padding:.8rem; }
+.omi-matter-frame-settings p { margin:0; }
+.omi-matter-frame-actions button,.omi-matter-frame-settings button { min-height:2.5rem; }
+.omi-matter-frame { outline:1px dashed transparent; }
+.omi-matter-frame.is-selected { outline-color:#276b9a; }
+.omi-matter-frame-outline,.omi-matter-frame-content { position:absolute; inset:0; box-sizing:border-box; }
+.omi-matter-frame-outline { pointer-events:none; }
+.omi-matter-frame-outline svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.omi-matter-frame-content { overflow:hidden; }
+.omi-matter-frame-content p { font:inherit; margin:0 0 .8em; white-space:pre-wrap; }
+.omi-matter-frame-content p:last-child { margin-bottom:0; }
+.omi-matter-frame-image { touch-action:none; }
+.omi-matter-frame-image > img { display:block; width:100%; height:100%; max-width:none; max-height:none; object-fit:fill; margin:0; user-select:none; }
+.omi-matter-frame-move,.omi-matter-frame-resize,.omi-matter-frame-point { position:absolute; z-index:10; touch-action:none; min-width:24px; min-height:24px; padding:1px; border:1px solid #276b9a; background:#fff; color:#183849; cursor:move; }
+.omi-matter-frame-move { top:0; left:0; }
+.omi-matter-frame-resize { right:0; bottom:0; cursor:nwse-resize; }
+.omi-matter-frame-point { min-width:14px; min-height:14px; transform:translate(-50%,-50%); border-radius:50%; background:#dbeefa; }
+.omi-matter-frame-text .tiptap { min-height:1em; }

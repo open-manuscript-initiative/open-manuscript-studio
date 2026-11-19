@@ -1,3 +1,5 @@
+import { matterFrameBoxStyle, matterImageStyle, type PublicationMatterFrame } from '../model/publicationMatterFrames';
+import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 import { renderTextBoxGraphic, visualTextBoxDiagnostics } from '../model/textBoxes';
 import { tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../model/tableLayout';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
@@ -16,7 +18,7 @@ import { renderPublicationNoteBody } from './publicationNoteBody';
 import { contributorNameParts } from '../model/contributorName.ts';
 import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
-import { publicationMatterPages, type PublicationMatterPage } from '../model/publicationMatter';
+import { getPublicationMatter, publicationMatterPages, type PublicationMatterPage } from '../model/publicationMatter';
 import { cssStringLiteral } from './embeddedCss';
 import {
   buildPublicationRenderingContext,
@@ -160,6 +162,8 @@ export function renderHtmlArticle(
     : context.title;
   const matterBefore = options.publicationMatter === false ? [] : publicationMatterPages(manuscript, 'before');
   const matterAfter = options.publicationMatter === false ? [] : publicationMatterPages(manuscript, 'after');
+  const spine = matterBefore.find((page) => page.kind === 'spine');
+  const spineWidth = getPublicationMatter(manuscript)?.spineWidthMm ?? 10;
   const article = [
     renderFront(state, labels),
     context.sections.length
@@ -193,16 +197,16 @@ export function renderHtmlArticle(
     indent(renderProfileCss(profile), 2),
     '  </style>',
     state.pagedNotes ? `<style data-omi-paged-notes>\n${PAGED_NOTE_CSS}\n</style>` : '',
-    matterBefore.length || matterAfter.length ? `<style data-omi-publication-matter>\n${publicationMatterCss(profile)}\n</style>` : '',
+    matterBefore.length || matterAfter.length ? `<style data-omi-publication-matter>\n${publicationMatterCss(profile, spineWidth)}\n</style>` : '',
     '</head>',
     '<body>',
-    matterBefore.map((page) => renderPublicationMatterPage(page, state)).join('\n'),
+    (spine ? renderPublicationCoverSpread(matterBefore.find((page) => page.kind === 'front-cover'), spine, matterAfter.find((page) => page.kind === 'back-cover'), spineWidth, state) : '') + matterBefore.filter((page) => !spine || !['spine', 'front-cover'].includes(page.kind)).map((page) => renderPublicationMatterPage(page, state)).join('\n'),
     `  <article class="omi-scholarly-article" data-omi-manuscript-id="${escapeAttribute(
       context.manuscriptId,
     )}" data-omi-head-revision="${escapeAttribute(context.headRevisionId)}">`,
     indent(article, 2),
     '  </article>',
-    matterAfter.map((page) => renderPublicationMatterPage(page, state)).join('\n'),
+    matterAfter.filter((page) => !spine || page.kind !== 'back-cover').map((page) => renderPublicationMatterPage(page, state)).join('\n'),
     '</body>',
     '</html>',
     '',
@@ -683,7 +687,17 @@ function renderMusicScore(block: OmiBlock, state: RenderState): string {
   return `<figure id="${htmlId('music', block.id)}" class="scholarly-music-score" data-omi-block-id="${escapeAttribute(block.id)}"><div class="music-score-data" data-format="${escapeAttribute(visual.format)}">${escapeHtml(notes)}</div>${title ? `<figcaption>${escapeHtml(title)}</figcaption>` : ''}</figure>`;
 }
 
-function renderPublicationMatterPage(page: PublicationMatterPage, state: RenderState): string {
+function renderPublicationCoverSpread(front: PublicationMatterPage | undefined, spine: PublicationMatterPage, back: PublicationMatterPage | undefined, spineWidth: number, state: RenderState): string {
+  const profile = state.context.profile;
+  const width = profile.publicationStyle?.page.width ?? (profile.rules.layout.pageSize === 'Letter' ? 215.9 : 210);
+  const height = profile.publicationStyle?.page.height ?? (profile.rules.layout.pageSize === 'Letter' ? 279.4 : 297);
+  const panels = [back ? renderPublicationMatterPage(back, state, { width, height, left: 0 }) : '',
+    renderPublicationMatterPage(spine, state, { width: spineWidth, height, left: width }),
+    front ? renderPublicationMatterPage(front, state, { width, height, left: width + spineWidth }) : ''].join('');
+  return `<section class="omi-publication-cover-spread" data-spine-width-mm="${spineWidth}" style="width:${2 * width + spineWidth}mm;height:${height}mm">${panels}</section>`;
+}
+
+function renderPublicationMatterPage(page: PublicationMatterPage, state: RenderState, panel?: { width: number; height: number; left: number }): string {
   const appearance = page.appearance;
   const justify = { top: 'flex-start', center: 'center', bottom: 'flex-end' }[appearance.vertical];
   const styles = `font-family:${cssStringLiteral(appearance.fontFamily)},serif;font-size:${appearance.fontSizePt}pt;color:${appearance.color};background:${appearance.background};text-align:${appearance.alignment};justify-content:${justify};padding:${appearance.paddingMm}mm`;
@@ -694,10 +708,28 @@ function renderPublicationMatterPage(page: PublicationMatterPage, state: RenderS
       state.diagnostics.push({ code: 'publication-matter-image-missing', severity: 'error', message: 'A publication cover image is missing or unsupported.', targetId: page.kind });
     } else image = `<img class="omi-publication-matter-image" src="${escapeAttribute(state.assetPrefix + assetPath(asset))}" alt="${escapeAttribute(page.image.alt)}" style="object-fit:${page.image.fit}">`;
   }
-  return `<section class="omi-publication-matter-page" data-publication-matter="${page.kind}" aria-label="${page.kind}" style="${escapeAttribute(styles)}">${image}<div class="omi-publication-matter-text">${renderJsonNode(JSON.parse(page.content) as JsonNode, state)}</div></section>`;
+  const width = panel?.width ?? state.context.profile.publicationStyle?.page.width ?? (state.context.profile.rules.layout.pageSize === 'Letter' ? 215.9 : 210);
+  const height = panel?.height ?? state.context.profile.publicationStyle?.page.height ?? (state.context.profile.rules.layout.pageSize === 'Letter' ? 279.4 : 297);
+  const frames = (page.frames ?? []).map((frame, index) => renderPublicationMatterFrame(frame, index, width, height, state)).join('');
+  return `<section class="omi-publication-matter-page" data-publication-matter="${page.kind}" aria-label="${page.kind}" style="${escapeAttribute(styles + (frames || panel ? `;height:${height}mm;overflow:hidden` : '') + (panel ? `;width:${width}mm;min-height:${height}mm;position:absolute;left:${panel.left}mm;top:0;max-width:none` : ''))}">${image}<div class="omi-publication-matter-text">${renderJsonNode(JSON.parse(page.content) as JsonNode, state)}</div>${frames}</section>`;
 }
 
-function publicationMatterCss(profile: OmiPublicationProfile): string {
+function renderPublicationMatterFrame(frame: PublicationMatterFrame, index: number, width: number, height: number, state: RenderState): string {
+  const inline = (style: object) => Object.entries(style).map(([key, value]) => `${key.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}:${value}`).join(';');
+  const box = inline({ ...matterFrameBoxStyle(frame, width, height), zIndex: index + 2 });
+  let content = '';
+  if (frame.kind === 'text') content = renderJsonNode(JSON.parse(frame.content!) as JsonNode, state);
+  else if (frame.image) {
+    const asset = state.assetMap.get(frame.image.assetId);
+    if (!asset || !['image/png', 'image/jpeg', 'image/webp'].includes(asset.mediaType)) {
+      state.diagnostics.push({ code: 'publication-matter-frame-image-missing', severity: 'error', message: 'A publication page frame image is missing or unsupported.', targetId: frame.id });
+    } else content = `<img class="omi-matter-frame-image" src="${escapeAttribute(state.assetPrefix + assetPath(asset))}" alt="${escapeAttribute(frame.image.alt)}" style="${escapeAttribute(inline(matterImageStyle(frame)))}">`;
+  }
+  const textStyle = frame.kind === 'text' ? `;padding:${frame.style.paddingMm}mm;font-family:${cssStringLiteral(frame.style.fontFamily)},serif;font-size:${frame.style.fontSizePt}pt;line-height:${frame.style.lineHeightPt}pt;font-weight:${frame.style.fontWeight};font-style:${frame.style.fontStyle};color:${frame.style.color};text-align:${frame.style.alignment}` : '';
+  return `<div class="omi-matter-frame" data-matter-frame-id="${escapeAttribute(frame.id)}" data-frame-kind="${frame.kind}" aria-label="${escapeAttribute(frame.name)}" style="${escapeAttribute(box)}">${frameShapeSvg(frame, { ...frame.style, strokeWidthMm: 0 })}<div class="omi-matter-frame-content" style="clip-path:${frameClipPath(frame)}${escapeAttribute(textStyle)}">${content}</div>${frame.style.strokeWidthMm > 0 ? frameShapeSvg(frame, { ...frame.style, fill: 'none' }) : ''}</div>`;
+}
+
+function publicationMatterCss(profile: OmiPublicationProfile, spineWidth: number): string {
   const width = profile.publicationStyle?.page.width ?? (profile.rules.layout.pageSize === 'Letter' ? 215.9 : 210);
   const height = profile.publicationStyle?.page.height ?? (profile.rules.layout.pageSize === 'Letter' ? 279.4 : 297);
   return `
@@ -705,10 +737,22 @@ function publicationMatterCss(profile: OmiPublicationProfile): string {
   @top-left { content:none } @top-center { content:none } @top-right { content:none }
   @bottom-left { content:none } @bottom-center { content:none } @bottom-right { content:none }
 }
+@page omi_publication_cover { size:${2 * width + spineWidth}mm ${height}mm; margin:0; counter-increment:page 0;
+  @top-left { content:none } @top-center { content:none } @top-right { content:none }
+  @bottom-left { content:none } @bottom-center { content:none } @bottom-right { content:none }
+}
+.omi-publication-cover-spread { page:omi_publication_cover; position:relative; break-before:page; break-after:page; break-inside:avoid; background:#fff; isolation:isolate; }
+.omi-publication-cover-spread > .omi-publication-matter-page { page:auto; break-before:auto; break-after:auto; margin:0; box-shadow:none; }
 .omi-publication-matter-page { page:omi_publication_matter; break-before:page; break-after:page; break-inside:avoid;
   box-sizing:border-box; width:${width}mm; min-height:${height}mm; position:relative; display:flex; flex-direction:column; isolation:isolate;
   print-color-adjust:exact; -webkit-print-color-adjust:exact; overflow-wrap:anywhere; }
 .omi-publication-matter-image { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+.omi-matter-frame { overflow:visible; }
+.omi-matter-frame > .omi-frame-outline { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.omi-matter-frame-content { position:absolute; inset:0; overflow:hidden; box-sizing:border-box; }
+.omi-matter-frame-content p { margin:0 0 .8em; font:inherit; white-space:pre-wrap; }
+.omi-matter-frame-content p:last-child { margin-bottom:0; }
+.omi-matter-frame-image { display:block; object-fit:fill; }
 .omi-publication-matter-text { position:relative; z-index:1; } .omi-publication-matter-text p { white-space:pre-wrap; }
 @media screen { .omi-publication-matter-page { margin:1rem auto; max-width:100%; box-shadow:0 2px 10px #0002; } }
 @media print { .omi-publication-matter-page { margin:0; } }

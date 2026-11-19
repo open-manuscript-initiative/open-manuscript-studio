@@ -79,7 +79,7 @@ export function frameRunningHeader(layout: PublicationFrameLayout, index: number
   const fill = (text: string) => text.replace(/\{(title|articleTitle|page|pageNumber|pages|style)\}/g, (_, key: string) => values[key]!);
   return { left: fill(fields.left), center: fill(fields.center), right: fill(fields.right) };
 }
-export function frameGraphicTransform(frame: PublicationFrame, aspectRatio?: number): FrameGraphicTransform {
+export function frameGraphicTransform(frame: Pick<PublicationFrame, 'widthMm' | 'heightMm' | 'graphicTransform'>, aspectRatio?: number): FrameGraphicTransform {
   if (frame.graphicTransform) return { ...frame.graphicTransform };
   const ratio = aspectRatio && Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : frame.widthMm / frame.heightMm;
   const widthMm = Math.min(frame.widthMm, frame.heightMm * ratio), heightMm = widthMm / ratio;

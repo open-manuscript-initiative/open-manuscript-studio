@@ -1,8 +1,10 @@
+import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
+export { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 import { framePageStyle, framePageStyles, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader } from '../model/publicationFramePages';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import {
   flowFrameStories, frameDisplayText, frameStyle, validateFrameLayout, MM_PER_POINT,
-  type FrameTextMeasure, type FrameTextStyle, type PublicationFrame, type PublicationFrameFlow, type PublicationFrameLayout,
+  type FrameTextMeasure, type FrameTextStyle, type PublicationFrameFlow, type PublicationFrameLayout,
 } from '../model/publicationFrames';
 import { cssStringLiteral } from './embeddedCss';
 import { buildPdfArtifactDocument } from './exportPdf';
@@ -16,19 +18,9 @@ export function createFrameTextMeasure(): FrameTextMeasure {
     return context.measureText(text).width * 25.4 / 96;
   };
 }
-export function frameClipPath(frame: PublicationFrame): string {
-  return frame.shape === 'ellipse' ? 'ellipse(50% 50% at 50% 50%)' : frame.shape === 'polygon'
-    ? `polygon(evenodd, ${frame.points.map((point) => `${point.x}% ${point.y}%`).join(', ')})` : 'none';
-}
 export function frameTypography(style: FrameTextStyle) {
   return { fontFamily: `${cssStringLiteral(style.fontFamily)}, serif`, fontSize: `${style.fontSizePt}pt`,
     lineHeight: `${style.lineHeightPt}pt`, fontWeight: style.fontWeight, fontStyle: style.fontStyle, color: style.color };
-}
-export function frameShapeSvg(frame: PublicationFrame, style: FrameTextStyle): string {
-  const attrs = `fill="${style.fill}" stroke="${style.stroke}" stroke-width="${style.strokeWidthMm}"`;
-  const shape = frame.shape === 'ellipse' ? `<ellipse cx="${frame.widthMm / 2}" cy="${frame.heightMm / 2}" rx="${frame.widthMm / 2}" ry="${frame.heightMm / 2}" ${attrs}/>`
-    : `<polygon points="${(frame.shape === 'rectangle' ? [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }] : frame.points).map((p) => `${p.x * frame.widthMm / 100},${p.y * frame.heightMm / 100}`).join(' ')}" fill-rule="evenodd" ${attrs}/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" class="omi-frame-outline" viewBox="0 0 ${frame.widthMm} ${frame.heightMm}" preserveAspectRatio="none" aria-hidden="true">${shape}</svg>`;
 }
 export function renderFrameDocument(layout: PublicationFrameLayout, flow: PublicationFrameFlow, graphics: ReadonlyMap<string, string>, title: string, language = 'en'): string {
   validateFrameLayout(layout);
