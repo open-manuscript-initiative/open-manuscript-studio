@@ -1,3 +1,12 @@
+import { readDocxNotes } from '../src/services/docxNoteImport.ts';
+import { OdtZip } from '../src/services/odtZip.ts';
+import { parseDocxSource } from '../server/src/integrations/ojs/docxSource.ts';
+import { applyNoteIntegrity } from '../server/src/integrations/ojs/docxNoteIntegrity.ts';
+import { applyReferenceSemantics } from '../server/src/integrations/ojs/docxReferences.ts';
+import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
+import { serializeOmiJson } from '../src/services/exportOmi.ts';
+import { parseOmiJson } from '../src/services/omiPortableFormat.ts';
+import { createNoteBodyDocument } from '../src/model/noteRichText.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getDocumentStructureProfile } from '../src/model/documentProfile.ts';
@@ -195,4 +204,62 @@ test('OJS editable import labels its provider source without exposing private so
   const content = manuscript.sections.flatMap((section) => section.blocks.map((block) => block.content)).join(' ');
   assert.match(content, /Synthetic Journal/);
   assert.doesNotMatch(content, /PRIVATE-SYNTHETIC-AUTHOR/);
+});
+
+test('preserves rich OJS DOCX notes through server integrity, both launch paths and OMI reopen', async () => {
+  const w = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const r = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const bytes = Buffer.from(createStoreZip([
+    textZipEntry('word/document.xml', `<w:document xmlns:w="${w}"><w:body><w:p><w:r><w:t>Body</w:t><w:footnoteReference w:id="14"/><w:endnoteReference w:id="2"/></w:r></w:p></w:body></w:document>`),
+    textZipEntry('word/styles.xml', `<w:styles xmlns:w="${w}"><w:style w:styleId="BaseNote"><w:rPr><w:i/></w:rPr></w:style><w:style w:styleId="Inherited"><w:basedOn w:val="BaseNote"/></w:style></w:styles>`),
+    textZipEntry('word/footnotes.xml', `<w:footnotes xmlns:w="${w}" xmlns:r="${r}"><w:footnote w:id="-1"><w:p/></w:footnote><w:footnote w:id="14"><w:p>
+      <w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:footnoteRef/></w:r>
+      <w:r><w:rPr><w:rStyle w:val="Inherited"/><w:b/></w:rPr><w:t>Styled</w:t></w:r>
+      <w:r><w:rPr><w:rStyle w:val="Inherited"/><w:i w:val="0"/></w:rPr><w:t> plain</w:t></w:r>
+      <w:r><w:rPr><w:u/><w:strike/><w:smallCaps/></w:rPr><w:t> decorated</w:t></w:r>
+      <w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:t>2</w:t></w:r>
+      <w:r><w:br/><w:t>Line</w:t><w:tab/><w:t>tab</w:t></w:r>
+      <w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> XE "Hidden" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>
+      <w:del><w:r><w:delText>Deleted</w:delText></w:r></w:del>
+      </w:p><w:p><w:hyperlink r:id="note-link"><w:r><w:t>Link</w:t></w:r></w:hyperlink></w:p></w:footnote></w:footnotes>`),
+    textZipEntry('word/endnotes.xml', `<w:endnotes xmlns:w="${w}"><w:endnote w:id="2"><w:p><w:r><w:rPr><w:vertAlign w:val="subscript"/></w:rPr><w:t>End</w:t></w:r></w:p></w:endnote></w:endnotes>`),
+    textZipEntry('word/_rels/footnotes.xml.rels', '<Relationships><Relationship Id="note-link" Target="https://source.example/note"/></Relationships>'),
+    textZipEntry('word/_rels/document.xml.rels', '<Relationships><Relationship Id="note-link" Target="https://wrong.example/"/></Relationships>'),
+  ]));
+  const parsed = parseDocxSource(bytes, '1', 'source.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  const local = await readDocxNotes(new OdtZip(new Uint8Array(bytes).buffer));
+  assert.equal(parsed.footnotes[0]?.bodyContent, local.footnotes.get('14')?.bodyContent);
+  assert.equal(parsed.endnotes[0]?.bodyContent, local.endnotes.get('2')?.bodyContent);
+  const source = applyReferenceSemantics(bytes, applyNoteIntegrity(bytes, parsed));
+  assert.equal(source.footnotes.length, 1);
+  assert.equal(source.footnotes[0]?.bodyContent, parsed.footnotes[0]?.bodyContent);
+  for (const importer of [createManuscriptFromOjsLaunch, importLocalizedLaunch]) {
+    const manuscript = importer(launchWithSource(source));
+    assert.ok(manuscript);
+    assert.equal(manuscript.annotations.length, 2);
+    const note = manuscript.annotations[0]!;
+    const doc = JSON.parse(note.bodyContent!);
+    const nodes = doc.content.flatMap((p: { content: Array<{ text?: string; marks?: Array<{ type: string; attrs?: Record<string, unknown> }> }> }) => p.content);
+    const marks = (text: string) => nodes.find((node: { text?: string }) => node.text === text)?.marks ?? [];
+    assert.deepEqual(marks('Styled').map((mark: { type: string }) => mark.type), ['italic', 'bold']);
+    assert.deepEqual(marks(' plain'), []);
+    assert.deepEqual(marks(' decorated').map((mark: { type: string }) => mark.type), ['omiUnderline', 'strike', 'omiSmallCaps']);
+    assert.equal(marks('2')[0]?.type, 'omiSuperscript');
+    assert.deepEqual(marks('Link'), [{ type: 'omiLink', attrs: { href: 'https://source.example/note' } }]);
+    assert.equal(doc.content.length, 2);
+    assert.match(note.body, /Line\ttab\nLink$/);
+    assert.doesNotMatch(note.body, /Hidden|Deleted/);
+    assert.equal(JSON.parse(manuscript.annotations[1]!.bodyContent!).content[0].content[0].marks[0].type, 'omiSubscript');
+    const restored = parseOmiJson(serializeOmiJson(manuscript));
+    assert.equal(restored.annotations[0]?.bodyContent, note.bodyContent);
+    assert.deepEqual(createNoteBodyDocument(note, [], 'chicago-notes-bibliography', 'hu'), doc);
+  }
+});
+
+test('falls back to legacy plain notes when optional OJS rich content is absent or malformed', () => {
+  for (const bodyContent of [undefined, '{bad', '{"type":"doc","content":[{"type":"omiNote"}]}']) {
+    const manuscript = importLocalizedLaunch(launchWithSource({ kind: 'docx', paragraphs: [{ text: 'Body', inline: [{ kind: 'text', text: 'Body' }, { kind: 'footnoteReference', footnoteId: '1' }] }], footnotes: [{ id: '1', text: 'Legacy note', bodyContent }] }));
+    assert.equal(manuscript?.annotations[0]?.body, 'Legacy note');
+    assert.equal(manuscript?.annotations[0]?.bodyContent, undefined);
+  }
 });

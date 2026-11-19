@@ -25,3 +25,18 @@ The live continuous manuscript editor and its existing semantic HTML/print rende
 The existing `omi-publication-artifact/1` and `omi-publication-build/0.1.0` contracts are reused. A new endpoint, plugin protocol, database migration, scientific-review authority or OMP feature is not introduced. Workflow-token support requires OJS Integration 1.7 or newer; use the current complete 1.8.3 package or newer. Native plugin checks still enforce stage, current unpublished publication, role, genre/locale, build identity and exact bytes.
 
 [ADR-038](architecture/adr-038-live-publication-ojs-handoff.md) records the input/provenance and acceptance decisions.
+
+### Formatted source notes
+
+The Studio API extracts rich footnote/endnote bodies from the original DOCX
+source supplied by OJS/OMP. The launch payload carries optional `bodyContent`
+(Tiptap document JSON) beside the plain `text` projection. Note IDs, reference
+positions and numbering remain unchanged. Inherited and directly applied inline
+styles, explicit resets, links scoped to the note part, tabs and paragraph/line
+breaks survive opening and OMI save/reopen. Internal Word field instructions,
+deleted revisions and automatic note-number runs are omitted.
+
+Deploy both the updated Studio frontend and API. This change does not require an
+OJS plugin update. Older launch payloads remain readable as plain-text notes.
+Previously flattened Studio documents must be reopened from the original OJS
+source to recover formatting; local edits are not silently overwritten.

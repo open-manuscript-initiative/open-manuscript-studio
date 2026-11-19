@@ -1,3 +1,5 @@
+import { noteBodyPlainText, type NoteJsonNode } from '../../model/noteRichText';
+import { normalizeExternalHref, normalizeInlineLanguageTag } from '../../model/richText';
 import { createSampleManuscript } from '../../document/sampleManuscript';
 import { createDocumentStructureProfile } from '../../model/documentProfile';
 import {
@@ -80,6 +82,7 @@ interface OjsSourceParagraph {
 interface OjsSourceNote {
   id?: string;
   text?: string;
+  bodyContent?: string;
 }
 
 export interface OjsSourceDocument {
@@ -524,11 +527,11 @@ function inferHeadingLevelFromText(
   return undefined;
 }
 
-function createNoteMap(notes: OjsSourceNote[] | undefined): Map<string, string> {
+function createNoteMap(notes: OjsSourceNote[] | undefined): Map<string, OjsSourceNote> {
   return new Map(
     (notes ?? [])
       .filter((note) => note.id !== undefined)
-      .map((note) => [String(note.id), typeof note.text === 'string' ? note.text : '']),
+      .map((note) => [String(note.id), note]),
   );
 }
 
@@ -544,8 +547,8 @@ function isSourceNoteReference(
 function buildParagraphContent(
   paragraph: OjsSourceParagraph,
   blockId: string,
-  footnotes: Map<string, string>,
-  endnotes: Map<string, string>,
+  footnotes: Map<string, OjsSourceNote>,
+  endnotes: Map<string, OjsSourceNote>,
   startingNoteNumber: number,
   importedAt: string,
 ): {
@@ -596,7 +599,9 @@ function buildParagraphContent(
     if (!sourceNoteId) continue;
 
     const noteKind = isEndnote ? 'endnote' : 'footnote';
-    const body = (isEndnote ? endnotes : footnotes).get(sourceNoteId) ?? '';
+    const sourceNote = (isEndnote ? endnotes : footnotes).get(sourceNoteId);
+    const richBody = importedNoteBody(sourceNote?.bodyContent);
+    const body = richBody ? noteBodyPlainText(richBody) : (typeof sourceNote?.text === 'string' ? sourceNote.text : '');
 
     noteNumber += 1;
     const noteId = `note-${crypto.randomUUID()}`;
@@ -620,6 +625,7 @@ function buildParagraphContent(
       anchorId,
       targetBlockId: blockId,
       body,
+      ...(richBody ? { bodyContent: JSON.stringify(richBody) } : {}),
       renderingHint: noteKind,
       createdAt: importedAt,
       modifiedAt: importedAt,
@@ -761,4 +767,43 @@ function fallbackLabels(locale: string) {
 
 function normalizeComparison(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+/** The launch envelope is external data: import only the note editor's text schema. */
+function importedNoteBody(value: string | undefined): NoteJsonNode | null {
+  if (typeof value !== 'string' || value.length > 1_000_000) return null;
+  try {
+    const document = JSON.parse(value);
+    let count = 0;
+    const clean = (node: NoteJsonNode, depth: number): NoteJsonNode => {
+      if (!node || typeof node !== 'object' || ++count > 50_000 || depth > 32) throw new Error('Invalid note');
+      if (node.type === 'text' && typeof node.text === 'string') {
+        const marks = (Array.isArray(node.marks) ? node.marks : []).flatMap((mark) => {
+          if (!mark || typeof mark !== 'object') return [];
+          if (['bold', 'italic', 'strike', 'code', 'omiUnderline', 'omiSmallCaps', 'omiSuperscript', 'omiSubscript'].includes(mark.type ?? '')) return [{ type: mark.type! }];
+          if (mark.type === 'omiLink') {
+            const href = typeof mark.attrs?.href === 'string' ? normalizeExternalHref(mark.attrs.href) : undefined;
+            return href ? [{ type: mark.type, attrs: { href } }] : [];
+          }
+          if (mark.type === 'omiLanguage') {
+            const lang = typeof mark.attrs?.lang === 'string' ? normalizeInlineLanguageTag(mark.attrs.lang) : undefined;
+            return lang ? [{ type: mark.type, attrs: { lang } }] : [];
+          }
+          if (mark.type === 'omiSourceFont' && typeof mark.attrs?.family === 'string') {
+            const family = mark.attrs.family.trim().slice(0, 128);
+            return family ? [{ type: mark.type, attrs: { family } }] : [];
+          }
+          return [];
+        });
+        return { type: 'text', text: node.text, ...(marks.length ? { marks } : {}) };
+      }
+      if (node.type === 'hardBreak') return { type: 'hardBreak' };
+      if (node.type !== 'doc' && node.type !== 'paragraph') throw new Error('Invalid note node');
+      if (!Array.isArray(node.content)) throw new Error('Invalid note content');
+      const content = node.content.map((child) => clean(child, depth + 1));
+      if (content.some((child) => node.type === 'doc' ? child.type !== 'paragraph' : !['text', 'hardBreak'].includes(child.type ?? ''))) throw new Error('Invalid note structure');
+      return { type: node.type, content };
+    };
+    return document?.type === 'doc' ? clean(document, 0) : null;
+  } catch { return null; }
 }
