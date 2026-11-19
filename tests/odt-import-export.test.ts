@@ -36,6 +36,32 @@ test('rejects DTD and entity declarations in untrusted ODT XML', async () => {
   await assert.rejects(() => parseOdtForStudio(new File([bytes], 'unsafe.odt')), /declarations and entities are not supported/i);
 });
 
+test('preserves actual ODT style properties and paragraph boundaries in notes', async () => {
+  const content = `<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <office:automatic-styles>
+      <style:style style:name="T1" style:family="text" style:parent-style-name="Inherited"><style:text-properties fo:font-weight="bold" style:text-underline-style="solid"/></style:style>
+      <style:style style:name="T2" style:family="text" style:parent-style-name="Inherited"><style:text-properties fo:font-style="normal"/></style:style>
+      <style:style style:name="T3" style:family="text"><style:text-properties fo:font-variant="small-caps" style:text-position="super 58%"/></style:style>
+    </office:automatic-styles>
+    <office:body><office:text><text:p>Body<text:note text:note-class="endnote"><text:note-citation>7</text:note-citation><text:note-body>
+      <text:p><text:span text:style-name="T1">Styled</text:span><text:span text:style-name="T2"> plain</text:span><text:line-break/><text:span text:style-name="T3">Caps</text:span><text:tab/>tab</text:p>
+      <text:p><text:a xlink:href="https://source.example/">Source</text:a></text:p>
+    </text:note-body></text:note></text:p></office:text></office:body></office:document-content>`;
+  const styles = '<office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"><office:styles><style:style style:name="Inherited" style:family="text"><style:text-properties fo:font-style="italic"/></style:style></office:styles></office:document-styles>';
+  const bytes = createStoreZip([textZipEntry('mimetype', 'application/vnd.oasis.opendocument.text'), textZipEntry('content.xml', content), textZipEntry('styles.xml', styles)]);
+  const plan = await parseOdtForStudio(new File([bytes], 'notes.odt'));
+  const note = plan.annotations[0]!;
+  assert.equal(note.noteKind, 'endnote');
+  assert.equal(note.body, 'Styled plain\nCaps\ttab\nSource');
+  const doc = JSON.parse(note.bodyContent!);
+  assert.equal(doc.content.length, 2);
+  assert.deepEqual(doc.content[0].content[0].marks.map((mark: { type: string }) => mark.type), ['italic', 'bold', 'omiUnderline']);
+  assert.equal(doc.content[0].content[1].marks, undefined);
+  assert.equal(doc.content[0].content[2].type, 'hardBreak');
+  assert.deepEqual(doc.content[0].content[3].marks.map((mark: { type: string }) => mark.type), ['omiSmallCaps', 'omiSuperscript']);
+  assert.deepEqual(doc.content[1].content[0].marks, [{ type: 'omiLink', attrs: { href: 'https://source.example/' } }]);
+});
+
 test('exports an ODT package with the required first mimetype entry and portable manuscript content', () => {
   const manuscript = createTestManuscript();
   manuscript.sections[0]!.blocks.push(createImageBlock({ src: 'data:image/png;base64,iVBORw0KGgo=', mediaType: 'image/png', alt: 'A chart' }));

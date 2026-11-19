@@ -1,3 +1,4 @@
+import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
 import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
 import {
   createEquationBlock,
@@ -88,8 +89,8 @@ interface TiptapNode {
 
 interface InlineContext {
   blockId: string;
-  footnotes: Map<string, string>;
-  endnotes: Map<string, string>;
+  footnotes: Map<string, ImportedNoteBody>;
+  endnotes: Map<string, ImportedNoteBody>;
   bibliographyByTag: Map<string, OmiBibliographicRecord>;
   annotations: OmiAnnotation[];
   citations: OmiCitation[];
@@ -154,12 +155,7 @@ export async function parseDocxManuscript(
   const core = archive.has('docProps/core.xml')
     ? parseCoreProperties(await archive.text('docProps/core.xml'))
     : {};
-  const footnotes = archive.has('word/footnotes.xml')
-    ? parseNotes(await archive.text('word/footnotes.xml'), 'footnote')
-    : new Map<string, string>();
-  const endnotes = archive.has('word/endnotes.xml')
-    ? parseNotes(await archive.text('word/endnotes.xml'), 'endnote')
-    : new Map<string, string>();
+  const { footnotes, endnotes } = await readDocxNotes(archive);
   const bibliographicRecords = await readWordBibliography(archive, importedAt);
   const bibliographyByTag = new Map(
     bibliographicRecords
@@ -651,7 +647,7 @@ function parseParagraphInline(
         if (!noteBodies.has(noteId)) {
           context.warnings.push(warning('missing-note-body'));
         }
-        const noteBody = noteBodies.get(noteId) ?? '';
+        const noteBody = noteBodies.get(noteId);
         const annotationId = `note-${crypto.randomUUID()}`;
         const anchorId = `anchor-${crypto.randomUUID()}`;
         const label = String(context.annotations.length + 1);
@@ -661,7 +657,8 @@ function parseParagraphInline(
           noteKind: noteType,
           anchorId,
           targetBlockId: context.blockId,
-          body: noteBody,
+          body: noteBody?.body ?? '',
+          ...(noteBody ? { bodyContent: noteBody.bodyContent } : {}),
           renderingHint: noteType,
           createdAt: new Date().toISOString(),
           modifiedAt: new Date().toISOString(),
@@ -1152,23 +1149,6 @@ function parseCoreProperties(xmlText: string): {
     creator: firstTextByLocalName(document, 'creator'),
     language: firstTextByLocalName(document, 'language'),
   };
-}
-
-function parseNotes(
-  xmlText: string,
-  localName: 'footnote' | 'endnote',
-): Map<string, string> {
-  const document = parseXml(xmlText);
-  const result = new Map<string, string>();
-  for (const note of descendantsByLocalName(document, localName)) {
-    const id = attributeByLocalName(note, 'id');
-    if (!id || Number(id) < 1) continue;
-    const paragraphs = directChildrenByLocalName(note, 'p')
-      .map((paragraph) => paragraphPlainText(paragraph).trim())
-      .filter(Boolean);
-    result.set(id, paragraphs.join('\n'));
-  }
-  return result;
 }
 
 async function readWordBibliography(

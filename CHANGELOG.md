@@ -4,6 +4,11 @@
   saving, bold, italic, underline, strikethrough, small caps and super/subscript.
 - Keep the focused note visible while its source anchor scrolls out of view;
   follow the mobile keyboard viewport and synchronize edits with note cards.
+- Preserve footnote/endnote rich text during normal and large-document Word
+  import, including inherited character styles, explicit formatting resets,
+  hyperlinks from each note part, and paragraph/line breaks. ODT notes also
+  retain text styles and paragraph/list structure. Previously flattened notes
+  require reimporting the original document to recover their source formatting.
 
 ## Unreleased — Selective OJS metadata reconciliation
 
