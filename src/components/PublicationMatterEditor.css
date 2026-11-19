@@ -34,3 +34,4 @@
 .omi-matter-frame-resize { right:0; bottom:0; cursor:nwse-resize; }
 .omi-matter-frame-point { min-width:14px; min-height:14px; transform:translate(-50%,-50%); border-radius:50%; background:#dbeefa; }
 .omi-matter-frame-text .tiptap { min-height:1em; }
+.omi-matter-frame-layer-actions { display:flex; flex-wrap:wrap; gap:.35rem; grid-column:1/-1; }

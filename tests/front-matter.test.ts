@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createPublicationMatterFrame, fitPublicationMatterImage, matterFrameBoxStyle, matterImageStyle, resizePublicationMatterImage } from '../src/model/publicationMatterFrames.ts';
+import { createPublicationMatterFrame, fitPublicationMatterImage, matterFrameBoxStyle, matterImageStyle, reorderPublicationMatterFrame, resizePublicationMatterImage } from '../src/model/publicationMatterFrames.ts';
 import { frameGraphicTransform } from '../src/model/publicationFramePages.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 import { createDocumentStructureProfile } from '../src/model/documentProfile.ts';
@@ -334,4 +334,33 @@ test('an enabled spine joins the exterior covers into one correctly sized printa
   assert.throws(() => validatePublicationMatter({ ...model, spineWidthMm: 101 }));
   const legacy = { ...model, spineWidthMm: undefined, pages: model.pages.filter((page) => page.kind !== 'spine') };
   assert.doesNotThrow(() => validatePublicationMatter(legacy));
+});
+
+
+test('overlapping frame layers reorder without changing content or geometry and survive OMI/HTML/PDF', () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.documentStructure = createDocumentStructureProfile('volume');
+  const model = createPublicationMatter(manuscript), page = model.pages[4]!;
+  page.enabled = true;
+  const frames = ['Bottom', 'Middle', 'Top'].map((name) => {
+    const frame = createPublicationMatterFrame('text', 210, 297);
+    frame.name = name; frame.xMm = 30; frame.yMm = 40;
+    frame.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: name }] }] });
+    return frame;
+  });
+  const original = structuredClone(frames);
+  page.frames = reorderPublicationMatterFrame(frames, frames[0]!.id, 1);
+  assert.deepEqual(page.frames.map((frame) => frame.name), ['Middle', 'Bottom', 'Top']);
+  page.frames = reorderPublicationMatterFrame(page.frames, frames[2]!.id, 0);
+  assert.deepEqual(page.frames.map((frame) => frame.name), ['Top', 'Middle', 'Bottom']);
+  assert.deepEqual(frames, original);
+  for (const frame of page.frames) assert.deepEqual(frame, original.find((item) => item.id === frame.id));
+  manuscript.extensions = { [PUBLICATION_MATTER_EXTENSION]: model };
+  const restored = parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(getPublicationMatter(restored)!.pages[4]!.frames, page.frames);
+  const layerOrder = (html: string) => [...html.matchAll(/data-matter-frame-id="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(layerOrder(renderHtmlArticle(restored).html), page.frames.map((frame) => frame.id));
+  assert.deepEqual(layerOrder(buildPdfPrintDocument(restored)), page.frames.map((frame) => frame.id));
+  assert.throws(() => reorderPublicationMatterFrame(frames, 'unknown-frame', 0));
+  assert.throws(() => reorderPublicationMatterFrame(frames, frames[0]!.id, frames.length));
 });

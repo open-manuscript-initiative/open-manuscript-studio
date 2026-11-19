@@ -8,6 +8,16 @@ export interface PublicationMatterFrame extends Pick<PublicationFrame, 'id' | 'n
   graphicTransform?: FrameGraphicTransform;
 }
 
+/** Array order is the persisted stacking order, from bottom to top. */
+export function reorderPublicationMatterFrame(frames: readonly PublicationMatterFrame[], id: string, destination: number): PublicationMatterFrame[] {
+  const source = frames.findIndex((frame) => frame.id === id);
+  if (source < 0 || !Number.isInteger(destination) || destination < 0 || destination >= frames.length) throw new Error('Invalid frame layer.');
+  const next = [...frames];
+  const [frame] = next.splice(source, 1);
+  next.splice(destination, 0, frame!);
+  return next;
+}
+
 export function createPublicationMatterFrame(kind: 'text' | 'graphic', widthMm: number, heightMm: number): PublicationMatterFrame {
   const narrowText = kind === 'text' && widthMm < 60;
   const fontSizePt = narrowText ? Math.max(6, Math.min(20, widthMm * 1.1)) : 20;

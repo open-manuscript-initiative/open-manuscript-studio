@@ -29,8 +29,11 @@ page or spine. Select a frame on the page or in **Select frame**. Move and resiz
 its handles, or enter X/Y, width, height and rotation in millimetres/degrees.
 Choose a rectangle, ellipse or custom polygon; polygon points can be dragged,
 added and removed. Each frame has its own fill, stroke, typography and inset.
-Use **Bring to front**, **Send to back** and **Delete frame** to manage overlapping
-frames. Type and apply rich inline formatting directly inside a text frame; an
+Frames may overlap freely. Use **Bring forward** / **Send backward** for one
+layer at a time, **Bring to front** / **Send to back** for the outermost layers,
+or choose an exact **Layer (1 = bottom)**. A covered frame can still be selected
+from **Select frame**. Selection keeps the saved stacking order. The same order
+is retained in OMI and HTML/PDF output. **Delete frame** removes the selected frame. Type and apply rich inline formatting directly inside a text frame; an
 overflow message indicates that the text needs more space.
 
 Upload PNG/JPEG/WebP artwork into a selected graphic frame, or paste/drop an image

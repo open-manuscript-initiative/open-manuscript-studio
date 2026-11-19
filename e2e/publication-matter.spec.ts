@@ -96,6 +96,32 @@ for (const width of [1440, 393]) {
     await numeric('Graphic width (mm)', '110'); await numeric('Graphic height (mm)', '70');
     await expect(settings.getByRole('spinbutton', { name: 'Width (mm)', exact: true })).toHaveValue('100');
     await expect(settings.getByRole('spinbutton', { name: 'Height (mm)', exact: true })).toHaveValue('90');
+    const artworkId = (await panel.locator('[data-frame-kind="graphic"]').getAttribute('data-matter-frame-id'))!;
+    await panel.getByRole('button', { name: 'Add text frame', exact: true }).click();
+    await settings.getByRole('textbox', { name: 'Frame name', exact: true }).fill('Overlay');
+    await panel.getByRole('textbox', { name: 'Text frame content', exact: true }).fill('Overlay text');
+    const overlayId = (await panel.locator('.omi-matter-frame.is-selected').getAttribute('data-matter-frame-id'))!;
+    const topFrameAtOverlayCenter = async () => {
+      const overlay = panel.locator('.omi-matter-frame').filter({ has: page.getByRole('textbox', { name: 'Text frame content', exact: true }) });
+      await overlay.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+      return overlay.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.closest('[data-matter-frame-id]')?.getAttribute('data-matter-frame-id');
+      });
+    };
+    await expect.poll(topFrameAtOverlayCenter).toBe(overlayId);
+    await settings.getByRole('button', { name: 'Send backward', exact: true }).click();
+    await expect(panel.locator('[data-matter-frame-id]').nth(1)).toHaveAttribute('data-matter-frame-id', overlayId);
+    await expect.poll(topFrameAtOverlayCenter).toBe(artworkId);
+    await settings.getByRole('button', { name: 'Send backward', exact: true }).click();
+    await expect(settings.getByRole('button', { name: 'Send backward', exact: true })).toBeDisabled();
+    await settings.getByRole('button', { name: 'Bring forward', exact: true }).click();
+    await expect(settings.getByLabel('Layer (1 = bottom)', { exact: true })).toHaveValue('1');
+    await settings.getByLabel('Layer (1 = bottom)', { exact: true }).selectOption('2');
+    await expect(settings.getByRole('button', { name: 'Bring to front', exact: true })).toBeDisabled();
+    await expect.poll(topFrameAtOverlayCenter).toBe(overlayId);
+    await settings.getByRole('button', { name: 'Delete frame', exact: true }).click();
+    await panel.getByLabel('Select frame', { exact: true }).selectOption(artworkId);
     await settings.getByRole('button', { name: 'Send to back', exact: true }).click();
     await expect(panel.locator('[data-frame-kind]').first()).toHaveAttribute('data-frame-kind', 'graphic');
     await settings.getByRole('button', { name: 'Bring to front', exact: true }).click();

@@ -6,7 +6,7 @@ import { getPublicationMatterCopy } from '../i18n/publicationMatter';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
 import { getPublicationMatterFramesCopy } from '../i18n/publicationMatterFrames';
 import { createPublicationMatter, getPublicationMatter, type PublicationMatterPage } from '../model/publicationMatter';
-import { createPublicationMatterFrame, fitPublicationMatterImage, matterFrameBoxStyle, matterImageStyle, resizePublicationMatterImage, type PublicationMatterFrame } from '../model/publicationMatterFrames';
+import { createPublicationMatterFrame, fitPublicationMatterImage, matterFrameBoxStyle, matterImageStyle, reorderPublicationMatterFrame, resizePublicationMatterImage, type PublicationMatterFrame } from '../model/publicationMatterFrames';
 import { frameGraphicTransform } from '../model/publicationFramePages';
 import { frameClipPath, frameShapeSvg } from '../services/publicationFrameShapes';
 import { getAssetPayload } from '../services/assetRepository';
@@ -30,6 +30,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
   const [overflow, setOverflow] = useState(false);
   const frames = page.frames ?? [];
   const selected = frames.find((frame) => frame.id === selectedId);
+  const selectedIndex = frames.findIndex((frame) => frame.id === selectedId);
   const graphic = selected?.kind === 'graphic' ? frameGraphicTransform(selected) : undefined;
   useEffect(() => {
     if (!paper.current) return;
@@ -49,6 +50,9 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
   function choose(id: string) { setSelectedId(id); setEditImage(false); }
   function patchFrame(id: string, patch: Partial<PublicationMatterFrame>) {
     if (!readOnly) onChange({ frames: frames.map((frame) => frame.id === id ? { ...frame, ...patch } : frame) });
+  }
+  function reorder(destination: number) {
+    if (!readOnly && selected) onChange({ frames: reorderPublicationMatterFrame(frames, selected.id, destination) });
   }
   function add(kind: 'text' | 'graphic') {
     if (readOnly || frames.length >= 128) return;
@@ -143,7 +147,14 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
           <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'cover') })}>{copy.fillFrame}</button>
         </> : null}
       </>}
-      <div><button type="button" onClick={() => onChange({ frames: [...frames.filter((frame) => frame.id !== selected.id), selected] })}>{labels.front}</button><button type="button" onClick={() => onChange({ frames: [selected, ...frames.filter((frame) => frame.id !== selected.id)] })}>{labels.back}</button><button type="button" onClick={() => { onChange({ frames: frames.filter((frame) => frame.id !== selected.id) }); choose(''); }}>{copy.deleteFrame}</button></div>
+      <label>{labels.layer}<select value={selectedIndex} onChange={(event) => reorder(Number(event.target.value))}>{frames.map((frame, index) => <option key={frame.id} value={index}>{index + 1}</option>)}</select></label>
+      <div className="omi-matter-frame-layer-actions" role="group" aria-label={labels.order}>
+        <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(frames.length - 1)}>{labels.front}</button>
+        <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(selectedIndex + 1)}>{labels.forward}</button>
+        <button type="button" disabled={selectedIndex === 0} onClick={() => reorder(selectedIndex - 1)}>{labels.backward}</button>
+        <button type="button" disabled={selectedIndex === 0} onClick={() => reorder(0)}>{labels.back}</button>
+      </div>
+      <button type="button" onClick={() => { onChange({ frames: frames.filter((frame) => frame.id !== selected.id) }); choose(''); }}>{copy.deleteFrame}</button>
     </fieldset> : null}
     {error ? <p role="alert">{error}</p> : null}
     {overflow ? <p role="status">{labels.overflow}</p> : null}
