@@ -326,9 +326,11 @@ for (const width of [1440, 393]) {
       const { serializeOmiJson } = await import('/src/services/exportOmi.ts');
       const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
       const { getPublicationMatter } = await import('/src/model/publicationMatter.ts');
+      const { loadPublicationStyle } = await import('/src/services/publicationStyleExport.ts');
       const { renderHtmlArticle } = await import('/src/services/exportHtml.ts');
+      const { resolvePublicationProfile } = await import('/src/model/publicationProfile.ts');
       const manuscript = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
-      return { model: getPublicationMatter(manuscript), html: renderHtmlArticle(manuscript).html };
+      return { model: getPublicationMatter(manuscript), html: renderHtmlArticle(manuscript, { ...resolvePublicationProfile(manuscript), publicationStyle: loadPublicationStyle() }).html };
     });
     expect(persisted.model!.spineCalculation).toMatchObject({ pageCount: 300, paperId: 'munken-80-1.5', mode: 'manual', allowanceMm: .5 });
     expect(persisted.html).toContain(`width:${sheetDimensions.width - 18.5 + 20}mm;height:${sheetDimensions.height}mm`);
