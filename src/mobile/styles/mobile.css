@@ -110,6 +110,17 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.mobile-editor-tools {
+  min-width: 0;
+  min-height: 0;
+  background: inherit;
+  z-index: 19;
+}
+
+.mobile-editor-tools .focus-header-formatting {
+  padding-inline: 0.5rem;
+}
+
 .mobile-action-bar::-webkit-scrollbar {
   display: none;
 }

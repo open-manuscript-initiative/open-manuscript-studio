@@ -140,39 +140,6 @@
   gap: 0.55rem;
 }
 
-.omi-note-formatting {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  font-family: var(--omi-academic-sans, sans-serif);
-}
-
-.omi-note-formatting button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.25rem;
-  min-height: 2.25rem;
-  padding: 0.25rem;
-  border: 1px solid #d0d5dd;
-  border-radius: 0.3rem;
-  background: #fff;
-  color: #344054;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.omi-note-formatting button[aria-pressed="true"] {
-  background: var(--omi-academic-burgundy-soft, #f6ecee);
-  border-color: var(--omi-academic-burgundy, #6d2130);
-  color: var(--omi-academic-burgundy, #6d2130);
-}
-
-.omi-note-formatting button:focus-visible {
-  outline: 2px solid #6d2130;
-  outline-offset: 2px;
-}
-
 .omi-note-rich-editor {
   min-height: 7rem;
   box-sizing: border-box;
