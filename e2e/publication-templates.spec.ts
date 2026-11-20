@@ -11,8 +11,8 @@ for (const width of [1440, 393]) {
     await signInToStudio(page);
     await page.getByRole('button', { name: /^New volume or issue/ }).click();
     const form = page.locator('.omi-new-publication-form');
-    await form.getByLabel('Publication template', { exact: true }).selectOption('omi-series-a5');
-    await expect(form.getByLabel('Publication template').locator('option')).toHaveCount(2);
+    await form.getByRole('combobox', { name: 'Publication template', exact: true }).selectOption('omi-series-a5');
+    await expect(form.getByRole('combobox', { name: 'Publication template', exact: true }).locator('option')).toHaveCount(2);
     await form.getByLabel('Volume or journal issue title').fill('Source volume');
     await form.getByRole('button', { name: 'Create', exact: true }).click();
     await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
@@ -30,7 +30,7 @@ for (const width of [1440, 393]) {
     await panel.getByLabel('Series or journal name', { exact: true }).fill('History series');
     await panel.getByRole('button', { name: 'Save as new template', exact: true }).click();
     await expect(panel.getByRole('status')).toHaveText('Template saved.');
-    const templateId = await panel.getByLabel('Publication template', { exact: true }).inputValue();
+    const templateId = await panel.getByRole('combobox', { name: 'Publication template', exact: true }).inputValue();
     expect(templateId).not.toBe('');
     expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
 
@@ -40,7 +40,7 @@ for (const width of [1440, 393]) {
       createAndOpenBlankOmiDocument({ kind: 'volume', publicationKind: 'volume', title: 'Target volume', locale: 'en', titleMatter: { isbn: '978-3-16-148410-0' } });
     });
     await editor.locator('.publication-template-panel summary').click();
-    await panel.getByLabel('Publication template', { exact: true }).selectOption(templateId);
+    await panel.getByRole('combobox', { name: 'Publication template', exact: true }).selectOption(templateId);
     await panel.getByRole('button', { name: 'Apply template', exact: true }).click();
     await expect(panel.getByRole('status')).toHaveText('Template applied.');
     const result = await page.evaluate(async () => {
@@ -60,7 +60,7 @@ for (const width of [1440, 393]) {
     await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
     await menu.getByRole('group', { name: 'Publishing', exact: true }).getByRole('button', { name: 'Publication editor', exact: true }).click();
     await editor.locator('.publication-template-panel summary').click();
-    await expect(panel.getByLabel('Publication template').locator('option', { hasText: 'University book series' })).toHaveCount(1);
+    await expect(panel.getByRole('combobox', { name: 'Publication template', exact: true }).locator('option', { hasText: 'University book series' })).toHaveCount(1);
     if (width > 720) {
       await editor.getByRole('button', { name: 'Print page', exact: true }).click();
       await expect(editor.getByLabel('Trim width (mm)', { exact: true })).toHaveValue('160');
@@ -77,11 +77,11 @@ test('journal creation filters templates and preserves issue identifiers', async
   await installMockStudioApi(page); await signInToStudio(page);
   await page.getByRole('button', { name: /^New volume or issue/ }).click();
   const form = page.locator('.omi-new-publication-form');
-  await form.getByLabel('Publication template').selectOption('omi-series-a5');
-  await form.getByLabel('Publication type', { exact: true }).selectOption('journal-issue');
-  await expect(form.getByLabel('Publication template')).toHaveValue('');
-  await expect(form.getByLabel('Publication template').locator('option')).toHaveCount(2);
-  await form.getByLabel('Publication template').selectOption('omi-journal-150-240');
+  await form.getByRole('combobox', { name: 'Publication template', exact: true }).selectOption('omi-series-a5');
+  await form.getByRole('combobox', { name: 'Publication type', exact: true }).selectOption('journal-issue');
+  await expect(form.getByRole('combobox', { name: 'Publication template', exact: true })).toHaveValue('');
+  await expect(form.getByRole('combobox', { name: 'Publication template', exact: true }).locator('option')).toHaveCount(2);
+  await form.getByRole('combobox', { name: 'Publication template', exact: true }).selectOption('omi-journal-150-240');
   await form.getByLabel('Volume or journal issue title').fill('Special issue');
   await form.getByLabel('ISSN (print)', { exact: true }).fill('1234-5679');
   await form.getByLabel('ISBN (print)', { exact: true }).fill('978-3-16-148410-0');
