@@ -203,6 +203,7 @@ test('styled and semantic HTML panels download single files whose images work of
   }
   await menu.getByRole('button', { name: 'Publication', exact: true }).click();
   for (const selector of ['.publication-style-export-panel', '.html-export-panel']) {
+    await menu.getByRole('navigation', { name: 'Publication tasks' }).getByRole('button', { name: selector === '.publication-style-export-panel' ? 'Styles and templates' : 'Files and export', exact: true }).click();
     const panel = menu.locator(selector);
     await expect(panel.getByLabel('HTML save mode')).toHaveValue('standalone');
     await panel.getByRole('button', { name: /^Export HTML/ }).click();
@@ -320,6 +321,7 @@ async function exportFromUi(
     await menu.locator('.studio-menu-navigation-toggle').click();
   }
   await menu.getByRole('button', { name: 'Publication', exact: true }).click();
+  await menu.getByRole('navigation', { name: 'Publication tasks' }).getByRole('button', { name: 'Files and export', exact: true }).click();
   const exportFormats = menu.locator('.studio-export-formats');
   const formatSelect = exportFormats.getByLabel('Export format');
   await formatSelect.selectOption(format);
@@ -390,6 +392,7 @@ async function expectJatsReleaseBlocked(page: Page): Promise<void> {
     await menu.locator('.studio-menu-navigation-toggle').click();
   }
   await menu.getByRole('button', { name: 'Publication', exact: true }).click();
+  await menu.getByRole('navigation', { name: 'Publication tasks' }).getByRole('button', { name: 'Files and export', exact: true }).click();
   const exportFormats = menu.locator('.studio-export-formats');
   await exportFormats.getByLabel('Export format').selectOption('jats');
   await exportFormats.getByRole('button', { name: 'Export', exact: true }).click();

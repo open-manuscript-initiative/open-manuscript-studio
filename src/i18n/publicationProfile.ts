@@ -5,6 +5,9 @@ import type {
 } from '../model/publicationProfile';
 
 export interface PublicationProfileCopy {
+  workspaceNavigation: string;
+  workspaceDescription: string;
+  workspaceGroups: Record<'profiles' | 'styles' | 'checks' | 'exports' | 'delivery', { title: string; description: string }>;
   navigation: string;
   title: string;
   description: string;
@@ -67,6 +70,15 @@ export interface PublicationProfileCopy {
 }
 
 const en: PublicationProfileCopy = {
+  workspaceNavigation: "Publication tasks",
+  workspaceDescription: "Prepare the publication profile and styles, check requirements, then export or send the finished manuscript.",
+  workspaceGroups: {
+    profiles: { title: "Profiles and publisher", description: "Choose a publication profile, manage publisher details and save reusable profile definitions." },
+    styles: { title: "Styles and templates", description: "Import layout templates and configure styled exports, HTML and print stylesheets." },
+    checks: { title: "Publication checks", description: "Review rendering rules and resolve missing publication requirements before export." },
+    exports: { title: "Files and export", description: "Create downloadable publication files or use the detailed JATS and HTML export tools." },
+    delivery: { title: "Submission and publishing", description: "Submit to OJS/OMP, prepare publication artifacts or publish a newsletter." },
+  },
   navigation: 'Publication',
   title: 'Publication profile',
   description: 'Choose the rendering, metadata and accessibility rules for the intended publication target.',
@@ -159,6 +171,15 @@ profileSeparation: 'The profile changes presentation and publication requirement
 
 const hu: PublicationProfileCopy = {
   ...en,
+  workspaceNavigation: "Publikációs feladatok",
+  workspaceDescription: "Állítsd be a publikáció profilját és stílusait, ellenőrizd a követelményeket, majd exportáld vagy küldd tovább a kész kéziratot.",
+  workspaceGroups: {
+    profiles: { title: "Profilok és kiadó", description: "Válassz publikációs profilt, kezeld a kiadói adatokat, és mentsd el az újra felhasználható profilokat." },
+    styles: { title: "Stílusok és sablonok", description: "Importálj tördelési sablont, és állítsd be a formázott export, a HTML és a nyomtatás stílusait." },
+    checks: { title: "Publikációs ellenőrzés", description: "Tekintsd át a megjelenítési szabályokat, és pótold a hiányzó publikációs követelményeket exportálás előtt." },
+    exports: { title: "Fájlok és export", description: "Készíts letölthető publikációs fájlokat, vagy használd a részletes JATS- és HTML-exportot." },
+    delivery: { title: "Beküldés és közzététel", description: "Küldd be a kéziratot OJS/OMP rendszerbe, készíts publikációs csomagot, vagy tedd közzé hírlevélként." },
+  },
   navigation: 'Publikáció',
   title: 'Publikációs profil',
   description: 'Válaszd ki a célkiadvány megjelenítési, metaadat- és akadálymentességi szabályait.',
@@ -251,6 +272,15 @@ profileSeparation: 'A profil a megjelenítést és a publikációs követelmény
 
 const de: PublicationProfileCopy = {
   ...en,
+  workspaceNavigation: "Publikationsaufgaben",
+  workspaceDescription: "Richten Sie Profil und Stile ein, prüfen Sie die Anforderungen und exportieren oder übermitteln Sie das fertige Manuskript.",
+  workspaceGroups: {
+    profiles: { title: "Profile und Verlag", description: "Wählen Sie ein Publikationsprofil, verwalten Sie Verlagsangaben und speichern Sie wiederverwendbare Profile." },
+    styles: { title: "Stile und Vorlagen", description: "Importieren Sie Layoutvorlagen und konfigurieren Sie formatierte Exporte sowie HTML- und Druckstile." },
+    checks: { title: "Publikationsprüfung", description: "Prüfen Sie die Darstellungsregeln und ergänzen Sie fehlende Publikationsanforderungen vor dem Export." },
+    exports: { title: "Dateien und Export", description: "Erstellen Sie Publikationsdateien oder nutzen Sie die ausführlichen JATS- und HTML-Exportwerkzeuge." },
+    delivery: { title: "Einreichung und Veröffentlichung", description: "Reichen Sie bei OJS/OMP ein, erstellen Sie Publikationspakete oder veröffentlichen Sie einen Newsletter." },
+  },
   navigation: 'Publikation',
   title: 'Publikationsprofil',
   description: 'Wählen Sie Darstellungs-, Metadaten- und Barrierefreiheitsregeln für das Publikationsziel.',

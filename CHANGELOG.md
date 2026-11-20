@@ -1,3 +1,9 @@
+## Unreleased — Organized publication workspace
+
+- Group Publication into Profiles and publisher, Styles and templates, Publication checks, Files and export, and Submission and publishing. Use icon navigation, surfaces and active colors consistent with the manuscript menu.
+- Show one task group at a time, retain form drafts and export results when switching groups, and keep mobile navigation and forms in a single column. Use available content width for two-column tools instead of squeezing unrelated forms into viewport-based grids.
+- Provide Hungarian, English and German group labels and guidance.
+
 ## Unreleased — Complete cover sheets and paper-based spine calculation
 
 - Edit the cover as one physical sheet with outside and inside faces, shared full-sheet coordinates and layers, nonprinting fold guides and artwork spanning both folds. Keep title-matter pages separate; retain legacy panel drafts and compose their content into editable sheet frames.
