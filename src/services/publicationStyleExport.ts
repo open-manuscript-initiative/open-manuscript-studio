@@ -1,3 +1,4 @@
+import { publicationFirstPageNumber } from '../model/publicationSpreads';
 import { inlinePublicationArtifactImages } from './publicationHtmlArtifact';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { buildPublicationPageStylesCss } from './publicationPageStyleCss';
@@ -26,7 +27,8 @@ import {
 } from '../model/publicationParagraphStyles';
 
 type PublicationStyleTemplate = typeof templateJson;
-export type PublicationStyle = Omit<PublicationStyleTemplate, 'paragraphStyles'> & {
+export type PublicationStyle = Omit<PublicationStyleTemplate, 'paragraphStyles' | 'page'> & {
+  page: PublicationStyleTemplate['page'] & { facingPages?: boolean };
   paragraphStyles: PublicationParagraphStyleCollection;
   pageStyles?: PublicationPageStyleCollection;
 };
@@ -66,6 +68,8 @@ export function normalizePublicationStyle(style: PublicationStyle): PublicationS
     page: {
       ...fallback.page,
       ...style.page,
+      facingPages: style.page?.facingPages === true,
+      pageNumberStart: publicationFirstPageNumber(style.page ?? fallback.page),
       margins: {
         ...fallback.page.margins,
         ...style.page?.margins,
@@ -442,7 +446,7 @@ body { padding: 2rem max(1rem, calc((100vw - 56rem) / 2)); }
   const bleed = nonNegative(style.page.bleed, 0);
   const innerMargin = nonNegative(margins.inner, 0) + gutter;
   const outerMargin = nonNegative(margins.outer, 0);
-  const pageNumberStart = Math.max(0, Math.trunc(style.page.pageNumberStart ?? 1));
+  const pageNumberStart = publicationFirstPageNumber(style.page);
   const cropMarks = style.page.cropMarks ?? false;
   const mirroredPageRules = style.page.mirroredMargins
     ? `

@@ -83,6 +83,8 @@ export function validatePublisherProfile(value: unknown): ProtectablePublication
     const style = object(profile.publicationStyle, '/publicationStyle');
     const { paragraphStyles: _paragraphStyles, ...requiredStyle } = styleTemplate;
     shape(style, requiredStyle, '/publicationStyle');
+    const page = object(style.page, '/publicationStyle/page');
+    if (page.facingPages !== undefined && typeof page.facingPages !== 'boolean') fail('/publicationStyle/page/facingPages');
     if (style.pageStyles !== undefined) validatePublicationPageStyles(style.pageStyles);
     const paragraphs = object(style.paragraphStyles, '/publicationStyle/paragraphStyles');
     if (typeof paragraphs.defaultStyleId !== 'string' || !Array.isArray(paragraphs.items)) fail('/publicationStyle/paragraphStyles');

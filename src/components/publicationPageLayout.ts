@@ -19,6 +19,7 @@ export interface PublicationFlowLine {
 }
 
 export interface PublicationFlowBreak {
+  pageIndex: number;
   blockIndex: number;
   textOffset: number;
   height: number;
@@ -154,6 +155,7 @@ export function paginatePublicationBlocks(
 
         if (breakHeight > 0.5) {
           flowBreaks.push({
+            pageIndex: linePage,
             blockIndex: index,
             textOffset: line.textOffset,
             height: breakHeight,
@@ -254,7 +256,7 @@ function paginateStyledPages(
       const delta = actualTop - unit.top;
       if (unit.first) placements[unit.blockIndex] = { pageIndex: page, translateY: delta - inlineHeight };
       else if (delta > previousDelta + 0.5) {
-        const height = delta - previousDelta; flowBreaks.push({ blockIndex: unit.blockIndex, textOffset: unit.textOffset, height }); inlineHeight += height;
+        const height = delta - previousDelta; flowBreaks.push({ pageIndex: page, blockIndex: unit.blockIndex, textOffset: unit.textOffset, height }); inlineHeight += height;
       }
       previousDelta = delta;
     }
@@ -412,7 +414,7 @@ function paginateWithFootnotes(
         placements[unit.blockIndex] = { pageIndex: page, translateY: delta - inlineHeight };
       } else if (delta > previousDelta + 0.5) {
         const height = delta - previousDelta;
-        flowBreaks.push({ blockIndex: unit.blockIndex, textOffset: unit.textOffset, height });
+        flowBreaks.push({ pageIndex: page, blockIndex: unit.blockIndex, textOffset: unit.textOffset, height });
         inlineHeight += height;
       }
       previousDelta = delta;

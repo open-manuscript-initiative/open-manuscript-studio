@@ -2037,3 +2037,12 @@
   align-items: center;
   justify-content: space-between;
 }
+
+/* Facing sheets share a spine. The continuous editor stays a single editable
+   document; only its screen coordinates change. */
+.publication-document-paper--spreads { overflow: clip; overflow-clip-margin: 16px; }
+.publication-document-paper--spreads .publication-document-page-separator { display: none; }
+.publication-document-paper--spreads .omi-continuous-visual:has(.omi-table-editor),
+.publication-document-paper--spreads .omi-visual-block--table,
+.publication-document-paper--spreads .omi-table-editor-wrap,
+.publication-document-paper--spreads .omi-table-scroll { overflow: visible; background: transparent; box-shadow: none; }

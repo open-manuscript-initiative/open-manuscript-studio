@@ -60,3 +60,22 @@ cover and title-matter sheets. Ordinary browser print may not implement these
 paged-media selectors; use Studio's server-generated PDF for the final proof.
 Responsive HTML keeps its continuous semantic layout and receives no page-style
 or section-header rules.
+
+
+## Facing pages
+
+Enable **Publication editor → Print page → Facing pages** for a spread view:
+start with a single odd right-hand page, then pair even left-hand and odd
+right-hand pages (1; 2–3; 4–5). An even first page number is rounded up to the
+next odd number. The missing first left-hand sheet is pasteboard, not an
+inserted blank page. Fit spread scales both sheets together.
+
+Paragraph continuations, table rows, footnotes, section headers and assigned
+page masters follow their sheets. Mixed-size masters align to the spine and
+the taller page determines the next row. The frame workspace uses the same
+facing-page setting. Mirror margins remains an independent print setting.
+
+The setting is part of the publication style, including OMI files and reusable
+templates. IDML carries FacingPages and the odd starting page number. PDF keeps
+individual pages in reading order; the workspace spread is not printer
+imposition. Disable Facing pages to return to the vertical single-page view.

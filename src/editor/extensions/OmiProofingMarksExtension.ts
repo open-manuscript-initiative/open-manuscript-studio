@@ -20,6 +20,9 @@ export interface OmiPublicationFlowBreak {
   targetBlockId: string;
   textOffset: number;
   height: number;
+  /** Screen-only continuation offset relative to the block's first sheet. */
+  shiftX?: number;
+  shiftY?: number;
 }
 
 export interface OmiProofingMarksPayload {
@@ -143,6 +146,19 @@ export const OmiProofingMarksExtension = Extension.create({
                   offset,
                   pageFlowBreak,
                 );
+              }
+              const continuations = pageFlowBreaks.filter((item) => item.shiftX !== undefined || item.shiftY !== undefined)
+                .sort((a, b) => a.textOffset - b.textOffset);
+              for (const [index, item] of continuations.entries()) {
+                const from = textPositionInNode(node, offset, item.textOffset);
+                const to = continuations[index + 1]
+                  ? textPositionInNode(node, offset, continuations[index + 1]!.textOffset)
+                  : offset + node.nodeSize - 1;
+                if (from === null || to === null || from >= to) continue;
+                decorations.push(Decoration.inline(from, to, {
+                  class: 'omi-publication-spread-continuation',
+                  style: `position:relative;left:calc(var(--omi-spread-projection, 1) * ${item.shiftX ?? 0}px);top:calc(var(--omi-spread-projection, 1) * ${item.shiftY ?? 0}px)`,
+                }));
               }
             });
 
