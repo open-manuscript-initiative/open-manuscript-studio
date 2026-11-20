@@ -20,9 +20,9 @@ async function fixture(t, { metadataFailures = [], assetFailures = [], bytes = p
   const requests = [];
   const waits = [];
   const options = { repository: 'github/codeql-action', tag: 'synthetic-tag',
-    assetName: 'tool.bin', destination, wait: async milliseconds => waits.push(milliseconds),
+    assetName: 'tool.bin', destination, token: '', wait: async milliseconds => waits.push(milliseconds),
     fetchImpl: async (url, init) => {
-      requests.push({ url, accept: init.headers.Accept });
+      requests.push({ url, accept: init.headers.Accept, authorization: init.headers.Authorization });
       if (url.includes('/releases/tags/')) {
         const status = metadataFailures.shift();
         if (status) return new Response(null, { status });
@@ -50,6 +50,83 @@ test('metadata and binary downloads retry transient HTTP failures', async t => {
   assert.equal(f.requests.length, 5);
   assert.deepEqual(f.waits, [5000, 5000, 10000]);
   assert.equal(f.requests[3].url, 'https://github.com/github/codeql-action/releases/download/synthetic-tag/tool.bin');
+});
+
+test('authenticated official API requests use the token for metadata and asset bytes', async t => {
+  const f = await fixture(t);
+  await downloadReleaseAsset({ ...f.options, token: 'synthetic-test-token' });
+  assert.equal(f.requests.length, 2);
+  assert.ok(f.requests.every(request => request.authorization === 'Bearer synthetic-test-token'));
+  assert.ok(f.requests.every(request => new URL(request.url).origin === 'https://api.github.com'));
+});
+
+test('tokens are omitted from direct release and Gradle vendor fallback URLs', async t => {
+  const f = await fixture(t, { assetFailures: [504, 502] });
+  await downloadReleaseAsset({ ...f.options, repository: 'gradle/gradle-distributions', token: 'synthetic-test-token' });
+  assert.equal(f.requests[0].authorization, 'Bearer synthetic-test-token');
+  assert.equal(f.requests[1].authorization, 'Bearer synthetic-test-token');
+  assert.equal(new URL(f.requests[2].url).origin, 'https://github.com');
+  assert.equal(f.requests[2].authorization, undefined);
+  assert.equal(new URL(f.requests[3].url).origin, 'https://downloads.gradle.org');
+  assert.equal(f.requests[3].authorization, undefined);
+});
+
+test('the workflow token is read from GH_TOKEN or GITHUB_TOKEN without being required locally', async t => {
+  const previous = { GH_TOKEN: process.env.GH_TOKEN, GITHUB_TOKEN: process.env.GITHUB_TOKEN };
+  try {
+    process.env.GH_TOKEN = 'synthetic-gh-token'; process.env.GITHUB_TOKEN = 'synthetic-github-token';
+    const f = await fixture(t);
+    const { token: _token, ...options } = f.options;
+    await downloadReleaseAsset(options);
+    assert.equal(f.requests[0].authorization, 'Bearer synthetic-gh-token');
+    delete process.env.GH_TOKEN;
+    const second = await fixture(t);
+    const { token: _secondToken, ...fallback } = second.options;
+    await downloadReleaseAsset(fallback);
+    assert.equal(second.requests[0].authorization, 'Bearer synthetic-github-token');
+    delete process.env.GITHUB_TOKEN;
+    const third = await fixture(t);
+    const { token: _thirdToken, ...anonymous } = third.options;
+    await downloadReleaseAsset(anonymous);
+    assert.ok(third.requests.every(request => request.authorization === undefined));
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
+});
+
+test('API authorization errors remain failures and rate-limit diagnostics never disclose the token', async t => {
+  for (const status of [401, 403]) {
+    const f = await fixture(t, { metadataFailures: [status] });
+    await assert.rejects(downloadReleaseAsset({ ...f.options, token: 'synthetic-private-token' }), error => {
+      assert.match(error.message, new RegExp(`HTTP ${status}`));
+      assert.doesNotMatch(error.message, /synthetic-private-token/);
+      return true;
+    });
+    assert.equal(f.requests.length, 1);
+    assert.deepEqual(f.waits, []);
+  }
+  const f = await fixture(t);
+  await assert.rejects(downloadReleaseAsset({ ...f.options, token: 'synthetic-private-token',
+    fetchImpl: async () => new Response(null, { status: 403, headers: { 'x-ratelimit-remaining': '0' } }),
+  }), error => {
+    assert.match(error.message, /GitHub API rate limit exhausted/);
+    assert.doesNotMatch(error.message, /synthetic-private-token/);
+    return true;
+  });
+});
+
+test('native download workflow steps supply the existing GitHub token within the step', async () => {
+  let steps = 0;
+  for (const workflow of ['tauri-desktop.yml', 'codeql.yml', 'android-agp9-test.yml', 'android-agp91-test.yml']) {
+    const source = await readFile(new URL(`../.github/workflows/${workflow}`, import.meta.url), 'utf8');
+    for (const step of source.split(/\n {6}- /).filter(step => /run: node scripts\/prepare-native-ci-downloads\.mjs/.test(step))) {
+      assert.match(step, /env:\s*\n(?:[^\n]*\n)*?\s+GH_TOKEN: \$\{\{ github\.token \}\}/, workflow);
+      steps += 1;
+    }
+  }
+  assert.equal(steps, 6);
 });
 
 test('valid cached bytes are verified and reused without another binary download', async t => {

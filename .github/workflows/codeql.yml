@@ -67,6 +67,7 @@ jobs:
         if: steps.codeql-bundle.outputs.cache-hit != 'true'
         env:
           CODEQL_BUNDLE_LANGUAGE: ${{ matrix.bundle }}
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/prepare-native-ci-downloads.mjs codeql "$CODEQL_BUNDLE_LANGUAGE"
 
       - name: Initialize CodeQL
@@ -146,6 +147,8 @@ jobs:
 
       - name: Prepare verified Gradle distribution
         if: matrix.language == 'java-kotlin'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/prepare-native-ci-downloads.mjs gradle
 
       - name: Build Android code for CodeQL
