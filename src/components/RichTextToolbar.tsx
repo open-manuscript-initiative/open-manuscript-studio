@@ -229,6 +229,12 @@ export function RichTextToolbar({
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // A navigation key starts a new selection interaction even if the
+      // browser coalesces its selectionchange with a subsequent re-selection
+      // of the same range that Escape dismissed.
+      if (/^(Arrow(Left|Right|Up|Down)|Home|End|PageUp|PageDown)$/.test(event.key)) {
+        dismissedSelection = null;
+      }
       if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
         event.preventDefault();
         explicitMenu = true;

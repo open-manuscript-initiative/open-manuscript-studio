@@ -442,7 +442,7 @@ export function PublicationDocumentCanvas({
     let frame = 0;
     let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
-    const measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
+    let measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
     const measuredWidths = new WeakMap<HTMLElement, number>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
     const update = () => {
@@ -487,9 +487,11 @@ export function PublicationDocumentCanvas({
         // This React-owned ancestor is outside ProseMirror's observed DOM.
         // Touching a paragraph/node-view style would make ProseMirror reparse
         // and recreate it, restarting measurement and losing active controls.
-        // Disable projection only for these synchronous reads, never across a
-        // requestAnimationFrame (where the unprojected text could be painted).
-        if (facingPages) content.style.setProperty('--omi-spread-projection', '0');
+        // Measure natural flow, without the previous pass's page spacers or
+        // spread projection. Subtracting spacer heights cannot undo wrapping
+        // at an obsolete break after zooming or editing. Restore before yielding
+        // so the unpaginated document is never painted.
+        content.dataset.publicationMeasuring = 'true';
         try {
           while (flowIndex < flow.length
             && (flowIndex === 0 || performance.now() - startedAt < 8)) {
@@ -506,22 +508,17 @@ export function PublicationDocumentCanvas({
               element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
             );
             if (splittable) {
-              const cachedLines = flowBreakElements.length > 0
-                ? undefined
-                : measuredLines.get(element);
-              if (cachedLines && !dirtyBlocks.has(element) && measuredWidths.get(element) === element.clientWidth) {
+              const width = element.getBoundingClientRect().width;
+              const cachedLines = measuredLines.get(element);
+              if (cachedLines && !dirtyBlocks.has(element) && measuredWidths.get(element) === width) {
                 lines = cachedLines.map((line) => ({ ...line }));
               } else {
                 lines = table ? measurePublicationTableRows(element, table) : measurePublicationLines(element);
-                if (flowBreakElements.length > 0) {
-                  measuredLines.delete(element);
-                } else {
-                  measuredLines.set(
-                    element,
-                    lines.map((line) => ({ ...line, noteIds: undefined })),
-                  );
-                }
-                measuredWidths.set(element, element.clientWidth);
+                measuredLines.set(
+                  element,
+                  lines.map((line) => ({ ...line, noteIds: undefined })),
+                );
+                measuredWidths.set(element, width);
                 dirtyBlocks.delete(element);
               }
             }
@@ -573,7 +570,7 @@ export function PublicationDocumentCanvas({
             flowIndex += 1;
           }
         } finally {
-          if (facingPages) content.style.removeProperty('--omi-spread-projection');
+          delete content.dataset.publicationMeasuring;
         }
 
         if (flowIndex < flow.length) {
@@ -617,6 +614,7 @@ export function PublicationDocumentCanvas({
           firstPageLeftMargin,
           styledPageGeometry: pageGeometries,
           sheetPositions,
+          scale,
         });
         const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
           (flowBreak) => {
@@ -672,7 +670,12 @@ export function PublicationDocumentCanvas({
     resizeObserver?.observe(content);
     if (noteMeasureRef.current) resizeObserver?.observe(noteMeasureRef.current);
     const fonts = content.ownerDocument.fonts;
-    fonts?.addEventListener('loadingdone', schedule);
+    const fontsLoaded = () => {
+      // Font metrics can change line breaks without changing a block's width.
+      measuredLines = new WeakMap();
+      schedule();
+    };
+    fonts?.addEventListener('loadingdone', fontsLoaded);
     const mutationObserver = typeof MutationObserver === 'undefined'
       ? null
       : new MutationObserver((records) => {
@@ -708,7 +711,7 @@ export function PublicationDocumentCanvas({
       if (scheduleTimer !== null) clearTimeout(scheduleTimer);
       cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
-      fonts?.removeEventListener('loadingdone', schedule);
+      fonts?.removeEventListener('loadingdone', fontsLoaded);
       mutationObserver?.disconnect();
     };
   }, [
@@ -1491,6 +1494,7 @@ function buildPaginationCss({
   firstPageLeftMargin,
   styledPageGeometry,
   sheetPositions,
+  scale,
 }: {
   canvasId: string;
   flow: readonly PublicationFlowElement[];
@@ -1502,6 +1506,7 @@ function buildPaginationCss({
   firstPageLeftMargin: number;
   styledPageGeometry?: ReturnType<typeof canvasPageGeometry>[];
   sheetPositions?: PublicationSheetPosition[];
+  scale: number;
 }): string {
   return flow.map((block, index) => {
     const placement = placements[index];
@@ -1517,7 +1522,10 @@ function buildPaginationCss({
     const computed = geometry ? block.element.ownerDocument.defaultView?.getComputedStyle(block.element) : undefined;
     const horizontalMargins = (parseFloat(computed?.marginLeft ?? '0') || 0) + (parseFloat(computed?.marginRight ?? '0') || 0);
     const blockWidth = geometry ? Math.max(1, geometry.bodyWidth - horizontalMargins) : 0;
-    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(translateY)}; ${geometry ? `width:${cssPixel(blockWidth)};max-width:none;box-sizing:border-box;` : ''} }`;
+    // Keep the assigned master width in scaled points, so a zoom render cannot
+    // measure new font sizes against the previous pagination's pixel width.
+    const widthPoints = blockWidth / (PIXELS_PER_POINT * scale);
+    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(translateY)}; ${geometry ? `width:calc(var(--omi-publication-point) * ${widthPoints});max-width:none;box-sizing:border-box;` : ''} }`;
   }).filter(Boolean).join('\n');
 }
 

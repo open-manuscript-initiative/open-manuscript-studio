@@ -106,6 +106,9 @@ jobs:
         # unrelated apt/font download blocking browser installation on DNS outages.
         run: npx playwright install --only-shell chromium
 
+      - name: Verify pagination and selection regressions without retries
+        run: npx playwright test e2e/menu-selection.spec.ts e2e/publication-editor.spec.ts e2e/publication-spreads.spec.ts e2e/selection-toolbar-layout.spec.ts --project=desktop-chromium --workers=1 --retries=0
+
       - name: Run browser smoke tests
         run: npm run test:e2e
 

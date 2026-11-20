@@ -1656,6 +1656,23 @@
   line-height: 0;
 }
 
+/* Synchronous pagination reads use natural flow. This flag lives outside
+   ProseMirror's DOM and is removed before the browser can paint a frame. */
+.publication-document-content[data-publication-measuring] {
+  --omi-spread-projection: 0;
+}
+
+.publication-document-content[data-publication-measuring] .omi-publication-flow-break {
+  display: none !important;
+}
+
+.publication-document-content[data-publication-measuring] > .publication-document-front-matter,
+.publication-document-content[data-publication-measuring] > .publication-document-empty,
+.publication-document-content[data-publication-measuring] > .publication-document-notes,
+.publication-document-content[data-publication-measuring] .omi-continuous-tiptap-editor > * {
+  translate: none !important;
+}
+
 @media (max-width: 1100px) {
   .publication-style-grid {
     grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));

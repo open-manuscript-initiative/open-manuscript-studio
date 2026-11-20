@@ -125,27 +125,6 @@ export function StudioMenuWithHelp({
     return () => navigationHost.removeEventListener('click', closePortalOnOtherNavigation);
   }, [navigationHost]);
 
-  useEffect(() => {
-    if (!navigationHost) return;
-    const internalButtons = Array.from(navigationHost.querySelectorAll<HTMLButtonElement>(
-      '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-agents-navigation="true"]):not([data-lists-navigation="true"]):not([data-modules-navigation="true"])',
-    ));
-    const externalNavigationOpen = helpOpen || integrationsOpen || agentsOpen || listsOpen || modulesOpen;
-    for (const button of internalButtons) {
-      button.classList.remove('studio-menu-nav-button--external-suppressed');
-      if (!button.classList.contains('studio-menu-nav-button--active')) { button.removeAttribute('aria-current'); continue; }
-      if (externalNavigationOpen) { button.classList.add('studio-menu-nav-button--external-suppressed'); button.removeAttribute('aria-current'); }
-      else button.setAttribute('aria-current', 'page');
-    }
-    return () => { for (const button of internalButtons) button.classList.remove('studio-menu-nav-button--external-suppressed'); };
-  }, [navigationHost, helpOpen, integrationsOpen, agentsOpen, listsOpen, modulesOpen]);
-
-  useEffect(() => {
-    if (!contentHost) return;
-    contentHost.classList.toggle('studio-menu-content--help-open', helpOpen || integrationsOpen || agentsOpen || listsOpen || modulesOpen);
-    return () => contentHost.classList.remove('studio-menu-content--help-open');
-  }, [contentHost, helpOpen, integrationsOpen, agentsOpen, listsOpen, modulesOpen]);
-
   const closeExternalViews = () => { setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); setModulesOpen(false); };
   const requestDocumentClose = () => {
     if (!window.confirm(closeDocumentCopy.confirm)) return;
