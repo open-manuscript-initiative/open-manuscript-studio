@@ -1,3 +1,4 @@
+import { arrangePublicationSheets, publicationFirstPageNumber, type PublicationSheetPosition } from '../model/publicationSpreads';
 import { resolvePublicationPageStyle, publicationSectionPageRules, publicationSectionLayoutKey } from '../model/publicationPageStyles';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import { renderPublicationNoteBody, type PublicationNoteBody } from '../services/publicationNoteBody';
@@ -187,9 +188,10 @@ export function PublicationDocumentCanvas({
   const bleedMm = nonNegative(style.page.bleed, 0);
   const innerMarginMm = nonNegative(style.page.margins.inner, 19) + gutterMm;
   const outerMarginMm = nonNegative(style.page.margins.outer, 17);
+  const facingPages = style.page.facingPages === true;
   const physicalWidth = pageWidthMm * PIXELS_PER_MM;
   const fitScale = stageWidth > 0
-    ? Math.min(1, Math.max(0.25, (stageWidth - 34) / physicalWidth))
+    ? Math.min(1, Math.max(facingPages ? 0.1 : 0.25, (stageWidth - 34) / (physicalWidth * (facingPages ? 2 : 1))))
     : 0.75;
   const printLayoutScale = zoom === 'fit'
     ? fitScale
@@ -211,7 +213,7 @@ export function PublicationDocumentCanvas({
     80,
     pageHeight - topMargin - bottomMargin,
   );
-  const firstPageNumber = Math.max(0, Math.trunc(style.page.pageNumberStart ?? 1));
+  const firstPageNumber = publicationFirstPageNumber(style.page);
   const firstPageIsMirrored = style.page.mirroredMargins && firstPageNumber % 2 === 0;
   const firstPageLeftMarginMm = firstPageIsMirrored ? outerMarginMm : innerMarginMm;
   const firstPageRightMarginMm = firstPageIsMirrored ? innerMarginMm : outerMarginMm;
@@ -220,9 +222,8 @@ export function PublicationDocumentCanvas({
   const contentWidth = Math.max(80, pageWidth - firstPageLeftMargin - firstPageRightMargin);
   const pageOverhead = topMargin + bottomMargin + pageGap;
 
-  const styledPages = useMemo(() => {
+  const styledSheetLayout = useMemo(() => {
     const pages = [];
-    let top = 0;
     const seenHeaders = new Set<string | undefined>();
     for (let index = 0; index < pageCount; index += 1) {
       const sectionId = pagination.pageSectionIds?.[index];
@@ -230,11 +231,12 @@ export function PublicationDocumentCanvas({
       const geometry = canvasPageGeometry(resolved, scale);
       const firstSectionPage = !seenHeaders.has(resolved.headerSectionId);
       seenHeaders.add(resolved.headerSectionId);
-      pages.push({ ...geometry, top, resolved, sectionId, firstSectionPage });
-      top += geometry.height + pageGap;
+      pages.push({ ...geometry, resolved, sectionId, firstSectionPage });
     }
-    return pages;
-  }, [style, manuscript.sections, pagination.pageSectionIds, pageCount, scale, pageGap]);
+    const arranged = arrangePublicationSheets(pages, facingPages, pageGap);
+    return { ...arranged, pages: pages.map((page, index) => ({ ...page, ...arranged.pages[index]! })) };
+  }, [style, manuscript.sections, pagination.pageSectionIds, pageCount, scale, pageGap, facingPages]);
+  const styledPages = styledSheetLayout.pages;
 
   const sectionNumbers = useMemo(
     () => new Map(
@@ -482,86 +484,96 @@ export function PublicationDocumentCanvas({
       const measureBlocksChunk = () => {
         if (cancelled || !content.getClientRects().length) return;
         const startedAt = performance.now();
-        while (flowIndex < flow.length
-          && (flowIndex === 0 || performance.now() - startedAt < 8)) {
-          const { element } = flow[flowIndex]!;
-          const blockId = publicationFlowBlockId(element) ?? '';
-          const blockCorrections = corrections.filter(
-            (correction) => correction.targetBlockId === blockId,
-          );
-          const table = element.querySelector<HTMLTableElement>('.omi-visual-block--table .omi-table-editor');
-          const tableHeight = element.getBoundingClientRect().height - publicationFlowBreakHeight(element);
-          const splittable = isSplittablePublicationParagraph(element) || Boolean(table && tableHeight > usablePageHeight);
-          let lines: PublicationFlowLine[] = [];
-          const flowBreakElements = Array.from(
-            element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
-          );
-          if (splittable) {
-            const cachedLines = flowBreakElements.length > 0
-              ? undefined
-              : measuredLines.get(element);
-            if (cachedLines && !dirtyBlocks.has(element) && measuredWidths.get(element) === element.clientWidth) {
-              lines = cachedLines.map((line) => ({ ...line }));
-            } else {
-              lines = table ? measurePublicationTableRows(element, table) : measurePublicationLines(element);
-              if (flowBreakElements.length > 0) {
-                measuredLines.delete(element);
+        // This React-owned ancestor is outside ProseMirror's observed DOM.
+        // Touching a paragraph/node-view style would make ProseMirror reparse
+        // and recreate it, restarting measurement and losing active controls.
+        // Disable projection only for these synchronous reads, never across a
+        // requestAnimationFrame (where the unprojected text could be painted).
+        if (facingPages) content.style.setProperty('--omi-spread-projection', '0');
+        try {
+          while (flowIndex < flow.length
+            && (flowIndex === 0 || performance.now() - startedAt < 8)) {
+            const { element } = flow[flowIndex]!;
+            const blockId = publicationFlowBlockId(element) ?? '';
+            const blockCorrections = corrections.filter(
+              (correction) => correction.targetBlockId === blockId,
+            );
+            const table = element.querySelector<HTMLTableElement>('.omi-visual-block--table .omi-table-editor');
+            const tableHeight = element.getBoundingClientRect().height - publicationFlowBreakHeight(element);
+            const splittable = isSplittablePublicationParagraph(element) || Boolean(table && tableHeight > usablePageHeight);
+            let lines: PublicationFlowLine[] = [];
+            const flowBreakElements = Array.from(
+              element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
+            );
+            if (splittable) {
+              const cachedLines = flowBreakElements.length > 0
+                ? undefined
+                : measuredLines.get(element);
+              if (cachedLines && !dirtyBlocks.has(element) && measuredWidths.get(element) === element.clientWidth) {
+                lines = cachedLines.map((line) => ({ ...line }));
               } else {
-                measuredLines.set(
-                  element,
-                  lines.map((line) => ({ ...line, noteIds: undefined })),
-                );
+                lines = table ? measurePublicationTableRows(element, table) : measurePublicationLines(element);
+                if (flowBreakElements.length > 0) {
+                  measuredLines.delete(element);
+                } else {
+                  measuredLines.set(
+                    element,
+                    lines.map((line) => ({ ...line, noteIds: undefined })),
+                  );
+                }
+                measuredWidths.set(element, element.clientWidth);
+                dirtyBlocks.delete(element);
               }
-              measuredWidths.set(element, element.clientWidth);
-              dirtyBlocks.delete(element);
             }
+            const elementRect = element.getBoundingClientRect();
+            const flowBreaks = flowBreakElements.map((spacer) => {
+              const rect = spacer.getBoundingClientRect();
+              return { top: rect.top, height: rect.height };
+            });
+            const ownFlowBreakHeight = flowBreaks.reduce((sum, spacer) => sum + spacer.height, 0);
+            const anchors = Array.from(
+              element.querySelectorAll<HTMLElement>('[data-omi-note][data-note-id]'),
+            ).filter((anchor) => noteHeights.has(anchor.dataset.noteId!));
+            for (const anchor of anchors) {
+              const rect = anchor.getBoundingClientRect();
+              const removedSpace = flowBreaks
+                .filter((spacer) => spacer.top < rect.top - 0.5)
+                .reduce((sum, spacer) => sum + spacer.height, 0);
+              const top = rect.top - elementRect.top - removedSpace;
+              const line = lines.reduce<PublicationFlowLine | undefined>((nearest, candidate) => (
+                !nearest || Math.abs(candidate.top - top) < Math.abs(nearest.top - top) ? candidate : nearest
+              ), undefined);
+              if (line) line.noteIds = [...(line.noteIds ?? []), anchor.dataset.noteId!];
+            }
+            const paragraphStyle = resolvePublicationParagraphStyle(
+              style,
+              element.dataset.paragraphStyleId,
+            );
+            measuredBlocks.push({
+              top: Math.max(
+                0,
+                offsetTopWithin(element, content) - existingFlowBreakHeight,
+              ),
+              height: Math.max(0, elementRect.height - ownFlowBreakHeight),
+              sectionId: element.dataset.sectionId ?? element.querySelector<HTMLElement>('[data-section-id]')?.dataset.sectionId,
+              lines,
+              noteIds: anchors.map((anchor) => anchor.dataset.noteId!),
+              leadingHeight: lines[0]?.height,
+              splittable,
+              keepWithNext: /^H[1-6]$/.test(element.tagName)
+                || paragraphStyle.keepWithNext
+                || blockCorrections.some((item) => item.kind === 'keep-with-next'),
+              keepTogether: paragraphStyle.keepTogether
+                || blockCorrections.some((item) => item.kind === 'keep-together'),
+              forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
+                || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
+                  && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
+            });
+            existingFlowBreakHeight += ownFlowBreakHeight;
+            flowIndex += 1;
           }
-          const elementRect = element.getBoundingClientRect();
-          const flowBreaks = flowBreakElements.map((spacer) => {
-            const rect = spacer.getBoundingClientRect();
-            return { top: rect.top, height: rect.height };
-          });
-          const ownFlowBreakHeight = flowBreaks.reduce((sum, spacer) => sum + spacer.height, 0);
-          const anchors = Array.from(
-            element.querySelectorAll<HTMLElement>('[data-omi-note][data-note-id]'),
-          ).filter((anchor) => noteHeights.has(anchor.dataset.noteId!));
-          for (const anchor of anchors) {
-            const rect = anchor.getBoundingClientRect();
-            const removedSpace = flowBreaks
-              .filter((spacer) => spacer.top < rect.top - 0.5)
-              .reduce((sum, spacer) => sum + spacer.height, 0);
-            const top = rect.top - elementRect.top - removedSpace;
-            const line = lines.reduce<PublicationFlowLine | undefined>((nearest, candidate) => (
-              !nearest || Math.abs(candidate.top - top) < Math.abs(nearest.top - top) ? candidate : nearest
-            ), undefined);
-            if (line) line.noteIds = [...(line.noteIds ?? []), anchor.dataset.noteId!];
-          }
-          const paragraphStyle = resolvePublicationParagraphStyle(
-            style,
-            element.dataset.paragraphStyleId,
-          );
-          measuredBlocks.push({
-            top: Math.max(
-              0,
-              offsetTopWithin(element, content) - existingFlowBreakHeight,
-            ),
-            height: Math.max(0, elementRect.height - ownFlowBreakHeight),
-            sectionId: element.dataset.sectionId ?? element.querySelector<HTMLElement>('[data-section-id]')?.dataset.sectionId,
-            lines,
-            noteIds: anchors.map((anchor) => anchor.dataset.noteId!),
-            leadingHeight: lines[0]?.height,
-            splittable,
-            keepWithNext: /^H[1-6]$/.test(element.tagName)
-              || paragraphStyle.keepWithNext
-              || blockCorrections.some((item) => item.kind === 'keep-with-next'),
-            keepTogether: paragraphStyle.keepTogether
-              || blockCorrections.some((item) => item.kind === 'keep-together'),
-            forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
-              || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
-                && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
-          });
-          existingFlowBreakHeight += ownFlowBreakHeight;
-          flowIndex += 1;
+        } finally {
+          if (facingPages) content.style.removeProperty('--omi-spread-projection');
         }
 
         if (flowIndex < flow.length) {
@@ -591,6 +603,9 @@ export function PublicationDocumentCanvas({
           { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight },
           style.pageStyles ? metrics : undefined,
         );
+        const pageGeometries = Array.from({ length: layout.pageCount }, (_, index) =>
+          canvasPageGeometry(resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index]), scale));
+        const sheetPositions = arrangePublicationSheets(pageGeometries, facingPages, pageGap).pages;
         const css = buildPaginationCss({
           canvasId,
           flow,
@@ -600,7 +615,8 @@ export function PublicationDocumentCanvas({
           innerMargin,
           outerMargin,
           firstPageLeftMargin,
-          styledPageGeometry: style.pageStyles ? layout.pageSectionIds?.map((sectionId, index) => canvasPageGeometry(resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId), scale)) : undefined,
+          styledPageGeometry: pageGeometries,
+          sheetPositions,
         });
         const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
           (flowBreak) => {
@@ -611,6 +627,10 @@ export function PublicationDocumentCanvas({
                   targetBlockId,
                   textOffset: flowBreak.textOffset,
                   height: flowBreak.height,
+                  ...(facingPages ? continuationProjection(
+                    pageGeometries, sheetPositions,
+                    layout.placements[flowBreak.blockIndex]!.pageIndex, flowBreak.pageIndex,
+                  ) : {}),
                 }]
               : [];
           },
@@ -696,6 +716,7 @@ export function PublicationDocumentCanvas({
     manuscriptId,
     firstPageLeftMargin,
     firstPageNumber,
+    facingPages,
     innerMargin,
     publicationCorrections,
     noteLineHeight,
@@ -802,8 +823,8 @@ export function PublicationDocumentCanvas({
   const pageStyle = viewMode === 'print'
     ? {
         ...publicationStyleVariables,
-        width: `${Math.max(pageWidth, ...styledPages.map((page) => page.width))}px`,
-        height: `${styledPages.reduce((sum, page) => sum + page.height, 0) + pageGap * Math.max(0, pageCount - 1)}px`,
+        width: `${styledSheetLayout.width}px`,
+        height: `${styledSheetLayout.height}px`,
         marginTop: `${Math.max(8, bleed + 8)}px`,
         marginBottom: `${Math.max(8, bleed + 8)}px`,
       }
@@ -858,7 +879,7 @@ export function PublicationDocumentCanvas({
                   value={String(zoom)}
                   onChange={(event) => setZoom(parseZoom(event.target.value))}
                 >
-                  <option value="fit">{copy.fit}</option>
+                  <option value="fit">{facingPages ? (locale === 'hu' ? 'Oldalpár szélessége' : locale === 'de' ? 'Doppelseitenbreite' : 'Fit spread') : copy.fit}</option>
                   <option value="50">50%</option>
                   <option value="75">75%</option>
                   <option value="100">100%</option>
@@ -886,7 +907,7 @@ export function PublicationDocumentCanvas({
           rulerStepPx={5 * PIXELS_PER_MM * scale}
         /> : null}
         <article
-          className={`publication-document-paper publication-document-paper--${viewMode}`}
+          className={`publication-document-paper publication-document-paper--${viewMode}${facingPages && viewMode === 'print' ? ' publication-document-paper--spreads' : ''}`}
           data-publication-view={viewMode}
           style={pageStyle}
           lang={manuscript.locale}
@@ -910,6 +931,7 @@ export function PublicationDocumentCanvas({
                   key={index}
                   style={{
                     top: `${geometry.top}px`,
+                    left: `${geometry.x}px`,
                     width: `${geometry.width}px`,
                     height: `${geometry.height}px`,
                     '--omi-publication-bleed': `${resolved.page.bleed * PIXELS_PER_MM * scale}px`,
@@ -921,6 +943,8 @@ export function PublicationDocumentCanvas({
                   data-page-style={resolved.id}
                   data-section-id={geometry.sectionId}
                   data-page-number={pageNumber}
+                  data-page-side={geometry.side}
+                  data-spread={geometry.spread}
                   data-page-label={copy.page(pageNumber)}
                 >
                   {showRunningHeader ? (
@@ -948,7 +972,7 @@ export function PublicationDocumentCanvas({
                   <div
                     className="publication-document-page-separator"
                     key={index}
-                    style={{ top: `${styledPages[index]!.top + styledPages[index]!.height}px` }}
+                    style={{ top: `${styledPages[index]!.top + styledPages[index]!.height}px`, left: styledPages[index]!.x, width: styledPages[index]!.width }}
                     data-page-label={copy.page(firstPageNumber + index)}
                   />
                 );
@@ -1097,7 +1121,7 @@ export function PublicationDocumentCanvas({
               <section key={pageIndex} className="publication-page-footnotes" data-footnote-page={pageIndex}
                 aria-label={`${copy.notes} — ${copy.page(firstPageNumber + pageIndex)}`}
                 style={{
-                  left: geometry.left,
+                  left: geometry.x + geometry.left,
                   width: geometry.bodyWidth,
                   top: geometry.top + geometry.height - geometry.bottomMargin - noteSeparatorHeight
                     - fragments.reduce((sum, fragment) => sum + fragment.height, 0),
@@ -1419,7 +1443,8 @@ function publicationFlowBreaksEqual(
     const other = right[index];
     return other?.targetBlockId === item.targetBlockId
       && other.textOffset === item.textOffset
-      && Math.abs(other.height - item.height) < 0.01;
+      && Math.abs(other.height - item.height) < 0.01
+      && other.shiftX === item.shiftX && other.shiftY === item.shiftY;
   });
 }
 
@@ -1465,6 +1490,7 @@ function buildPaginationCss({
   outerMargin,
   firstPageLeftMargin,
   styledPageGeometry,
+  sheetPositions,
 }: {
   canvasId: string;
   flow: readonly PublicationFlowElement[];
@@ -1475,6 +1501,7 @@ function buildPaginationCss({
   outerMargin: number;
   firstPageLeftMargin: number;
   styledPageGeometry?: ReturnType<typeof canvasPageGeometry>[];
+  sheetPositions?: PublicationSheetPosition[];
 }): string {
   return flow.map((block, index) => {
     const placement = placements[index];
@@ -1484,11 +1511,13 @@ function buildPaginationCss({
       ? outerMargin
       : innerMargin;
     const geometry = styledPageGeometry?.[placement.pageIndex];
-    const translateX = (geometry?.left ?? pageLeftMargin) - firstPageLeftMargin;
+    const sheet = sheetPositions?.[placement.pageIndex];
+    const translateX = (sheet?.x ?? 0) + (geometry?.left ?? pageLeftMargin) - firstPageLeftMargin;
+    const translateY = placement.translateY + (sheet ? sheet.top - sheet.flowTop : 0);
     const computed = geometry ? block.element.ownerDocument.defaultView?.getComputedStyle(block.element) : undefined;
     const horizontalMargins = (parseFloat(computed?.marginLeft ?? '0') || 0) + (parseFloat(computed?.marginRight ?? '0') || 0);
     const blockWidth = geometry ? Math.max(1, geometry.bodyWidth - horizontalMargins) : 0;
-    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(placement.translateY)}; ${geometry ? `width:${cssPixel(blockWidth)};max-width:none;box-sizing:border-box;` : ''} }`;
+    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(translateY)}; ${geometry ? `width:${cssPixel(blockWidth)};max-width:none;box-sizing:border-box;` : ''} }`;
   }).filter(Boolean).join('\n');
 }
 
@@ -1572,4 +1601,11 @@ function canvasPageGeometry(resolved: ReturnType<typeof resolvePublicationPageSt
   const topMargin = p.margins.top * unit, bottomMargin = p.margins.bottom * unit;
   return { width, height, topMargin, bottomMargin, left: mirrored ? outer : inner, right: mirrored ? inner : outer,
     bodyHeight: Math.max(10 * unit, height - topMargin - bottomMargin), bodyWidth: Math.max(10 * unit, width - inner - outer) };
+}
+
+/** Relative to the block's starting sheet, including mirrored inside margins. */
+function continuationProjection(geometry: ReturnType<typeof canvasPageGeometry>[], sheets: PublicationSheetPosition[], from: number, to: number) {
+  const start = sheets[from]!, end = sheets[to]!;
+  return { shiftX: end.x + geometry[to]!.left - start.x - geometry[from]!.left,
+    shiftY: end.top - end.flowTop - (start.top - start.flowTop) };
 }

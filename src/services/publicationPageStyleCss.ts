@@ -1,3 +1,4 @@
+import { publicationFirstPageNumber } from '../model/publicationSpreads';
 import type { OmiSection } from '../types/omi';
 import type { PublicationStyle, PublicationPublisherIdentity } from './publicationStyleExport';
 import { publicationSectionPageRules, resolvePublicationPageStyle, type PublicationPageStyle } from '../model/publicationPageStyles';
@@ -53,8 +54,8 @@ export function buildPublicationPageStylesCss(style: PublicationStyle, sections:
   for (const assignment of style.pageStyles.pages) {
     const master = style.pageStyles.styles.find((item) => item.id === assignment.styleId);
     if (!master) continue;
-    const from = assignment.from - (style.page.pageNumberStart ?? 1) + 1 + bodyPageOffset;
-    const to = assignment.to - (style.page.pageNumberStart ?? 1) + 1 + bodyPageOffset;
+    const from = assignment.from - publicationFirstPageNumber(style.page) + 1 + bodyPageOffset;
+    const to = assignment.to - publicationFirstPageNumber(style.page) + 1 + bodyPageOffset;
     if (to < 1) continue;
     const range = `:nth(n+${Math.max(bodyPageOffset + 1, from)}):nth(-n+${to})`;
     for (const name of names) {

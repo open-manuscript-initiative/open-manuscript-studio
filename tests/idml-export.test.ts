@@ -4,7 +4,7 @@ import test from 'node:test';
 import { DOMParser as XmlParser } from '@xmldom/xmldom';
 
 import { buildIdmlExport, IDML_MEDIA_TYPE } from '../src/services/exportIdml.ts';
-import type { PublicationStyle } from '../src/services/publicationStyleExport.ts';
+import { clonePublicationStyleTemplate, type PublicationStyle } from '../src/services/publicationStyleExport.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
 test('builds an IDML package with paragraph and character styles', () => {
@@ -407,3 +407,12 @@ function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
 
   return entries;
 }
+
+
+test('IDML carries facing-page preferences and an odd starting recto', () => {
+  const style = clonePublicationStyleTemplate();
+  style.page.facingPages = true; style.page.pageNumberStart = 42;
+  const entries = readStoreZipEntries(buildIdmlExport(createVersionedTestManuscript(), style).bytes);
+  assert.match(new TextDecoder().decode(entries.get('Resources/Preferences.xml')), /FacingPages="true"/);
+  assert.match(new TextDecoder().decode(entries.get('Spreads/Spread_u2.xml')), /Name="43"/);
+});

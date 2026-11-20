@@ -1,3 +1,4 @@
+import { arrangePublicationSheets, publicationFirstPageNumber } from '../model/publicationSpreads';
 import { usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
 import { getPublicationMatterFramesCopy } from '../i18n/publicationMatterFrames';
@@ -45,8 +46,11 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   const measure = useMemo(createFrameTextMeasure, []);
   const layout = useMemo(() => {
     void fontGeneration;
-    return paginateAutomaticFrameLayout(draft ?? stored, measure);
-  }, [draft, stored, measure, fontGeneration]);
+    const current = draft ?? stored;
+    return paginateAutomaticFrameLayout(publicationStyle.page.facingPages
+      ? { ...current, pageNumberStart: publicationFirstPageNumber({ ...current, facingPages: true }) }
+      : current, measure);
+  }, [draft, stored, measure, fontGeneration, publicationStyle.page.facingPages]);
   const [pageSelection, setPageSelection] = useState(0);
   const activePage = Math.min(Math.max(0, pageSelection), layout.page.count - 1);
   const [selectedId, setSelectedId] = useState('');
@@ -67,7 +71,12 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   const stage = useRef<HTMLDivElement>(null); const [stageWidth, setStageWidth] = useState(500);
   const drag = useRef<Drag | null>(null); const dragDraft = useRef<PublicationFrameLayout | null>(null);
   const widestPage = Math.max(...framePages(layout).map((_, index) => framePageStyle(layout, index).widthMm));
-  const scale = Math.min(1, Math.max(0.1, (stageWidth - 28) / (widestPage * 96 / 25.4)));
+  const facingPages = publicationStyle.page.facingPages === true;
+  const spreadSheets = arrangePublicationSheets(framePages(layout).map((_, index) => {
+    const page = framePageStyle(layout, index);
+    return { width: page.widthMm, height: page.heightMm };
+  }), facingPages, 8);
+  const scale = Math.min(1, Math.max(0.1, (stageWidth - 28) / (widestPage * (facingPages ? 2 : 1) * 96 / 25.4)));
   function graphicAspect(frame: PublicationFrame): number | undefined {
     const visual = graphics.find((block) => block.id === frame.sourceBlockId)?.visual;
     if (frame.sourceBlockId && graphicAspects[frame.sourceBlockId]) return graphicAspects[frame.sourceBlockId];
@@ -200,9 +209,11 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
     <div className="omi-frame-workspace">
       <div ref={stage} className="omi-frame-stage">
         {!layout.frames.length ? <p>{copy.empty}</p> : null}
+        <div className={facingPages ? 'omi-frame-sheets omi-frame-sheets--spreads' : 'omi-frame-sheets'}
+          style={facingPages ? { position: 'relative', width: `${spreadSheets.width}mm`, height: `${spreadSheets.height}mm`, zoom: scale, margin: '0 auto' } : undefined}>
         {framePages(layout).map((page, pageIndex) => {
           const pageStyle = framePageStyle(layout, pageIndex), header = frameRunningHeader(layout, pageIndex, manuscript.title), headerStyle = pageStyle.runningHeader;
-          return <div key={page.id} className="omi-frame-editor-page" data-frame-page={pageIndex} data-page-style={pageStyle.id} aria-label={`${copy.page} ${pageIndex + 1}`} style={{ width: `${pageStyle.widthMm}mm`, height: `${pageStyle.heightMm}mm`, background: pageStyle.background, zoom: scale }}>
+          return <div key={page.id} className="omi-frame-editor-page" data-frame-page={pageIndex} data-page-style={pageStyle.id} aria-label={`${copy.page} ${pageIndex + 1}`} style={{ width: `${pageStyle.widthMm}mm`, height: `${pageStyle.heightMm}mm`, background: pageStyle.background, zoom: facingPages ? 1 : scale, ...(facingPages ? { position: 'absolute', left: `${spreadSheets.pages[pageIndex]!.x}mm`, top: `${spreadSheets.pages[pageIndex]!.top}mm`, margin: 0 } : {}) }}>
           {header ? <header className="omi-frame-running-header" style={{ top: `${headerStyle.topMm}mm`, height: `${headerStyle.heightMm}mm`, left: `${pageStyle.margins.left}mm`, right: `${pageStyle.margins.right}mm`, fontFamily: headerStyle.fontFamily, fontSize: `${headerStyle.fontSizePt}pt`, color: headerStyle.color }}><span>{header.left}</span><span>{header.center}</span><span>{header.right}</span></header> : null}
           {!preview ? <div className="omi-frame-margin-guide" style={{ top: `${pageStyle.margins.top}mm`, right: `${pageStyle.margins.right}mm`, bottom: `${pageStyle.margins.bottom}mm`, left: `${pageStyle.margins.left}mm` }} /> : null}
           {layout.frames.filter((frame) => frame.page === pageIndex).map((frame, layer) => {
@@ -232,6 +243,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
           })}
         </div>;
         })}
+        </div>
       </div>
       {!preview ? <aside className="omi-frame-inspector" aria-label={copy.mode}>
         <PublicationFramePagePanel layout={layout} pageIndex={activePage} onChange={commit} onSelect={(index) => { setPageSelection(index); setSelectedId(''); }} />

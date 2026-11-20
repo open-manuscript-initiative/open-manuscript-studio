@@ -1,3 +1,4 @@
+import { publicationFirstPageNumber } from '../model/publicationSpreads';
 import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import {
@@ -153,7 +154,7 @@ export function buildIdmlExport(
   const spreadXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Spread xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
   <Spread Self="${spreadId}" FlattenerOverride="Default" ShowMasterItems="true" PageTransitionType="None" PageTransitionDirection="NotApplicable" PageTransitionDuration="Medium" BindingLocation="0 0" AllowPageShuffle="true" ItemTransform="1 0 0 1 0 0">
-    <Page Self="${pageId}" GeometricBounds="0 0 ${pageHeight} ${pageWidth}" ItemTransform="1 0 0 1 0 0" Name="1" AppliedMaster="n" MasterPageTransform="1 0 0 1 0 0" GridStartingPoint="TopOutside" UseMasterGrid="true"/>
+    <Page Self="${pageId}" GeometricBounds="0 0 ${pageHeight} ${pageWidth}" ItemTransform="1 0 0 1 0 0" Name="${publicationStyle ? publicationFirstPageNumber(publicationStyle.page) : 1}" AppliedMaster="n" MasterPageTransform="1 0 0 1 0 0" GridStartingPoint="TopOutside" UseMasterGrid="true"/>
     <TextFrame Self="${frameId}" ParentStory="${storyId}" PreviousTextFrame="n" NextTextFrame="n" ContentType="TextType" ParentPage="${pageId}" ItemLayer="${layerId}" Locked="false" LocalDisplaySetting="Default" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0">
       <Properties>
         <PathGeometry><GeometryPathType PathOpen="false"><PathPointArray>
@@ -171,7 +172,7 @@ export function buildIdmlExport(
   const stylesXml = buildStylesXml(publicationStyle);
   const preferencesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Preferences xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
-  <DocumentPreference PageHeight="${pageHeight}" PageWidth="${pageWidth}" PagesPerDocument="1" FacingPages="false" PageOrientation="${pageOrientation}" PageBinding="LeftToRight"/>
+  <DocumentPreference PageHeight="${pageHeight}" PageWidth="${pageWidth}" PagesPerDocument="1" FacingPages="${publicationStyle?.page.facingPages === true}" PageOrientation="${pageOrientation}" PageBinding="LeftToRight"/>
 </idPkg:Preferences>`;
   const fontsXml = buildFontsXml(publicationStyle, context.sections);
   const graphicXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

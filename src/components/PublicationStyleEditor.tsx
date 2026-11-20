@@ -322,7 +322,7 @@ function PublicationStyleEditorWorkspace() {
     key: K,
     value: PublicationStyle['page'][K],
   ): void {
-    patchStyle((current) => ({
+    patchStyle((current) => normalizePublicationStyle({
       ...current,
       page: { ...current.page, [key]: value },
     }));
@@ -1023,6 +1023,11 @@ function PublicationStyleEditorWorkspace() {
           <div id="publication-style-ribbon-panel-page" className="publication-style-ribbon-panel" role="dialog" aria-label={copy.page}>
             <fieldset>
               <legend>{copy.page}</legend>
+              <label className="publication-style-toggle">
+                <input type="checkbox" checked={style.page.facingPages === true} onChange={(event) => setPage('facingPages', event.target.checked)} />
+                <span>{locale === 'hu' ? 'Oldalpáros elrendezés' : locale === 'de' ? 'Doppelseiten' : 'Facing pages'}</span>
+              </label>
+              <small>{locale === 'hu' ? 'Az első oldal önálló páratlan jobb oldal. Ezután páros bal és páratlan jobb oldalak következnek.' : locale === 'de' ? 'Die erste Seite ist eine einzelne ungerade rechte Seite. Danach folgen gerade linke und ungerade rechte Seiten.' : 'Start with a single odd right-hand page, then pair even left-hand and odd right-hand pages.'}</small>
               <div className="publication-style-grid">
                 <label>
                   <span>{copy.preset}</span>
@@ -1040,7 +1045,7 @@ function PublicationStyleEditorWorkspace() {
                 </label>
                 <NumberField label={`${copy.width} (mm)`} value={style.page.width} min={50} onChange={(value) => setPage('width', value)} />
                 <NumberField label={`${copy.height} (mm)`} value={style.page.height} min={50} onChange={(value) => setPage('height', value)} />
-                <NumberField label={copy.pageNumberStart} value={style.page.pageNumberStart ?? 1} min={0} step={1} onChange={(value) => setPage('pageNumberStart', Math.trunc(value))} />
+                <NumberField label={copy.pageNumberStart} value={style.page.pageNumberStart ?? 1} min={style.page.facingPages ? 1 : 0} step={style.page.facingPages ? 2 : 1} onChange={(value) => setPage('pageNumberStart', Math.trunc(value))} />
               </div>
             </fieldset>
           </div>

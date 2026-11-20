@@ -1,3 +1,4 @@
+import { publicationFirstPageNumber } from './publicationSpreads';
 import type { OmiSection } from '../types/omi';
 import type { PublicationStyle } from '../services/publicationStyleExport';
 import { getParentSectionId } from './sectionStructure';
@@ -71,7 +72,7 @@ export function resolvePublicationPageStyle(style: PublicationStyle, sections: r
     if (rule.runningHeaders) { result = { ...result, runningHeaders: rule.runningHeaders }; headerSectionId = rule.sectionId; }
     if (rule.showFirstPage !== undefined) result = { ...result, showFirstPage: rule.showFirstPage };
   }
-  const number = (style.page.pageNumberStart ?? 1) + pageIndex;
+  const number = publicationFirstPageNumber(style.page) + pageIndex;
   const assignment = [...collection.pages].reverse().find((item) => number >= item.from && number <= item.to);
   const master = collection.styles.find((item) => item.id === assignment?.styleId);
   // Explicit pages override the section geometry/header style, while keeping section tokens.
@@ -115,7 +116,7 @@ export function validatePublicationPageStyles(value: unknown): asserts value is 
     const p = item.page;
     if (!finite(p.width, 50, 1200) || !finite(p.height, 50, 1200) || !record(p.margins)
       || ![p.margins.top, p.margins.bottom, p.margins.inner, p.margins.outer].every((v) => finite(v, 0, 600))
-      || !finite(p.gutter, 0, 600) || !finite(p.bleed, 0, 100) || typeof p.mirroredMargins !== 'boolean' || typeof p.cropMarks !== 'boolean'
+      || !finite(p.gutter, 0, 600) || !finite(p.bleed, 0, 100) || typeof p.mirroredMargins !== 'boolean' || typeof p.cropMarks !== 'boolean' || (p.facingPages !== undefined && typeof p.facingPages !== 'boolean')
       || Number(p.margins.top) + Number(p.margins.bottom) > Number(p.height) - 10
       || Number(p.margins.inner) + Number(p.margins.outer) + Number(p.gutter) > Number(p.width) - 10) fail();
     header(item.runningHeaders);

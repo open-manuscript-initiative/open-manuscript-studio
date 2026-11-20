@@ -267,6 +267,14 @@ function EditableGrid({
   const columnWidths = data.kind === 'table' ? data.columnWidths : undefined;
   const widths = tableColumnWidths(cells, columnWidths);
   const pageBreaks = useContext(TablePaginationContext).filter((item) => item.targetBlockId === blockId);
+  const continuationStyle = (row: number): CSSProperties | undefined => {
+    const offset = [...pageBreaks].reverse().find((item) => item.textOffset <= row);
+    return offset?.shiftX !== undefined || offset?.shiftY !== undefined ? {
+      position: 'relative',
+      left: `calc(var(--omi-spread-projection, 1) * ${offset.shiftX ?? 0}px)`,
+      top: `calc(var(--omi-spread-projection, 1) * ${offset.shiftY ?? 0}px)`,
+    } : undefined;
+  };
   const drag = useRef<{ index: number; start: number; width: number; widths: number[] } | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const reduction = data.kind === 'table' && data.fontSizeReduction === 0 ? 0 : 1;
@@ -316,7 +324,7 @@ function EditableGrid({
                     <td colSpan={widths.length}><div style={{ height: item.height }} /></td>
                   </tr>
                 ))}
-                <tr key={rowIndex}>
+                <tr key={rowIndex} style={continuationStyle(rowIndex)}>
                   {row.map((cell, columnIndex) => {
                     const Cell = data.kind === 'table' && rowIndex < (data.headerRows ?? 0) ? 'th' : 'td';
                     const format = tableCellFormat(cellFormats, rowIndex, columnIndex);
@@ -387,7 +395,7 @@ function EditableGrid({
         </table>
       </div>
       {!previewOnly ? <>
-      <div className="omi-table-actions">
+      <div className="omi-table-actions" style={continuationStyle(cells.length)}>
         <button type="button" onClick={() => onChange({ ...data, cells: addTableRow(cells) })}>
           <Plus size={14} aria-hidden="true" /> {copy.addRow}
         </button>
@@ -405,7 +413,7 @@ function EditableGrid({
         </button>
       </div>
       {data.kind === 'table' ? (
-        <details className="omi-table-cell-formatting">
+        <details className="omi-table-cell-formatting" style={continuationStyle(cells.length)}>
           <summary>{copy.cellFormatting}</summary>
           <div className="omi-table-cell-formatting-fields">
             <label><span>{copy.cellRow}</span><input type="number" min={1} max={cells.length} value={selectedRow + 1} onChange={(event) => setSelection({ row: Math.max(0, Number(event.target.value) - 1), column: selectedColumn })} /></label>
@@ -421,7 +429,7 @@ function EditableGrid({
         </details>
       ) : null}
       {data.kind === 'table' ? (
-        <label className="omi-table-font-size">
+        <label className="omi-table-font-size" style={continuationStyle(cells.length)}>
           <span>{copy.tableFontSize}</span>
           <select value={reduction} onChange={(event) => onChange({ ...data, fontSizeReduction: event.target.value === '0' ? 0 : 1 })}>
             <option value={0}>{copy.bodyFontSize}</option>
@@ -430,7 +438,7 @@ function EditableGrid({
         </label>
       ) : null}
       {data.kind === 'table' ? (
-        <label className="omi-table-caption">
+        <label className="omi-table-caption" style={continuationStyle(cells.length)}>
           <span>{copy.caption}</span>
           <input
             value={data.caption ?? ''}
@@ -438,7 +446,7 @@ function EditableGrid({
           />
         </label>
       ) : null}
-      </> : data.kind === 'table' && data.caption ? <p className="omi-table-preview-caption">{data.caption}</p> : null}
+      </> : data.kind === 'table' && data.caption ? <p className="omi-table-preview-caption" style={continuationStyle(cells.length)}>{data.caption}</p> : null}
     </div>
   );
 }

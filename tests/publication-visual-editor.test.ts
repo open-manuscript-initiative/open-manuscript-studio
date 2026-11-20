@@ -458,7 +458,7 @@ test('a heading keeps only the opening line, not the entire following paragraph'
   assert.equal(layout.placements[0]?.pageIndex, 0);
   assert.equal(layout.placements[1]?.pageIndex, 0);
   assert.deepEqual(layout.flowBreaks, [
-    { blockIndex: 1, textOffset: 8, height: 55 },
+    { pageIndex: 1, blockIndex: 1, textOffset: 8, height: 55 },
   ]);
 });
 
@@ -486,7 +486,7 @@ test('normal paragraphs continue line by line instead of moving as one block', (
     { pageIndex: 1, translateY: 0 },
   ]);
   assert.deepEqual(layout.flowBreaks, [
-    { blockIndex: 0, textOffset: 20, height: 50 },
+    { pageIndex: 1, blockIndex: 0, textOffset: 20, height: 50 },
   ]);
   assert.equal(layout.pageCount, 2);
   assert.match(documentCanvas, /measurePublicationLines/);
@@ -514,7 +514,7 @@ test('a line that would cross the footer resumes at the next page body', () => {
   );
 
   assert.deepEqual(layout.flowBreaks, [
-    { blockIndex: 0, textOffset: 10, height: 60 },
+    { pageIndex: 1, blockIndex: 0, textOffset: 10, height: 60 },
   ]);
   assert.deepEqual(layout.placements, [
     { pageIndex: 0, translateY: 0 },
@@ -639,7 +639,7 @@ test('footnotes reserve space and travel with the reference line across a split 
   });
   assert.equal(layout.pageCount, 2);
   assert.deepEqual(layout.pageNotes?.[1], [{ id: 'note-1', offset: 0, height: 30 }]);
-  assert.deepEqual(layout.flowBreaks, [{ blockIndex: 0, textOffset: 56, height: 70 }]);
+  assert.deepEqual(layout.flowBreaks, [{ pageIndex: 1, blockIndex: 0, textOffset: 56, height: 70 }]);
   // The inline spacer already shifts the next block: do not shift it twice.
   assert.deepEqual(layout.placements[1], { pageIndex: 1, translateY: 0 });
 });

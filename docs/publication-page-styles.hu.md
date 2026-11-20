@@ -2,6 +2,25 @@
 
 Elérés: **Publikálás → Kiadványszerkesztő → Oldalstílusok és szakaszfejlécek**.
 
+## Oldalpáros tördelés
+
+A **Kiadványszerkesztő → Nyomtatási oldal → Oldalpáros elrendezés** kapcsolóval
+választható az oldalpáros munkanézet. Az első oldal önálló páratlan jobb oldal;
+utána páros bal és páratlan jobb oldalak alkotnak egy oldalpárt (1; 2–3; 4–5).
+Páros kezdőoldalszám megadásakor a következő páratlan szám lesz a kezdőoldal.
+A nyitóoldal bal oldalán nincs üres dokumentumoldal: az a munkaterület része.
+
+A nagyítás az egész oldalpár szélességéhez igazítható. A bekezdések,
+táblázatsorok és lábjegyzetek a megfelelő oldalon folytatódnak, a szakaszonkénti
+fejlécek és az egyedi oldalstílusok ugyanúgy érvényesülnek. Eltérő méretű
+oldalstílusok a közös gerinchez igazodnak. A keretalapú nézet is oldalpáros lesz.
+A belső/külső margók váltakozását a **Tükrözött margók** beállítás szabályozza.
+
+A kapcsoló a kiadványstílus része: OMI-mentés és újrafelhasználható sablon is
+megőrzi. Az IDML-export átadja az oldalpáros dokumentumbeállítást. A nyomdai
+PDF továbbra is különálló, olvasási sorrendű oldalakat tartalmaz; az oldalpáros
+munkanézet nem nyomdai kilövés. Kikapcsolva visszatér az egymás alatti nézet.
+
 ## Egyháztörténeti Szemle: egy folyóiratszám előkészítése
 
 1. A tanulmányokat önálló felső szintű szakaszként kezeld. Az alszakaszok a
