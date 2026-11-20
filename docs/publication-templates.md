@@ -9,15 +9,17 @@ Beépített kezdősablonok:
 | Kötet, monográfia vagy tanulmánykötet | Könyvsorozat | A5, 148 × 210 mm |
 | Folyóiratszám | Folyóirat | 150 × 240 mm |
 
-A saját sablon a jelenlegi lapméretet, margókat, élőfejeket, betűbeállításokat, bekezdésstílusokat és kiadói profilt, valamint a borító és címnegyed oldalait, kereteit és képeit tárolja. A kézirat tanulmányait, szerzőit, szövegét és a törzsszöveghez kötött egyedi kerettörténeteket nem másolja át.
+A saját sablon a jelenlegi lapméretet, margókat, élőfejeket, betűbeállításokat, bekezdésstílusokat és kiadói profilt, valamint a borító és címnegyed oldalait, kereteit, képeit és beírt szövegeit tárolja. Az egyedi oldalstílusok, oldaltartományok, szakaszhozzárendelések, számozási és jegyzékbeállítások is megmaradnak. A szakaszhozzárendelések az eredeti szakaszazonosítókhoz kötődnek; új tanulmányoknál a megfelelő szakaszokra kell aktualizálni őket. A kézirat tanulmányait, szerzőit, törzsszövegét és a törzsszöveghez kötött egyedi kerettörténeteket nem másolja át.
 
-Az alkalmazás lecseréli a célkiadvány formátumát és borító/címnegyed beállításait. A cím, a kiadvány saját metaadatai és a tartalma megmaradnak. A kiadó neve, a kiadás helye, az ISSN/eISSN, a szerzői jogi közlés és a kolofon csak üres célmezőket tölt ki. Az ISBN, eISBN, DOI, év és kiadási adatok nem válnak új kiadványok alapértelmezett értékeivé. A kötet és folyóiratszám sablonjai külön jelennek meg; a rendszer nem alkalmaz eltérő típusú sablont.
+Az alkalmazás lecseréli a célkiadvány formátumát és borító/címnegyed beállításait. A célkiadványban már kitöltött cím, alcím, mottó és címadatmezők elsőbbséget kapnak; az üres mezőket a sablon mentett értékei töltik ki. A folyóiratsablon megőrzi a nyomtatott és elektronikus ISSN-t, a kiadási adatokat, az impresszumot és a többi beírt szöveget. A következő számhoz így elegendő az aktuális adatokat módosítani.
+
+A könyvsorozatok szövegei és beállításai ugyanígy megmaradnak. Az **Új kötet / folyóiratszám → Sorozat címe**, illetve a kötet **Címadatok → Sorozat címe** mezőjében megadható a sorozat neve; ez a sablon része, és a sorozati oldalon, valamint a `{{seriesTitle}}` helyőrzővel is használható. A sablon mentésekor megadott sorozatnév is kitölti ezt az adatot, ha még üres. A könyvek **ISBN-je és elektronikus ISBN-je nem öröklődik**: ezeket az új kötetnél kell megadni. Az új kötethez megadott ISBN-eket a sablon alkalmazása megőrzi. A kötet és folyóiratszám sablonjai külön jelennek meg; a rendszer nem alkalmaz eltérő típusú sablont.
 
 ## Változó adatok a borítón
 
 A borító és címnegyed szövegében használható a `{{title}}`, `{{subtitle}}`, illetve bármely címadatmező neve, például `{{publicationYear}}`, `{{isbn}}`, `{{electronicIsbn}}`, `{{doi}}`, `{{publisherName}}`. A helyőrző az alkalmazáskor kapja meg a célkiadvány aktuális értékét; az üres adat üres szöveget eredményez. A beépített sablonok impresszuma az összes aktuális azonosítót külön sorokban állítja elő.
 
-Mentéskor a program az aktuális címet, alcímet és egyedi címadatokat automatikusan helyőrzőkre cseréli a borító és címnegyed szövegcsomópontjaiban. A kézi formázás megmarad. Ha az adat több külön szövegcsomópontban, eltérő formázással szerepel, vagy nincs a kiadvány metaadataiban, célszerű mentés előtt kézzel teljes helyőrzőre cserélni. Az automatikus gerinc megtartja a papírtípust, és az új kiadvány tördeléséből számolja az oldalszámot.
+Mentéskor a program az aktuális címet, alcímet, mottót és címadatokat automatikusan helyőrzőkre cseréli a borító és címnegyed szövegcsomópontjaiban; a mentett alapértékek gondoskodnak róla, hogy a szövegek az új kiadványnál is megjelenjenek. A kézi formázás megmarad. Ha az adat több külön szövegcsomópontban, eltérő formázással szerepel, vagy nincs a kiadvány metaadataiban, célszerű mentés előtt kézzel teljes helyőrzőre cserélni. A könyvazonosítókhoz használja a `{{isbn}}` és `{{electronicIsbn}}` helyőrzőt. Az automatikus gerinc megőrzi a papírtípust és a számítási beállításokat. A kézzel megadott oldalszám megmarad; a tördelésből számított oldalszám az új kiadványhoz igazodik.
 
 ## Mentés és átvitel
 

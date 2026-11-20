@@ -41,7 +41,7 @@ function stageTemplateState(next: OmiManuscriptState, summary: string): void {
   useStudioStore.setState((state) => {
     const previous = extractManuscriptState(state.manuscript);
     const timestamp = new Date().toISOString();
-    const keys = ['publicationProfile', 'embeddedPublicationProfile', 'sectionNumberingStyle', 'citationStyle', 'crossReferenceNumbering', 'sections', 'titleMatter', 'assets', 'extensions'] as const;
+    const keys = ['publicationProfile', 'embeddedPublicationProfile', 'sectionNumberingStyle', 'citationStyle', 'crossReferenceNumbering', 'sections', 'title', 'subtitle', 'motto', 'titleMatter', 'documentStructure', 'assets', 'extensions'] as const;
     const events = keys.filter((key) => JSON.stringify(previous[key]) !== JSON.stringify(next[key])).map((key) => ({
       operation: 'publication.template.set' as const, targetId: state.manuscript.id, path: `/${key}`, previousValue: previous[key], nextValue: next[key],
     }));

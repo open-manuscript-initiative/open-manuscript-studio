@@ -1,8 +1,8 @@
-import { withoutPublicationPageAssignments } from '../model/publicationPageStyles';
+import { getDocumentStructureProfile } from '../model/documentProfile';
 import { createPublicationMatter, getPublicationMatter, validatePublicationMatter, PUBLICATION_MATTER_EXTENSION } from '../model/publicationMatter';
 import { BUILTIN_PUBLICATION_PROFILES, resolvePublicationProfile } from '../model/publicationProfile';
 import { validatePublisherProfile } from '../model/publisherProfileImport';
-import { applyPublicationTemplate, capturePublicationMatter, publicationTemplatePageToken, recurringPublicationMetadata, TEMPLATE_DEFAULT_FIELDS, templateMatterAssetIds, type PublicationTemplate } from '../model/publicationTemplates';
+import { applyPublicationTemplate, capturePublicationMatter, publicationTemplateDefaultFields, publicationTemplatePageToken, recurringPublicationMetadata, templateMatterAssetIds, type PublicationTemplate } from '../model/publicationTemplates';
 import { createAssetMetadata, sha256Hex } from '../model/assets';
 import { clonePublicationStyleTemplate, normalizePublicationStyle, type PublicationStyle } from './publicationStyleExport';
 import { getAssetPayload, putAssetPayload } from './assetRepository';
@@ -56,8 +56,15 @@ export async function validatePublicationTemplate(value: unknown): Promise<Publi
     || typeof template.association !== 'string' || template.association.length > 256
     || !['volume', 'journal-issue'].includes(template.kind)
     || !template.defaults || typeof template.defaults !== 'object' || Array.isArray(template.defaults)
-    || Object.entries(template.defaults).some(([key, text]) => !TEMPLATE_DEFAULT_FIELDS.includes(key as typeof TEMPLATE_DEFAULT_FIELDS[number]) || typeof text !== 'string' || text.length > 10000)
+    || Object.entries(template.defaults).some(([key, text]) => !publicationTemplateDefaultFields(template.kind).includes(key as keyof typeof template.defaults) || typeof text !== 'string' || text.length > 10000)
     || !Array.isArray(template.assets) || template.assets.length > 128) return fail();
+  if (template.textDefaults !== undefined && (!template.textDefaults || typeof template.textDefaults !== 'object' || Array.isArray(template.textDefaults)
+    || Object.entries(template.textDefaults).some(([key, text]) => !['title', 'subtitle', 'motto'].includes(key) || typeof text !== 'string' || text.length > 10000))) return fail();
+  const structure = template.structureDefaults;
+  if (structure !== undefined && (!structure || typeof structure !== 'object' || Array.isArray(structure)
+    || Object.keys(structure).some((key) => !['noteNumberingScope', 'referencesPlacement', 'listsPlacement'].includes(key))
+    || !['continuous', 'study', 'section'].includes(structure.noteNumberingScope)
+    || !['study-end', 'volume-end'].includes(structure.referencesPlacement) || !['study-end', 'volume-end'].includes(structure.listsPlacement))) return fail();
   const profile = validatePublisherProfile(template.profile);
   if (!profile.publicationStyle) return fail();
   validatePublicationMatter(template.matter);
@@ -90,9 +97,19 @@ export async function capturePublicationTemplate(state: OmiManuscriptState, styl
   // A local template is an independent editable snapshot of a profile.
   delete profile.distribution;
   delete (profile as typeof profile & { protection?: unknown }).protection;
-  profile.publicationStyle = withoutPublicationPageAssignments(normalizePublicationStyle(style));
-  const template: PublicationTemplate = { model: 'omi-publication-template', version: 1, id, name: name.trim(), association: association.trim(), kind: matter.publicationKind,
-    profile, defaults: recurringPublicationMetadata(state.titleMatter), matter, assets: [] };
+  profile.publicationStyle = normalizePublicationStyle(structuredClone(style));
+  profile.rules.sections.numberingStyle = state.sectionNumberingStyle ?? profile.rules.sections.numberingStyle;
+  profile.rules.citations.style = state.citationStyle ?? profile.rules.citations.style;
+  profile.rules.objects.numbering = structuredClone(state.crossReferenceNumbering ?? profile.rules.objects.numbering);
+  const structure = getDocumentStructureProfile(state);
+  const defaults = recurringPublicationMetadata(state.titleMatter, matter.publicationKind);
+  const savedAssociation = association.trim() || defaults.seriesTitle?.trim() || '';
+  if (matter.publicationKind === 'volume' && !defaults.seriesTitle?.trim() && savedAssociation) defaults.seriesTitle = savedAssociation;
+  const template: PublicationTemplate = { model: 'omi-publication-template', version: 1, id, name: name.trim(), association: savedAssociation, kind: matter.publicationKind,
+    profile, defaults,
+    textDefaults: Object.fromEntries((['title', 'subtitle', 'motto'] as const).flatMap((key) => state[key] ? [[key, state[key]]] : [])),
+    structureDefaults: { noteNumberingScope: structure.noteNumberingScope, referencesPlacement: structure.referencesPlacement, listsPlacement: structure.listsPlacement },
+    matter, assets: [] };
   const remap = new Map<string, string>();
   for (const assetId of new Set(templateMatterAssetIds(template))) {
     const sourceAsset = state.assets?.find((asset) => asset.id === assetId);

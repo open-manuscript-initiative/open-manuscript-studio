@@ -276,6 +276,7 @@ function TitleMatterFields({
     wide?: boolean;
     multiline?: boolean;
   }> = [
+    { key: 'seriesTitle', label: copy.seriesTitle, wide: true },
     { key: 'halfTitle', label: copy.halfTitle, wide: true },
     { key: 'responsibilityStatement', label: copy.responsibility, wide: true },
     { key: 'editionStatement', label: copy.edition },
@@ -449,7 +450,7 @@ function getVolumeFrontMatterCopy(locale: string, kind: 'study' | 'volume') {
 function sharedCopyHu() {
   return {
     titleMatterDetails: 'Cím- és kiadási adatok', titleMatterDetailsDescription: 'A kiadvány cím-, impresszum- és kiadási adatai.',
-    halfTitle: 'Félcím', responsibility: 'Szerzőségi vagy felelősségi közlés', edition: 'Kiadásjelzés', publisher: 'Kiadó', place: 'Kiadás helye', year: 'Kiadás éve', isbn: 'ISBN', copyright: 'Copyright-közlés', colophon: 'Kolofon vagy impresszum',
+    seriesTitle: 'Sorozat címe', halfTitle: 'Félcím', responsibility: 'Szerzőségi vagy felelősségi közlés', edition: 'Kiadásjelzés', publisher: 'Kiadó', place: 'Kiadás helye', year: 'Kiadás éve', isbn: 'ISBN', copyright: 'Copyright-közlés', colophon: 'Kolofon vagy impresszum',
     structureTitle: 'A kötet típusa és közös apparátusa', structureDescription: 'Adja meg, hol induljon újra a jegyzetszámozás, és hová kerüljenek a hivatkozás- és egyéb jegyzékek.', volumeKind: 'Kötet típusa', monograph: 'Egyszerzős monográfia', editedVolume: 'Többszerzős tanulmánykötet', noteNumbering: 'Jegyzetszámozás', continuous: 'Folyamatos a teljes kötetben', perSection: 'Újraindul minden szakaszban', referencesPlacement: 'Hivatkozásjegyzék helye', listsPlacement: 'Egyéb jegyzékek helye', atVolumeEnd: 'A kötet végén', chapter: 'fejezet', studyUnit: 'tanulmány', perUnit: (unit: string) => `Újraindul ${unit}onként`, atUnitEnd: (unit: string) => `Minden ${unit} végén`, structureHint: 'A beállítások szemantikai szabályok: a szöveg és az objektumazonosítók változatlanok maradnak.',
   };
 }
@@ -457,7 +458,7 @@ function sharedCopyHu() {
 function sharedCopyDe() {
   return {
     titleMatterDetails: 'Titel- und Publikationsdaten', titleMatterDetailsDescription: 'Schmutztitel, Impressum und Publikationsdaten bleiben strukturiert in OMI erhalten.',
-    halfTitle: 'Schmutztitel', responsibility: 'Verantwortlichkeitsangabe', edition: 'Ausgabebezeichnung', publisher: 'Verlag', place: 'Erscheinungsort', year: 'Erscheinungsjahr', isbn: 'ISBN', copyright: 'Copyright-Vermerk', colophon: 'Kolophon oder Impressum',
+    seriesTitle: 'Reihentitel', halfTitle: 'Schmutztitel', responsibility: 'Verantwortlichkeitsangabe', edition: 'Ausgabebezeichnung', publisher: 'Verlag', place: 'Erscheinungsort', year: 'Erscheinungsjahr', isbn: 'ISBN', copyright: 'Copyright-Vermerk', colophon: 'Kolophon oder Impressum',
     structureTitle: 'Bandtyp und gemeinsamer Apparat', structureDescription: 'Legen Sie die Neunummerierung der Anmerkungen und die Position von Literatur- und anderen Verzeichnissen fest.', volumeKind: 'Bandtyp', monograph: 'Einzelautorenmonografie', editedVolume: 'Mehrfach verfasster Sammelband', noteNumbering: 'Anmerkungsnummerierung', continuous: 'Fortlaufend im gesamten Band', perSection: 'In jedem Abschnitt neu', referencesPlacement: 'Position des Literaturverzeichnisses', listsPlacement: 'Position weiterer Verzeichnisse', atVolumeEnd: 'Am Ende des Bandes', chapter: 'Kapitel', studyUnit: 'Beitrag', perUnit: (unit: string) => `In jedem ${unit} neu`, atUnitEnd: (unit: string) => `Am Ende jedes ${unit}s`, structureHint: 'Diese Einstellungen sind semantische Regeln; Text und Objektidentitäten bleiben unverändert.',
   };
 }
@@ -465,7 +466,7 @@ function sharedCopyDe() {
 function sharedCopyEn() {
   return {
     titleMatterDetails: 'Detailed title matter', titleMatterDetailsDescription: 'Half-title, imprint, and publication data remain structured in OMI.',
-    halfTitle: 'Half-title', responsibility: 'Statement of responsibility', edition: 'Edition statement', publisher: 'Publisher', place: 'Place of publication', year: 'Publication year', isbn: 'ISBN', copyright: 'Copyright statement', colophon: 'Colophon or imprint',
+    seriesTitle: 'Series title', halfTitle: 'Half-title', responsibility: 'Statement of responsibility', edition: 'Edition statement', publisher: 'Publisher', place: 'Place of publication', year: 'Publication year', isbn: 'ISBN', copyright: 'Copyright statement', colophon: 'Colophon or imprint',
     structureTitle: 'Volume type and shared apparatus', structureDescription: 'Choose where note numbering restarts and where references and other lists are placed.', volumeKind: 'Volume type', monograph: 'Single-author monograph', editedVolume: 'Multi-author edited volume', noteNumbering: 'Note numbering', continuous: 'Continuous through the volume', perSection: 'Restart in every section', referencesPlacement: 'Reference-list placement', listsPlacement: 'Other-list placement', atVolumeEnd: 'At the end of the volume', chapter: 'chapter', studyUnit: 'study', perUnit: (unit: string) => `Restart in every ${unit}`, atUnitEnd: (unit: string) => `At the end of every ${unit}`, structureHint: 'These are semantic rules; text and stable object identities remain unchanged.',
   };
 }
