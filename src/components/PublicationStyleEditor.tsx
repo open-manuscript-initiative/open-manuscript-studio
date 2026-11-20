@@ -270,9 +270,11 @@ function PublicationStyleEditorWorkspace() {
 
   useEffect(() => {
     persistLibrary(upsertStyle(library, activeId, style), style);
-    stageAppliedPublicationStyle(style);
+    // Opening an unformatted document is a projection, not an authoring edit.
+    // Embed the format after the first user change or when it already exists.
+    if (style !== initial.style || synchronizedStyleRef.current) stageAppliedPublicationStyle(style);
     synchronizedStyleRef.current = getAppliedPublicationTemplate(useStudioStore.getState().manuscript)?.style;
-  }, [activeId, library, style]);
+  }, [activeId, library, style, initial.style]);
 
   useEffect(() => {
     // Revision restoration can replace a format without changing document id.

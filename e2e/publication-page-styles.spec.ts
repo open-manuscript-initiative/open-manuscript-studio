@@ -21,6 +21,11 @@ test('section headers and individual page masters reflow, persist and feed PDF o
   await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
   const editor = menu.locator('.publication-style-editor');
   await editor.getByRole('combobox', { name: 'Zoom', exact: true }).selectOption('50');
+  expect(await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { getAppliedPublicationTemplate } = await import('/src/model/publicationTemplates.ts');
+    return Boolean(getAppliedPublicationTemplate(useStudioStore.getState().manuscript));
+  })).toBe(false);
   const toggle = editor.getByRole('button', { name: 'Page styles and section headers', exact: true });
   await toggle.click();
   const panel = editor.locator('.publication-page-styles-panel');

@@ -565,11 +565,19 @@ export function PublicationDocumentCanvas({
         }
         if (cancelled) return;
         const metricPages: ReturnType<typeof canvasPageGeometry>[] = [];
+        const metricCache = new Map<number, { sectionId?: string; bodyHeight: number; bodyTop: number }>();
         const metrics = (index: number, sectionId?: string) => {
+          const cached = metricCache.get(index);
+          if (cached && cached.sectionId === sectionId) return cached;
           const resolved = resolvePublicationPageStyle(style, manuscript.sections, index, sectionId);
           metricPages[index] = canvasPageGeometry(resolved, scale);
           const previousHeight = metricPages.slice(0, index).reduce((sum, item) => sum + item.height + pageGap, 0);
-          return { bodyHeight: metricPages[index]!.bodyHeight, bodyTop: previousHeight + metricPages[index]!.topMargin - topMargin };
+          const measured = { sectionId, bodyHeight: metricPages[index]!.bodyHeight, bodyTop: previousHeight + metricPages[index]!.topMargin - topMargin };
+          // A revised first content block can change a page's master. Future
+          // absolute positions must then be recomputed from that page onward.
+          for (const key of metricCache.keys()) if (key >= index) metricCache.delete(key);
+          metricCache.set(index, measured);
+          return measured;
         };
         const layout = paginatePublicationBlocks(
           measuredBlocks,
