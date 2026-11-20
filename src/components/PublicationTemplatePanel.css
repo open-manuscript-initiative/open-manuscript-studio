@@ -1,0 +1,16 @@
+.publication-template-panel {
+  min-width: 0;
+  margin-block: .75rem;
+  padding: .75rem;
+  border: 1px solid var(--border-color, #d4dce5);
+  border-radius: .6rem;
+  background: var(--surface-color, #f8fafc);
+}
+.publication-template-panel summary { cursor: pointer; font-weight: 600; }
+.publication-template-panel fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: .75rem; }
+.publication-template-panel p { font-size: .875rem; line-height: 1.5; overflow-wrap: anywhere; }
+.publication-template-selector, .publication-template-fields label { display: grid; gap: .35rem; min-width: 0; }
+.publication-template-selector select, .publication-template-fields input { width: 100%; min-width: 0; box-sizing: border-box; padding: .5rem; font: inherit; }
+.publication-template-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .75rem; }
+.publication-template-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.publication-template-actions button { min-height: 2.75rem; padding: .5rem .75rem; max-width: 100%; white-space: normal; }

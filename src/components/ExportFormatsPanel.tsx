@@ -247,7 +247,7 @@ export function ExportFormatsPanel() {
           break;
         }
         case 'idml': {
-          const result = buildIdmlExport(manuscript, loadPublicationStyle());
+          const result = buildIdmlExport(manuscript, loadPublicationStyle(manuscript));
           recordAdapterDiagnostics(result);
           reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;

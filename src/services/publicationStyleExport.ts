@@ -7,6 +7,7 @@ import {
   applyTextPublicationCorrections,
 } from '../model/proofing';
 import type { OmiPublicationProfile } from '../model/publicationProfile';
+import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import type {
   OmiBlock,
   OmiManuscript,
@@ -40,8 +41,10 @@ export function clonePublicationPublisherTemplate(): PublicationPublisherIdentit
   return JSON.parse(JSON.stringify(publisherJson)) as PublicationPublisherIdentity;
 }
 
-export function loadPublicationStyle(): PublicationStyle {
+export function loadPublicationStyle(manuscript?: Pick<OmiManuscript, 'extensions'>): PublicationStyle {
   try {
+    const applied = manuscript && getAppliedPublicationTemplate(manuscript);
+    if (applied?.style) return normalizePublicationStyle(structuredClone(applied.style));
     const saved = window.localStorage.getItem(PUBLICATION_STYLE_STORAGE_KEY);
     return saved
       ? normalizePublicationStyle(JSON.parse(saved) as PublicationStyle)
@@ -912,8 +915,11 @@ export async function renderStyleBasedHtml(
   target: PublicationStyleTarget,
   context?: { style: PublicationStyle; identity: PublicationPublisherIdentity; embedAssets?: boolean },
 ): Promise<string> {
-  const style = context?.style ?? loadPublicationStyle();
-  const identity = context?.identity ?? loadPublicationPublisherIdentity();
+  const style = context?.style ?? loadPublicationStyle(manuscript);
+  const appliedTemplate = getAppliedPublicationTemplate(manuscript);
+  const identity = context?.identity ?? (appliedTemplate
+    ? templatePublisherIdentity(manuscript, profile, appliedTemplate.association ?? '')
+    : loadPublicationPublisherIdentity());
   const renderingManuscript = target === 'print'
     ? applyPublicationCorrectionsForRendering(manuscript)
     : manuscript;
@@ -941,6 +947,27 @@ export async function renderStyleBasedHtml(
   return target === 'print' || context?.embedAssets
     ? inlinePublicationArtifactImages(html, manuscript, target === 'print' ? 48 * 1024 * 1024 : 8 * 1024 * 1024, target === 'print')
     : html;
+}
+
+/** A portable template must not inherit another device's active journal brand. */
+function templatePublisherIdentity(manuscript: OmiManuscript, profile: OmiPublicationProfile, association: string): PublicationPublisherIdentity {
+  const identity = clonePublicationPublisherTemplate();
+  identity.id = profile.id;
+  identity.journalTitle = association;
+  identity.journalShortTitle = association;
+  identity.publisherName = manuscript.titleMatter?.publisherName ?? profile.publisher ?? '';
+  identity.publisherAddress = ''; identity.contactEmail = '';
+  identity.website = profile.branding?.website ?? '';
+  identity.identifiers.issn = manuscript.titleMatter?.issn ?? '';
+  identity.identifiers.eissn = manuscript.titleMatter?.eissn ?? '';
+  identity.branding.logo.enabled = Boolean(profile.branding?.logoDataUrl);
+  identity.branding.logo.src = profile.branding?.logoDataUrl ?? '';
+  identity.branding.logo.alt = profile.branding?.logoAlt ?? association;
+  // Legal statements belong to the captured imprint/profile, not the old brand.
+  identity.legal.copyright.enabled = false;
+  identity.legal.copyright.copyrightHolder = '';
+  identity.legal.license.enabled = false;
+  return identity;
 }
 
 /** Returns a print-only clone containing inline correction characters. */

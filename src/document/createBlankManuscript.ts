@@ -15,6 +15,7 @@ import { createInitialVersioningEnvelope } from '../model/versioning';
 import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 import { normalizeTitleMatter, type OmiTitleMatter } from '../model/frontMatter';
 import { createPublicationMatter, PUBLICATION_MATTER_EXTENSION, type PublicationMatter } from '../model/publicationMatter';
+import { applyPublicationTemplate, type PublicationTemplate } from '../model/publicationTemplates';
 
 export interface CreateBlankManuscriptInput {
   kind: OmiDocumentKind;
@@ -23,6 +24,7 @@ export interface CreateBlankManuscriptInput {
   title?: string;
   publicationKind?: PublicationMatter['publicationKind'];
   titleMatter?: OmiTitleMatter;
+  publicationTemplate?: PublicationTemplate;
   author?: {
     displayName: string;
     givenName?: string;
@@ -60,7 +62,7 @@ export function createBlankManuscript(
       }, crypto.randomUUID(), now)
     : null;
   const rootStudyId = input.kind === 'study' ? crypto.randomUUID() : null;
-  const state: OmiManuscriptState = {
+  let state: OmiManuscriptState = {
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
     version: '0.1.0-alpha.1',
@@ -111,6 +113,7 @@ export function createBlankManuscript(
       ...createPublicationMatter(state), publicationKind: input.publicationKind,
     } };
   }
+  if (input.publicationTemplate) state = applyPublicationTemplate(state, input.publicationTemplate);
 
   const summary = input.kind === 'study'
     ? 'Created blank OMI study'

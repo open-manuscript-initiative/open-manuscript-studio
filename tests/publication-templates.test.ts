@@ -1,0 +1,186 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { createBlankManuscript } from '../src/document/createBlankManuscript.ts';
+import { applyPublicationTemplate, getAppliedPublicationTemplate, PUBLICATION_TEMPLATE_EXTENSION } from '../src/model/publicationTemplates.ts';
+import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
+import { createPublicationMatter, getPublicationMatter, PUBLICATION_MATTER_EXTENSION } from '../src/model/publicationMatter.ts';
+import { createPublicationMatterFrame } from '../src/model/publicationMatterFrames.ts';
+import { defaultSpineCalculation, publicationSpineWidth } from '../src/model/publicationSpine.ts';
+import { createAssetMetadata } from '../src/model/assets.ts';
+import { inspectRevisionStateIntegrity } from '../src/model/revisionIntegrity.ts';
+import { builtinPublicationTemplates, capturePublicationTemplate, prepareTemplatedPublication, validatePublicationTemplate } from '../src/services/publicationTemplates.ts';
+import { clonePublicationStyleTemplate, loadPublicationStyle, buildPublicationStyleCss, renderStyleBasedHtml } from '../src/services/publicationStyleExport.ts';
+import { getAssetPayload, putAssetPayload } from '../src/services/assetRepository.ts';
+import { serializeOmiJson } from '../src/services/exportOmi.ts';
+import { parseOmiJson } from '../src/services/omiPortableFormat.ts';
+import { useStudioStore } from '../src/app/useStudioStore.ts';
+import { stageAppliedPublicationStyle, stagePublicationTemplate } from '../src/app/publicationTemplateActions.ts';
+
+const rich = (text: string) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text, marks: [{ type: 'italic' }] }] }] });
+function source() {
+  const manuscript = createBlankManuscript({ kind: 'volume', publicationKind: 'journal-issue', title: 'First issue',
+    titleMatter: { publisherName: 'University Press', publicationPlace: 'Eger', publicationYear: '2025', isbn: '978-0-306-40615-7', doi: '10.1234/first', issn: '1234-5679', eissn: '2049-3630' } });
+  const matter = createPublicationMatter(manuscript); matter.publicationKind = 'journal-issue';
+  matter.pages[0]!.enabled = true;
+  matter.pages[0]!.content = rich('First issue / 2025 / 978-0-306-40615-7 / 10.1234/first');
+  manuscript.extensions = { ...manuscript.extensions, [PUBLICATION_MATTER_EXTENSION]: matter };
+  return { manuscript, matter };
+}
+
+test('built-in templates are valid and initialize complete revision snapshots and the new imprint', async () => {
+  for (const template of builtinPublicationTemplates()) {
+    await validatePublicationTemplate(template);
+    const manuscript = createBlankManuscript({ kind: 'volume', publicationKind: template.kind, publicationTemplate: template,
+      title: 'New publication', titleMatter: { isbn: '978-3-16-148410-0', doi: '10.1234/new' } });
+    assert.equal(getPublicationMatter(manuscript)?.publicationKind, template.kind);
+    assert.equal(getAppliedPublicationTemplate(manuscript)?.style.page.width, template.kind === 'volume' ? 148 : 150);
+    assert.match(getPublicationMatter(manuscript)!.pages.find((page) => page.kind === 'title-page')!.content, /New publication/);
+    const imprint = getPublicationMatter(manuscript)!.pages.find((page) => page.kind === 'imprint-page')!.content;
+    assert.match(imprint, /ISBN 978-3-16-148410-0/); assert.match(imprint, /DOI 10.1234\/new/);
+    assert.doesNotMatch(JSON.stringify(getPublicationMatter(manuscript)), /"text":""/);
+    assert.equal(inspectRevisionStateIntegrity(manuscript.revisionHistory.revisions[0]!).status, 'verified');
+    const restored = parseOmiJson(serializeOmiJson(manuscript));
+    assert.equal(JSON.stringify(getAppliedPublicationTemplate(restored)), JSON.stringify(getAppliedPublicationTemplate(manuscript)));
+    assert.equal(JSON.stringify(loadPublicationStyle(restored)), JSON.stringify(getAppliedPublicationTemplate(restored)!.style));
+    assert.match(buildPublicationStyleCss(loadPublicationStyle(restored)), new RegExp(`${template.kind === 'volume' ? 148 : 150}mm`));
+  }
+});
+
+test('template exports use the portable format and brand instead of the device journal defaults', async () => {
+  const template = builtinPublicationTemplates()[0]!;
+  template.association = 'University history series';
+  const manuscript = createBlankManuscript({ kind: 'volume', publicationKind: 'volume', publicationTemplate: template, title: 'Portable volume', author: { displayName: 'Test Author', email: 'author@example.test' } });
+  const html = await renderStyleBasedHtml(manuscript, resolvePublicationProfile(manuscript), 'print');
+  assert.match(html, /148mm 210mm/);
+  assert.match(html, /University history series/);
+  assert.doesNotMatch(html, /egyhaztortenetiszemle\.hu|Egyháztörténeti Szemle/);
+});
+
+test('metadata tokens prefer the document title over an identical half-title and never read inherited properties', async () => {
+  const { manuscript, matter } = source();
+  manuscript.titleMatter!.halfTitle = manuscript.title;
+  matter.pages[0]!.content = rich('First issue / University Press / {{constructor}} / {{subtitle}}');
+  const template = await capturePublicationTemplate(manuscript, clonePublicationStyleTemplate(), 'Metadata', '');
+  assert.match(template.matter.pages[0]!.content, /\{\{title\}\}/);
+  const target = createBlankManuscript({ kind: 'volume', publicationKind: 'journal-issue', title: 'New title', titleMatter: { publisherName: 'New publisher' } });
+  const applied = getPublicationMatter(applyPublicationTemplate(target, template))!;
+  assert.match(applied.pages[0]!.content, /New title \/ New publisher/);
+  assert.doesNotMatch(applied.pages[0]!.content, /function|University Press/);
+});
+
+test('portable OMI input rejects malformed applied template styles', () => {
+  const manuscript = createBlankManuscript({ kind: 'volume', publicationKind: 'volume', title: 'Valid title', publicationTemplate: builtinPublicationTemplates()[0] });
+  const json = JSON.parse(serializeOmiJson(manuscript));
+  json.extensions[PUBLICATION_TEMPLATE_EXTENSION].style = { page: null };
+  assert.throws(() => parseOmiJson(JSON.stringify(json)));
+});
+
+test('captures recurring metadata and substitutes variable text without changing marks or frame geometry', async () => {
+  const { manuscript, matter } = source();
+  const frame = createPublicationMatterFrame('text', 150, 240); frame.content = rich('First issue'); frame.rotation = 21;
+  matter.pages[0]!.frames = [frame];
+  const template = await capturePublicationTemplate(manuscript, clonePublicationStyleTemplate(), 'Review format', 'Review');
+  assert.deepEqual(template.defaults, { publisherName: 'University Press', publicationPlace: 'Eger', issn: '1234-5679', eissn: '2049-3630' });
+  assert.match(template.matter.pages[0]!.content, /\{\{title\}\}.*\{\{publicationYear\}\}.*\{\{isbn\}\}.*\{\{doi\}\}/);
+  assert.match(template.matter.pages[0]!.frames![0]!.content!, /\{\{title\}\}/);
+  assert.equal(template.matter.pages[0]!.frames![0]!.rotation, 21);
+  assert.match(template.matter.pages[0]!.content, /italic/);
+  assert.match(matter.pages[0]!.content, /First issue/);
+});
+
+test('applies a detached format while preserving scholarly content, identities, current identifiers and explicit metadata', async () => {
+  const { manuscript } = source();
+  const template = await capturePublicationTemplate(manuscript, clonePublicationStyleTemplate(), 'Review format', 'Review');
+  const target = createBlankManuscript({ kind: 'volume', publicationKind: 'journal-issue', title: 'Second issue', titleMatter: { isbn: '978-3-16-148410-0', doi: '10.1234/second', publicationYear: '2026', publisherName: 'Local publisher' } });
+  const before = structuredClone(target);
+  const applied = applyPublicationTemplate(target, template);
+  assert.equal(applied.id, target.id); assert.equal(applied.title, 'Second issue');
+  assert.deepEqual(applied.sections, target.sections); assert.deepEqual(applied.agents, target.agents);
+  assert.equal(applied.titleMatter!.publisherName, 'Local publisher'); assert.equal(applied.titleMatter!.issn, '1234-5679');
+  assert.equal(applied.titleMatter!.isbn, '978-3-16-148410-0'); assert.equal(applied.titleMatter!.doi, '10.1234/second');
+  const text = getPublicationMatter(applied)!.pages[0]!.content;
+  assert.match(text, /Second issue.*2026.*978-3-16-148410-0.*10.1234\/second/);
+  assert.doesNotMatch(text, /First issue|2025|10.1234\/first/);
+  template.matter.pages[0]!.appearance.background = '#abcdef';
+  template.profile.publicationStyle!.page.width = 99;
+  assert.notEqual(getPublicationMatter(applied)!.pages[0]!.appearance.background, '#abcdef');
+  assert.notEqual(getAppliedPublicationTemplate(applied)!.style.page.width, 99);
+  assert.deepEqual(target, before);
+});
+
+test('rejects mismatched template kinds and templates on standalone studies', () => {
+  const [volume, journal] = builtinPublicationTemplates();
+  assert.throws(() => applyPublicationTemplate(createBlankManuscript({ kind: 'volume', publicationKind: 'volume' }), journal!), /type does not match/);
+  assert.throws(() => applyPublicationTemplate(createBlankManuscript({ kind: 'study' }), volume!), /requires a volume/);
+});
+
+test('cover images survive portable template JSON and are copied into the target asset repository', async () => {
+  const { manuscript, matter } = source();
+  const payload = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const asset = await createAssetMetadata(payload, { mediaType: 'image/png', fileName: 'logo.png', role: 'figure' });
+  manuscript.assets = [asset];
+  await putAssetPayload(manuscript.id, asset.id, payload);
+  matter.pages[0]!.image = { assetId: asset.id, alt: 'Logo', fit: 'contain' };
+  const template = await capturePublicationTemplate(manuscript, clonePublicationStyleTemplate(), 'With logo', '');
+  assert.notEqual(template.assets[0]!.metadata.id, asset.id);
+  const imported = await validatePublicationTemplate(JSON.parse(JSON.stringify(template)));
+  const target = createBlankManuscript({ kind: 'volume', publicationKind: 'journal-issue', title: 'Next issue' });
+  const applied = await prepareTemplatedPublication(target, imported);
+  const id = getPublicationMatter(applied)!.pages[0]!.image!.assetId;
+  assert.deepEqual(await getAssetPayload(target.id, id), payload);
+  assert.equal(applied.assets!.find((item) => item.id === id)!.checksum.value, asset.checksum.value);
+  assert.equal(applyPublicationTemplate(applied, imported).assets!.length, 1);
+  imported.assets[0]!.base64 = btoa('corrupted');
+  await assert.rejects(validatePublicationTemplate(imported));
+});
+
+test('missing image payloads abort capture, and malformed portable templates fail validation', async () => {
+  const { manuscript, matter } = source();
+  matter.pages[0]!.image = { assetId: 'missing', alt: 'Missing', fit: 'cover' };
+  await assert.rejects(capturePublicationTemplate(manuscript, clonePublicationStyleTemplate(), 'Broken', ''), /unavailable/);
+  for (const mutate of [
+    (t: any) => { t.defaults.doi = '10.1234/old'; },
+    (t: any) => { t.kind = 'study'; },
+    (t: any) => { t.profile.publicationStyle = { page: null }; },
+    (t: any) => { t.matter.pages[0].content = '<script>'; },
+    (t: any) => { t.matter.pages[0].image = { assetId: 'missing', alt: '', fit: 'cover' }; },
+  ]) {
+    const template = builtinPublicationTemplates()[0]!; mutate(template);
+    await assert.rejects(validatePublicationTemplate(template));
+  }
+});
+
+test('automatic spine templates keep paper stock and switch to the target layout count', async () => {
+  const { manuscript, matter } = source();
+  matter.spineCalculation = { ...defaultSpineCalculation(400), mode: 'automatic', pageCountSource: 'manual' };
+  const template = await capturePublicationTemplate(manuscript, clonePublicationStyleTemplate(), 'Paper', '');
+  const target = createBlankManuscript({ kind: 'volume', publicationKind: 'journal-issue' });
+  const applied = getPublicationMatter(applyPublicationTemplate(target, template))!;
+  assert.equal(applied.spineCalculation!.paperId, matter.spineCalculation.paperId);
+  assert.equal(applied.spineCalculation!.pageCount, 1); assert.equal(applied.spineCalculation!.pageCountSource, 'layout');
+  assert.ok(publicationSpineWidth(applied) < 1);
+});
+
+test('applying and then editing a template records complete portable working revisions', async () => {
+  const previous = useStudioStore.getState();
+  try {
+    const manuscript = createBlankManuscript({ kind: 'volume', publicationKind: 'volume', title: 'Working publication' });
+    useStudioStore.getState().loadManuscript(manuscript);
+    const style = await stagePublicationTemplate(builtinPublicationTemplates()[0]!);
+    assert.equal(style.page.width, 148);
+    assert.equal(useStudioStore.getState().manuscript.title, 'Working publication');
+    assert.equal(useStudioStore.getState().pendingChangeSet, null);
+    const next = structuredClone(style); next.page.width = 162;
+    stageAppliedPublicationStyle(next);
+    assert.ok(useStudioStore.getState().pendingChangeSet);
+    useStudioStore.getState().checkpoint('manual');
+    const committed = useStudioStore.getState().manuscript;
+    const restored = parseOmiJson(serializeOmiJson(committed));
+    assert.equal(loadPublicationStyle(restored).page.width, 162);
+    assert.equal(restored.embeddedPublicationProfile!.publicationStyle!.page.width, 162);
+    assert.equal(inspectRevisionStateIntegrity(restored.revisionHistory.revisions[0]!).status, 'verified');
+    assert.ok(restored.revisionHistory.revisions.every((revision) => inspectRevisionStateIntegrity(revision).status !== 'mismatch'));
+    const head = restored.revisionHistory.revisions.find((revision) => revision.id === restored.headRevisionId)!;
+    assert.equal(getAppliedPublicationTemplate(head.snapshot.state)!.style.page.width, 162);
+  } finally { useStudioStore.setState(previous, true); }
+});

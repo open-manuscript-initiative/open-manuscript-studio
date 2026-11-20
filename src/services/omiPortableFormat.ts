@@ -1,6 +1,7 @@
 import { TEXT_BOX_CONTENT_PROFILE, decodeTextBoxContent } from '../model/textBoxContent';
 import { FRAME_LAYOUT_EXTENSION, validateFrameLayout } from '../model/publicationFrames';
 import { PUBLICATION_MATTER_EXTENSION, validatePublicationMatter } from '../model/publicationMatter';
+import { PUBLICATION_TEMPLATE_EXTENSION, validateAppliedPublicationTemplate } from '../model/publicationTemplates';
 import {
   OMI_FILE_FORMAT_PROFILES,
   OMI_FILE_FORMAT_SPECIFICATIONS,
@@ -356,6 +357,11 @@ function validateSection(
 }
 
 function validateStudioExtensions(value: Record<string, unknown>): void {
+  const template = isRecord(value.extensions) ? value.extensions[PUBLICATION_TEMPLATE_EXTENSION] : undefined;
+  if (template !== undefined) {
+    try { validateAppliedPublicationTemplate(template); }
+    catch (error) { invalid(error instanceof Error ? error.message : 'Invalid applied publication template.'); }
+  }
   const matter = isRecord(value.extensions) ? value.extensions[PUBLICATION_MATTER_EXTENSION] : undefined;
   if (matter !== undefined) {
     try { validatePublicationMatter(matter); }

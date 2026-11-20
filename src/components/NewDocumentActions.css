@@ -5,10 +5,12 @@
   min-width: 0;
 }
 
-.omi-new-publication-form > label {
+.omi-new-publication-form label {
   display: grid;
   gap: .3rem;
 }
+
+.omi-new-publication-template-fields { display: grid; gap: .75rem; border: 0; padding: 0; }
 
 .omi-new-publication-form input,
 .omi-new-publication-form select,
