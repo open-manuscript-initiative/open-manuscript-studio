@@ -28,7 +28,7 @@ for (const viewport of [
     await expect(navigation.getByRole('button', { name: groups[0], exact: true })).toHaveAttribute('aria-pressed', 'true');
     const candidate = workspace.getByRole('radio').nth(1);
     await candidate.check();
-    const profileName = workspace.locator('#publication-workspace-profiles .publisher-profile-editor input').first();
+    const profileName = workspace.getByRole('textbox', { name: 'Profile name', exact: true });
     await profileName.fill('Unfinished publisher profile');
 
     for (const name of groups) {
