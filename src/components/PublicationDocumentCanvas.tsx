@@ -1,4 +1,4 @@
-import { resolvePublicationPageStyle, publicationSectionPageRules } from '../model/publicationPageStyles';
+import { resolvePublicationPageStyle, publicationSectionPageRules, publicationSectionLayoutKey } from '../model/publicationPageStyles';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import { renderPublicationNoteBody, type PublicationNoteBody } from '../services/publicationNoteBody';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
@@ -156,6 +156,7 @@ export function PublicationDocumentCanvas({
   // on every content edit. MutationObserver already schedules changed blocks.
   const layoutSectionsRef = useRef(manuscript.sections);
   layoutSectionsRef.current = manuscript.sections;
+  const sectionLayoutKey = publicationSectionLayoutKey(manuscript.sections);
   const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
   const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
   const [stageWidth, setStageWidth] = useState(0);
@@ -705,6 +706,7 @@ export function PublicationDocumentCanvas({
     pageGap,
     scale,
     topMargin,
+    sectionLayoutKey,
     style.page.mirroredMargins,
     style,
     usablePageHeight,

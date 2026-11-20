@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { capturePublicationPageStyle, publicationPageStyles, removePublicationPageStyle, resolvePublicationPageStyle, validatePublicationPageStyles, withoutPublicationPageAssignments } from '../src/model/publicationPageStyles.ts';
+import { capturePublicationPageStyle, publicationPageStyles, removePublicationPageStyle, resolvePublicationPageStyle, validatePublicationPageStyles, withoutPublicationPageAssignments, publicationSectionLayoutKey } from '../src/model/publicationPageStyles.ts';
 import { clonePublicationStyleTemplate, clonePublicationPublisherTemplate, renderStyleBasedHtml, loadPublicationStyle, withPrintRunningHeader } from '../src/services/publicationStyleExport.ts';
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
 import { buildPublicationPageStylesCss } from '../src/services/publicationPageStyleCss.ts';
@@ -38,6 +38,16 @@ test('section masters and custom headers inherit through flat and nested subsect
   assert.equal(resolved.page.margins.top, 40); assert.equal(resolved.runningHeaders.odd.left, 'Subsection'); assert.equal(resolved.showFirstPage, true);
   assert.equal(resolvePublicationPageStyle(style, sections, 1, 'article-b').page.margins.top, style.page.margins.top);
   assert.equal(resolvePublicationPageStyle(style, [{ ...sections[0]!, children: [{ id: 'nested', title: '', blocks: [] }] }], 1, 'nested').id, 'opening');
+});
+test('page measurement invalidation follows hierarchy and layout without discarding caches on text edits', () => {
+  const key = publicationSectionLayoutKey(sections);
+  const edited = structuredClone(sections);
+  edited[0]!.title = 'Revised title'; edited[0]!.blocks = [{ id: 'text', type: 'paragraph', content: 'Updated prose' }];
+  assert.equal(publicationSectionLayoutKey(edited), key);
+  edited[1] = withParentSectionId(edited[1]!, 'article-b');
+  assert.notEqual(publicationSectionLayoutKey(edited), key);
+  const layout = structuredClone(sections); layout[0]!.layout = { columns: 2 };
+  assert.notEqual(publicationSectionLayoutKey(layout), key);
 });
 test('inclusive printed-page assignments override section masters, with the latest assignment winning', () => {
   const style = configured(); style.page.pageNumberStart = 11;

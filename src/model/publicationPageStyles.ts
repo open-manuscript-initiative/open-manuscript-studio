@@ -24,6 +24,12 @@ export interface PublicationPageStyleCollection {
   pages: { from: number; to: number; styleId: string }[];
 }
 
+/** Invalidate page measurements for structure/layout changes, not every keystroke. */
+export function publicationSectionLayoutKey(sections: readonly OmiSection[]): string {
+  const visit = (section: OmiSection): unknown[] => [section.id, getParentSectionId(section), section.layout, (section.children ?? []).map(visit)];
+  return JSON.stringify(sections.map(visit));
+}
+
 export function publicationPageStyles(style: PublicationStyle): PublicationPageStyleCollection {
   return style.pageStyles ?? { version: 1, styles: [], sections: [], pages: [] };
 }
