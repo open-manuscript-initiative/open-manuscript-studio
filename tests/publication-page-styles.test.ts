@@ -10,6 +10,7 @@ import { serializeOmiJson } from '../src/services/exportOmi.ts';
 import { useStudioStore } from '../src/app/useStudioStore.ts';
 import { stageAppliedPublicationStyle } from '../src/app/publicationTemplateActions.ts';
 import { capturePublicationTemplate } from '../src/services/publicationTemplates.ts';
+import { getAppliedPublicationTemplate } from '../src/model/publicationTemplates.ts';
 import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
 import { withParentSectionId } from '../src/model/sectionStructure.ts';
 
@@ -109,12 +110,14 @@ test('page styles and section rules persist in OMI even without a previously app
     stageAppliedPublicationStyle(configured()); useStudioStore.getState().checkpoint('manual');
     const restored = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
     assert.deepEqual(loadPublicationStyle(restored).pageStyles, configured().pageStyles);
+    assert.equal(getAppliedPublicationTemplate(restored)!.source, 'document-style');
     const template = await capturePublicationTemplate(restored, loadPublicationStyle(restored), 'Journal format', 'Review');
     assert.equal(template.profile.publicationStyle!.pageStyles!.styles.length, 1);
     assert.deepEqual(template.profile.publicationStyle!.pageStyles!.sections, []);
     assert.deepEqual(template.profile.publicationStyle!.pageStyles!.pages, []);
     const html = await renderStyleBasedHtml(restored, resolvePublicationProfile(restored), 'print');
     assert.match(html, /@page omi_section_0/);
+    assert.ok(html.includes(`© ${restored.updatedAt.slice(0, 4)} Egyháztörténeti Szemle`));
     const responsive = await renderStyleBasedHtml(restored, resolvePublicationProfile(restored), 'html');
     assert.doesNotMatch(responsive, /@page omi_section_0/);
   } finally { useStudioStore.setState(previous, true); }

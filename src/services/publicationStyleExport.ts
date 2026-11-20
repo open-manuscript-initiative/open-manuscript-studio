@@ -922,7 +922,7 @@ export async function renderStyleBasedHtml(
 ): Promise<string> {
   const style = context?.style ?? loadPublicationStyle(manuscript);
   const appliedTemplate = getAppliedPublicationTemplate(manuscript);
-  const identity = context?.identity ?? (appliedTemplate
+  const identity = context?.identity ?? (appliedTemplate && appliedTemplate.source !== 'document-style'
     ? templatePublisherIdentity(manuscript, profile, appliedTemplate.association ?? '')
     : loadPublicationPublisherIdentity());
   const renderingManuscript = target === 'print'

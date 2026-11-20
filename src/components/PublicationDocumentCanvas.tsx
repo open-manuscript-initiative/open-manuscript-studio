@@ -152,6 +152,10 @@ export function PublicationDocumentCanvas({
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const noteMeasureRef = useRef<HTMLDivElement>(null);
+  // Read the latest section hierarchy without discarding measured-line caches
+  // on every content edit. MutationObserver already schedules changed blocks.
+  const layoutSectionsRef = useRef(manuscript.sections);
+  layoutSectionsRef.current = manuscript.sections;
   const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
   const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
   const [stageWidth, setStageWidth] = useState(0);
@@ -553,7 +557,7 @@ export function PublicationDocumentCanvas({
               || blockCorrections.some((item) => item.kind === 'keep-together'),
             forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
               || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
-                && publicationSectionPageRules(style, manuscript.sections, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
+                && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
           });
           existingFlowBreakHeight += ownFlowBreakHeight;
           flowIndex += 1;
@@ -569,7 +573,7 @@ export function PublicationDocumentCanvas({
         const metrics = (index: number, sectionId?: string) => {
           const cached = metricCache.get(index);
           if (cached && cached.sectionId === sectionId) return cached;
-          const resolved = resolvePublicationPageStyle(style, manuscript.sections, index, sectionId);
+          const resolved = resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId);
           metricPages[index] = canvasPageGeometry(resolved, scale);
           const previousHeight = metricPages.slice(0, index).reduce((sum, item) => sum + item.height + pageGap, 0);
           const measured = { sectionId, bodyHeight: metricPages[index]!.bodyHeight, bodyTop: previousHeight + metricPages[index]!.topMargin - topMargin };
@@ -595,7 +599,7 @@ export function PublicationDocumentCanvas({
           innerMargin,
           outerMargin,
           firstPageLeftMargin,
-          styledPageGeometry: style.pageStyles ? layout.pageSectionIds?.map((sectionId, index) => canvasPageGeometry(resolvePublicationPageStyle(style, manuscript.sections, index, sectionId), scale)) : undefined,
+          styledPageGeometry: style.pageStyles ? layout.pageSectionIds?.map((sectionId, index) => canvasPageGeometry(resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId), scale)) : undefined,
         });
         const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
           (flowBreak) => {
@@ -701,7 +705,6 @@ export function PublicationDocumentCanvas({
     pageGap,
     scale,
     topMargin,
-    manuscript.sections,
     style.page.mirroredMargins,
     style,
     usablePageHeight,

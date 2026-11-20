@@ -1,4 +1,4 @@
-import { withPublicationStyleCss, withPrintRunningHeader, templatePublisherIdentity } from './publicationStyleExport';
+import { withPublicationStyleCss, withPrintRunningHeader, templatePublisherIdentity, loadPublicationPublisherIdentity } from './publicationStyleExport';
 import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { assetPath, sha256Hex } from '../model/assets';
@@ -70,7 +70,8 @@ export function buildPdfPrintDocument(
     output = withPublicationStyleCss(output, profile.publicationStyle, 'print');
     const applied = getAppliedPublicationTemplate(manuscript);
     output = withPrintRunningHeader(output, manuscript, profile.publicationStyle,
-      templatePublisherIdentity(manuscript, profile, applied?.association ?? profile.publicationStyle.name));
+      applied?.source === 'document-style' ? loadPublicationPublisherIdentity()
+        : templatePublisherIdentity(manuscript, profile, applied?.association ?? profile.publicationStyle.name));
   }
   return applyPdfInteractionMode(output, normalizedMode, normalizedContentMode);
 }

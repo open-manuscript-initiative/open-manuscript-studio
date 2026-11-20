@@ -22,7 +22,7 @@ export async function stagePublicationTemplate(template: PublicationTemplate): P
 export function stageAppliedPublicationStyle(style: PublicationStyle): void {
   const manuscript = useStudioStore.getState().manuscript;
   const applied = getAppliedPublicationTemplate(manuscript) ?? {
-    version: 1 as const, id: 'publication-format', name: style.name, association: style.name, style: undefined,
+    version: 1 as const, source: 'document-style' as const, id: 'publication-format', name: style.name, association: style.name, style: undefined,
   };
   if (JSON.stringify(applied.style) === JSON.stringify(style)) return;
   const profile = manuscript.embeddedPublicationProfile;
