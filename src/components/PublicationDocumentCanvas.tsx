@@ -484,90 +484,96 @@ export function PublicationDocumentCanvas({
       const measureBlocksChunk = () => {
         if (cancelled || !content.getClientRects().length) return;
         const startedAt = performance.now();
-        while (flowIndex < flow.length
-          && (flowIndex === 0 || performance.now() - startedAt < 8)) {
-          const { element } = flow[flowIndex]!;
-          // Measure the logical continuous flow synchronously; presentation
-          // offsets must never feed back into pagination or note positions.
-          element.style.setProperty('--omi-spread-projection', '0');
-          const blockId = publicationFlowBlockId(element) ?? '';
-          const blockCorrections = corrections.filter(
-            (correction) => correction.targetBlockId === blockId,
-          );
-          const table = element.querySelector<HTMLTableElement>('.omi-visual-block--table .omi-table-editor');
-          const tableHeight = element.getBoundingClientRect().height - publicationFlowBreakHeight(element);
-          const splittable = isSplittablePublicationParagraph(element) || Boolean(table && tableHeight > usablePageHeight);
-          let lines: PublicationFlowLine[] = [];
-          const flowBreakElements = Array.from(
-            element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
-          );
-          if (splittable) {
-            const cachedLines = flowBreakElements.length > 0
-              ? undefined
-              : measuredLines.get(element);
-            if (cachedLines && !dirtyBlocks.has(element) && measuredWidths.get(element) === element.clientWidth) {
-              lines = cachedLines.map((line) => ({ ...line }));
-            } else {
-              lines = table ? measurePublicationTableRows(element, table) : measurePublicationLines(element);
-              if (flowBreakElements.length > 0) {
-                measuredLines.delete(element);
+        // This React-owned ancestor is outside ProseMirror's observed DOM.
+        // Touching a paragraph/node-view style would make ProseMirror reparse
+        // and recreate it, restarting measurement and losing active controls.
+        // Disable projection only for these synchronous reads, never across a
+        // requestAnimationFrame (where the unprojected text could be painted).
+        if (facingPages) content.style.setProperty('--omi-spread-projection', '0');
+        try {
+          while (flowIndex < flow.length
+            && (flowIndex === 0 || performance.now() - startedAt < 8)) {
+            const { element } = flow[flowIndex]!;
+            const blockId = publicationFlowBlockId(element) ?? '';
+            const blockCorrections = corrections.filter(
+              (correction) => correction.targetBlockId === blockId,
+            );
+            const table = element.querySelector<HTMLTableElement>('.omi-visual-block--table .omi-table-editor');
+            const tableHeight = element.getBoundingClientRect().height - publicationFlowBreakHeight(element);
+            const splittable = isSplittablePublicationParagraph(element) || Boolean(table && tableHeight > usablePageHeight);
+            let lines: PublicationFlowLine[] = [];
+            const flowBreakElements = Array.from(
+              element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
+            );
+            if (splittable) {
+              const cachedLines = flowBreakElements.length > 0
+                ? undefined
+                : measuredLines.get(element);
+              if (cachedLines && !dirtyBlocks.has(element) && measuredWidths.get(element) === element.clientWidth) {
+                lines = cachedLines.map((line) => ({ ...line }));
               } else {
-                measuredLines.set(
-                  element,
-                  lines.map((line) => ({ ...line, noteIds: undefined })),
-                );
+                lines = table ? measurePublicationTableRows(element, table) : measurePublicationLines(element);
+                if (flowBreakElements.length > 0) {
+                  measuredLines.delete(element);
+                } else {
+                  measuredLines.set(
+                    element,
+                    lines.map((line) => ({ ...line, noteIds: undefined })),
+                  );
+                }
+                measuredWidths.set(element, element.clientWidth);
+                dirtyBlocks.delete(element);
               }
-              measuredWidths.set(element, element.clientWidth);
-              dirtyBlocks.delete(element);
             }
+            const elementRect = element.getBoundingClientRect();
+            const flowBreaks = flowBreakElements.map((spacer) => {
+              const rect = spacer.getBoundingClientRect();
+              return { top: rect.top, height: rect.height };
+            });
+            const ownFlowBreakHeight = flowBreaks.reduce((sum, spacer) => sum + spacer.height, 0);
+            const anchors = Array.from(
+              element.querySelectorAll<HTMLElement>('[data-omi-note][data-note-id]'),
+            ).filter((anchor) => noteHeights.has(anchor.dataset.noteId!));
+            for (const anchor of anchors) {
+              const rect = anchor.getBoundingClientRect();
+              const removedSpace = flowBreaks
+                .filter((spacer) => spacer.top < rect.top - 0.5)
+                .reduce((sum, spacer) => sum + spacer.height, 0);
+              const top = rect.top - elementRect.top - removedSpace;
+              const line = lines.reduce<PublicationFlowLine | undefined>((nearest, candidate) => (
+                !nearest || Math.abs(candidate.top - top) < Math.abs(nearest.top - top) ? candidate : nearest
+              ), undefined);
+              if (line) line.noteIds = [...(line.noteIds ?? []), anchor.dataset.noteId!];
+            }
+            const paragraphStyle = resolvePublicationParagraphStyle(
+              style,
+              element.dataset.paragraphStyleId,
+            );
+            measuredBlocks.push({
+              top: Math.max(
+                0,
+                offsetTopWithin(element, content) - existingFlowBreakHeight,
+              ),
+              height: Math.max(0, elementRect.height - ownFlowBreakHeight),
+              sectionId: element.dataset.sectionId ?? element.querySelector<HTMLElement>('[data-section-id]')?.dataset.sectionId,
+              lines,
+              noteIds: anchors.map((anchor) => anchor.dataset.noteId!),
+              leadingHeight: lines[0]?.height,
+              splittable,
+              keepWithNext: /^H[1-6]$/.test(element.tagName)
+                || paragraphStyle.keepWithNext
+                || blockCorrections.some((item) => item.kind === 'keep-with-next'),
+              keepTogether: paragraphStyle.keepTogether
+                || blockCorrections.some((item) => item.kind === 'keep-together'),
+              forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
+                || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
+                  && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
+            });
+            existingFlowBreakHeight += ownFlowBreakHeight;
+            flowIndex += 1;
           }
-          const elementRect = element.getBoundingClientRect();
-          const flowBreaks = flowBreakElements.map((spacer) => {
-            const rect = spacer.getBoundingClientRect();
-            return { top: rect.top, height: rect.height };
-          });
-          const ownFlowBreakHeight = flowBreaks.reduce((sum, spacer) => sum + spacer.height, 0);
-          const anchors = Array.from(
-            element.querySelectorAll<HTMLElement>('[data-omi-note][data-note-id]'),
-          ).filter((anchor) => noteHeights.has(anchor.dataset.noteId!));
-          for (const anchor of anchors) {
-            const rect = anchor.getBoundingClientRect();
-            const removedSpace = flowBreaks
-              .filter((spacer) => spacer.top < rect.top - 0.5)
-              .reduce((sum, spacer) => sum + spacer.height, 0);
-            const top = rect.top - elementRect.top - removedSpace;
-            const line = lines.reduce<PublicationFlowLine | undefined>((nearest, candidate) => (
-              !nearest || Math.abs(candidate.top - top) < Math.abs(nearest.top - top) ? candidate : nearest
-            ), undefined);
-            if (line) line.noteIds = [...(line.noteIds ?? []), anchor.dataset.noteId!];
-          }
-          const paragraphStyle = resolvePublicationParagraphStyle(
-            style,
-            element.dataset.paragraphStyleId,
-          );
-          measuredBlocks.push({
-            top: Math.max(
-              0,
-              offsetTopWithin(element, content) - existingFlowBreakHeight,
-            ),
-            height: Math.max(0, elementRect.height - ownFlowBreakHeight),
-            sectionId: element.dataset.sectionId ?? element.querySelector<HTMLElement>('[data-section-id]')?.dataset.sectionId,
-            lines,
-            noteIds: anchors.map((anchor) => anchor.dataset.noteId!),
-            leadingHeight: lines[0]?.height,
-            splittable,
-            keepWithNext: /^H[1-6]$/.test(element.tagName)
-              || paragraphStyle.keepWithNext
-              || blockCorrections.some((item) => item.kind === 'keep-with-next'),
-            keepTogether: paragraphStyle.keepTogether
-              || blockCorrections.some((item) => item.kind === 'keep-together'),
-            forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
-              || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
-                && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
-          });
-          element.style.removeProperty('--omi-spread-projection');
-          existingFlowBreakHeight += ownFlowBreakHeight;
-          flowIndex += 1;
+        } finally {
+          if (facingPages) content.style.removeProperty('--omi-spread-projection');
         }
 
         if (flowIndex < flow.length) {
