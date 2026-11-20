@@ -2,6 +2,7 @@ import { BUILTIN_PUBLICATION_PROFILES, OMI_PUBLICATION_PROFILE_MODEL } from './p
 import type { ProtectablePublicationProfile } from './publisherProfileProtection';
 import { CITATION_STYLE_IDS, parseCustomCitationStyleId } from './cslRendering';
 import styleTemplate from '../document/publicationStyles/egyhaztorteneti-szemle.json' with { type: 'json' };
+import { validatePublicationPageStyles } from './publicationPageStyles';
 
 export async function readPublisherProfileBytes(bytes: Uint8Array, expectedSha256?: string) {
   if (bytes.byteLength > 2 * 1024 * 1024) throw new Error('Publisher profile exceeds 2 MB.');
@@ -82,6 +83,7 @@ export function validatePublisherProfile(value: unknown): ProtectablePublication
     const style = object(profile.publicationStyle, '/publicationStyle');
     const { paragraphStyles: _paragraphStyles, ...requiredStyle } = styleTemplate;
     shape(style, requiredStyle, '/publicationStyle');
+    if (style.pageStyles !== undefined) validatePublicationPageStyles(style.pageStyles);
     const paragraphs = object(style.paragraphStyles, '/publicationStyle/paragraphStyles');
     if (typeof paragraphs.defaultStyleId !== 'string' || !Array.isArray(paragraphs.items)) fail('/publicationStyle/paragraphStyles');
     for (const item of paragraphs.items as unknown[]) {

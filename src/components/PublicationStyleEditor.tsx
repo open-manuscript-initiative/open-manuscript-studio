@@ -1,3 +1,4 @@
+import { withoutPublicationPageAssignments } from '../model/publicationPageStyles';
 import { PublicationMeasurementSelector, usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
 import { OjsPublicationTransferPanel } from './OjsPublicationTransferPanel';
@@ -5,6 +6,8 @@ import { ojsPublicationCopy } from '../i18n/ojsPublication';
 import { PublicationFrameEditor } from './PublicationFrameEditor';
 import { PublicationMatterEditor } from './PublicationMatterEditor';
 import { PublicationTemplatePanel } from './PublicationTemplatePanel';
+import { PublicationPageStylesPanel } from './PublicationPageStylesPanel';
+import { publicationPageStylesCopy } from '../i18n/publicationPageStyles';
 import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import { stageAppliedPublicationStyle } from '../app/publicationTemplateActions';
 import { getPublicationMatter } from '../model/publicationMatter';
@@ -80,7 +83,7 @@ import {
 import './PublicationStyleEditor.css';
 
 type PageOrientation = 'portrait' | 'landscape';
-type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | null;
+type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'pageStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | null;
 type SystemFontLoadStatus = 'fallback' | 'loading' | 'loaded' | 'unsupported' | 'denied' | 'error';
 
 const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
@@ -153,10 +156,10 @@ function loadInitialState(manuscript: OmiManuscript): {
 }
 
 function persistLibrary(library: PublicationStyle[], active: PublicationStyle): void {
-  window.localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(library));
+  window.localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(library.map(withoutPublicationPageAssignments)));
   window.localStorage.setItem(ACTIVE_STYLE_KEY, active.id);
   // Compatibility bridge: the current PDF/HTML readers consume this key.
-  window.localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(active));
+  window.localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(withoutPublicationPageAssignments(active)));
 }
 
 function withCurrentPageDefaults(style: PublicationStyle): PublicationStyle {
@@ -267,9 +270,11 @@ function PublicationStyleEditorWorkspace() {
 
   useEffect(() => {
     persistLibrary(upsertStyle(library, activeId, style), style);
-    stageAppliedPublicationStyle(style);
+    // Opening an unformatted document is a projection, not an authoring edit.
+    // Embed the format after the first user change or when it already exists.
+    if (style !== initial.style || synchronizedStyleRef.current) stageAppliedPublicationStyle(style);
     synchronizedStyleRef.current = getAppliedPublicationTemplate(useStudioStore.getState().manuscript)?.style;
-  }, [activeId, library, style]);
+  }, [activeId, library, style, initial.style]);
 
   useEffect(() => {
     // Revision restoration can replace a format without changing document id.
@@ -820,6 +825,13 @@ function PublicationStyleEditorWorkspace() {
             {documentViewMode === 'print' ? (
               <>
                 <PublicationRibbonMenuButton
+                  panelId="pageStyles"
+                  label={publicationPageStylesCopy(locale).title}
+                  icon={<Copy size={18} aria-hidden="true" />}
+                  open={openPanel === 'pageStyles'}
+                  onToggle={() => setOpenPanel((current) => current === 'pageStyles' ? null : 'pageStyles')}
+                />
+                <PublicationRibbonMenuButton
                   panelId="page"
                   label={copy.page}
                   icon={<FileText size={18} aria-hidden="true" />}
@@ -1002,6 +1014,10 @@ function PublicationStyleEditorWorkspace() {
             </fieldset>
           </div>
         ) : null}
+
+        {openPanel === 'pageStyles' ? <div id="publication-style-ribbon-panel-pageStyles" className="publication-style-ribbon-panel" role="dialog" aria-label={publicationPageStylesCopy(locale).title}>
+          <PublicationPageStylesPanel style={style} sections={manuscript.sections} locale={locale} selectedSectionId={useStudioStore.getState().selectedSectionId} onChange={setStyle} />
+        </div> : null}
 
         {openPanel === 'page' ? (
           <div id="publication-style-ribbon-panel-page" className="publication-style-ribbon-panel" role="dialog" aria-label={copy.page}>

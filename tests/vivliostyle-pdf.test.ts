@@ -131,6 +131,59 @@ if (process.env.OMI_RUN_VIVLIOSTYLE_SMOKE === '1') {
     }
   });
 
+  test('section headers, opening-page suppression and a physical-page master survive real PDF pagination', async () => {
+    const { renderStyleBasedHtml, clonePublicationStyleTemplate, clonePublicationPublisherTemplate } = await import('../src/services/publicationStyleExport.ts');
+    const { capturePublicationPageStyle } = await import('../src/model/publicationPageStyles.ts');
+    const { resolvePublicationProfile } = await import('../src/model/publicationProfile.ts');
+    const { createPublicationMatter, PUBLICATION_MATTER_EXTENSION } = await import('../src/model/publicationMatter.ts');
+    const { createTestManuscript } = await import('./testManuscriptFixture.ts');
+    const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const manuscript = createTestManuscript();
+    manuscript.abstract = ''; manuscript.keywords = []; manuscript.annotations = []; manuscript.bibliographicRecords = [];
+    const block = (id: string, text: string) => ({ id, type: 'paragraph', content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] }) });
+    manuscript.sections = [
+      { id: 'alpha', title: 'Alpha', blocks: [block('A1', 'ALPHA_START'), block('A2', 'ALPHA_CONT'), block('A3', 'PLATE_BODY')] },
+      { id: 'beta', title: 'Beta', blocks: [block('B1', 'BETA_BODY')] },
+    ];
+    const matter = createPublicationMatter(manuscript);
+    matter.pages.find((page) => page.kind === 'half-title')!.enabled = true;
+    manuscript.extensions = { ...manuscript.extensions, [PUBLICATION_MATTER_EXTENSION]: matter };
+    const style = clonePublicationStyleTemplate();
+    style.fonts.body.family = 'serif';
+    const plate = capturePublicationPageStyle(style, 'plate', 'Plate');
+    plate.page.width = 180; plate.page.margins.top = 35; plate.showFirstPage = true;
+    plate.runningHeaders.odd.left = plate.runningHeaders.even.left = 'PLATE_HEADER';
+    const alpha = structuredClone(style.runningHeaders), beta = structuredClone(style.runningHeaders);
+    alpha.odd.left = alpha.even.left = 'ALPHA_HEADER'; beta.odd.left = beta.even.left = 'BETA_HEADER';
+    style.pageStyles = { version: 1, styles: [plate], sections: [
+      { sectionId: 'alpha', startNewPage: true, runningHeaders: alpha, showFirstPage: false },
+      { sectionId: 'beta', startNewPage: true, runningHeaders: beta, showFirstPage: true },
+    ], pages: [{ from: 4, to: 4, styleId: 'plate' }] };
+    const identity = clonePublicationPublisherTemplate();
+    identity.display.firstPageBranding = false; identity.display.firstPageLegalBlock = false;
+    const html = (await renderStyleBasedHtml(manuscript, resolvePublicationProfile(manuscript), 'print', { style, identity }))
+      .replace('</head>', '<style>#block-A2,#block-A3{break-before:page}</style></head>');
+    const directory = await mkdtemp(join(tmpdir(), 'omi-section-page-styles-'));
+    try {
+      const artifact = await renderVivliostylePdf(html);
+      const path = join(directory, 'issue.pdf'); await writeFile(path, artifact.bytes);
+      const { stdout } = await promisify(execFile)(process.env.PDFTOTEXT_BIN || 'pdftotext', ['-bbox', path, '-']);
+      const pages = [...stdout.matchAll(/<page\b([^>]*)>([\s\S]*?)<\/page>/g)];
+      const find = (word: string) => { const page = pages.find((item) => item[2]!.includes(`>${word}</word>`)); assert.ok(page, `Missing PDF marker: ${word}`); return page; };
+      assert.doesNotMatch(find('ALPHA_START')[2]!, /ALPHA_HEADER/);
+      assert.match(find('ALPHA_CONT')[2]!, /ALPHA_HEADER/);
+      assert.match(find('BETA_BODY')[2]!, /BETA_HEADER/);
+      const platePage = find('PLATE_BODY'); assert.match(platePage[2]!, /PLATE_HEADER/);
+      assert.ok(Math.abs(Number(platePage[1]!.match(/width="([^"]+)"/)![1]) - 180 * 72 / 25.4) < 1);
+      const plateWord = [...platePage[2]!.matchAll(/<word\b([^>]*)>([^<]*)<\/word>/g)].find((word) => word[2] === 'PLATE_BODY')!;
+      assert.ok(Number(plateWord[1]!.match(/yMin="([^"]+)"/)![1]) >= 35 * 72 / 25.4 - 1);
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  });
+
   test('pinned Vivliostyle CLI renders a real PDF artifact', async () => {
     const artifact = await renderVivliostylePdf(
       '<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A5;margin:15mm}h1{break-after:avoid}</style></head><body><h1>OMI PDF smoke test</h1><p>Vivliostyle paged-media artifact.</p></body></html>',

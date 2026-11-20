@@ -24,6 +24,8 @@ export interface PublicationTemplate {
 }
 export interface AppliedPublicationTemplate {
   version: 1;
+  /** A working format keeps the existing publisher identity; actual templates own theirs. */
+  source?: 'publication-template' | 'document-style';
   id: string;
   name: string;
   association?: string;
@@ -33,6 +35,7 @@ export interface AppliedPublicationTemplate {
 export function validateAppliedPublicationTemplate(value: unknown): asserts value is AppliedPublicationTemplate {
   const applied = value as AppliedPublicationTemplate;
   if (!applied || applied.version !== 1 || typeof applied.id !== 'string' || !applied.id || applied.id.length > 128
+    || (applied.source !== undefined && !['publication-template', 'document-style'].includes(applied.source))
     || typeof applied.name !== 'string' || !applied.name.trim() || applied.name.length > 200 || !applied.style
     || (applied.association !== undefined && (typeof applied.association !== 'string' || applied.association.length > 256))) {
     throw new Error('Invalid applied publication template.');

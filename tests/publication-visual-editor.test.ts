@@ -372,7 +372,6 @@ test('print-page controls cover trim size, binding, bleed and pagination', () =>
   assert.match(documentCanvas, /publication-document-running-header/);
   assert.match(documentCanvas, /publication-document-page-guide--crop-marks/);
   assert.match(documentCanvas, /publication-document-page-guide--bleed/);
-  assert.match(documentCanvas, /const mirroredEvenPage = style\.page\.mirroredMargins && evenPage/);
 });
 
 test('the same print-page values feed generated export CSS', () => {
@@ -415,7 +414,6 @@ test('screen pagination presents separate Word-like sheets without storing page 
   assert.match(documentCanvas, /<PublicationSectionRuler/);
   assert.match(sectionRuler, /publication-document-ruler/);
   assert.match(sectionRuler, /stageSectionLayoutChange/);
-  assert.match(documentCanvas, /pageHeight \* pageCount \+ pageGap/);
   assert.match(editorStyles, /\.publication-document-page-guide[\s\S]*background: #fff/);
   assert.match(editorStyles, /\.publication-document-page-guide[\s\S]*box-shadow:/);
 });

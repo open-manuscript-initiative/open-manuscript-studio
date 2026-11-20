@@ -1,3 +1,4 @@
+import { resolvePublicationPageStyle, publicationSectionPageRules, publicationSectionLayoutKey } from '../model/publicationPageStyles';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import { renderPublicationNoteBody, type PublicationNoteBody } from '../services/publicationNoteBody';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
@@ -90,6 +91,7 @@ interface PublicationPaginationState {
   css: string;
   pageNotes: PublicationPageNote[][];
   flowBreaks: readonly OmiPublicationFlowBreak[];
+  pageSectionIds?: (string | undefined)[];
 }
 
 interface PublicationDocumentCanvasProps {
@@ -150,6 +152,11 @@ export function PublicationDocumentCanvas({
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const noteMeasureRef = useRef<HTMLDivElement>(null);
+  // Read the latest section hierarchy without discarding measured-line caches
+  // on every content edit. MutationObserver already schedules changed blocks.
+  const layoutSectionsRef = useRef(manuscript.sections);
+  layoutSectionsRef.current = manuscript.sections;
+  const sectionLayoutKey = publicationSectionLayoutKey(manuscript.sections);
   const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
   const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
   const [stageWidth, setStageWidth] = useState(0);
@@ -212,6 +219,22 @@ export function PublicationDocumentCanvas({
   const firstPageRightMargin = firstPageRightMarginMm * PIXELS_PER_MM * scale;
   const contentWidth = Math.max(80, pageWidth - firstPageLeftMargin - firstPageRightMargin);
   const pageOverhead = topMargin + bottomMargin + pageGap;
+
+  const styledPages = useMemo(() => {
+    const pages = [];
+    let top = 0;
+    const seenHeaders = new Set<string | undefined>();
+    for (let index = 0; index < pageCount; index += 1) {
+      const sectionId = pagination.pageSectionIds?.[index];
+      const resolved = resolvePublicationPageStyle(style, manuscript.sections, index, sectionId);
+      const geometry = canvasPageGeometry(resolved, scale);
+      const firstSectionPage = !seenHeaders.has(resolved.headerSectionId);
+      seenHeaders.add(resolved.headerSectionId);
+      pages.push({ ...geometry, top, resolved, sectionId, firstSectionPage });
+      top += geometry.height + pageGap;
+    }
+    return pages;
+  }, [style, manuscript.sections, pagination.pageSectionIds, pageCount, scale, pageGap]);
 
   const sectionNumbers = useMemo(
     () => new Map(
@@ -372,10 +395,11 @@ export function PublicationDocumentCanvas({
         const paperTop = paperRect.top - stageRect.top + stage.scrollTop;
         const viewportTop = stage.scrollTop - paperTop;
         const overscan = Math.max(stage.clientHeight * 1.5, pageStride * 2);
-        const start = Math.max(0, Math.floor((viewportTop - overscan) / pageStride));
+        const first = styledPages.findIndex((page) => page.top + page.height >= viewportTop - overscan);
+        const start = first < 0 ? Math.max(0, pageCount - 1) : first;
         const end = Math.min(
           pageCount,
-          Math.ceil((viewportTop + stage.clientHeight + overscan) / pageStride) + 1,
+          styledPages.filter((page) => page.top <= viewportTop + stage.clientHeight + overscan).length + 1,
         );
         setVisiblePageRange((current) => (
           current.start === start && current.end === end
@@ -391,7 +415,7 @@ export function PublicationDocumentCanvas({
       stage.removeEventListener('scroll', updateVisiblePages);
       cancelAnimationFrame(frame);
     };
-  }, [pageCount, pageStride, viewMode]);
+  }, [pageCount, pageStride, styledPages, viewMode]);
 
   useLayoutEffect(() => {
     if (viewMode !== 'print') {
@@ -417,6 +441,7 @@ export function PublicationDocumentCanvas({
     let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
     const measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
+    const measuredWidths = new WeakMap<HTMLElement, number>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
     const update = () => {
       if (!content.getClientRects().length) return;
@@ -475,7 +500,7 @@ export function PublicationDocumentCanvas({
             const cachedLines = flowBreakElements.length > 0
               ? undefined
               : measuredLines.get(element);
-            if (cachedLines && !dirtyBlocks.has(element)) {
+            if (cachedLines && !dirtyBlocks.has(element) && measuredWidths.get(element) === element.clientWidth) {
               lines = cachedLines.map((line) => ({ ...line }));
             } else {
               lines = table ? measurePublicationTableRows(element, table) : measurePublicationLines(element);
@@ -487,6 +512,7 @@ export function PublicationDocumentCanvas({
                   lines.map((line) => ({ ...line, noteIds: undefined })),
                 );
               }
+              measuredWidths.set(element, element.clientWidth);
               dirtyBlocks.delete(element);
             }
           }
@@ -520,6 +546,7 @@ export function PublicationDocumentCanvas({
               offsetTopWithin(element, content) - existingFlowBreakHeight,
             ),
             height: Math.max(0, elementRect.height - ownFlowBreakHeight),
+            sectionId: element.dataset.sectionId ?? element.querySelector<HTMLElement>('[data-section-id]')?.dataset.sectionId,
             lines,
             noteIds: anchors.map((anchor) => anchor.dataset.noteId!),
             leadingHeight: lines[0]?.height,
@@ -529,9 +556,9 @@ export function PublicationDocumentCanvas({
               || blockCorrections.some((item) => item.kind === 'keep-with-next'),
             keepTogether: paragraphStyle.keepTogether
               || blockCorrections.some((item) => item.kind === 'keep-together'),
-            forcePageBreakBefore: blockCorrections.some(
-              (item) => item.kind === 'page-break-before',
-            ),
+            forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
+              || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
+                && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
           });
           existingFlowBreakHeight += ownFlowBreakHeight;
           flowIndex += 1;
@@ -542,11 +569,27 @@ export function PublicationDocumentCanvas({
           return;
         }
         if (cancelled) return;
+        const metricPages: ReturnType<typeof canvasPageGeometry>[] = [];
+        const metricCache = new Map<number, { sectionId?: string; bodyHeight: number; bodyTop: number }>();
+        const metrics = (index: number, sectionId?: string) => {
+          const cached = metricCache.get(index);
+          if (cached && cached.sectionId === sectionId) return cached;
+          const resolved = resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId);
+          metricPages[index] = canvasPageGeometry(resolved, scale);
+          const previousHeight = metricPages.slice(0, index).reduce((sum, item) => sum + item.height + pageGap, 0);
+          const measured = { sectionId, bodyHeight: metricPages[index]!.bodyHeight, bodyTop: previousHeight + metricPages[index]!.topMargin - topMargin };
+          // A revised first content block can change a page's master. Future
+          // absolute positions must then be recomputed from that page onward.
+          for (const key of metricCache.keys()) if (key >= index) metricCache.delete(key);
+          metricCache.set(index, measured);
+          return measured;
+        };
         const layout = paginatePublicationBlocks(
           measuredBlocks,
           usablePageHeight,
           pageOverhead,
           { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight },
+          style.pageStyles ? metrics : undefined,
         );
         const css = buildPaginationCss({
           canvasId,
@@ -557,6 +600,7 @@ export function PublicationDocumentCanvas({
           innerMargin,
           outerMargin,
           firstPageLeftMargin,
+          styledPageGeometry: style.pageStyles ? layout.pageSectionIds?.map((sectionId, index) => canvasPageGeometry(resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId), scale)) : undefined,
         });
         const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
           (flowBreak) => {
@@ -577,10 +621,11 @@ export function PublicationDocumentCanvas({
         setPagination((current) => (
           current.pageCount === layout.pageCount
             && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
+            && JSON.stringify(current.pageSectionIds) === JSON.stringify(layout.pageSectionIds)
             && current.css === css
             && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
             ? current
-            : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [] }
+            : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds }
         ));
       };
 
@@ -658,6 +703,10 @@ export function PublicationDocumentCanvas({
     outerMargin,
     paginationDebounceMs,
     pageOverhead,
+    pageGap,
+    scale,
+    topMargin,
+    sectionLayoutKey,
     style.page.mirroredMargins,
     style,
     usablePageHeight,
@@ -753,8 +802,8 @@ export function PublicationDocumentCanvas({
   const pageStyle = viewMode === 'print'
     ? {
         ...publicationStyleVariables,
-        width: `${pageWidth}px`,
-        height: `${pageHeight * pageCount + pageGap * Math.max(0, pageCount - 1)}px`,
+        width: `${Math.max(pageWidth, ...styledPages.map((page) => page.width))}px`,
+        height: `${styledPages.reduce((sum, page) => sum + page.height, 0) + pageGap * Math.max(0, pageCount - 1)}px`,
         marginTop: `${Math.max(8, bleed + 8)}px`,
         marginBottom: `${Math.max(8, bleed + 8)}px`,
       }
@@ -848,35 +897,39 @@ export function PublicationDocumentCanvas({
             {Array.from({ length: visiblePageEnd - firstVisiblePage }, (_, visibleIndex) => {
               const index = firstVisiblePage + visibleIndex;
               const pageNumber = firstPageNumber + index;
-              const evenPage = pageNumber % 2 === 0;
-              const mirroredEvenPage = style.page.mirroredMargins && evenPage;
-              const leftMargin = mirroredEvenPage ? outerMarginMm : innerMarginMm;
-              const rightMargin = mirroredEvenPage ? innerMarginMm : outerMarginMm;
-              const header = evenPage ? style.runningHeaders.even : style.runningHeaders.odd;
-              const showRunningHeader = style.runningHeaders.enabled
-                && (index > 0 || style.firstPage.showRunningHeader);
+              const geometry = styledPages[index]!;
+              const resolved = geometry.resolved;
+              const header = pageNumber % 2 === 0 ? resolved.runningHeaders.even : resolved.runningHeaders.odd;
+              const showRunningHeader = resolved.runningHeaders.enabled && (!geometry.firstSectionPage || resolved.showFirstPage);
+              const headerSection = manuscript.sections.find((section) => section.id === (resolved.headerSectionId ?? geometry.sectionId));
+              const headerValues = { ...runningHeaderValues, sectionTitle: headerSection?.title ?? '', shortSectionTitle: shorten(headerSection?.title ?? '', 72), pageNumber: String(pageNumber) };
 
               return (
                 <div
-                  className={`publication-document-page-guide${style.page.cropMarks ? ' publication-document-page-guide--crop-marks' : ''}${bleedMm > 0 ? ' publication-document-page-guide--bleed' : ''}`}
+                  className={`publication-document-page-guide${resolved.page.cropMarks ? ' publication-document-page-guide--crop-marks' : ''}${resolved.page.bleed > 0 ? ' publication-document-page-guide--bleed' : ''}`}
                   key={index}
                   style={{
-                    top: `${index * pageStride}px`,
-                    height: `${pageHeight}px`,
-                    '--omi-publication-page-left-margin': `${leftMargin * PIXELS_PER_MM * scale}px`,
-                    '--omi-publication-page-right-margin': `${rightMargin * PIXELS_PER_MM * scale}px`,
-                    '--omi-publication-page-top-margin': `${topMarginMm * PIXELS_PER_MM * scale}px`,
-                    '--omi-publication-page-bottom-margin': `${bottomMarginMm * PIXELS_PER_MM * scale}px`,
+                    top: `${geometry.top}px`,
+                    width: `${geometry.width}px`,
+                    height: `${geometry.height}px`,
+                    '--omi-publication-bleed': `${resolved.page.bleed * PIXELS_PER_MM * scale}px`,
+                    '--omi-publication-page-left-margin': `${geometry.left}px`,
+                    '--omi-publication-page-right-margin': `${geometry.right}px`,
+                    '--omi-publication-page-top-margin': `${geometry.topMargin}px`,
+                    '--omi-publication-page-bottom-margin': `${geometry.bottomMargin}px`,
                   } as CSSProperties}
+                  data-page-style={resolved.id}
+                  data-section-id={geometry.sectionId}
+                  data-page-number={pageNumber}
                   data-page-label={copy.page(pageNumber)}
                 >
                   {showRunningHeader ? (
-                    <div className="publication-document-running-header">
-                      <span>{fillRunningHeaderTemplate(header.left, { ...runningHeaderValues, pageNumber: String(pageNumber) })}</span>
-                      <span>{fillRunningHeaderTemplate(header.right, { ...runningHeaderValues, pageNumber: String(pageNumber) })}</span>
+                    <div className="publication-document-running-header" style={{ fontSize: resolved.runningHeaders.fontSize * PIXELS_PER_POINT * scale, borderBottomWidth: resolved.runningHeaders.rule.enabled ? resolved.runningHeaders.rule.width * PIXELS_PER_POINT * scale : 0 }}>
+                      <span>{fillRunningHeaderTemplate(header.left, headerValues)}</span>
+                      <span>{fillRunningHeaderTemplate(header.right, headerValues)}</span>
                     </div>
                   ) : null}
-                  {style.page.cropMarks ? (
+                  {resolved.page.cropMarks ? (
                     <>
                       <i className="publication-document-crop-mark publication-document-crop-mark--top-left" />
                       <i className="publication-document-crop-mark publication-document-crop-mark--top-right" />
@@ -895,7 +948,7 @@ export function PublicationDocumentCanvas({
                   <div
                     className="publication-document-page-separator"
                     key={index}
-                    style={{ top: `${index * pageStride + pageHeight}px` }}
+                    style={{ top: `${styledPages[index]!.top + styledPages[index]!.height}px` }}
                     data-page-label={copy.page(firstPageNumber + index)}
                   />
                 );
@@ -1039,14 +1092,14 @@ export function PublicationDocumentCanvas({
           ) : null}
           {viewMode === 'print' ? pagination.pageNotes.map((fragments, pageIndex) => {
             if (!fragments?.length) return null;
-            const mirrored = style.page.mirroredMargins && (firstPageNumber + pageIndex) % 2 === 0;
+            const geometry = styledPages[pageIndex]!;
             return (
               <section key={pageIndex} className="publication-page-footnotes" data-footnote-page={pageIndex}
                 aria-label={`${copy.notes} — ${copy.page(firstPageNumber + pageIndex)}`}
                 style={{
-                  left: mirrored ? outerMargin : innerMargin,
-                  width: contentWidth,
-                  top: pageIndex * pageStride + pageHeight - bottomMargin - noteSeparatorHeight
+                  left: geometry.left,
+                  width: geometry.bodyWidth,
+                  top: geometry.top + geometry.height - geometry.bottomMargin - noteSeparatorHeight
                     - fragments.reduce((sum, fragment) => sum + fragment.height, 0),
                 }}>
                 {fragments.map((fragment) => {
@@ -1135,7 +1188,7 @@ function fillRunningHeaderTemplate(
   values: Record<string, string>,
 ): string {
   return template
-    .replace(/\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g, (_match, key: string) => values[key] ?? '')
+    .replace(/\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g, (_match, key: string) => Object.hasOwn(values, key) ? values[key]! : '')
     .replace(/\s*\/\s*(?=\()/g, ' ')
     .replace(/\(\s*\)/g, '')
     .replace(/\s{2,}/g, ' ')
@@ -1411,6 +1464,7 @@ function buildPaginationCss({
   innerMargin,
   outerMargin,
   firstPageLeftMargin,
+  styledPageGeometry,
 }: {
   canvasId: string;
   flow: readonly PublicationFlowElement[];
@@ -1420,6 +1474,7 @@ function buildPaginationCss({
   innerMargin: number;
   outerMargin: number;
   firstPageLeftMargin: number;
+  styledPageGeometry?: ReturnType<typeof canvasPageGeometry>[];
 }): string {
   return flow.map((block, index) => {
     const placement = placements[index];
@@ -1428,8 +1483,12 @@ function buildPaginationCss({
     const pageLeftMargin = mirroredMargins && pageNumber % 2 === 0
       ? outerMargin
       : innerMargin;
-    const translateX = pageLeftMargin - firstPageLeftMargin;
-    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(placement.translateY)}; }`;
+    const geometry = styledPageGeometry?.[placement.pageIndex];
+    const translateX = (geometry?.left ?? pageLeftMargin) - firstPageLeftMargin;
+    const computed = geometry ? block.element.ownerDocument.defaultView?.getComputedStyle(block.element) : undefined;
+    const horizontalMargins = (parseFloat(computed?.marginLeft ?? '0') || 0) + (parseFloat(computed?.marginRight ?? '0') || 0);
+    const blockWidth = geometry ? Math.max(1, geometry.bodyWidth - horizontalMargins) : 0;
+    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(placement.translateY)}; ${geometry ? `width:${cssPixel(blockWidth)};max-width:none;box-sizing:border-box;` : ''} }`;
   }).filter(Boolean).join('\n');
 }
 
@@ -1503,4 +1562,14 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
     notes: 'Notes',
     empty: 'The document does not yet contain body text.',
   };
+}
+
+function canvasPageGeometry(resolved: ReturnType<typeof resolvePublicationPageStyle>, scale: number) {
+  const p = resolved.page, unit = PIXELS_PER_MM * scale;
+  const inner = (p.margins.inner + p.gutter) * unit, outer = p.margins.outer * unit;
+  const mirrored = p.mirroredMargins && resolved.pageNumber % 2 === 0;
+  const width = p.width * unit, height = p.height * unit;
+  const topMargin = p.margins.top * unit, bottomMargin = p.margins.bottom * unit;
+  return { width, height, topMargin, bottomMargin, left: mirrored ? outer : inner, right: mirrored ? inner : outer,
+    bodyHeight: Math.max(10 * unit, height - topMargin - bottomMargin), bodyWidth: Math.max(10 * unit, width - inner - outer) };
 }

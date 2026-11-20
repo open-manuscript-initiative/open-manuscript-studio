@@ -21,8 +21,10 @@ export async function stagePublicationTemplate(template: PublicationTemplate): P
 /** Keep the template's working style inside the portable document. */
 export function stageAppliedPublicationStyle(style: PublicationStyle): void {
   const manuscript = useStudioStore.getState().manuscript;
-  const applied = getAppliedPublicationTemplate(manuscript);
-  if (!applied || JSON.stringify(applied.style) === JSON.stringify(style)) return;
+  const applied = getAppliedPublicationTemplate(manuscript) ?? {
+    version: 1 as const, source: 'document-style' as const, id: 'publication-format', name: style.name, association: style.name, style: undefined,
+  };
+  if (JSON.stringify(applied.style) === JSON.stringify(style)) return;
   const profile = manuscript.embeddedPublicationProfile;
   stageTemplateState({
     ...extractManuscriptState(manuscript),

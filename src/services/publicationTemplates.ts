@@ -1,3 +1,4 @@
+import { withoutPublicationPageAssignments } from '../model/publicationPageStyles';
 import { createPublicationMatter, getPublicationMatter, validatePublicationMatter, PUBLICATION_MATTER_EXTENSION } from '../model/publicationMatter';
 import { BUILTIN_PUBLICATION_PROFILES, resolvePublicationProfile } from '../model/publicationProfile';
 import { validatePublisherProfile } from '../model/publisherProfileImport';
@@ -89,7 +90,7 @@ export async function capturePublicationTemplate(state: OmiManuscriptState, styl
   // A local template is an independent editable snapshot of a profile.
   delete profile.distribution;
   delete (profile as typeof profile & { protection?: unknown }).protection;
-  profile.publicationStyle = normalizePublicationStyle(structuredClone(style));
+  profile.publicationStyle = withoutPublicationPageAssignments(normalizePublicationStyle(style));
   const template: PublicationTemplate = { model: 'omi-publication-template', version: 1, id, name: name.trim(), association: association.trim(), kind: matter.publicationKind,
     profile, defaults: recurringPublicationMetadata(state.titleMatter), matter, assets: [] };
   const remap = new Map<string, string>();
