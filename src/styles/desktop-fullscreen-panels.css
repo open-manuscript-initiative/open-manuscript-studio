@@ -31,7 +31,8 @@
   --tile-hover: #eaf2e6;
 }
 
-.studio-menu-nav-group[data-tile-category="publication"] {
+.studio-menu-nav-group[data-tile-category="publication"],
+.publication-profile-view {
   --tile-accent: #9a6870;
   --tile-border: #e2d0d2;
   --tile-surface: #f8f1f1;

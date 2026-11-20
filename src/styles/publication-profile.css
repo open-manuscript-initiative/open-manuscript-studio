@@ -259,9 +259,9 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
   gap: .5rem;
   padding: .65rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--tile-border, #e2d0d2);
   border-radius: .75rem;
-  background: #f1f5f9;
+  background: var(--tile-surface, #f8f1f1);
 }
 
 .publication-workspace-button {
@@ -271,10 +271,11 @@
   min-width: 0;
   min-height: 2.75rem;
   padding: .6rem .7rem;
-  border: 1px solid transparent;
-  border-radius: .65rem;
-  background: transparent;
-  color: #334155;
+  border: 1px solid var(--tile-border, #e2d0d2);
+  border-inline-start: 3px solid var(--tile-accent, #9a6870);
+  border-radius: .6rem;
+  background: var(--omi-academic-paper, #fffefa);
+  color: #535960;
   text-align: left;
   font-weight: 650;
 }
@@ -285,19 +286,20 @@
 
 .publication-workspace-button:hover,
 .publication-workspace-button:focus-visible {
-  border-color: #cbd5e1;
-  background: #fff;
+  border-color: var(--tile-accent, #9a6870);
+  background: var(--tile-hover, #f2e7e8);
 }
 
 .publication-workspace-button:focus-visible {
-  outline: 2px solid #0284c7;
+  outline: 2px solid var(--omi-academic-burgundy, #6d2130);
   outline-offset: 2px;
 }
 
 .publication-workspace-button[aria-pressed='true'] {
-  border-color: #bae6fd;
-  background: #e0f2fe;
-  color: #075985;
+  box-shadow: inset 3px 0 0 var(--tile-accent, #9a6870);
+  border-color: var(--tile-accent, #9a6870);
+  background: var(--tile-hover, #f2e7e8);
+  color: var(--omi-academic-burgundy-dark, #51202c);
 }
 
 .publication-workspace-group {
@@ -313,7 +315,7 @@
 
 .publication-workspace-group-heading {
   padding: .25rem 0 .75rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--omi-academic-line, #e2ddd4);
 }
 
 .publication-workspace-group-heading h4 {
@@ -322,7 +324,7 @@
 
 .publication-workspace-group-heading p {
   margin: .35rem 0 0;
-  color: #64748b;
+  color: var(--omi-academic-muted, #6c6a66);
   line-height: 1.5;
 }
 
@@ -353,9 +355,9 @@
 }
 
 .publication-profile-option--selected {
-  border-color: #bae6fd;
-  background: #e0f2fe;
-  color: #075985;
+  border-color: var(--tile-accent, #9a6870);
+  background: var(--tile-hover, #f2e7e8);
+  color: var(--omi-academic-burgundy-dark, #51202c);
   box-shadow: none;
 }
 
