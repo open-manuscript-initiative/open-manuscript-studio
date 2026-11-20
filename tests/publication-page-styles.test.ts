@@ -65,6 +65,12 @@ test('portable validation rejects malformed geometry, references, duplicate IDs,
     (c: typeof collection) => { c.styles[0]!.runningHeaders.odd.left = 'x'.repeat(1001); },
   ]) { const next = structuredClone(collection); mutate(next); assert.throws(() => validatePublicationPageStyles(next)); }
 });
+test('import validation bounds the section/page selector cross product before CSS allocation', () => {
+  const collection = configured().pageStyles!;
+  collection.sections = Array.from({ length: 100 }, (_, index) => ({ sectionId: `section-${index}`, startNewPage: true, styleId: 'opening' }));
+  collection.pages = Array.from({ length: 50 }, (_, index) => ({ from: index + 1, to: index + 1, styleId: 'opening' }));
+  assert.throws(() => validatePublicationPageStyles(collection));
+});
 test('variable page heights place content after a section break at its own top margin', () => {
   const layout = paginatePublicationBlocks([
     { sectionId: 'article-a', top: 0, height: 40 },

@@ -49,7 +49,7 @@ export function buildPublicationPageStylesCss(style: PublicationStyle, sections:
   }
   // Page-number exceptions have higher specificity and are emitted last. The
   // :nth() index is physical within this body document, independent of counters.
-  const names = ['omi_body', ...sectionNames.values()];
+  const names = [...emitted];
   for (const assignment of style.pageStyles.pages) {
     const master = style.pageStyles.styles.find((item) => item.id === assignment.styleId);
     if (!master) continue;

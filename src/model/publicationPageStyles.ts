@@ -98,6 +98,10 @@ export function validatePublicationPageStyles(value: unknown): asserts value is 
   };
   if (!record(value) || value.version !== 1 || !Array.isArray(value.styles) || value.styles.length > 100
     || !Array.isArray(value.sections) || value.sections.length > 5000 || !Array.isArray(value.pages) || value.pages.length > 5000) fail();
+  // PDF exceptions are emitted for each named section page group. Bound the
+  // cross product as well as individual collections before allocating CSS.
+  const groups = 1 + value.sections.filter((item) => record(item) && (item.styleId || item.runningHeaders)).length;
+  if (groups * value.pages.length > 4096) fail();
   const ids = new Set<string>(), sectionIds = new Set<string>();
   for (const item of value.styles) {
     if (!record(item) || !text(item.id) || ids.has(item.id as string) || !text(item.name) || typeof item.showFirstPage !== 'boolean' || !record(item.page)) fail();

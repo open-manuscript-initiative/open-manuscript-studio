@@ -20,6 +20,13 @@ test('section headers and individual page masters reflow, persist and feed PDF o
       blocks: Array.from({ length: 12 }, (_, i) => ({ id: `block-${index}-${i}`, type: 'paragraph', content: rich(`Paragraph ${i + 1}. ` + 'Text for testing journal page layouts and headers. '.repeat(8)) })),
     })) });
   });
+  const originalParagraphs = await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    return useStudioStore.getState().manuscript.sections.flatMap((section) => section.blocks)
+      .filter((block) => block.type === 'paragraph')
+      .map((block) => ({ id: block.id, text: JSON.parse(block.content).content[0].content.map((node: { text?: string }) => node.text ?? '').join('') }));
+  });
+  expect(originalParagraphs).toHaveLength(24);
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
@@ -80,11 +87,11 @@ test('section headers and individual page masters reflow, persist and feed PDF o
     const style = loadPublicationStyle(restored);
     const html = withPrintRunningHeader('<html><head></head><body></body></html>', restored, style, clonePublicationPublisherTemplate());
     useStudioStore.getState().loadManuscript(restored);
-    return { collection: style.pageStyles!, html, paragraphs: restored.sections.flatMap((s) => s.blocks).length };
+    return { collection: style.pageStyles!, html, paragraphs: restored.sections.flatMap((s) => s.blocks).filter((block) => block.type === 'paragraph').map((block) => ({ id: block.id, text: JSON.parse(block.content).content[0].content.map((node: { text?: string }) => node.text ?? '').join('') })) };
   });
   expect(result.collection.styles[0]!.name).toBe('Article opening');
   expect(result.collection.sections).toHaveLength(2); expect(result.collection.pages).toHaveLength(1);
-  expect(result.paragraphs).toBe(24);
+  expect(result.paragraphs).toEqual(originalParagraphs);
   expect(result.html).toContain('Author A'); expect(result.html).toContain('Author B'); expect(result.html).toContain(':nth(n+1):nth(-n+1)');
   await expect(guides.first()).toHaveAttribute('data-page-style', styleId);
 });
