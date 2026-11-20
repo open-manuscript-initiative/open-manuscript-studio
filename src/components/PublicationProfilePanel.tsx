@@ -5,8 +5,11 @@ import {
   FileCheck2,
   LockKeyhole,
   LayoutTemplate,
+  Send,
+  Settings2,
+  Palette,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { stagePublicationProfileChange } from '../app/publicationProfileActions';
 import { useStudioStore } from '../app/useStudioStore';
@@ -40,6 +43,8 @@ import { PublisherExportStylesheetPanel } from './PublisherExportStylesheetPanel
 import { PublisherPrintStylesheetPanel } from './PublisherPrintStylesheetPanel';
 import { PublisherProfileEditor } from './PublisherProfileEditor';
 
+type PublicationGroup = 'profiles' | 'styles' | 'checks' | 'exports' | 'delivery';
+
 export function PublicationProfilePanel() {
   const { locale } = useTranslation();
   const copy = getPublicationProfileCopy(locale);
@@ -50,6 +55,14 @@ export function PublicationProfilePanel() {
   const activeKey = activeReference ? `${activeReference.id}@${activeReference.version}` : `${DEFAULT_PUBLICATION_PROFILE_ID}@${BUILTIN_PUBLICATION_PROFILES[0]?.version ?? ''}`;
   const [candidateKey, setCandidateKey] = useState(activeKey);
   const [savedProfiles, setSavedProfiles] = useState(loadPublisherProfiles);
+  const [activeGroup, setActiveGroup] = useState<PublicationGroup>('profiles');
+  const groups = [
+    { id: 'profiles', icon: Settings2 },
+    { id: 'styles', icon: Palette },
+    { id: 'checks', icon: FileCheck2 },
+    { id: 'exports', icon: Download },
+    { id: 'delivery', icon: Send },
+  ] as const;
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,51 +110,42 @@ export function PublicationProfilePanel() {
     <section className="publication-profile-view" aria-labelledby="publication-profile-title">
       <div className="studio-menu-view-header publication-profile-header">
         <div>
-          <h3 id="publication-profile-title">{copy.title}</h3>
-          <p>{copy.description}</p>
+          <h3 id="publication-profile-title">{copy.navigation}</h3>
+          <p>{copy.workspaceDescription}</p>
         </div>
         <LayoutTemplate size={22} aria-hidden="true" />
       </div>
 
-      <div className="publication-profile-quick-grid">
-        <DirectSubmissionPanel />
-        <PublicationArtifactPanel />
-        <NewsletterPublishingPanel />
-      </div>
+      <nav className="publication-workspace-navigation" aria-label={copy.workspaceNavigation}>
+        {groups.map(({ id, icon: Icon }) => (
+          <button
+            key={id}
+            id={`publication-group-${id}`}
+            type="button"
+            className="publication-workspace-button"
+            aria-pressed={activeGroup === id}
+            aria-controls={`publication-workspace-${id}`}
+            onClick={() => setActiveGroup(id)}
+          >
+            <Icon size={18} aria-hidden="true" />
+            <span>{copy.workspaceGroups[id].title}</span>
+          </button>
+        ))}
+      </nav>
 
-      <div className="publication-profile-identity-grid">
-      <section className="publication-profile-selector" aria-labelledby="publication-profile-choose">
-        <div className="publication-profile-section-heading">
-          <div>
-            <h4 id="publication-profile-choose">{copy.chooseProfile}</h4>
-            <p>{copy.profileSeparation}</p>
-          </div>
-        </div>
+      <PublicationTaskGroup id="profiles" activeGroup={activeGroup} copy={copy}>
+        <div className="publication-profile-identity-grid">
+          <section className="publication-profile-selector" aria-labelledby="publication-profile-choose">
+            <div className="publication-profile-section-heading">
+              <div>
+                <h4 id="publication-profile-choose">{copy.chooseProfile}</h4>
+                <p>{copy.profileSeparation}</p>
+              </div>
+            </div>
 
-        <div className="publication-profile-options">
-          {BUILTIN_PUBLICATION_PROFILES.map((profile) => {
-            const localized = copy.profileNames[profile.id] ?? { name: profile.name, description: profile.description };
-            const key = `${profile.id}@${profile.version}`;
-            const isActive = activeProfile.id === profile.id && activeProfile.version === profile.version;
-            const isCandidate = candidateKey === key;
-            return (
-              <label className={`publication-profile-option${isCandidate ? ' publication-profile-option--selected' : ''}`} key={key}>
-                <input type="radio" name="publication-profile" value={key} checked={isCandidate} onChange={() => { setCandidateKey(key); setStatusMessage(null); }} />
-                <span className="publication-profile-option-copy">
-                  <span className="publication-profile-option-title">
-                    <strong>{localized.name}</strong>
-                    {isActive ? <small className="publication-profile-active-badge">{copy.active}</small> : null}
-                  </span>
-                  <span>{localized.description}</span>
-                  <code>{profile.id}@{profile.version}</code>
-                </span>
-              </label>
-            );
-          })}
-          {savedProfiles.length > 0 ? (
-            <>
-              <h5 className="publication-profile-options-group">{copy.myProfiles}</h5>
-              {savedProfiles.map((profile) => {
+            <div className="publication-profile-options">
+              {BUILTIN_PUBLICATION_PROFILES.map((profile) => {
+                const localized = copy.profileNames[profile.id] ?? { name: profile.name, description: profile.description };
                 const key = `${profile.id}@${profile.version}`;
                 const isActive = activeProfile.id === profile.id && activeProfile.version === profile.version;
                 const isCandidate = candidateKey === key;
@@ -150,76 +154,129 @@ export function PublicationProfilePanel() {
                     <input type="radio" name="publication-profile" value={key} checked={isCandidate} onChange={() => { setCandidateKey(key); setStatusMessage(null); }} />
                     <span className="publication-profile-option-copy">
                       <span className="publication-profile-option-title">
-                        <strong>{profile.name}</strong>
+                        <strong>{localized.name}</strong>
                         {isActive ? <small className="publication-profile-active-badge">{copy.active}</small> : null}
-                        {profile.protection?.readOnly ? <small title={copy.lockedProfile}><LockKeyhole size={13} aria-hidden="true" /> {copy.lockedProfile}</small> : null}
                       </span>
-                      <span>{profile.description || profile.publisher || ''}</span>
+                      <span>{localized.description}</span>
                       <code>{profile.id}@{profile.version}</code>
                     </span>
                   </label>
                 );
               })}
-            </>
-          ) : null}
+              {savedProfiles.length > 0 ? (
+                <>
+                  <h5 className="publication-profile-options-group">{copy.myProfiles}</h5>
+                  {savedProfiles.map((profile) => {
+                    const key = `${profile.id}@${profile.version}`;
+                    const isActive = activeProfile.id === profile.id && activeProfile.version === profile.version;
+                    const isCandidate = candidateKey === key;
+                    return (
+                      <label className={`publication-profile-option${isCandidate ? ' publication-profile-option--selected' : ''}`} key={key}>
+                        <input type="radio" name="publication-profile" value={key} checked={isCandidate} onChange={() => { setCandidateKey(key); setStatusMessage(null); }} />
+                        <span className="publication-profile-option-copy">
+                          <span className="publication-profile-option-title">
+                            <strong>{profile.name}</strong>
+                            {isActive ? <small className="publication-profile-active-badge">{copy.active}</small> : null}
+                            {profile.protection?.readOnly ? <small title={copy.lockedProfile}><LockKeyhole size={13} aria-hidden="true" /> {copy.lockedProfile}</small> : null}
+                          </span>
+                          <span>{profile.description || profile.publisher || ''}</span>
+                          <code>{profile.id}@{profile.version}</code>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </>
+              ) : null}
+            </div>
+
+            <button type="button" className="studio-menu-primary-action publication-profile-apply" disabled={candidateProfile.id === activeProfile.id && candidateProfile.version === activeProfile.version && overrides.length === 0} onClick={() => applyProfile(candidateProfile)}>
+              <FileCheck2 size={16} aria-hidden="true" />
+              {candidateProfile.id === activeProfile.id ? copy.resetDefaults : copy.applyProfile}
+            </button>
+
+            {statusMessage ? <div className="publication-profile-status" role="status"><CheckCircle2 size={15} aria-hidden="true" />{statusMessage}</div> : null}
+          </section>
+
+          <PublisherProfileEditor baseProfile={activeProfile} />
         </div>
 
-        <button type="button" className="studio-menu-primary-action publication-profile-apply" disabled={candidateProfile.id === activeProfile.id && candidateProfile.version === activeProfile.version && overrides.length === 0} onClick={() => applyProfile(candidateProfile)}>
-          <FileCheck2 size={16} aria-hidden="true" />
-          {candidateProfile.id === activeProfile.id ? copy.resetDefaults : copy.applyProfile}
-        </button>
-
-        {statusMessage ? <div className="publication-profile-status" role="status"><CheckCircle2 size={15} aria-hidden="true" />{statusMessage}</div> : null}
-      </section>
-
-      <PublisherProfileEditor baseProfile={activeProfile} />
-      </div>
-
-      <div className="publication-profile-style-grid">
-        <IdmlPublicationStyleImportPanel />
-        <PublicationStyleExportPanel />
-        <PublisherExportStylesheetPanel profile={activeProfile} />
-        <PublisherPrintStylesheetPanel profile={activeProfile} />
-      </div>
-
-      <ExportFormatsPanel />
-
-      <div className="publication-profile-validation-grid">
-      <ProfileRuleSummary profile={activeProfile} copy={copy} frontMatterCopy={frontMatterCopy} />
-
-      <section className="publication-profile-readiness" aria-labelledby="publication-readiness-title">
-        <div className="publication-profile-section-heading">
-          <div>
-            <h4 id="publication-readiness-title">{copy.readiness}</h4>
-            <p className={readiness.ready ? 'publication-ready' : 'publication-not-ready'}>{readiness.ready ? copy.ready : copy.notReady}</p>
-          </div>
-          <div className="publication-readiness-counts"><span>{readiness.errors} {copy.errors}</span><span>{readiness.warnings} {copy.warnings}</span></div>
+        <section className="publication-profile-export">
+          <div><strong>{copy.exportProfile}</strong><p>{copy.exportDescription}</p></div>
+          <button type="button" className="studio-menu-secondary-action" onClick={exportProfile}><Download size={16} aria-hidden="true" />{copy.exportProfile}</button>
+        </section>
+      </PublicationTaskGroup>
+      <PublicationTaskGroup id="styles" activeGroup={activeGroup} copy={copy}>
+        <div className="publication-profile-style-grid">
+          <IdmlPublicationStyleImportPanel />
+          <PublicationStyleExportPanel />
+          <PublisherExportStylesheetPanel profile={activeProfile} />
+          <PublisherPrintStylesheetPanel profile={activeProfile} />
         </div>
+      </PublicationTaskGroup>
+      <PublicationTaskGroup id="checks" activeGroup={activeGroup} copy={copy}>
+        <div className="publication-profile-validation-grid">
+          <ProfileRuleSummary profile={activeProfile} copy={copy} frontMatterCopy={frontMatterCopy} />
 
-        {issues.length === 0 ? (
-          <p className="publication-profile-no-issues"><CheckCircle2 size={16} aria-hidden="true" />{copy.noIssues}</p>
-        ) : (
-          <ul className="publication-profile-issue-list">
-            {issues.slice(0, 60).map((issue, index) => (
-              <li className={`publication-profile-issue publication-profile-issue--${issue.severity}`} key={`${issue.code}:${issue.targetId ?? ''}:${issue.detail ?? ''}:${index}`}>
-                <AlertTriangle size={15} aria-hidden="true" />
-                <span>{copy.issueText[issue.code]}{issue.code === 'too-few-keywords' && issue.detail ? ` (${issue.detail})` : ''}{issue.code === 'profile-override' && issue.detail ? ` — ${issue.detail}` : ''}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      </div>
+          <section className="publication-profile-readiness" aria-labelledby="publication-readiness-title">
+            <div className="publication-profile-section-heading">
+              <div>
+                <h4 id="publication-readiness-title">{copy.readiness}</h4>
+                <p className={readiness.ready ? 'publication-ready' : 'publication-not-ready'}>{readiness.ready ? copy.ready : copy.notReady}</p>
+              </div>
+              <div className="publication-readiness-counts"><span>{readiness.errors} {copy.errors}</span><span>{readiness.warnings} {copy.warnings}</span></div>
+            </div>
 
-      <div className="publication-profile-export-grid">
-        <JatsExportPanel />
-        <HtmlExportPanel />
+            {issues.length === 0 ? (
+              <p className="publication-profile-no-issues"><CheckCircle2 size={16} aria-hidden="true" />{copy.noIssues}</p>
+            ) : (
+              <ul className="publication-profile-issue-list">
+                {issues.slice(0, 60).map((issue, index) => (
+                  <li className={`publication-profile-issue publication-profile-issue--${issue.severity}`} key={`${issue.code}:${issue.targetId ?? ''}:${issue.detail ?? ''}:${index}`}>
+                    <AlertTriangle size={15} aria-hidden="true" />
+                    <span>{copy.issueText[issue.code]}{issue.code === 'too-few-keywords' && issue.detail ? ` (${issue.detail})` : ''}{issue.code === 'profile-override' && issue.detail ? ` — ${issue.detail}` : ''}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </PublicationTaskGroup>
+      <PublicationTaskGroup id="exports" activeGroup={activeGroup} copy={copy}>
+        <ExportFormatsPanel />
+        <div className="publication-profile-export-grid">
+          <JatsExportPanel />
+          <HtmlExportPanel />
+        </div>
+      </PublicationTaskGroup>
+      <PublicationTaskGroup id="delivery" activeGroup={activeGroup} copy={copy}>
+        <div className="publication-profile-delivery-grid">
+          <DirectSubmissionPanel />
+          <PublicationArtifactPanel />
+          <NewsletterPublishingPanel />
+        </div>
+      </PublicationTaskGroup>
+    </section>
+  );
+}
 
-      <section className="publication-profile-export">
-        <div><strong>{copy.exportProfile}</strong><p>{copy.exportDescription}</p></div>
-        <button type="button" className="studio-menu-secondary-action" onClick={exportProfile}><Download size={16} aria-hidden="true" />{copy.exportProfile}</button>
-      </section>
-      </div>
+function PublicationTaskGroup({ id, activeGroup, copy, children }: {
+  id: PublicationGroup;
+  activeGroup: PublicationGroup;
+  copy: ReturnType<typeof getPublicationProfileCopy>;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      id={`publication-workspace-${id}`}
+      className="publication-workspace-group"
+      aria-labelledby={`publication-group-${id}`}
+      hidden={activeGroup !== id}
+    >
+      <header className="publication-workspace-group-heading">
+        <h4>{copy.workspaceGroups[id].title}</h4>
+        <p>{copy.workspaceGroups[id].description}</p>
+      </header>
+      {children}
     </section>
   );
 }
