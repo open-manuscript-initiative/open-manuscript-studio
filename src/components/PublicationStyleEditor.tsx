@@ -4,6 +4,9 @@ import { OjsPublicationTransferPanel } from './OjsPublicationTransferPanel';
 import { ojsPublicationCopy } from '../i18n/ojsPublication';
 import { PublicationFrameEditor } from './PublicationFrameEditor';
 import { PublicationMatterEditor } from './PublicationMatterEditor';
+import { PublicationTemplatePanel } from './PublicationTemplatePanel';
+import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
+import { stageAppliedPublicationStyle } from '../app/publicationTemplateActions';
 import { getPublicationMatter } from '../model/publicationMatter';
 import { synchronizePublicationSpine } from '../model/publicationSpine';
 import { stagePublicationMatter } from '../app/publicationMatterActions';
@@ -67,7 +70,7 @@ import {
   type SystemFontFace,
   type SystemFontFamily,
 } from '../services/systemFonts';
-import type { OmiBlock, OmiPublicationCorrectionKind } from '../types/omi';
+import type { OmiBlock, OmiPublicationCorrectionKind, OmiManuscript } from '../types/omi';
 import { InDesignParagraphStyleSettings } from './InDesignParagraphStyleSettings';
 import { ProofingColorLegend } from './ProofingColorLegend';
 import {
@@ -127,12 +130,17 @@ function loadLibrary(): PublicationStyle[] {
   return [cloneTemplate()];
 }
 
-function loadInitialState(): {
+function loadInitialState(manuscript: OmiManuscript): {
   library: PublicationStyle[];
   activeId: string;
   style: PublicationStyle;
 } {
   const library = loadLibrary();
+  const applied = getAppliedPublicationTemplate(manuscript);
+  if (applied?.style) {
+    const style = withCurrentPageDefaults(cloneStyle(applied.style));
+    return { library: upsertStyle(library, style.id, style), activeId: style.id, style };
+  }
   const requestedId = window.localStorage.getItem(ACTIVE_STYLE_KEY);
   const active = library.find((item) => item.id === requestedId)
     ?? library[0]
@@ -186,6 +194,11 @@ function copyFor(locale: string) {
 }
 
 export function PublicationStyleEditor() {
+  const id = useStudioStore((state) => state.manuscript.id);
+  return <PublicationStyleEditorWorkspace key={id} />;
+}
+
+function PublicationStyleEditorWorkspace() {
   const { locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const manuscriptLanguage = manuscript.locale;
@@ -222,10 +235,12 @@ export function PublicationStyleEditor() {
   useEffect(() => { setMatterToolsOpen(false); }, [manuscript.id, manuscript.documentStructure?.kind]);
   const [ojsTransferOpen, setOjsTransferOpen] = useState(false);
   const frameCopy = getPublicationFramesCopy(locale);
-  const initial = useMemo(loadInitialState, []);
+  const [initial] = useState(() => loadInitialState(manuscript));
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
   const [activeId, setActiveId] = useState(initial.activeId);
   const [style, setStyle] = useState<PublicationStyle>(initial.style);
+  const appliedStyle = getAppliedPublicationTemplate(manuscript)?.style;
+  const synchronizedStyleRef = useRef(appliedStyle);
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState('');
   const [openPanel, setOpenPanel] = useState<PublicationRibbonPanel>(null);
@@ -252,7 +267,20 @@ export function PublicationStyleEditor() {
 
   useEffect(() => {
     persistLibrary(upsertStyle(library, activeId, style), style);
+    stageAppliedPublicationStyle(style);
+    synchronizedStyleRef.current = getAppliedPublicationTemplate(useStudioStore.getState().manuscript)?.style;
   }, [activeId, library, style]);
+
+  useEffect(() => {
+    // Revision restoration can replace a format without changing document id.
+    if (!appliedStyle || appliedStyle === synchronizedStyleRef.current) return;
+    synchronizedStyleRef.current = appliedStyle;
+    const next = withCurrentPageDefaults(cloneStyle(appliedStyle));
+    setStyle(next); setActiveId(next.id);
+    setLibrary((current) => upsertStyle(current, next.id, next));
+    setActiveParagraphStyleId(next.paragraphStyles.defaultStyleId);
+    setProofingSelection(null);
+  }, [appliedStyle]);
 
   useEffect(() => {
     if (!openPanel) return;
@@ -733,6 +761,10 @@ export function PublicationStyleEditor() {
         </div>
       </div>
 
+      {getDocumentStructureProfile(manuscript).kind === 'volume' ? <PublicationTemplatePanel locale={locale} style={style} onApplied={(next) => {
+        setStyle(cloneStyle(next)); setActiveId(next.id); setLibrary((current) => upsertStyle(current, next.id, next));
+        setActiveParagraphStyleId(next.paragraphStyles.defaultStyleId); setProofingSelection(null);
+      }} /> : null}
       {getDocumentStructureProfile(manuscript).kind === 'volume' ? <div className="publication-workspace-tabs" role="tablist" aria-label={copy.title} onKeyDown={(event) => {
         if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
         event.preventDefault();

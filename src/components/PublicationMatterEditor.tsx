@@ -19,7 +19,7 @@ export function PublicationMatterEditor({ widthMm, heightMm, bodyPageCount, read
   const { locale } = useTranslation();
   const copy = getPublicationMatterCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
-  const [defaultStyle] = useState(loadPublicationStyle);
+  const [defaultStyle] = useState(() => loadPublicationStyle(manuscript));
   const [unit] = usePublicationMeasurementUnit();
   const model = getPublicationMatter(manuscript) ?? createPublicationMatter(manuscript);
   const [selected, setSelected] = useState<PublicationMatterPageKind>('cover-outside');

@@ -88,7 +88,7 @@ export function PublicationStyleExportPanel() {
       checkpoint('export');
       const committed = useStudioStore.getState().manuscript;
       const profile = resolvePublicationProfile(committed);
-      const style = loadPublicationStyle();
+      const style = loadPublicationStyle(committed);
       const htmlCss = buildPublicationStyleCss(style, 'html');
       const head = committed.revisionHistory.revisions.find(
         (revision) => revision.id === committed.headRevisionId,

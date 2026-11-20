@@ -32,6 +32,7 @@ export type OmiChangeOperation =
   | 'translation.model.set'
   | 'publication.frames.set'
   | 'publication.matter.set'
+  | 'publication.template.set'
   | 'manuscript.snapshot.create'
   | 'manuscript.title.set'
   | 'manuscript.subtitle.set'
