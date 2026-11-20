@@ -108,7 +108,9 @@ export function NewDocumentActions({
         <PublicationTemplateSelector templates={templates} locale={locale} kind={publicationKind} value={template?.id ?? ''} onChange={setTemplate} />
         {loadError ? <p role="alert">{templateCopy.loadError}</p> : null}
         <label>{copy.publicationTitle}<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-        <PublicationIdentifierFields locale={locale} kind={publicationKind} values={titleMatter}
+        {publicationKind === 'volume' ? <label>{templateCopy.seriesTitle}<input value={titleMatter.seriesTitle ?? template?.defaults.seriesTitle ?? ''}
+          onChange={(event) => setTitleMatter((previous) => ({ ...previous, seriesTitle: event.target.value }))} /></label> : null}
+        <PublicationIdentifierFields locale={locale} kind={publicationKind} values={{ ...template?.defaults, ...titleMatter }}
           onChange={(field, value) => setTitleMatter((previous) => ({ ...previous, [field]: value }))} />
         <div className="omi-new-publication-form-actions">
           <button type="submit">{copy.create}</button>

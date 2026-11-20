@@ -123,8 +123,7 @@ test('page styles and section rules persist in OMI even without a previously app
     assert.equal(getAppliedPublicationTemplate(restored)!.source, 'document-style');
     const template = await capturePublicationTemplate(restored, loadPublicationStyle(restored), 'Journal format', 'Review');
     assert.equal(template.profile.publicationStyle!.pageStyles!.styles.length, 1);
-    assert.deepEqual(template.profile.publicationStyle!.pageStyles!.sections, []);
-    assert.deepEqual(template.profile.publicationStyle!.pageStyles!.pages, []);
+    assert.deepEqual(template.profile.publicationStyle!.pageStyles, configured().pageStyles);
     const html = await renderStyleBasedHtml(restored, resolvePublicationProfile(restored), 'print');
     assert.match(html, /@page omi_section_0/);
     assert.ok(html.includes(`© ${restored.updatedAt.slice(0, 4)} Egyháztörténeti Szemle`));

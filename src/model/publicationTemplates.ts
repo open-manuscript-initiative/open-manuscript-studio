@@ -1,6 +1,6 @@
 import { applyPublicationProfileDefaults, BUILTIN_PUBLICATION_PROFILES, type OmiPublicationProfile } from './publicationProfile';
 import { validatePublisherProfile } from './publisherProfileImport';
-import { getDocumentStructureProfile } from './documentProfile';
+import { getDocumentStructureProfile, type OmiDocumentStructureProfile } from './documentProfile';
 import { getPublicationMatter, PUBLICATION_MATTER_EXTENSION, publicationMatterAssetIds, publicationMatterTemplate, type PublicationMatter } from './publicationMatter';
 import { synchronizeCrossReferenceLabels } from './crossReferences';
 import { withPublicationSpineWidth, calculatedSpineWidthMm } from './publicationSpine';
@@ -19,6 +19,8 @@ export interface PublicationTemplate {
   kind: 'volume' | 'journal-issue';
   profile: OmiPublicationProfile;
   defaults: OmiTitleMatter;
+  textDefaults?: Partial<Pick<OmiManuscriptState, 'title' | 'subtitle' | 'motto'>>;
+  structureDefaults?: Pick<OmiDocumentStructureProfile, 'noteNumberingScope' | 'referencesPlacement' | 'listsPlacement'>;
   matter: PublicationMatter;
   assets: { metadata: OmiAsset; base64: string }[];
 }
@@ -43,11 +45,15 @@ export function validateAppliedPublicationTemplate(value: unknown): asserts valu
   validatePublisherProfile({ ...BUILTIN_PUBLICATION_PROFILES[0], publicationStyle: applied.style });
 }
 
-/** Only recurring publisher/serial metadata belongs in a format template. */
-export const TEMPLATE_DEFAULT_FIELDS = ['publisherName', 'publicationPlace', 'issn', 'eissn', 'copyrightStatement', 'colophon'] as const;
+/** Saved text remains editable on the next issue/volume. Books need new ISBNs. */
+export const TEMPLATE_DEFAULT_FIELDS = ['seriesTitle', 'halfTitle', 'responsibilityStatement', 'editionStatement', 'publisherName', 'publicationPlace', 'publicationYear', 'isbn', 'electronicIsbn', 'issn', 'eissn', 'doi', 'otherIdentifiers', 'copyrightStatement', 'colophon'] as const satisfies readonly (keyof OmiTitleMatter)[];
 
-export function recurringPublicationMetadata(source: OmiTitleMatter = {}): OmiTitleMatter {
-  return Object.fromEntries(TEMPLATE_DEFAULT_FIELDS.flatMap((key) => source[key] ? [[key, source[key]]] : []));
+export function publicationTemplateDefaultFields(kind: PublicationTemplate['kind']) {
+  return TEMPLATE_DEFAULT_FIELDS.filter((key) => kind !== 'volume' || (key !== 'isbn' && key !== 'electronicIsbn'));
+}
+
+export function recurringPublicationMetadata(source: OmiTitleMatter = {}, kind: PublicationTemplate['kind'] = 'volume'): OmiTitleMatter {
+  return Object.fromEntries(publicationTemplateDefaultFields(kind).flatMap((key) => source[key] ? [[key, source[key]]] : []));
 }
 
 export function getAppliedPublicationTemplate(state: Pick<OmiManuscriptState, 'extensions'>): AppliedPublicationTemplate | undefined {
@@ -75,7 +81,7 @@ export function mapPublicationMatterText(matter: PublicationMatter, transform: (
 }
 
 export function publicationTemplateValues(state: OmiManuscriptState): Record<string, string> {
-  return { title: state.title, subtitle: state.subtitle ?? '', ...state.titleMatter, halfTitle: state.titleMatter?.halfTitle || state.title };
+  return { title: state.title, subtitle: state.subtitle ?? '', motto: state.motto ?? '', ...state.titleMatter, halfTitle: state.titleMatter?.halfTitle || state.title };
 }
 
 export function publicationTemplatePageToken(name: 'imprint' | 'titlePage'): string {
@@ -102,19 +108,21 @@ export function applyPublicationTemplate(state: OmiManuscriptState, template: Pu
   const kind = getPublicationMatter(state)?.publicationKind ?? 'volume';
   if (kind !== template.kind) throw new Error('Publication template type does not match.');
   const titleMatter = { ...state.titleMatter };
-  for (const key of TEMPLATE_DEFAULT_FIELDS) if (!titleMatter[key]?.trim() && template.defaults[key]) titleMatter[key] = template.defaults[key];
-  const values = publicationTemplateValues({ ...state, titleMatter });
+  for (const key of publicationTemplateDefaultFields(template.kind)) if (!titleMatter[key]?.trim() && template.defaults[key]) titleMatter[key] = template.defaults[key];
+  const text = Object.fromEntries((['title', 'subtitle', 'motto'] as const).map((key) => [key, state[key]?.trim() ? state[key] : template.textDefaults?.[key] ?? state[key]]));
+  const publication = { ...state, ...text, titleMatter };
+  const values = publicationTemplateValues(publication);
   const sourceMatter = structuredClone(template.matter);
   for (const page of sourceMatter.pages) {
     // Whole-page metadata blocks can add/remove optional identifier lines.
     if (page.content === publicationTemplatePageToken('imprint')) {
-      page.content = publicationMatterTemplate('imprint-page', { ...state, titleMatter });
+      page.content = publicationMatterTemplate('imprint-page', publication);
     }
-    if (page.content === publicationTemplatePageToken('titlePage')) page.content = publicationMatterTemplate('title-page', { ...state, titleMatter });
+    if (page.content === publicationTemplatePageToken('titlePage')) page.content = publicationMatterTemplate('title-page', publication);
   }
   let matter = mapPublicationMatterText(sourceMatter, (text) => text.replace(/\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g, (_, key: string) => Object.hasOwn(values, key) ? values[key] ?? '' : ''));
-  // Automatic spine settings retain paper stock, but use the new layout's count.
-  if (matter.spineCalculation?.mode === 'automatic') {
+  // A calculated layout count is refreshed; a user-entered count is a setting.
+  if (matter.spineCalculation?.mode === 'automatic' && matter.spineCalculation.pageCountSource === 'layout') {
     const calculation = { ...matter.spineCalculation, pageCountSource: 'layout' as const, pageCount: 1 };
     matter = { ...withPublicationSpineWidth(matter, calculatedSpineWidthMm(calculation)), spineCalculation: calculation };
   }
@@ -131,7 +139,8 @@ export function applyPublicationTemplate(state: OmiManuscriptState, template: Pu
   profile.publicationStyle = { ...profile.publicationStyle!, id: `publication-template:${template.id}`, name: template.name };
   const applied: AppliedPublicationTemplate = { version: 1, id: template.id, name: template.name, association: template.association, style: structuredClone(profile.publicationStyle!) };
   return {
-    ...applyPublicationProfileDefaults(state, profile), titleMatter, assets,
+    ...applyPublicationProfileDefaults(publication, profile), assets,
+    documentStructure: { ...getDocumentStructureProfile(state), ...template.structureDefaults },
     sections: synchronizeCrossReferenceLabels(state.sections, state.crossReferences ?? [], profile.rules.objects.numbering, state.locale),
     extensions: { ...state.extensions, [PUBLICATION_MATTER_EXTENSION]: matter, [PUBLICATION_TEMPLATE_EXTENSION]: applied },
   };

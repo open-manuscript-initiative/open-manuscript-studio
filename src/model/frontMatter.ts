@@ -16,6 +16,7 @@ declare module '../types/omi.ts' {
 }
 
 export interface OmiTitleMatter {
+  seriesTitle?: string;
   halfTitle?: string;
   responsibilityStatement?: string;
   editionStatement?: string;

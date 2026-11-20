@@ -35,7 +35,8 @@ export function publicationMatterTemplate(kind: PublicationMatterPageKind, manus
   const publisher = [metadata?.publicationPlace, metadata?.publisherName, metadata?.publicationYear].filter(Boolean).join(' · ');
   const texts = kind === 'spine' ? [] : kind === 'front-cover' || kind === 'title-page'
     ? [metadata?.responsibilityStatement, manuscript.title, manuscript.subtitle, metadata?.editionStatement, publisher]
-    : kind === 'half-title' ? [metadata?.halfTitle || manuscript.title]
+    : kind === 'series-page' ? [metadata?.seriesTitle]
+      : kind === 'half-title' ? [metadata?.halfTitle || manuscript.title]
       : kind === 'imprint-page' ? [metadata?.copyrightStatement, metadata?.colophon, ...publicationIdentifierLines(metadata), publisher]
         : [];
   const content = texts.filter(Boolean).map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] }));
