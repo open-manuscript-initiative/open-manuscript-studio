@@ -10,6 +10,10 @@ test('section headers and individual page masters reflow, persist and feed PDF o
   await page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     const current = useStudioStore.getState().manuscript;
+    const { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY } = await import('/src/services/publicationStyleExport.ts');
+    const baseStyle = clonePublicationStyleTemplate();
+    baseStyle.paragraphStyles.items.find((item) => item.id === baseStyle.paragraphStyles.defaultStyleId)!.properties = { leftIndent: 6, rightIndent: 3 };
+    localStorage.setItem(PUBLICATION_STYLE_STORAGE_KEY, JSON.stringify(baseStyle));
     const rich = (text: string) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
     useStudioStore.getState().loadManuscript({ ...current, title: 'Journal issue', sections: ['First article', 'Second article'].map((title, index) => ({
       id: `article-${index}`, title,
@@ -49,6 +53,14 @@ test('section headers and individual page masters reflow, persist and feed PDF o
   await expect.poll(() => guides.filter({ has: page.locator('.publication-document-running-header', { hasText: 'Author A' }) }).count()).toBeGreaterThan(0);
   await expect.poll(() => guides.filter({ has: page.locator('.publication-document-running-header', { hasText: 'Author B' }) }).count()).toBeGreaterThan(0);
   await expect.poll(() => guides.filter({ has: page.locator('.publication-document-running-header', { hasText: 'Author B' }) }).first().getAttribute('data-page-style')).toBe('default');
+  const body = editor.locator('.omi-continuous-tiptap-editor > [data-block-id="block-0-0"]');
+  const horizontal = await body.evaluate((el) => {
+    const computed = getComputedStyle(el);
+    const guide = document.querySelector<HTMLElement>('.publication-document-page-guide[data-section-id="article-0"]')!;
+    return { occupied: el.getBoundingClientRect().width + parseFloat(computed.marginLeft) + parseFloat(computed.marginRight),
+      available: guide.getBoundingClientRect().width - parseFloat(guide.style.getPropertyValue('--omi-publication-page-left-margin')) - parseFloat(guide.style.getPropertyValue('--omi-publication-page-right-margin')) };
+  });
+  expect(horizontal.occupied).toBeLessThanOrEqual(horizontal.available + 1);
   const before = await guides.first().evaluate((el) => ({ top: getComputedStyle(el).getPropertyValue('--omi-publication-page-top-margin'), height: el.getBoundingClientRect().height }));
   await toggle.click();
   await panel.getByRole('spinbutton', { name: 'From page number', exact: true }).fill('1');

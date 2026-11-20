@@ -1480,7 +1480,10 @@ function buildPaginationCss({
       : innerMargin;
     const geometry = styledPageGeometry?.[placement.pageIndex];
     const translateX = (geometry?.left ?? pageLeftMargin) - firstPageLeftMargin;
-    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(placement.translateY)}; ${geometry ? `width:${cssPixel(geometry.bodyWidth)};max-width:none;box-sizing:border-box;` : ''} }`;
+    const computed = geometry ? block.element.ownerDocument.defaultView?.getComputedStyle(block.element) : undefined;
+    const horizontalMargins = (parseFloat(computed?.marginLeft ?? '0') || 0) + (parseFloat(computed?.marginRight ?? '0') || 0);
+    const blockWidth = geometry ? Math.max(1, geometry.bodyWidth - horizontalMargins) : 0;
+    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(placement.translateY)}; ${geometry ? `width:${cssPixel(blockWidth)};max-width:none;box-sizing:border-box;` : ''} }`;
   }).filter(Boolean).join('\n');
 }
 

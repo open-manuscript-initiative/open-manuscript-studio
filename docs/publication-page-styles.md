@@ -1,5 +1,7 @@
 # Section running headers and page styles
 
+[Magyar használati leírás](publication-page-styles.hu.md)
+
 In **Publishing → Publication editor → Page styles and section headers**, create
 named page styles from the publication's current print settings. Edit trim size,
 inner/outer/top/bottom margins, gutter, mirrored margins, bleed, crop marks and
