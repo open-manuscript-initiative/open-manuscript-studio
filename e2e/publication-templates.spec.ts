@@ -118,5 +118,5 @@ test('saved journal templates prefill both ISSNs and retain entered text for the
   await page.getByRole('tab', { name: 'Title data', exact: true }).click();
   await expect(page.getByLabel('ISSN (print)', { exact: true })).toHaveValue('1234-5679');
   await expect(page.getByLabel('ISSN (electronic, eISSN)', { exact: true })).toHaveValue('2049-3630');
-  await expect(page.getByLabel('Colophon or imprint', { exact: true })).toHaveValue('Editorial board\nPermanent imprint');
+  await expect(page.getByRole('textbox', { name: 'Colophon or imprint', exact: true })).toHaveValue('Editorial board\nPermanent imprint');
 });
