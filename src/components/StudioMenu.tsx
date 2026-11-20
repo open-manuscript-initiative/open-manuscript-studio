@@ -150,6 +150,7 @@ export function StudioMenu({
   const [navigationOpen, setNavigationOpen] = useState(true);
   const navigationToggleRef = useRef<HTMLButtonElement>(null);
   const [activeView, setActiveView] = useState<StudioMenuView | null>(null);
+  const isViewActive = (view: StudioMenuView) => !externalContentActive && activeView === view;
   const canShow = (view: StudioMenuView) => activeView === view || isWorkflowTaskVisible(effectiveRole.role, view, showAllTools);
   const hasActiveContent = activeView !== null || externalContentActive;
 
@@ -212,7 +213,7 @@ export function StudioMenu({
             }}
           ><Menu size={20} aria-hidden="true" /></button>
           <div className="studio-menu-heading"><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
-          {activeView === 'notes' ? <HeaderFormattingButton /> : <span className="studio-menu-header-spacer" aria-hidden="true" />}
+          {isViewActive('notes') ? <HeaderFormattingButton /> : <span className="studio-menu-header-spacer" aria-hidden="true" />}
         </header>
         <div data-shared-formatting-host="true" />
         <div className={`studio-menu-body${navigationOpen ? ' studio-menu-body--navigation-open' : ' studio-menu-body--navigation-collapsed'}`}>
@@ -242,35 +243,35 @@ export function StudioMenu({
               </section>
             ) : null}
             <MenuNavGroup category="manuscript" label={supplementalCopy.manuscriptGroup}>
-              {canShow('document') ? <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} /> : null}
-              {canShow('manuscript') ? <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} /> : null}
-              {canShow('contributors') ? <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} /> : null}
-              {canShow('translations') ? <MenuButton active={activeView === 'translations'} icon={<Languages size={18} aria-hidden="true" />} label={translateCatalog(locale, '/translationModel/title')} onClick={() => setActiveView('translations')} /> : null}
-              {canShow('notes') ? <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} /> : null}
-              {canShow('references') ? <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} /> : null}
+              {canShow('document') ? <MenuButton active={isViewActive('document')} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} /> : null}
+              {canShow('manuscript') ? <MenuButton active={isViewActive('manuscript')} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} /> : null}
+              {canShow('contributors') ? <MenuButton active={isViewActive('contributors')} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} /> : null}
+              {canShow('translations') ? <MenuButton active={isViewActive('translations')} icon={<Languages size={18} aria-hidden="true" />} label={translateCatalog(locale, '/translationModel/title')} onClick={() => setActiveView('translations')} /> : null}
+              {canShow('notes') ? <MenuButton active={isViewActive('notes')} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} /> : null}
+              {canShow('references') ? <MenuButton active={isViewActive('references')} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} /> : null}
               {navigationAfterReferences}
-              {canShow('history') ? <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} /> : null}
-              {canShow('validation') ? <MenuButton active={activeView === 'validation'} icon={<ShieldCheck size={18} aria-hidden="true" />} label={translateCatalog(locale, '/uncataloguedUi/validationModel/title')} onClick={() => setActiveView('validation')} /> : null}
+              {canShow('history') ? <MenuButton active={isViewActive('history')} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} /> : null}
+              {canShow('validation') ? <MenuButton active={isViewActive('validation')} icon={<ShieldCheck size={18} aria-hidden="true" />} label={translateCatalog(locale, '/uncataloguedUi/validationModel/title')} onClick={() => setActiveView('validation')} /> : null}
             </MenuNavGroup>
             <MenuNavGroup category="editorial" label={supplementalCopy.editorialGroup} hidden={!['editorial-workflow', 'assignments', 'signatures'].some((view) => canShow(view as StudioMenuView))}>
-              {canShow('editorial-workflow') ? <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} /> : null}
-              {ojsAssignment && canShow('assignments') ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
-              {canShow('signatures') ? <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} /> : null}
+              {canShow('editorial-workflow') ? <MenuButton active={isViewActive('editorial-workflow')} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} /> : null}
+              {ojsAssignment && canShow('assignments') ? <MenuButton active={isViewActive('assignments')} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
+              {canShow('signatures') ? <MenuButton active={isViewActive('signatures')} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} /> : null}
             </MenuNavGroup>
             <MenuNavGroup category="publication" label={supplementalCopy.publicationGroup} hidden={!canShow('publication-editor') && !canShow('publication')}>
-              {canShow('publication-editor') ? <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} /> : null}
-              {canShow('publication') ? <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} /> : null}
+              {canShow('publication-editor') ? <MenuButton active={isViewActive('publication-editor')} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} /> : null}
+              {canShow('publication') ? <MenuButton active={isViewActive('publication')} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} /> : null}
             </MenuNavGroup>
             <MenuNavGroup category="tools" label={supplementalCopy.toolsGroup}>
               {navigationBeforeTools}
-              <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={supplementalCopy.tools} onClick={() => setActiveView('tools')} />
+              <MenuButton active={isViewActive('tools')} icon={<Wrench size={18} aria-hidden="true" />} label={supplementalCopy.tools} onClick={() => setActiveView('tools')} />
             </MenuNavGroup>
             <MenuNavGroup category="preferences" label={supplementalCopy.preferencesGroup}>
-              <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
+              <MenuButton active={isViewActive('settings')} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
               {navigationAfterSettings}
             </MenuNavGroup>
           </nav>
-          <div className={`studio-menu-content${activeView === 'publication-editor' ? ' studio-menu-content--publication-editor' : ''}${!hasActiveContent ? ' studio-menu-content--empty' : ''}`}>
+          <div className={`studio-menu-content${isViewActive('publication-editor') ? ' studio-menu-content--publication-editor' : ''}${externalContentActive ? ' studio-menu-content--help-open' : ''}${!hasActiveContent ? ' studio-menu-content--empty' : ''}`}>
             {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={returnHome} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
