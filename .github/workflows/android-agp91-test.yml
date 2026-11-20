@@ -81,6 +81,8 @@ jobs:
           node scripts/configure-android-signing.mjs
 
       - name: Prepare verified Gradle distribution
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/prepare-native-ci-downloads.mjs gradle
 
       - name: Build ARM64 release AAB and APK with R8

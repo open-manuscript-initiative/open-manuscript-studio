@@ -177,6 +177,8 @@ jobs:
 
       - name: Prepare verified official bundler tools
         if: matrix.artifact == 'linux-x86_64' || matrix.artifact == 'windows-x86_64'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/prepare-native-ci-downloads.mjs bundler
 
       - name: Build Tauri bundles
@@ -421,6 +423,8 @@ jobs:
           echo 'Android release signing key loaded successfully.'
 
       - name: Prepare verified Gradle distribution
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/prepare-native-ci-downloads.mjs gradle
 
       - name: Build Android APK for pull request

@@ -17,7 +17,7 @@ async function hashFile(path) {
 }
 
 export async function downloadReleaseAsset({ repository, tag, assetName, destination,
-  sha256, fetchImpl = fetch, wait = delay }) {
+  sha256, token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN, fetchImpl = fetch, wait = delay }) {
   if (!REPOSITORIES.has(repository) || !tag || !assetName || !destination) {
     throw new Error('Expected a supported official release asset.');
   }
@@ -29,7 +29,12 @@ export async function downloadReleaseAsset({ repository, tag, assetName, destina
       let response;
       try {
         response = await fetchImpl(source, {
-          headers: { ...headers, Accept: accept }, signal: AbortSignal.timeout(180_000),
+          // Keep credentials off direct release URLs and vendor fallbacks.
+          // Native fetch also strips Authorization on cross-origin redirects.
+          headers: { ...headers, Accept: accept,
+            ...(token && new URL(source).origin === 'https://api.github.com'
+              ? { Authorization: `Bearer ${token}` } : {}),
+          }, signal: AbortSignal.timeout(180_000),
         });
       } catch (error) {
         if (attempt === 4) throw error;
@@ -38,8 +43,9 @@ export async function downloadReleaseAsset({ repository, tag, assetName, destina
       }
       if (response.ok) return response;
       const retryable = [408, 429, 500, 502, 503, 504].includes(response.status);
+      const rateLimited = response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0';
       await response.body?.cancel();
-      if (!retryable || attempt === 4) throw new Error(`Official asset download failed at ${new URL(source).origin}: HTTP ${response.status}`);
+      if (!retryable || attempt === 4) throw new Error(`Official asset download failed at ${new URL(source).origin}: HTTP ${response.status}${rateLimited ? ' (GitHub API rate limit exhausted; configure GH_TOKEN or GITHUB_TOKEN)' : ''}`);
       await wait(attempt * 5000);
     }
   }
