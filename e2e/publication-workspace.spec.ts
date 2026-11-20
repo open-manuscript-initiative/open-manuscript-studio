@@ -50,7 +50,7 @@ for (const viewport of [
     }
 
     await navigation.getByRole('button', { name: 'Files and export', exact: true }).click();
-    const format = workspace.getByLabel('Export format', { exact: true });
+    const format = workspace.getByLabel('Export format');
     await format.selectOption('omi-json');
     await navigation.getByRole('button', { name: 'Profiles and publisher', exact: true }).click();
     await expect(candidate).toBeChecked();
