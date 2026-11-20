@@ -1,4 +1,5 @@
 export interface PublicationFlowBlock {
+  sectionId?: string;
   top: number;
   height: number;
   noteIds?: readonly string[];
@@ -33,6 +34,13 @@ export interface PublicationPageLayout {
   placements: PublicationBlockPlacement[];
   flowBreaks: PublicationFlowBreak[];
   pageNotes?: PublicationPageNote[][];
+  pageSectionIds?: (string | undefined)[];
+}
+
+export interface PublicationPageMetrics {
+  bodyHeight: number;
+  /** Absolute body top relative to the first page's body top. */
+  bodyTop: number;
 }
 
 /**
@@ -48,7 +56,9 @@ export function paginatePublicationBlocks(
   usablePageHeight: number,
   pageOverhead: number,
   footnotes?: PublicationFootnotes,
+  pageMetrics?: (index: number, sectionId?: string) => PublicationPageMetrics,
 ): PublicationPageLayout {
+  if (pageMetrics) return paginateStyledPages(blocks, pageMetrics, footnotes);
   if (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length))) {
     return paginateWithFootnotes(blocks, usablePageHeight, pageOverhead, footnotes);
   }
@@ -178,6 +188,80 @@ export function paginatePublicationBlocks(
     placements,
     flowBreaks,
   };
+}
+
+/** Variable-height page masters share the same measured-line/footnote model as
+ * ordinary pages. Page styles never insert semantic breaks into the manuscript. */
+function paginateStyledPages(
+  blocks: readonly PublicationFlowBlock[],
+  metrics: (index: number, sectionId?: string) => PublicationPageMetrics,
+  notes?: PublicationFootnotes,
+): PublicationPageLayout {
+  const pageSectionIds: (string | undefined)[] = [];
+  const pageNotes: PublicationPageNote[][] = [];
+  const placements: PublicationBlockPlacement[] = [], flowBreaks: PublicationFlowBreak[] = [];
+  const seen = new Set<string>();
+  const lineHeight = positive(notes?.lineHeight ?? 1, 1), separator = nonNegative(notes?.separatorHeight ?? 0);
+  const units = blocks.flatMap((block, blockIndex) => {
+    const lines = normalizeLines(block.lines, block.height);
+    const split = block.splittable && !block.keepTogether && lines.length;
+    return (split ? lines : [{ top: 0, height: block.height, textOffset: 0, noteIds: block.noteIds }]).map((line, index, all) => ({
+      blockIndex, sectionId: block.sectionId, textOffset: line.textOffset, top: nonNegative(block.top) + line.top,
+      height: line.height, noteIds: line.noteIds ?? [], first: index === 0,
+      forceBreak: index === 0 && block.forcePageBreakBefore, keepNext: index === all.length - 1 && block.keepWithNext,
+    }));
+  });
+  let page = 0, position = 0, naturalBottom = 0, inlineHeight = 0, previousDelta = 0;
+  const ensurePage = (index: number, sectionId?: string) => {
+    while (pageSectionIds.length <= index) pageSectionIds.push(sectionId);
+  };
+  const reservation = (index: number) => pageNotes[index]?.length
+    ? separator + pageNotes[index]!.reduce((sum, fragment) => sum + fragment.height, 0) : 0;
+  const capacity = (index: number) => Math.max(lineHeight, Math.floor((metrics(index, pageSectionIds[index]).bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
+  for (let index = 0; index < units.length; index += 1) {
+    const first = units[index]!;
+    ensurePage(page, first.sectionId);
+    if (position <= 0.5 && !pageNotes[page]?.length) pageSectionIds[page] = first.sectionId;
+    const group = [first];
+    while (group.at(-1)!.keepNext && units[index + group.length] && !units[index + group.length]!.forceBreak) group.push(units[index + group.length]!);
+    if (group.at(-1)!.top + group.at(-1)!.height - first.top > metrics(page, pageSectionIds[page]).bodyHeight) group.splice(1);
+    const last = group.at(-1)!, height = last.top + last.height - first.top;
+    const ids = [...new Set(group.flatMap((unit) => [...unit.noteIds]))].filter((id) => !seen.has(id) && notes?.heights.has(id));
+    const newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
+    position += Math.max(0, first.top - naturalBottom);
+    const advance = () => { page += 1; position = 0; ensurePage(page, first.sectionId); };
+    if (first.forceBreak && position > 0.5) advance();
+    const reserved = () => newNoteHeight ? separator + Math.min(capacity(page), Math.max(0, reservation(page) - separator) + newNoteHeight) : reservation(page);
+    if (position > 0.5 && position + height + reserved() > metrics(page, pageSectionIds[page]).bodyHeight - 2) advance();
+    // A continued footnote can occupy pages before the next reference fits.
+    while (reservation(page) > 0 && (position + height + reserved() > metrics(page, pageSectionIds[page]).bodyHeight - 2
+      || reservation(page) - separator + ids.length * lineHeight > capacity(page) + 0.5)) advance();
+    for (const [noteIndex, id] of ids.entries()) {
+      seen.add(id);
+      let remaining = nonNegative(notes?.heights.get(id) ?? 0), offset = 0, notePage = page;
+      while (remaining > 0.01) {
+        ensurePage(notePage, first.sectionId);
+        const fragments = pageNotes[notePage] ??= [];
+        const used = fragments.reduce((sum, fragment) => sum + fragment.height, 0);
+        const following = notePage === page ? (ids.length - noteIndex - 1) * lineHeight : 0;
+        const slice = Math.min(remaining, Math.max(0, capacity(notePage) - used - following));
+        if (slice > 0.01) { fragments.push({ id, offset, height: slice }); offset += slice; remaining -= slice; }
+        notePage += 1;
+      }
+    }
+    for (const unit of group) {
+      const actualTop = metrics(page, pageSectionIds[page]).bodyTop + position + unit.top - first.top;
+      const delta = actualTop - unit.top;
+      if (unit.first) placements[unit.blockIndex] = { pageIndex: page, translateY: delta - inlineHeight };
+      else if (delta > previousDelta + 0.5) {
+        const height = delta - previousDelta; flowBreaks.push({ blockIndex: unit.blockIndex, textOffset: unit.textOffset, height }); inlineHeight += height;
+      }
+      previousDelta = delta;
+    }
+    position += height; naturalBottom = last.top + last.height; index += group.length - 1;
+  }
+  ensurePage(0);
+  return { pageCount: Math.max(1, page + 1, pageNotes.length), placements, flowBreaks, pageNotes, pageSectionIds };
 }
 
 function normalizeLines(

@@ -1,3 +1,10 @@
+## Unreleased — Section running headers and page styles
+
+- Configure running headers per study/section, with inherited subsection settings, odd/even text, header typography and optional opening-page suppression.
+- Save, duplicate and edit named print-page styles; apply them to sections or inclusive printed-page ranges, with explicit page exceptions taking precedence.
+- Retain page masters and assignments in portable OMI and revision history, including documents without a previously applied template. Reusable templates retain masters without copying issue-specific assignments.
+- Render variable page geometry in the live print view and shared Vivliostyle PDF CSS, accounting for cover/title-matter offsets. Keep responsive HTML continuous. See [usage and proofing details](docs/publication-page-styles.md).
+
 ## Unreleased — Organized publication workspace
 
 - Group Publication into Profiles and publisher, Styles and templates, Publication checks, Files and export, and Submission and publishing. Use icon navigation, surfaces and active colors consistent with the manuscript menu.

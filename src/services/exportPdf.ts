@@ -1,3 +1,5 @@
+import { withPublicationStyleCss, withPrintRunningHeader, templatePublisherIdentity } from './publicationStyleExport';
+import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { assetPath, sha256Hex } from '../model/assets';
 import { combinedPublisherPrintCss } from '../model/publisherExportStyle';
@@ -63,7 +65,14 @@ export function buildPdfPrintDocument(
     `  <style data-omi-print-style data-omi-pdf-content="${normalizedContentMode}">\n${stylesheet}\n  </style>\n</head>`,
   );
 
-  return applyPdfInteractionMode(styledHtml, normalizedMode, normalizedContentMode);
+  let output = styledHtml;
+  if (normalizedContentMode === 'publication' && profile.publicationStyle?.pageStyles) {
+    output = withPublicationStyleCss(output, profile.publicationStyle, 'print');
+    const applied = getAppliedPublicationTemplate(manuscript);
+    output = withPrintRunningHeader(output, manuscript, profile.publicationStyle,
+      templatePublisherIdentity(manuscript, profile, applied?.association ?? profile.publicationStyle.name));
+  }
+  return applyPdfInteractionMode(output, normalizedMode, normalizedContentMode);
 }
 
 /**

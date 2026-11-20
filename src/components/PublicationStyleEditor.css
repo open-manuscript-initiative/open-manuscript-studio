@@ -2001,3 +2001,39 @@
 .publication-frame-inspector-actions { gap:.6rem; flex-wrap:wrap; }
 .publication-frame-inspector-actions > label { display:flex; align-items:center; gap:.4rem; font-size:.85rem; }
 .publication-frame-inspector-actions select { min-height:2.4rem; padding:.3rem; border:1px solid #c5bfb5; border-radius:.35rem; background:#fff; color:inherit; font:inherit; }
+
+.publication-page-styles-panel {
+  display: grid;
+  gap: 1rem;
+}
+.publication-page-styles-panel > fieldset {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+}
+.publication-page-styles-panel label {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.publication-page-styles-panel .publication-style-toggle {
+  display: flex;
+  align-items: center;
+}
+.publication-page-styles-panel textarea,
+.publication-page-styles-panel select,
+.publication-page-styles-panel input:not([type="checkbox"]) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+.publication-page-style-assignment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}

@@ -1,5 +1,6 @@
 import { inlinePublicationArtifactImages } from './publicationHtmlArtifact';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
+import { buildPublicationPageStylesCss } from './publicationPageStyleCss';
 import publisherJson from '../document/publicationStyles/egyhaztorteneti-szemle.publisher.json' with { type: 'json' };
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json' with { type: 'json' };
 import {
@@ -7,6 +8,7 @@ import {
   applyTextPublicationCorrections,
 } from '../model/proofing';
 import type { OmiPublicationProfile } from '../model/publicationProfile';
+import type { PublicationPageStyleCollection } from '../model/publicationPageStyles';
 import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import type {
   OmiBlock,
@@ -26,6 +28,7 @@ import {
 type PublicationStyleTemplate = typeof templateJson;
 export type PublicationStyle = Omit<PublicationStyleTemplate, 'paragraphStyles'> & {
   paragraphStyles: PublicationParagraphStyleCollection;
+  pageStyles?: PublicationPageStyleCollection;
 };
 export type PublicationPublisherIdentity = typeof publisherJson;
 export type PublicationStyleTarget = 'html' | 'print';
@@ -798,11 +801,11 @@ export function withPublicationStyleCss(
 
 export function withPrintRunningHeader(
   html: string,
-  manuscript: Pick<OmiManuscript, 'title' | 'updatedAt'>,
+  manuscript: Pick<OmiManuscript, 'title' | 'updatedAt'> & Partial<Pick<OmiManuscript, 'sections'>>,
   style: PublicationStyle,
   identity: PublicationPublisherIdentity = loadPublicationPublisherIdentity(),
 ): string {
-  if (!style.runningHeaders.enabled) return html;
+  if (!style.runningHeaders.enabled && !style.pageStyles) return html;
   const values = {
     articleTitle: manuscript.title,
     shortArticleTitle: shortenText(manuscript.title, 72),
@@ -823,19 +826,21 @@ export function withPrintRunningHeader(
   @top-left { content: none; }
   @top-right { content: none; }
 }`;
+  const beforeBody = html.split('<article class="omi-scholarly-article"')[0] ?? '';
+  const bodyPageOffset = (beforeBody.match(/<section class="omi-publication-matter-page"/g) ?? []).length;
   const headerCss = `
 @page:left {
-  @top-left { content: ${runningHeaderCssContent(style.runningHeaders.even.left, values)}; ${declarations} }
-  @top-right { content: ${runningHeaderCssContent(style.runningHeaders.even.right, values)}; text-align: right; ${declarations} }
+  @top-left { content: ${style.runningHeaders.enabled ? runningHeaderCssContent(style.runningHeaders.even.left, values) : 'none'}; ${declarations} }
+  @top-right { content: ${style.runningHeaders.enabled ? runningHeaderCssContent(style.runningHeaders.even.right, values) : 'none'}; text-align: right; ${declarations} }
 }
 @page:right {
-  @top-left { content: ${runningHeaderCssContent(style.runningHeaders.odd.left, values)}; ${declarations} }
-  @top-right { content: ${runningHeaderCssContent(style.runningHeaders.odd.right, values)}; text-align: right; ${declarations} }
+  @top-left { content: ${style.runningHeaders.enabled ? runningHeaderCssContent(style.runningHeaders.odd.left, values) : 'none'}; ${declarations} }
+  @top-right { content: ${style.runningHeaders.enabled ? runningHeaderCssContent(style.runningHeaders.odd.right, values) : 'none'}; text-align: right; ${declarations} }
 }${firstPageRule}
 `;
   return html.replace(
     '</head>',
-    `  <style data-omi-print-running-headers>${headerCss}</style>\n</head>`,
+    `  <style data-omi-print-running-headers>${headerCss}\n${buildPublicationPageStylesCss(style, manuscript.sections ?? [], manuscript.title, identity, manuscript.updatedAt.slice(0, 4), bodyPageOffset)}</style>\n</head>`,
   );
 }
 
@@ -950,7 +955,7 @@ export async function renderStyleBasedHtml(
 }
 
 /** A portable template must not inherit another device's active journal brand. */
-function templatePublisherIdentity(manuscript: OmiManuscript, profile: OmiPublicationProfile, association: string): PublicationPublisherIdentity {
+export function templatePublisherIdentity(manuscript: OmiManuscript, profile: OmiPublicationProfile, association: string): PublicationPublisherIdentity {
   const identity = clonePublicationPublisherTemplate();
   identity.id = profile.id;
   identity.journalTitle = association;
