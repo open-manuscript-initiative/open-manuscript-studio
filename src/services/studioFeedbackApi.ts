@@ -5,6 +5,8 @@ export type FeedbackArea = 'editor' | 'import' | 'export' | 'notes' | 'collabora
 export type FeedbackTestOutcome = 'success' | 'problem' | 'not_applicable';
 
 export interface StudioFeedback {
+  /** Interface language used solely to translate the report at the selected server. */
+  messageLocale?: string;
   category: FeedbackCategory;
   area: FeedbackArea;
   title: string;
