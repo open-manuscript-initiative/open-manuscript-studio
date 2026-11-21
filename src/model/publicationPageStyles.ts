@@ -16,13 +16,17 @@ export interface PublicationSectionPageRule {
   startNewPage: boolean;
   runningHeaders?: PublicationStyle['runningHeaders'];
   showFirstPage?: boolean;
+  keepTogether?: boolean;
 }
+export interface PublicationPageInsertion { id: string; beforeBlockId: string; styleId?: string }
 export interface PublicationPageStyleCollection {
   version: 1;
   styles: PublicationPageStyle[];
   sections: PublicationSectionPageRule[];
   /** Inclusive printed body-page numbers; later assignments take precedence. */
   pages: { from: number; to: number; styleId: string }[];
+  /** Deliberate empty pages anchored to stable manuscript block IDs. */
+  insertions?: PublicationPageInsertion[];
 }
 
 /** Invalidate page measurements for structure/layout changes, not every keystroke. */
@@ -61,7 +65,7 @@ export function publicationSectionPageRules(style: PublicationStyle, sections: r
   return result;
 }
 
-export function resolvePublicationPageStyle(style: PublicationStyle, sections: readonly OmiSection[], pageIndex: number, sectionId?: string) {
+export function resolvePublicationPageStyle(style: PublicationStyle, sections: readonly OmiSection[], pageIndex: number, sectionId?: string, insertedStyleId?: string) {
   const collection = publicationPageStyles(style);
   const rules = publicationSectionPageRules(style, sections, sectionId);
   let result = capturePublicationPageStyle(style, 'default', style.name);
@@ -77,18 +81,23 @@ export function resolvePublicationPageStyle(style: PublicationStyle, sections: r
   const master = collection.styles.find((item) => item.id === assignment?.styleId);
   // Explicit pages override the section geometry/header style, while keeping section tokens.
   if (master) result = master;
+  // An empty string explicitly selects the publication default for an inserted
+  // sheet, independently of section masters and physical-page exceptions.
+  if (insertedStyleId !== undefined) result = collection.styles.find((item) => item.id === insertedStyleId)
+    ?? capturePublicationPageStyle(style, 'default', style.name);
   return { ...result, headerSectionId, pageNumber: number };
 }
 
 /** Reusable formats carry masters, never another document's section/page bindings. */
 export function withoutPublicationPageAssignments(style: PublicationStyle): PublicationStyle {
   const next = structuredClone(style);
-  if (next.pageStyles) { next.pageStyles.sections = []; next.pageStyles.pages = []; }
+  if (next.pageStyles) { next.pageStyles.sections = []; next.pageStyles.pages = []; delete next.pageStyles.insertions; }
   return next;
 }
 
 export function removePublicationPageStyle(collection: PublicationPageStyleCollection, id: string): PublicationPageStyleCollection {
   return { ...collection, styles: collection.styles.filter((item) => item.id !== id),
+    insertions: collection.insertions?.map((item) => item.styleId === id ? { ...item, styleId: undefined } : item),
     pages: collection.pages.filter((item) => item.styleId !== id),
     sections: collection.sections.map((item) => item.styleId === id ? { ...item, styleId: undefined } : item) };
 }
@@ -123,10 +132,20 @@ export function validatePublicationPageStyles(value: unknown): asserts value is 
   }
   for (const rule of value.sections) {
     if (!record(rule) || !text(rule.sectionId) || sectionIds.has(rule.sectionId as string) || typeof rule.startNewPage !== 'boolean'
-      || (rule.styleId !== undefined && !ids.has(rule.styleId as string)) || (rule.showFirstPage !== undefined && typeof rule.showFirstPage !== 'boolean')) fail();
+      || (rule.styleId !== undefined && !ids.has(rule.styleId as string)) || (rule.showFirstPage !== undefined && typeof rule.showFirstPage !== 'boolean')
+      || (rule.keepTogether !== undefined && typeof rule.keepTogether !== 'boolean')) fail();
     sectionIds.add(rule.sectionId as string);
     if (rule.runningHeaders !== undefined) header(rule.runningHeaders);
   }
   for (const item of value.pages) if (!record(item) || !ids.has(item.styleId as string) || !Number.isInteger(item.from) || !Number.isInteger(item.to)
     || !finite(item.from, 0, 1_000_000) || !finite(item.to, Number(item.from), 1_000_000)) fail();
+  if (value.insertions !== undefined) {
+    if (!Array.isArray(value.insertions) || value.insertions.length > 100) fail();
+    const insertionIds = new Set<string>();
+    for (const item of value.insertions) {
+      if (!record(item) || !text(item.id) || insertionIds.has(item.id as string) || !text(item.beforeBlockId)
+        || (item.styleId !== undefined && !ids.has(item.styleId as string))) fail();
+      insertionIds.add(item.id as string);
+    }
+  }
 }

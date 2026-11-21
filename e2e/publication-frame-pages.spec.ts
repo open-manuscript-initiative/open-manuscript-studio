@@ -76,7 +76,7 @@ test('custom page styles, insertion/deletion and running headers persist into mi
   await editor.getByRole('combobox', { name: 'Selected page', exact: true }).selectOption('0');
   await editor.getByRole('button', { name: 'Delete selected page', exact: true }).click();
   await expect.poll(async () => (await model(page)).page.count).toBe(1);
-  await expect(editor.getByRole('status')).toContainText('Text does not fit');
+  await expect(editor.getByRole('status').getByRole('img', { name: /^Text does not fit/ })).toBeVisible();
   await expect.poll(async () => (await model(page)).stories[0]!.text).toBe(story);
   const storyId = (await model(page)).stories[0]!.id;
   await editor.getByRole('combobox', { name: 'Retained story', exact: true }).selectOption(storyId);

@@ -74,6 +74,49 @@ test('Vivliostyle PDF source enforces the HTML size boundary', () => {
 });
 
 if (process.env.OMI_RUN_VIVLIOSTYLE_SMOKE === '1') {
+  test('an inserted styled page occupies exactly one real PDF sheet and deletion closes the gap', async () => {
+    const { renderStyleBasedHtml, clonePublicationStyleTemplate, clonePublicationPublisherTemplate } = await import('../src/services/publicationStyleExport.ts');
+    const { capturePublicationPageStyle } = await import('../src/model/publicationPageStyles.ts');
+    const { resolvePublicationProfile } = await import('../src/model/publicationProfile.ts');
+    const { createTestManuscript } = await import('./testManuscriptFixture.ts');
+    const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const manuscript = createTestManuscript();
+    manuscript.abstract = ''; manuscript.keywords = []; manuscript.annotations = []; manuscript.bibliographicRecords = [];
+    const rich = (text: string) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
+    manuscript.sections = [{ id: 's', title: '', blocks: [
+      { id: 'before', type: 'paragraph', content: rich('BEFORE_INSERT') },
+      { id: 'after', type: 'paragraph', content: rich('AFTER_INSERT') },
+    ] }];
+    const style = clonePublicationStyleTemplate(); style.fonts.body.family = 'serif'; style.runningHeaders.enabled = false;
+    const plate = capturePublicationPageStyle(style, 'plate', 'Plate'); plate.page.width = 180; plate.page.height = 200;
+    const identity = clonePublicationPublisherTemplate(); identity.display.firstPageBranding = false; identity.display.firstPageLegalBlock = false;
+    const directory = await mkdtemp(join(tmpdir(), 'omi-inserted-pages-'));
+    try {
+      for (const inserted of [true, false]) {
+        style.pageStyles = { version: 1, styles: [plate], sections: [], pages: [],
+          insertions: inserted ? [{ id: 'blank', beforeBlockId: 'after', styleId: 'plate' }] : [] };
+        const html = await renderStyleBasedHtml(manuscript, resolvePublicationProfile(manuscript), 'print', { style, identity });
+        const artifact = await renderVivliostylePdf(html);
+        const path = join(directory, `${inserted}.pdf`); await writeFile(path, artifact.bytes);
+        const { stdout } = await promisify(execFile)(process.env.PDFTOTEXT_BIN || 'pdftotext', ['-bbox', path, '-']);
+        const pages = [...stdout.matchAll(/<page\b([^>]*)>([\s\S]*?)<\/page>/g)];
+        const before = pages.findIndex((page) => page[2]!.includes('>BEFORE_INSERT</word>'));
+        const after = pages.findIndex((page) => page[2]!.includes('>AFTER_INSERT</word>'));
+        assert.ok(before >= 0); assert.equal(after - before, inserted ? 2 : 0);
+        if (inserted) {
+          const blank = pages[before + 1]!;
+          assert.ok(Math.abs(Number(blank[1]!.match(/width="([^"]+)"/)![1]) - 180 * 72 / 25.4) < 1);
+          assert.ok(Math.abs(Number(blank[1]!.match(/height="([^"]+)"/)![1]) - 200 * 72 / 25.4) < 1);
+          assert.doesNotMatch(blank[2]!, /BEFORE_INSERT|AFTER_INSERT/);
+        }
+      }
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  });
+
   test('PDF footnotes stay below their anchors on two different pages', async () => {
     const { buildPdfPrintDocument } = await import('../src/services/exportPdf.ts');
     const { createTestManuscript } = await import('./testManuscriptFixture.ts');

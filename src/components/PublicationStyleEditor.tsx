@@ -1,4 +1,7 @@
 import { withoutPublicationPageAssignments } from '../model/publicationPageStyles';
+import { PublicationLayoutChecker } from './PublicationLayoutChecker';
+import { PUBLICATION_REVEAL_FRAME_EVENT, type PublicationLayoutIssue } from '../model/publicationLayoutDiagnostics';
+import { cssStringLiteral } from '../services/embeddedCss';
 import { PublicationMeasurementSelector, usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
 import { OjsPublicationTransferPanel } from './OjsPublicationTransferPanel';
@@ -265,6 +268,42 @@ function PublicationStyleEditorWorkspace() {
   );
   const [systemFontLoadStatus, setSystemFontLoadStatus] = useState<SystemFontLoadStatus>('fallback');
   const ribbonRef = useRef<HTMLDivElement>(null);
+  const editorRoot = useRef<HTMLElement>(null);
+  const [checkerEnabled, setCheckerEnabled] = useState(false);
+  const [layoutTarget, setLayoutTarget] = useState<PublicationLayoutIssue | null>(null);
+  useEffect(() => {
+    if (!layoutTarget) return;
+    const timer = setTimeout(() => setLayoutTarget(null), 3000);
+    return () => clearTimeout(timer);
+  }, [layoutTarget]);
+  const [bodyIssues, setBodyIssues] = useState<{ manuscriptId: string; issues: PublicationLayoutIssue[] }>({ manuscriptId: '', issues: [] });
+  const [frameIssues, setFrameIssues] = useState<{ manuscriptId: string; issues: PublicationLayoutIssue[] }>({ manuscriptId: '', issues: [] });
+  const reportBodyIssues = useCallback((manuscriptId: string, issues: PublicationLayoutIssue[]) => setBodyIssues((previous) =>
+    previous.manuscriptId === manuscriptId && JSON.stringify(previous.issues) === JSON.stringify(issues) ? previous : { manuscriptId, issues }), []);
+  const reportFrameIssues = useCallback((manuscriptId: string, issues: PublicationLayoutIssue[]) => setFrameIssues((previous) =>
+    previous.manuscriptId === manuscriptId && JSON.stringify(previous.issues) === JSON.stringify(issues) ? previous : { manuscriptId, issues }), []);
+  const layoutIssues = [...(bodyIssues.manuscriptId === manuscript.id ? bodyIssues.issues : []), ...(frameIssues.manuscriptId === manuscript.id ? frameIssues.issues : [])];
+  function navigateLayoutIssue(issue: PublicationLayoutIssue) {
+    if (issue.insertionId) {
+      editorRoot.current?.querySelector<HTMLElement>(`[data-insertion-id=${cssStringLiteral(issue.insertionId)}]`)?.scrollIntoView({ block: 'center' });
+      return;
+    }
+    setLayoutTarget(issue);
+    setOpenPanel(null);
+    if (issue.frameId || issue.storyId) {
+      setFrameToolsOpen(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => document.dispatchEvent(new CustomEvent(PUBLICATION_REVEAL_FRAME_EVENT, { detail: issue }))));
+      return;
+    }
+    requestAnimationFrame(() => {
+      const selector = issue.blockId ? `[data-block-id=${cssStringLiteral(issue.blockId)}]` : `[data-section-id=${cssStringLiteral(issue.sectionId ?? '')}]`;
+      const target = editorRoot.current?.querySelector<HTMLElement>(`.publication-document-content .omi-continuous-tiptap-editor > ${selector}`)
+        ?? editorRoot.current?.querySelector<HTMLElement>(`.publication-document-content ${selector}`);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      }
+    });
+  }
 
   const availableFontFamilies = useMemo(
     () => ensureSystemFontFamilies(
@@ -773,6 +812,7 @@ function PublicationStyleEditorWorkspace() {
 
   return (
     <section
+      ref={editorRoot}
       className="publication-style-editor"
       data-publication-page-count={bodyPageCount}
       aria-labelledby="publication-style-editor-title"
@@ -1046,7 +1086,8 @@ function PublicationStyleEditorWorkspace() {
         ) : null}
 
         {openPanel === 'pageStyles' ? <div id="publication-style-ribbon-panel-pageStyles" className="publication-style-ribbon-panel" role="dialog" aria-label={publicationPageStylesCopy(locale).title}>
-          <PublicationPageStylesPanel style={style} sections={manuscript.sections} locale={locale} selectedSectionId={useStudioStore.getState().selectedSectionId} onChange={setStyle} />
+          <PublicationPageStylesPanel style={style} sections={manuscript.sections} locale={locale} selectedSectionId={useStudioStore.getState().selectedSectionId} onChange={setStyle}
+            checker={<PublicationLayoutChecker locale={locale} enabled={checkerEnabled} onEnabled={setCheckerEnabled} issues={layoutIssues} onNavigate={navigateLayoutIssue} />} />
         </div> : null}
 
         {openPanel === 'page' ? (
@@ -1332,12 +1373,15 @@ function PublicationStyleEditorWorkspace() {
           onViewModeChange={changeDocumentViewMode}
           onProofingSelection={setProofingSelection}
           onPageCountChange={handlePageCount}
+          onLayoutIssues={reportBodyIssues}
+          navigationTarget={layoutTarget}
         />
-        {frameToolsOpen ? (
+        {frameToolsOpen || checkerEnabled ? (
           <section
             id="publication-frame-inspector-panel"
             className="publication-frame-inspector-panel"
             aria-label={frameCopy.tools}
+            style={!frameToolsOpen ? { display: 'none' } : undefined}
           >
             <div className="publication-frame-inspector-heading">
               <h5>{frameCopy.tools}</h5>
@@ -1346,7 +1390,7 @@ function PublicationStyleEditorWorkspace() {
               </button>
             </div>
             <p className="publication-frame-inspector-advisory">{frameCopy.toolsHelp}</p>
-            <PublicationFrameEditor key={manuscript.id} publicationStyle={style} />
+            <PublicationFrameEditor key={manuscript.id} publicationStyle={style} onLayoutIssues={reportFrameIssues} />
           </section>
         ) : null}
       </div>

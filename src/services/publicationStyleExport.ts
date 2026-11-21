@@ -1052,9 +1052,27 @@ export async function renderStyleBasedHtml(
   }
   html = withPublisherIdentity(html, manuscript, target, identity);
   if (target === 'print') html = withPrintRunningHeader(html, manuscript, style, identity);
+  if (target === 'print') html = withInsertedPublicationPages(html, style);
   return target === 'print' || context?.embedAssets
     ? inlinePublicationArtifactImages(html, manuscript, target === 'print' ? 48 * 1024 * 1024 : 8 * 1024 * 1024, target === 'print')
     : html;
+}
+
+/** Stable block anchors keep deliberate empty pages out of the scholarly text. */
+export function withInsertedPublicationPages(html: string, style: PublicationStyle): string {
+  const byAnchor = new Map<string, string[]>();
+  for (const insertion of style.pageStyles?.insertions ?? []) {
+    const key = escapeHtml(insertion.beforeBlockId);
+    const nodes = byAnchor.get(key) ?? [];
+    nodes.push(`<div class="omi-inserted-publication-page" data-omi-inserted-page="${escapeHtml(insertion.id)}" aria-hidden="true">&#160;</div>`);
+    byAnchor.set(key, nodes);
+  }
+  return html.replace(/<[a-z][\w:-]*\b[^>]*\bdata-omi-block-id="([^"]+)"[^>]*>/gi, (tag, id: string) => {
+    const pages = byAnchor.get(id);
+    if (!pages) return tag;
+    byAnchor.delete(id);
+    return pages.join('\n') + tag;
+  });
 }
 
 function withPublicationTextRoleLanguages(html: string, style: PublicationStyle, language: string): string {
