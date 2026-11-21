@@ -226,7 +226,7 @@ export function StudioFeedbackPanel() {
             </select>
           </label>}
           <label>{copy.email}
-            <input type="email" maxLength={320} autoComplete="email" value={contactEmail}
+            <input type="email" maxLength={320} autoComplete="off" value={contactEmail}
               onChange={(event) => setContactEmail(event.target.value)} />
             <small>{copy.emailHelp}</small>
           </label>
