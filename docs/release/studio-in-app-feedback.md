@@ -28,12 +28,13 @@ OMI_FEEDBACK_RECIPIENT=contact@openmanuscript.org
 
 The address above is an **example for the central OMI server only**. Institutional operators must supply their own managed mailbox. Leave the variable unset to disable the endpoint. Confirm sendmail operation and mail forwarding before enabling the feature. Deploy the API before rolling out updated clients.
 
-The form is initially translated in Hungarian, German and English; other locales use the English copy until their catalog is translated.
+The feedback form and recipient e-mail are localized in Hungarian, German, English, French, Italian, Spanish, Dutch and Polish. Other supported Studio interface locales currently fall back to English for this particular feature; their general Studio localization remains unchanged.
 
 ## Privacy / Adatvédelem
 
 - No automatic document text, manuscript identifier, citation, note, screenshot, stack trace, raw log, token, precise location or device ID is included in the JSON report.
-- App version, broad platform name and interface language are sent **only when the user opts in** (checkbox off by default).
+- App version, broad platform name and interface language in **diagnostic metadata** are sent only when the user opts in (checkbox off by default).
+- The form sends a minimal `messageLocale` code independently of diagnostics so the server can format field names and enumerated values in the chosen interface language; no document or device fingerprint is attached.
 - Contact e-mail is optional and entered manually. Login is required for misuse control, but the report itself does not add the account identifier or account e-mail.
 - The report is held in the operator's **mailbox**, not a new Studio database table. This makes the operator's mail retention, access policy, backup rotation, deletion and subject-access procedures relevant. For the central OMI instance, align mailbox deletion with the published one-month default unless a documented legal retention exception applies.
 - The operator must update the public privacy notice to cover feedback mail processing and verify its real retention configuration **before** enabling the receiving address.
@@ -54,13 +55,14 @@ The form is initially translated in Hungarian, German and English; other locales
 
 - [ ] Android closed-test build: login, open main menu > Send feedback and submit a test result; verify local mailbox receives identical fields and receipt ID.
 - [ ] Web and native clients: account/session credentials are forwarded only to the selected trusted Studio server.
-- [ ] With technical checkbox **off**: inspect request payload; no `technical` object is sent.
+- [ ] With technical checkbox **off**: inspect request payload; no `technical` object is sent; `messageLocale` alone is permitted for translation.
 - [ ] With checkbox **on**: only version, broad platform and locale are sent.
 - [ ] Missing mailbox: 503 and unchanged text; copy action still works.
 - [ ] Network failure: the form keeps the entered contents.
 - [ ] Invalid report (too long or unexpected fields): 400; email transport is not invoked.
 - [ ] Six submitted reports from one account are permitted within one hour; the next is throttled; another account is not affected by a shared NAT IP.
 - [ ] No document contents or personal data is automatically inserted into reports.
+- [ ] Verify multilingual e-mails for hu/de/en/fr/it/es/nl/pl, HTML/mail-client charset decoding, and unsupported-language English fallback.
 - [ ] Verify the mailbox retention and update the actual operator's published privacy notice.
 - [ ] Recheck Google Play Data safety answers and the app privacy-policy URL before uploading the updated closed-test AAB; optional contact and feedback data must be accurately disclosed.
 - [ ] Confirm accessible labels, keyboard navigation and mobile touch targets.
