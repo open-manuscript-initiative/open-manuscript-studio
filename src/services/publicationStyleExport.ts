@@ -430,6 +430,7 @@ ${TABLE_LAYOUT_CSS}
     return `${shared}
 ${publicationHyphenationCss(false)}
 body { padding: 2rem max(1rem, calc((100vw - 56rem) / 2)); }
+.article-body, .manuscript-section-body { text-align: ${alignment(body.alignment, target)}; }
 .omi-publication-matter-page[style*="text-align:justify"], .omi-matter-frame-content[style*="text-align:justify"] { text-align:left !important; }
 .omi-print-running-header, .omi-print-page-number { display: none !important; }
 *, *::before, *::after { break-before: auto !important; break-after: auto !important; page-break-before: auto !important; page-break-after: auto !important; }

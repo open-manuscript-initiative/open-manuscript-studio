@@ -160,6 +160,7 @@ test('print preserves all four alignments while responsive HTML omits justificat
     assert.match(print, new RegExp(`text-align: ${alignment};`));
     assert.match(html, new RegExp(`text-align: ${alignment === 'justify' ? 'left' : alignment};`));
     assert.doesNotMatch(html, /text-align: justify;/);
+    assert.match(html, new RegExp(`\\.article-body, \\.manuscript-section-body \\{ text-align: ${alignment === 'justify' ? 'left' : alignment};`));
   }
   assert.equal(style.styles.body.alignment, 'justify');
   assert.match(buildPublicationStyleCss(style, 'print'), /hyphens: auto/);

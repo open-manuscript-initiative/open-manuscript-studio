@@ -21,7 +21,7 @@ test('HTML keeps three alignments and print keeps justification and language pat
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
   const canvas = menu.locator('.publication-document-canvas');
-  const paragraph = canvas.locator('[data-block-id="p"]');
+  const paragraph = canvas.locator('p[data-block-id="p"]');
   await expect.poll(() => paragraph.evaluate((el) => getComputedStyle(el).textAlign)).toBe('justify');
   await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
   await expect.poll(() => paragraph.evaluate((el) => getComputedStyle(el).textAlign)).toBe('left');
