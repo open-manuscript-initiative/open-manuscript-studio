@@ -705,7 +705,7 @@ function renderPublicationCoverSheets(model: NonNullable<ReturnType<typeof getPu
 function renderPublicationMatterPage(page: PublicationMatterPage, state: RenderState, panel?: { width: number; height: number; left: number }): string {
   const appearance = page.appearance;
   const justify = { top: 'flex-start', center: 'center', bottom: 'flex-end' }[appearance.vertical];
-  const styles = `font-family:${cssStringLiteral(appearance.fontFamily)},serif;font-size:${appearance.fontSizePt}pt;color:${appearance.color};background:${appearance.background};text-align:${appearance.alignment};justify-content:${justify};padding:${appearance.paddingMm}mm`;
+  const styles = `font-family:${cssStringLiteral(appearance.fontFamily)},serif;font-size:${appearance.fontSizePt}pt;color:${appearance.color};background:${appearance.background};text-align:${appearance.alignment};hyphens:auto;justify-content:${justify};padding:${appearance.paddingMm}mm`;
   let image = '';
   if (page.image) {
     const asset = state.assetMap.get(page.image.assetId);
@@ -730,8 +730,8 @@ function renderPublicationMatterFrame(frame: PublicationMatterFrame, index: numb
       state.diagnostics.push({ code: 'publication-matter-frame-image-missing', severity: 'error', message: 'A publication page frame image is missing or unsupported.', targetId: frame.id });
     } else content = `<img class="omi-matter-frame-image" src="${escapeAttribute(state.assetPrefix + assetPath(asset))}" alt="${escapeAttribute(frame.image.alt)}" style="${escapeAttribute(inline(matterImageStyle(frame)))}">`;
   }
-  const textStyle = frame.kind === 'text' ? `;display:flex;flex-direction:column;justify-content:${{ top: 'flex-start', center: 'center', bottom: 'flex-end' }[frame.vertical ?? 'top']};padding:${frame.style.paddingMm}mm;font-family:${cssStringLiteral(frame.style.fontFamily)},serif;font-size:${frame.style.fontSizePt}pt;line-height:${frame.style.lineHeightPt}pt;font-weight:${frame.style.fontWeight};font-style:${frame.style.fontStyle};color:${frame.style.color};text-align:${frame.style.alignment}` : '';
-  return `<div class="omi-matter-frame" data-matter-frame-id="${escapeAttribute(frame.id)}" data-frame-kind="${frame.kind}" aria-label="${escapeAttribute(frame.name)}" style="${escapeAttribute(box)}">${frameShapeSvg(frame, { ...frame.style, strokeWidthMm: 0 })}<div class="omi-matter-frame-content" style="clip-path:${frameClipPath(frame)}${escapeAttribute(textStyle)}">${content}</div>${frame.style.strokeWidthMm > 0 ? frameShapeSvg(frame, { ...frame.style, fill: 'none' }) : ''}</div>`;
+  const textStyle = frame.kind === 'text' ? `;display:flex;flex-direction:column;justify-content:${{ top: 'flex-start', center: 'center', bottom: 'flex-end' }[frame.vertical ?? 'top']};padding:${frame.style.paddingMm}mm;font-family:${cssStringLiteral(frame.style.fontFamily)},serif;font-size:${frame.style.fontSizePt}pt;line-height:${frame.style.lineHeightPt}pt;font-weight:${frame.style.fontWeight};font-style:${frame.style.fontStyle};color:${frame.style.color};text-align:${frame.style.alignment};hyphens:${frame.style.hyphenation === false ? 'none' : 'auto'}` : '';
+  return `<div class="omi-matter-frame" data-matter-frame-id="${escapeAttribute(frame.id)}" data-frame-kind="${frame.kind}" aria-label="${escapeAttribute(frame.name)}" style="${escapeAttribute(box)}">${frameShapeSvg(frame, { ...frame.style, strokeWidthMm: 0 })}<div class="omi-matter-frame-content"${frame.style.hyphenation === false ? ' data-omi-no-hyphenation="true"' : ''}${frame.style.language ? ` lang="${escapeAttribute(frame.style.language)}"` : ''} style="clip-path:${frameClipPath(frame)}${escapeAttribute(textStyle)}">${content}</div>${frame.style.strokeWidthMm > 0 ? frameShapeSvg(frame, { ...frame.style, fill: 'none' }) : ''}</div>`;
 }
 
 function publicationMatterCss(profile: OmiPublicationProfile, spineWidth: number): string {

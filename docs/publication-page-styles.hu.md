@@ -75,3 +75,25 @@ az előnézet a bekezdés kezdő szélességét tartja meg. A PDF minden oldalon
 szövegtükörre tördeli a tartalmat. Az egyszerű böngészős nyomtatás nem feltétlenül
 ismeri a szakaszkezdő oldalakhoz és az egyedi oldalszámokhoz szükséges tördelési
 szabályokat. A folyamatos HTML-nézetet az oldalstílusok nem darabolják oldalakra.
+
+
+## Szövegigazítás és elválasztás
+
+A nyomtatási nézetben balra, középre, jobbra és sorkizártan igazítható a szöveg,
+a belív szövegkereteiben és a borító/címnegyed kereteiben is. A sorkizárás a
+kimért sor szabad helyét a szóközök között osztja el; a bekezdés utolsó sora és
+a kézi sortöréssel lezárt sor nem lesz széthúzva. A HTML5-nézet három igazítási
+módot mutat (balra, középre, jobbra); a nyomtatási sorkizárás HTML-ben balra
+igazításként jelenik meg, a mentett nyomtatási stílus módosítása nélkül.
+
+A kereteknél az elválasztás alapértelmezetten a dokumentum nyelvét követi. A
+közös vagy helyi keretstílusban külön **Szöveg nyelve** is megadható, például
+`hu-HU`, `en-GB` vagy `de-DE`. Az **Elválasztás** kapcsolóval kikapcsolható.
+Csak a használt nyelvek mintái töltődnek be. A megjelenő elválasztójel helye
+és szélessége része a tördelési számításnak, de a mentett szövegbe nem kerül
+bele: a forrásszöveg és a keretek közötti folytatás sértetlen marad.
+
+Az előnézet és a keretes nyomtatási export ugyanazt a tördelést használja.
+Az ismeretlen nyelvekhez nem talál ki elválasztási pontokat. A folyószöveges
+PDF-export a bekezdésstílus nyelvét, az egyes szövegrészek nyelvjelölését és az
+elválasztás kikapcsolását is figyelembe veszi.

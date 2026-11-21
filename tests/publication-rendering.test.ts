@@ -148,3 +148,25 @@ test('publication contributors never leak private name or identifier assertions'
   assert.equal(rendered?.orcid, undefined);
   assert.equal(rendered?.affiliations[0]?.organizationIdentifier, undefined);
 });
+
+test('print preserves all four alignments while responsive HTML omits justification and hyphenation', async () => {
+  const { clonePublicationStyleTemplate, buildPublicationStyleCss } = await import('../src/services/publicationStyleExport.ts');
+  const style = clonePublicationStyleTemplate();
+  for (const alignment of ['left', 'center', 'right', 'justify']) {
+    for (const typography of Object.values(style.styles)) typography.alignment = alignment;
+    style.paragraphStyles.items[0]!.properties.alignment = alignment as 'left' | 'center' | 'right' | 'justify';
+    const print = buildPublicationStyleCss(style, 'print');
+    const html = buildPublicationStyleCss(style, 'html');
+    assert.match(print, new RegExp(`text-align: ${alignment};`));
+    assert.match(html, new RegExp(`text-align: ${alignment === 'justify' ? 'left' : alignment};`));
+    assert.doesNotMatch(html, /text-align: justify;/);
+    for (const selector of ['.article-front h1', '.article-body h2', '.article-body h3', 'figcaption', 'table caption']) {
+      const rule = html.split('\n').find((line) => line.startsWith(`${selector} {`));
+      assert.ok(rule, `${selector} has an HTML typography rule`);
+      assert.ok(rule.includes(`text-align: ${alignment === 'justify' ? 'left' : alignment};`), `${selector} keeps its effective HTML alignment`);
+    }
+    assert.match(html, new RegExp(`\\.article-body, \\.manuscript-section-body \\{ text-align: ${alignment === 'justify' ? 'left' : alignment};`));
+  }
+  assert.equal(style.styles.body.alignment, 'justify');
+  assert.match(buildPublicationStyleCss(style, 'print'), /hyphens: auto/);
+});

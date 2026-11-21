@@ -130,3 +130,84 @@ test('frame layers stay page-local and preserve linked text flow through OMI and
   assert.deepEqual(reorderFrameLayer(reordered, 'b', 1).frames.map((frame) => frame.id), ['a', 'other', 'b']);
   assert.throws(() => reorderFrameLayer(layout, 'other', 1));
 });
+
+test('justification expands measured word spaces except at paragraph endings', () => {
+  const layout = createFrameLayout();
+  layout.styles[0]!.properties = { ...DEFAULT_FRAME_STYLE, alignment: 'justify', paddingMm: 0, lineHeightPt: 12 };
+  layout.stories = [{ id: 'j', name: 'J', text: 'One two three four five.\nLast line.' }];
+  layout.frames = [{ ...frame('j-frame', 'j'), widthMm: 16, heightMm: 100 }];
+  const lines = flowFrameStories(layout, measure).frames[0]!.lines;
+  const stretched = lines.find((line) => line.wordSpacingMm)!;
+  assert.ok(stretched);
+  const visible = stretched.text.trimEnd();
+  assert.ok(Math.abs(measure(visible) + (visible.match(/ /g) ?? []).length * stretched.wordSpacingMm! - stretched.width) < 0.00001);
+  assert.equal(lines.at(-1)!.wordSpacingMm, undefined);
+  assert.equal(lines.find((line) => line.text.endsWith('five.'))!.wordSpacingMm, undefined);
+  validateFrameLayout(layout);
+});
+
+test('language-pattern frame breaks add only painted hyphens and retain source offsets', async () => {
+  const { prepareFrameHyphenation } = await import('../src/services/publicationFrameRendering.ts');
+  const { frameLineDisplayText } = await import('../src/model/publicationFrames.ts');
+  const { printHyphenationBreaks } = await import('../src/services/printHyphenation.ts');
+  const layout = createFrameLayout();
+  layout.styles[0]!.properties = { ...DEFAULT_FRAME_STYLE, paddingMm: 0, lineHeightPt: 12 };
+  const word = 'megszentségteleníthetetlenségeskedéseitekért';
+  layout.stories = [{ id: 'hu', name: 'Hungarian', text: word }];
+  layout.frames = [{ ...frame('hu-frame', 'hu'), widthMm: 12, heightMm: 100 }];
+  const before = JSON.stringify(layout);
+  const options = await prepareFrameHyphenation(layout, 'hu-HU');
+  const flow = flowFrameStories(layout, measure, options);
+  const lines = flow.frames[0]!.lines;
+  assert.equal(flow.overflow.length, 0);
+  assert.ok(lines.some((line) => line.hyphenated));
+  assert.equal(lines.map((line) => line.text).join(''), word);
+  const allowed = printHyphenationBreaks(word, 'hu-HU');
+  assert.ok(allowed.length > 0);
+  const first = lines[0]!;
+  assert.ok(allowed.includes(first.end));
+  for (const line of lines) if (line.hyphenated) assert.ok(allowed.includes(line.end));
+  assert.equal(frameLineDisplayText(first), first.text + '-');
+  assert.ok(measure(frameLineDisplayText(first)) <= first.width);
+  assert.equal(JSON.stringify(layout), before);
+  const html = renderFrameDocument(layout, flow, new Map(), 'Hungarian', 'hu-HU');
+  assert.match(html, /data-hyphenated="true"/);
+  assert.match(html, /lang="hu-HU"/);
+  layout.styles[0]!.properties.hyphenation = false;
+  assert.equal(flowFrameStories(layout, measure, options).frames[0]!.lines.some((line) => line.hyphenated), false);
+  layout.styles[0]!.properties.hyphenation = true;
+  assert.equal(flowFrameStories(layout, measure, { ...options, language: 'und' }).frames[0]!.lines.some((line) => line.hyphenated), false);
+});
+
+test('local frame language overrides the document language and survives OMI round-trip', async () => {
+  const { prepareFrameHyphenation } = await import('../src/services/publicationFrameRendering.ts');
+  const layout = createFrameLayout();
+  layout.styles[0]!.properties = { ...DEFAULT_FRAME_STYLE, paddingMm: 0, lineHeightPt: 12 };
+  layout.stories = [{ id: 's', name: 'S', text: 'megszentségteleníthetetlenségeskedéseitekért' }];
+  layout.frames = [{ ...frame('f', 's'), widthMm: 12, heightMm: 100, overrides: { language: 'hu-HU', hyphenation: true, alignment: 'justify' } }];
+  const options = await prepareFrameHyphenation(layout, 'und');
+  assert.ok(flowFrameStories(layout, measure, options).frames[0]!.lines.some((line) => line.hyphenated));
+  const manuscript = createVersionedTestManuscript();
+  manuscript.extensions = { ...manuscript.extensions, [FRAME_LAYOUT_EXTENSION]: layout };
+  const restored = getFrameLayout(parseOmiJson(serializeOmiJson(manuscript)))!;
+  assert.deepEqual(restored.frames[0]!.overrides, layout.frames[0]!.overrides);
+  const invalid = structuredClone(layout);
+  invalid.frames[0]!.overrides!.language = '<script>';
+  assert.throws(() => validateFrameLayout(invalid), /invalid frame/);
+});
+
+
+test('centered and right-aligned hyphenated lines include the printed hyphen in their fit', async () => {
+  const { prepareFrameHyphenation } = await import('../src/services/publicationFrameRendering.ts');
+  const { frameLineDisplayText } = await import('../src/model/publicationFrames.ts');
+  for (const alignment of ['center', 'right'] as const) {
+    const layout = createFrameLayout();
+    layout.styles[0]!.properties = { ...DEFAULT_FRAME_STYLE, alignment, paddingMm: 0 };
+    layout.stories = [{ id: 's', name: 'S', text: 'megszentségteleníthetetlenségeskedéseitekért' }];
+    layout.frames = [{ ...frame('f', 's'), widthMm: 12, heightMm: 100 }];
+    const options = await prepareFrameHyphenation(layout, 'hu');
+    const lines = flowFrameStories(layout, measure, options).frames[0]!.lines;
+    assert.ok(lines.some((line) => line.hyphenated));
+    for (const line of lines) assert.ok(line.x + measure(frameLineDisplayText(line)) <= 12 + .00001);
+  }
+});

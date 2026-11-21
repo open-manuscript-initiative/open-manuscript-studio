@@ -800,7 +800,7 @@ export function PublicationDocumentCanvas({
     '--omi-publication-author-size': `${author.fontSize * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-author-leading': `${author.lineHeight * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-author-weight': String(author.fontWeight),
-    '--omi-publication-author-align': author.alignment,
+    '--omi-publication-author-align': viewMode === 'html' && author.alignment === 'justify' ? 'left' : author.alignment,
     '--omi-publication-author-given-weight': String(authorGivenName.fontWeight),
     '--omi-publication-author-given-style': authorGivenName.fontStyle,
     '--omi-publication-author-given-caps': authorGivenName.fontVariantCaps,
@@ -820,7 +820,7 @@ export function PublicationDocumentCanvas({
     '--omi-publication-heading-one-after': `${heading1.spaceAfter * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-two-before': `${heading2.spaceBefore * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-two-after': `${heading2.spaceAfter * PIXELS_PER_POINT * scale}px`,
-    '--omi-publication-body-align': body.alignment,
+    '--omi-publication-body-align': viewMode === 'html' && body.alignment === 'justify' ? 'left' : body.alignment,
     '--omi-publication-hyphens': viewMode === 'print' && body.hyphenation ? 'auto' : 'none',
   } as CSSProperties;
   const pageStyle = viewMode === 'print'
@@ -1479,7 +1479,7 @@ function buildLiveParagraphStyleCss(
       ? `${assignedSelector}, ${editor} > :is(p, blockquote, ul, ol, pre):not([data-paragraph-style-id])`
       : assignedSelector;
     const hyphenation = viewMode === 'print' && resolved.hyphenation ? 'auto' : 'none';
-    return `${selector} { font-family: ${cssStringLiteral(resolved.fontFamily)}, ${cssStringLiteral(style.fonts.body.fallback)}; font-size: ${cssPixel(resolved.fontSize * PIXELS_PER_POINT * scale)}; line-height: ${cssPixel(resolved.lineHeight * PIXELS_PER_POINT * scale)}; font-weight: ${resolved.fontWeight}; font-style: ${resolved.fontStyle}; text-align: ${resolved.alignment}; text-indent: ${cssPixel(resolved.firstLineIndent * PIXELS_PER_MM * scale)}; margin-top: ${cssPixel(resolved.spaceBefore * PIXELS_PER_POINT * scale)}; margin-bottom: ${cssPixel(resolved.spaceAfter * PIXELS_PER_POINT * scale)}; margin-left: ${cssPixel(resolved.leftIndent * PIXELS_PER_MM * scale)}; margin-right: ${cssPixel(resolved.rightIndent * PIXELS_PER_MM * scale)}; -webkit-hyphens: ${hyphenation}; hyphens: ${hyphenation}; widows: ${Math.max(1, Math.trunc(resolved.widows))}; orphans: ${Math.max(1, Math.trunc(resolved.orphans))}; }`;
+    return `${selector} { font-family: ${cssStringLiteral(resolved.fontFamily)}, ${cssStringLiteral(style.fonts.body.fallback)}; font-size: ${cssPixel(resolved.fontSize * PIXELS_PER_POINT * scale)}; line-height: ${cssPixel(resolved.lineHeight * PIXELS_PER_POINT * scale)}; font-weight: ${resolved.fontWeight}; font-style: ${resolved.fontStyle}; ${resolved.language ? `-webkit-locale:${cssStringLiteral(resolved.language)};` : ''} text-align: ${viewMode === 'html' && resolved.alignment === 'justify' ? 'left' : resolved.alignment}; text-indent: ${cssPixel(resolved.firstLineIndent * PIXELS_PER_MM * scale)}; margin-top: ${cssPixel(resolved.spaceBefore * PIXELS_PER_POINT * scale)}; margin-bottom: ${cssPixel(resolved.spaceAfter * PIXELS_PER_POINT * scale)}; margin-left: ${cssPixel(resolved.leftIndent * PIXELS_PER_MM * scale)}; margin-right: ${cssPixel(resolved.rightIndent * PIXELS_PER_MM * scale)}; -webkit-hyphens: ${hyphenation}; hyphens: ${hyphenation}; widows: ${Math.max(1, Math.trunc(resolved.widows))}; orphans: ${Math.max(1, Math.trunc(resolved.orphans))}; }`;
   }).join('\n');
 }
 

@@ -604,12 +604,12 @@ test('print hyphenation is optional and stays outside canonical manuscript state
   assert.match(documentCanvas, /lang=\{manuscript\.locale\}/);
   assert.match(editorStyles, /--omi-publication-hyphens/);
   assert.match(exportRenderer, /target === 'print' && publicationHyphenationEnabled\(style\)/);
-  assert.match(exportRenderer, /await hyphenatePrintHtml\(html, manuscript\.locale\)/);
+  assert.match(exportRenderer, /await hyphenatePrintHtml\(html, manuscript\.locale, /);
   assert.match(exportRenderer, /\[data-omi-hyphenation-module\][\s\S]*hyphens: manual/);
 });
 
 test('print hyphenation parses only renderer-owned HTML before imported style data is embedded', () => {
-  const hyphenation = exportRenderer.indexOf('html = await hyphenatePrintHtml(html, manuscript.locale)');
+  const hyphenation = exportRenderer.indexOf('html = await hyphenatePrintHtml(html, manuscript.locale,');
   const styleEmbedding = exportRenderer.indexOf('html = withPublicationStyleCss(html, style, target)');
 
   assert.ok(hyphenation >= 0);

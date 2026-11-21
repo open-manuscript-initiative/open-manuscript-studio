@@ -50,7 +50,7 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   await expect.poll(async () => (await model()).stories.length).toBe(1);
   await expect(editor.getByRole('status')).toHaveCount(0);
   await expect(editor.locator(`[data-frame-id="${second}"] [data-frame-line]`)).not.toHaveCount(0);
-  await expect.poll(async () => (await editor.locator('[data-frame-line]').allTextContents()).join('')).toBe(text);
+  await expect.poll(async () => await editor.locator('[data-frame-line]').evaluateAll((lines) => lines.map((line) => line.hasAttribute('data-hyphenated') ? line.textContent!.slice(0, -1) : line.textContent).join(''))).toBe(text);
   await editor.getByRole('button', { name: 'Unlink continuation' }).click();
   await expect.poll(async () => (await model()).stories.map((story) => story.text).join('')).toBe(text);
   await expect.poll(async () => (await model()).stories.length).toBe(2);

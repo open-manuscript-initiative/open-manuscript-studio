@@ -142,3 +142,26 @@ The same transforms and clipping are used in mobile preview, HTML and PDF output
 proportionally** covers the whole frame with a centered crop. After an explicit
 content transform, resizing the outer frame retains the content's independent
 geometry. Replacing a frame's graphic source resets its content transform.
+
+
+## Print alignment and language-based hyphenation
+
+Print text frames now support left, center, right and justified alignment. On
+justified lines the measured remaining width is distributed across word spaces;
+paragraph endings and explicit line breaks keep their natural spacing. Shared
+styles and local overrides both support justification. The cover and title-page
+text frames support it too. Responsive HTML retains left/center/right alignment.
+
+Frame hyphenation is enabled by default. It follows the manuscript language,
+with an optional BCP 47 text-language override on each shared/local frame style
+(for example `hu-HU`, `en-GB` or `de-DE`). Only the used language dictionaries
+are loaded. Hyphens appear only at dictionary break positions which fit in the
+measured line, including the width of the hyphen. Turning hyphenation off leaves
+word wrapping available. Unknown languages receive no guessed hyphens.
+
+Preview and frame PDF/HTML export use the same line compositor and dictionary
+patterns. The HTML download of frames is a fixed print proof, distinct from the
+responsive HTML publication. Generated hyphens and expanded word spaces are
+presentation data; story text, source offsets, frame links and OMI content stay
+unchanged. Paragraph-style language overrides and disabled hyphenation are also
+respected by the continuous print export, including inline language spans.

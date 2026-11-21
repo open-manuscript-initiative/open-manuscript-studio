@@ -85,9 +85,13 @@ const MODULE_LOADERS = {
 
 export type PrintHyphenationModuleId = keyof typeof MODULE_LOADERS;
 
+const breakCache = new Map<string, number[]>();
+const loadedHyphenators = new Map<PrintHyphenationModuleId, HyphenateSync>();
 const moduleCache = new Map<PrintHyphenationModuleId, Promise<HyphenateSync | null>>();
 const HYPHENATABLE_SELECTOR = [
   '.article-body p',
+  '.omi-publication-matter-page p',
+  '.omi-matter-frame-content p',
   '.article-body li',
   '.article-body blockquote',
   '.abstract p',
@@ -150,6 +154,7 @@ export async function hyphenatePrintText(
 export async function hyphenatePrintHtml(
   html: string,
   fallbackLanguage: string,
+  settings?: (element: Element) => { enabled?: boolean; language?: string },
 ): Promise<string> {
   if (typeof DOMParser === 'undefined') return html;
 
@@ -160,7 +165,10 @@ export async function hyphenatePrintHtml(
   await Promise.all(nodes.map(async (node) => {
     const element = node.parentElement;
     if (!element) return;
-    const language = element.closest('[lang]')?.getAttribute('lang') || defaultLanguage;
+    const options = settings?.(element);
+    if (options?.enabled === false) return;
+    const owner = element.closest('[lang]');
+    const language = (owner && owner !== document.documentElement ? owner.getAttribute('lang') : '') || options?.language || defaultLanguage;
     const moduleId = resolvePrintHyphenationModule(language);
     if (!moduleId) return;
     const hyphenate = await loadHyphenator(moduleId);
@@ -215,15 +223,42 @@ function markHyphenationScope(
   scope.setAttribute('data-omi-hyphenation-module', [...modules].sort().join(' '));
 }
 
+/** Warm only the language patterns used by a print layout. */
+export async function preparePrintHyphenation(language: string): Promise<void> {
+  const id = resolvePrintHyphenationModule(language);
+  if (id) await loadHyphenator(id);
+}
+
+/** UTF-16 source offsets, so discretionary breaks never alter saved stories. */
+export function printHyphenationBreaks(word: string, language: string): number[] {
+  const id = resolvePrintHyphenationModule(language);
+  const hyphenate = id ? loadedHyphenators.get(id) : undefined;
+  if (!hyphenate || word.length > 5000) return [];
+  const key = `${id}:${word}`;
+  const cached = breakCache.get(key);
+  if (cached) return cached;
+  const result: number[] = [];
+  let offset = 0;
+  for (const character of hyphenate(word, { minWordLength: 6, hyphenChar: '\u00ad' })) {
+    if (character === '\u00ad') { if (offset > 0 && offset < word.length) result.push(offset); }
+    else offset += character.length;
+  }
+  if (breakCache.size >= 4000) breakCache.delete(breakCache.keys().next().value!);
+  breakCache.set(key, result);
+  return result;
+}
+
 async function loadHyphenator(
   moduleId: PrintHyphenationModuleId,
 ): Promise<HyphenateSync | null> {
   const cached = moduleCache.get(moduleId);
   if (cached) return cached;
 
-  const loading = MODULE_LOADERS[moduleId]().then((module) => (
-    module.hyphenateSync ?? module.default?.hyphenateSync ?? null
-  )).catch(() => null);
+  const loading = MODULE_LOADERS[moduleId]().then((module) => {
+    const hyphenate = module.hyphenateSync ?? module.default?.hyphenateSync ?? null;
+    if (hyphenate) loadedHyphenators.set(moduleId, hyphenate);
+    return hyphenate;
+  }).catch(() => null);
   moduleCache.set(moduleId, loading);
   return loading;
 }

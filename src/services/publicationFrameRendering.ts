@@ -1,14 +1,21 @@
+import { preparePrintHyphenation, printHyphenationBreaks } from './printHyphenation';
 import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 export { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 import { framePageStyle, framePageStyles, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader } from '../model/publicationFramePages';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import {
-  flowFrameStories, frameDisplayText, frameStyle, validateFrameLayout, MM_PER_POINT,
-  type FrameTextMeasure, type FrameTextStyle, type PublicationFrameFlow, type PublicationFrameLayout,
+  flowFrameStories, frameLineDisplayText, frameStyle, validateFrameLayout, MM_PER_POINT,
+  type FrameTextFlowOptions, type FrameTextMeasure, type FrameTextStyle, type PublicationFrameFlow, type PublicationFrameLayout,
 } from '../model/publicationFrames';
 import { cssStringLiteral } from './embeddedCss';
 import { buildPdfArtifactDocument } from './exportPdf';
 import type { OmiManuscript } from '../types/omi';
+
+export async function prepareFrameHyphenation(layout: PublicationFrameLayout, language: string): Promise<FrameTextFlowOptions> {
+  const languages = new Set([language, ...layout.styles.map((s) => s.properties.language || language), ...layout.frames.map((f) => f.overrides?.language || language)]);
+  await Promise.all([...languages].map(preparePrintHyphenation));
+  return { language, hyphenate: printHyphenationBreaks };
+}
 
 export function createFrameTextMeasure(): FrameTextMeasure {
   const context = document.createElement('canvas').getContext('2d');
@@ -38,9 +45,9 @@ export function renderFrameDocument(layout: PublicationFrameLayout, flow: Public
     const style = frameStyle(layout, frame);
     const typography = Object.entries(frameTypography(style)).map(([key, value]) => `${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}:${value}`).join(';');
     const content = frame.kind === 'text' ? (current.find((item) => item.frameId === frame.id)?.lines ?? []).map((line) =>
-      `<div class="omi-frame-line" style="left:${line.x}mm;top:${line.y}mm;width:${line.width}mm;height:${style.lineHeightPt * MM_PER_POINT}mm">${escape(frameDisplayText(line.text)).replace(/\r\n?|\n/g, '&#10;')}</div>`,
+      `<div class="omi-frame-line"${line.hyphenated ? ' data-hyphenated="true"' : ''} style="left:${line.x}mm;top:${line.y}mm;width:${line.width}mm;height:${style.lineHeightPt * MM_PER_POINT}mm;word-spacing:${line.wordSpacingMm ?? 0}mm">${escape(frameLineDisplayText(line)).replace(/\r\n?|\n/g, '&#10;')}</div>`,
     ).join('') : `<div class="omi-frame-graphic" style="clip-path:${frameClipPath(frame)}"><div class="omi-frame-graphic-position" style="${escape(inlineStyle(frameGraphicContentStyle(frame)))}"><div class="omi-frame-graphic-inner" style="${escape(inlineStyle(frameGraphicInnerStyle(frame)))}">${graphics.get(frame.sourceBlockId!)}</div></div></div>`;
-    return `<div class="omi-publication-frame" data-frame-id="${escape(frame.id)}" style="left:${frame.xMm}mm;top:${frame.yMm}mm;width:${frame.widthMm}mm;height:${frame.heightMm}mm;transform:rotate(${frame.rotation}deg);${escape(typography)}">${frameShapeSvg(frame, style)}${content}</div>`;
+    return `<div class="omi-publication-frame" lang="${escape(style.language || language)}" data-frame-id="${escape(frame.id)}" style="left:${frame.xMm}mm;top:${frame.yMm}mm;width:${frame.widthMm}mm;height:${frame.heightMm}mm;transform:rotate(${frame.rotation}deg);${escape(typography)}">${frameShapeSvg(frame, style)}${content}</div>`;
   }).join('')}</section>`;
   }).join('');
   return `<!doctype html><html lang="${escape(language)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)}</title><style>
@@ -80,7 +87,8 @@ export function captureFrameGraphicSnapshots(root: HTMLElement, layout: Publicat
 
 export async function buildFrameExport(manuscript: OmiManuscript, layout: PublicationFrameLayout, snapshots: ReadonlyMap<string, string> = new Map()): Promise<string> {
   await document.fonts.ready;
-  const flow = flowFrameStories(layout, createFrameTextMeasure());
+  const options = await prepareFrameHyphenation(layout, manuscript.locale);
+  const flow = flowFrameStories(layout, createFrameTextMeasure(), options);
   const graphics = new Map<string, string>();
   if (layout.frames.some((frame) => frame.kind === 'graphic')) {
     // Reuse the existing integrity-checked, self-contained asset pipeline.

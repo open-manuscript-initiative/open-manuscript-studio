@@ -11,12 +11,12 @@ import { stageFrameLayout } from '../app/publicationFrameActions';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
 import { useTranslation } from '../i18n';
 import {
-  collectFrameSourceBlocks, flowFrameStories, frameDisplayText, frameStyle, getFrameLayout, linkFrames, removeFrame, reorderFrameLayer,
-  unlinkFrames, RECTANGLE_POINTS, type FrameTextStyle, type PublicationFrame, type PublicationFrameLayout,
+  collectFrameSourceBlocks, flowFrameStories, frameLineDisplayText, frameStyle, getFrameLayout, linkFrames, removeFrame, reorderFrameLayer,
+  unlinkFrames, RECTANGLE_POINTS, type FrameTextStyle, type FrameTextFlowOptions, type PublicationFrame, type PublicationFrameLayout,
 } from '../model/publicationFrames';
 import { storedContentText } from '../model/proofing';
 import {
-  buildFrameExport, captureFrameGraphicSnapshots, createFrameTextMeasure, frameClipPath, frameShapeSvg, frameTypography,
+  buildFrameExport, captureFrameGraphicSnapshots, createFrameTextMeasure, prepareFrameHyphenation, frameClipPath, frameShapeSvg, frameTypography,
 } from '../services/publicationFrameRendering';
 import type { PublicationStyle } from '../services/publicationStyleExport';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
@@ -44,13 +44,25 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   const [draft, setDraft] = useState<PublicationFrameLayout | null>(null);
   const [fontGeneration, setFontGeneration] = useState(0);
   const measure = useMemo(createFrameTextMeasure, []);
+  const [hyphenation, setHyphenation] = useState<FrameTextFlowOptions>({ language: manuscript.locale });
+  const hyphenationLanguages = JSON.stringify([manuscript.locale,
+    ...((draft ?? stored).styles.map((s) => s.properties.language)),
+    ...((draft ?? stored).frames.map((f) => f.overrides?.language)),
+  ]);
+  useEffect(() => {
+    let active = true;
+    void prepareFrameHyphenation(draft ?? stored, manuscript.locale).then((options) => { if (active) setHyphenation(options); });
+    return () => { active = false; };
+  // Only dictionary identities change the prepared options, not text or geometry.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hyphenationLanguages]);
   const layout = useMemo(() => {
     void fontGeneration;
     const current = draft ?? stored;
     return paginateAutomaticFrameLayout(publicationStyle.page.facingPages
       ? { ...current, pageNumberStart: publicationFirstPageNumber({ ...current, facingPages: true }) }
-      : current, measure);
-  }, [draft, stored, measure, fontGeneration, publicationStyle.page.facingPages]);
+      : current, measure, hyphenation);
+  }, [draft, stored, measure, fontGeneration, publicationStyle.page.facingPages, hyphenation]);
   const [pageSelection, setPageSelection] = useState(0);
   const activePage = Math.min(Math.max(0, pageSelection), layout.page.count - 1);
   const [selectedId, setSelectedId] = useState('');
@@ -60,7 +72,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   const [graphicAspects, setGraphicAspects] = useState<Record<string, number>>({});
   const [targetId, setTargetId] = useState(''); const [reuseStory, setReuseStory] = useState('');
   const [message, setMessage] = useState(''); const [exporting, setExporting] = useState(false);
-  const flow = useMemo(() => flowFrameStories(layout, measure), [layout, measure]);
+  const flow = useMemo(() => flowFrameStories(layout, measure, hyphenation), [layout, measure, hyphenation]);
   const blocks = useMemo(() => collectFrameSourceBlocks(manuscript), [manuscript]);
   const graphics = blocks.filter((block) => block.visual);
   const sourceIds = new Set(graphics.map((block) => block.id));
@@ -101,7 +113,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   }, []);
   function commit(next: PublicationFrameLayout) {
     if (preview) return;
-    try { stageFrameLayout(paginateAutomaticFrameLayout(next, measure)); setMessage(''); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); }
+    try { stageFrameLayout(paginateAutomaticFrameLayout(next, measure, hyphenation)); setMessage(''); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); }
   }
   function updateFrame(patch: Partial<PublicationFrame>) {
     if (!selected) return;
@@ -223,7 +235,7 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
               style={{ position: 'absolute', left: `${frame.xMm}mm`, top: `${frame.yMm}mm`, width: `${frame.widthMm}mm`, height: `${frame.heightMm}mm`, transform: `rotate(${frame.rotation}deg)`, ...frameTypography(properties), zIndex: layer + 1 }}
               onPointerDown={() => { if (!preview) { setSelectedId(frame.id); setPageSelection(frame.page); } }}>
               <div className="omi-frame-shape" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, properties) }} />
-              {frame.kind === 'text' ? placed?.lines.map((line, index) => <div key={index} className="omi-frame-line" data-frame-line="true" data-text-start={line.start} data-text-end={line.end} style={{ left: `${line.x}mm`, top: `${line.y}mm`, width: `${line.width}mm`, height: `${properties.lineHeightPt}pt` }}>{frameDisplayText(line.text) || '\u00a0'}</div>)
+              {frame.kind === 'text' ? placed?.lines.map((line, index) => <div key={index} className="omi-frame-line" data-frame-line="true" data-hyphenated={line.hyphenated || undefined} data-text-start={line.start} data-text-end={line.end} style={{ left: `${line.x}mm`, top: `${line.y}mm`, width: `${line.width}mm`, height: `${properties.lineHeightPt}pt`, wordSpacing: `${line.wordSpacingMm ?? 0}mm` }}>{frameLineDisplayText(line) || '\u00a0'}</div>)
                 : <div className="omi-frame-graphic-content" style={{ clipPath: frameClipPath(frame) }} onLoadCapture={(event) => {
                   const image = event.target;
                   if (image instanceof HTMLImageElement && image.naturalWidth > 0 && image.naturalHeight > 0 && frame.sourceBlockId) {
@@ -303,7 +315,9 @@ function StyleFields({ copy, value, onChange }: { copy: Copy; value: FrameTextSt
     <NumberInput label={copy.size} min={1} max={300} value={value.fontSizePt} onChange={(fontSizePt) => onChange({ fontSizePt })} />
     <NumberInput label={copy.leading} min={value.fontSizePt} max={600} value={value.lineHeightPt} onChange={(lineHeightPt) => onChange({ lineHeightPt })} />
     <NumberInput label={copy.padding} min={0} max={100} value={value.paddingMm} onChange={(paddingMm) => onChange({ paddingMm })} />
-    <label>{copy.alignment}<select aria-label={copy.alignment} value={value.alignment} onChange={(event) => onChange({ alignment: event.target.value as FrameTextStyle['alignment'] })}>{(['left', 'center', 'right'] as const).map((alignment) => <option key={alignment} value={alignment}>{copy[alignment]}</option>)}</select></label>
+    <label>{copy.alignment}<select aria-label={copy.alignment} value={value.alignment} onChange={(event) => onChange({ alignment: event.target.value as FrameTextStyle['alignment'] })}>{(['left', 'center', 'right', 'justify'] as const).map((alignment) => <option key={alignment} value={alignment}>{copy[alignment]}</option>)}</select></label>
+    <label className="omi-frame-checkbox"><input type="checkbox" checked={value.hyphenation !== false} onChange={(event) => onChange({ hyphenation: event.target.checked })} />{copy.hyphenation}</label>
+    <label>{copy.language}<input key={value.language ?? ''} defaultValue={value.language ?? ''} placeholder={copy.documentLanguage} maxLength={85} onBlur={(event) => { const language = event.target.value.trim(); if (!language || /^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$/i.test(language)) onChange({ language }); else event.target.value = value.language ?? ''; }} /></label>
     <label className="omi-frame-checkbox"><input type="checkbox" checked={value.fontWeight === 700} onChange={(event) => onChange({ fontWeight: event.target.checked ? 700 : 400 })} />{copy.weight}</label>
     <label className="omi-frame-checkbox"><input type="checkbox" checked={value.fontStyle === 'italic'} onChange={(event) => onChange({ fontStyle: event.target.checked ? 'italic' : 'normal' })} />{copy.italic}</label>
     {(['color', 'fill', 'stroke'] as const).map((key) => <label key={key}>{copy[key]}<input type="color" value={value[key]} onChange={(event) => onChange({ [key]: event.target.value })} /></label>)}

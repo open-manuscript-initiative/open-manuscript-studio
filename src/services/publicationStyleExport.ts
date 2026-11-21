@@ -405,22 +405,22 @@ body { font-family: var(--omi-publication-font); font-size: ${body.fontSize}pt; 
 .omi-publisher-legal { margin-top: 8mm; padding-top: 2.5mm; border-top: .3pt solid currentColor; font-size: 8.5pt; line-height: 1.25; }
 .omi-publisher-legal p { margin: 0 0 1mm; text-indent: 0; }
 .omi-publisher-legal a { color: inherit; text-decoration: none; }
-.article-front h1 { font-size: ${title.fontSize}pt; line-height: ${title.lineHeight}pt; font-weight: ${title.fontWeight}; text-align: ${title.alignment}; margin: 0 0 ${title.spaceAfter}pt; }
-.article-front .article-subtitle, .article-front .subtitle { font-size: ${subtitle.fontSize}pt; line-height: ${subtitle.lineHeight}pt; text-align: ${subtitle.alignment}; margin: 0 0 ${subtitle.spaceAfter}pt; }
-.article-front .contributor-name, .article-front .author, .article-front .author-name { font-size: ${author.fontSize}pt; line-height: ${author.lineHeight}pt; font-weight: ${author.fontWeight}; text-align: ${author.alignment}; }
+.article-front h1 { font-size: ${title.fontSize}pt; line-height: ${title.lineHeight}pt; font-weight: ${title.fontWeight}; text-align: ${alignment(title.alignment, target)}; margin: 0 0 ${title.spaceAfter}pt; }
+.article-front .article-subtitle, .article-front .subtitle { font-size: ${subtitle.fontSize}pt; line-height: ${subtitle.lineHeight}pt; text-align: ${alignment(subtitle.alignment, target)}; margin: 0 0 ${subtitle.spaceAfter}pt; }
+.article-front .contributor-name, .article-front .author, .article-front .author-name { font-size: ${author.fontSize}pt; line-height: ${author.lineHeight}pt; font-weight: ${author.fontWeight}; text-align: ${alignment(author.alignment, target)}; }
 .article-front .author-given-name { font-weight: ${authorGivenName.fontWeight}; font-style: ${fontStyle(authorGivenName.fontStyle)}; font-variant-caps: ${fontVariantCaps(authorGivenName.fontVariantCaps)}; text-transform: ${textTransform(authorGivenName.textTransform)}; }
 .article-front .author-family-name { font-weight: ${authorFamilyName.fontWeight}; font-style: ${fontStyle(authorFamilyName.fontStyle)}; font-variant-caps: ${fontVariantCaps(authorFamilyName.fontVariantCaps)}; text-transform: ${textTransform(authorFamilyName.textTransform)}; }
-.article-front .affiliation { font-size: ${affiliation.fontSize}pt; line-height: ${affiliation.lineHeight}pt; text-align: ${affiliation.alignment}; margin-bottom: ${affiliation.spaceAfter}pt; }
-.abstract h2, .abstract-title { font-size: ${abstractHeading.fontSize}pt; line-height: ${abstractHeading.lineHeight}pt; text-align: ${abstractHeading.alignment}; margin: ${abstractHeading.spaceBefore}pt 0 ${abstractHeading.spaceAfter}pt; }
-.abstract p, .article-abstract p { font-size: ${abstractBody.fontSize}pt; line-height: ${abstractBody.lineHeight}pt; text-align: ${abstractBody.alignment}; text-indent: ${abstractBody.firstLineIndent}mm; }
-.article-body p { font-size: ${body.fontSize}pt; line-height: ${body.lineHeight}pt; text-align: ${body.alignment}; text-indent: ${body.firstLineIndent}mm; margin: ${body.spaceBefore}pt 0 ${body.spaceAfter}pt; }
-.article-body h2 { font-size: ${heading1.fontSize}pt; line-height: ${heading1.lineHeight}pt; font-weight: ${heading1.fontWeight}; text-align: ${heading1.alignment}; margin: ${heading1.spaceBefore}pt 0 ${heading1.spaceAfter}pt; }
-.article-body h3 { font-size: ${heading2.fontSize}pt; line-height: ${heading2.lineHeight}pt; font-weight: ${heading2.fontWeight}; text-align: ${heading2.alignment}; margin: ${heading2.spaceBefore}pt 0 ${heading2.spaceAfter}pt; }
+.article-front .affiliation { font-size: ${affiliation.fontSize}pt; line-height: ${affiliation.lineHeight}pt; text-align: ${alignment(affiliation.alignment, target)}; margin-bottom: ${affiliation.spaceAfter}pt; }
+.abstract h2, .abstract-title { font-size: ${abstractHeading.fontSize}pt; line-height: ${abstractHeading.lineHeight}pt; text-align: ${alignment(abstractHeading.alignment, target)}; margin: ${abstractHeading.spaceBefore}pt 0 ${abstractHeading.spaceAfter}pt; }
+.abstract p, .article-abstract p { font-size: ${abstractBody.fontSize}pt; line-height: ${abstractBody.lineHeight}pt; text-align: ${alignment(abstractBody.alignment, target)}; text-indent: ${abstractBody.firstLineIndent}mm; }
+.article-body p { font-size: ${body.fontSize}pt; line-height: ${body.lineHeight}pt; text-align: ${alignment(body.alignment, target)}; text-indent: ${body.firstLineIndent}mm; margin: ${body.spaceBefore}pt 0 ${body.spaceAfter}pt; }
+.article-body h2 { font-size: ${heading1.fontSize}pt; line-height: ${heading1.lineHeight}pt; font-weight: ${heading1.fontWeight}; text-align: ${alignment(heading1.alignment, target)}; margin: ${heading1.spaceBefore}pt 0 ${heading1.spaceAfter}pt; }
+.article-body h3 { font-size: ${heading2.fontSize}pt; line-height: ${heading2.lineHeight}pt; font-weight: ${heading2.fontWeight}; text-align: ${alignment(heading2.alignment, target)}; margin: ${heading2.spaceBefore}pt 0 ${heading2.spaceAfter}pt; }
 figure { margin-left: 0; margin-right: 0; }
-figcaption { font-size: ${figureCaption.fontSize}pt; line-height: ${figureCaption.lineHeight}pt; text-align: ${figureCaption.alignment}; margin: ${figureCaption.spaceBefore}pt 0 ${figureCaption.spaceAfter}pt; }
-table caption { font-size: ${tableCaption.fontSize}pt; line-height: ${tableCaption.lineHeight}pt; text-align: ${tableCaption.alignment}; margin: ${tableCaption.spaceBefore}pt 0 ${tableCaption.spaceAfter}pt; }
+figcaption { font-size: ${figureCaption.fontSize}pt; line-height: ${figureCaption.lineHeight}pt; text-align: ${alignment(figureCaption.alignment, target)}; margin: ${figureCaption.spaceBefore}pt 0 ${figureCaption.spaceAfter}pt; }
+table caption { font-size: ${tableCaption.fontSize}pt; line-height: ${tableCaption.lineHeight}pt; text-align: ${alignment(tableCaption.alignment, target)}; margin: ${tableCaption.spaceBefore}pt 0 ${tableCaption.spaceAfter}pt; }
 .article-notes, .footnotes, [role="doc-endnotes"], .omi-page-footnote { font-family: ${noteFamily}; font-size: ${footnote.fontSize}pt; line-height: ${footnote.lineHeight}pt; }
-.bibliography p, .references li { font-size: ${bibliography.fontSize}pt; line-height: ${bibliography.lineHeight}pt; text-align: ${bibliography.alignment}; padding-left: ${bibliography.hangingIndent}mm; text-indent: -${bibliography.hangingIndent}mm; }
+.bibliography p, .references li { font-size: ${bibliography.fontSize}pt; line-height: ${bibliography.lineHeight}pt; text-align: ${alignment(bibliography.alignment, target)}; padding-left: ${bibliography.hangingIndent}mm; text-indent: -${bibliography.hangingIndent}mm; }
 img, svg, table { max-width: 100%; }
 ${paragraphStyleRules}
 ${TABLE_LAYOUT_CSS}
@@ -430,6 +430,8 @@ ${TABLE_LAYOUT_CSS}
     return `${shared}
 ${publicationHyphenationCss(false)}
 body { padding: 2rem max(1rem, calc((100vw - 56rem) / 2)); }
+.article-body, .manuscript-section-body { text-align: ${alignment(body.alignment, target)}; }
+.omi-publication-matter-page[style*="text-align:justify"], .omi-matter-frame-content[style*="text-align:justify"] { text-align:left !important; }
 .omi-print-running-header, .omi-print-page-number { display: none !important; }
 *, *::before, *::after { break-before: auto !important; break-after: auto !important; page-break-before: auto !important; page-break-after: auto !important; }
 .omi-scholarly-article, section, figure, table, .article-notes { break-inside: auto; page-break-inside: auto; }
@@ -521,7 +523,7 @@ export function buildPublicationParagraphStyleRules(
       );
     }
     return [
-      `${paragraphSelector} { font-family: ${cssFontFamily(resolved.fontFamily, style.fonts.body.fallback)}; font-size: ${finite(resolved.fontSize, 10.5)}pt; line-height: ${finite(resolved.lineHeight, 12.5)}pt; font-weight: ${finite(resolved.fontWeight, 400)}; font-style: ${fontStyle(resolved.fontStyle)}; text-align: ${alignment(resolved.alignment)}; text-indent: ${finite(resolved.firstLineIndent, 0)}mm; margin-top: ${finite(resolved.spaceBefore, 0)}pt; margin-bottom: ${finite(resolved.spaceAfter, 0)}pt; margin-left: ${finite(resolved.leftIndent, 0)}mm; margin-right: ${finite(resolved.rightIndent, 0)}mm; color: ${cssColorValue(resolved.fillColor, 'currentColor')}; -webkit-hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; widows: ${integer(resolved.widows, 2)}; orphans: ${integer(resolved.orphans, 2)}; ${keepRules} ${extendedParagraphStyleCss(resolved, target)} }`,
+      `${paragraphSelector} { font-family: ${cssFontFamily(resolved.fontFamily, style.fonts.body.fallback)}; font-size: ${finite(resolved.fontSize, 10.5)}pt; line-height: ${finite(resolved.lineHeight, 12.5)}pt; font-weight: ${finite(resolved.fontWeight, 400)}; font-style: ${fontStyle(resolved.fontStyle)}; text-align: ${alignment(resolved.alignment, target)}; text-indent: ${finite(resolved.firstLineIndent, 0)}mm; margin-top: ${finite(resolved.spaceBefore, 0)}pt; margin-bottom: ${finite(resolved.spaceAfter, 0)}pt; margin-left: ${finite(resolved.leftIndent, 0)}mm; margin-right: ${finite(resolved.rightIndent, 0)}mm; color: ${cssColorValue(resolved.fillColor, 'currentColor')}; -webkit-hyphens: ${target === 'print' && resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${target === 'print' && resolved.hyphenation ? 'auto' : 'none'}; widows: ${integer(resolved.widows, 2)}; orphans: ${integer(resolved.orphans, 2)}; ${keepRules} ${extendedParagraphStyleCss(resolved, target)} }`,
       `${containerSelector} { ${keepRules} }`,
       ...extraRules,
     ].join('\n');
@@ -546,6 +548,7 @@ function extendedParagraphStyleCss(
   }
 
   if (resolved.noBreak) declarations.push('white-space: nowrap;');
+  if (resolved.language) declarations.push(`-webkit-locale:${cssStringLiteral(resolved.language)};`);
   if (resolved.balanceRaggedLines) declarations.push('text-wrap: balance;');
 
   if (resolved.position === 'superscript' || resolved.position === 'superior') {
@@ -776,7 +779,8 @@ function integer(value: number | undefined, fallback: number): number {
   return Math.max(1, Math.trunc(finite(value, fallback)));
 }
 
-function alignment(value: string): 'left' | 'center' | 'right' | 'justify' {
+function alignment(value: string, target: PublicationStyleTarget = 'print'): 'left' | 'center' | 'right' | 'justify' {
+  if (target === 'html' && value === 'justify') return 'left';
   return value === 'center' || value === 'right' || value === 'justify'
     ? value
     : 'left';
@@ -942,7 +946,12 @@ export async function renderStyleBasedHtml(
   // storage or an imported IDML package, so add them only after hyphenation.
   let html = rendered.html;
   if (target === 'print' && publicationHyphenationEnabled(style)) {
-    html = await hyphenatePrintHtml(html, manuscript.locale);
+    html = await hyphenatePrintHtml(html, manuscript.locale, (element) => {
+      if (!element.closest('.article-body')) return {};
+      const id = element.closest('[data-omi-paragraph-style-id]')?.getAttribute('data-omi-paragraph-style-id');
+      const paragraph = resolvePublicationParagraphStyle(style, id ?? undefined);
+      return { enabled: paragraph.hyphenation && !paragraph.noBreak, language: paragraph.language || manuscript.locale };
+    });
   }
   html = withPublicationStyleCss(html, style, target);
   if (target === 'print') {
