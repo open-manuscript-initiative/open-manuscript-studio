@@ -5,30 +5,15 @@ import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 
 import { env } from '../config/env.js';
-import { requireSession } from '../middleware/requireSession.js';
+import { studioFeedbackSchema } from '../model/studioFeedbackSchema.js';
+import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 
 export const studioFeedbackRouter = Router();
-
-// No manuscript contents, document identifiers, tokens, raw logs or device IDs.
-export const studioFeedbackSchema = z.object({
-  category: z.enum(['bug', 'suggestion', 'test']),
-  area: z.enum(['editor', 'import', 'export', 'notes', 'collaboration', 'publishing', 'account', 'other']),
-  title: z.string().trim().min(5).max(120),
-  description: z.string().trim().min(15).max(4000),
-  reproductionSteps: z.string().trim().max(1500).optional(),
-  expectedResult: z.string().trim().max(1500).optional(),
-  testOutcome: z.enum(['success', 'problem', 'not_applicable']).optional(),
-  contactEmail: z.email().trim().max(320).optional(),
-  technical: z.object({
-    platform: z.enum(['android', 'ios', 'desktop', 'web']),
-    appVersion: z.string().trim().max(80),
-    locale: z.string().trim().max(25),
-  }).strict().optional(),
-}).strict();
 
 const feedbackRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 6,
+  keyGenerator: (request) => String((request as AuthenticatedRequest).authUserId),
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { error: { code: 'FEEDBACK_RATE_LIMITED', message: 'Please try again later.' } },
