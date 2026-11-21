@@ -48,6 +48,8 @@ import type { OmiBibliographicRecord, OmiSection } from '../types/omi';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
+  buildPublicationTextRoleCss,
+  publicationNoteCitationRules,
   resolvePublicationParagraphStyle,
   type PublicationStyle,
 } from '../services/publicationStyleExport';
@@ -315,10 +317,10 @@ export function PublicationDocumentCanvas({
       annotations: manuscriptAnnotations,
     }, occurrences);
   }, [manuscriptAnnotations, manuscriptDocumentStructure, manuscriptSections]);
-  const citationRules = useMemo(() => resolvePublicationProfile({
+  const citationRules = useMemo(() => publicationNoteCitationRules(style, resolvePublicationProfile({
     publicationProfile: manuscript.publicationProfile,
     embeddedPublicationProfile: manuscript.embeddedPublicationProfile,
-  }).rules.citations, [manuscript.publicationProfile, manuscript.embeddedPublicationProfile]);
+  }).rules.citations), [manuscript.publicationProfile, manuscript.embeddedPublicationProfile, style]);
   const noteLocale = manuscript.locale;
   const records = manuscript.bibliographicRecords ?? EMPTY_BIBLIOGRAPHIC_RECORDS;
   const semanticNotes = useMemo(() => {
@@ -359,7 +361,8 @@ export function PublicationDocumentCanvas({
   const endnotes = useMemo(() => semanticNotes.filter(
     (note) => note.kind === 'endnote',
   ), [semanticNotes]);
-  const noteLineHeight = positive(style.styles.footnote.lineHeight * PIXELS_PER_POINT * scale, 1);
+  const noteStyle = resolvePublicationParagraphStyle(style, style.paragraphStyles.items.find((item) => item.role === 'note')?.id, manuscript.locale);
+  const noteLineHeight = positive(noteStyle.lineHeight * PIXELS_PER_POINT * scale, 1);
   const noteSeparatorHeight = 8 * scale + 1;
   const firstVisiblePage = Math.max(0, Math.min(pageCount - 1, visiblePageRange.start));
   const visiblePageEnd = Math.min(pageCount, Math.max(firstVisiblePage + 1, visiblePageRange.end));
@@ -758,13 +761,13 @@ export function PublicationDocumentCanvas({
   const authorFamilyName = style.styles.authorFamilyName;
   const heading1 = style.styles.heading1;
   const heading2 = style.styles.heading2;
-  const note = style.styles.footnote;
+  const note = noteStyle;
   const paragraphStyleCss = buildLiveParagraphStyleCss(
     canvasId,
     style,
     scale,
     viewMode,
-  );
+  ) + '\n' + buildPublicationTextRoleCss(style, viewMode, manuscript.locale, `#${canvasId}`, scale);
   const sectionLayoutCss = buildLiveSectionLayoutCss(
     canvasId,
     manuscript.sections,
@@ -1042,6 +1045,7 @@ export function PublicationDocumentCanvas({
                 placeholder={copy.abstract}
                 onChange={setAbstract}
               />
+              {manuscript.keywords.length ? <div className="publication-document-keywords">{manuscript.keywords.join(' · ')}</div> : null}
             </header>
 
             {manuscript.sections.length ? (
@@ -1173,7 +1177,7 @@ function AutoGrowPublicationField({
     if (!element) return;
     element.style.height = 'auto';
     element.style.height = `${element.scrollHeight}px`;
-  }, [value]);
+  });
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>): void {
     onChange(event.target.value.replace(/[\r\n]+/g, ' '));
@@ -1471,7 +1475,7 @@ function buildLiveParagraphStyleCss(
   scale: number,
   viewMode: PublicationDocumentViewMode,
 ): string {
-  return style.paragraphStyles.items.map((definition) => {
+  return style.paragraphStyles.items.filter((item) => item.role !== 'citation' && item.role !== 'note-citation').map((definition) => {
     const resolved = resolvePublicationParagraphStyle(style, definition.id);
     const editor = `#${canvasId} .omi-continuous-tiptap-editor`;
     const assignedSelector = `${editor} > [data-paragraph-style-id=${cssStringLiteral(definition.id)}]`;

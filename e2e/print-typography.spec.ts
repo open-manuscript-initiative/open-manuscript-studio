@@ -1,6 +1,82 @@
 import { expect, test } from '@playwright/test';
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
+test('semantic text roles offer editable point presets, languages and inherited note citation settings', async ({ page }) => {
+  test.setTimeout(90_000);
+  await installMockStudioApi(page); await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { createNoteAnnotation } = await import('/src/model/notes.ts');
+    const current = useStudioStore.getState().manuscript;
+    useStudioStore.getState().loadManuscript({ ...current, title: 'Semantic typography fixture', locale: 'hu-HU', motto: 'A short motto', abstract: 'An abstract', keywords: ['History', 'Archives'],
+      bibliographicRecords: [{ id: 'bib', type: 'journal-article', title: 'Structured Notes', contributors: [{ id: 'a', role: 'author', familyName: 'Scholar', givenName: 'Ada' }], issued: '2026', identifiers: [], status: 'verified' }],
+      sections: [{ id: 's', title: 'Section heading', blocks: [{ id: 'p', type: 'paragraph', content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+        { type: 'text', text: 'Original body text.' }, { type: 'omiNote', attrs: { noteId: 'n', anchorId: 'a', label: '1', noteType: 'footnote' } },
+      ] }] }) }] }],
+      annotations: [{ ...createNoteAnnotation({ id: 'n', anchorId: 'a', targetBlockId: 'p', body: 'See also' }), noteCitations: [{ id: 'nc', target: 'bib' }] }],
+    });
+  });
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
+  const canvas = menu.locator('.publication-document-canvas');
+  await expect(canvas.locator('.publication-document-keywords')).toHaveText('History · Archives');
+  await menu.getByRole('button', { name: 'Paragraph styles', exact: true }).click();
+  const panel = menu.locator('.publication-style-ribbon-panel--paragraph-styles');
+  const list = panel.locator('.publication-paragraph-style-list');
+  for (const name of ['Title', 'Motto', 'Abstract', 'Keywords', 'Quotation', 'Note', 'Citation', 'Citation in notes']) await expect(list.getByRole('option', { name, exact: true })).toBeVisible();
+  await list.getByRole('option', { name: 'Title', exact: true }).click();
+  await panel.getByRole('button', { name: 'Basic character formats', exact: true }).click();
+  const size = panel.getByRole('spinbutton', { name: 'Size', exact: true });
+  expect(await size.evaluate((element) => Array.from((element as HTMLInputElement).list?.options ?? []).map((option) => option.value))).toContain('12');
+  await size.fill('27.3');
+  await panel.getByRole('spinbutton', { name: 'Leading', exact: true }).fill('32.7');
+  await panel.getByRole('button', { name: 'Advanced character formats', exact: true }).click();
+  await panel.getByRole('textbox', { name: 'Language', exact: true }).fill('de-DE');
+  await expect.poll(() => canvas.locator('.publication-document-title').evaluate((element) => getComputedStyle(element).getPropertyValue('-webkit-locale'))).toContain('de-DE');
+  await expect.poll(() => canvas.locator('.publication-document-title').evaluate((element) => {
+    const css = getComputedStyle(element); return Math.round(parseFloat(css.lineHeight) / parseFloat(css.fontSize) * 1000);
+  })).toBe(Math.round(32.7 / 27.3 * 1000));
+  await list.getByRole('option', { name: 'Heading 1', exact: true }).click();
+  await panel.getByRole('button', { name: 'Basic character formats', exact: true }).click();
+  await panel.getByRole('spinbutton', { name: 'Size', exact: true }).fill('19.4');
+  await panel.getByRole('spinbutton', { name: 'Leading', exact: true }).fill('24.6');
+  await expect.poll(() => canvas.locator('.omi-continuous-tiptap-editor > h1[data-section-id="s"]').evaluate((element) => {
+    const css = getComputedStyle(element); return Math.round(parseFloat(css.lineHeight) / parseFloat(css.fontSize) * 1000);
+  })).toBe(Math.round(24.6 / 19.4 * 1000));
+  await list.getByRole('option', { name: 'Citation in notes', exact: true }).click();
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    useStudioStore.getState().checkpoint('manual');
+  });
+  await expect(list.getByRole('option', { name: 'Citation in notes', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(panel.getByRole('combobox', { name: 'First citation style', exact: true })).toBeVisible();
+  await panel.getByRole('combobox', { name: 'First citation style', exact: true }).selectOption('apa-7');
+  await panel.getByRole('combobox', { name: 'Subsequent citation style', exact: true }).selectOption('mla-9');
+  await list.getByRole('option', { name: 'Title', exact: true }).click();
+  await panel.getByRole('button', { name: 'Duplicate', exact: true }).click();
+  await panel.getByRole('button', { name: 'General', exact: true }).click();
+  await panel.getByRole('textbox', { name: 'Style name', exact: true }).fill('Source title');
+  const result = await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { loadPublicationStyle, renderStyleBasedHtml, clonePublicationPublisherTemplate, resolvePublicationParagraphStyle } = await import('/src/services/publicationStyleExport.ts');
+    const { getPublicationProfile } = await import('/src/model/publicationProfile.ts');
+    const manuscript = useStudioStore.getState().manuscript;
+    const style = loadPublicationStyle(manuscript);
+    const title = style.paragraphStyles.items.find((item) => item.role === 'title')!;
+    const before = JSON.stringify(manuscript);
+    const html = await renderStyleBasedHtml(manuscript, getPublicationProfile('omi-generic-scholarly')!, 'html', { style, identity: clonePublicationPublisherTemplate(), embedAssets: false });
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return { title: resolvePublicationParagraphStyle(style, title.id, manuscript.locale), custom: style.paragraphStyles.items.some((item) => item.name === 'Source title' && !item.role),
+      first: style.noteCitationStyles?.first, subsequent: style.noteCitationStyles?.subsequent, lang: doc.querySelector('.article-front h1')?.getAttribute('lang'),
+      citation: doc.querySelector('.omi-note-citation')?.textContent, unchanged: JSON.stringify(manuscript) === before, locale: manuscript.locale };
+  });
+  expect(result.title.fontSize).toBe(27.3); expect(result.title.lineHeight).toBe(32.7); expect(result.title.language).toBe('de-DE');
+  expect(result.custom).toBe(true); expect(result.first).toBe('apa-7'); expect(result.subsequent).toBe('mla-9'); expect(result.lang).toBe('de-DE');
+  expect(result.citation).toContain('Scholar'); expect(result.unchanged).toBe(true); expect(result.locale).toBe('hu-HU');
+});
+
 test('HTML keeps three alignments and print keeps justification and language patterns', async ({ page }) => {
   test.setTimeout(90_000);
   await installMockStudioApi(page); await signInToStudio(page);

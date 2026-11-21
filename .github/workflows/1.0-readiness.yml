@@ -100,10 +100,7 @@ jobs:
         run: |
           npm install --global @vivliostyle/cli@11.0.4
           vivliostyle --version
-          browser="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          if [[ -n "$browser" ]]; then
-            echo "VIVLIOSTYLE_EXECUTABLE_BROWSER=$browser" >> "$GITHUB_ENV"
-          fi
+          node scripts/prepare-vivliostyle-ci-browser.mjs
           echo "OMI_RUN_VIVLIOSTYLE_SMOKE=1" >> "$GITHUB_ENV"
 
       - name: Verify publication release gates

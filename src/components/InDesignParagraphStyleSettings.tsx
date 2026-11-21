@@ -1,5 +1,7 @@
 
 import { useState, type ReactNode } from 'react';
+import { publicationParagraphStyleName } from '../model/publicationTextRoles';
+import { PublicationPointInput } from './PublicationPointInput';
 
 import {
   paragraphStyleWouldCreateCycle,
@@ -39,6 +41,7 @@ type SetProperty = <K extends keyof PublicationParagraphStyleProperties>(
 ) => void;
 
 interface Props {
+  documentLanguage?: string;
   printLayout?: boolean;
   locale: string;
   collection: PublicationParagraphStyleCollection;
@@ -53,6 +56,7 @@ interface Props {
 
 export function InDesignParagraphStyleSettings({
   locale,
+  documentLanguage = '',
   printLayout = true,
   collection,
   definition,
@@ -62,8 +66,10 @@ export function InDesignParagraphStyleSettings({
   onSetProperty,
 }: Props) {
   const copy = copyFor(locale);
-  const categories = categoryItems(copy);
-  const [category, setCategory] = useState<Category>('general');
+  const inline = definition.role === 'citation' || definition.role === 'note-citation';
+  const categories = categoryItems(copy).filter((item) => !inline || ['general', 'basic', 'advanced', 'color', 'opentype', 'underline', 'strikethrough'].includes(item.id));
+  const [requestedCategory, setCategory] = useState<Category>('general');
+  const category = categories.some((item) => item.id === requestedCategory) ? requestedCategory : 'general';
 
   return (
     <div className="indesign-paragraph-style-settings">
@@ -84,7 +90,7 @@ export function InDesignParagraphStyleSettings({
       <section className="indesign-paragraph-style-category-pane">
         <header>
           <strong>{categories.find((item) => item.id === category)?.label}</strong>
-          <span>{definition.name}</span>
+          <span>{publicationParagraphStyleName(definition, locale)}</span>
         </header>
 
         {category === 'general' ? (
@@ -93,6 +99,7 @@ export function InDesignParagraphStyleSettings({
             collection={collection}
             definition={definition}
             resolved={resolved}
+            locale={locale}
             onPatchDefinition={onPatchDefinition}
           />
         ) : null}
@@ -101,8 +108,8 @@ export function InDesignParagraphStyleSettings({
           <>
             {fontControls}
             <Grid>
-              <NumberField label={copy.size} value={resolved.fontSize} step={0.1} suffix="pt" onChange={(value) => onSetProperty('fontSize', value)} />
-              <NumberField label={copy.leading} value={resolved.lineHeight} step={0.1} suffix="pt" onChange={(value) => onSetProperty('lineHeight', value)} />
+              <PublicationPointInput label={copy.size} value={resolved.fontSize} onChange={(value) => onSetProperty('fontSize', value)} />
+              <PublicationPointInput label={copy.leading} value={resolved.lineHeight} leading onChange={(value) => onSetProperty('lineHeight', value)} />
               <SelectField label={copy.kerning} value={resolved.kerningMode} options={[
                 ['metrics', copy.metrics], ['optical', copy.optical], ['manual', copy.manual],
               ]} onChange={(value) => onSetProperty('kerningMode', value as PublicationParagraphStyleProperties['kerningMode'])} />
@@ -133,7 +140,9 @@ export function InDesignParagraphStyleSettings({
             <NumberField label={copy.verticalScale} value={resolved.verticalScale} step={1} suffix="%" onChange={(value) => onSetProperty('verticalScale', value)} />
             <NumberField label={copy.baselineShift} value={resolved.baselineShift} step={0.1} suffix="pt" onChange={(value) => onSetProperty('baselineShift', value)} />
             <NumberField label={copy.skew} value={resolved.skew} step={0.1} suffix="°" onChange={(value) => onSetProperty('skew', value)} />
-            <TextField label={copy.language} value={resolved.language} onChange={(value) => onSetProperty('language', value)} />
+            <label><span>{copy.language}</span><input aria-label={copy.language} value={definition.properties.language ?? ''} placeholder={resolved.language || documentLanguage} onChange={(event) => onSetProperty('language', event.target.value)} />
+              <small>{locale === 'hu' ? 'Üresen: öröklés az alapstílusból vagy a kézirat nyelvéből.' : locale === 'de' ? 'Leer: Sprache des Basisstils oder Manuskripts übernehmen.' : 'Empty: inherit the base style or manuscript language.'}</small>
+            </label>
           </Grid>
         ) : null}
 
@@ -234,12 +243,14 @@ export function InDesignParagraphStyleSettings({
 
 function GeneralPane({
   copy,
+  locale,
   collection,
   definition,
   resolved,
   onPatchDefinition,
 }: {
   copy: Copy;
+  locale: string;
   collection: PublicationParagraphStyleCollection;
   definition: PublicationParagraphStyleDefinition;
   resolved: ResolvedPublicationParagraphStyle;
@@ -248,7 +259,7 @@ function GeneralPane({
   return (
     <>
       <Grid>
-        <TextField label={copy.styleName} value={definition.name} onChange={(name) => onPatchDefinition((current) => ({ ...current, name }))} />
+        <TextField label={copy.styleName} value={publicationParagraphStyleName(definition, locale)} onChange={(name) => onPatchDefinition((current) => ({ ...current, name, automaticName: false }))} />
         <SelectField
           label={copy.basedOn}
           value={definition.basedOnId ?? ''}
@@ -256,14 +267,14 @@ function GeneralPane({
             ['', copy.noStyle],
             ...collection.items
               .filter((item) => !paragraphStyleWouldCreateCycle(collection, definition.id, item.id))
-              .map((item) => [item.id, item.name] as [string, string]),
+              .map((item) => [item.id, publicationParagraphStyleName(item, locale)] as [string, string]),
           ]}
           onChange={(value) => onPatchDefinition((current) => ({ ...current, basedOnId: value || null }))}
         />
         <SelectField
           label={copy.nextStyle}
           value={definition.nextStyleId ?? collection.defaultStyleId}
-          options={collection.items.map((item) => [item.id, item.name] as [string, string])}
+          options={collection.items.map((item) => [item.id, publicationParagraphStyleName(item, locale)] as [string, string])}
           onChange={(value) => onPatchDefinition((current) => ({ ...current, nextStyleId: value }))}
         />
         <TextField label={copy.shortcut} value={definition.shortcut ?? ''} onChange={(shortcut) => onPatchDefinition((current) => ({ ...current, shortcut: shortcut || null }))} />

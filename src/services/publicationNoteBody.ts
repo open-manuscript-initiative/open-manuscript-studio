@@ -28,7 +28,7 @@ function render(node: NoteJsonNode): string {
     case 'text': return applyMarks(escape(node.text ?? '').replace(/\r\n?|\n/g, '<br>'), node.marks ?? []);
     case 'hardBreak': return '<br>';
     case 'omiTab': return '\t';
-    case 'omiCitation': return applyMarks(escape(typeof node.attrs?.label === 'string' ? node.attrs.label : ''), node.marks ?? []);
+    case 'omiCitation': return `<span class="citation omi-note-citation">${applyMarks(escape(typeof node.attrs?.label === 'string' ? node.attrs.label : ''), node.marks ?? [])}</span>`;
     case 'doc': case 'listItem': case 'blockquote': return children('<br>');
     case 'bulletList': return (node.content ?? []).map((item) => `• ${render(item)}`).join('<br>');
     case 'orderedList': {

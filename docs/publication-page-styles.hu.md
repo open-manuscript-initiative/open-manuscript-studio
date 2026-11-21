@@ -97,3 +97,35 @@ Az előnézet és a keretes nyomtatási export ugyanazt a tördelést használja
 Az ismeretlen nyelvekhez nem talál ki elválasztási pontokat. A folyószöveges
 PDF-export a bekezdésstílus nyelvét, az egyes szövegrészek nyelvjelölését és az
 elválasztás kikapcsolását is figyelembe veszi.
+## A szöveg szerepéhez kötött stílusok
+
+A **Bekezdésstílusok** panelen a törzsszöveg, cím, alcím, szerző, mottó,
+absztrakt, kulcsszavak, címsorok, idézet, jegyzet, hivatkozás, jegyzetbeli
+hivatkozás, irodalomjegyzék és feliratok külön stílusként szerkeszthetők.
+A rendszer a kézirat megfelelő elemeire automatikusan alkalmazza ezeket,
+az előnézetben és a HTML/PDF exportban is. Az alapstílusok neve a felület
+nyelvét követi; átnevezés után az egyéni név marad meg.
+
+Az **Új bekezdésstílus** és a **Másolat készítése** művelet egyéni stílust
+hoz létre, amely az **Alapja** mezőben kiválasztott stílust örökli. A másolat
+nem veszi át az eredeti stílus automatikus szerepkörét. A beépített
+szövegelemstílusok módosíthatók és átnevezhetők, az egyéni stílusok törölhetők.
+A korábbi mentések egyéni nevei, tulajdonságai és hozzárendelései megmaradnak.
+
+A **Speciális karakterformázás → Nyelv** mezőben egy stílus saját nyelve
+adható meg, például `hu-HU`, `de-DE` vagy `la`. Üresen az alapstílus, majd a
+kézirat nyelve érvényesül. A nyomtatott elválasztás ezt a nyelvet használja;
+a szövegben külön megjelölt nyelvek továbbra is elsőbbséget élveznek.
+
+A **Méret** és **Sortávolság** mező legördülő javaslataiból szokásos
+pontérték választható, vagy közvetlenül beírható egyéni érték, például
+`10,7 pt` betűméret és `13,2 pt` sortávolság. A pontérték a sorok alapvonalai
+közötti távolságot jelenti. Ugyanez a vezérlő a szövegkereteknél és a borító
+szövegeinél is elérhető.
+
+A **Hivatkozás a jegyzetben** a **Hivatkozás** karakterformázását örökli;
+a nem megadott értékek a környező jegyzet betűformázását követik. Itt az első
+és az ismételt hivatkozás hivatkozási formátuma külön is felülírható.
+Az **Öröklés a hivatkozási beállításokból** visszaállítja a publikációs profil
+beállítását. Ezek a módosítások a megjelenítést érintik, a hivatkozási rekordok
+és a jegyzetek eredeti szövege megmarad.

@@ -15,12 +15,16 @@ import type {
   OmiBlock,
   OmiManuscript,
   OmiPublicationCorrection,
+  OmiCitationStyleId,
 } from '../types/omi';
 import { cssStringLiteral } from './embeddedCss';
 import { renderPublisherHtmlArticle } from './exportPublisherHtmlPackage';
 import { hyphenatePrintHtml } from './printHyphenation';
+import { CITATION_STYLE_CATALOG } from '../model/cslRendering';
+import { EXPORT_TEXT_ROLE_SELECTORS, LIVE_TEXT_ROLE_SELECTORS, withPublicationTextRoles, type PublicationTextRole } from '../model/publicationTextRoles';
 import {
   normalizePublicationParagraphStyleCollection,
+  mergePublicationParagraphStyleProperties,
   resolvePublicationParagraphStyle as resolveParagraphStyle,
   type PublicationParagraphStyleCollection,
   type ResolvedPublicationParagraphStyle,
@@ -30,6 +34,7 @@ type PublicationStyleTemplate = typeof templateJson;
 export type PublicationStyle = Omit<PublicationStyleTemplate, 'paragraphStyles' | 'page'> & {
   page: PublicationStyleTemplate['page'] & { facingPages?: boolean };
   paragraphStyles: PublicationParagraphStyleCollection;
+  noteCitationStyles?: { first?: OmiCitationStyleId; subsequent?: OmiCitationStyleId };
   pageStyles?: PublicationPageStyleCollection;
 };
 export type PublicationPublisherIdentity = typeof publisherJson;
@@ -39,7 +44,9 @@ export const PUBLICATION_STYLE_STORAGE_KEY = 'omi:publication-style:egyhaztorten
 export const PUBLICATION_PUBLISHER_STORAGE_KEY = 'omi:publication-publisher:egyhaztorteneti-szemle';
 
 export function clonePublicationStyleTemplate(): PublicationStyle {
-  return JSON.parse(JSON.stringify(templateJson)) as PublicationStyle;
+  const style = JSON.parse(JSON.stringify(templateJson)) as PublicationStyle;
+  style.paragraphStyles = withPublicationTextRoles(style.paragraphStyles);
+  return style;
 }
 
 export function clonePublicationPublisherTemplate(): PublicationPublisherIdentity {
@@ -83,10 +90,14 @@ export function normalizePublicationStyle(style: PublicationStyle): PublicationS
         ...style.styles?.body,
       },
     },
-    paragraphStyles: normalizePublicationParagraphStyleCollection(
+    paragraphStyles: withPublicationTextRoles(normalizePublicationParagraphStyleCollection(
       style.paragraphStyles,
       fallback.paragraphStyles,
-    ),
+    )),
+    noteCitationStyles: {
+      first: CITATION_STYLE_CATALOG.some((item) => item.id === style.noteCitationStyles?.first) ? style.noteCitationStyles?.first : undefined,
+      subsequent: CITATION_STYLE_CATALOG.some((item) => item.id === style.noteCitationStyles?.subsequent) ? style.noteCitationStyles?.subsequent : undefined,
+    },
   };
 }
 
@@ -336,12 +347,90 @@ export function publicationParagraphStyleDefaults(
 export function resolvePublicationParagraphStyle(
   style: PublicationStyle,
   styleId?: string | null,
+  documentLanguage = '',
 ): ResolvedPublicationParagraphStyle {
-  return resolveParagraphStyle(
-    style.paragraphStyles,
+  const collection = { ...style.paragraphStyles, items: style.paragraphStyles.items.map((item) => ({ ...item, properties: { ...publicationRoleDefaults(style, item.role), ...item.properties } })) };
+  let defaults = publicationParagraphStyleDefaults(style);
+  const visited = new Set<string>();
+  let inherited = collection.items.find((item) => item.id === styleId);
+  while (inherited && !visited.has(inherited.id)) {
+    visited.add(inherited.id);
+    if (inherited.role === 'note-citation') {
+      defaults = resolveParagraphStyle(collection, collection.items.find((item) => item.role === 'note')?.id, defaults);
+      break;
+    }
+    inherited = collection.items.find((item) => item.id === inherited?.basedOnId);
+  }
+  const resolved = resolveParagraphStyle(
+    collection,
     styleId,
-    publicationParagraphStyleDefaults(style),
+    defaults,
   );
+  return { ...resolved, language: resolved.language || documentLanguage };
+}
+
+function publicationRoleDefaults(style: PublicationStyle, role?: PublicationTextRole): import('../model/publicationParagraphStyles').PublicationParagraphStyleProperties {
+  if (!role || role === 'body' || role === 'citation' || role === 'note-citation') return {};
+  if (role === 'quote') return { fontStyle: 'italic', firstLineIndent: 0, leftIndent: 5, rightIndent: 5, spaceBefore: 4, spaceAfter: 4 };
+  const keys = { title: 'articleTitlePrimary', subtitle: 'articleSubtitlePrimary', author: 'author', motto: 'epigraph', abstract: 'abstractBody', keywords: 'keywords', heading1: 'heading1', heading2: 'heading2', note: 'footnote', bibliography: 'bibliography', 'figure-caption': 'figureCaption', 'table-caption': 'tableCaption' } as const;
+  const value = style.styles[keys[role]] as Record<string, unknown>;
+  const properties: import('../model/publicationParagraphStyles').PublicationParagraphStyleProperties = { firstLineIndent: 0, leftIndent: 0, rightIndent: 0 };
+  for (const key of ['fontSize', 'lineHeight', 'fontWeight', 'spaceBefore', 'spaceAfter', 'firstLineIndent'] as const) {
+    if (typeof value?.[key] === 'number') properties[key] = value[key];
+  }
+  if (typeof value?.alignment === 'string') properties.alignment = alignment(value.alignment);
+  if (typeof value?.fontStyle === 'string') properties.fontStyle = fontStyle(value.fontStyle);
+  if (role === 'note') { properties.fontFamily = style.fonts.note.family; properties.alignment = 'left'; }
+  if (role === 'bibliography' && typeof value?.hangingIndent === 'number') { properties.leftIndent = value.hangingIndent; properties.firstLineIndent = -value.hangingIndent; }
+  if (role === 'motto') properties.fontStyle = 'italic';
+  if (role === 'title' || role.startsWith('heading')) { properties.keepWithNext = true; properties.hyphenation = false; }
+  return properties;
+}
+
+/** Citation typography is sparse: unset values inherit the surrounding note text. */
+export function publicationInlineStyleProperties(style: PublicationStyle, id: string): import('../model/publicationParagraphStyles').PublicationParagraphStyleProperties {
+  const visited = new Set<string>();
+  function collect(styleId: string | null): import('../model/publicationParagraphStyles').PublicationParagraphStyleProperties {
+    if (!styleId || visited.has(styleId)) return {};
+    visited.add(styleId);
+    const item = style.paragraphStyles.items.find((definition) => definition.id === styleId);
+    return item ? mergePublicationParagraphStyleProperties(collect(item.basedOnId), item.properties) : {};
+  }
+  return collect(id);
+}
+
+export function publicationNoteCitationRules(style: PublicationStyle, rules: OmiPublicationProfile['rules']['citations']): OmiPublicationProfile['rules']['citations'] {
+  return { ...rules, noteFirstStyle: style.noteCitationStyles?.first ?? rules.noteFirstStyle ?? rules.style,
+    noteSubsequentStyle: style.noteCitationStyles?.subsequent ?? rules.noteSubsequentStyle ?? style.noteCitationStyles?.first ?? rules.noteFirstStyle ?? rules.style };
+}
+
+/** The same role-to-style mapping drives live pages and both export targets. */
+export function buildPublicationTextRoleCss(style: PublicationStyle, target: PublicationStyleTarget, documentLanguage = '', liveScope?: string, scale = 1): string {
+  const selectors = liveScope ? LIVE_TEXT_ROLE_SELECTORS : EXPORT_TEXT_ROLE_SELECTORS;
+  const point = (value: number) => liveScope ? `${finite(value, 10) * 96 / 72 * scale}px` : `${finite(value, 10)}pt`;
+  return style.paragraphStyles.items.filter((item) => item.role && item.role !== 'body').map((item) => {
+    const inline = item.role === 'citation' || item.role === 'note-citation';
+    const resolved = resolvePublicationParagraphStyle(style, item.id, documentLanguage);
+    const sparse = inline ? publicationInlineStyleProperties(style, item.id) : resolved;
+    const advanced = inline
+      ? mergePublicationParagraphStyleProperties(publicationParagraphStyleDefaults(style), sparse) as ResolvedPublicationParagraphStyle : resolved;
+    if (inline && !sparse.openType) advanced.openType = {};
+    const rules = [
+      sparse.fontFamily !== undefined ? `font-family:${cssFontFamily(sparse.fontFamily, style.fonts.body.fallback)}` : '',
+      sparse.fontSize !== undefined ? `font-size:${point(sparse.fontSize)}` : '',
+      sparse.lineHeight !== undefined ? `line-height:${point(sparse.lineHeight)}` : '',
+      sparse.fontWeight !== undefined ? `font-weight:${finite(sparse.fontWeight, 400)}` : '',
+      sparse.fontStyle !== undefined ? `font-style:${fontStyle(sparse.fontStyle)}` : '',
+      sparse.fillColor !== undefined ? `color:${cssColorValue(sparse.fillColor, 'currentColor')}` : '',
+      sparse.language ? `-webkit-locale:${cssStringLiteral(sparse.language)}` : '',
+      sparse.capitalization ? `font-variant-caps:${sparse.capitalization === 'small-caps' ? 'small-caps' : 'normal'};text-transform:${sparse.capitalization === 'all-caps' ? 'uppercase' : 'none'}` : '',
+      !inline ? `text-align:${alignment(resolved.alignment, target)};text-indent:${point(resolved.firstLineIndent * 72 / 25.4)};margin-left:${point(resolved.leftIndent * 72 / 25.4)};margin-right:${point(resolved.rightIndent * 72 / 25.4)};margin-top:${point(resolved.spaceBefore)};margin-bottom:${point(resolved.spaceAfter)};hyphens:${target === 'print' && resolved.hyphenation ? 'auto' : 'none'}` : '',
+      !inline && target === 'print' && resolved.keepWithNext ? 'break-after:avoid' : '',
+      extendedParagraphStyleCss(advanced, target),
+    ].filter(Boolean).join(';');
+    const selector = selectors[item.role!].map((selector) => `${liveScope ?? '.omi-scholarly-article'} ${selector}`).join(', ');
+    return selector && rules ? `${selector} { ${rules}; }` : '';
+  }).join('\n');
 }
 
 export function loadPublicationPublisherIdentity(): PublicationPublisherIdentity {
@@ -424,6 +513,7 @@ table caption { font-size: ${tableCaption.fontSize}pt; line-height: ${tableCapti
 img, svg, table { max-width: 100%; }
 ${paragraphStyleRules}
 ${TABLE_LAYOUT_CSS}
+${buildPublicationTextRoleCss(style, target)}
 `;
 
   if (target === 'html') {
@@ -486,7 +576,7 @@ export function buildPublicationParagraphStyleRules(
   style: PublicationStyle,
   target: PublicationStyleTarget,
 ): string {
-  return style.paragraphStyles.items.map((definition) => {
+  return style.paragraphStyles.items.filter((item) => item.role !== 'citation' && item.role !== 'note-citation').map((definition) => {
     const resolved = resolvePublicationParagraphStyle(style, definition.id);
     const selectorValue = cssStringLiteral(definition.id);
     const containerSelector = `.article-body [data-omi-paragraph-style-id=${selectorValue}]`;
@@ -928,7 +1018,7 @@ export async function renderStyleBasedHtml(
   target: PublicationStyleTarget,
   context?: { style: PublicationStyle; identity: PublicationPublisherIdentity; embedAssets?: boolean },
 ): Promise<string> {
-  const style = context?.style ?? loadPublicationStyle(manuscript);
+  const style = normalizePublicationStyle(context?.style ?? loadPublicationStyle(manuscript));
   const appliedTemplate = getAppliedPublicationTemplate(manuscript);
   const identity = context?.identity ?? (appliedTemplate && appliedTemplate.source !== 'document-style'
     ? templatePublisherIdentity(manuscript, profile, appliedTemplate.association ?? '')
@@ -936,7 +1026,7 @@ export async function renderStyleBasedHtml(
   const renderingManuscript = target === 'print'
     ? applyPublicationCorrectionsForRendering(manuscript)
     : manuscript;
-  const rendered = renderPublisherHtmlArticle(renderingManuscript, { ...profile, publicationStyle: style }, {
+  const rendered = renderPublisherHtmlArticle(renderingManuscript, { ...profile, rules: { ...profile.rules, citations: publicationNoteCitationRules(style, profile.rules.citations) }, publicationStyle: style }, {
     noteLayout: target === 'print' ? 'paged' : undefined,
   });
   const fatal = rendered.diagnostics.filter(item => item.severity === 'error' && (target !== 'print' || item.code !== 'profile-does-not-support-html'));
@@ -944,12 +1034,12 @@ export async function renderStyleBasedHtml(
   // Keep DOM parsing confined to the semantic article produced by our HTML
   // renderer. Publication-style and publisher values can originate in local
   // storage or an imported IDML package, so add them only after hyphenation.
-  let html = rendered.html;
+  let html = withPublicationTextRoleLanguages(rendered.html, style, manuscript.locale);
   if (target === 'print' && publicationHyphenationEnabled(style)) {
     html = await hyphenatePrintHtml(html, manuscript.locale, (element) => {
-      if (!element.closest('.article-body')) return {};
       const id = element.closest('[data-omi-paragraph-style-id]')?.getAttribute('data-omi-paragraph-style-id');
-      const paragraph = resolvePublicationParagraphStyle(style, id ?? undefined);
+      const role = element.closest('[data-omi-text-role]')?.getAttribute('data-omi-text-role');
+      const paragraph = resolvePublicationParagraphStyle(style, id ?? style.paragraphStyles.items.find((item) => item.role === role)?.id, manuscript.locale);
       return { enabled: paragraph.hyphenation && !paragraph.noBreak, language: paragraph.language || manuscript.locale };
     });
   }
@@ -965,6 +1055,29 @@ export async function renderStyleBasedHtml(
   return target === 'print' || context?.embedAssets
     ? inlinePublicationArtifactImages(html, manuscript, target === 'print' ? 48 * 1024 * 1024 : 8 * 1024 * 1024, target === 'print')
     : html;
+}
+
+function withPublicationTextRoleLanguages(html: string, style: PublicationStyle, language: string): string {
+  if (typeof DOMParser === 'undefined') return html;
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const originalLanguageNodes = new Set(doc.querySelectorAll('[lang]'));
+  for (const definition of style.paragraphStyles.items) {
+    if (!definition.role || definition.role === 'body') continue;
+    const selectors = EXPORT_TEXT_ROLE_SELECTORS[definition.role];
+    if (!selectors.length) continue;
+    const resolved = resolvePublicationParagraphStyle(style, definition.id, language);
+    const roleLanguage = definition.role === 'citation' || definition.role === 'note-citation'
+      ? publicationInlineStyleProperties(style, definition.id).language : resolved.language;
+    for (const element of doc.querySelectorAll(selectors.join(', '))) {
+      element.setAttribute('data-omi-text-role', definition.role);
+      if (!originalLanguageNodes.has(element) && roleLanguage) element.setAttribute('lang', roleLanguage);
+    }
+  }
+  for (const element of doc.querySelectorAll('[data-omi-paragraph-style-id], .article-body')) {
+    const resolved = resolvePublicationParagraphStyle(style, element.getAttribute('data-omi-paragraph-style-id'), language);
+    if (!originalLanguageNodes.has(element) && resolved.language) element.setAttribute('lang', resolved.language);
+  }
+  return `<!doctype html>\n${doc.documentElement.outerHTML}\n`;
 }
 
 /** A portable template must not inherit another device's active journal brand. */

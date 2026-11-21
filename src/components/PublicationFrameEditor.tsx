@@ -1,3 +1,4 @@
+import { PublicationPointInput } from './PublicationPointInput';
 import { arrangePublicationSheets, publicationFirstPageNumber } from '../model/publicationSpreads';
 import { usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
@@ -312,8 +313,8 @@ function NumberInput({ label, value, min, max, onChange }: { label: string; valu
 function StyleFields({ copy, value, onChange }: { copy: Copy; value: FrameTextStyle; onChange: (patch: Partial<FrameTextStyle>) => void }) {
   return <div className="omi-frame-style-fields">
     <label>{copy.font}<input value={value.fontFamily} onChange={(event) => onChange({ fontFamily: event.target.value || 'serif' })} /></label>
-    <NumberInput label={copy.size} min={1} max={300} value={value.fontSizePt} onChange={(fontSizePt) => onChange({ fontSizePt })} />
-    <NumberInput label={copy.leading} min={value.fontSizePt} max={600} value={value.lineHeightPt} onChange={(lineHeightPt) => onChange({ lineHeightPt })} />
+    <PublicationPointInput label={copy.size} min={1} max={300} value={value.fontSizePt} onChange={(fontSizePt) => onChange({ fontSizePt })} />
+    <PublicationPointInput leading label={copy.leading} min={value.fontSizePt} max={600} value={value.lineHeightPt} onChange={(lineHeightPt) => onChange({ lineHeightPt })} />
     <NumberInput label={copy.padding} min={0} max={100} value={value.paddingMm} onChange={(paddingMm) => onChange({ paddingMm })} />
     <label>{copy.alignment}<select aria-label={copy.alignment} value={value.alignment} onChange={(event) => onChange({ alignment: event.target.value as FrameTextStyle['alignment'] })}>{(['left', 'center', 'right', 'justify'] as const).map((alignment) => <option key={alignment} value={alignment}>{copy[alignment]}</option>)}</select></label>
     <label className="omi-frame-checkbox"><input type="checkbox" checked={value.hyphenation !== false} onChange={(event) => onChange({ hyphenation: event.target.checked })} />{copy.hyphenation}</label>

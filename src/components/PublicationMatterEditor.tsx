@@ -1,3 +1,4 @@
+import { PublicationPointInput } from './PublicationPointInput';
 import { PublicationMeasurementSelector, usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
 import { createCoverSheetFrame, getPublicationCoverSheet, isPublicationCoverSheet, publicationCoverPanels } from '../model/publicationCoverSheet';
@@ -101,7 +102,7 @@ export function PublicationMatterEditor({ widthMm, heightMm, bodyPageCount, read
       </> : null}
       <div className="omi-publication-matter-settings">
         <label>{copy.font}<input value={page.appearance.fontFamily} disabled={readOnly} maxLength={128} onChange={(event) => { if (event.target.value.trim()) appearance({ fontFamily: event.target.value }); }} /></label>
-        <MatterNumber label={copy.size} min={6} max={120} value={page.appearance.fontSizePt} disabled={readOnly} onCommit={(value) => appearance({ fontSizePt: value })} />
+        <PublicationPointInput label={copy.size} min={6} max={120} value={page.appearance.fontSizePt} disabled={readOnly} onChange={(value) => appearance({ fontSizePt: value })} />
         <label>{copy.color}<input type="color" value={page.appearance.color} disabled={readOnly} onChange={(event) => appearance({ color: event.target.value })} /></label>
         <label>{copy.background}<input type="color" value={page.appearance.background} disabled={readOnly} onChange={(event) => appearance({ background: event.target.value })} /></label>
         <MatterNumber unit={unit} label={copy.padding} min={0} max={60} value={page.appearance.paddingMm} disabled={readOnly} onCommit={(value) => appearance({ paddingMm: value })} />

@@ -1,3 +1,4 @@
+import { PublicationPointInput } from './PublicationPointInput';
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
 import { getPublicationCoverSheet, isPublicationCoverSheet } from '../model/publicationCoverSheet';
 import { useStudioStore } from '../app/useStudioStore';
@@ -139,7 +140,8 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
       {selected.kind === 'text' ? <>
         <label>{pageCopy.vertical}<select aria-label={pageCopy.vertical} value={selected.vertical ?? 'top'} onChange={(event) => patchFrame(selected.id, { vertical: event.target.value as 'top' | 'center' | 'bottom' })}><option value="top">{pageCopy.top}</option><option value="center">{pageCopy.middle}</option><option value="bottom">{pageCopy.bottom}</option></select></label>
         <label>{copy.font}<input value={selected.style.fontFamily} maxLength={128} onChange={(event) => { if (event.target.value.trim()) patchFrame(selected.id, { style: { ...selected.style, fontFamily: event.target.value } }); }} /></label>
-        {(['fontSizePt', 'lineHeightPt', 'paddingMm'] as const).map((key, index) => <MatterNumber unit={key === 'paddingMm' ? unit : undefined} key={key} label={[copy.size, copy.leading, copy.padding][index]!} value={selected.style[key]} min={key === 'paddingMm' ? 0 : 6} max={key === 'fontSizePt' ? 120 : key === 'paddingMm' ? 60 : 240} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, [key]: value } })} />)}
+        {(['fontSizePt', 'lineHeightPt'] as const).map((key, index) => <PublicationPointInput key={key} leading={key === 'lineHeightPt'} label={[copy.size, copy.leading][index]!} value={selected.style[key]} min={6} max={key === 'fontSizePt' ? 120 : 240} disabled={readOnly} onChange={(value) => patchFrame(selected.id, { style: { ...selected.style, [key]: value } })} />)}
+        <MatterNumber unit={unit} label={copy.padding} value={selected.style.paddingMm} min={0} max={60} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, paddingMm: value } })} />
         <label>{copy.alignment}<select aria-label={copy.alignment} value={selected.style.alignment} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, alignment: event.target.value as 'left' | 'center' | 'right' | 'justify' } })}>{(['left', 'center', 'right', 'justify'] as const).map((value) => <option key={value} value={value}>{copy[value]}</option>)}</select></label>
       </> : <>
         <label>{labels.image}<input type="file" disabled={busy} accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ''; }} /></label>
