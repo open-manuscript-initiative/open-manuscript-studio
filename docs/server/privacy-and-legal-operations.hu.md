@@ -211,7 +211,7 @@ a központi OMI-nak automatikusan.
 
 A szöveges jelentéshez önkéntes kapcsolati e-mail-cím és külön engedélyezett,
 minimális technikai adatok (platform, alkalmazásverzió, felületi nyelv)
-kapcsolódhatnak. A kliens kéziratot, jegyzetet, azonosítót és teljes naplót nem
+kapcsolódhatnak. A jelentés mezőneveinek fordításához a kliens a felület nyelvének rövid kódját a technikaiadat-kapcsolótól függetlenül elküldi. A kliens kéziratot, jegyzetet, azonosítót és teljes naplót nem
 csatol automatikusan. A jelentést a szerver helyi levelezőrendszere kezeli,
 nem új Studio-adatbázistábla. Az üzemeltetőnek dokumentálnia kell a célhoz kötött
 hozzáférést, a postafiók tényleges megőrzési és törlési szabályait, az érintetti

@@ -320,7 +320,7 @@ note to the **selected instance operator**. Receiving is disabled unless
 not transmit feedback to the central OMI by default. Reports are authenticated
 and rate-limited, but do not include the authenticated account identity in the
 message. Contact e-mail is voluntary; basic technical details (broad platform,
-build version, interface locale) are separately opt-in. Manuscript contents,
+build version, interface locale) are separately opt-in. A minimal UI language code is always sent with the report solely to translate its field labels, independent of diagnostic consent. Manuscript contents,
 notes, log files, screenshots and device identifiers are never gathered automatically.
 
 The submitted report is delivered via the instance's local mail transport rather

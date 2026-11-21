@@ -15,6 +15,7 @@ test('accepts minimal useful issue report without personal or technical metadata
   assert.equal(result.success, true);
   if (result.success) {
     assert.equal('technical' in result.data, false);
+    assert.equal('messageLocale' in result.data, false);
     assert.equal('contactEmail' in result.data, false);
   }
 });
@@ -46,6 +47,7 @@ test('rejects invalid category, excessive text and malformed contact e-mail', ()
   assert.equal(studioFeedbackSchema.safeParse({ ...valid, category: 'analytics' }).success, false);
   assert.equal(studioFeedbackSchema.safeParse({ ...valid, description: 'x'.repeat(4001) }).success, false);
   assert.equal(studioFeedbackSchema.safeParse({ ...valid, contactEmail: 'invalid@@example' }).success, false);
+  assert.equal(studioFeedbackSchema.safeParse({ ...valid, messageLocale: '\\r\\nBcc:evil@example.net' }).success, false);
 });
 
 test('rejects additional technical fingerprinting properties', () => {
