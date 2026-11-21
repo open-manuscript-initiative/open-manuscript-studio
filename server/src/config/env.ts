@@ -49,6 +49,9 @@ const environmentSchema = z.object({
   OMI_ANDROID_TEST_SIGNUPS_ENABLED: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
   OMI_ANDROID_TEST_ORIGIN: z.string().url().default('https://studio.openmanuscript.org'),
 
+  // Send feedback only to an explicitly configured recipient on this instance.
+  OMI_FEEDBACK_RECIPIENT: z.email().trim().max(320).optional(),
+
   // Registry audit credentials exist only on the registry host. Per-instance Studio servers never receive this token.
   OMI_SERVER_REGISTRY_GITHUB_APP_ID: z.string().trim().min(1).optional(),
   OMI_SERVER_REGISTRY_GITHUB_INSTALLATION_ID: z.string().trim().min(1).optional(),

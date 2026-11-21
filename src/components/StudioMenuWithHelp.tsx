@@ -1,4 +1,4 @@
-import { Bot, Boxes, CircleHelp, CircleX, FolderOpen, ListTree, Plug, UploadCloud } from 'lucide-react';
+import { Bot, Boxes, CircleHelp, CircleX, FolderOpen, ListTree, MessageSquareText, Plug, UploadCloud } from 'lucide-react';
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -25,6 +25,11 @@ import './StudioMenuWithHelp.css';
 const LazyHelpPanel = lazy(async () => {
   const module = await import('./HelpPanel');
   return { default: module.HelpPanel };
+});
+
+const LazyStudioFeedbackPanel = lazy(async () => {
+  const module = await import('./StudioFeedbackPanel');
+  return { default: module.StudioFeedbackPanel };
 });
 
 const LazyIntegrationExecutionWorkspace = lazy(async () => {
@@ -86,13 +91,14 @@ export function StudioMenuWithHelp({
   const [ompRevisionBusy, setOmpRevisionBusy] = useState(false);
   const [ompRevisionMessage, setOmpRevisionMessage] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [listsOpen, setListsOpen] = useState(false);
   const [modulesOpen, setModulesOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
   const [contentHost, setContentHost] = useState<HTMLElement | null>(null);
-  const externalContentActive = helpOpen || integrationsOpen || agentsOpen || listsOpen || modulesOpen;
+  const externalContentActive = helpOpen || feedbackOpen || integrationsOpen || agentsOpen || listsOpen || modulesOpen;
 
   useEffect(() => {
     if (previousManuscriptRef.current === manuscript) return;
@@ -103,7 +109,7 @@ export function StudioMenuWithHelp({
 
   useEffect(() => {
     if (!open) {
-      setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); setModulesOpen(false);
+      setHelpOpen(false); setFeedbackOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); setModulesOpen(false);
       setNavigationHost(null); setContentHost(null); return;
     }
     setNavigationHost(document.querySelector<HTMLElement>('.studio-menu-navigation'));
@@ -116,6 +122,7 @@ export function StudioMenuWithHelp({
       const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('.studio-menu-nav-button');
       if (!button) return;
       if (button.dataset.helpNavigation !== 'true') setHelpOpen(false);
+      if (button.dataset.feedbackNavigation !== 'true') setFeedbackOpen(false);
       if (button.dataset.integrationsNavigation !== 'true') setIntegrationsOpen(false);
       if (button.dataset.agentsNavigation !== 'true') setAgentsOpen(false);
       if (button.dataset.listsNavigation !== 'true') setListsOpen(false);
@@ -125,7 +132,7 @@ export function StudioMenuWithHelp({
     return () => navigationHost.removeEventListener('click', closePortalOnOtherNavigation);
   }, [navigationHost]);
 
-  const closeExternalViews = () => { setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); setModulesOpen(false); };
+  const closeExternalViews = () => { setHelpOpen(false); setFeedbackOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); setModulesOpen(false); };
   const requestDocumentClose = () => {
     if (!window.confirm(closeDocumentCopy.confirm)) return;
     onClose();
@@ -182,9 +189,12 @@ export function StudioMenuWithHelp({
   const modulesNavigation = (
     <button type="button" data-modules-navigation="true" className={'studio-menu-nav-button' + (modulesOpen ? ' studio-menu-nav-button--active' : '')} aria-current={modulesOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setModulesOpen(true); }}><Boxes size={18} aria-hidden="true" /><span>{modulesLabel}</span></button>
   );
-  const utilityNavigation = (
+  const feedbackLabel = locale.startsWith('hu') ? 'Visszajelzés küldése'
+    : locale.startsWith('de') ? 'Feedback senden' : 'Send feedback';
+  const utilityNavigation = <>
     <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}><CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span></button>
-  );
+    <button type="button" data-feedback-navigation="true" className={`studio-menu-nav-button${feedbackOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={feedbackOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setFeedbackOpen(true); }}><MessageSquareText size={18} aria-hidden="true" /><span>{feedbackLabel}</span></button>
+  </>;
   const documentCloseAction = (
     <>
       {!native ? (
@@ -279,6 +289,14 @@ export function StudioMenuWithHelp({
       <div className="studio-help-portal">
         <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
           <LazyHelpPanel />
+        </Suspense>
+      </div>,
+      contentHost,
+    ) : null}
+    {contentHost && feedbackOpen ? createPortal(
+      <div className="studio-help-portal">
+        <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
+          <LazyStudioFeedbackPanel />
         </Suspense>
       </div>,
       contentHost,

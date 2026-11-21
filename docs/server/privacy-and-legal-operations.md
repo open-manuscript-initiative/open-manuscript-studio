@@ -310,3 +310,24 @@ The executable DTO/error contract and generated OpenAPI are described in
 identity/API/privacy release gates include `npm run test:privacy`; source tests do
 not replace operator notice review or deployed-system acceptance. No new database
 migration is introduced by this boundary repair.
+
+
+## Optional in-app feedback
+
+The Studio feedback form can submit a bug report, suggestion or completed test
+note to the **selected instance operator**. Receiving is disabled unless
+`OMI_FEEDBACK_RECIPIENT` is configured. Self-hosted/institutional instances do
+not transmit feedback to the central OMI by default. Reports are authenticated
+and rate-limited, but do not include the authenticated account identity in the
+message. Contact e-mail is voluntary; basic technical details (broad platform,
+build version, interface locale) are separately opt-in. Manuscript contents,
+notes, log files, screenshots and device identifiers are never gathered automatically.
+
+The submitted report is delivered via the instance's local mail transport rather
+than stored in a new Studio database table. The operator must restrict mailbox
+access, verify and document retention/deletion and backup practices, and handle
+applicable data subject requests. For the central instance, confirm alignment
+with the previously defined one-month retention default. Update the actual
+public privacy notice **before** enabling the receiving mailbox. See
+[In-app feedback](../release/studio-in-app-feedback.md) for the deployment and
+acceptance checklist.

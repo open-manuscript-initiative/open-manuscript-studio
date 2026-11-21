@@ -1,4 +1,5 @@
 import { androidTestSignupRouter } from './routes/androidTestSignupRoutes.js';
+import { studioFeedbackRouter } from './routes/studioFeedbackRoutes.js';
 import { extensionRegistryRouter } from './routes/extensionRegistryRoutes.js';
 import {apiCors} from './middleware/apiCors.js';
 import express from 'express';
@@ -151,6 +152,7 @@ const privacyRouter = createPrivacyRouter({
   onLegacyRequest: (route) => console.info('privacy-api-legacy-route', { route }),
 });
 app.use(['/api/v1', '/api'], privacyRouter); // Additive v1 and shared legacy facade.
+app.use('/api/v1', studioFeedbackRouter);
 app.use('/api', accountDeletionRouter);
 app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);

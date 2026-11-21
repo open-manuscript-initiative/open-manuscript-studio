@@ -199,3 +199,24 @@ Az [ADR-034](../architecture/adr-034-privacy-api-and-account-overview.md) rögz�
 a DTO/OpenAPI-, repository- és release-gate határt. A `npm run test:privacy` a
 meglévő kötelező CI-ellenőrzés része, de nem helyettesít éles elfogadást vagy jogi
 ellenőrzést. A javítás nem vezet be adatbázis-migrációt vagy szerkesztési korlátot.
+
+
+## Alkalmazáson belüli visszajelzések (opcionális)
+
+A Súgó melletti „Visszajelzés küldése” űrlap a kiválasztott szerver üzemeltetőjének
+küldhet hibajelentést, fejlesztési javaslatot vagy tesztbeszámolót. A fogadó végpont
+**alapértelmezetten tiltott**, és csak az üzemeltető által megadott
+`OMI_FEEDBACK_RECIPIENT` címre továbbít; az intézményi telepítések nem küldenek
+a központi OMI-nak automatikusan.
+
+A szöveges jelentéshez önkéntes kapcsolati e-mail-cím és külön engedélyezett,
+minimális technikai adatok (platform, alkalmazásverzió, felületi nyelv)
+kapcsolódhatnak. A kliens kéziratot, jegyzetet, azonosítót és teljes naplót nem
+csatol automatikusan. A jelentést a szerver helyi levelezőrendszere kezeli,
+nem új Studio-adatbázistábla. Az üzemeltetőnek dokumentálnia kell a célhoz kötött
+hozzáférést, a postafiók tényleges megőrzési és törlési szabályait, az érintetti
+kérelmek kezelését és a biztonsági mentések sorsát. A központi telepítésnél a
+korábban meghatározott egyhónapos alapmegőrzéssel való összhangot külön ellenőrizni
+kell. A nyilvános adatvédelmi tájékoztatót a fogadás bekapcsolása előtt frissítse.
+
+Üzemeltetés és tesztek: [Stúdió-visszajelzés](../release/studio-in-app-feedback.md).

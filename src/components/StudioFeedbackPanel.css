@@ -1,0 +1,89 @@
+.studio-feedback {
+  width: 100%;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 1.75rem);
+  color: var(--omi-text, inherit);
+}
+
+.studio-feedback__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  margin-bottom: 1.25rem;
+}
+
+.studio-feedback__header h2 {
+  font-size: 1.35rem;
+  margin: 0 0 0.35rem;
+}
+
+.studio-feedback__header p { margin: 0; line-height: 1.5; }
+
+.studio-feedback__form {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.studio-feedback__form > label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.studio-feedback input:not([type="checkbox"]),
+.studio-feedback textarea,
+.studio-feedback select {
+  width: 100%;
+  min-height: 2.75rem;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.65rem;
+  color: inherit;
+  background: var(--omi-surface, #fff);
+  border: 1px solid var(--omi-border, #a7adb8);
+  border-radius: 0.45rem;
+  font: inherit;
+  font-weight: 400;
+}
+
+.studio-feedback textarea { resize: vertical; }
+.studio-feedback small { font-weight: 400; opacity: 0.8; }
+.studio-feedback__form > .studio-feedback__checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-weight: 400;
+}
+.studio-feedback__checkbox input { margin-top: 0.25rem; }
+.studio-feedback__privacy {
+  padding: 0.75rem;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  border: 1px solid var(--omi-border, #a7adb8);
+  border-radius: 0.5rem;
+}
+.studio-feedback__error { color: #b42318; font-weight: 600; }
+.studio-feedback__actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+.studio-feedback__actions button, .studio-feedback__confirmation button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.95rem;
+  border: 1px solid var(--omi-border, #a7adb8);
+  border-radius: 0.5rem;
+  background: var(--omi-accent, #1e40af);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+.studio-feedback__actions .studio-feedback__secondary { background: transparent; color: inherit; }
+.studio-feedback__actions button:disabled { cursor: wait; opacity: 0.6; }
+.studio-feedback__confirmation { padding: 1rem 0; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .studio-feedback { padding: 0.75rem; }
+  .studio-feedback__actions button { width: 100%; }
+}

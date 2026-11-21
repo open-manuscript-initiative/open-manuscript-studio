@@ -156,6 +156,9 @@ jobs:
       - name: Test privacy notice, account export and expiry-only cleanup
         run: npm run test:privacy
 
+      - name: Verify Studio feedback privacy contract
+        run: npm --prefix server run test:studio-feedback
+
       - name: Test Android closed-test signups and confirmation safety
         run: npm --prefix server run test:android-signup
 
