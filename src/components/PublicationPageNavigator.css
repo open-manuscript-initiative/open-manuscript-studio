@@ -4,7 +4,7 @@
 .publication-page-thumbnails{display:flex;gap:10px;overflow-x:auto;max-height:195px;padding:6px 4px 10px;overscroll-behavior:contain}
 .publication-page-thumbnails .publication-page-thumbnail{display:flex;flex:0 0 84px;flex-direction:column;align-items:center;gap:5px;padding:5px;border:2px solid transparent;border-radius:5px;background:transparent;color:inherit;cursor:pointer;min-width:84px}
 .publication-page-thumbnail[draggable=true]{cursor:grab}
-.publication-page-thumbnails .publication-page-thumbnail[aria-current=page]{border-color:var(--accent-color,#2563eb);background:#dbeafe;color:#172033}
+.publication-page-thumbnails .publication-page-thumbnail[aria-current=page]{border-color:var(--omi-academic-burgundy,#7c2d3f);background:#f5e9ec;color:#172033}
 .publication-page-thumbnail:focus-visible{outline:2px solid #2563eb;outline-offset:1px}
 .publication-page-thumbnail svg{width:70px;height:100px;object-fit:contain;filter:drop-shadow(0 1px 2px #0004);overflow:hidden}
 .publication-page-thumbnail-caption{display:flex;justify-content:space-between;width:70px;font-size:.8rem}
@@ -19,3 +19,7 @@
 .publication-style-editor-layout>.publication-document-canvas--print{grid-template-rows:auto auto minmax(0,1fr)}
 .publication-page-navigation-actions select{max-width:100%;min-width:0}
 .publication-page-navigation-actions label{max-width:100%;min-width:0}
+
+.publication-page-navigation-actions button,.publication-page-navigation-actions select{padding:6px 10px;border:1px solid #c4bac0;border-radius:7px;background:#fff;color:#293447;font-size:.8rem}
+.publication-page-navigation-actions button{font-weight:600;cursor:pointer}
+.publication-page-navigation-actions button:not(:disabled):hover{border-color:var(--omi-academic-burgundy,#7c2d3f);background:#f5e9ec}

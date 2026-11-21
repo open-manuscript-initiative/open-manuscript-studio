@@ -701,7 +701,8 @@ export function PublicationDocumentCanvas({
         const thumbnails: PublicationBodyPageThumbnail[] = pageGeometries.map((geometry, index) => {
           const inserted = layout.insertedPages?.find((item) => item.pageIndex === index);
           const insertion = style.pageStyles?.insertions?.find((item) => item.id === inserted?.id);
-          const anchorSection = blockSectionIds.get(insertion?.beforeBlockId ?? insertion?.afterBlockId ?? '');
+          const anchorSection = insertion?.beforeBlockId === PUBLICATION_BODY_START ? layoutSectionsRef.current[0]?.id
+            : blockSectionIds.get(insertion?.beforeBlockId ?? insertion?.afterBlockId ?? '');
           return { id: inserted ? `inserted:${inserted.id}` : `body:${index}`, insertionId: inserted?.id,
             number: firstPageNumber + index, styleId: resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index], insertionStyles.get(index)).id,
             width: geometry.width, height: geometry.height, marks: [], studyId: getStudyRootSectionId(layoutSectionsRef.current, layout.pageSectionIds?.[index] ?? anchorSection ?? ''),

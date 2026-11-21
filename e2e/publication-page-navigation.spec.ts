@@ -67,6 +67,12 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
   await thumbnails().first().click();
   await navigator.getByRole('button', { name: 'Add page before', exact: true }).click();
   await expect(navigator.locator('[data-thumbnail-id^="inserted:"]')).toHaveCount(1);
+  // A leading blank is also a usable drop target for a complete study.
+  await thumbnails().last().dragTo(thumbnails().first());
+  await expect.poll(() => page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    return useStudioStore.getState().manuscript.sections.map((section) => section.id);
+  })).toEqual(['a', 'child', 'b']);
   await page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     const { resumeLastSessionPersistence } = await import('/src/app/lastSessionPersistence.ts');
