@@ -1,4 +1,6 @@
 import { PublicationPointInput } from './PublicationPointInput';
+import { publicationPaginationCopy } from '../i18n/publicationPagination';
+import { PUBLICATION_REVEAL_FRAME_EVENT, type PublicationLayoutIssueReporter } from '../model/publicationLayoutDiagnostics';
 import { arrangePublicationSheets, publicationFirstPageNumber } from '../model/publicationSpreads';
 import { usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
@@ -13,7 +15,7 @@ import { getPublicationFramesCopy } from '../i18n/publicationFrames';
 import { useTranslation } from '../i18n';
 import {
   collectFrameSourceBlocks, flowFrameStories, frameLineDisplayText, frameStyle, getFrameLayout, linkFrames, removeFrame, reorderFrameLayer,
-  unlinkFrames, RECTANGLE_POINTS, type FrameTextStyle, type FrameTextFlowOptions, type PublicationFrame, type PublicationFrameLayout,
+  unlinkFrames, updateFrameStoryText, RECTANGLE_POINTS, type FrameStoryBreak, type FrameTextStyle, type FrameTextFlowOptions, type PublicationFrame, type PublicationFrameLayout,
 } from '../model/publicationFrames';
 import { storedContentText } from '../model/proofing';
 import {
@@ -30,9 +32,11 @@ interface Drag {
   kind: 'move' | 'resize' | 'point' | 'graphic-move' | 'graphic-resize'; point?: number; frame: PublicationFrame; graphic?: FrameGraphicTransform;
   layout: PublicationFrameLayout; x: number; y: number; pixelsPerMm: number;
 }
-export function PublicationFrameEditor({ publicationStyle }: { publicationStyle: PublicationStyle }) {
+export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { publicationStyle: PublicationStyle; onLayoutIssues?: PublicationLayoutIssueReporter }) {
   const manuscript = useStudioStore((state) => state.manuscript);
   const { locale } = useTranslation(); const copy = getPublicationFramesCopy(locale);
+  const paginationCopy = publicationPaginationCopy(locale);
+  const storyInput = useRef<HTMLTextAreaElement>(null);
   const layersCopy = getPublicationMatterFramesCopy(locale);
   const preview = usePublicationPreview();
   const initial = useMemo(() => {
@@ -78,11 +82,44 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
   const graphics = blocks.filter((block) => block.visual);
   const sourceIds = new Set(graphics.map((block) => block.id));
   const missingSources = layout.frames.some((frame) => frame.kind === 'graphic' && !sourceIds.has(frame.sourceBlockId!));
+  const reportIssues = useRef(onLayoutIssues); reportIssues.current = onLayoutIssues;
+  useEffect(() => {
+    reportIssues.current?.(manuscript.id, [
+      ...flow.overflow.map((item) => ({ id: `story:${item.storyId}`, storyId: item.storyId,
+        frameId: layout.frames.find((frame) => frame.storyId === item.storyId && !frame.nextFrameId)?.id,
+        message: `${layout.stories.find((story) => story.id === item.storyId)?.name}: ${copy.overflow}` })),
+      ...layout.frames.filter((frame) => frame.kind === 'graphic' && !sourceIds.has(frame.sourceBlockId!)).map((frame) => ({
+        id: `frame:${frame.id}`, frameId: frame.id, message: `${frame.name}: ${copy.missingGraphic}`,
+      })),
+    ]);
+  // Source IDs affect only the missing-graphic check; the flow already carries text/geometry changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manuscript.id, flow, layout, missingSources, copy]);
   const story = layout.stories.find((item) => item.id === selected?.storyId);
+  function addStoryBreak(kind: FrameStoryBreak['kind']) {
+    if (!story) return;
+    const cursor = storyInput.current?.selectionStart ?? 0;
+    const offset = Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(story.text), (part) => part.index)
+      .filter((value) => value <= cursor).at(-1) ?? 0;
+    const point = { offset: cursor === story.text.length ? cursor : offset, kind };
+    commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? { ...item,
+      breaks: [...(item.breaks ?? []).filter((existing) => existing.offset !== point.offset), point].sort((a, b) => a.offset - b.offset) } : item) });
+  }
   const effective = selected ? frameStyle(layout, selected) : undefined;
   const shared = layout.styles.find((style) => style.id === selected?.styleId);
   const stage = useRef<HTMLDivElement>(null); const [stageWidth, setStageWidth] = useState(500);
   const drag = useRef<Drag | null>(null); const dragDraft = useRef<PublicationFrameLayout | null>(null);
+  useEffect(() => {
+    const reveal = (event: Event) => {
+      const { frameId, storyId } = (event as CustomEvent<{ frameId?: string; storyId?: string }>).detail;
+      const frame = layout.frames.find((item) => item.id === frameId);
+      if (frame) { setPageSelection(frame.page); setSelectedId(frame.id); }
+      else if (storyId) setReuseStory(storyId);
+      stage.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    };
+    document.addEventListener(PUBLICATION_REVEAL_FRAME_EVENT, reveal);
+    return () => document.removeEventListener(PUBLICATION_REVEAL_FRAME_EVENT, reveal);
+  }, [layout.frames]);
   const widestPage = Math.max(...framePages(layout).map((_, index) => framePageStyle(layout, index).widthMm));
   const facingPages = publicationStyle.page.facingPages === true;
   const spreadSheets = arrangePublicationSheets(framePages(layout).map((_, index) => {
@@ -216,8 +253,8 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
       <button type="button" disabled={exporting || !!flow.overflow.length || missingSources} onClick={() => void exportLayout(true)}>{copy.print}</button>
       <button type="button" disabled={exporting || !!flow.overflow.length || missingSources} onClick={() => void exportLayout(false)}>{copy.exportHtml}</button>
     </div> : null}
-    {flow.overflow.length ? <p className="omi-frame-overflow" role="status">{layout.autoFlowStoryId && flow.overflow.some((item) => item.storyId === layout.autoFlowStoryId) ? copy.autoOverflow : copy.overflow} {flow.overflow.map((item) => `${layout.stories.find((story) => story.id === item.storyId)?.name}: ${item.text.length}`).join(' · ')}</p> : null}
-    {missingSources ? <p role="alert">{copy.missingGraphic}</p> : null}
+    {flow.overflow.length ? <p className="omi-frame-overflow" role="status"><span role="img" aria-label={copy.overflow}>⚠</span></p> : null}
+    {missingSources ? <p role="alert"><span role="img" aria-label={copy.missingGraphic}>⚠</span></p> : null}
     {message ? <p role="alert">{message}</p> : null}
     <div className="omi-frame-workspace">
       <div ref={stage} className="omi-frame-stage">
@@ -280,7 +317,12 @@ export function PublicationFrameEditor({ publicationStyle }: { publicationStyle:
           <label className="omi-frame-checkbox"><input type="checkbox" checked={!!selected.overrides} onChange={(event) => updateFrame({ overrides: event.target.checked ? {} : undefined })} />{copy.local}</label>
           {selected.overrides ? <StyleFields copy={copy} value={effective} onChange={(patch) => changeStyle(patch, true)} /> : null}
           {selected.kind === 'text' && story ? <>
-            <label>{copy.text}<textarea rows={7} value={story.text} onChange={(event) => commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? { ...item, text: event.target.value } : item) })} /></label>
+            <label>{copy.text}<textarea ref={storyInput} rows={7} value={story.text} onChange={(event) => commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? updateFrameStoryText(item, event.target.value) : item) })} /></label>
+            <label className="omi-frame-checkbox"><input type="checkbox" checked={story.autoContinue ?? story.id === layout.autoFlowStoryId} onChange={(event) => commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? { ...item, autoContinue: event.target.checked } : item) })} />{paginationCopy.autoContinue}</label>
+            <label>{paginationCopy.continuationStyle}<select value={story.continuationStyleId ?? ''} onChange={(event) => commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? { ...item, continuationStyleId: event.target.value || undefined } : item) })}><option value="">{paginationCopy.inherit}</option>{layout.pageStyles?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+            <div role="group" aria-label={paginationCopy.breaks}><button type="button" disabled={(story.breaks?.length ?? 0) >= 500} onClick={() => addStoryBreak('frame')}>{paginationCopy.frameBreak}</button><button type="button" disabled={(story.breaks?.length ?? 0) >= 500} onClick={() => addStoryBreak('page')}>{paginationCopy.pageBreak}</button></div>
+            <small>{paginationCopy.breakHelp}</small>
+            {story.breaks?.map((point) => <div key={point.offset}><span>{point.kind === 'page' ? paginationCopy.pageBreak : paginationCopy.frameBreak}: {point.offset}</span><button type="button" aria-label={`${paginationCopy.removeBreak}: ${point.offset}`} onClick={() => commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? { ...item, breaks: item.breaks?.filter((existing) => existing.offset !== point.offset) } : item) })}>{paginationCopy.removeBreak}</button></div>)}
             <button type="button" onClick={() => commit({ ...layout, stories: layout.stories.map((item) => item.id === story.id ? { ...item, text: item.text + blocks.filter((block) => !block.visual).map((block) => storedContentText(block.content)).filter(Boolean).join('\n\n') } : item) })}>{copy.importText}</button><small>{copy.importHelp}</small>
             {selected.nextFrameId ? <><p>{copy.linked}: {layout.frames.find((frame) => frame.id === selected.nextFrameId)?.name}</p><button type="button" onClick={() => { try { commit(unlinkFrames(layout, selected.id, flow.frames.find((item) => item.frameId === selected.id)?.end ?? 0, crypto.randomUUID())); } catch (error) { setMessage(String(error)); } }}>{copy.unlink}</button></> : <>
               <label>{copy.next}<select aria-label={copy.next} value={targetId} onChange={(event) => setTargetId(event.target.value)}><option value="">—</option>{layout.frames.filter((frame) => frame.kind === 'text' && frame.storyId !== story.id && !layout.frames.some((other) => other.nextFrameId === frame.id)).map((frame) => <option key={frame.id} value={frame.id}>{frame.name}</option>)}</select></label><button type="button" disabled={!targetId} onClick={() => { try { commit(linkFrames(layout, selected.id, targetId)); setTargetId(''); } catch (error) { setMessage(String(error)); } }}>{copy.link}</button>

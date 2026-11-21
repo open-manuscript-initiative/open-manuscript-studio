@@ -39,7 +39,7 @@ export function buildPublicationPageStylesCss(style: PublicationStyle, sections:
     const name = owner ? sectionNames.get(owner.sectionId)! : 'omi_body';
     const selector = `.manuscript-section[data-omi-section-id=${cssStringLiteral(section.id)}]`;
     const direct = style.pageStyles.sections.find((item) => item.sectionId === section.id);
-    result.push(`${selector}{page:${name};string-set:omi_section_title ${cssStringLiteral(section.title)},omi_short_section_title ${cssStringLiteral(short(section.title))};${direct?.startNewPage ? 'break-before:page;' : ''}}`);
+    result.push(`${selector}{page:${name};string-set:omi_section_title ${cssStringLiteral(section.title)},omi_short_section_title ${cssStringLiteral(short(section.title))};${direct?.startNewPage ? 'break-before:page;' : ''}${direct?.keepTogether ? 'break-inside:avoid;' : ''}}`);
     if (emitted.has(name)) continue;
     emitted.add(name);
     const master = resolvePublicationPageStyle({ ...style, pageStyles: { ...style.pageStyles, pages: [] } }, sections, 0, section.id);
@@ -65,6 +65,13 @@ export function buildPublicationPageStylesCss(style: PublicationStyle, sections:
       result.push(geometry(master, `${name}${range}`), header(master, values, `${name}${range}`, !ownerId));
       if (!master.showFirstPage) result.push(`@page ${name}${range}:${ownerId ? `nth(1 of ${name})` : `nth(${bodyPageOffset + 1})`}{@top-left{content:none}@top-right{content:none}}`);
     }
+  }
+  for (const [index, insertion] of (style.pageStyles.insertions ?? []).entries()) {
+    const master = style.pageStyles.styles.find((item) => item.id === insertion.styleId)
+      ?? resolvePublicationPageStyle({ ...style, pageStyles: { ...style.pageStyles, pages: [], sections: [] } }, sections, 0);
+    const name = `omi_inserted_${index}`;
+    result.push(geometry(master, name), header(master, { ...baseValues, sectionTitle: '', shortSectionTitle: '' }, name));
+    result.push(`[data-omi-inserted-page=${cssStringLiteral(insertion.id)}]{page:${name};display:block;height:1px;margin:0;padding:0;break-before:page;break-after:page;}`);
   }
   if (!resolvePublicationPageStyle(style, sections, 0).showFirstPage) result.push(`@page omi_body:nth(${bodyPageOffset + 1}){@top-left{content:none}@top-right{content:none}}`);
   return result.join('\n');

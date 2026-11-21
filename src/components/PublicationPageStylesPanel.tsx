@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import { stageMoveSectionSibling } from '../app/sectionActions';
+import { partitionManuscriptStudies } from '../model/sectionStructure';
+import { storedContentText } from '../model/proofing';
+import { publicationPaginationCopy } from '../i18n/publicationPagination';
 import type { OmiSection } from '../types/omi';
 import type { PublicationStyle } from '../services/publicationStyleExport';
 import { capturePublicationPageStyle, publicationPageStyles, removePublicationPageStyle, resolvePublicationPageStyle,
@@ -7,10 +11,12 @@ import { publicationPageStylesCopy } from '../i18n/publicationPageStyles';
 import { usePublicationMeasurementUnit } from './PublicationMeasurementControls';
 import { MatterNumber } from './PublicationMatterControls';
 
-export function PublicationPageStylesPanel({ style, sections, locale, selectedSectionId, onChange }: {
-  style: PublicationStyle; sections: OmiSection[]; locale: string; selectedSectionId?: string | null; onChange: (style: PublicationStyle) => void;
+export function PublicationPageStylesPanel({ style, sections, locale, selectedSectionId, onChange, checker }: {
+  style: PublicationStyle; sections: OmiSection[]; locale: string; selectedSectionId?: string | null; onChange: (style: PublicationStyle) => void; checker?: ReactNode;
 }) {
   const copy = publicationPageStylesCopy(locale), collection = publicationPageStyles(style);
+  const paginationCopy = publicationPaginationCopy(locale);
+  const [anchorId, setAnchorId] = useState(''), [insertionStyleId, setInsertionStyleId] = useState('');
   const [masterId, setMasterId] = useState('');
   const [sectionId, setSectionId] = useState(selectedSectionId ?? sections[0]?.id ?? '');
   const [from, setFrom] = useState(style.page.pageNumberStart ?? 1), [to, setTo] = useState(style.page.pageNumberStart ?? 1);
@@ -20,6 +26,10 @@ export function PublicationPageStylesPanel({ style, sections, locale, selectedSe
   const availableSections: OmiSection[] = [];
   const visit = (items: OmiSection[]) => { for (const item of items) { if (availableSections.some((s) => s.id === item.id)) continue; availableSections.push(item); visit(item.children ?? []); } };
   visit(sections);
+  const studies = partitionManuscriptStudies(sections);
+  const anchors = availableSections.flatMap((item) => item.blocks.map((block) => ({ id: block.id,
+    label: `${item.title || paginationCopy.untitled}: ${storedContentText(block.content).slice(0, 64) || block.type}` })));
+  const anchor = anchors.find((item) => item.id === anchorId) ?? anchors.find((item) => availableSections.find((s) => s.id === sectionId)?.blocks.some((block) => block.id === item.id)) ?? anchors[0];
   const section = availableSections.find((item) => item.id === sectionId) ?? availableSections[0];
   const rule = collection.sections.find((item) => item.sectionId === section?.id);
   const resolved = resolvePublicationPageStyle({ ...style, pageStyles: { ...collection, pages: [] } }, sections, 0, section?.id);
@@ -32,7 +42,7 @@ export function PublicationPageStylesPanel({ style, sections, locale, selectedSe
   }
   function patchRule(patch: Partial<PublicationSectionPageRule>) {
     if (!section) return;
-    const next: PublicationSectionPageRule = { sectionId: section.id, startNewPage: true, ...rule, ...patch };
+    const next: PublicationSectionPageRule = { sectionId: section.id, startNewPage: false, ...rule, ...patch };
     if (next.styleId || next.runningHeaders) next.startNewPage = true;
     commit({ ...collection, sections: [...collection.sections.filter((item) => item.sectionId !== section.id), next] });
   }
@@ -55,6 +65,12 @@ export function PublicationPageStylesPanel({ style, sections, locale, selectedSe
   }
   return <div className="publication-page-styles-panel">
     {error ? <p role="alert">{error}</p> : null}
+    {checker}
+    {studies.length > 1 ? <fieldset><legend>{paginationCopy.studies}</legend><ol className="publication-study-order">{studies.map((study, index) => <li key={study.rootSectionId} data-study-order-id={study.rootSectionId}>
+      <span>{availableSections.find((item) => item.id === study.rootSectionId)?.title || paginationCopy.untitled}</span>
+      <button type="button" disabled={index === 0} aria-label={`${paginationCopy.up}: ${index + 1}`} onClick={() => stageMoveSectionSibling(study.rootSectionId, -1)}>{paginationCopy.up}</button>
+      <button type="button" disabled={index === studies.length - 1} aria-label={`${paginationCopy.down}: ${index + 1}`} onClick={() => stageMoveSectionSibling(study.rootSectionId, 1)}>{paginationCopy.down}</button>
+    </li>)}</ol></fieldset> : null}
     <fieldset><legend>{copy.masters}</legend>
       <p>{copy.masterHelp}</p>
       <div className="publication-style-actions">
@@ -86,6 +102,7 @@ export function PublicationPageStylesPanel({ style, sections, locale, selectedSe
         <label><span>{copy.section}</span><select aria-label={copy.section} value={section.id} onChange={(e) => setSectionId(e.target.value)}>{availableSections.map((item, index) => <option key={item.id} value={item.id}>{item.title || `${copy.section} ${index + 1}`}</option>)}</select></label>
         <label><span>{copy.sectionStyle}</span><select aria-label={copy.sectionStyle} value={rule?.styleId ?? ''} onChange={(e) => patchRule({ styleId: e.target.value || undefined })}><option value="">{copy.inherit}</option>{collection.styles.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         <label className="publication-style-toggle"><input type="checkbox" disabled={!!(rule?.styleId || rule?.runningHeaders)} checked={rule?.startNewPage ?? false} onChange={(e) => patchRule({ startNewPage: e.target.checked })} /><span>{copy.start}</span></label>
+        <label className="publication-style-toggle"><input type="checkbox" checked={rule?.keepTogether ?? false} onChange={(e) => patchRule({ keepTogether: e.target.checked })} /><span>{paginationCopy.keepSection}</span></label>
         <label className="publication-style-toggle"><input type="checkbox" checked={!!rule?.runningHeaders} onChange={(e) => patchRule({ runningHeaders: e.target.checked ? structuredClone(resolved.runningHeaders) : undefined, showFirstPage: e.target.checked ? resolved.showFirstPage : undefined })} /><span>{copy.ownHeader}</span></label>
         {rule?.runningHeaders ? headerFields(rule.runningHeaders, rule.showFirstPage ?? resolved.showFirstPage, (runningHeaders, showFirstPage) => patchRule({ runningHeaders, showFirstPage })) : null}
         <button type="button" disabled={!rule} onClick={() => commit({ ...collection, sections: collection.sections.filter((item) => item.sectionId !== section.id) })}>{copy.reset}</button>
@@ -98,6 +115,12 @@ export function PublicationPageStylesPanel({ style, sections, locale, selectedSe
       </div>
       <button type="button" disabled={!master || from < 0 || to < from || to > 1000000 || collection.pages.length >= 5000} onClick={() => { if (master) commit({ ...collection, pages: [...collection.pages, { from, to, styleId: master.id }] }); }}>{copy.apply}</button>
       {collection.pages.map((item, index) => <div className="publication-page-style-assignment" key={`${index}-${item.from}`}><span>{item.from}–{item.to}: {collection.styles.find((s) => s.id === item.styleId)?.name}</span><button type="button" aria-label={`${copy.clear}: ${item.from}–${item.to}`} onClick={() => commit({ ...collection, pages: collection.pages.filter((_, i) => i !== index) })}>{copy.clear}</button></div>)}
+    </fieldset>
+    <fieldset><legend>{paginationCopy.inserted}</legend><p>{paginationCopy.insertHelp}</p>
+      <label><span>{paginationCopy.anchor}</span><select value={anchor?.id ?? ''} onChange={(event) => setAnchorId(event.target.value)}>{anchors.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+      <label><span>{paginationCopy.insertStyle}</span><select value={collection.styles.some((item) => item.id === insertionStyleId) ? insertionStyleId : ''} onChange={(event) => setInsertionStyleId(event.target.value)}><option value="">{copy.default}</option>{collection.styles.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <button type="button" disabled={!anchor || (collection.insertions?.length ?? 0) >= 100} onClick={() => { if (anchor) commit({ ...collection, insertions: [...(collection.insertions ?? []), { id: crypto.randomUUID(), beforeBlockId: anchor.id, ...(collection.styles.some((item) => item.id === insertionStyleId) ? { styleId: insertionStyleId } : {}) }] }); }}>{paginationCopy.insert}</button>
+      {collection.insertions?.map((item, index) => <div className="publication-page-style-assignment" data-insertion-id={item.id} key={item.id}><span>{index + 1}. {collection.styles.find((master) => master.id === item.styleId)?.name ?? copy.default} · {anchors.find((anchor) => anchor.id === item.beforeBlockId)?.label ?? paginationCopy.missingAnchor}</span><button type="button" aria-label={`${paginationCopy.deletePage}: ${index + 1}`} onClick={() => commit({ ...collection, insertions: collection.insertions?.filter((existing) => existing.id !== item.id) })}>{paginationCopy.deletePage}</button></div>)}
     </fieldset>
   </div>;
 }

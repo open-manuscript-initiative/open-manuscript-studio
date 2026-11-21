@@ -9,6 +9,9 @@ export interface PublicationFlowBlock {
   keepWithNext?: boolean;
   keepTogether?: boolean;
   forcePageBreakBefore?: boolean;
+  keepSectionTogether?: boolean;
+  keepSectionId?: string;
+  insertedPagesBefore?: readonly { id: string; styleId?: string }[];
 }
 
 export interface PublicationFlowLine {
@@ -36,6 +39,8 @@ export interface PublicationPageLayout {
   flowBreaks: PublicationFlowBreak[];
   pageNotes?: PublicationPageNote[][];
   pageSectionIds?: (string | undefined)[];
+  insertedPages?: { pageIndex: number; id: string; styleId?: string }[];
+  sectionWarnings?: { sectionId: string; firstPage: number; lastPage: number; reason: 'continued' | 'moved' | 'oversized' }[];
 }
 
 export interface PublicationPageMetrics {
@@ -57,7 +62,7 @@ export function paginatePublicationBlocks(
   usablePageHeight: number,
   pageOverhead: number,
   footnotes?: PublicationFootnotes,
-  pageMetrics?: (index: number, sectionId?: string) => PublicationPageMetrics,
+  pageMetrics?: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
 ): PublicationPageLayout {
   if (pageMetrics) return paginateStyledPages(blocks, pageMetrics, footnotes);
   if (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length))) {
@@ -196,12 +201,14 @@ export function paginatePublicationBlocks(
  * ordinary pages. Page styles never insert semantic breaks into the manuscript. */
 function paginateStyledPages(
   blocks: readonly PublicationFlowBlock[],
-  metrics: (index: number, sectionId?: string) => PublicationPageMetrics,
+  metrics: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
   notes?: PublicationFootnotes,
 ): PublicationPageLayout {
   const pageSectionIds: (string | undefined)[] = [];
   const pageNotes: PublicationPageNote[][] = [];
   const placements: PublicationBlockPlacement[] = [], flowBreaks: PublicationFlowBreak[] = [];
+  const insertedPages: NonNullable<PublicationPageLayout['insertedPages']> = [];
+  const movedSections = new Set<string>();
   const seen = new Set<string>();
   const lineHeight = positive(notes?.lineHeight ?? 1, 1), separator = nonNegative(notes?.separatorHeight ?? 0);
   const units = blocks.flatMap((block, blockIndex) => {
@@ -211,6 +218,8 @@ function paginateStyledPages(
       blockIndex, sectionId: block.sectionId, textOffset: line.textOffset, top: nonNegative(block.top) + line.top,
       height: line.height, noteIds: line.noteIds ?? [], first: index === 0,
       forceBreak: index === 0 && block.forcePageBreakBefore, keepNext: index === all.length - 1 && block.keepWithNext,
+      insertedPagesBefore: index === 0 ? block.insertedPagesBefore : undefined,
+      keepSectionId: block.keepSectionId ?? block.sectionId,
     }));
   });
   let page = 0, position = 0, naturalBottom = 0, inlineHeight = 0, previousDelta = 0;
@@ -224,17 +233,36 @@ function paginateStyledPages(
     const first = units[index]!;
     ensurePage(page, first.sectionId);
     if (position <= 0.5 && !pageNotes[page]?.length) pageSectionIds[page] = first.sectionId;
+    const advance = () => { page += 1; position = 0; ensurePage(page, first.sectionId); };
+    if (first.insertedPagesBefore?.length) {
+      if (position > 0.5) advance();
+      while (reservation(page) > 0) advance();
+      for (const insertion of first.insertedPagesBefore) {
+        pageSectionIds[page] = undefined;
+        insertedPages.push({ pageIndex: page, ...insertion });
+        metrics(page, undefined, insertion.styleId ?? '');
+        advance();
+      }
+    }
+    const sectionStart = first.sectionId !== undefined && (index === 0 || units[index - 1]?.sectionId !== first.sectionId);
+    const keepSection = (index === 0 || units[index - 1]?.keepSectionId !== first.keepSectionId) && blocks[first.blockIndex]!.keepSectionTogether;
     const group = [first];
-    while (group.at(-1)!.keepNext && units[index + group.length] && !units[index + group.length]!.forceBreak) group.push(units[index + group.length]!);
+    while (units[index + group.length] && !units[index + group.length]!.forceBreak && !units[index + group.length]!.insertedPagesBefore?.length
+      && ((keepSection && units[index + group.length]!.keepSectionId === first.keepSectionId) || group.at(-1)!.keepNext)) group.push(units[index + group.length]!);
     if (group.at(-1)!.top + group.at(-1)!.height - first.top > metrics(page, pageSectionIds[page]).bodyHeight) group.splice(1);
+    const groupNotes = () => [...new Set(group.flatMap((unit) => [...unit.noteIds]))].filter((id) => !seen.has(id) && notes?.heights.has(id));
+    const notesHeight = groupNotes().reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
+    if (group.length > 1 && group.at(-1)!.top + group.at(-1)!.height - first.top + Math.min(capacity(page), notesHeight) + (notesHeight ? separator : 0) > metrics(page, pageSectionIds[page]).bodyHeight - 2) group.splice(1);
     const last = group.at(-1)!, height = last.top + last.height - first.top;
-    const ids = [...new Set(group.flatMap((unit) => [...unit.noteIds]))].filter((id) => !seen.has(id) && notes?.heights.has(id));
+    const ids = groupNotes();
     const newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
     position += Math.max(0, first.top - naturalBottom);
-    const advance = () => { page += 1; position = 0; ensurePage(page, first.sectionId); };
     if (first.forceBreak && position > 0.5) advance();
     const reserved = () => newNoteHeight ? separator + Math.min(capacity(page), Math.max(0, reservation(page) - separator) + newNoteHeight) : reservation(page);
-    if (position > 0.5 && position + height + reserved() > metrics(page, pageSectionIds[page]).bodyHeight - 2) advance();
+    if (position > 0.5 && position + height + reserved() > metrics(page, pageSectionIds[page]).bodyHeight - 2) {
+      if (sectionStart && first.sectionId) movedSections.add(keepSection ? first.keepSectionId! : first.sectionId);
+      advance();
+    }
     // A continued footnote can occupy pages before the next reference fits.
     while (reservation(page) > 0 && (position + height + reserved() > metrics(page, pageSectionIds[page]).bodyHeight - 2
       || reservation(page) - separator + ids.length * lineHeight > capacity(page) + 0.5)) advance();
@@ -263,7 +291,34 @@ function paginateStyledPages(
     position += height; naturalBottom = last.top + last.height; index += group.length - 1;
   }
   ensurePage(0);
-  return { pageCount: Math.max(1, page + 1, pageNotes.length), placements, flowBreaks, pageNotes, pageSectionIds };
+  const result = { pageCount: Math.max(1, page + 1, pageNotes.length), placements, flowBreaks, pageNotes, pageSectionIds, insertedPages };
+  return { ...result, sectionWarnings: publicationSectionFitWarnings(blocks, result, (index) => metrics(index, pageSectionIds[index]), movedSections) };
+}
+
+export function publicationSectionFitWarnings(blocks: readonly PublicationFlowBlock[], layout: PublicationPageLayout,
+  metrics?: (index: number) => PublicationPageMetrics, movedSections: ReadonlySet<string> = new Set()) {
+  const { placements, flowBreaks } = layout;
+  const lastBreakPages = new Map<number, number>();
+  for (const point of flowBreaks) lastBreakPages.set(point.blockIndex, Math.max(lastBreakPages.get(point.blockIndex) ?? 0, point.pageIndex));
+  const ranges = new Map<string, { firstPage: number; lastPage: number; height: number; keep: boolean }>();
+  blocks.forEach((block, blockIndex) => {
+    const placement = placements[blockIndex];
+    if (!block.sectionId || !placement) return;
+    const lastPage = Math.max(placement.pageIndex, lastBreakPages.get(blockIndex) ?? 0);
+    for (const id of new Set([block.sectionId, ...(block.keepSectionId ? [block.keepSectionId] : [])])) {
+      const prior = ranges.get(id);
+      ranges.set(id, { firstPage: Math.min(prior?.firstPage ?? placement.pageIndex, placement.pageIndex),
+        lastPage: Math.max(prior?.lastPage ?? lastPage, lastPage), height: (prior?.height ?? 0) + block.height,
+        keep: (prior?.keep ?? false) || !!block.keepSectionTogether });
+    }
+  });
+  const sectionWarnings: NonNullable<PublicationPageLayout['sectionWarnings']> = [];
+  for (const [sectionId, range] of ranges) {
+    if (range.lastPage > range.firstPage) sectionWarnings.push({ sectionId, firstPage: range.firstPage, lastPage: range.lastPage,
+      reason: range.keep && metrics && range.height > metrics(range.firstPage).bodyHeight ? 'oversized' : 'continued' });
+    else if (movedSections.has(sectionId)) sectionWarnings.push({ sectionId, firstPage: range.firstPage, lastPage: range.lastPage, reason: 'moved' });
+  }
+  return sectionWarnings;
 }
 
 function normalizeLines(

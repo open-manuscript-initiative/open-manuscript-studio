@@ -39,7 +39,7 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   await editor.getByRole('spinbutton', { name: 'Height (mm)', exact: true }).fill('30');
   const text = 'Flow words through connected frames. '.repeat(20);
   await editor.getByRole('textbox', { name: 'Story text', exact: true }).fill(text);
-  await expect(editor.getByRole('status')).toContainText('Text does not fit');
+  await expect(editor.getByRole('status').getByRole('img', { name: /^Text does not fit/ })).toBeVisible();
   await editor.getByRole('button', { name: 'Add text frame' }).click();
   const second = (await model()).frames[1]!.id;
   await editor.getByRole('spinbutton', { name: 'X (mm)', exact: true }).fill('80');

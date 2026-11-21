@@ -1,0 +1,220 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { createFrameLayout, flowFrameStories, FRAME_LAYOUT_EXTENSION, linkFrames, unlinkFrames, updateFrameStoryText, validateFrameLayout, RECTANGLE_POINTS, type PublicationFrame } from '../src/model/publicationFrames.ts';
+import { paginateAutomaticFrameLayout, createDefaultFlowFrameLayout } from '../src/model/publicationAutoFlow.ts';
+import { framePageStyle, withFramePages } from '../src/model/publicationFramePages.ts';
+import { paginatePublicationBlocks, publicationSectionFitWarnings, type PublicationFlowBlock } from '../src/components/publicationPageLayout.ts';
+import { capturePublicationPageStyle, resolvePublicationPageStyle, validatePublicationPageStyles, withoutPublicationPageAssignments } from '../src/model/publicationPageStyles.ts';
+import { clonePublicationStyleTemplate, clonePublicationPublisherTemplate, renderStyleBasedHtml, withInsertedPublicationPages } from '../src/services/publicationStyleExport.ts';
+import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
+import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
+import { serializeOmiJson } from '../src/services/exportOmi.ts';
+import { parseOmiJson } from '../src/services/omiPortableFormat.ts';
+import { useStudioStore } from '../src/app/useStudioStore.ts';
+import { stageMoveSectionSibling } from '../src/app/sectionActions.ts';
+import { stageAppliedPublicationStyle } from '../src/app/publicationTemplateActions.ts';
+
+const measure = (text: string) => text.length;
+const metrics = (index: number) => ({ bodyHeight: 100, bodyTop: index * 120 });
+function frame(id: string, page: number, storyId = 'story'): PublicationFrame {
+  return { id, name: id, kind: 'text', page, storyId, styleId: 'frame-style-default',
+    xMm: 10, yMm: 10, widthMm: 80, heightMm: 40, rotation: 0, shape: 'rectangle', points: structuredClone(RECTANGLE_POINTS) };
+}
+function brokenStory(kind: 'page' | 'frame') {
+  const layout = withFramePages(createFrameLayout());
+  layout.page.count = 2;
+  layout.pages!.push({ id: 'page-2', styleId: layout.pageStyles![0]!.id });
+  layout.stories = [{ id: 'story', name: 'Story', text: 'FIRST SECOND', breaks: [{ offset: 6, kind }] }];
+  layout.frames = [{ ...frame('one', 0), nextFrameId: 'two' }, { ...frame('two', 0), nextFrameId: 'three' }, frame('three', 1)];
+  return layout;
+}
+
+test('page breaks skip same-page linked frames while frame breaks use them, preserving every character', () => {
+  for (const kind of ['page', 'frame'] as const) {
+    const layout = brokenStory(kind);
+    const result = flowFrameStories(layout, measure);
+    assert.equal(result.frames[0]!.end, 6);
+    assert.equal(result.frames[1]!.end, kind === 'page' ? 6 : layout.stories[0]!.text.length);
+    assert.equal(result.frames.flatMap((item) => item.lines.map((line) => line.text)).join(''), 'FIRST SECOND');
+    assert.equal(result.overflow.length, 0);
+    layout.stories[0]!.breaks = [];
+    assert.equal(flowFrameStories(layout, measure).frames[0]!.end, layout.stories[0]!.text.length);
+  }
+});
+
+test('break at a full-frame boundary is consumed once, with no empty continuation page', () => {
+  const layout = brokenStory('page');
+  layout.frames[0]!.heightMm = 5;
+  layout.frames[0]!.widthMm = 12;
+  layout.styles[0]!.properties.paddingMm = 0;
+  layout.styles[0]!.properties.fontSizePt = 10;
+  layout.styles[0]!.properties.lineHeightPt = 10;
+  layout.frames[0]!.widthMm = 6;
+  const result = flowFrameStories(layout, measure);
+  assert.equal(result.frames[0]!.end, 6);
+  assert.equal(result.frames[2]!.start, 6);
+  assert.equal(result.frames[2]!.end, 12);
+});
+
+test('break anchors follow edits, collapse safely on deletion, and survive linking/unlinking and OMI round-trip', () => {
+  const layout = brokenStory('page');
+  const story = updateFrameStoryText(layout.stories[0]!, 'XX FIRST SECOND');
+  assert.equal(story.breaks![0]!.offset, 9);
+  assert.deepEqual(updateFrameStoryText(story, 'FIRST SECOND').breaks, layout.stories[0]!.breaks);
+  const collapsed = updateFrameStoryText({ id: 'x', name: 'X', text: 'abcdef', breaks: [{ offset: 1, kind: 'frame' }, { offset: 4, kind: 'page' }] }, 'aef');
+  assert.equal(collapsed.breaks?.length, 1);
+  const split = unlinkFrames(layout, 'one', 6, 'tail');
+  const joined = linkFrames(split, 'one', 'two');
+  assert.equal(joined.stories[0]!.text, 'FIRST SECOND');
+  assert.deepEqual(joined.stories[0]!.breaks, layout.stories[0]!.breaks);
+  const manuscript = createVersionedTestManuscript();
+  manuscript.extensions = { ...manuscript.extensions, [FRAME_LAYOUT_EXTENSION]: layout };
+  assert.deepEqual(parseOmiJson(serializeOmiJson(manuscript)).extensions![FRAME_LAYOUT_EXTENSION], layout);
+});
+
+test('break validation rejects invalid types, offsets and grapheme splits', () => {
+  for (const breaks of [[{ offset: -1, kind: 'page' }], [{ offset: 2, kind: 'invalid' }], [{ offset: 2, kind: 'page' }, { offset: 1, kind: 'page' }], [{ offset: 1, kind: 'page' }]]) {
+    const layout = brokenStory('page');
+    layout.stories[0]!.text = '👩🏽‍💻 text';
+    layout.stories[0]!.breaks = breaks as never;
+    assert.throws(() => validateFrameLayout(layout), /story break/);
+  }
+});
+
+test('any text story can grow independently using its continuation page style and shrink around other stories', () => {
+  const layout = withFramePages(createFrameLayout());
+  const wide = structuredClone(layout.pageStyles![0]!); wide.id = 'wide'; wide.widthMm = 240; wide.heightMm = 160;
+  layout.pageStyles!.push(wide);
+  layout.stories = [{ id: 'a', name: 'A', text: 'content '.repeat(900), autoContinue: true, continuationStyleId: 'wide' },
+    { id: 'b', name: 'B', text: 'second '.repeat(300), autoContinue: true }];
+  layout.frames = [frame('a-root', 0, 'a'), { ...frame('b-root', 0, 'b'), yMm: 70 }];
+  const grown = paginateAutomaticFrameLayout(layout, measure);
+  assert.ok(grown.page.count > 2);
+  assert.equal(flowFrameStories(grown, measure).overflow.length, 0);
+  const aFrame = grown.frames.find((item) => item.storyId === 'a' && item.autoGenerated)!;
+  assert.equal(framePageStyle(grown, aFrame.page).id, 'wide');
+  assert.equal(aFrame.widthMm, wide.widthMm - wide.margins.left - wide.margins.right);
+  const before = grown.page.count;
+  grown.stories[0]!.text = 'short';
+  const shrunk = paginateAutomaticFrameLayout(grown, measure);
+  assert.ok(shrunk.page.count < before);
+  assert.equal(flowFrameStories(shrunk, measure).overflow.length, 0);
+  assert.equal(shrunk.stories[1]!.text, layout.stories[1]!.text);
+  validateFrameLayout(shrunk);
+});
+
+test('automatic continuation can be disabled without deleting text or placed pages', () => {
+  const layout = createDefaultFlowFrameLayout();
+  layout.stories[0]!.text = 'word '.repeat(20000);
+  layout.stories[0]!.autoContinue = false;
+  const result = paginateAutomaticFrameLayout(layout, measure);
+  assert.equal(result.page.count, 1);
+  assert.ok(flowFrameStories(result, measure).overflow.length);
+});
+
+test('a section that fits a fresh page moves together; a longer section continues and reports its range', () => {
+  const blocks: PublicationFlowBlock[] = [
+    { sectionId: 'a', top: 0, height: 70 },
+    { sectionId: 'b', top: 70, height: 20, keepSectionTogether: true },
+    { sectionId: 'b', top: 90, height: 20, keepSectionTogether: true },
+  ];
+  const together = paginatePublicationBlocks(blocks, 100, 20, undefined, metrics);
+  assert.deepEqual(together.placements.map((item) => item.pageIndex), [0, 1, 1]);
+  assert.equal(together.sectionWarnings![0]!.reason, 'moved');
+  blocks[1] = { sectionId: 'b', top: 70, height: 120, keepSectionTogether: true, splittable: true,
+    lines: Array.from({ length: 6 }, (_, index) => ({ top: index * 20, height: 20, textOffset: index * 10 })) };
+  blocks.splice(2);
+  const continued = paginatePublicationBlocks(blocks, 100, 20, undefined, metrics);
+  assert.equal(continued.sectionWarnings![0]!.reason, 'oversized');
+  assert.ok(continued.flowBreaks.length > 0);
+  assert.ok(publicationSectionFitWarnings(blocks, continued).some((issue) => issue.sectionId === 'b'));
+});
+
+test('keep-section respects footnote space rather than forcing a combined section through the footer', () => {
+  const result = paginatePublicationBlocks([
+    { sectionId: 'a', top: 0, height: 60 },
+    { sectionId: 'b', top: 60, height: 20, keepSectionTogether: true, noteIds: ['note'] },
+    { sectionId: 'b', top: 80, height: 20, keepSectionTogether: true },
+  ], 100, 20, { heights: new Map([['note', 20]]), lineHeight: 10, separatorHeight: 5 }, metrics);
+  assert.deepEqual(result.placements.map((item) => item.pageIndex), [0, 1, 1]);
+  assert.equal(result.pageNotes![1]![0]!.id, 'note');
+});
+
+test('inserted pages reserve complete sheets before their block and deletion reflows without altering blocks', () => {
+  const blocks: PublicationFlowBlock[] = [{ sectionId: 'a', top: 0, height: 20 },
+    { sectionId: 'a', top: 20, height: 20, insertedPagesBefore: [{ id: 'blank', styleId: 'plate' }] }];
+  const before = structuredClone(blocks);
+  const called: unknown[] = [];
+  const result = paginatePublicationBlocks(blocks, 100, 20, undefined, (index, section, style) => {
+    if (style) called.push([index, section, style]);
+    return metrics(index);
+  });
+  assert.equal(result.pageCount, 3);
+  assert.equal(result.placements[1]!.pageIndex, 2);
+  assert.deepEqual(result.insertedPages, [{ pageIndex: 1, id: 'blank', styleId: 'plate' }]);
+  assert.deepEqual(called, [[1, undefined, 'plate']]);
+  assert.deepEqual(blocks, before);
+  delete blocks[1]!.insertedPagesBefore;
+  assert.equal(paginatePublicationBlocks(blocks, 100, 20, undefined, metrics).pageCount, 1);
+});
+
+test('blank pages never absorb carried footnotes and multiple inserts at the first block have no phantom page', () => {
+  const result = paginatePublicationBlocks([{ sectionId: 'a', top: 0, height: 20,
+    insertedPagesBefore: [{ id: 'one' }, { id: 'two' }], noteIds: ['note'] }], 100, 20,
+  { heights: new Map([['note', 150]]), lineHeight: 10, separatorHeight: 5 }, metrics);
+  assert.deepEqual(result.insertedPages!.map((page) => page.pageIndex), [0, 1]);
+  assert.equal(result.placements[0]!.pageIndex, 2);
+  assert.equal(result.pageNotes![0], undefined);
+  assert.equal(result.pageNotes![1], undefined);
+  assert.equal(result.pageNotes!.flat().reduce((sum, note) => sum + note.height, 0), 150);
+});
+
+test('insertion anchors and section keep rules survive OMI but are removed from reusable page assignments', async () => {
+  const manuscript = createVersionedTestManuscript();
+  const blockId = manuscript.sections[0]!.blocks[0]!.id;
+  const style = clonePublicationStyleTemplate();
+  const master = capturePublicationPageStyle(style, 'plate', 'Plate'); master.page.width = 180;
+  style.pageStyles = { version: 1, styles: [master], sections: [{ sectionId: manuscript.sections[0]!.id, startNewPage: false, keepTogether: true }], pages: [],
+    insertions: [{ id: 'blank', beforeBlockId: blockId, styleId: 'plate' }, { id: 'orphan', beforeBlockId: 'removed-block' }] };
+  validatePublicationPageStyles(style.pageStyles);
+  assert.equal(resolvePublicationPageStyle(style, manuscript.sections, 0, undefined, 'plate').page.width, 180);
+  style.pageStyles.pages = [{ from: style.page.pageNumberStart ?? 1, to: style.page.pageNumberStart ?? 1, styleId: 'plate' }];
+  assert.equal(resolvePublicationPageStyle(style, manuscript.sections, 0, undefined, '').page.width, style.page.width);
+  assert.equal(withoutPublicationPageAssignments(style).pageStyles?.insertions, undefined);
+  const context = { style, identity: clonePublicationPublisherTemplate() };
+  const html = await renderStyleBasedHtml(manuscript, resolvePublicationProfile(manuscript), 'print', context);
+  assert.match(html, /data-omi-inserted-page="blank"/);
+  assert.doesNotMatch(html, /<div[^>]*data-omi-inserted-page="orphan"/);
+  assert.match(html, /@page omi_inserted_0\{size:180mm/);
+  assert.match(html, /break-inside:avoid/);
+  assert.doesNotMatch(await renderStyleBasedHtml(manuscript, resolvePublicationProfile(manuscript), 'html', context), /data-omi-inserted-page/);
+  const malicious = structuredClone(style); malicious.pageStyles!.insertions = [{ id: '"><script>x</script>', beforeBlockId: blockId }];
+  assert.doesNotMatch(withInsertedPublicationPages(`<p data-omi-block-id="${blockId}">text</p>`, malicious), /<script>/);
+  for (const invalid of [{ id: 'a', beforeBlockId: blockId, styleId: 'missing' }, { id: '', beforeBlockId: blockId }]) {
+    const collection = structuredClone(style.pageStyles); collection.insertions = [invalid];
+    assert.throws(() => validatePublicationPageStyles(collection));
+  }
+});
+
+test('moving a study carries all descendants while notes, contributors and insertion anchors keep their identities', () => {
+  const prior = useStudioStore.getState();
+  try {
+    const manuscript = createVersionedTestManuscript();
+    const first = { id: 'first', title: 'First', blocks: [{ id: 'one', type: 'paragraph', content: 'First text' }] };
+    const child = { id: 'child', title: 'Child', parentSectionId: 'first', blocks: [{ id: 'nested', type: 'paragraph', content: 'Nested text' }] };
+    const second = { id: 'second', title: 'Second', blocks: [{ id: 'two', type: 'paragraph', content: 'Second text' }] };
+    useStudioStore.getState().loadManuscript({ ...manuscript, sections: [first, child, second] });
+    const style = clonePublicationStyleTemplate();
+    style.pageStyles = { version: 1, styles: [], sections: [], pages: [], insertions: [{ id: 'blank', beforeBlockId: 'nested' }] };
+    stageAppliedPublicationStyle(style);
+    const before = useStudioStore.getState().manuscript;
+    assert.equal(stageMoveSectionSibling('first', 1), true);
+    const after = useStudioStore.getState().manuscript;
+    assert.deepEqual(after.sections.map((item) => item.id), ['second', 'first', 'child']);
+    assert.deepEqual(after.sections.find((item) => item.id === 'child')!.blocks, before.sections.find((item) => item.id === 'child')!.blocks);
+    assert.deepEqual(after.annotations, before.annotations);
+    assert.deepEqual(after.contributions, before.contributions);
+    assert.deepEqual(after.extensions, before.extensions);
+    assert.ok(useStudioStore.getState().pendingChangeSet);
+  } finally { useStudioStore.setState(prior); }
+});

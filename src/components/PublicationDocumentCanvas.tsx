@@ -1,6 +1,8 @@
 import { arrangePublicationSheets, publicationFirstPageNumber, type PublicationSheetPosition } from '../model/publicationSpreads';
 import { resolvePublicationPageStyle, publicationSectionPageRules, publicationSectionLayoutKey } from '../model/publicationPageStyles';
 import { resolvePublicationProfile } from '../model/publicationProfile';
+import { publicationPaginationCopy } from '../i18n/publicationPagination';
+import type { PublicationLayoutIssue, PublicationLayoutIssueReporter } from '../model/publicationLayoutDiagnostics';
 import { renderPublicationNoteBody, type PublicationNoteBody } from '../services/publicationNoteBody';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import type { JSONContent } from '@tiptap/core';
@@ -61,6 +63,8 @@ import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
 import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
   paginatePublicationBlocks,
+  publicationSectionFitWarnings,
+  type PublicationPageLayout,
   type PublicationFlowBlock,
   type PublicationFlowLine,
   type PublicationPageNote,
@@ -95,6 +99,8 @@ interface PublicationPaginationState {
   pageNotes: PublicationPageNote[][];
   flowBreaks: readonly OmiPublicationFlowBreak[];
   pageSectionIds?: (string | undefined)[];
+  insertedPages?: PublicationPageLayout['insertedPages'];
+  sectionWarnings?: PublicationPageLayout['sectionWarnings'];
 }
 
 interface PublicationDocumentCanvasProps {
@@ -103,6 +109,7 @@ interface PublicationDocumentCanvasProps {
   onViewModeChange: (mode: PublicationDocumentViewMode) => void;
   onProofingSelection?: (selection: ProofingSelection | null) => void;
   onPageCountChange?: (manuscriptId: string, count: number) => void;
+  onLayoutIssues?: PublicationLayoutIssueReporter;
 }
 
 interface PublicationCanvasCopy {
@@ -132,6 +139,7 @@ export function PublicationDocumentCanvas({
   onViewModeChange,
   onProofingSelection,
   onPageCountChange,
+  onLayoutIssues,
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
@@ -139,6 +147,7 @@ export function PublicationDocumentCanvas({
   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
   const pageCountChange = useRef(onPageCountChange); pageCountChange.current = onPageCountChange;
+  const reportIssues = useRef(onLayoutIssues); reportIssues.current = onLayoutIssues;
   const {
     id: manuscriptId,
     agents: manuscriptAgents,
@@ -229,7 +238,9 @@ export function PublicationDocumentCanvas({
     const seenHeaders = new Set<string | undefined>();
     for (let index = 0; index < pageCount; index += 1) {
       const sectionId = pagination.pageSectionIds?.[index];
-      const resolved = resolvePublicationPageStyle(style, manuscript.sections, index, sectionId);
+      const insertedPage = pagination.insertedPages?.find((item) => item.pageIndex === index);
+      const insertedStyleId = insertedPage ? insertedPage.styleId ?? '' : undefined;
+      const resolved = resolvePublicationPageStyle(style, manuscript.sections, index, sectionId, insertedStyleId);
       const geometry = canvasPageGeometry(resolved, scale);
       const firstSectionPage = !seenHeaders.has(resolved.headerSectionId);
       seenHeaders.add(resolved.headerSectionId);
@@ -237,8 +248,11 @@ export function PublicationDocumentCanvas({
     }
     const arranged = arrangePublicationSheets(pages, facingPages, pageGap);
     return { ...arranged, pages: pages.map((page, index) => ({ ...page, ...arranged.pages[index]! })) };
-  }, [style, manuscript.sections, pagination.pageSectionIds, pageCount, scale, pageGap, facingPages]);
+  }, [style, manuscript.sections, pagination.pageSectionIds, pagination.insertedPages, pageCount, scale, pageGap, facingPages]);
   const styledPages = styledSheetLayout.pages;
+  const fitWarningCss = viewMode === 'print' ? (pagination.sectionWarnings ?? []).map((warning) =>
+    `#${canvasId} :is(h1,h2,h3,h4,h5,h6)[data-section-id=${cssStringLiteral(warning.sectionId)}]{position:relative}#${canvasId} :is(h1,h2,h3,h4,h5,h6)[data-section-id=${cssStringLiteral(warning.sectionId)}]::after{content:"⚠";position:absolute;right:100%;top:0;margin-right:.35em;color:#b45309;font:14px sans-serif;pointer-events:none}`,
+  ).join('\n') : '';
 
   const sectionNumbers = useMemo(
     () => new Map(
@@ -549,13 +563,15 @@ export function PublicationDocumentCanvas({
               style,
               element.dataset.paragraphStyleId,
             );
+            const sectionId = element.dataset.sectionId ?? element.querySelector<HTMLElement>('[data-section-id]')?.dataset.sectionId;
+            const keepRule = publicationSectionPageRules(style, layoutSectionsRef.current, sectionId).filter((rule) => rule.keepTogether !== undefined).at(-1);
             measuredBlocks.push({
               top: Math.max(
                 0,
                 offsetTopWithin(element, content) - existingFlowBreakHeight,
               ),
               height: Math.max(0, elementRect.height - ownFlowBreakHeight),
-              sectionId: element.dataset.sectionId ?? element.querySelector<HTMLElement>('[data-section-id]')?.dataset.sectionId,
+              sectionId,
               lines,
               noteIds: anchors.map((anchor) => anchor.dataset.noteId!),
               leadingHeight: lines[0]?.height,
@@ -565,6 +581,9 @@ export function PublicationDocumentCanvas({
                 || blockCorrections.some((item) => item.kind === 'keep-with-next'),
               keepTogether: paragraphStyle.keepTogether
                 || blockCorrections.some((item) => item.kind === 'keep-together'),
+              keepSectionTogether: keepRule?.keepTogether,
+              keepSectionId: keepRule?.keepTogether ? keepRule.sectionId : undefined,
+              insertedPagesBefore: style.pageStyles?.insertions?.filter((item) => item.beforeBlockId === publicationFlowBlockId(element)),
               forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
                 || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
                   && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
@@ -583,10 +602,12 @@ export function PublicationDocumentCanvas({
         if (cancelled) return;
         const metricPages: ReturnType<typeof canvasPageGeometry>[] = [];
         const metricCache = new Map<number, { sectionId?: string; bodyHeight: number; bodyTop: number }>();
-        const metrics = (index: number, sectionId?: string) => {
+        const insertionStyles = new Map<number, string>();
+        const metrics = (index: number, sectionId?: string, insertedStyleId?: string) => {
+          if (insertedStyleId !== undefined && insertionStyles.get(index) !== insertedStyleId) { insertionStyles.set(index, insertedStyleId); metricCache.delete(index); }
           const cached = metricCache.get(index);
           if (cached && cached.sectionId === sectionId) return cached;
-          const resolved = resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId);
+          const resolved = resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId, insertionStyles.get(index));
           metricPages[index] = canvasPageGeometry(resolved, scale);
           const previousHeight = metricPages.slice(0, index).reduce((sum, item) => sum + item.height + pageGap, 0);
           const measured = { sectionId, bodyHeight: metricPages[index]!.bodyHeight, bodyTop: previousHeight + metricPages[index]!.topMargin - topMargin };
@@ -603,8 +624,27 @@ export function PublicationDocumentCanvas({
           { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight },
           style.pageStyles ? metrics : undefined,
         );
+        const sectionWarnings = layout.sectionWarnings ?? publicationSectionFitWarnings(measuredBlocks, layout,
+          () => ({ bodyHeight: usablePageHeight, bodyTop: 0 }));
+        const diagnosticCopy = publicationPaginationCopy(locale);
+        const issues: PublicationLayoutIssue[] = sectionWarnings.map((warning) => ({
+          id: `section:${warning.sectionId}`, sectionId: warning.sectionId,
+          message: `${layoutSectionsRef.current.find((section) => section.id === warning.sectionId)?.title || diagnosticCopy.untitled}: ${diagnosticCopy[warning.reason]}`,
+        }));
+        const presentBlocks = new Set(flow.map((item) => publicationFlowBlockId(item.element)));
+        for (const insertion of style.pageStyles?.insertions ?? []) if (!presentBlocks.has(insertion.beforeBlockId)) issues.push({
+          id: `insertion:${insertion.id}`, insertionId: insertion.id, message: diagnosticCopy.missingAnchor,
+        });
+        measuredBlocks.forEach((block, index) => {
+          const pageIndex = layout.placements[index]?.pageIndex ?? 0;
+          if ((!block.splittable || block.keepTogether) && block.height > metrics(pageIndex, layout.pageSectionIds?.[pageIndex]).bodyHeight + 0.5) issues.push({
+            id: `block:${index}`, blockId: publicationFlowBlockId(flow[index]!.element), sectionId: block.sectionId,
+            message: diagnosticCopy.blockOverflow,
+          });
+        });
+        reportIssues.current?.(manuscriptId, issues);
         const pageGeometries = Array.from({ length: layout.pageCount }, (_, index) =>
-          canvasPageGeometry(resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index]), scale));
+          canvasPageGeometry(resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index], insertionStyles.get(index)), scale));
         const sheetPositions = arrangePublicationSheets(pageGeometries, facingPages, pageGap).pages;
         const css = buildPaginationCss({
           canvasId,
@@ -643,10 +683,12 @@ export function PublicationDocumentCanvas({
           current.pageCount === layout.pageCount
             && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
             && JSON.stringify(current.pageSectionIds) === JSON.stringify(layout.pageSectionIds)
+            && JSON.stringify(current.insertedPages) === JSON.stringify(layout.insertedPages)
+            && JSON.stringify(current.sectionWarnings) === JSON.stringify(sectionWarnings)
             && current.css === css
             && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
             ? current
-            : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds }
+            : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds, insertedPages: layout.insertedPages, sectionWarnings }
         ));
       };
 
@@ -720,6 +762,7 @@ export function PublicationDocumentCanvas({
   }, [
     canvasId,
     manuscriptId,
+    locale,
     firstPageLeftMargin,
     firstPageNumber,
     facingPages,
@@ -849,8 +892,8 @@ export function PublicationDocumentCanvas({
       className={`publication-document-canvas publication-document-canvas--${viewMode}${previewOnly ? ' publication-document-canvas--preview' : ''}`}
       aria-labelledby="publication-document-canvas-title"
     >
-      {pagination.css || paragraphStyleCss || sectionLayoutCss
-        ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}`}</style>
+      {pagination.css || paragraphStyleCss || sectionLayoutCss || fitWarningCss
+        ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}\n${fitWarningCss}`}</style>
         : null}
       <header className="publication-document-canvas-toolbar">
         <div>
@@ -947,6 +990,7 @@ export function PublicationDocumentCanvas({
                     '--omi-publication-page-bottom-margin': `${geometry.bottomMargin}px`,
                   } as CSSProperties}
                   data-page-style={resolved.id}
+                  data-inserted-page={pagination.insertedPages?.find((item) => item.pageIndex === index)?.id}
                   data-section-id={geometry.sectionId}
                   data-page-number={pageNumber}
                   data-page-side={geometry.side}
