@@ -241,6 +241,9 @@ function PublicationStyleEditorWorkspace() {
   useEffect(() => { setMatterToolsOpen(false); }, [manuscript.id, manuscript.documentStructure?.kind]);
   const [ojsTransferOpen, setOjsTransferOpen] = useState(false);
   const frameCopy = getPublicationFramesCopy(locale);
+  const noteCitationLabels = locale === 'hu' ? { first: 'Első hivatkozás stílusa', subsequent: 'Ismételt hivatkozás stílusa' }
+    : locale === 'de' ? { first: 'Erster Literaturverweis', subsequent: 'Weitere Literaturverweise' }
+      : { first: 'First citation style', subsequent: 'Subsequent citation style' };
   const [initial] = useState(() => loadInitialState(manuscript));
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
   const [activeId, setActiveId] = useState(initial.activeId);
@@ -1015,8 +1018,8 @@ function PublicationStyleEditorWorkspace() {
                   {activeParagraphStyle.role === 'note-citation' ? <fieldset>
                     <legend>{publicationParagraphStyleName(activeParagraphStyle, locale)}</legend>
                     {(['first', 'subsequent'] as const).map((kind) => <label key={kind}>
-                      <span>{locale === 'hu' ? kind === 'first' ? 'Első hivatkozás stílusa' : 'Ismételt hivatkozás stílusa' : locale === 'de' ? kind === 'first' ? 'Erster Literaturverweis' : 'Weitere Literaturverweise' : kind === 'first' ? 'First citation style' : 'Subsequent citation style'}</span>
-                      <select value={style.noteCitationStyles?.[kind] ?? ''} onChange={(event) => patchStyle((current) => ({ ...current, noteCitationStyles: { ...current.noteCitationStyles, [kind]: event.target.value || undefined } }))}>
+                      <span>{noteCitationLabels[kind]}</span>
+                      <select aria-label={noteCitationLabels[kind]} value={style.noteCitationStyles?.[kind] ?? ''} onChange={(event) => patchStyle((current) => ({ ...current, noteCitationStyles: { ...current.noteCitationStyles, [kind]: event.target.value || undefined } }))}>
                         <option value="">{locale === 'hu' ? 'Öröklés a hivatkozási beállításokból' : locale === 'de' ? 'Aus Zitiereinstellungen übernehmen' : 'Inherit citation settings'}</option>
                         {CITATION_STYLE_CATALOG.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
                       </select>

@@ -11,7 +11,7 @@ test('semantic text roles offer editable point presets, languages and inherited 
     const current = useStudioStore.getState().manuscript;
     useStudioStore.getState().loadManuscript({ ...current, title: 'Semantic typography fixture', locale: 'hu-HU', motto: 'A short motto', abstract: 'An abstract', keywords: ['History', 'Archives'],
       bibliographicRecords: [{ id: 'bib', type: 'journal-article', title: 'Structured Notes', contributors: [{ id: 'a', role: 'author', familyName: 'Scholar', givenName: 'Ada' }], issued: '2026', identifiers: [], status: 'verified' }],
-      sections: [{ id: 's', title: '', blocks: [{ id: 'p', type: 'paragraph', content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+      sections: [{ id: 's', title: 'Section heading', blocks: [{ id: 'p', type: 'paragraph', content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
         { type: 'text', text: 'Original body text.' }, { type: 'omiNote', attrs: { noteId: 'n', anchorId: 'a', label: '1', noteType: 'footnote' } },
       ] }] }) }] }],
       annotations: [{ ...createNoteAnnotation({ id: 'n', anchorId: 'a', targetBlockId: 'p', body: 'See also' }), noteCitations: [{ id: 'nc', target: 'bib' }] }],
@@ -38,15 +38,22 @@ test('semantic text roles offer editable point presets, languages and inherited 
   await expect.poll(() => canvas.locator('.publication-document-title').evaluate((element) => {
     const css = getComputedStyle(element); return Math.round(parseFloat(css.lineHeight) / parseFloat(css.fontSize) * 1000);
   })).toBe(Math.round(32.7 / 27.3 * 1000));
+  await list.getByRole('option', { name: 'Heading 1', exact: true }).click();
+  await panel.getByRole('button', { name: 'Basic character formats', exact: true }).click();
+  await panel.getByRole('spinbutton', { name: 'Size', exact: true }).fill('19.4');
+  await panel.getByRole('spinbutton', { name: 'Leading', exact: true }).fill('24.6');
+  await expect.poll(() => canvas.locator('.omi-continuous-tiptap-editor > h1[data-section-id="s"]').evaluate((element) => {
+    const css = getComputedStyle(element); return Math.round(parseFloat(css.lineHeight) / parseFloat(css.fontSize) * 1000);
+  })).toBe(Math.round(24.6 / 19.4 * 1000));
   await list.getByRole('option', { name: 'Citation in notes', exact: true }).click();
   await page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     useStudioStore.getState().checkpoint('manual');
   });
   await expect(list.getByRole('option', { name: 'Citation in notes', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await expect(panel.getByLabel('First citation style', { exact: true })).toBeVisible();
-  await panel.getByLabel('First citation style', { exact: true }).selectOption('apa-7');
-  await panel.getByLabel('Subsequent citation style', { exact: true }).selectOption('mla-9');
+  await expect(panel.getByRole('combobox', { name: 'First citation style', exact: true })).toBeVisible();
+  await panel.getByRole('combobox', { name: 'First citation style', exact: true }).selectOption('apa-7');
+  await panel.getByRole('combobox', { name: 'Subsequent citation style', exact: true }).selectOption('mla-9');
   await list.getByRole('option', { name: 'Title', exact: true }).click();
   await panel.getByRole('button', { name: 'Duplicate', exact: true }).click();
   await panel.getByRole('button', { name: 'General', exact: true }).click();

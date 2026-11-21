@@ -41,7 +41,7 @@ export function withPublicationTextRoles(collection: PublicationParagraphStyleCo
 export const EXPORT_TEXT_ROLE_SELECTORS: Record<PublicationTextRole, string[]> = {
   body: [], title: ['.article-front h1'], subtitle: ['.article-front .article-subtitle', '.article-front .subtitle'], author: ['.article-front .contributor-name', '.article-front .author-name'],
   motto: ['.article-motto'], abstract: ['.article-abstract > p', '.abstract > p'], keywords: ['.article-keywords li'],
-  heading1: ['.article-body h2:not([data-omi-paragraph-style-id])'], heading2: ['.article-body h3:not([data-omi-paragraph-style-id])'],
+  heading1: ['.article-body h2:not([data-omi-paragraph-style-id])'], heading2: ['.article-body :is(h3, h4, h5, h6):not([data-omi-paragraph-style-id])'],
   quote: ['.article-body .text-block:not([data-omi-paragraph-style-id]) > blockquote:not([data-omi-paragraph-style-id])', '.article-body .text-block:not([data-omi-paragraph-style-id]) > blockquote:not([data-omi-paragraph-style-id]) > p', '.article-body blockquote[data-omi-block-id]:not([data-omi-paragraph-style-id])', '.article-body blockquote[data-omi-block-id]:not([data-omi-paragraph-style-id]) > p'],
   note: ['.article-notes > ol > li', '.omi-page-footnote', '.omi-local-note'],
   citation: ['.citation'], 'note-citation': ['.article-notes .omi-note-citation', '.omi-page-footnote .omi-note-citation', '.omi-local-note .omi-note-citation'],
@@ -51,7 +51,7 @@ export const EXPORT_TEXT_ROLE_SELECTORS: Record<PublicationTextRole, string[]> =
 export const LIVE_TEXT_ROLE_SELECTORS: Record<PublicationTextRole, string[]> = {
   body: [], title: ['.publication-document-title'], subtitle: ['.publication-document-subtitle'], author: ['.publication-document-authors'], motto: ['.publication-document-motto'],
   abstract: ['.publication-document-abstract'], keywords: ['.publication-document-keywords'],
-  heading1: ['.omi-continuous-tiptap-editor > h2:not([data-paragraph-style-id])'], heading2: ['.omi-continuous-tiptap-editor > h3:not([data-paragraph-style-id])'],
+  heading1: ['.omi-continuous-tiptap-editor > h1:not([data-paragraph-style-id])'], heading2: ['.omi-continuous-tiptap-editor > :is(h2, h3, h4, h5, h6):not([data-paragraph-style-id])'],
   quote: ['.omi-continuous-tiptap-editor > blockquote:not([data-paragraph-style-id])', '.omi-continuous-tiptap-editor > blockquote:not([data-paragraph-style-id]) > p'],
   note: ['.publication-page-note', '.publication-document-notes > ol > li'], citation: ['.citation'], 'note-citation': ['.omi-publication-note-body .omi-note-citation'],
   bibliography: ['.publication-document-bibliography li'], 'figure-caption': ['figcaption'], 'table-caption': ['table caption'],

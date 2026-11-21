@@ -58,6 +58,7 @@ test('role styles follow legacy typography defaults and inherit the document or 
 test('semantic role CSS targets front matter, notes and quotations in preview and both exports', () => {
   const style = clonePublicationStyleTemplate();
   const motto = style.paragraphStyles.items.find((item) => item.role === 'motto')!;
+  style.paragraphStyles.items.find((item) => item.role === 'heading1')!.properties.fontSize = 19.4;
   motto.properties = { fontSize: 13.7, lineHeight: 17.8, alignment: 'justify', language: 'la' };
   const html = buildPublicationStyleCss(style, 'html');
   const print = buildPublicationStyleCss(style, 'print');
@@ -68,6 +69,8 @@ test('semantic role CSS targets front matter, notes and quotations in preview an
   assert.match(live, /-webkit-locale:"la"/);
   assert.match(live, /#proof \.publication-document-keywords/);
   assert.match(live, /#proof \.publication-page-note/);
+  assert.match(live, /#proof \.omi-continuous-tiptap-editor > h1[^}]*font-size:25.866/);
+  assert.match(print, /\.omi-scholarly-article \.article-body h2[^}]*font-size:19.4pt/);
 });
 
 test('note citation typography inherits citation overrides while unset values follow the surrounding note', () => {
