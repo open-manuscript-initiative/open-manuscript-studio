@@ -32,6 +32,22 @@ for (const width of [1440, 393]) {
     await panel.locator('summary').click();
     await panel.getByLabel('Template name', { exact: true }).fill('University book series');
     await panel.getByLabel('Series or journal name', { exact: true }).fill('History series');
+    // A committed write can finish before the selector's IndexedDB read does.
+    // Keep that read pending so success must include the refreshed selection.
+    await page.evaluate(() => {
+      const getAll = IDBObjectStore.prototype.getAll;
+      IDBObjectStore.prototype.getAll = function (...args) {
+        const request = getAll.apply(this, args);
+        if (this.transaction.db.name === 'omi-publication-templates-v1') {
+          request.addEventListener('success', (event) => {
+            if (!event.isTrusted) return;
+            event.stopImmediatePropagation();
+            setTimeout(() => request.dispatchEvent(new Event('success')), 300);
+          });
+        }
+        return request;
+      };
+    });
     await panel.getByRole('button', { name: 'Save as new template', exact: true }).click();
     await expect(panel.getByRole('status')).toHaveText('Template saved.');
     const templateId = await panel.getByRole('combobox', { name: 'Publication template', exact: true }).inputValue();

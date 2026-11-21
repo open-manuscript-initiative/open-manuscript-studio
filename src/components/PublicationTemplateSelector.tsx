@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { publicationTemplatesCopy } from '../i18n/publicationTemplates';
 import type { PublicationTemplate } from '../model/publicationTemplates';
 import { builtinPublicationTemplates, loadPublicationTemplates, PUBLICATION_TEMPLATES_EVENT } from '../services/publicationTemplates';
@@ -11,16 +11,25 @@ export function publicationTemplateName(template: PublicationTemplate, locale: s
 export function usePublicationTemplates() {
   const [templates, setTemplates] = useState(builtinPublicationTemplates);
   const [loadError, setLoadError] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    const refresh = () => { loadPublicationTemplates().then((next) => {
-      if (!cancelled) { setTemplates(next); setLoadError(false); }
-    }).catch(() => { if (!cancelled) setLoadError(true); }); };
-    refresh();
-    window.addEventListener(PUBLICATION_TEMPLATES_EVENT, refresh);
-    return () => { cancelled = true; window.removeEventListener(PUBLICATION_TEMPLATES_EVENT, refresh); };
+  const refreshToken = useRef<symbol | null>(null);
+  const refresh = useCallback(async () => {
+    const token = Symbol();
+    refreshToken.current = token;
+    try {
+      const next = await loadPublicationTemplates();
+      if (token === refreshToken.current) { setTemplates(next); setLoadError(false); }
+    } catch (error) {
+      if (token === refreshToken.current) setLoadError(true);
+      throw error;
+    }
   }, []);
-  return { templates, loadError };
+  useEffect(() => {
+    const onChange = () => { void refresh().catch(() => {}); };
+    onChange();
+    window.addEventListener(PUBLICATION_TEMPLATES_EVENT, onChange);
+    return () => { refreshToken.current = null; window.removeEventListener(PUBLICATION_TEMPLATES_EVENT, onChange); };
+  }, [refresh]);
+  return { templates, loadError, refresh };
 }
 
 export function PublicationTemplateSelector({ templates, locale, kind, value, onChange, disabled = false }: {

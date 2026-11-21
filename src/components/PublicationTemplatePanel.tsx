@@ -13,7 +13,7 @@ export function PublicationTemplatePanel({ locale, style, onApplied }: { locale:
   const manuscript = useStudioStore((state) => state.manuscript);
   const kind = getPublicationMatter(manuscript)?.publicationKind ?? 'volume';
   const copy = publicationTemplatesCopy(locale);
-  const { templates, loadError } = usePublicationTemplates();
+  const { templates, loadError, refresh } = usePublicationTemplates();
   const [selectedId, setSelectedId] = useState('');
   const selected = templates.find((template) => template.id === selectedId && template.kind === kind);
   const [name, setName] = useState('');
@@ -31,6 +31,8 @@ export function PublicationTemplatePanel({ locale, style, onApplied }: { locale:
   async function save(id?: string) {
     const template = await capturePublicationTemplate(useStudioStore.getState().manuscript, style, name, association, id);
     await savePublicationTemplate(template);
+    // Success includes the selector refresh, not just the IndexedDB write.
+    await refresh();
     setSelectedId(template.id);
   }
   return <details className="publication-template-panel">
@@ -53,6 +55,7 @@ export function PublicationTemplatePanel({ locale, style, onApplied }: { locale:
           const file = event.target.files?.[0]; event.target.value = '';
           if (file) void run(async () => {
             const template = await importPublicationTemplate(file);
+            await refresh();
             if (template.kind === kind) { setSelectedId(template.id); setName(template.name); setAssociation(template.association); }
           }, copy.imported);
         }} />
@@ -65,7 +68,7 @@ export function PublicationTemplatePanel({ locale, style, onApplied }: { locale:
         <button type="button" disabled={!name.trim()} onClick={() => void run(() => save(), copy.saved)}>{copy.save}</button>
         <button type="button" disabled={!name.trim() || !selected || isBuiltinPublicationTemplate(selected.id)} onClick={() => void run(() => save(selected!.id), copy.saved)}>{copy.update}</button>
         <button type="button" disabled={!selected || isBuiltinPublicationTemplate(selected.id)} onClick={() => void run(async () => {
-          await deletePublicationTemplate(selected!.id); setSelectedId('');
+          await deletePublicationTemplate(selected!.id); await refresh(); setSelectedId('');
         }, copy.deleted)}>{copy.remove}</button>
       </div>
     </fieldset>
