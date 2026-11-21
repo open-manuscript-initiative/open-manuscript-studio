@@ -800,7 +800,7 @@ export function PublicationDocumentCanvas({
     '--omi-publication-author-size': `${author.fontSize * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-author-leading': `${author.lineHeight * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-author-weight': String(author.fontWeight),
-    '--omi-publication-author-align': author.alignment,
+    '--omi-publication-author-align': viewMode === 'html' && author.alignment === 'justify' ? 'left' : author.alignment,
     '--omi-publication-author-given-weight': String(authorGivenName.fontWeight),
     '--omi-publication-author-given-style': authorGivenName.fontStyle,
     '--omi-publication-author-given-caps': authorGivenName.fontVariantCaps,
