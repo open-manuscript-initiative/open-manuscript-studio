@@ -304,7 +304,8 @@ function paginateStyledPages(
     }
   }
   ensurePage(0);
-  const result = { pageCount: Math.max(1, ...placements.map((item) => item.pageIndex + 1), ...flowBreaks.map((item) => item.pageIndex + 1), ...insertedPages.map((item) => item.pageIndex + 1), pageNotes.length), placements, flowBreaks, pageNotes, pageSectionIds, insertedPages };
+  const pageCount = [...placements, ...flowBreaks, ...insertedPages].reduce((count, item) => Math.max(count, item.pageIndex + 1), Math.max(1, pageNotes.length));
+  const result = { pageCount, placements, flowBreaks, pageNotes, pageSectionIds, insertedPages };
   return { ...result, sectionWarnings: publicationSectionFitWarnings(blocks, result, (index) => metrics(index, pageSectionIds[index]), movedSections) };
 }
 

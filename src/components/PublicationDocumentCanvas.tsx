@@ -694,15 +694,17 @@ export function PublicationDocumentCanvas({
 
         // Read-only previews use the measured line positions; no editable DOM
         // is cloned or modified by thumbnail rendering.
-        const validBlockIds = new Set<string>();
-        const visitBlocks = (blocks: OmiBlock[]) => { for (const block of blocks) { validBlockIds.add(block.id); visitBlocks(block.children ?? []); } };
-        for (const section of layoutSectionsRef.current) visitBlocks(section.blocks);
+        const validBlockIds = new Set<string>(), blockSectionIds = new Map<string, string>();
+        const visitBlocks = (blocks: OmiBlock[], sectionId: string) => { for (const block of blocks) { validBlockIds.add(block.id); blockSectionIds.set(block.id, sectionId); visitBlocks(block.children ?? [], sectionId); } };
+        for (const section of layoutSectionsRef.current) visitBlocks(section.blocks, section.id);
         const blockIds = flow.map((item) => publicationFlowBlockId(item.element));
         const thumbnails: PublicationBodyPageThumbnail[] = pageGeometries.map((geometry, index) => {
           const inserted = layout.insertedPages?.find((item) => item.pageIndex === index);
+          const insertion = style.pageStyles?.insertions?.find((item) => item.id === inserted?.id);
+          const anchorSection = blockSectionIds.get(insertion?.beforeBlockId ?? insertion?.afterBlockId ?? '');
           return { id: inserted ? `inserted:${inserted.id}` : `body:${index}`, insertionId: inserted?.id,
             number: firstPageNumber + index, styleId: resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index], insertionStyles.get(index)).id,
-            width: geometry.width, height: geometry.height, marks: [], studyId: getStudyRootSectionId(layoutSectionsRef.current, layout.pageSectionIds?.[index] ?? ''),
+            width: geometry.width, height: geometry.height, marks: [], studyId: getStudyRootSectionId(layoutSectionsRef.current, layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
           };
         });
         let priorInlineHeight = 0;
@@ -723,6 +725,7 @@ export function PublicationDocumentCanvas({
               width: geometry.bodyWidth * (block.splittable ? Math.min(1, Math.max(0.12, count / 70)) : 1), height: Math.max(1, Math.min(line.height * 0.4, geometry.height)),
               graphic: !block.splittable && !!flow[index]!.element.querySelector('img,svg,table'),
             });
+            thumbnail.studyId ??= getStudyRootSectionId(layoutSectionsRef.current, block.sectionId ?? blockSectionIds.get(anchor ?? '') ?? '');
             if (anchor) { thumbnail.firstBlockId ??= anchor; thumbnail.lastBlockId = anchor; }
             if (!thumbnail.id.startsWith('inserted:') && thumbnail.id === `body:${page}`) thumbnail.id = `text:${id ?? `front-${index}`}:${line.textOffset}`;
           });
