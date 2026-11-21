@@ -16,10 +16,11 @@
 .publication-page-navigation-actions button:disabled{opacity:.45;cursor:default}
 @media print{.publication-page-navigator{display:none}}
 
-.publication-style-editor-layout>.publication-document-canvas--print{grid-template-rows:auto auto minmax(0,1fr)}
+.publication-style-editor-layout>.publication-document-canvas.publication-document-canvas--print{grid-template-rows:auto auto minmax(0,1fr)}
 .publication-page-navigation-actions select{max-width:100%;min-width:0}
 .publication-page-navigation-actions label{max-width:100%;min-width:0}
 
 .publication-page-navigation-actions button,.publication-page-navigation-actions select{padding:6px 10px;border:1px solid #c4bac0;border-radius:7px;background:#fff;color:#293447;font-size:.8rem}
 .publication-page-navigation-actions button{font-weight:600;cursor:pointer}
 .publication-page-navigation-actions button:not(:disabled):hover{border-color:var(--omi-academic-burgundy,#7c2d3f);background:#f5e9ec}
+@media(max-width:720px){.publication-page-navigator[open]{max-height:30dvh;overflow-y:auto;box-sizing:border-box}}

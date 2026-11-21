@@ -84,6 +84,7 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
   await page.setViewportSize({ width: 480, height: 900 });
   await expect(navigator.getByRole('button', { name: 'Add page before', exact: true })).toBeVisible();
   expect(await navigator.evaluate((element) => element.scrollWidth <= element.clientWidth + 2)).toBe(true);
+  expect(await editor.locator('.publication-document-canvas-stage').evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(50);
   await page.screenshot({ path: testInfo.outputPath('page-thumbnails-mobile.png') });
 });
 
