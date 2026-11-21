@@ -30,7 +30,7 @@ test('accepts explicitly supplied technical context for Android tests', () => {
   assert.equal(result.success, true);
 });
 
-test('never allows manuscript content, secret fields or raw diagnostic logs', () => {
+test('rejects unexpected structured manuscript fields, secret fields and raw diagnostic logs', () => {
   for (const forbidden of [
     { manuscript: 'private draft text' },
     { manuscriptId: 'draft-123' },
