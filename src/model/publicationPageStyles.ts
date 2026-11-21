@@ -18,6 +18,8 @@ export interface PublicationSectionPageRule {
   showFirstPage?: boolean;
   keepTogether?: boolean;
 }
+/** Stable body boundary, before the rendered title/front matter. */
+export const PUBLICATION_BODY_START = 'urn:omi:publication:body:start';
 export interface PublicationPageInsertion { id: string; beforeBlockId?: string; afterBlockId?: string; styleId?: string }
 export interface PublicationPageStyleCollection {
   version: 1;

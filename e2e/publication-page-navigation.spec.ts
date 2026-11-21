@@ -115,4 +115,10 @@ test('frame thumbnails carry their style and objects through moves, navigation, 
   await navigator.getByRole('button', { name: 'Delete page', exact: true }).click();
   await expect(pages).toHaveCount(2);
   await expect(frames.getByRole('textbox', { name: 'Story text', exact: true })).toHaveValue('ORIGINAL_FRAME_TEXT');
+  await page.setViewportSize({ width: 480, height: 900 });
+  await expect(navigator).toBeVisible();
+  await navigator.getByRole('button', { name: 'Add page after', exact: true }).click();
+  await expect(pages).toHaveCount(3);
+  await navigator.getByRole('button', { name: 'Delete page', exact: true }).click();
+  await expect(pages).toHaveCount(2);
 });

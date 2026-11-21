@@ -252,11 +252,14 @@ test('live pages place each footnote below its anchor and reflow after zoom and 
   }
   const editor = canvas.locator('.omi-continuous-tiptap-editor');
   const firstNoteAnchor = canvas.locator('[data-omi-note][data-note-id="note-0"]').first();
-  const firstNoteAnchorTopBeforeEdit = await firstNoteAnchor.evaluate((anchor) => anchor.getBoundingClientRect().top);
+  // Compare coordinates inside the paper: focusing a paragraph can scroll
+  // the canvas, especially when the thumbnail panel reduces viewport height.
+  const anchorTopInPaper = () => firstNoteAnchor.evaluate((anchor) => anchor.getBoundingClientRect().top - anchor.closest('.publication-document-paper')!.getBoundingClientRect().top);
+  const firstNoteAnchorTopBeforeEdit = await anchorTopInPaper();
   await editor.locator('p').first().click();
   await page.keyboard.press('Home');
   await page.keyboard.insertText('Additional content changes the page breaks. '.repeat(8));
-  await expect.poll(() => firstNoteAnchor.evaluate((anchor) => anchor.getBoundingClientRect().top))
+  await expect.poll(anchorTopInPaper)
     .toBeGreaterThan(firstNoteAnchorTopBeforeEdit);
   await expect.poll(audit).toEqual([]);
   await expect(canvas.locator('[data-note-continuation]')).not.toHaveCount(0);

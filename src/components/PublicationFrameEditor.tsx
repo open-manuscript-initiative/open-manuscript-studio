@@ -152,8 +152,8 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
     document.fonts.addEventListener('loadingdone', changed);
     return () => document.fonts.removeEventListener('loadingdone', changed);
   }, []);
-  function commit(next: PublicationFrameLayout) {
-    if (preview) return;
+  function commit(next: PublicationFrameLayout, pageNavigation = false) {
+    if (preview && !pageNavigation) return;
     try { stageFrameLayout(paginateAutomaticFrameLayout(next, measure, hyphenation)); setMessage(''); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); }
   }
   function updateFrame(patch: Partial<PublicationFrame>) {
@@ -271,11 +271,11 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
     {flow.overflow.length ? <p className="omi-frame-overflow" role="status"><span role="img" aria-label={copy.overflow}>⚠</span></p> : null}
     {missingSources ? <p role="alert"><span role="img" aria-label={copy.missingGraphic}>⚠</span></p> : null}
     {message ? <p role="alert">{message}</p> : null}
-    {!preview ? <PublicationPageNavigator pages={thumbnails} styles={framePageStyles(layout)} selected={activePage} help="frame"
+    <PublicationPageNavigator pages={thumbnails} styles={framePageStyles(layout)} selected={activePage} help="frame"
       onSelect={(index) => { setPageSelection(index); setSelectedId(''); }}
-      onInsert={(index, side, styleId) => { commit(insertFramePage(layout, side === 'before' ? index - 1 : index, styleId, crypto.randomUUID())); setPageSelection(side === 'before' ? index : index + 1); setSelectedId(''); }}
-      onDelete={(index) => { commit(deleteFramePage(layout, index)); setPageSelection(Math.min(index, layout.page.count - 2)); setSelectedId(''); }}
-      onMove={(from, to) => { commit(moveFramePage(layout, from, to)); setPageSelection(to); setSelectedId(''); }} /> : null}
+      onInsert={(index, side, styleId) => { commit(insertFramePage(layout, side === 'before' ? index - 1 : index, styleId, crypto.randomUUID()), true); setPageSelection(side === 'before' ? index : index + 1); setSelectedId(''); }}
+      onDelete={(index) => { commit(deleteFramePage(layout, index), true); setPageSelection(Math.min(index, layout.page.count - 2)); setSelectedId(''); }}
+      onMove={(from, to) => { commit(moveFramePage(layout, from, to), true); setPageSelection(to); setSelectedId(''); }} />
     <div className="omi-frame-workspace">
       <div ref={stage} className="omi-frame-stage">
         {!layout.frames.length ? <p>{copy.empty}</p> : null}

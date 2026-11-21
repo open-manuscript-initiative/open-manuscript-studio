@@ -9,7 +9,7 @@ import {
   applyTextPublicationCorrections,
 } from '../model/proofing';
 import type { OmiPublicationProfile } from '../model/publicationProfile';
-import type { PublicationPageStyleCollection } from '../model/publicationPageStyles';
+import { PUBLICATION_BODY_START, type PublicationPageStyleCollection } from '../model/publicationPageStyles';
 import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import type {
   OmiBlock,
@@ -1071,6 +1071,9 @@ export function withInsertedPublicationPages(html: string, style: PublicationSty
   for (const match of html.matchAll(tokens)) {
     if (!match[1]) continue;
     const tag = match[0], name = match[1].toLowerCase(), before = match.index!;
+    if (name === 'article' && !tag.startsWith('</') && /\bclass="[^"]*\bomi-scholarly-article\b[^"]*"/.test(tag)) {
+      positions.set(PUBLICATION_BODY_START, { before: before + tag.length, after: before + tag.length });
+    }
     if (tag.startsWith('</')) {
       let index = stack.length - 1;
       while (index >= 0 && stack[index]!.name !== name) index -= 1;

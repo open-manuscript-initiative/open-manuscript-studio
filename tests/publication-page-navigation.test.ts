@@ -4,7 +4,7 @@ import { publicationPageStyleLetter, placePublicationEmptyPage, type Publication
 import { createFrameLayout, FRAME_LAYOUT_EXTENSION, getFrameLayout, RECTANGLE_POINTS, validateFrameLayout } from '../src/model/publicationFrames.ts';
 import { defaultFramePageStyle, insertFramePage, moveFramePage, withFramePages } from '../src/model/publicationFramePages.ts';
 import { clonePublicationStyleTemplate, withInsertedPublicationPages } from '../src/services/publicationStyleExport.ts';
-import { validatePublicationPageStyles } from '../src/model/publicationPageStyles.ts';
+import { PUBLICATION_BODY_START, validatePublicationPageStyles } from '../src/model/publicationPageStyles.ts';
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
 import { stageMoveSectionToSibling } from '../src/app/sectionActions.ts';
 import { useStudioStore } from '../src/app/useStudioStore.ts';
@@ -58,6 +58,13 @@ test('blank pages can be inserted before/after the last paragraph and reordered 
   validatePublicationPageStyles(moved);
   assert.throws(() => validatePublicationPageStyles({ ...moved, insertions: [{ id: 'bad', beforeBlockId: 'a', afterBlockId: 'b' }] }));
   assert.throws(() => validatePublicationPageStyles({ ...moved, insertions: [{ id: 'bad' }] }));
+});
+
+test('a blank moved before the first thumbnail precedes the body title in print export', () => {
+  const style = clonePublicationStyleTemplate();
+  style.pageStyles = { version: 1, styles: [], sections: [], pages: [], insertions: [{ id: 'first-blank', beforeBlockId: PUBLICATION_BODY_START }] };
+  const html = withInsertedPublicationPages('<article class="omi-scholarly-article"><header>TITLE</header><p>TEXT</p></article>', style);
+  assert.match(html, /<article class="omi-scholarly-article"><div[^]*?data-omi-inserted-page="first-blank"[^]*?<header>TITLE/);
 });
 
 test('after-block pagination reserves one blank sheet each, carries notes first and creates no phantom final page', () => {
