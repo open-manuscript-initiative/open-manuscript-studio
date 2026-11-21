@@ -9,6 +9,7 @@ import { closeCurrentDocument } from '../app/documentLifecycle';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
+import { getStudioFeedbackCopy } from '../i18n/studioFeedbackTranslations';
 import { getLocalFileLabels } from '../i18n/nativeStorageTranslations';
 import { getStudioPlatform } from '../mobile/platform/platform';
 import { isNativeStudio } from '../services/nativeManuscriptFile';
@@ -189,8 +190,7 @@ export function StudioMenuWithHelp({
   const modulesNavigation = (
     <button type="button" data-modules-navigation="true" className={'studio-menu-nav-button' + (modulesOpen ? ' studio-menu-nav-button--active' : '')} aria-current={modulesOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setModulesOpen(true); }}><Boxes size={18} aria-hidden="true" /><span>{modulesLabel}</span></button>
   );
-  const feedbackLabel = locale.startsWith('hu') ? 'Visszajelzés küldése'
-    : locale.startsWith('de') ? 'Feedback senden' : 'Send feedback';
+  const feedbackLabel = getStudioFeedbackCopy(locale).heading;
   const utilityNavigation = <>
     <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}><CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span></button>
     <button type="button" data-feedback-navigation="true" className={`studio-menu-nav-button${feedbackOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={feedbackOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setFeedbackOpen(true); }}><MessageSquareText size={18} aria-hidden="true" /><span>{feedbackLabel}</span></button>
