@@ -52,7 +52,7 @@ function renderSection(section: ReturnType<typeof buildPublicationRenderingConte
   const level = Math.min(6, Math.max(1, section.depth + 1));
   const heading = section.number ? `${section.number} ${section.title}` : section.title;
   return [
-    `<text:h text:style-name="OMIHeading${level}" text:outline-level="${level}">${escape(heading)}</text:h>`,
+    ...(section.title.trim() ? [`<text:h text:style-name="OMIHeading${level}" text:outline-level="${level}">${escape(heading)}</text:h>`] : []),
     ...section.blocks.map((block) => renderBlock(block, notes, usedNotes, warnings, images)),
     ...section.children.flatMap((child) => renderSection(child, notes, usedNotes, warnings, images)),
   ];

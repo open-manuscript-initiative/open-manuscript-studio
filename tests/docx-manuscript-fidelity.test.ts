@@ -23,6 +23,10 @@ import type { PdfImportResult } from '../src/services/pdfImport.ts';
 import { parseDocxMonograph } from '../src/services/docxMonographImport.ts';
 import { parseDocxForStudio } from '../src/services/docxImportStrategy.ts';
 import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
+import { createBlankManuscript } from '../src/document/createBlankManuscript.ts';
+import { buildDocxExport } from '../src/services/exportDocx.ts';
+import { buildOdtExport } from '../src/services/exportOdt.ts';
+import { parseOdtForStudio } from '../src/services/odtImport.ts';
 
 installXmlDomGlobals();
 
@@ -615,3 +619,26 @@ test('import defaults follow author and editorial workflow roles', async () => {
   assert.equal(defaultDocumentImportMode('author'), 'own-work');
   assert.equal(defaultDocumentImportMode('general'), 'citation');
 });
+
+for (const format of ['docx', 'odt'] as const) {
+  for (const hasNamedSection of [false, true]) {
+    test(`${format} export/reimport preserves a paragraph opening with named section: ${hasNamedSection}`, async () => {
+      // Use the same heading-free source as the browser regression. A generic
+      // scholarly profile still numbers real headings, but an untitled body
+      // container must not turn into an empty/number-only heading on export.
+      const manuscript = createBlankManuscript({ kind: 'study', locale: 'en', title: 'Test manuscript' });
+      manuscript.sections = [{ id: 'opening', title: '', blocks: [{ id: 'body', type: 'paragraph', content: 'Opening body paragraph.' }] }];
+      if (hasNamedSection) manuscript.sections.push({ id: 'methods', title: 'Methods', blocks: [{ id: 'methods-body', type: 'paragraph', content: 'Methods text.' }] });
+      const exported = format === 'docx' ? buildDocxExport(manuscript) : buildOdtExport(manuscript);
+      const file = new File([exported.bytes], `candidate.${format}`);
+      const plan = await (format === 'docx' ? parseDocxForStudio(file) : parseOdtForStudio(file));
+      assert.equal(plan.sections[0]?.title, '');
+      const editor = buildContinuousManuscriptDocument(plan.sections);
+      assert.equal(editor.content?.[0]?.type, 'paragraph');
+      assert.match(JSON.stringify(editor), /Opening body paragraph/);
+      const headings = editor.content?.filter(node => node.type === 'heading') ?? [];
+      assert.equal(headings.length, hasNamedSection ? 1 : 0);
+      if (hasNamedSection) assert.match(JSON.stringify(headings[0]), /Methods/);
+    });
+  }
+}

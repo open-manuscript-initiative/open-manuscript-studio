@@ -53,7 +53,7 @@ test('DOCX candidate report retains original and blocks a stale workspace replac
   await report.getByRole('button', { name: 'Save original file', exact: true }).click();
   const file = await download;
   expect(createHash('sha256').update(await readFile((await file.path())!)).digest('hex')).toBe(createHash('sha256').update(fixture.bytes).digest('hex'));
-  await page.getByRole('checkbox', { name: 'This is my own work created earlier in another editor; do not add a source line.', exact: true }).check();
+  await page.getByRole('combobox', { name: 'Import purpose', exact: true }).selectOption('own-work');
   await page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     useStudioStore.getState().setTitle('Changed during preparation');

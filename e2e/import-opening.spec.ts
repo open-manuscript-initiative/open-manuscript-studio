@@ -4,6 +4,7 @@ import { createVersionedTestManuscript } from '../tests/testManuscriptFixture';
 import { buildDocxExport } from '../src/services/exportDocx';
 import { buildOdtExport } from '../src/services/exportOdt';
 import { buildOmiContainer } from '../src/services/omiContainer';
+import { createBlankManuscript } from '../src/document/createBlankManuscript';
 
 async function openDocumentMenu(page: Page) {
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
@@ -87,7 +88,7 @@ for (const width of [1440, 393]) {
         await signInToStudio(page);
         await page.getByRole('button', { name: /^New OMI study/ }).click();
         await openDocumentMenu(page);
-        const manuscript = createVersionedTestManuscript();
+        const manuscript = createBlankManuscript({ kind: 'study', locale: 'en', title: 'Test manuscript' });
         manuscript.sections = [{ id: 'body-section', title: '', blocks: [{ id: 'body', type: 'paragraph', content: 'Opening body paragraph.' }] }];
         const bytes = format === 'docx' ? buildDocxExport(manuscript).bytes
           : format === 'odt' ? buildOdtExport(manuscript).bytes : new TextEncoder().encode('%PDF-1.7\nFixture');
