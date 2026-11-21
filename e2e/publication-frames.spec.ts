@@ -66,6 +66,7 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   await editor.getByRole('combobox', { name: 'Select frame', exact: true }).selectOption(first);
   const move = editor.locator(`[data-frame-selection-id="${first}"] .omi-frame-move`);
   const beforeX = (await model()).frames[0]!.xMm;
+  await move.scrollIntoViewIfNeeded();
   const box = await move.boundingBox(); expect(box).not.toBeNull();
   await page.mouse.move(box!.x + 10, box!.y + 5); await page.mouse.down();
   await page.mouse.move(box!.x + 30, box!.y + 10, { steps: 3 }); await page.mouse.up();
@@ -73,6 +74,7 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   const resize = editor.locator(`[data-frame-selection-id="${first}"] .omi-frame-resize`);
   const beforeWidth = (await model()).frames[0]!.widthMm;
   const beforeOrder = (await model()).frames.map((frame) => frame.id);
+  await resize.scrollIntoViewIfNeeded();
   const resizeBox = await resize.boundingBox(); expect(resizeBox).not.toBeNull();
   await page.mouse.move(resizeBox!.x + 4, resizeBox!.y + 4); await page.mouse.down();
   await page.mouse.move(resizeBox!.x + 14, resizeBox!.y + 10, { steps: 3 }); await page.mouse.up();
@@ -85,6 +87,7 @@ test('frame stories link, split and reflow with shared/local styles, shapes, gra
   await expect(editor.locator(`[data-frame-id="${first}"]`)).toHaveCSS('transform', /matrix/);
   await expect.poll(async () => (await model()).frames[0]!.points[1]!.x).toBe(75);
   const outlinePoint = editor.locator(`[data-frame-selection-id="${first}"] .omi-frame-point`).nth(1);
+  await outlinePoint.scrollIntoViewIfNeeded();
   const pointBox = await outlinePoint.boundingBox(); expect(pointBox).not.toBeNull();
   await page.mouse.move(pointBox!.x + 5, pointBox!.y + 5); await page.mouse.down();
   await page.mouse.move(pointBox!.x + 10, pointBox!.y + 10, { steps: 3 }); await page.mouse.up();

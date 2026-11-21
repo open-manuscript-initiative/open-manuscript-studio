@@ -57,9 +57,14 @@ test('section headers and individual page masters reflow, persist and feed PDF o
   await panel.getByRole('textbox', { name: 'Even page — left', exact: true }).fill('Author B — {{sectionTitle}}');
   await toggle.click();
   const guides = editor.locator('.publication-document-page-guide');
+  const navigator = editor.locator('.publication-document-canvas > .publication-page-navigator');
   await expect.poll(() => guides.filter({ has: page.locator('.publication-document-running-header', { hasText: 'Author A' }) }).count()).toBeGreaterThan(0);
+  // Page guides are virtualized. Navigate to each study before checking its header.
+  await navigator.getByRole('button', { name: /Second article/ }).first().click();
   await expect.poll(() => guides.filter({ has: page.locator('.publication-document-running-header', { hasText: 'Author B' }) }).count()).toBeGreaterThan(0);
   await expect.poll(() => guides.filter({ has: page.locator('.publication-document-running-header', { hasText: 'Author B' }) }).first().getAttribute('data-page-style')).toBe('default');
+  await navigator.locator('[data-thumbnail-page="0"]').click();
+  await expect(guides.filter({ has: page.locator('.publication-document-running-header', { hasText: 'Author A' }) }).first()).toBeAttached();
   const body = editor.locator('.omi-continuous-tiptap-editor > [data-block-id="block-0-0"]');
   const horizontal = await body.evaluate((el) => {
     const computed = getComputedStyle(el);
@@ -68,14 +73,15 @@ test('section headers and individual page masters reflow, persist and feed PDF o
       available: guide.getBoundingClientRect().width - parseFloat(guide.style.getPropertyValue('--omi-publication-page-left-margin')) - parseFloat(guide.style.getPropertyValue('--omi-publication-page-right-margin')) };
   });
   expect(horizontal.occupied).toBeLessThanOrEqual(horizontal.available + 1);
-  const before = await guides.first().evaluate((el) => ({ top: getComputedStyle(el).getPropertyValue('--omi-publication-page-top-margin'), height: el.getBoundingClientRect().height }));
+  const firstGuide = editor.locator('.publication-document-page-guide[data-page-number="1"]');
+  const before = await firstGuide.evaluate((el) => ({ top: getComputedStyle(el).getPropertyValue('--omi-publication-page-top-margin'), height: el.getBoundingClientRect().height }));
   await toggle.click();
   await panel.getByRole('spinbutton', { name: 'From page number', exact: true }).fill('1');
   await panel.getByRole('spinbutton', { name: 'To page number', exact: true }).fill('1');
   await panel.getByRole('button', { name: 'Apply to pages', exact: true }).click();
   await toggle.click();
-  await expect(guides.first()).toHaveAttribute('data-page-style', styleId);
-  const after = await guides.first().evaluate((el) => ({ top: getComputedStyle(el).getPropertyValue('--omi-publication-page-top-margin'), height: el.getBoundingClientRect().height }));
+  await expect(firstGuide).toHaveAttribute('data-page-style', styleId);
+  const after = await firstGuide.evaluate((el) => ({ top: getComputedStyle(el).getPropertyValue('--omi-publication-page-top-margin'), height: el.getBoundingClientRect().height }));
   expect(parseFloat(after.top)).toBeGreaterThan(parseFloat(before.top)); expect(after.height).toBeCloseTo(before.height, 1);
   const result = await page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
@@ -93,5 +99,5 @@ test('section headers and individual page masters reflow, persist and feed PDF o
   expect(result.collection.sections).toHaveLength(2); expect(result.collection.pages).toHaveLength(1);
   expect(result.paragraphs).toEqual(originalParagraphs);
   expect(result.html).toContain('Author A'); expect(result.html).toContain('Author B'); expect(result.html).toContain(':nth(n+1):nth(-n+1)');
-  await expect(guides.first()).toHaveAttribute('data-page-style', styleId);
+  await expect(firstGuide).toHaveAttribute('data-page-style', styleId);
 });
