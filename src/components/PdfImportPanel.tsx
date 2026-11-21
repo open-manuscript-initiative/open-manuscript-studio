@@ -1,3 +1,5 @@
+import { defaultDocumentImportMode, documentImportSourcePolicy, type DocumentImportMode } from '../model/documentImportMode';
+import type { WorkflowRole } from '../model/workflowRole';
 import { AlertTriangle, FileText, LoaderCircle } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -13,9 +15,10 @@ import {
 
 interface PdfImportPanelProps {
   onImported?: () => void;
+  workflowRole?: WorkflowRole;
 }
 
-export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
+export function PdfImportPanel({ onImported, workflowRole = 'general' }: PdfImportPanelProps) {
   const { locale } = useTranslation();
   const copy = getPdfImportCopy(locale);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -25,7 +28,8 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [pendingResult, setPendingResult] = useState<PdfImportResult | null>(null);
   const [source, setSource] = useState('');
-  const [selfAuthoredExternal, setSelfAuthoredExternal] = useState(false);
+  const [importMode, setImportMode] = useState<DocumentImportMode>(() => defaultDocumentImportMode(workflowRole));
+  const [includeSource, setIncludeSource] = useState(false);
 
   async function handleFile(file: File | undefined): Promise<void> {
     if (!file || busy) return;
@@ -33,7 +37,7 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
     setProgress({ status: 'queued', pagesProcessed: 0, pagesTotal: 0 });
     setSummary(null);
     setPendingResult(null);
-    setSelfAuthoredExternal(false);
+    setImportMode(defaultDocumentImportMode(workflowRole)); setIncludeSource(false);
     setError(null);
     try {
       const result = await importPdfForStudio(file, setProgress);
@@ -50,9 +54,9 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
   }
 
   function confirmImport(): void {
-    if (!pendingResult || (!selfAuthoredExternal && !source.trim())) return;
+    if (!pendingResult || (documentImportSourcePolicy({ importMode, includeSource }).includeSource && !source.trim())) return;
     try {
-      applyPdfImportResult(pendingResult, source, selfAuthoredExternal);
+      applyPdfImportResult(pendingResult, source, { importMode, includeSource });
       setSummary(pendingResult);
       setPendingResult(null);
       clearDocumentClosedState();
@@ -109,8 +113,8 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
         locale={locale}
         summary={pendingResult.title}
         source={source}
-        selfAuthoredExternal={selfAuthoredExternal}
-        onSelfAuthoredExternalChange={setSelfAuthoredExternal}
+        importMode={importMode} includeSource={includeSource}
+        onImportModeChange={setImportMode} onIncludeSourceChange={setIncludeSource}
         onSourceChange={setSource}
         onConfirm={confirmImport}
         onCancel={() => { setPendingResult(null); setSource(''); }}

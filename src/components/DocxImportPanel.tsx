@@ -1,3 +1,5 @@
+import { defaultDocumentImportMode, documentImportSourcePolicy, type DocumentImportMode } from '../model/documentImportMode';
+import type { WorkflowRole } from '../model/workflowRole';
 import {
   AlertTriangle,
   FileUp,
@@ -27,9 +29,10 @@ import { exchangeCopy } from '../i18n/exchange';
 
 interface DocxImportPanelProps {
   onImported?: () => void;
+  workflowRole?: WorkflowRole;
 }
 
-export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
+export function DocxImportPanel({ onImported, workflowRole = 'general' }: DocxImportPanelProps) {
   const { locale } = useTranslation();
   const copy = getDocxImportCopy(locale);
   const description = getCurrentDocxImportDescription(locale);
@@ -40,7 +43,8 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<DocxManuscriptImportPlan | null>(null);
   const [source, setSource] = useState('');
-  const [selfAuthoredExternal, setSelfAuthoredExternal] = useState(false);
+  const [importMode, setImportMode] = useState<DocumentImportMode>(() => defaultDocumentImportMode(workflowRole));
+  const [includeSource, setIncludeSource] = useState(false);
   const [receipt, setReceipt] = useState<OfficeImportReceipt | null>(null);
   const base = useRef(useStudioStore.getState().manuscript);
   const [failedReceipt, setFailedReceipt] = useState<OfficeImportPreparationError | null>(null);
@@ -54,7 +58,7 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
     setPendingPlan(null);
     setReceipt(null); setFailedReceipt(null);
     base.current = useStudioStore.getState().manuscript;
-    setSelfAuthoredExternal(false);
+    setImportMode(defaultDocumentImportMode(workflowRole)); setIncludeSource(false);
 
     try {
       await yieldToBrowser();
@@ -82,13 +86,13 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   }
 
   function confirmImport(): void {
-    if (!pendingPlan || (!selfAuthoredExternal && !source.trim())) return;
+    if (!pendingPlan || (documentImportSourcePolicy({ importMode, includeSource }).includeSource && !source.trim())) return;
     try {
       if (base.current !== useStudioStore.getState().manuscript) throw new Error(exchangeCopy(locale).changed);
       applyDocxImportPlan(pendingPlan, {
         importDetectedAuthors: pendingPlan.authors.length > 0,
         source,
-        selfAuthoredExternal,
+        importMode, includeSource,
       });
       if (receipt) setReceipt({ ...receipt, report: finishExchangeReport(receipt.report,
         new TextEncoder().encode(JSON.stringify(useStudioStore.getState().manuscript))) });
@@ -159,13 +163,13 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
         locale={locale}
         summary={pendingPlan.title}
         source={source}
-        selfAuthoredExternal={selfAuthoredExternal}
-        onSelfAuthoredExternalChange={setSelfAuthoredExternal}
+        importMode={importMode} includeSource={includeSource}
+        onImportModeChange={setImportMode} onIncludeSourceChange={setIncludeSource}
         onSourceChange={setSource}
         onConfirm={confirmImport}
         onCancel={() => { setPendingPlan(null); setSource(''); if (receipt) setReceipt({ ...receipt, report: { ...receipt.report, status: 'cancelled' } }); }}
       />}
-      <PdfImportPanel onImported={onImported} />
+      <PdfImportPanel workflowRole={workflowRole} onImported={onImported} />
     </>
   );
 }

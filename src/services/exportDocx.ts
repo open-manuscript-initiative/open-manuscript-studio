@@ -82,7 +82,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     for (const section of sections) {
       const level = Math.min(6, section.depth + 1);
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
-      body.push(paragraph(heading, `Heading${level}`));
+      if (section.title.trim()) body.push(paragraph(heading, `Heading${level}`));
       for (const block of section.blocks) {
         const indexFields = renderWordIndexEntryFields(indexEntriesByBlock.get(block.id) ?? []);
         if (block.visual) {

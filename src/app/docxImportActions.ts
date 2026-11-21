@@ -1,5 +1,6 @@
 import { useStudioStore } from './useStudioStore';
 import { manuscriptImportOrigin } from '../model/manuscriptImportOrigin';
+import { documentImportSourcePolicy, type DocumentImportSourceOptions } from '../model/documentImportMode';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { createDocumentStructureProfile } from '../model/documentProfile';
 import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
@@ -12,10 +13,9 @@ import { createInitialVersioningEnvelope } from '../model/versioning';
 import type { DocxManuscriptImportPlan } from '../services/docxManuscriptImport';
 import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 
-export interface ApplyDocxImportOptions {
+export interface ApplyDocxImportOptions extends DocumentImportSourceOptions {
   importDetectedAuthors: boolean;
   source: string;
-  selfAuthoredExternal?: boolean;
 }
 
 export function applyDocxImportPlan(
@@ -50,15 +50,15 @@ export function applyDocxImportPlan(
     ),
   );
 
-  if (!options.selfAuthoredExternal && !options.source.trim()) throw new Error('Imported document requires a source.');
-  const sections = options.selfAuthoredExternal
-    ? plan.sections
-    : attachImportedDocumentSource(plan.sections, options.source, importedDocumentSourceLabel(plan.locale ?? current.locale));
+  const policy = documentImportSourcePolicy(options);
+  const sections = policy.includeSource
+    ? attachImportedDocumentSource(plan.sections, options.source, importedDocumentSourceLabel(plan.locale ?? current.locale))
+    : plan.sections;
   // Document provenance has no block/section anchor and cannot constrain edits.
   const annotations = plan.annotations;
 
   const state: OmiManuscriptState = {
-    ...(options.selfAuthoredExternal ? { extensions: manuscriptImportOrigin(
+    ...(policy.selfAuthored ? { extensions: manuscriptImportOrigin(
       plan.fileName.toLowerCase().endsWith('.odt') ? 'odt' : 'docx', timestamp,
     ) } : {}),
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
@@ -70,7 +70,7 @@ export function applyDocxImportPlan(
     abstract: plan.abstract,
     keywords: plan.keywords,
     documentStructure: createDocumentStructureProfile('study'),
-    sectionNumberingStyle: 'decimal',
+    sectionNumberingStyle: 'none',
     citationStyle: current.citationStyle ?? 'apa-7',
     crossReferenceNumbering: 'document',
     agents,
@@ -89,7 +89,7 @@ export function applyDocxImportPlan(
     updatedAt: timestamp,
   };
   const envelope = createInitialVersioningEnvelope(state, {
-    summary: options.selfAuthoredExternal
+    summary: policy.selfAuthored
       ? `Imported self-authored ${plan.fileName.toLowerCase().endsWith('.odt') ? 'ODT' : 'DOCX'} manuscript`
       : `Imported ${plan.fileName.toLowerCase().endsWith('.odt') ? 'ODT' : 'DOCX'} manuscript: ${plan.fileName}`,
     timestamp,

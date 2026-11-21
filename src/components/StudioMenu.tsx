@@ -41,7 +41,7 @@ import { getCloudStorageCopy } from '../i18n/cloudStorageTranslations';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
 import { getWorkflowRoleCopy } from '../i18n/workflowRoleTranslations';
-import { isWorkflowTaskVisible, resolveWorkflowRole, type ExternalWorkflowContext } from '../model/workflowRole';
+import { isWorkflowTaskVisible, resolveWorkflowRole, type ExternalWorkflowContext, type WorkflowRole } from '../model/workflowRole';
 import '../styles/workflow-role.css';
 import { getStudioPlatform, type StudioPlatform } from '../mobile/platform/platform';
 import {
@@ -272,7 +272,7 @@ export function StudioMenu({
             </MenuNavGroup>
           </nav>
           <div className={`studio-menu-content${isViewActive('publication-editor') ? ' studio-menu-content--publication-editor' : ''}${externalContentActive ? ' studio-menu-content--help-open' : ''}${!hasActiveContent ? ' studio-menu-content--empty' : ''}`}>
-            {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
+            {activeView === 'document' ? <DocumentMenuView workflowRole={effectiveRole.role} documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={returnHome} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'translations' ? <TranslationPanel key={manuscriptId} active={!externalContentActive} /> : null}
@@ -332,11 +332,13 @@ function useOwnDeviceStorage(): boolean {
 }
 
 function DocumentMenuView({
+  workflowRole,
   documentCloseAction,
   onCreated,
 }: {
   documentCloseAction?: ReactNode;
   onCreated: () => void;
+  workflowRole: WorkflowRole;
 }) {
   const { t, locale } = useTranslation();
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
@@ -565,8 +567,8 @@ function DocumentMenuView({
       </div>
     ) : null}
     <ProfileSavedDocumentsSection onOpened={onCreated} />
-    <DocxImportPanel onImported={onCreated} />
-    <OdtImportPanel onImported={onCreated} />
+    <DocxImportPanel workflowRole={workflowRole} onImported={onCreated} />
+    <OdtImportPanel workflowRole={workflowRole} onImported={onCreated} />
   </section>;
 }
 

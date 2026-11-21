@@ -23,6 +23,10 @@ import type { PdfImportResult } from '../src/services/pdfImport.ts';
 import { parseDocxMonograph } from '../src/services/docxMonographImport.ts';
 import { parseDocxForStudio } from '../src/services/docxImportStrategy.ts';
 import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
+import { createBlankManuscript } from '../src/document/createBlankManuscript.ts';
+import { buildDocxExport } from '../src/services/exportDocx.ts';
+import { buildOdtExport } from '../src/services/exportOdt.ts';
+import { parseOdtForStudio } from '../src/services/odtImport.ts';
 
 installXmlDomGlobals();
 
@@ -568,3 +572,73 @@ test('self-authored PDF import leaves the opening heading free of source annotat
     useStudioStore.setState(previous);
   }
 });
+
+for (const format of ['docx', 'odt', 'pdf'] as const) {
+  test(`${format} import distinguishes editorial work, own-work attribution and citation without adding headings or numbering`, async () => {
+    const previous = useStudioStore.getState();
+    try {
+      const plan = await parseDocxForStudio(makeDocx('<w:p><w:r><w:t>Opening paragraph without a heading</w:t></w:r></w:p>'));
+      const pdf = {
+        source: { fileName: 'manuscript.pdf' }, title: 'Manuscript', warnings: [],
+        blocks: [{ kind: 'paragraph', text: 'Opening paragraph without a heading', page: 1, confidence: 1 }],
+      } as unknown as PdfImportResult;
+      const apply = (source: string, options: import('../src/model/documentImportMode.ts').DocumentImportSourceOptions) => {
+        if (format === 'pdf') applyPdfImportResult(pdf, source, options);
+        else applyDocxImportPlan({ ...plan, fileName: `manuscript.${format}` }, { importDetectedAuthors: false, source, ...options });
+        return useStudioStore.getState().manuscript;
+      };
+      for (const importMode of ['editorial', 'own-work'] as const) {
+        // A retained filename or checked source toggle cannot leak into editorial text.
+        const imported = apply('PRIVATE_FILENAME', { importMode, includeSource: importMode === 'editorial' });
+        assert.equal(imported.sectionNumberingStyle, 'none');
+        assert.equal(imported.sections[0]?.title, '');
+        assert.equal(JSON.stringify(imported.sections).includes('PRIVATE_FILENAME'), false);
+        assert.equal(Boolean(imported.extensions?.[MANUSCRIPT_IMPORT_ORIGIN]), importMode === 'own-work');
+        const editor = buildContinuousManuscriptDocument(imported.sections);
+        assert.equal(editor.content?.[0]?.type, 'paragraph');
+        const projected = projectContinuousManuscriptDocument(editor, imported.sections);
+        assert.equal(buildContinuousManuscriptDocument(projected).content?.some(n => n.type === 'heading'), false);
+        const reopened = parseOmiJson(serializeOmiJson(imported));
+        assert.equal(buildContinuousManuscriptDocument(reopened.sections).content?.[0]?.type, 'paragraph');
+      }
+      const ownWithSource = apply('My earlier edition', { importMode: 'own-work', includeSource: true });
+      assert.match(ownWithSource.sections[0]!.blocks[0]!.content, /My earlier edition/);
+      assert.ok(ownWithSource.extensions?.[MANUSCRIPT_IMPORT_ORIGIN]);
+      assert.throws(() => apply('', { importMode: 'own-work', includeSource: true }), /requires a source/);
+      assert.throws(() => apply('', { importMode: 'citation', includeSource: false }), /requires a source/);
+      const cited = apply('External edition', { importMode: 'citation' });
+      assert.match(cited.sections[0]!.blocks[0]!.content, /External edition/);
+      assert.equal(cited.extensions?.[MANUSCRIPT_IMPORT_ORIGIN], undefined);
+    } finally { useStudioStore.setState(previous); }
+  });
+}
+
+test('import defaults follow author and editorial workflow roles', async () => {
+  const { defaultDocumentImportMode } = await import('../src/model/documentImportMode.ts');
+  for (const role of ['editor', 'copyeditor', 'layout-editor'] as const) assert.equal(defaultDocumentImportMode(role), 'editorial');
+  assert.equal(defaultDocumentImportMode('author'), 'own-work');
+  assert.equal(defaultDocumentImportMode('general'), 'citation');
+});
+
+for (const format of ['docx', 'odt'] as const) {
+  for (const hasNamedSection of [false, true]) {
+    test(`${format} export/reimport preserves a paragraph opening with named section: ${hasNamedSection}`, async () => {
+      // Use the same heading-free source as the browser regression. A generic
+      // scholarly profile still numbers real headings, but an untitled body
+      // container must not turn into an empty/number-only heading on export.
+      const manuscript = createBlankManuscript({ kind: 'study', locale: 'en', title: 'Test manuscript' });
+      manuscript.sections = [{ id: 'opening', title: '', blocks: [{ id: 'body', type: 'paragraph', content: 'Opening body paragraph.' }] }];
+      if (hasNamedSection) manuscript.sections.push({ id: 'methods', title: 'Methods', blocks: [{ id: 'methods-body', type: 'paragraph', content: 'Methods text.' }] });
+      const exported = format === 'docx' ? buildDocxExport(manuscript) : buildOdtExport(manuscript);
+      const file = new File([exported.bytes], `candidate.${format}`);
+      const plan = await (format === 'docx' ? parseDocxForStudio(file) : parseOdtForStudio(file));
+      assert.equal(plan.sections[0]?.title, '');
+      const editor = buildContinuousManuscriptDocument(plan.sections);
+      assert.equal(editor.content?.[0]?.type, 'paragraph');
+      assert.match(JSON.stringify(editor), /Opening body paragraph/);
+      const headings = editor.content?.filter(node => node.type === 'heading') ?? [];
+      assert.equal(headings.length, hasNamedSection ? 1 : 0);
+      if (hasNamedSection) assert.match(JSON.stringify(headings[0]), /Methods/);
+    });
+  }
+}

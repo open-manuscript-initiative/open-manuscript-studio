@@ -1,5 +1,6 @@
 import { useStudioStore } from './useStudioStore';
 import { manuscriptImportOrigin } from '../model/manuscriptImportOrigin';
+import { documentImportSourcePolicy, type DocumentImportSourceOptions } from '../model/documentImportMode';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { OMI_IDENTITY_MODEL_VERSION } from '../model/identity';
 import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
@@ -25,8 +26,9 @@ interface PendingPdfAnchor {
   blockIndex: number;
 }
 
-export function applyPdfImportResult(result: PdfImportResult, source: string, selfAuthoredExternal = false): string {
-  if (!selfAuthoredExternal && !source.trim()) throw new Error('Imported document requires a source.');
+export function applyPdfImportResult(result: PdfImportResult, source: string, options: boolean | DocumentImportSourceOptions = false): string {
+  const policy = documentImportSourcePolicy(typeof options === 'boolean' ? { selfAuthoredExternal: options } : options);
+  if (policy.includeSource && !source.trim()) throw new Error('Imported document requires a source.');
   const current = useStudioStore.getState().manuscript;
   const timestamp = new Date().toISOString();
   const manuscriptId = crypto.randomUUID();
@@ -36,13 +38,13 @@ export function applyPdfImportResult(result: PdfImportResult, source: string, se
   const footnotes = indexPdfFootnotes(importedBlocks);
   const consumedFootnotes = new Set<string>();
 
-  let section: OmiSection = createSection('Imported PDF');
+  let section: OmiSection = createSection('');
   sections.push(section);
   let previousTextBlock: OmiBlock | null = null;
 
   for (const imported of importedBlocks) {
     if (imported.kind === 'heading' && (imported.headingLevel ?? 1) === 1) {
-      if (section.blocks.length === 0 && section.title === 'Imported PDF') {
+      if (section.blocks.length === 0 && !section.title) {
         section.title = imported.text;
       } else {
         section = createSection(imported.text);
@@ -101,19 +103,19 @@ export function applyPdfImportResult(result: PdfImportResult, source: string, se
     }
   }
 
-  if (sections.length > 1 && sections[0]?.blocks.length === 0 && sections[0].title === 'Imported PDF') {
+  if (sections.length > 1 && sections[0]?.blocks.length === 0 && !sections[0].title) {
     sections.shift();
   }
-  if (sections.length === 0) sections.push(createSection('Imported PDF'));
+  if (sections.length === 0) sections.push(createSection(''));
 
   preservePdfPublicationMetadata(result, sections, annotations, timestamp);
 
-  const sourcedSections = selfAuthoredExternal
-    ? sections
-    : attachImportedDocumentSource(sections, source, importedDocumentSourceLabel(current.locale));
+  const sourcedSections = policy.includeSource
+    ? attachImportedDocumentSource(sections, source, importedDocumentSourceLabel(current.locale))
+    : sections;
 
   const state: OmiManuscriptState = {
-    ...(selfAuthoredExternal ? { extensions: manuscriptImportOrigin('pdf', timestamp) } : {}),
+    ...(policy.selfAuthored ? { extensions: manuscriptImportOrigin('pdf', timestamp) } : {}),
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
     version: current.version,
@@ -122,7 +124,7 @@ export function applyPdfImportResult(result: PdfImportResult, source: string, se
     title: result.title,
     abstract: '',
     keywords: [],
-    sectionNumberingStyle: 'decimal',
+    sectionNumberingStyle: 'none',
     citationStyle: current.citationStyle ?? 'apa-7',
     crossReferenceNumbering: 'document',
     agents: [],
@@ -138,7 +140,7 @@ export function applyPdfImportResult(result: PdfImportResult, source: string, se
     updatedAt: timestamp,
   };
   const envelope = createInitialVersioningEnvelope(state, {
-    summary: selfAuthoredExternal ? 'Imported self-authored PDF manuscript' : `Imported PDF manuscript: ${result.source.fileName}`,
+    summary: policy.selfAuthored ? 'Imported self-authored PDF manuscript' : `Imported PDF manuscript: ${result.source.fileName}`,
     timestamp,
     completeness: result.warnings.length > 0 ? 'shallow' : 'complete',
   });

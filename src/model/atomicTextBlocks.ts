@@ -10,7 +10,9 @@ export function materializeSectionHeadingBlocks(
   sections: readonly OmiSection[],
 ): OmiSection[] {
   return sections.map((section) => {
-    if (isSectionHeadingBlock(section.blocks[0])) return section;
+    // Untitled sections are valid body containers. Import, save/reopen and
+    // migration must not insert an empty heading before their first paragraph.
+    if (isSectionHeadingBlock(section.blocks[0]) || !section.title.trim()) return section;
 
     const level = Math.max(
       1,
