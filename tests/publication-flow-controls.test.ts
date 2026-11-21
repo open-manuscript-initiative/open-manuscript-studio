@@ -188,8 +188,13 @@ test('insertion anchors and section keep rules survive OMI but are removed from 
   assert.match(html, /@page omi_inserted_0\{size:180mm/);
   assert.match(html, /break-inside:avoid/);
   assert.doesNotMatch(await renderStyleBasedHtml(manuscript, resolvePublicationProfile(manuscript), 'html', context), /data-omi-inserted-page/);
-  const malicious = structuredClone(style); malicious.pageStyles!.insertions = [{ id: '"><script>x</script>', beforeBlockId: blockId }];
-  assert.doesNotMatch(withInsertedPublicationPages(`<p data-omi-block-id="${blockId}">text</p>`, malicious), /<script>/);
+  for (const tag of ['script', 'SCRIPT', 'ScRiPt']) {
+    const malicious = structuredClone(style);
+    malicious.pageStyles!.insertions = [{ id: `"><${tag} src=x>payload</${tag}>`, beforeBlockId: blockId }];
+    const escaped = withInsertedPublicationPages(`<p data-omi-block-id="${blockId}">text</p>`, malicious);
+    assert.doesNotMatch(escaped, /<script\b/i);
+    assert.match(escaped, /&lt;/);
+  }
   for (const invalid of [{ id: 'a', beforeBlockId: blockId, styleId: 'missing' }, { id: '', beforeBlockId: blockId }]) {
     const collection = structuredClone(style.pageStyles); collection.insertions = [invalid];
     assert.throws(() => validatePublicationPageStyles(collection));
