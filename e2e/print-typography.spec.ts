@@ -13,7 +13,7 @@ test('HTML keeps three alignments and print keeps justification and language pat
     style.paragraphStyles.items[0]!.properties.alignment = 'justify';
     localStorage.setItem(PUBLICATION_STYLE_STORAGE_KEY, JSON.stringify(style));
     const current = useStudioStore.getState().manuscript;
-    useStudioStore.getState().loadManuscript({ ...current, locale: 'hu-HU', sections: [{ id: 's', title: '', blocks: [
+    useStudioStore.getState().loadManuscript({ ...current, title: 'Print typography fixture', locale: 'hu-HU', sections: [{ id: 's', title: '', blocks: [
       { id: 'p', type: 'paragraph', content: 'megszentségteleníthetetlenségeskedéseitekért '.repeat(3) },
     ] }] });
   });
