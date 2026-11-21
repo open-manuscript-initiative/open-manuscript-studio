@@ -81,7 +81,9 @@ export function validatePublicationMatterFrames(value: unknown, validateContent:
       || !finite(style.fontSizePt, 6, 120) || !finite(style.lineHeightPt, 6, 240)
       || ![400, 700].includes(style.fontWeight) || !['normal', 'italic'].includes(style.fontStyle)
       || !color(style.color) || !(style.fill === 'none' || color(style.fill)) || !color(style.stroke)
-      || !finite(style.strokeWidthMm, 0, 20) || !finite(style.paddingMm, 0, 60) || !['left', 'center', 'right'].includes(style.alignment)) fail();
+      || (style.hyphenation !== undefined && typeof style.hyphenation !== 'boolean')
+      || (style.language !== undefined && (typeof style.language !== 'string' || style.language.length > 85 || (style.language && !/^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$/i.test(style.language))))
+      || !finite(style.strokeWidthMm, 0, 20) || !finite(style.paddingMm, 0, 60) || !['left', 'center', 'right', 'justify'].includes(style.alignment)) fail();
     if (frame.kind === 'text') {
       validateContent(frame.content);
       if (frame.image !== undefined || frame.graphicTransform !== undefined) fail();

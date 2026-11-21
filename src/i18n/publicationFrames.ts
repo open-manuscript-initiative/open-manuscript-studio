@@ -10,7 +10,7 @@ const en = {
   shape: 'Frame shape', rectangle: 'Rectangle', ellipse: 'Ellipse', polygon: 'Custom polygon', points: 'Outline points (%)', addPoint: 'Add point', removePoint: 'Remove point',
   next: 'Link to text frame', link: 'Link frames', unlink: 'Unlink continuation', linked: 'Continues in', deleteFrame: 'Delete frame',
   font: 'Font family', size: 'Font size (pt)', leading: 'Leading (pt)', padding: 'Inset (mm)', weight: 'Bold', italic: 'Italic',
-  color: 'Text color', fill: 'Frame fill', stroke: 'Frame stroke', strokeWidth: 'Stroke width (mm)', alignment: 'Alignment', left: 'Left', center: 'Center', right: 'Right',
+  color: 'Text color', fill: 'Frame fill', stroke: 'Frame stroke', strokeWidth: 'Stroke width (mm)', alignment: 'Alignment', left: 'Left', center: 'Center', right: 'Right', justify: 'Justified', hyphenation: 'Language-based hyphenation', language: 'Text language', documentLanguage: 'Document language',
   print: 'Print frames / save PDF', exportHtml: 'Download frame HTML', overflow: 'Text does not fit. Add or enlarge linked frames.', autoOverflow: 'Automatic page continuation is exhausted or text cannot fit the frame. Resize the frame or adjust its typography.',
   empty: 'Add a text or graphic frame to begin.', missingGraphic: 'Select an existing graphic element.',
   story: 'Story', unusedStory: 'Retained story', freshStory: 'New story', saved: 'Layout saved in the manuscript.',
@@ -30,7 +30,7 @@ const hu: FrameCopy = {
   shape: 'Keret alakja', rectangle: 'Téglalap', ellipse: 'Ellipszis', polygon: 'Egyedi sokszög', points: 'Körvonalpontok (%)', addPoint: 'Pont hozzáadása', removePoint: 'Pont törlése',
   next: 'Összekapcsolás szövegkerettel', link: 'Keretek összekapcsolása', unlink: 'Folytatás szétválasztása', linked: 'Folytatás itt', deleteFrame: 'Keret törlése',
   font: 'Betűcsalád', size: 'Betűméret (pt)', leading: 'Sorköz (pt)', padding: 'Belső margó (mm)', weight: 'Félkövér', italic: 'Dőlt',
-  color: 'Szövegszín', fill: 'Keret kitöltése', stroke: 'Keret körvonala', strokeWidth: 'Vonalvastagság (mm)', alignment: 'Igazítás', left: 'Balra', center: 'Középre', right: 'Jobbra',
+  color: 'Szövegszín', fill: 'Keret kitöltése', stroke: 'Keret körvonala', strokeWidth: 'Vonalvastagság (mm)', alignment: 'Igazítás', left: 'Balra', center: 'Középre', right: 'Jobbra', justify: 'Sorkizárt', hyphenation: 'Nyelvi szabályok szerinti elválasztás', language: 'Szöveg nyelve', documentLanguage: 'Dokumentum nyelve',
   print: 'Keretek nyomtatása / PDF mentése', exportHtml: 'Keretes HTML letöltése', overflow: 'A szöveg nem fér el. Adjon hozzá vagy növeljen összekapcsolt kereteket.', autoOverflow: 'Az automatikus oldalfolytatás elérte a korlátot, vagy a szöveg nem fér a keretbe. Módosítsa a keret méretét vagy a betűbeállításokat.',
   empty: 'Kezdésként adjon hozzá szöveg- vagy grafikai keretet.', missingGraphic: 'Válasszon meglévő grafikus elemet.',
   story: 'Szövegfolyam', unusedStory: 'Megőrzött szövegfolyam', freshStory: 'Új szövegfolyam', saved: 'A tördelés a kéziratban mentve.',
@@ -38,7 +38,7 @@ const hu: FrameCopy = {
   exportError: 'Exportálás előtt rendezze a túlcsorduló szöveget és a hiányzó grafikai forrásokat.',
 };
 const de: FrameCopy = {
-  ...en, tools: 'Rahmen und Seitenstile', closeTools: 'Rahmenwerkzeuge schließen', toolsHelp: 'Hier lassen sich Rahmengeometrie und Grafiken bearbeiten. Rahmentext bleibt vorerst separater Klartext: strukturiertes Manuskript, Formatierungen und Fußnoten im Haupteditor bearbeiten. Für vollständige Manuskripte den Hauptexport verwenden.', mode: 'Rahmenlayout', continuous: 'Fortlaufendes Layout', description: 'Text und Grafiken in eigenen Rahmen anordnen. Verknüpfte Textrahmen führen den Text fort.',
+  ...en, justify: 'Blocksatz', hyphenation: 'Sprachabhängige Silbentrennung', language: 'Textsprache', documentLanguage: 'Dokumentsprache', tools: 'Rahmen und Seitenstile', closeTools: 'Rahmenwerkzeuge schließen', toolsHelp: 'Hier lassen sich Rahmengeometrie und Grafiken bearbeiten. Rahmentext bleibt vorerst separater Klartext: strukturiertes Manuskript, Formatierungen und Fußnoten im Haupteditor bearbeiten. Für vollständige Manuskripte den Hauptexport verwenden.', mode: 'Rahmenlayout', continuous: 'Fortlaufendes Layout', description: 'Text und Grafiken in eigenen Rahmen anordnen. Verknüpfte Textrahmen führen den Text fort.',
   addText: 'Textrahmen hinzufügen', addGraphic: 'Grafikrahmen hinzufügen', selectFrame: 'Rahmen auswählen', text: 'Textfluss',
   importText: 'Manuskripttext in Textfluss kopieren', importHelp: 'Kopiert Klartext. Struktur, Formatierung und Anmerkungen bleiben im fortlaufenden Layout.',
   style: 'Gemeinsamer Rahmenstil', newStyle: 'Neuer gemeinsamer Stil', editShared: 'Gemeinsamen Stil bearbeiten', local: 'Lokale Stilabweichungen',

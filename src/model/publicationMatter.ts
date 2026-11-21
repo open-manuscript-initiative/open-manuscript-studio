@@ -17,7 +17,7 @@ export interface PublicationMatterPage {
   content: string;
   appearance: {
     fontFamily: string; fontSizePt: number; color: string; background: string;
-    alignment: 'left' | 'center' | 'right'; vertical: 'top' | 'center' | 'bottom'; paddingMm: number;
+    alignment: 'left' | 'center' | 'right' | 'justify'; vertical: 'top' | 'center' | 'bottom'; paddingMm: number;
   };
   image?: { assetId: string; alt: string; fit: 'contain' | 'cover' };
   frames?: PublicationMatterFrame[];
@@ -90,7 +90,7 @@ export function validatePublicationMatter(value: unknown): asserts value is Publ
       || !Number.isFinite(style.fontSizePt) || style.fontSizePt < 6 || style.fontSizePt > 120
       || !Number.isFinite(style.paddingMm) || style.paddingMm < 0 || style.paddingMm > 60
       || !/^#[a-f0-9]{6}$/i.test(style.color) || !/^#[a-f0-9]{6}$/i.test(style.background)
-      || !['left', 'center', 'right'].includes(style.alignment) || !['top', 'center', 'bottom'].includes(style.vertical)) fail();
+      || !['left', 'center', 'right', 'justify'].includes(style.alignment) || !['top', 'center', 'bottom'].includes(style.vertical)) fail();
     if (page.image !== undefined && (!record(page.image) || typeof page.image.assetId !== 'string' || !page.image.assetId
       || typeof page.image.alt !== 'string' || !['contain', 'cover'].includes(page.image.fit))) fail();
     validatePublicationMatterContent(page.content);

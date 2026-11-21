@@ -148,3 +148,19 @@ test('publication contributors never leak private name or identifier assertions'
   assert.equal(rendered?.orcid, undefined);
   assert.equal(rendered?.affiliations[0]?.organizationIdentifier, undefined);
 });
+
+test('print preserves all four alignments while responsive HTML omits justification and hyphenation', async () => {
+  const { clonePublicationStyleTemplate, buildPublicationStyleCss } = await import('../src/services/publicationStyleExport.ts');
+  const style = clonePublicationStyleTemplate();
+  for (const alignment of ['left', 'center', 'right', 'justify']) {
+    style.styles.body.alignment = alignment;
+    style.paragraphStyles.items[0]!.properties.alignment = alignment as 'left' | 'center' | 'right' | 'justify';
+    const print = buildPublicationStyleCss(style, 'print');
+    const html = buildPublicationStyleCss(style, 'html');
+    assert.match(print, new RegExp(`text-align: ${alignment};`));
+    assert.match(html, new RegExp(`text-align: ${alignment === 'justify' ? 'left' : alignment};`));
+    assert.doesNotMatch(html, /text-align: justify;/);
+  }
+  assert.equal(style.styles.body.alignment, 'justify');
+  assert.match(buildPublicationStyleCss(style, 'print'), /hyphens: auto/);
+});

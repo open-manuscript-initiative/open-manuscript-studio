@@ -105,8 +105,8 @@ export function PublicationMatterEditor({ widthMm, heightMm, bodyPageCount, read
         <label>{copy.color}<input type="color" value={page.appearance.color} disabled={readOnly} onChange={(event) => appearance({ color: event.target.value })} /></label>
         <label>{copy.background}<input type="color" value={page.appearance.background} disabled={readOnly} onChange={(event) => appearance({ background: event.target.value })} /></label>
         <MatterNumber unit={unit} label={copy.padding} min={0} max={60} value={page.appearance.paddingMm} disabled={readOnly} onCommit={(value) => appearance({ paddingMm: value })} />
-        <label>{copy.alignment}<select aria-label={copy.alignment} value={page.appearance.alignment} disabled={readOnly} onChange={(event) => appearance({ alignment: event.target.value as 'left' | 'center' | 'right' })}>
-          <option value="left">{copy.left}</option><option value="center">{copy.center}</option><option value="right">{copy.right}</option>
+        <label>{copy.alignment}<select aria-label={copy.alignment} value={page.appearance.alignment} disabled={readOnly} onChange={(event) => appearance({ alignment: event.target.value as 'left' | 'center' | 'right' | 'justify' })}>
+          <option value="left">{copy.left}</option><option value="center">{copy.center}</option><option value="right">{copy.right}</option><option value="justify">{copy.justify}</option>
         </select></label>
         <label>{copy.vertical}<select aria-label={copy.vertical} value={page.appearance.vertical} disabled={readOnly} onChange={(event) => appearance({ vertical: event.target.value as 'top' | 'center' | 'bottom' })}>
           <option value="top">{copy.top}</option><option value="center">{copy.middle}</option><option value="bottom">{copy.bottom}</option>

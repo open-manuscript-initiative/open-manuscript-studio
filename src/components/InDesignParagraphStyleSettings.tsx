@@ -39,6 +39,7 @@ type SetProperty = <K extends keyof PublicationParagraphStyleProperties>(
 ) => void;
 
 interface Props {
+  printLayout?: boolean;
   locale: string;
   collection: PublicationParagraphStyleCollection;
   definition: PublicationParagraphStyleDefinition;
@@ -52,6 +53,7 @@ interface Props {
 
 export function InDesignParagraphStyleSettings({
   locale,
+  printLayout = true,
   collection,
   definition,
   resolved,
@@ -138,8 +140,8 @@ export function InDesignParagraphStyleSettings({
         {category === 'indents' ? (
           <>
             <Grid>
-              <SelectField label={copy.alignment} value={resolved.alignment} options={[
-                ['left', copy.left], ['center', copy.center], ['right', copy.right], ['justify', copy.justify],
+              <SelectField label={copy.alignment} value={!printLayout && resolved.alignment === 'justify' ? 'left' : resolved.alignment} options={[
+                ['left', copy.left], ['center', copy.center], ['right', copy.right], ...(printLayout ? [['justify', copy.justify] as [string, string]] : []),
               ]} onChange={(value) => onSetProperty('alignment', value as PublicationParagraphStyleProperties['alignment'])} />
               <NumberField label={copy.leftIndent} value={resolved.leftIndent} step={0.5} suffix="mm" onChange={(value) => onSetProperty('leftIndent', value)} />
               <NumberField label={copy.rightIndent} value={resolved.rightIndent} step={0.5} suffix="mm" onChange={(value) => onSetProperty('rightIndent', value)} />

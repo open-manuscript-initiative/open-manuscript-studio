@@ -8,7 +8,8 @@ export interface FrameTextStyle {
   fontFamily: string; fontSizePt: number; lineHeightPt: number;
   fontWeight: 400 | 700; fontStyle: 'normal' | 'italic';
   color: string; fill: string; stroke: string; strokeWidthMm: number; paddingMm: number;
-  alignment: 'left' | 'center' | 'right';
+  alignment: 'left' | 'center' | 'right' | 'justify';
+  hyphenation?: boolean; language?: string;
 }
 export interface PublicationFrameStyle { id: string; name: string; properties: FrameTextStyle }
 export interface PublicationFrame {
@@ -30,10 +31,15 @@ export interface PublicationFrameLayout {
   /** Optional text story which automatically continues in new pages. */
   autoFlowStoryId?: string;
 }
-export interface FrameLine { text: string; start: number; end: number; x: number; y: number; width: number }
+export interface FrameLine { text: string; start: number; end: number; x: number; y: number; width: number; hyphenated?: boolean; wordSpacingMm?: number }
+export interface FrameTextFlowOptions { language?: string; hyphenate?: (word: string, language: string) => readonly number[] }
 export interface FrameFlow { frameId: string; start: number; end: number; lines: FrameLine[] }
 export interface PublicationFrameFlow { frames: FrameFlow[]; overflow: { storyId: string; offset: number; text: string }[] }
 export function frameDisplayText(text: string): string { return text.replace(/\t/g, '    '); }
+export function frameLineDisplayText(line: FrameLine): string {
+  const text = frameDisplayText(line.text);
+  return (line.wordSpacingMm ? text.trimEnd() : text) + (line.hyphenated ? '-' : '');
+}
 export type FrameTextMeasure = (text: string, style: FrameTextStyle) => number;
 export const MM_PER_POINT = 25.4 / 72;
 export const RECTANGLE_POINTS: FramePoint[] = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
@@ -141,13 +147,14 @@ export function frameLineIntervals(frame: PublicationFrame, y: number, height: n
   return result.filter(([a, b]) => b > a);
 }
 
-export function flowFrameStories(layout: PublicationFrameLayout, measure: FrameTextMeasure): PublicationFrameFlow {
+export function flowFrameStories(layout: PublicationFrameLayout, measure: FrameTextMeasure, options: FrameTextFlowOptions = {}): PublicationFrameFlow {
   validateFrameLayout(layout);
   const result: PublicationFrameFlow = { frames: [], overflow: [] };
   for (const story of layout.stories) {
     const root = layout.frames.find((frame) => frame.storyId === story.id && !layout.frames.some((other) => other.nextFrameId === frame.id));
     let offset = 0;
     const segments = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(story.text)];
+    const words = [...story.text.matchAll(/\p{L}[\p{L}\p{M}]*/gu)];
     const limits: number[] = Array(segments.length + 1).fill(segments.length);
     for (let i = segments.length - 1; i >= 0; i -= 1) limits[i] = /[\r\n]/.test(segments[i]!.segment) ? i : limits[i + 1]!;
     let segmentIndex = 0;
@@ -168,16 +175,48 @@ export function flowFrameStories(layout: PublicationFrameLayout, measure: FrameT
           }
           if (lower === first && first !== limit) continue;
           let finish = lower;
+          let hyphenated = false;
           if (finish < limit) {
-            for (let i = finish - 1; i > first; i -= 1) if (/^[ \t]$/u.test(segments[i]!.segment)) { finish = i + 1; break; }
+            let spaceFinish = first;
+            for (let i = finish - 1; i > first; i -= 1) if (/^[ \t]$/u.test(segments[i]!.segment)) { spaceFinish = i + 1; break; }
+            const fitEnd = segments[finish - 1]!.index + segments[finish - 1]!.segment.length;
+            let wordLower = 0, wordUpper = words.length;
+            while (wordLower < wordUpper) {
+              const middle = Math.floor((wordLower + wordUpper) / 2);
+              if (words[middle]!.index + words[middle]![0].length <= fitEnd) wordLower = middle + 1;
+              else wordUpper = middle;
+            }
+            const word = words[wordLower];
+            if (style.hyphenation !== false && options.hyphenate && word && word.index < fitEnd) {
+              const points = options.hyphenate(word[0], style.language || options.language || 'und');
+              for (const point of [...points].sort((a, b) => b - a)) {
+                if (!Number.isInteger(point) || point <= 0 || point >= word[0].length) continue;
+                const end = word.index + point;
+                if (end > fitEnd || end <= (spaceFinish > first ? segments[spaceFinish - 1]!.index + segments[spaceFinish - 1]!.segment.length : offset)) continue;
+                if (measure(frameDisplayText(story.text.slice(offset, end)) + '-', style) > right - left + 0.00001) continue;
+                let split = lower;
+                while (split > first && segments[split - 1]!.index + segments[split - 1]!.segment.length > end) split -= 1;
+                if (split > first && segments[split - 1]!.index + segments[split - 1]!.segment.length === end) {
+                  finish = split; hyphenated = true; break;
+                }
+              }
+            }
+            if (!hyphenated && spaceFinish > first) finish = spaceFinish;
           }
           const textEnd = finish > first ? segments[finish - 1]!.index + segments[finish - 1]!.segment.length : offset;
           let consumed = textEnd;
           if (finish === limit && limit < segments.length) { consumed += segments[limit]!.segment.length; finish += 1; }
           const text = story.text.slice(offset, textEnd);
-          const width = measure(frameDisplayText(text), style);
+          const width = measure(frameDisplayText(text) + (hyphenated ? '-' : ''), style);
           const x = style.alignment === 'center' ? left + (right - left - width) / 2 : style.alignment === 'right' ? right - width : left;
-          placed.lines.push({ text, start: offset, end: consumed, x, y, width: right - left });
+          const display = frameDisplayText(text).trimEnd() + (hyphenated ? '-' : '');
+          const spaces = (display.match(/ /g) ?? []).length;
+          const justify = style.alignment === 'justify' && consumed === textEnd && consumed < story.text.length && spaces > 0;
+          const extra = Math.max(0, right - left - measure(display, style));
+          placed.lines.push({ text, start: offset, end: consumed, x, y, width: right - left,
+            ...(hyphenated ? { hyphenated: true } : {}),
+            ...(justify && extra > 0 ? { wordSpacingMm: extra / spaces } : {}),
+          });
           offset = consumed; segmentIndex = finish;
           if (consumed > textEnd) break;
         }
@@ -212,7 +251,9 @@ export function validateFrameLayout(input: unknown): asserts input is Publicatio
   const validStyle = (style: FrameTextStyle) => record(style) && typeof style.fontFamily === 'string' && style.fontFamily.length > 0 && style.fontFamily.length <= 150
     && finite(style.fontSizePt, 1, 300) && finite(style.lineHeightPt, style.fontSizePt, 600) && [400, 700].includes(style.fontWeight)
     && ['normal', 'italic'].includes(style.fontStyle) && [style.color, style.fill, style.stroke].every((color) => typeof color === 'string' && /^#[\da-f]{6}$/i.test(color))
-    && finite(style.paddingMm, 0, 100) && finite(style.strokeWidthMm, 0, 10) && ['left', 'center', 'right'].includes(style.alignment);
+    && finite(style.paddingMm, 0, 100) && finite(style.strokeWidthMm, 0, 10) && ['left', 'center', 'right', 'justify'].includes(style.alignment)
+    && (style.hyphenation === undefined || typeof style.hyphenation === 'boolean')
+    && (style.language === undefined || (typeof style.language === 'string' && style.language.length <= 85 && (!style.language || /^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$/i.test(style.language))));
   if (!value.styles.length || value.styles.some((style) => typeof style.name !== 'string' || !validStyle(style.properties))) fail('invalid shared style.');
   if (value.stories.some((story) => typeof story.name !== 'string' || typeof story.text !== 'string' || story.text.length > 2_000_000)) fail('invalid story.');
   const incoming = new Set<string>();

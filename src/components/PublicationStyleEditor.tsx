@@ -959,6 +959,7 @@ function PublicationStyleEditorWorkspace() {
                 <div className="publication-paragraph-style-settings">
                   <InDesignParagraphStyleSettings
                     locale={locale}
+                    printLayout={documentViewMode === 'print'}
                     collection={style.paragraphStyles}
                     definition={activeParagraphStyle}
                     resolved={resolvedParagraphStyle}
@@ -1218,8 +1219,8 @@ function PublicationStyleEditorWorkspace() {
                 <div className="publication-style-alignment" role="group" aria-label={copy.alignment}>
                   <span>{copy.alignment}</span>
                   <div>
-                    <AlignmentButton label={copy.justify} active={body.alignment === 'justify'} onClick={() => setStyleValue('body', 'alignment', 'justify')}><AlignJustify size={17} aria-hidden="true" /></AlignmentButton>
-                    <AlignmentButton label={copy.alignLeft} active={body.alignment === 'left'} onClick={() => setStyleValue('body', 'alignment', 'left')}><AlignLeft size={17} aria-hidden="true" /></AlignmentButton>
+                    {documentViewMode === 'print' ? <AlignmentButton label={copy.justify} active={body.alignment === 'justify'} onClick={() => setStyleValue('body', 'alignment', 'justify')}><AlignJustify size={17} aria-hidden="true" /></AlignmentButton> : null}
+                    <AlignmentButton label={copy.alignLeft} active={body.alignment === 'left' || (documentViewMode === 'html' && body.alignment === 'justify')} onClick={() => setStyleValue('body', 'alignment', 'left')}><AlignLeft size={17} aria-hidden="true" /></AlignmentButton>
                     <AlignmentButton label={copy.alignCenter} active={body.alignment === 'center'} onClick={() => setStyleValue('body', 'alignment', 'center')}><AlignCenter size={17} aria-hidden="true" /></AlignmentButton>
                     <AlignmentButton label={copy.alignRight} active={body.alignment === 'right'} onClick={() => setStyleValue('body', 'alignment', 'right')}><AlignRight size={17} aria-hidden="true" /></AlignmentButton>
                   </div>
