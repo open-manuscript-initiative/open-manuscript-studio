@@ -104,7 +104,9 @@ jobs:
       - name: Install Playwright browser
         # Hosted runners already provide Chromium's runtime libraries. Avoid an
         # unrelated apt/font download blocking browser installation on DNS outages.
-        run: npx playwright install --only-shell chromium
+        # Install the full pinned Chromium too: Vivliostyle must use this binary,
+        # not the hosted image's independently updated system Chrome.
+        run: npx playwright install chromium
 
       - name: Verify publication and selection regressions without retries
         run: npx playwright test e2e/menu-selection.spec.ts e2e/publication-editor.spec.ts e2e/publication-spreads.spec.ts e2e/publication-templates.spec.ts e2e/selection-toolbar-layout.spec.ts --project=desktop-chromium --workers=1 --retries=0
@@ -186,10 +188,7 @@ jobs:
         run: |
           npm install --global @vivliostyle/cli@11.0.4
           vivliostyle --version
-          browser="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          if [[ -n "$browser" ]]; then
-            echo "VIVLIOSTYLE_EXECUTABLE_BROWSER=$browser" >> "$GITHUB_ENV"
-          fi
+          node scripts/prepare-vivliostyle-ci-browser.mjs
           echo "OMI_RUN_VIVLIOSTYLE_SMOKE=1" >> "$GITHUB_ENV"
 
       - name: Verify private PDF staging API runner guards

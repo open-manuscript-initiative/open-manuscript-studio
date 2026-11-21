@@ -56,6 +56,13 @@ If `VIVLIOSTYLE_EXECUTABLE_BROWSER` is omitted, Vivliostyle uses its configured
 browser discovery/runtime behavior. Studio refuses a renderer version other
 than 11.0.4 so artifact provenance does not silently change after a host update.
 
+CI installs the full Chromium distribution pinned by the Playwright lockfile
+and passes its executable explicitly to Vivliostyle. The browser is launched
+and closed once with the renderer's filtered environment before the PDF gates;
+its path and version appear in the setup log. Both CI and readiness use this
+setup rather than the hosted runner's independently updated system Chrome.
+The real footnote and page-style PDF assertions still run without retries.
+
 ## Security boundary
 
 The PDF endpoint requires a normal authenticated Studio session and is marked
