@@ -1,3 +1,5 @@
+import { defaultDocumentImportMode, documentImportSourcePolicy, type DocumentImportMode } from '../model/documentImportMode';
+import type { WorkflowRole } from '../model/workflowRole';
 import { AlertTriangle, FileUp, LoaderCircle } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { applyDocxImportPlan } from '../app/docxImportActions';
@@ -12,7 +14,7 @@ import { finishExchangeReport } from '../model/exchange';
 import { useStudioStore } from '../app/useStudioStore';
 import { exchangeCopy } from '../i18n/exchange';
 
-export function OdtImportPanel({ onImported }: { onImported?: () => void }) {
+export function OdtImportPanel({ onImported, workflowRole = 'general' }: { onImported?: () => void; workflowRole?: WorkflowRole }) {
   const { locale } = useTranslation();
   const hu = locale.toLowerCase().startsWith('hu');
   const de = locale.toLowerCase().startsWith('de');
@@ -29,7 +31,8 @@ export function OdtImportPanel({ onImported }: { onImported?: () => void }) {
   const [error, setError] = useState('');
   const [plan, setPlan] = useState<DocxManuscriptImportPlan | null>(null);
   const [source, setSource] = useState('');
-  const [selfAuthored, setSelfAuthored] = useState(false);
+  const [importMode, setImportMode] = useState<DocumentImportMode>(() => defaultDocumentImportMode(workflowRole));
+  const [includeSource, setIncludeSource] = useState(false);
   const [receipt, setReceipt] = useState<OfficeImportReceipt | null>(null);
   const base = useRef(useStudioStore.getState().manuscript);
   const [failedReceipt, setFailedReceipt] = useState<OfficeImportPreparationError | null>(null);
@@ -42,17 +45,17 @@ export function OdtImportPanel({ onImported }: { onImported?: () => void }) {
 
   async function selectFile(file?: File): Promise<void> {
     if (!file || busy) return;
-    setBusy(true); setError(''); setPlan(null); setReceipt(null); setFailedReceipt(null); setSelfAuthored(false);
+    setBusy(true); setError(''); setPlan(null); setReceipt(null); setFailedReceipt(null); setImportMode(defaultDocumentImportMode(workflowRole)); setIncludeSource(false);
     base.current = useStudioStore.getState().manuscript;
     try { const prepared = await prepareOfficeImport(file, 'odt', parseOdtForStudio); setReceipt(prepared); setPlan(prepared.plan); setSource(prepared.plan.fileName); }
     catch (cause) { if (cause instanceof OfficeImportPreparationError) setFailedReceipt(cause); setError(cause instanceof OfficeImportPreparationError ? copy.failure : cause instanceof Error ? cause.message : copy.failure); }
     finally { setBusy(false); if (inputRef.current) inputRef.current.value = ''; }
   }
   function confirm(): void {
-    if (!plan || (!selfAuthored && !source.trim())) return;
+    if (!plan || (documentImportSourcePolicy({ importMode, includeSource }).includeSource && !source.trim())) return;
     try {
       if (base.current !== useStudioStore.getState().manuscript) throw new Error(exchangeCopy(locale).changed);
-      applyDocxImportPlan(plan, { importDetectedAuthors: plan.authors.length > 0, source, selfAuthoredExternal: selfAuthored });
+      applyDocxImportPlan(plan, { importDetectedAuthors: plan.authors.length > 0, source, importMode, includeSource });
       if (receipt) setReceipt({ ...receipt, report: finishExchangeReport(receipt.report,
         new TextEncoder().encode(JSON.stringify(useStudioStore.getState().manuscript))) });
       setPlan(null); clearDocumentClosedState(); onImported?.();
@@ -77,7 +80,7 @@ export function OdtImportPanel({ onImported }: { onImported?: () => void }) {
         <strong>{plan.title}</strong><p>{outline}</p>
         {plan.warnings.length ? <><strong>{copy.warnings}</strong><ul>{plan.warnings.map((item) => <li key={`${item.code}:${item.message}`}>{item.message}</li>)}</ul></> : null}
       </section>
-      <ExternalDocumentSourceReview key={plan.fileName} locale={locale} summary={plan.title} source={source} selfAuthoredExternal={selfAuthored} onSelfAuthoredExternalChange={setSelfAuthored} onSourceChange={setSource} onConfirm={confirm} onCancel={() => { setPlan(null); setSource(''); if (receipt) setReceipt({ ...receipt, report: { ...receipt.report, status: 'cancelled' } }); }} />
+      <ExternalDocumentSourceReview key={plan.fileName} locale={locale} summary={plan.title} source={source} importMode={importMode} includeSource={includeSource} onImportModeChange={setImportMode} onIncludeSourceChange={setIncludeSource} onSourceChange={setSource} onConfirm={confirm} onCancel={() => { setPlan(null); setSource(''); if (receipt) setReceipt({ ...receipt, report: { ...receipt.report, status: 'cancelled' } }); }} />
     </> : null}
   </>;
 }
