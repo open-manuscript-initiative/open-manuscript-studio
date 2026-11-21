@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { env } from '../config/env.js';
 import { studioFeedbackSchema } from '../model/studioFeedbackSchema.js';
+import { formatStudioFeedbackMail } from '../model/studioFeedbackMail.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 
 export const studioFeedbackRouter = Router();
@@ -19,40 +20,8 @@ const feedbackRateLimit = rateLimit({
   message: { error: { code: 'FEEDBACK_RATE_LIMITED', message: 'Please try again later.' } },
 });
 
-function formatMail(reportId: string, data: z.infer<typeof studioFeedbackSchema>): string {
-  const lines = [
-    'OMI Studio feedback: ' + reportId,
-    'Category: ' + data.category,
-    'Area: ' + data.area,
-    'Title: ' + data.title,
-    'Description:',
-    data.description,
-    'Reproduction steps:',
-    data.reproductionSteps || '(not supplied)',
-    'Expected result:',
-    data.expectedResult || '(not supplied)',
-    'Test outcome: ' + (data.testOutcome || '(not supplied)'),
-    'Contact e-mail (voluntary): ' + (data.contactEmail || '(not supplied)'),
-    'Technical data (voluntary):',
-    data.technical ? JSON.stringify(data.technical) : '(not supplied)',
-  ];
-
-  // Fixed headers; user-controlled fields occur only in the plain-text body.
-  return [
-    'From: ' + env.MAIL_FROM,
-    'To: ' + env.OMI_FEEDBACK_RECIPIENT,
-    'Subject: OMI Studio feedback ' + reportId,
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=UTF-8',
-    'Auto-Submitted: auto-generated',
-    '',
-    lines.join('\r\n'),
-    '',
-  ].join('\r\n');
-}
-
 async function sendFeedbackMail(reportId: string, data: z.infer<typeof studioFeedbackSchema>): Promise<void> {
-  const message = formatMail(reportId, data);
+  const message = formatStudioFeedbackMail(reportId, data, env.MAIL_FROM, env.OMI_FEEDBACK_RECIPIENT!);
   await new Promise<void>((resolve, reject) => {
     const child = spawn(env.SENDMAIL_PATH, ['-i', '-t'], { stdio: ['pipe', 'ignore', 'pipe'] });
     child.on('error', reject);
