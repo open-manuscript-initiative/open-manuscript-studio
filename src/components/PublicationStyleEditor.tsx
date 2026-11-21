@@ -270,6 +270,12 @@ function PublicationStyleEditorWorkspace() {
   const ribbonRef = useRef<HTMLDivElement>(null);
   const editorRoot = useRef<HTMLElement>(null);
   const [checkerEnabled, setCheckerEnabled] = useState(false);
+  const [layoutTarget, setLayoutTarget] = useState<PublicationLayoutIssue | null>(null);
+  useEffect(() => {
+    if (!layoutTarget) return;
+    const timer = setTimeout(() => setLayoutTarget(null), 3000);
+    return () => clearTimeout(timer);
+  }, [layoutTarget]);
   const [bodyIssues, setBodyIssues] = useState<{ manuscriptId: string; issues: PublicationLayoutIssue[] }>({ manuscriptId: '', issues: [] });
   const [frameIssues, setFrameIssues] = useState<{ manuscriptId: string; issues: PublicationLayoutIssue[] }>({ manuscriptId: '', issues: [] });
   const reportBodyIssues = useCallback((manuscriptId: string, issues: PublicationLayoutIssue[]) => setBodyIssues((previous) =>
@@ -282,21 +288,19 @@ function PublicationStyleEditorWorkspace() {
       editorRoot.current?.querySelector<HTMLElement>(`[data-insertion-id=${cssStringLiteral(issue.insertionId)}]`)?.scrollIntoView({ block: 'center' });
       return;
     }
+    setLayoutTarget(issue);
     setOpenPanel(null);
     if (issue.frameId || issue.storyId) {
       setFrameToolsOpen(true);
       requestAnimationFrame(() => requestAnimationFrame(() => document.dispatchEvent(new CustomEvent(PUBLICATION_REVEAL_FRAME_EVENT, { detail: issue }))));
       return;
     }
-    if (issue.sectionId) useStudioStore.setState({ selectedSectionId: issue.sectionId });
     requestAnimationFrame(() => {
       const selector = issue.blockId ? `[data-block-id=${cssStringLiteral(issue.blockId)}]` : `[data-section-id=${cssStringLiteral(issue.sectionId ?? '')}]`;
       const target = editorRoot.current?.querySelector<HTMLElement>(`.publication-document-content .omi-continuous-tiptap-editor > ${selector}`)
         ?? editorRoot.current?.querySelector<HTMLElement>(`.publication-document-content ${selector}`);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-        target.dataset.layoutCheckerTarget = 'true';
-        setTimeout(() => { delete target.dataset.layoutCheckerTarget; }, 2000);
       }
     });
   }
@@ -1370,6 +1374,7 @@ function PublicationStyleEditorWorkspace() {
           onProofingSelection={setProofingSelection}
           onPageCountChange={handlePageCount}
           onLayoutIssues={reportBodyIssues}
+          navigationTarget={layoutTarget}
         />
         {frameToolsOpen || checkerEnabled ? (
           <section

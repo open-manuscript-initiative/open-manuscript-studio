@@ -81,6 +81,7 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
   const blocks = useMemo(() => collectFrameSourceBlocks(manuscript), [manuscript]);
   const graphics = blocks.filter((block) => block.visual);
   const sourceIds = new Set(graphics.map((block) => block.id));
+  const sourceKey = JSON.stringify([...sourceIds]);
   const missingSources = layout.frames.some((frame) => frame.kind === 'graphic' && !sourceIds.has(frame.sourceBlockId!));
   const reportIssues = useRef(onLayoutIssues); reportIssues.current = onLayoutIssues;
   useEffect(() => {
@@ -92,9 +93,9 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
         id: `frame:${frame.id}`, frameId: frame.id, message: `${frame.name}: ${copy.missingGraphic}`,
       })),
     ]);
-  // Source IDs affect only the missing-graphic check; the flow already carries text/geometry changes.
+  // The stable source key covers graphics changes without retriggering on every render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manuscript.id, flow, layout, missingSources, copy]);
+  }, [manuscript.id, flow, layout, missingSources, sourceKey, copy]);
   const story = layout.stories.find((item) => item.id === selected?.storyId);
   function addStoryBreak(kind: FrameStoryBreak['kind']) {
     if (!story) return;

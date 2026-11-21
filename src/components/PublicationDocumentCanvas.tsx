@@ -110,6 +110,7 @@ interface PublicationDocumentCanvasProps {
   onProofingSelection?: (selection: ProofingSelection | null) => void;
   onPageCountChange?: (manuscriptId: string, count: number) => void;
   onLayoutIssues?: PublicationLayoutIssueReporter;
+  navigationTarget?: PublicationLayoutIssue | null;
 }
 
 interface PublicationCanvasCopy {
@@ -140,6 +141,7 @@ export function PublicationDocumentCanvas({
   onProofingSelection,
   onPageCountChange,
   onLayoutIssues,
+  navigationTarget,
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
@@ -253,6 +255,9 @@ export function PublicationDocumentCanvas({
   const fitWarningCss = viewMode === 'print' ? (pagination.sectionWarnings ?? []).map((warning) =>
     `#${canvasId} :is(h1,h2,h3,h4,h5,h6)[data-section-id=${cssStringLiteral(warning.sectionId)}]{position:relative}#${canvasId} :is(h1,h2,h3,h4,h5,h6)[data-section-id=${cssStringLiteral(warning.sectionId)}]::after{content:"⚠";position:absolute;right:100%;top:0;margin-right:.35em;color:#b45309;font:14px sans-serif;pointer-events:none}`,
   ).join('\n') : '';
+  const navigationSelector = navigationTarget?.blockId ? `[data-block-id=${cssStringLiteral(navigationTarget.blockId)}]`
+    : navigationTarget?.sectionId ? `:is(h1,h2,h3,h4,h5,h6)[data-section-id=${cssStringLiteral(navigationTarget.sectionId)}]` : '';
+  const navigationCss = navigationSelector ? `#${canvasId} .publication-document-content .omi-continuous-tiptap-editor > ${navigationSelector}{outline:2px solid #b45309;outline-offset:3px}` : '';
 
   const sectionNumbers = useMemo(
     () => new Map(
@@ -890,10 +895,12 @@ export function PublicationDocumentCanvas({
     <section
       id={canvasId}
       className={`publication-document-canvas publication-document-canvas--${viewMode}${previewOnly ? ' publication-document-canvas--preview' : ''}`}
+      data-layout-checker-target={navigationTarget ? 'true' : undefined}
+      data-layout-checker-section={navigationTarget?.sectionId}
       aria-labelledby="publication-document-canvas-title"
     >
-      {pagination.css || paragraphStyleCss || sectionLayoutCss || fitWarningCss
-        ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}\n${fitWarningCss}`}</style>
+      {pagination.css || paragraphStyleCss || sectionLayoutCss || fitWarningCss || navigationCss
+        ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}\n${fitWarningCss}\n${navigationCss}`}</style>
         : null}
       <header className="publication-document-canvas-toolbar">
         <div>

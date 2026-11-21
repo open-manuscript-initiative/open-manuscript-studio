@@ -2068,4 +2068,3 @@
 .publication-study-order li > span { flex: 1 1 10rem; overflow-wrap: anywhere; }
 .publication-layout-checker ul { display: grid; gap: .4rem; padding-left: 1.25rem; }
 .publication-layout-checker button { max-width: 100%; text-align: left; white-space: normal; overflow-wrap: anywhere; }
-[data-layout-checker-target="true"] { outline: 2px solid #b45309; outline-offset: 3px; }

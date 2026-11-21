@@ -39,7 +39,8 @@ test('icon-only section warnings, optional checker navigation, study order and i
   await expect(panel.locator('[data-layout-issue]')).toHaveCount(0);
   await panel.getByRole('checkbox', { name: 'Check layout', exact: true }).check();
   await panel.locator('[data-layout-issue="section:study-a"]').click();
-  await expect(editor.locator('[data-layout-checker-target="true"]').first()).toBeVisible();
+  await expect(editor.locator('[data-layout-checker-target="true"]')).toHaveAttribute('data-layout-checker-section', 'study-a');
+  await expect(heading).toBeInViewport();
   await editor.getByRole('button', { name: 'Page styles and section headers', exact: true }).click();
   await expect(panel.getByRole('checkbox', { name: 'Check layout', exact: true })).toBeChecked();
   await panel.getByRole('button', { name: 'Move study down: 1', exact: true }).click();
