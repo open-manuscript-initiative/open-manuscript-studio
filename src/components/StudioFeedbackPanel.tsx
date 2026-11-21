@@ -133,8 +133,8 @@ export function StudioFeedbackPanel() {
 
   const report: StudioFeedback = {
     category, area, title: title.trim(), description: description.trim(),
-    ...(reproductionSteps.trim() ? { reproductionSteps: reproductionSteps.trim() } : {}),
-    ...(expectedResult.trim() ? { expectedResult: expectedResult.trim() } : {}),
+    ...(category === 'bug' && reproductionSteps.trim() ? { reproductionSteps: reproductionSteps.trim() } : {}),
+    ...(category === 'bug' && expectedResult.trim() ? { expectedResult: expectedResult.trim() } : {}),
     ...(category === 'test' ? { testOutcome } : {}),
     ...(contactEmail.trim() ? { contactEmail: contactEmail.trim() } : {}),
     ...(includeTechnical
