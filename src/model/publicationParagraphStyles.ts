@@ -1,3 +1,5 @@
+import { PUBLICATION_TEXT_ROLES, type PublicationTextRole } from './publicationTextRoles';
+
 export type PublicationParagraphAlignment = 'left' | 'center' | 'right' | 'justify';
 export type PublicationParagraphFontStyle = 'normal' | 'italic';
 export type PublicationParagraphCapitalization =
@@ -357,6 +359,8 @@ export interface PublicationParagraphStyleProperties {
 export interface PublicationParagraphStyleDefinition {
   id: string;
   name: string;
+  role?: PublicationTextRole;
+  automaticName?: boolean;
   basedOnId: string | null;
   nextStyleId: string | null;
   shortcut?: string | null;
@@ -553,6 +557,7 @@ function normalizeDefinition(
   return {
     id,
     name: cleanText(value?.name) || id,
+    ...(value?.role && PUBLICATION_TEXT_ROLES.includes(value.role) ? { role: value.role, automaticName: value.automaticName === true } : {}),
     basedOnId: cleanText(value?.basedOnId) || null,
     nextStyleId: cleanText(value?.nextStyleId) || null,
     shortcut: cleanText(value?.shortcut) || null,

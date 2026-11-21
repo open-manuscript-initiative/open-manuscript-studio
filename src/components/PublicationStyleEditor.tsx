@@ -45,6 +45,9 @@ import {
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { publicationParagraphStyleName } from '../model/publicationTextRoles';
+import { CITATION_STYLE_CATALOG } from '../model/cslRendering';
+import { PublicationPointInput } from './PublicationPointInput';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { useTranslation } from '../i18n';
 import { getManuscriptLanguageDisplayName } from '../model/manuscriptLanguage';
@@ -99,7 +102,7 @@ const PAGE_PRESETS = [
 ] as const;
 
 function cloneTemplate(): PublicationStyle {
-  return JSON.parse(JSON.stringify(templateJson)) as PublicationStyle;
+  return normalizePublicationStyle(JSON.parse(JSON.stringify(templateJson)) as PublicationStyle);
 }
 
 function cloneStyle(style: PublicationStyle): PublicationStyle {
@@ -186,13 +189,13 @@ function copyFor(locale: string) {
     typography: 'Tipográfia', font: 'Betűcsalád', fontVariant: 'Betűváltozat', fontSample: 'Árvíztűrő tükörfúrógép', searchFonts: 'Betűcsalád keresése', noMatchingFonts: 'Nincs ilyen betűcsalád.', loadSystemFonts: 'Rendszerbetűk betöltése', refreshSystemFonts: 'Rendszerbetűk frissítése', loadingSystemFonts: 'A telepített betűk beolvasása…', systemFontsFallback: 'Alaplista látható. A telepített betűk és valódi változataik a frissítés ikonnal tölthetők be.', systemFontsUnsupported: 'Ez a böngésző nem engedi a telepített betűk felsorolását; a kibővített alaplista használható.', systemFontsDenied: 'A betűlistához nem kapott engedélyt a szerkesztő; az alaplista maradt aktív.', systemFontsError: 'A telepített betűk nem olvashatók be; az alaplista maradt aktív.', systemFontsLoaded: (families: number, faces: number) => `${families} betűcsalád, ${faces} elérhető változat betöltve.`, bodySize: 'Törzsszöveg mérete', bodyLeading: 'Törzsszöveg sorköze', indent: 'Első sor behúzása', hyphenation: 'Automatikus elválasztás a nyomtatható változatokban', hyphenationModule: 'Nyelvi modul', hyphenationInline: 'A nyelvjelölt szövegrészek automatikusan a saját moduljukat használják.', hyphenationFallback: 'Ehhez a nyelvhez nincs beépített minta; a nyomtató böngésző elválasztási szótára használható.',
     titleSize: 'Cím mérete', headingSize: 'Címsor mérete', footnoteSize: 'Lábjegyzet mérete', authorNameParts: 'Szerzőnév részeinek formázása', givenNameStyle: 'Keresztnév vastagsága', familyNameStyle: 'Családnév vastagsága', givenNameVariant: 'Keresztnév stílusa', familyNameVariant: 'Családnév stílusa', givenNameSmallCaps: 'Keresztnév kiskapitális', familyNameSmallCaps: 'Családnév kiskapitális', givenNameUppercase: 'Keresztnév nagybetűs', familyNameUppercase: 'Családnév nagybetűs', regular: 'Normál', medium: 'Közepes', semiBold: 'Félkövér', bold: 'Kövér', alignment: 'Igazítás', justify: 'Sorkizárt', alignLeft: 'Balra', alignCenter: 'Középre', alignRight: 'Jobbra',
     save: 'Stílus mentése', saved: 'A stílus mentve és aktív', reset: 'Sablonértékek visszaállítása', export: 'Stílus exportálása', exportCss: 'CSS letöltése', defaultNewName: 'Új kiadványstílus', copySuffix: 'másolat', liveApplied: 'A módosítások automatikusan az aktív exportstílusba kerülnek.', proofing: 'Tördelési korrektúra', proofingHelp: 'A javítások csak a nyomtatási elrendezést módosítják; a kézirat szövege változatlan marad.', selectedText: 'Kijelölés', placeCursor: 'Helyezze a kurzort vagy jelöljön ki szöveget a nyomtatási képen.', optionalHyphen: 'Feltételes elválasztójel', nonbreaking: 'Egyben tartott kijelölés', forcedLineBreak: 'Kényszerített sortörés', pageBreakBefore: 'Oldaltörés elé', keepTogether: 'Bekezdés egyben tartása', keepWithNext: 'Együtt a következővel', corrections: 'Aktív tördelési javítások', noCorrections: 'Még nincs kézi tördelési javítás.', removeCorrection: 'Javítás eltávolítása', correctionAdded: 'A tördelési javítás hozzáadva.', selectRange: 'Ehhez a művelethez jelöljön ki szöveget.',
-    paragraphStyles: 'Bekezdésstílusok', paragraphStylesHelp: 'Az InDesignhoz hasonlóan az „Alapja” örökíti a formázást, a „Következő stílus” pedig új bekezdés létrehozásakor lép életbe.', selectedParagraphStyle: 'Kijelölt bekezdés stílusa', noParagraphSelected: 'Kattintson egy bekezdésbe a hozzárendeléshez.', paragraphStyleName: 'Stílus neve', newParagraphStyle: 'Új bekezdésstílus', deleteParagraphStyle: 'Bekezdésstílus törlése', defaultParagraphStyle: 'Az alapértelmezett stílus nem törölhető.', basedOn: 'Alapja', nextStyle: 'Következő stílus', noBaseStyle: '[Nincs bekezdésstílus]', characterFormatting: 'Alapvető karakterformátumok', paragraphFormatting: 'Behúzások és térközök', fontWeight: 'Betűvastagság', fontStyle: 'Betűstílus', normal: 'Normál', italic: 'Dőlt', leftIndent: 'Bal behúzás', rightIndent: 'Jobb behúzás', spaceBefore: 'Térköz előtte', spaceAfter: 'Térköz utána', widows: 'Fattyúsorok', orphans: 'Árvasorok', clearOverrides: 'Helyi felülírások törlése', styleApplied: 'A bekezdésstílus alkalmazva.', inheritedValues: 'A nem felülírt tulajdonságok az alapstílusból öröklődnek.',
+    paragraphStyles: 'Bekezdésstílusok', paragraphStylesHelp: 'A cím, mottó, absztrakt, kulcsszavak, idézet és jegyzet automatikusan a saját stílusát kapja. Az „Alapja” örökíti a formázást és a nyelvet; egyéni stílus is készíthető.', selectedParagraphStyle: 'Kijelölt bekezdés stílusa', noParagraphSelected: 'Kattintson egy bekezdésbe a hozzárendeléshez.', paragraphStyleName: 'Stílus neve', newParagraphStyle: 'Új bekezdésstílus', deleteParagraphStyle: 'Bekezdésstílus törlése', defaultParagraphStyle: 'Az alapértelmezett stílus nem törölhető.', basedOn: 'Alapja', nextStyle: 'Következő stílus', noBaseStyle: '[Nincs bekezdésstílus]', characterFormatting: 'Alapvető karakterformátumok', paragraphFormatting: 'Behúzások és térközök', fontWeight: 'Betűvastagság', fontStyle: 'Betűstílus', normal: 'Normál', italic: 'Dőlt', leftIndent: 'Bal behúzás', rightIndent: 'Jobb behúzás', spaceBefore: 'Térköz előtte', spaceAfter: 'Térköz utána', widows: 'Fattyúsorok', orphans: 'Árvasorok', clearOverrides: 'Helyi felülírások törlése', styleApplied: 'A bekezdésstílus alkalmazva.', inheritedValues: 'A nem felülírt tulajdonságok az alapstílusból öröklődnek.',
   };
   if (locale === 'de') return {
     title: 'Publikationseditor', contentWorkspace: 'Publikationsinhalt', description: 'Die vollständige, bearbeitbare Druckansicht des Beitrags oder Bandes. Inhaltliche und typografische Änderungen erscheinen sofort und werden für den Export verwendet.', htmlDescription: 'Die fortlaufende, responsive HTML5-Ansicht des vollständigen Beitrags oder Bandes. Dasselbe strukturierte Manuskript bleibt ohne Seiten, Kolumnentitel oder Seitenumbrüche bearbeitbar.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Druckseite', preset: 'Seitenformat', custom: 'Benutzerdefiniert', orientation: 'Ausrichtung', portrait: 'Hochformat', landscape: 'Querformat', width: 'Endbreite', height: 'Endhöhe', pageNumberStart: 'Erste Seitenzahl', margins: 'Ränder und Druckdaten', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', gutter: 'Bundsteg', bleed: 'Beschnitt', mirroredMargins: 'Gespiegelte Ränder für gerade und ungerade Seiten', cropMarks: 'Schnittmarken im Druckexport', runningHeaders: 'Kolumnentitel anzeigen', firstPageHeader: 'Kolumnentitel auch auf der ersten Seite', typography: 'Typografie', font: 'Schriftfamilie', fontVariant: 'Schriftschnitt', fontSample: 'Falsches Üben quält jeden größeren Zwerg', searchFonts: 'Schriftfamilie suchen', noMatchingFonts: 'Keine passende Schriftfamilie.', loadSystemFonts: 'Systemschriften laden', refreshSystemFonts: 'Systemschriften aktualisieren', loadingSystemFonts: 'Installierte Schriften werden eingelesen…', systemFontsFallback: 'Die Grundliste ist sichtbar. Installierte Schriften und ihre echten Schnitte lassen sich mit dem Aktualisieren-Symbol laden.', systemFontsUnsupported: 'Dieser Browser kann installierte Schriften nicht auflisten; die erweiterte Grundliste bleibt verfügbar.', systemFontsDenied: 'Der Zugriff auf die Schriftliste wurde nicht erlaubt; die Grundliste bleibt aktiv.', systemFontsError: 'Installierte Schriften konnten nicht gelesen werden; die Grundliste bleibt aktiv.', systemFontsLoaded: (families: number, faces: number) => `${families} Schriftfamilien mit ${faces} verfügbaren Schnitten geladen.`, bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', hyphenation: 'Automatische Silbentrennung in Druckausgaben', hyphenationModule: 'Sprachmodul', hyphenationInline: 'Sprachmarkierte Textteile verwenden automatisch ihr eigenes Modul.', hyphenationFallback: 'Für diese Sprache ist kein Muster eingebaut; das Wörterbuch des Druckbrowsers kann verwendet werden.', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', authorNameParts: 'Formatierung der Namensbestandteile', givenNameStyle: 'Stärke des Vornamens', familyNameStyle: 'Stärke des Familiennamens', givenNameVariant: 'Stil des Vornamens', familyNameVariant: 'Stil des Familiennamens', givenNameSmallCaps: 'Vorname in Kapitälchen', familyNameSmallCaps: 'Familienname in Kapitälchen', givenNameUppercase: 'Vorname in Versalien', familyNameUppercase: 'Familienname in Versalien', regular: 'Normal', medium: 'Medium', semiBold: 'Halbfett', bold: 'Fett', alignment: 'Ausrichtung', justify: 'Blocksatz', alignLeft: 'Links', alignCenter: 'Zentriert', alignRight: 'Rechts', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', exportCss: 'CSS herunterladen', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie', liveApplied: 'Änderungen werden automatisch auf den aktiven Exportstil angewendet.', proofing: 'Satzkorrektur', proofingHelp: 'Korrekturen ändern nur den Drucksatz; der Manuskripttext bleibt unverändert.', selectedText: 'Auswahl', placeCursor: 'Setzen Sie den Cursor oder markieren Sie Text im Druckbild.', optionalHyphen: 'Bedingter Trennstrich', nonbreaking: 'Auswahl zusammenhalten', forcedLineBreak: 'Erzwungener Zeilenumbruch', pageBreakBefore: 'Seitenumbruch davor', keepTogether: 'Absatz zusammenhalten', keepWithNext: 'Mit nächstem zusammenhalten', corrections: 'Aktive Satzkorrekturen', noCorrections: 'Noch keine manuellen Satzkorrekturen.', removeCorrection: 'Korrektur entfernen', correctionAdded: 'Satzkorrektur hinzugefügt.', selectRange: 'Markieren Sie für diese Aktion Text.', paragraphStyles: 'Absatzformate', paragraphStylesHelp: 'Wie in InDesign vererbt „Basiert auf“ die Formatierung; „Nächstes Format“ wird beim Erstellen eines neuen Absatzes angewendet.', selectedParagraphStyle: 'Format des ausgewählten Absatzes', noParagraphSelected: 'Klicken Sie zum Zuweisen in einen Absatz.', paragraphStyleName: 'Formatname', newParagraphStyle: 'Neues Absatzformat', deleteParagraphStyle: 'Absatzformat löschen', defaultParagraphStyle: 'Das Standardformat kann nicht gelöscht werden.', basedOn: 'Basiert auf', nextStyle: 'Nächstes Format', noBaseStyle: '[Kein Absatzformat]', characterFormatting: 'Grundlegende Zeichenformate', paragraphFormatting: 'Einzüge und Abstände', fontWeight: 'Schriftstärke', fontStyle: 'Schriftschnitt', normal: 'Normal', italic: 'Kursiv', leftIndent: 'Linker Einzug', rightIndent: 'Rechter Einzug', spaceBefore: 'Abstand davor', spaceAfter: 'Abstand danach', widows: 'Schusterjungen', orphans: 'Hurenkinder', clearOverrides: 'Lokale Überschreibungen löschen', styleApplied: 'Absatzformat angewendet.', inheritedValues: 'Nicht überschriebene Eigenschaften werden vom Basisformat geerbt.',
   };
   return {
-    title: 'Publication editor', contentWorkspace: 'Publication content', description: 'The complete editable print view of the article or volume. Content and typography changes appear immediately and drive the same export settings.', htmlDescription: 'The continuous, responsive HTML5 view of the complete article or volume. The same structured manuscript remains editable without pages, running headers, or page breaks.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Print page', preset: 'Page format', custom: 'Custom size', orientation: 'Orientation', portrait: 'Portrait', landscape: 'Landscape', width: 'Trim width', height: 'Trim height', pageNumberStart: 'First page number', margins: 'Margins and print data', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', gutter: 'Gutter', bleed: 'Bleed', mirroredMargins: 'Mirror margins on facing pages', cropMarks: 'Include crop marks in print export', runningHeaders: 'Show running headers', firstPageHeader: 'Show running header on first page', typography: 'Typography', font: 'Font family', fontVariant: 'Font style', fontSample: 'Sphinx of black quartz, judge my vow', searchFonts: 'Search font families', noMatchingFonts: 'No matching font family.', loadSystemFonts: 'Load system fonts', refreshSystemFonts: 'Refresh system fonts', loadingSystemFonts: 'Reading installed fonts…', systemFontsFallback: 'The starter list is shown. Use the refresh icon to load installed fonts and their actual styles.', systemFontsUnsupported: 'This browser cannot list installed fonts; the expanded starter list remains available.', systemFontsDenied: 'Font-list access was not allowed; the starter list remains active.', systemFontsError: 'Installed fonts could not be read; the starter list remains active.', systemFontsLoaded: (families: number, faces: number) => `${families} font families and ${faces} available styles loaded.`, bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', hyphenation: 'Automatic hyphenation in printable versions', hyphenationModule: 'Language module', hyphenationInline: 'Language-tagged passages automatically use their own module.', hyphenationFallback: 'No built-in pattern is available for this language; the print browser dictionary may be used.', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', authorNameParts: 'Author name part formatting', givenNameStyle: 'Given-name weight', familyNameStyle: 'Family-name weight', givenNameVariant: 'Given-name style', familyNameVariant: 'Family-name style', givenNameSmallCaps: 'Given name small caps', familyNameSmallCaps: 'Family name small caps', givenNameUppercase: 'Given name uppercase', familyNameUppercase: 'Family name uppercase', regular: 'Regular', medium: 'Medium', semiBold: 'Semi-bold', bold: 'Bold', alignment: 'Alignment', justify: 'Justified', alignLeft: 'Left', alignCenter: 'Center', alignRight: 'Right', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', defaultNewName: 'New publication style', copySuffix: 'copy', liveApplied: 'Changes are applied to the active export style automatically.', proofing: 'Typesetting proofing', proofingHelp: 'Corrections affect only the print layout; the manuscript text remains unchanged.', selectedText: 'Selection', placeCursor: 'Place the cursor or select text in the print view.', optionalHyphen: 'Optional hyphen', nonbreaking: 'Keep selection together', forcedLineBreak: 'Forced line break', pageBreakBefore: 'Page break before', keepTogether: 'Keep paragraph together', keepWithNext: 'Keep with next', corrections: 'Active typesetting corrections', noCorrections: 'No manual typesetting corrections yet.', removeCorrection: 'Remove correction', correctionAdded: 'Typesetting correction added.', selectRange: 'Select text for this action.', paragraphStyles: 'Paragraph styles', paragraphStylesHelp: 'As in InDesign, “Based on” inherits formatting and “Next style” applies when a new paragraph is created.', selectedParagraphStyle: 'Selected paragraph style', noParagraphSelected: 'Click inside a paragraph to assign a style.', paragraphStyleName: 'Style name', newParagraphStyle: 'New paragraph style', deleteParagraphStyle: 'Delete paragraph style', defaultParagraphStyle: 'The default style cannot be deleted.', basedOn: 'Based on', nextStyle: 'Next style', noBaseStyle: '[No paragraph style]', characterFormatting: 'Basic character formats', paragraphFormatting: 'Indents and spacing', fontWeight: 'Font weight', fontStyle: 'Font style', normal: 'Regular', italic: 'Italic', leftIndent: 'Left indent', rightIndent: 'Right indent', spaceBefore: 'Space before', spaceAfter: 'Space after', widows: 'Widow lines', orphans: 'Orphan lines', clearOverrides: 'Clear local overrides', styleApplied: 'Paragraph style applied.', inheritedValues: 'Properties without overrides inherit from the based-on style.',
+    title: 'Publication editor', contentWorkspace: 'Publication content', description: 'The complete editable print view of the article or volume. Content and typography changes appear immediately and drive the same export settings.', htmlDescription: 'The continuous, responsive HTML5 view of the complete article or volume. The same structured manuscript remains editable without pages, running headers, or page breaks.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Print page', preset: 'Page format', custom: 'Custom size', orientation: 'Orientation', portrait: 'Portrait', landscape: 'Landscape', width: 'Trim width', height: 'Trim height', pageNumberStart: 'First page number', margins: 'Margins and print data', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', gutter: 'Gutter', bleed: 'Bleed', mirroredMargins: 'Mirror margins on facing pages', cropMarks: 'Include crop marks in print export', runningHeaders: 'Show running headers', firstPageHeader: 'Show running header on first page', typography: 'Typography', font: 'Font family', fontVariant: 'Font style', fontSample: 'Sphinx of black quartz, judge my vow', searchFonts: 'Search font families', noMatchingFonts: 'No matching font family.', loadSystemFonts: 'Load system fonts', refreshSystemFonts: 'Refresh system fonts', loadingSystemFonts: 'Reading installed fonts…', systemFontsFallback: 'The starter list is shown. Use the refresh icon to load installed fonts and their actual styles.', systemFontsUnsupported: 'This browser cannot list installed fonts; the expanded starter list remains available.', systemFontsDenied: 'Font-list access was not allowed; the starter list remains active.', systemFontsError: 'Installed fonts could not be read; the starter list remains active.', systemFontsLoaded: (families: number, faces: number) => `${families} font families and ${faces} available styles loaded.`, bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', hyphenation: 'Automatic hyphenation in printable versions', hyphenationModule: 'Language module', hyphenationInline: 'Language-tagged passages automatically use their own module.', hyphenationFallback: 'No built-in pattern is available for this language; the print browser dictionary may be used.', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', authorNameParts: 'Author name part formatting', givenNameStyle: 'Given-name weight', familyNameStyle: 'Family-name weight', givenNameVariant: 'Given-name style', familyNameVariant: 'Family-name style', givenNameSmallCaps: 'Given name small caps', familyNameSmallCaps: 'Family name small caps', givenNameUppercase: 'Given name uppercase', familyNameUppercase: 'Family name uppercase', regular: 'Regular', medium: 'Medium', semiBold: 'Semi-bold', bold: 'Bold', alignment: 'Alignment', justify: 'Justified', alignLeft: 'Left', alignCenter: 'Center', alignRight: 'Right', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', defaultNewName: 'New publication style', copySuffix: 'copy', liveApplied: 'Changes are applied to the active export style automatically.', proofing: 'Typesetting proofing', proofingHelp: 'Corrections affect only the print layout; the manuscript text remains unchanged.', selectedText: 'Selection', placeCursor: 'Place the cursor or select text in the print view.', optionalHyphen: 'Optional hyphen', nonbreaking: 'Keep selection together', forcedLineBreak: 'Forced line break', pageBreakBefore: 'Page break before', keepTogether: 'Keep paragraph together', keepWithNext: 'Keep with next', corrections: 'Active typesetting corrections', noCorrections: 'No manual typesetting corrections yet.', removeCorrection: 'Remove correction', correctionAdded: 'Typesetting correction added.', selectRange: 'Select text for this action.', paragraphStyles: 'Paragraph styles', paragraphStylesHelp: 'Titles, mottos, abstracts, keywords, quotations and notes automatically use their own styles. “Based on” inherits formatting and language; custom styles can also be created.', selectedParagraphStyle: 'Selected paragraph style', noParagraphSelected: 'Click inside a paragraph to assign a style.', paragraphStyleName: 'Style name', newParagraphStyle: 'New paragraph style', deleteParagraphStyle: 'Delete paragraph style', defaultParagraphStyle: 'The default style cannot be deleted.', basedOn: 'Based on', nextStyle: 'Next style', noBaseStyle: '[No paragraph style]', characterFormatting: 'Basic character formats', paragraphFormatting: 'Indents and spacing', fontWeight: 'Font weight', fontStyle: 'Font style', normal: 'Regular', italic: 'Italic', leftIndent: 'Left indent', rightIndent: 'Right indent', spaceBefore: 'Space before', spaceAfter: 'Space after', widows: 'Widow lines', orphans: 'Orphan lines', clearOverrides: 'Clear local overrides', styleApplied: 'Paragraph style applied.', inheritedValues: 'Properties without overrides inherit from the based-on style.',
   };
 }
 
@@ -551,7 +554,10 @@ function PublicationStyleEditorWorkspace() {
     const definition: PublicationParagraphStyleDefinition = {
       ...source,
       id,
-      name: `${source.name} — ${copy.copySuffix}`,
+      role: undefined,
+      automaticName: false,
+      basedOnId: source.role ? source.id : source.basedOnId,
+      name: `${publicationParagraphStyleName(source, locale)} — ${copy.copySuffix}`,
       properties: { ...source.properties },
     };
     patchStyle((current) => ({
@@ -566,7 +572,7 @@ function PublicationStyleEditorWorkspace() {
 
   function deleteParagraphStyle(): void {
     const collection = style.paragraphStyles;
-    if (activeParagraphStyleId === collection.defaultStyleId) {
+    if (activeParagraphStyleId === collection.defaultStyleId || collection.items.find((item) => item.id === activeParagraphStyleId)?.role) {
       setMessage(copy.defaultParagraphStyle);
       return;
     }
@@ -637,13 +643,16 @@ function PublicationStyleEditorWorkspace() {
     (definition) => definition.id === assignedParagraphStyleId,
   )
     ? assignedParagraphStyleId!
-    : style.paragraphStyles.defaultStyleId;
+    : selectedParagraphBlock?.type === 'quote'
+      ? style.paragraphStyles.items.find((item) => item.role === 'quote')?.id ?? style.paragraphStyles.defaultStyleId
+      : style.paragraphStyles.defaultStyleId;
   const activeParagraphStyle = style.paragraphStyles.items.find(
     (definition) => definition.id === activeParagraphStyleId,
   ) ?? style.paragraphStyles.items[0];
   const resolvedParagraphStyle = resolvePublicationParagraphStyle(
     style,
     activeParagraphStyle?.id,
+    manuscript.locale,
   );
   const bodyFontStyle: SystemFontCssStyle = body.fontStyle === 'italic' ? 'italic' : 'normal';
   const bodyFontFaces = systemFontFacesForFamily(
@@ -924,8 +933,8 @@ function PublicationStyleEditorWorkspace() {
                   disabled={!paragraphStyleAssignable}
                   onChange={(event) => assignParagraphStyle(event.target.value)}
                 >
-                  {style.paragraphStyles.items.map((definition) => (
-                    <option key={definition.id} value={definition.id}>{definition.name}</option>
+                  {style.paragraphStyles.items.filter((item) => item.role !== 'citation' && item.role !== 'note-citation').map((definition) => (
+                    <option key={definition.id} value={definition.id}>{publicationParagraphStyleName(definition, locale)}</option>
                   ))}
                 </select>
                 {!paragraphStyleAssignable ? <small>{copy.noParagraphSelected}</small> : null}
@@ -944,7 +953,7 @@ function PublicationStyleEditorWorkspace() {
                         onClick={() => setActiveParagraphStyleId(definition.id)}
                       >
                         <Pilcrow size={14} aria-hidden="true" />
-                        <span>{definition.name}</span>
+                        <span>{publicationParagraphStyleName(definition, locale)}</span>
                         {definition.id === style.paragraphStyles.defaultStyleId ? <small>¶</small> : null}
                       </button>
                     ))}
@@ -952,13 +961,14 @@ function PublicationStyleEditorWorkspace() {
                   <div className="publication-paragraph-style-icon-actions">
                     <button type="button" title={copy.newParagraphStyle} aria-label={copy.newParagraphStyle} onClick={createParagraphStyle}><Plus size={16} /></button>
                     <button type="button" title={copy.duplicate} aria-label={copy.duplicate} onClick={duplicateParagraphStyle}><Copy size={16} /></button>
-                    <button type="button" title={copy.deleteParagraphStyle} aria-label={copy.deleteParagraphStyle} disabled={activeParagraphStyle.id === style.paragraphStyles.defaultStyleId} onClick={deleteParagraphStyle}><Trash2 size={16} /></button>
+                    <button type="button" title={copy.deleteParagraphStyle} aria-label={copy.deleteParagraphStyle} disabled={activeParagraphStyle.id === style.paragraphStyles.defaultStyleId || !!activeParagraphStyle.role} onClick={deleteParagraphStyle}><Trash2 size={16} /></button>
                   </div>
                 </div>
 
                 <div className="publication-paragraph-style-settings">
                   <InDesignParagraphStyleSettings
                     locale={locale}
+                    documentLanguage={manuscript.locale}
                     printLayout={documentViewMode === 'print'}
                     collection={style.paragraphStyles}
                     definition={activeParagraphStyle}
@@ -996,6 +1006,16 @@ function PublicationStyleEditorWorkspace() {
                       </>
                     )}
                   />
+                  {activeParagraphStyle.role === 'note-citation' ? <fieldset>
+                    <legend>{publicationParagraphStyleName(activeParagraphStyle, locale)}</legend>
+                    {(['first', 'subsequent'] as const).map((kind) => <label key={kind}>
+                      <span>{locale === 'hu' ? kind === 'first' ? 'Első hivatkozás stílusa' : 'Ismételt hivatkozás stílusa' : locale === 'de' ? kind === 'first' ? 'Erster Literaturverweis' : 'Weitere Literaturverweise' : kind === 'first' ? 'First citation style' : 'Subsequent citation style'}</span>
+                      <select value={style.noteCitationStyles?.[kind] ?? ''} onChange={(event) => patchStyle((current) => ({ ...current, noteCitationStyles: { ...current.noteCitationStyles, [kind]: event.target.value || undefined } }))}>
+                        <option value="">{locale === 'hu' ? 'Öröklés a hivatkozási beállításokból' : locale === 'de' ? 'Aus Zitiereinstellungen übernehmen' : 'Inherit citation settings'}</option>
+                        {CITATION_STYLE_CATALOG.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                      </select>
+                    </label>)}
+                  </fieldset> : null}
                   <div className="publication-style-actions">
                     <button
                       type="button"
@@ -1130,7 +1150,7 @@ function PublicationStyleEditorWorkspace() {
                   onChange={setBodyFontFace}
                 />
                 <NumberField label={`${copy.bodySize} (pt)`} value={body.fontSize} step={0.1} onChange={(value) => setStyleValue('body', 'fontSize', value)} />
-                <NumberField label={`${copy.bodyLeading} (pt)`} value={body.lineHeight} step={0.1} onChange={(value) => setStyleValue('body', 'lineHeight', value)} />
+                <NumberField leading label={`${copy.bodyLeading} (pt)`} value={body.lineHeight} step={0.1} onChange={(value) => setStyleValue('body', 'lineHeight', value)} />
                 <NumberField label={`${copy.indent} (mm)`} value={body.firstLineIndent} step={0.5} onChange={(value) => setStyleValue('body', 'firstLineIndent', value)} />
                 <NumberField label={`${copy.titleSize} (pt)`} value={title.fontSize} step={0.1} onChange={(value) => setStyleValue('articleTitlePrimary', 'fontSize', value)} />
                 <NumberField label={`${copy.headingSize} (pt)`} value={heading.fontSize} step={0.1} onChange={(value) => setStyleValue('heading1', 'fontSize', value)} />
@@ -1775,7 +1795,9 @@ function NumberField({
   onChange,
   step = 1,
   min = 0,
+  leading = false,
 }: {
+  leading?: boolean;
   label: string;
   value: number;
   onChange: (value: number) => void;
@@ -1783,6 +1805,7 @@ function NumberField({
   min?: number;
 }) {
   const [unit] = usePublicationMeasurementUnit();
+  if (label.endsWith('(pt)')) return <PublicationPointInput label={label} value={value} min={1} leading={leading} onChange={onChange} />;
   if (label.endsWith('(mm)')) return <MatterNumber label={label} value={value} min={min} max={20000} disabled={false} unit={unit} commitOnChange onCommit={onChange} />;
   return (
     <label>

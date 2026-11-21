@@ -165,3 +165,27 @@ responsive HTML publication. Generated hyphens and expanded word spaces are
 presentation data; story text, source offsets, frame links and OMI content stay
 unchanged. Paragraph-style language overrides and disabled hyphenation are also
 respected by the continuous print export, including inline language spans.
+
+## Semantic text styles and point presets
+
+The publication editor's **Paragraph styles** panel includes automatic styles for
+body text, title, subtitle, author, motto, abstract, keywords, headings, quotations,
+notes, citations, citations in notes, bibliography and captions. These styles drive
+the live canvas and HTML/PDF export. Built-in names follow the interface language
+until renamed. Existing custom names, IDs and overrides survive migration.
+
+Use **New paragraph style** or **Duplicate** to create an independent named style.
+A duplicate inherits formatting without claiming the source style's automatic
+semantic role. Built-in role styles can be edited and renamed; custom styles can
+be deleted. Empty language settings inherit the base style and then the manuscript
+language. Explicit inline language annotations keep precedence for print hyphenation.
+
+Font-size and leading fields offer common point values through native dropdown
+suggestions and also accept custom numeric values. Leading is the distance between
+baselines in points. The same editable point controls are available in text frames
+and cover text.
+
+**Citation in notes** inherits explicit typography from **Citation**; unspecified
+values inherit the surrounding note. Its first/subsequent citation format selectors
+inherit the publication profile unless overridden. These presentation preferences
+are saved with the publication style and do not rewrite note text or citation data.

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { PUBLICATION_TEXT_ROLES, publicationParagraphStyleName, withPublicationTextRoles } from '../src/model/publicationTextRoles.ts';
+import { buildPublicationStyleCss, buildPublicationTextRoleCss, clonePublicationStyleTemplate, normalizePublicationStyle, publicationInlineStyleProperties, publicationNoteCitationRules, resolvePublicationParagraphStyle } from '../src/services/publicationStyleExport.ts';
 
 import {
   mergePublicationParagraphStyleProperties,
@@ -17,6 +19,83 @@ const fallback: PublicationParagraphStyleCollection = {
     properties: {},
   }],
 };
+
+test('text roles migrate saved styles once and keep custom names, IDs and properties', () => {
+  const old = { defaultStyleId: 'body', items: [
+    { id: 'body', name: 'Törzsszöveg', basedOnId: null, nextStyleId: 'body', properties: {} },
+    { id: 'quotation', name: 'Archival quotation', basedOnId: 'body', nextStyleId: 'body', properties: { fontSize: 9.7 } },
+    { id: 'custom', name: 'Diplomatic source', basedOnId: 'body', nextStyleId: 'body', properties: { language: 'la' } },
+  ] };
+  const before = JSON.stringify(old);
+  const migrated = withPublicationTextRoles(old);
+  assert.equal(JSON.stringify(old), before);
+  assert.deepEqual(withPublicationTextRoles(migrated), migrated);
+  for (const role of PUBLICATION_TEXT_ROLES) assert.equal(migrated.items.filter((item) => item.role === role).length, 1);
+  const body = migrated.items.find((item) => item.id === 'body')!;
+  assert.equal(publicationParagraphStyleName(body, 'de-DE'), 'Fließtext');
+  assert.equal(publicationParagraphStyleName(migrated.items.find((item) => item.id === 'quotation')!, 'hu'), 'Archival quotation');
+  assert.equal(migrated.items.find((item) => item.id === 'quotation')!.properties.fontSize, 9.7);
+  assert.deepEqual(migrated.items.find((item) => item.id === 'custom'), old.items[2]);
+});
+
+test('role styles follow legacy typography defaults and inherit the document or explicit base language', () => {
+  const style = clonePublicationStyleTemplate();
+  const title = style.paragraphStyles.items.find((item) => item.role === 'title')!;
+  assert.equal(resolvePublicationParagraphStyle(style, title.id, 'hu-HU').fontSize, style.styles.articleTitlePrimary.fontSize);
+  style.styles.articleTitlePrimary.fontSize = 26;
+  assert.equal(resolvePublicationParagraphStyle(style, title.id, 'hu-HU').fontSize, 26);
+  title.properties = { fontSize: 27.3, lineHeight: 32.7, language: 'de-DE' };
+  style.paragraphStyles.items.push({ id: 'custom-title', name: 'Source title', basedOnId: title.id, nextStyleId: 'body', properties: {} });
+  const restored = normalizePublicationStyle(JSON.parse(JSON.stringify(style)));
+  const resolved = resolvePublicationParagraphStyle(restored, 'custom-title', 'hu-HU');
+  assert.equal(resolved.fontSize, 27.3); assert.equal(resolved.lineHeight, 32.7); assert.equal(resolved.language, 'de-DE');
+  delete title.properties.language;
+  assert.equal(resolvePublicationParagraphStyle(style, title.id, 'hu-HU').language, 'hu-HU');
+  title.name = 'My title'; title.automaticName = false;
+  assert.equal(publicationParagraphStyleName(title, 'hu'), 'My title');
+});
+
+test('semantic role CSS targets front matter, notes and quotations in preview and both exports', () => {
+  const style = clonePublicationStyleTemplate();
+  const motto = style.paragraphStyles.items.find((item) => item.role === 'motto')!;
+  motto.properties = { fontSize: 13.7, lineHeight: 17.8, alignment: 'justify', language: 'la' };
+  const html = buildPublicationStyleCss(style, 'html');
+  const print = buildPublicationStyleCss(style, 'print');
+  const live = buildPublicationTextRoleCss(style, 'print', 'hu-HU', '#proof', 1);
+  assert.match(html, /\.omi-scholarly-article \.article-motto \{[^}]*font-size:13.7pt[^}]*text-align:left/);
+  assert.match(print, /\.omi-scholarly-article \.article-motto \{[^}]*text-align:justify/);
+  assert.match(live, /#proof \.publication-document-motto \{[^}]*font-size:18.266/);
+  assert.match(live, /-webkit-locale:"la"/);
+  assert.match(live, /#proof \.publication-document-keywords/);
+  assert.match(live, /#proof \.publication-page-note/);
+});
+
+test('note citation typography inherits citation overrides while unset values follow the surrounding note', () => {
+  const style = clonePublicationStyleTemplate();
+  const citation = style.paragraphStyles.items.find((item) => item.role === 'citation')!;
+  const note = style.paragraphStyles.items.find((item) => item.role === 'note-citation')!;
+  assert.deepEqual(publicationInlineStyleProperties(style, note.id), {});
+  assert.equal(resolvePublicationParagraphStyle(style, note.id).fontSize, style.styles.footnote.fontSize);
+  citation.properties = { fontStyle: 'italic', fontSize: 8.7 };
+  note.properties = { fontSize: 9.3 };
+  assert.deepEqual(publicationInlineStyleProperties(style, note.id), { fontStyle: 'italic', fontSize: 9.3 });
+  const css = buildPublicationTextRoleCss(style, 'print');
+  const rule = css.split('\n').find((line) => line.includes('.article-notes .omi-note-citation'))!;
+  assert.match(rule, /font-size:9.3pt/); assert.match(rule, /font-style:italic/);
+  assert.doesNotMatch(rule, /text-align|margin|line-height/);
+});
+
+test('note citation presentation inherits profile settings and permits independent portable overrides', () => {
+  const style = clonePublicationStyleTemplate();
+  const rules = { style: 'apa-7' as const, noteFirstStyle: 'chicago-notes-bibliography' as const, noteSubsequentStyle: 'mla-9' as const, bibliographyHeading: true };
+  const before = JSON.stringify(rules);
+  assert.deepEqual(publicationNoteCitationRules(style, rules), rules);
+  style.noteCitationStyles = { first: 'iso-690', subsequent: 'apa-7' };
+  const restored = normalizePublicationStyle(JSON.parse(JSON.stringify(style)));
+  const result = publicationNoteCitationRules(restored, rules);
+  assert.equal(result.style, 'apa-7'); assert.equal(result.noteFirstStyle, 'iso-690'); assert.equal(result.noteSubsequentStyle, 'apa-7');
+  assert.equal(JSON.stringify(rules), before);
+});
 
 test('normalizes extended InDesign paragraph style fields', () => {
   const collection = normalizePublicationParagraphStyleCollection({
