@@ -39,6 +39,12 @@ test('semantic text roles offer editable point presets, languages and inherited 
     const css = getComputedStyle(element); return Math.round(parseFloat(css.lineHeight) / parseFloat(css.fontSize) * 1000);
   })).toBe(Math.round(32.7 / 27.3 * 1000));
   await list.getByRole('option', { name: 'Citation in notes', exact: true }).click();
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    useStudioStore.getState().checkpoint('manual');
+  });
+  await expect(list.getByRole('option', { name: 'Citation in notes', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(panel.getByLabel('First citation style', { exact: true })).toBeVisible();
   await panel.getByLabel('First citation style', { exact: true }).selectOption('apa-7');
   await panel.getByLabel('Subsequent citation style', { exact: true }).selectOption('mla-9');
   await list.getByRole('option', { name: 'Title', exact: true }).click();

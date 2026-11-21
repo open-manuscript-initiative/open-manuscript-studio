@@ -282,11 +282,17 @@ function PublicationStyleEditorWorkspace() {
   useEffect(() => {
     // Revision restoration can replace a format without changing document id.
     if (!appliedStyle || appliedStyle === synchronizedStyleRef.current) return;
+    // Checkpoints clone the portable state even when its format is unchanged.
+    // Keep the user's style selection while acknowledging that new identity.
+    if (JSON.stringify(appliedStyle) === JSON.stringify(synchronizedStyleRef.current)) {
+      synchronizedStyleRef.current = appliedStyle;
+      return;
+    }
     synchronizedStyleRef.current = appliedStyle;
     const next = withCurrentPageDefaults(cloneStyle(appliedStyle));
     setStyle(next); setActiveId(next.id);
     setLibrary((current) => upsertStyle(current, next.id, next));
-    setActiveParagraphStyleId(next.paragraphStyles.defaultStyleId);
+    setActiveParagraphStyleId((current) => next.paragraphStyles.items.some((item) => item.id === current) ? current : next.paragraphStyles.defaultStyleId);
     setProofingSelection(null);
   }, [appliedStyle]);
 
