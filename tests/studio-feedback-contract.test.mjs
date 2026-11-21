@@ -15,6 +15,7 @@ test('accepts minimal useful issue report without personal or technical metadata
   assert.equal(result.success, true);
   if (result.success) {
     assert.equal('technical' in result.data, false);
+    assert.equal('messageLocale' in result.data, false);
     assert.equal('contactEmail' in result.data, false);
   }
 });
