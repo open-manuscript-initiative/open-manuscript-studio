@@ -62,6 +62,7 @@ The form is initially translated in Hungarian, German and English; other locales
 - [ ] Six submitted reports from one account are permitted within one hour; the next is throttled; another account is not affected by a shared NAT IP.
 - [ ] No document contents or personal data is automatically inserted into reports.
 - [ ] Verify the mailbox retention and update the actual operator's published privacy notice.
+- [ ] Recheck Google Play Data safety answers and the app privacy-policy URL before uploading the updated closed-test AAB; optional contact and feedback data must be accurately disclosed.
 - [ ] Confirm accessible labels, keyboard navigation and mobile touch targets.
 
 Run `npm run test:studio-feedback` for the strict contract checks, then normal build/CI and on-device manual acceptance. **Passing unit checks does not demonstrate successful e-mail delivery or Play Console testing activity.**
