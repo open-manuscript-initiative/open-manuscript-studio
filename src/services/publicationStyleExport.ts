@@ -1059,20 +1059,43 @@ export async function renderStyleBasedHtml(
 }
 
 /** Stable block anchors keep deliberate empty pages out of the scholarly text. */
+/** Locate complete rendered block elements, including nested tables/SVG. This
+ * only places trusted blank-page markup; it does not filter or rewrite HTML. */
 export function withInsertedPublicationPages(html: string, style: PublicationStyle): string {
-  const byAnchor = new Map<string, string[]>();
-  for (const insertion of style.pageStyles?.insertions ?? []) {
-    const key = escapeHtml(insertion.beforeBlockId);
-    const nodes = byAnchor.get(key) ?? [];
-    nodes.push(`<div class="omi-inserted-publication-page" data-omi-inserted-page="${escapeHtml(insertion.id)}" aria-hidden="true">&#160;</div>`);
-    byAnchor.set(key, nodes);
+  const insertions = style.pageStyles?.insertions ?? [];
+  if (!insertions.length) return html;
+  const positions = new Map<string, { before: number; after: number }>();
+  const stack: { name: string; id?: string; before: number }[] = [];
+  const voids = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+  const tokens = /<!--[\s\S]*?-->|<\/?([a-z][\w:-]*)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
+  for (const match of html.matchAll(tokens)) {
+    if (!match[1]) continue;
+    const tag = match[0], name = match[1].toLowerCase(), before = match.index!;
+    if (tag.startsWith('</')) {
+      let index = stack.length - 1;
+      while (index >= 0 && stack[index]!.name !== name) index -= 1;
+      if (index < 0) continue;
+      const [item] = stack.splice(index);
+      if (item?.id && !positions.has(item.id)) positions.set(item.id, { before: item.before, after: before + tag.length });
+    } else {
+      const id = tag.match(/\bdata-omi-block-id="([^"]+)"/i)?.[1];
+      if (voids.has(name) || /\/\s*>$/.test(tag)) {
+        if (id && !positions.has(id)) positions.set(id, { before, after: before + tag.length });
+      } else stack.push({ name, id, before });
+    }
   }
-  return html.replace(/<[a-z][\w:-]*\b[^>]*\bdata-omi-block-id="([^"]+)"[^>]*>/gi, (tag, id: string) => {
-    const pages = byAnchor.get(id);
-    if (!pages) return tag;
-    byAnchor.delete(id);
-    return pages.join('\n') + tag;
-  });
+  const additions = new Map<number, string[]>();
+  for (const insertion of insertions) {
+    const anchor = insertion.beforeBlockId ?? insertion.afterBlockId;
+    const position = anchor ? positions.get(escapeHtml(anchor)) : undefined;
+    if (!position) continue;
+    const offset = insertion.afterBlockId ? position.after : position.before;
+    const nodes = additions.get(offset) ?? [];
+    nodes.push(`<div class="omi-inserted-publication-page" data-omi-inserted-page="${escapeHtml(insertion.id)}" aria-hidden="true">&#160;</div>`);
+    additions.set(offset, nodes);
+  }
+  for (const [offset, nodes] of [...additions].sort((a, b) => b[0] - a[0])) html = html.slice(0, offset) + nodes.join('\n') + html.slice(offset);
+  return html;
 }
 
 function withPublicationTextRoleLanguages(html: string, style: PublicationStyle, language: string): string {

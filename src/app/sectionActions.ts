@@ -12,6 +12,8 @@ import {
   insertSubsection,
   insertTopLevelSectionAtEnd,
   moveSectionAmongSiblings,
+  moveSubtreeBeforeSibling,
+  moveSubtreeAfterSibling,
   outdentSection,
   reparentSection,
   sectionOrder,
@@ -134,6 +136,13 @@ export function stageMoveSectionSibling(
     (sections) => moveSectionAmongSiblings(sections, sectionId, direction),
     'Reordered manuscript sections',
   );
+}
+
+/** Thumbnail drag moves one complete study/section subtree in a single change. */
+export function stageMoveSectionToSibling(sectionId: string, siblingId: string, after: boolean): boolean {
+  return stageSectionStructureChange(sectionId,
+    (sections) => (after ? moveSubtreeAfterSibling : moveSubtreeBeforeSibling)(sections, sectionId, siblingId),
+    'Reordered manuscript sections');
 }
 
 export function stageIndentSection(sectionId: string): boolean {

@@ -12,6 +12,7 @@ export interface PublicationFlowBlock {
   keepSectionTogether?: boolean;
   keepSectionId?: string;
   insertedPagesBefore?: readonly { id: string; styleId?: string }[];
+  insertedPagesAfter?: readonly { id: string; styleId?: string }[];
 }
 
 export interface PublicationFlowLine {
@@ -219,6 +220,7 @@ function paginateStyledPages(
       height: line.height, noteIds: line.noteIds ?? [], first: index === 0,
       forceBreak: index === 0 && block.forcePageBreakBefore, keepNext: index === all.length - 1 && block.keepWithNext,
       insertedPagesBefore: index === 0 ? block.insertedPagesBefore : undefined,
+      insertedPagesAfter: index === all.length - 1 ? block.insertedPagesAfter : undefined,
       keepSectionId: block.keepSectionId ?? block.sectionId,
     }));
   });
@@ -248,6 +250,7 @@ function paginateStyledPages(
     const keepSection = (index === 0 || units[index - 1]?.keepSectionId !== first.keepSectionId) && blocks[first.blockIndex]!.keepSectionTogether;
     const group = [first];
     while (units[index + group.length] && !units[index + group.length]!.forceBreak && !units[index + group.length]!.insertedPagesBefore?.length
+      && !group.at(-1)!.insertedPagesAfter?.length
       && ((keepSection && units[index + group.length]!.keepSectionId === first.keepSectionId) || group.at(-1)!.keepNext)) group.push(units[index + group.length]!);
     if (group.at(-1)!.top + group.at(-1)!.height - first.top > metrics(page, pageSectionIds[page]).bodyHeight) group.splice(1);
     const groupNotes = () => [...new Set(group.flatMap((unit) => [...unit.noteIds]))].filter((id) => !seen.has(id) && notes?.heights.has(id));
@@ -289,9 +292,19 @@ function paginateStyledPages(
       previousDelta = delta;
     }
     position += height; naturalBottom = last.top + last.height; index += group.length - 1;
+    if (last.insertedPagesAfter?.length) {
+      if (position > 0.5) advance();
+      while (reservation(page) > 0) advance();
+      for (const insertion of last.insertedPagesAfter) {
+        pageSectionIds[page] = undefined;
+        insertedPages.push({ pageIndex: page, ...insertion });
+        metrics(page, undefined, insertion.styleId ?? '');
+        advance();
+      }
+    }
   }
   ensurePage(0);
-  const result = { pageCount: Math.max(1, page + 1, pageNotes.length), placements, flowBreaks, pageNotes, pageSectionIds, insertedPages };
+  const result = { pageCount: Math.max(1, ...placements.map((item) => item.pageIndex + 1), ...flowBreaks.map((item) => item.pageIndex + 1), ...insertedPages.map((item) => item.pageIndex + 1), pageNotes.length), placements, flowBreaks, pageNotes, pageSectionIds, insertedPages };
   return { ...result, sectionWarnings: publicationSectionFitWarnings(blocks, result, (index) => metrics(index, pageSectionIds[index]), movedSections) };
 }
 
