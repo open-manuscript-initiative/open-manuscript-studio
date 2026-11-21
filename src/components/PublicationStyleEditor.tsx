@@ -1369,6 +1369,7 @@ function PublicationStyleEditorWorkspace() {
       <div id="publication-content-workspace" className="publication-style-editor-layout" role={getDocumentStructureProfile(manuscript).kind === 'volume' ? 'tabpanel' : undefined} aria-labelledby={getDocumentStructureProfile(manuscript).kind === 'volume' ? 'publication-content-tab' : undefined} hidden={matterToolsOpen}>
         <PublicationDocumentCanvas
           style={style}
+          onStyleChange={setStyle}
           viewMode={documentViewMode}
           onViewModeChange={changeDocumentViewMode}
           onProofingSelection={setProofingSelection}

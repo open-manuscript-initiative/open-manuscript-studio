@@ -1,5 +1,9 @@
+import { PublicationPageNavigator } from './PublicationPageNavigator';
+import { placePublicationEmptyPage, type PublicationBodyPageThumbnail } from '../model/publicationPageNavigation';
+import { getStudyRootSectionId, partitionManuscriptStudies } from '../model/sectionStructure';
+import { stageMoveSectionToSibling } from '../app/sectionActions';
 import { arrangePublicationSheets, publicationFirstPageNumber, type PublicationSheetPosition } from '../model/publicationSpreads';
-import { resolvePublicationPageStyle, publicationSectionPageRules, publicationSectionLayoutKey } from '../model/publicationPageStyles';
+import { resolvePublicationPageStyle, PUBLICATION_BODY_START, publicationPageStyles, publicationSectionPageRules, publicationSectionLayoutKey } from '../model/publicationPageStyles';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import { publicationPaginationCopy } from '../i18n/publicationPagination';
 import type { PublicationLayoutIssue, PublicationLayoutIssueReporter } from '../model/publicationLayoutDiagnostics';
@@ -46,7 +50,7 @@ import {
 import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
-import type { OmiBibliographicRecord, OmiSection } from '../types/omi';
+import type { OmiBibliographicRecord, OmiBlock, OmiSection } from '../types/omi';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
@@ -101,10 +105,12 @@ interface PublicationPaginationState {
   pageSectionIds?: (string | undefined)[];
   insertedPages?: PublicationPageLayout['insertedPages'];
   sectionWarnings?: PublicationPageLayout['sectionWarnings'];
+  thumbnails?: PublicationBodyPageThumbnail[];
 }
 
 interface PublicationDocumentCanvasProps {
   style: PublicationStyle;
+  onStyleChange?: (style: PublicationStyle) => void;
   viewMode: PublicationDocumentViewMode;
   onViewModeChange: (mode: PublicationDocumentViewMode) => void;
   onProofingSelection?: (selection: ProofingSelection | null) => void;
@@ -136,6 +142,7 @@ interface PublicationCanvasCopy {
 
 export function PublicationDocumentCanvas({
   style,
+  onStyleChange,
   viewMode,
   onViewModeChange,
   onProofingSelection,
@@ -181,6 +188,8 @@ export function PublicationDocumentCanvas({
     pageNotes: [],
     flowBreaks: EMPTY_PUBLICATION_FLOW_BREAKS,
   });
+  const [selectedThumbnailId, setSelectedThumbnailId] = useState('');
+  const pendingThumbnailNavigation = useRef<string | null>(null);
   const [zoom, setZoom] = useState<PublicationZoom>('fit');
   const [editorZoomPercent, setEditorZoomPercent] = useState(readStoredEditorZoom);
 
@@ -588,7 +597,8 @@ export function PublicationDocumentCanvas({
                 || blockCorrections.some((item) => item.kind === 'keep-together'),
               keepSectionTogether: keepRule?.keepTogether,
               keepSectionId: keepRule?.keepTogether ? keepRule.sectionId : undefined,
-              insertedPagesBefore: style.pageStyles?.insertions?.filter((item) => item.beforeBlockId === publicationFlowBlockId(element)),
+              insertedPagesBefore: (publicationFlowBlockId(element) || element.classList.contains('publication-document-front-matter')) ? style.pageStyles?.insertions?.filter((item) => item.beforeBlockId === (publicationFlowBlockId(element) ?? PUBLICATION_BODY_START)) : undefined,
+              insertedPagesAfter: publicationFlowBlockId(element) ? style.pageStyles?.insertions?.filter((item) => item.afterBlockId === publicationFlowBlockId(element)) : undefined,
               forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
                 || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
                   && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
@@ -636,8 +646,8 @@ export function PublicationDocumentCanvas({
           id: `section:${warning.sectionId}`, sectionId: warning.sectionId,
           message: `${layoutSectionsRef.current.find((section) => section.id === warning.sectionId)?.title || diagnosticCopy.untitled}: ${diagnosticCopy[warning.reason]}`,
         }));
-        const presentBlocks = new Set(flow.map((item) => publicationFlowBlockId(item.element)));
-        for (const insertion of style.pageStyles?.insertions ?? []) if (!presentBlocks.has(insertion.beforeBlockId)) issues.push({
+        const presentBlocks = new Set(flow.map((item) => publicationFlowBlockId(item.element) ?? (item.element.classList.contains('publication-document-front-matter') ? PUBLICATION_BODY_START : undefined)));
+        for (const insertion of style.pageStyles?.insertions ?? []) if (!presentBlocks.has(insertion.beforeBlockId ?? insertion.afterBlockId)) issues.push({
           id: `insertion:${insertion.id}`, insertionId: insertion.id, message: diagnosticCopy.missingAnchor,
         });
         measuredBlocks.forEach((block, index) => {
@@ -682,6 +692,54 @@ export function PublicationDocumentCanvas({
           },
         );
 
+        // Read-only previews use the measured line positions; no editable DOM
+        // is cloned or modified by thumbnail rendering.
+        const validBlockIds = new Set<string>(), blockSectionIds = new Map<string, string>();
+        const visitBlocks = (blocks: OmiBlock[], sectionId: string) => { for (const block of blocks) { validBlockIds.add(block.id); blockSectionIds.set(block.id, sectionId); visitBlocks(block.children ?? [], sectionId); } };
+        for (const section of layoutSectionsRef.current) visitBlocks(section.blocks, section.id);
+        const blockIds = flow.map((item) => publicationFlowBlockId(item.element));
+        const thumbnails: PublicationBodyPageThumbnail[] = pageGeometries.map((geometry, index) => {
+          const inserted = layout.insertedPages?.find((item) => item.pageIndex === index);
+          const insertion = style.pageStyles?.insertions?.find((item) => item.id === inserted?.id);
+          const anchorSection = insertion?.beforeBlockId === PUBLICATION_BODY_START ? layoutSectionsRef.current[0]?.id
+            : blockSectionIds.get(insertion?.beforeBlockId ?? insertion?.afterBlockId ?? '');
+          return { id: inserted ? `inserted:${inserted.id}` : `body:${index}`, insertionId: inserted?.id,
+            number: firstPageNumber + index, styleId: resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index], insertionStyles.get(index)).id,
+            width: geometry.width, height: geometry.height, marks: [], studyId: getStudyRootSectionId(layoutSectionsRef.current, layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
+          };
+        });
+        let priorInlineHeight = 0;
+        measuredBlocks.forEach((block, index) => {
+          const placement = layout.placements[index]; if (!placement) return;
+          const id = blockIds[index];
+          const anchor = id && validBlockIds.has(id) ? id : blockIds.slice(index + 1).find((candidate) => candidate && validBlockIds.has(candidate));
+          const lines = block.lines?.length ? block.lines : [{ top: 0, height: block.height, textOffset: 0 }];
+          const breaks = layout.flowBreaks.filter((item) => item.blockIndex === index);
+          let page = placement.pageIndex, inline = 0;
+          const text = flow[index]!.element.textContent ?? '';
+          lines.forEach((line, lineIndex) => {
+            for (const point of breaks.filter((item) => item.textOffset === line.textOffset)) { page = point.pageIndex; inline += point.height; }
+            const thumbnail = thumbnails[page], geometry = pageGeometries[page]; if (!thumbnail || !geometry) return;
+            const y = block.top + line.top + placement.translateY + priorInlineHeight + inline - metrics(page, layout.pageSectionIds?.[page]).bodyTop + geometry.topMargin;
+            const count = (lines[lineIndex + 1]?.textOffset ?? text.length) - line.textOffset;
+            if (thumbnail.marks.length < 96) thumbnail.marks.push({ x: geometry.left, y: Math.max(0, Math.min(geometry.height, y)),
+              width: geometry.bodyWidth * (block.splittable ? Math.min(1, Math.max(0.12, count / 70)) : 1), height: Math.max(1, Math.min(line.height * 0.4, geometry.height)),
+              graphic: !block.splittable && !!flow[index]!.element.querySelector('img,svg,table'),
+            });
+            thumbnail.studyId ??= getStudyRootSectionId(layoutSectionsRef.current, block.sectionId ?? blockSectionIds.get(anchor ?? '') ?? '');
+            if (anchor) { thumbnail.firstBlockId ??= anchor; thumbnail.lastBlockId = anchor; }
+            if (!thumbnail.id.startsWith('inserted:') && thumbnail.id === `body:${page}`) thumbnail.id = `text:${id ?? `front-${index}`}:${line.textOffset}`;
+          });
+          priorInlineHeight += breaks.reduce((sum, point) => sum + point.height, 0);
+        });
+        const frontIndex = flow.findIndex((item) => item.element.classList.contains('publication-document-front-matter'));
+        const frontPage = layout.placements[frontIndex]?.pageIndex;
+        if (frontPage !== undefined && thumbnails[frontPage]) thumbnails[frontPage]!.firstBlockId = PUBLICATION_BODY_START;
+        // Footnote-only sheets use the nearest manuscript boundary for additions.
+        thumbnails.forEach((item, index) => {
+          item.firstBlockId ??= thumbnails.slice(index + 1).find((next) => next.firstBlockId)?.firstBlockId ?? thumbnails.slice(0, index).reverse().find((previous) => previous.lastBlockId)?.lastBlockId;
+          item.lastBlockId ??= item.firstBlockId;
+        });
         if (!content.getClientRects().length) return;
         pageCountChange.current?.(manuscriptId, layout.pageCount);
         setPagination((current) => (
@@ -690,10 +748,11 @@ export function PublicationDocumentCanvas({
             && JSON.stringify(current.pageSectionIds) === JSON.stringify(layout.pageSectionIds)
             && JSON.stringify(current.insertedPages) === JSON.stringify(layout.insertedPages)
             && JSON.stringify(current.sectionWarnings) === JSON.stringify(sectionWarnings)
+            && JSON.stringify(current.thumbnails) === JSON.stringify(thumbnails)
             && current.css === css
             && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
             ? current
-            : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds, insertedPages: layout.insertedPages, sectionWarnings }
+            : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds, insertedPages: layout.insertedPages, sectionWarnings, thumbnails }
         ));
       };
 
@@ -890,6 +949,49 @@ export function PublicationDocumentCanvas({
         width: `${contentWidth}px`,
       } as CSSProperties
     : undefined;
+  const studies = partitionManuscriptStudies(manuscript.sections);
+  const pageCollection = publicationPageStyles(style);
+  const navigationPages = (pagination.thumbnails ?? []).map((item, index) => {
+    const studyIndex = studies.findIndex((study) => study.rootSectionId === item.studyId);
+    return { ...item,
+      label: manuscript.sections.find((section) => section.id === item.studyId)?.title,
+      canInsert: !!onStyleChange && (pageCollection.insertions?.length ?? 0) < 100 && (!!item.insertionId || !!item.firstBlockId),
+      canDelete: !!onStyleChange && !!item.insertionId,
+      moveUpTarget: item.insertionId ? index - 1 : pagination.thumbnails?.findIndex((candidate) => candidate.studyId === studies[studyIndex - 1]?.rootSectionId),
+      moveDownTarget: item.insertionId ? index + 1 : pagination.thumbnails?.findIndex((candidate) => candidate.studyId === studies[studyIndex + 1]?.rootSectionId),
+      canMoveUp: item.insertionId ? !!onStyleChange && index > 0 : studyIndex > 0,
+      canMoveDown: item.insertionId ? !!onStyleChange && index < pagination.pageCount - 1 : studyIndex >= 0 && studyIndex < studies.length - 1,
+    };
+  });
+  const selectedThumbnail = Math.max(0, navigationPages.findIndex((item) => item.id === selectedThumbnailId));
+  function selectThumbnail(index: number) {
+    const page = navigationPages[index]; if (!page) return;
+    setSelectedThumbnailId(page.id);
+    setVisiblePageRange({ start: Math.max(0, index - 2), end: Math.min(pageCount, index + 3) });
+    requestAnimationFrame(() => stageRef.current?.querySelector<HTMLElement>(`[data-page-number="${firstPageNumber + index}"]`)?.scrollIntoView({ block: 'center', inline: 'nearest' }));
+  }
+  function moveThumbnail(from: number, to: number) {
+    const source = navigationPages[from], target = navigationPages[to]; if (!source || !target || from === to) return;
+    if (source.insertionId) {
+      const insertion = pageCollection.insertions?.find((item) => item.id === source.insertionId);
+      if (insertion) onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, insertion, target, to < from ? 'before' : 'after') });
+    } else if (source.studyId) {
+      const targetId = target.studyId !== source.studyId ? target.studyId : undefined;
+      if (targetId) stageMoveSectionToSibling(source.studyId, targetId, to > from);
+    }
+    setSelectedThumbnailId(source.id); pendingThumbnailNavigation.current = source.insertionId ? source.id : `study:${source.studyId}`;
+  }
+  useEffect(() => {
+    const id = pendingThumbnailNavigation.current;
+    if (!id) return;
+    const index = pagination.thumbnails?.findIndex((item) => id.startsWith('study:') ? item.studyId === id.slice(6) : item.id === id) ?? -1;
+    if (index < 0) return;
+    pendingThumbnailNavigation.current = null;
+    setSelectedThumbnailId(pagination.thumbnails![index]!.id);
+    setVisiblePageRange({ start: Math.max(0, index - 2), end: Math.min(pagination.pageCount, index + 3) });
+    const frame = requestAnimationFrame(() => stageRef.current?.querySelector<HTMLElement>(`[data-page-number="${firstPageNumber + index}"]`)?.scrollIntoView({ block: 'center', inline: 'nearest' }));
+    return () => cancelAnimationFrame(frame);
+  }, [pagination.thumbnails, pagination.pageCount, firstPageNumber]);
   return (
     <PublicationPreviewContext.Provider value={previewOnly}>
     <section
@@ -948,6 +1050,20 @@ export function PublicationDocumentCanvas({
         </div>
       </header>
 
+      {viewMode === 'print' ? <PublicationPageNavigator pages={navigationPages}
+        styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
+        onSelect={selectThumbnail} onMove={moveThumbnail}
+        onInsert={(index, side, styleId) => {
+          const target = navigationPages[index]; if (!target) return;
+          const id = crypto.randomUUID();
+          onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
+          setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
+        }}
+        onDelete={(index) => {
+          const id = navigationPages[index]?.insertionId;
+          if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
+          setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
+        }} /> : null}
       <div
         ref={stageRef}
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}

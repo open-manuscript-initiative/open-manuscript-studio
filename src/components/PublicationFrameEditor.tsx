@@ -1,3 +1,5 @@
+import { PublicationPageNavigator } from './PublicationPageNavigator';
+import { type PublicationPageThumbnail } from '../model/publicationPageNavigation';
 import { PublicationPointInput } from './PublicationPointInput';
 import { publicationPaginationCopy } from '../i18n/publicationPagination';
 import { PUBLICATION_REVEAL_FRAME_EVENT, type PublicationLayoutIssueReporter } from '../model/publicationLayoutDiagnostics';
@@ -7,7 +9,7 @@ import { MatterNumber } from './PublicationMatterControls';
 import { getPublicationMatterFramesCopy } from '../i18n/publicationMatterFrames';
 import { PublicationFramePagePanel } from './PublicationFramePagePanel';
 import { createDefaultFlowFrameLayout, paginateAutomaticFrameLayout } from '../model/publicationAutoFlow';
-import { framePages, framePageStyle, frameGraphicTransform, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader, updateFrameGraphicSize, type FrameGraphicTransform } from '../model/publicationFramePages';
+import { framePages, framePageStyle, framePageStyles, insertFramePage, deleteFramePage, moveFramePage, frameGraphicTransform, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader, updateFrameGraphicSize, type FrameGraphicTransform } from '../model/publicationFramePages';
 import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { stageFrameLayout } from '../app/publicationFrameActions';
@@ -150,8 +152,8 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
     document.fonts.addEventListener('loadingdone', changed);
     return () => document.fonts.removeEventListener('loadingdone', changed);
   }, []);
-  function commit(next: PublicationFrameLayout) {
-    if (preview) return;
+  function commit(next: PublicationFrameLayout, pageNavigation = false) {
+    if (preview && !pageNavigation) return;
     try { stageFrameLayout(paginateAutomaticFrameLayout(next, measure, hyphenation)); setMessage(''); } catch (error) { setMessage(String(error instanceof Error ? error.message : error)); }
   }
   function updateFrame(patch: Partial<PublicationFrame>) {
@@ -245,6 +247,18 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
     } catch (error) { target?.close(); setMessage(`${copy.exportFailed} ${error instanceof Error ? error.message : ''}`); }
     finally { setExporting(false); }
   }
+  const thumbnails: PublicationPageThumbnail[] = framePages(layout).map((page, index) => {
+    const master = framePageStyle(layout, index);
+    return { id: page.id, number: (layout.pageNumberStart ?? 1) + index, styleId: master.id,
+      width: master.widthMm, height: master.heightMm, background: master.background,
+      canInsert: layout.page.count < 100, canDelete: layout.page.count > 1, canMoveUp: index > 0, canMoveDown: index < layout.page.count - 1,
+      marks: layout.frames.filter((frame) => frame.page === index).flatMap((frame) => frame.kind === 'graphic'
+        ? [{ x: frame.xMm, y: frame.yMm, width: frame.widthMm, height: frame.heightMm, graphic: true, rotation: frame.rotation }]
+        : (flow.frames.find((item) => item.frameId === frame.id)?.lines ?? []).map((line) => ({
+          x: frame.xMm + line.x, y: frame.yMm + line.y, width: Math.min(line.width, measure(line.text, frameStyle(layout, frame))), height: frameStyle(layout, frame).fontSizePt * 25.4 / 72 * 0.45,
+        }))),
+    };
+  });
   return <section className={`omi-frame-editor${preview ? ' omi-frame-editor--preview' : ''}`} aria-label={copy.mode}>
     <p>{copy.description}</p>
     {!preview ? <div className="omi-frame-tools">
@@ -257,6 +271,11 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
     {flow.overflow.length ? <p className="omi-frame-overflow" role="status"><span role="img" aria-label={copy.overflow}>⚠</span></p> : null}
     {missingSources ? <p role="alert"><span role="img" aria-label={copy.missingGraphic}>⚠</span></p> : null}
     {message ? <p role="alert">{message}</p> : null}
+    <PublicationPageNavigator pages={thumbnails} styles={framePageStyles(layout)} selected={activePage} help="frame"
+      onSelect={(index) => { setPageSelection(index); setSelectedId(''); }}
+      onInsert={(index, side, styleId) => { commit(insertFramePage(layout, side === 'before' ? index - 1 : index, styleId, crypto.randomUUID()), true); setPageSelection(side === 'before' ? index : index + 1); setSelectedId(''); }}
+      onDelete={(index) => { commit(deleteFramePage(layout, index), true); setPageSelection(Math.min(index, layout.page.count - 2)); setSelectedId(''); }}
+      onMove={(from, to) => { commit(moveFramePage(layout, from, to), true); setPageSelection(to); setSelectedId(''); }} />
     <div className="omi-frame-workspace">
       <div ref={stage} className="omi-frame-stage">
         {!layout.frames.length ? <p>{copy.empty}</p> : null}

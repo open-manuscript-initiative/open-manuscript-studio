@@ -96,9 +96,9 @@ if (process.env.OMI_RUN_VIVLIOSTYLE_SMOKE === '1') {
     const identity = clonePublicationPublisherTemplate(); identity.display.firstPageBranding = false; identity.display.firstPageLegalBlock = false;
     const directory = await mkdtemp(join(tmpdir(), 'omi-inserted-pages-'));
     try {
-      for (const inserted of [true, false]) {
+      for (const inserted of ['before', 'after', 'end', 'none'] as const) {
         style.pageStyles = { version: 1, styles: [plate], sections: [], pages: [],
-          insertions: inserted ? [{ id: 'blank', beforeBlockId: 'after', styleId: 'plate' }] : [] };
+          insertions: inserted === 'none' ? [] : [{ id: 'blank', styleId: 'plate', ...(inserted === 'before' ? { beforeBlockId: 'after' } : { afterBlockId: inserted === 'after' ? 'before' : 'after' }) }] };
         const html = await renderStyleBasedHtml(manuscript, resolvePublicationProfile(manuscript), 'print', { style, identity });
         const artifact = await renderVivliostylePdf(html);
         const path = join(directory, `${inserted}.pdf`); await writeFile(path, artifact.bytes);
@@ -106,9 +106,10 @@ if (process.env.OMI_RUN_VIVLIOSTYLE_SMOKE === '1') {
         const pages = [...stdout.matchAll(/<page\b([^>]*)>([\s\S]*?)<\/page>/g)];
         const before = pages.findIndex((page) => page[2]!.includes('>BEFORE_INSERT</word>'));
         const after = pages.findIndex((page) => page[2]!.includes('>AFTER_INSERT</word>'));
-        assert.ok(before >= 0); assert.equal(after - before, inserted ? 2 : 0);
-        if (inserted) {
-          const blank = pages[before + 1]!;
+        assert.ok(before >= 0); assert.equal(after - before, inserted === 'before' || inserted === 'after' ? 2 : 0);
+        if (inserted === 'end') assert.equal(pages.length, after + 2, 'exactly one final blank sheet');
+        if (inserted !== 'none') {
+          const blank = pages[inserted === 'end' ? after + 1 : before + 1]!;
           assert.ok(Math.abs(Number(blank[1]!.match(/width="([^"]+)"/)![1]) - 180 * 72 / 25.4) < 1);
           assert.ok(Math.abs(Number(blank[1]!.match(/height="([^"]+)"/)![1]) - 200 * 72 / 25.4) < 1);
           assert.doesNotMatch(blank[2]!, /BEFORE_INSERT|AFTER_INSERT/);

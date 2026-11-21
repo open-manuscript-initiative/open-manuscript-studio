@@ -1,0 +1,26 @@
+.publication-page-navigator{min-width:0;padding:10px;border:1px solid var(--border-color,#cbd5e1);border-radius:8px;background:var(--panel-bg,#f8fafc);color:var(--text-color,#172033);margin:8px 0}
+.publication-page-navigator>summary{cursor:pointer;font-weight:600}
+.publication-page-navigator>p{font-size:.8rem;margin:8px 0;max-width:85ch}
+.publication-page-thumbnails{display:flex;gap:10px;overflow-x:auto;max-height:195px;padding:6px 4px 10px;overscroll-behavior:contain}
+.publication-page-thumbnails .publication-page-thumbnail{display:flex;flex:0 0 84px;flex-direction:column;align-items:center;gap:5px;padding:5px;border:2px solid transparent;border-radius:5px;background:transparent;color:inherit;cursor:pointer;min-width:84px}
+.publication-page-thumbnail[draggable=true]{cursor:grab}
+.publication-page-thumbnails .publication-page-thumbnail[aria-current=page]{border-color:var(--omi-academic-burgundy,#7c2d3f);background:#f5e9ec;color:#172033}
+.publication-page-thumbnail:focus-visible{outline:2px solid #2563eb;outline-offset:1px}
+.publication-page-thumbnail svg{width:70px;height:100px;object-fit:contain;filter:drop-shadow(0 1px 2px #0004);overflow:hidden}
+.publication-page-thumbnail-caption{display:flex;justify-content:space-between;width:70px;font-size:.8rem}
+.publication-page-thumbnail-caption strong,.publication-page-style-legend strong{display:inline-block;background:#e2e8f0;color:#172033;border-radius:3px;padding:0 4px}
+.publication-page-style-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.75rem;margin:4px 0 8px}
+.publication-page-navigation-actions{display:flex;align-items:end;gap:6px;flex-wrap:wrap}
+.publication-page-navigation-actions label{display:flex;flex-direction:column;font-size:.8rem;gap:3px}
+.publication-page-navigation-actions button,.publication-page-navigation-actions select{min-height:34px;font:inherit}
+.publication-page-navigation-actions button:disabled{opacity:.45;cursor:default}
+@media print{.publication-page-navigator{display:none}}
+
+.publication-style-editor-layout>.publication-document-canvas.publication-document-canvas--print{grid-template-rows:auto auto minmax(0,1fr)}
+.publication-page-navigation-actions select{max-width:100%;min-width:0}
+.publication-page-navigation-actions label{max-width:100%;min-width:0}
+
+.publication-page-navigation-actions button,.publication-page-navigation-actions select{padding:6px 10px;border:1px solid #c4bac0;border-radius:7px;background:#fff;color:#293447;font-size:.8rem}
+.publication-page-navigation-actions button{font-weight:600;cursor:pointer}
+.publication-page-navigation-actions button:not(:disabled):hover{border-color:var(--omi-academic-burgundy,#7c2d3f);background:#f5e9ec}
+@media(max-width:720px){.publication-page-navigator[open]{max-height:30dvh;overflow-y:auto;box-sizing:border-box}}

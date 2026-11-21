@@ -18,7 +18,9 @@ export interface PublicationSectionPageRule {
   showFirstPage?: boolean;
   keepTogether?: boolean;
 }
-export interface PublicationPageInsertion { id: string; beforeBlockId: string; styleId?: string }
+/** Stable body boundary, before the rendered title/front matter. */
+export const PUBLICATION_BODY_START = 'urn:omi:publication:body:start';
+export interface PublicationPageInsertion { id: string; beforeBlockId?: string; afterBlockId?: string; styleId?: string }
 export interface PublicationPageStyleCollection {
   version: 1;
   styles: PublicationPageStyle[];
@@ -143,7 +145,8 @@ export function validatePublicationPageStyles(value: unknown): asserts value is 
     if (!Array.isArray(value.insertions) || value.insertions.length > 100) fail();
     const insertionIds = new Set<string>();
     for (const item of value.insertions) {
-      if (!record(item) || !text(item.id) || insertionIds.has(item.id as string) || !text(item.beforeBlockId)
+      if (!record(item) || !text(item.id) || insertionIds.has(item.id as string) || (text(item.beforeBlockId) === text(item.afterBlockId))
+        || (item.beforeBlockId !== undefined && !text(item.beforeBlockId)) || (item.afterBlockId !== undefined && !text(item.afterBlockId))
         || (item.styleId !== undefined && !ids.has(item.styleId as string))) fail();
       insertionIds.add(item.id as string);
     }
