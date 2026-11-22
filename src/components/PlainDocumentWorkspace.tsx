@@ -226,7 +226,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
             <div className="plain-document-loading" role="status" aria-live="polite">
               <div className="plain-document-load-progress">
                 <LoaderCircle size={22} className="plain-document-spinner" aria-hidden="true" />
-                <span>{!nativeStudio || busy ? copy.loading : nativeEditorPhase === 'host' ? copy.connectingOffice : nativeEditorPhase === 'editor' ? copy.startingOffice : copy.loadingDocument}</span>
+                <span>{nativeStudio && busy ? copy.preparingSession : !nativeStudio ? copy.loading : nativeEditorPhase === 'host' ? copy.connectingOffice : nativeEditorPhase === 'editor' ? copy.startingOffice : copy.loadingDocument}</span>
               </div>
               {nativeStudio ? (
                 <button type="button" className="plain-document-web-fallback" onClick={() => void openInMobileBrowser()}>
@@ -276,16 +276,16 @@ function getCopy(locale: string) {
   if (locale === 'hu') return {
     workspace: 'Word-dokumentumok', documents: 'Dokumentumaim', document: 'Dokumentum', titleLabel: 'Dokumentum címe',
     untitled: 'Névtelen dokumentum', create: 'Új DOCX létrehozása', description: 'Egyszerű, DOCX-formátumú dokumentumok szerkesztése az EuroOffice beágyazott szövegszerkesztőjével.',
-    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'Az EuroOffice menti a módosításokat.', editorUnavailable: 'Az EuroOffice szerkesztő nem érhető el.', openInBrowser: 'Megnyitás böngészőben (külön bejelentkezés)', connectingOffice: 'Kapcsolódás az EuroOffice-hoz…', startingOffice: 'Az EuroOffice szerkesztő indítása…', loadingDocument: 'Dokumentum betöltése…',
+    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'Az EuroOffice menti a módosításokat.', editorUnavailable: 'Az EuroOffice szerkesztő nem érhető el.', openInBrowser: 'Megnyitás böngészőben (külön bejelentkezés)', preparingSession: 'EuroOffice-munkamenet előkészítése…', connectingOffice: 'Kapcsolódás az EuroOffice-hoz…', startingOffice: 'Az EuroOffice szerkesztő indítása…', loadingDocument: 'Dokumentum betöltése…',
   };
   if (locale === 'de') return {
     workspace: 'Word-Dokumente', documents: 'Meine Dokumente', document: 'Dokument', titleLabel: 'Dokumenttitel',
     untitled: 'Unbenanntes Dokument', create: 'Neues DOCX erstellen', description: 'Einfache DOCX-Dokumente mit dem eingebetteten EuroOffice-Editor bearbeiten.',
-    loading: 'Wird geladen…', empty: 'Sie haben noch keine DOCX-Dokumente.', updated: 'Geändert', close: 'Schließen', actions: 'Dokumentaktionen', autosave: 'EuroOffice speichert Änderungen.', editorUnavailable: 'Der EuroOffice-Editor ist nicht verfügbar.', openInBrowser: 'Im mobilen Browser öffnen (separate Anmeldung)', connectingOffice: 'Verbindung zu EuroOffice…', startingOffice: 'EuroOffice-Editor wird gestartet…', loadingDocument: 'Dokument wird geladen…',
+    loading: 'Wird geladen…', empty: 'Sie haben noch keine DOCX-Dokumente.', updated: 'Geändert', close: 'Schließen', actions: 'Dokumentaktionen', autosave: 'EuroOffice speichert Änderungen.', editorUnavailable: 'Der EuroOffice-Editor ist nicht verfügbar.', openInBrowser: 'Im mobilen Browser öffnen (separate Anmeldung)', preparingSession: 'EuroOffice-Sitzung wird vorbereitet…', connectingOffice: 'Verbindung zu EuroOffice…', startingOffice: 'EuroOffice-Editor wird gestartet…', loadingDocument: 'Dokument wird geladen…',
   };
   return {
     workspace: 'Word documents', documents: 'My documents', document: 'Document', titleLabel: 'Document title',
     untitled: 'Untitled document', create: 'Create DOCX document', description: 'Write ordinary DOCX documents with the embedded EuroOffice editor.',
-    loading: 'Loading…', empty: 'You do not have any DOCX documents yet.', updated: 'Updated', close: 'Close', actions: 'Document actions', autosave: 'EuroOffice saves your changes.', editorUnavailable: 'The EuroOffice editor is unavailable.', openInBrowser: 'Open in mobile browser (sign in separately)', connectingOffice: 'Connecting to EuroOffice…', startingOffice: 'Starting EuroOffice editor…', loadingDocument: 'Loading document…',
+    loading: 'Loading…', empty: 'You do not have any DOCX documents yet.', updated: 'Updated', close: 'Close', actions: 'Document actions', autosave: 'EuroOffice saves your changes.', editorUnavailable: 'The EuroOffice editor is unavailable.', openInBrowser: 'Open in mobile browser (sign in separately)', preparingSession: 'Preparing EuroOffice session…', connectingOffice: 'Connecting to EuroOffice…', startingOffice: 'Starting EuroOffice editor…', loadingDocument: 'Loading document…',
   };
 }
