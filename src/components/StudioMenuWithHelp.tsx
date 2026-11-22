@@ -1,4 +1,4 @@
-import { Bot, Boxes, CircleHelp, CircleX, FolderOpen, ListTree, MessageSquareText, Plug, UploadCloud } from 'lucide-react';
+import { Bot, Boxes, CircleHelp, CircleX, ExternalLink, FolderOpen, ListTree, MessageSquareText, Plug, UploadCloud } from 'lucide-react';
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -10,9 +10,11 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 import { getStudioFeedbackCopy } from '../i18n/studioFeedbackTranslations';
+import { getGooglePlayFeedbackCopy } from '../i18n/googlePlayFeedbackTranslations';
 import { getLocalFileLabels } from '../i18n/nativeStorageTranslations';
 import { getStudioPlatform } from '../mobile/platform/platform';
 import { isNativeStudio } from '../services/nativeManuscriptFile';
+import { openStudioGooglePlay } from '../services/googlePlayFeedback';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import type { OmpNativeAuthorContext } from '../integrations/omp/importOmpLaunch';
 import { sendAuthorRevisionToOmp } from '../services/ompNativeApi';
@@ -93,6 +95,7 @@ export function StudioMenuWithHelp({
   const [ompRevisionMessage, setOmpRevisionMessage] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [playFeedbackError, setPlayFeedbackError] = useState('');
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [listsOpen, setListsOpen] = useState(false);
@@ -191,9 +194,24 @@ export function StudioMenuWithHelp({
     <button type="button" data-modules-navigation="true" className={'studio-menu-nav-button' + (modulesOpen ? ' studio-menu-nav-button--active' : '')} aria-current={modulesOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setModulesOpen(true); }}><Boxes size={18} aria-hidden="true" /><span>{modulesLabel}</span></button>
   );
   const feedbackLabel = getStudioFeedbackCopy(locale).heading;
+  const playFeedbackCopy = getGooglePlayFeedbackCopy(locale);
+  async function openPlayFeedback(): Promise<void> {
+    setPlayFeedbackError('');
+    try {
+      await openStudioGooglePlay();
+    } catch {
+      setPlayFeedbackError(playFeedbackCopy.error);
+    }
+  }
   const utilityNavigation = <>
     <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}><CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span></button>
     <button type="button" data-feedback-navigation="true" className={`studio-menu-nav-button${feedbackOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={feedbackOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setFeedbackOpen(true); }}><MessageSquareText size={18} aria-hidden="true" /><span>{feedbackLabel}</span></button>
+    {platform === 'android' ? (
+      <>
+        <button type="button" data-google-play-feedback="true" className="studio-menu-nav-button" onClick={() => void openPlayFeedback()}><ExternalLink size={18} aria-hidden="true" /><span>{playFeedbackCopy.label}</span></button>
+        {playFeedbackError ? <span role="alert">{playFeedbackError}</span> : null}
+      </>
+    ) : null}
   </>;
   const documentCloseAction = (
     <>
