@@ -173,6 +173,14 @@ function StudioApplication() {
   const [androidImportSource, setAndroidImportSource] = useState('');
   const [androidIncludeSource, setAndroidIncludeSource] = useState(false);
   const androidImportBase = useRef(useStudioStore.getState().manuscript);
+  const beginAndroidDocxImport = useCallback((receipt: OfficeImportReceipt) => {
+    androidImportBase.current = useStudioStore.getState().manuscript;
+    setAndroidDocxReceipt(receipt);
+    setAndroidImportMode('editorial');
+    setAndroidImportSource(receipt.plan.fileName);
+    setAndroidIncludeSource(false);
+    setLocalOpenError(null);
+  }, []);
   const [plainDocumentWorkspace, setPlainDocumentWorkspace] = useState<{
     open: boolean;
     documentId: string | null;
@@ -214,15 +222,18 @@ function StudioApplication() {
       setPlainDocumentWorkspace({ open: false, documentId: null });
       setMenuOpen(false);
     }, (error) => setLocalOpenError(error instanceof Error ? error.message : String(error)),
-    (receipt) => {
-      androidImportBase.current = useStudioStore.getState().manuscript;
-      setAndroidDocxReceipt(receipt);
-      setAndroidImportMode('editorial');
-      setAndroidImportSource(receipt.plan.fileName);
-      setAndroidIncludeSource(false);
-      setLocalOpenError(null);
-    });
-  }, [loadManuscript, reviewMode]);
+    beginAndroidDocxImport);
+  }, [loadManuscript, reviewMode, beginAndroidDocxImport]);
+
+  useEffect(() => {
+    if (reviewMode) return;
+    const onNativeDocx = (event: Event) => {
+      const receipt = (event as CustomEvent<OfficeImportReceipt>).detail;
+      if (receipt?.plan) beginAndroidDocxImport(receipt);
+    };
+    window.addEventListener('omi-native-docx-import', onNativeDocx);
+    return () => window.removeEventListener('omi-native-docx-import', onNativeDocx);
+  }, [beginAndroidDocxImport, reviewMode]);
 
   useEffect(() => {
     const openPlainDocument = (event: Event) => {
