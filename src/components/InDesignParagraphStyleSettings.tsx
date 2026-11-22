@@ -190,7 +190,7 @@ export function InDesignParagraphStyleSettings({
         ) : null}
 
         {category === 'keep' ? (
-          <KeepPane copy={copy} resolved={resolved} onSetProperty={onSetProperty} />
+          <KeepPane copy={copy} resolved={resolved} onSetProperty={onSetProperty} footnoteStyle={definition.role === 'note'} />
         ) : null}
 
         {category === 'hyphenation' ? (
@@ -417,12 +417,13 @@ function ShadingPane({ copy, resolved, onSetProperty }: PaneProps) {
   );
 }
 
-function KeepPane({ copy, resolved, onSetProperty }: PaneProps) {
+function KeepPane({ copy, resolved, onSetProperty, footnoteStyle }: PaneProps & { footnoteStyle: boolean }) {
   return (
     <>
       <ToggleGrid>
         <Toggle label={copy.keepWithPrevious} checked={resolved.keepWithPrevious} onChange={(checked) => onSetProperty('keepWithPrevious', checked)} />
         <Toggle label={copy.keepTogether} checked={resolved.keepTogether} onChange={(checked) => onSetProperty('keepTogether', checked)} />
+        {footnoteStyle ? <Toggle label={copy.footnoteContinueOnNextPage} checked={resolved.footnoteContinueOnNextPage !== false} onChange={(checked) => onSetProperty('footnoteContinueOnNextPage', checked)} /> : null}
       </ToggleGrid>
       <Grid>
         <NumberField label={copy.keepWithNext} value={resolved.keepWithNextLines} min={0} step={1} onChange={(value) => {
@@ -1089,6 +1090,7 @@ function copyFor(locale: string) {
     suppressExport: t('Ne nyomtassa vagy exportálja', 'Nicht drucken oder exportieren', 'Suppress in export'),
     keepWithPrevious: t('Együtt az előzővel', 'Mit vorherigem zusammenhalten', 'Keep with previous'),
     keepTogether: t('Sorok együtt tartása', 'Zeilen zusammenhalten', 'Keep lines together'),
+    footnoteContinueOnNextPage: t('A lábjegyzet folytatódhat a következő oldalon', 'Fußnote darf auf der nächsten Seite fortgesetzt werden', 'Allow footnote to continue on the next page'),
     keepWithNext: t('Együtt a következővel', 'Mit nächsten Zeilen zusammenhalten', 'Keep with next'),
     keepFirst: t('Bekezdés elején', 'Am Absatzanfang', 'At paragraph start'),
     keepLast: t('Bekezdés végén', 'Am Absatzende', 'At paragraph end'),

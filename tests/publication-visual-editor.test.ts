@@ -669,6 +669,48 @@ test('long footnotes continue in complete lines without dropping any content', (
   ]);
 });
 
+test('note style can keep a footnote together by moving its reference to the next page', () => {
+  const blocks = [
+    { top: 0, height: 10, noteIds: ['first'] },
+    { top: 10, height: 10, noteIds: ['second'] },
+  ];
+  const base = {
+    heights: new Map([['first', 30], ['second', 30]]),
+    lineHeight: 10,
+    separatorHeight: 10,
+  };
+  // Exercise both the simple and variable page-master pagination paths.
+  const layouts = [undefined, (index: number) => ({ bodyHeight: 100, bodyTop: index * 140 })];
+  for (const metrics of layouts) {
+    const continued = paginatePublicationBlocks(blocks, 100, 40, { ...base, allowPageContinuation: true }, metrics);
+    assert.deepEqual(continued.pageNotes?.[0]?.map((fragment) => fragment.id), ['first', 'second']);
+    assert.equal(continued.pageNotes?.[0]?.[1]?.height, 10);
+    assert.equal(continued.pageNotes?.[1]?.[0]?.offset, 10);
+
+    const kept = paginatePublicationBlocks(blocks, 100, 40, { ...base, allowPageContinuation: false }, metrics);
+    assert.equal(kept.placements[1]?.pageIndex, 1);
+    assert.deepEqual(kept.pageNotes?.[0], [{ id: 'first', offset: 0, height: 30 }]);
+    assert.deepEqual(kept.pageNotes?.[1], [{ id: 'second', offset: 0, height: 30 }]);
+  }
+});
+
+test('a note too long for a page still continues without truncation when keep-together is set', () => {
+  const base = { heights: new Map([['long', 130]]), lineHeight: 10, separatorHeight: 10, allowPageContinuation: false };
+  for (const metrics of [undefined, (index: number) => ({ bodyHeight: 100, bodyTop: index * 140 })]) {
+    const result = paginatePublicationBlocks([{ top: 0, height: 10, noteIds: ['long'] }], 100, 40, base, metrics);
+    assert.equal(result.pageCount, 4);
+    assert.equal(result.pageNotes?.flat().reduce((height, note) => height + note.height, 0), 130);
+    assert.deepEqual(result.pageNotes?.flat().map((note) => note.offset), [0, 40, 80, 120]);
+  }
+});
+
+test('note continuation preference is exposed in the style editor and passed to the paged PDF exporter', () => {
+  assert.match(inDesignParagraphStyles, /footnoteStyle=\{definition\.role === 'note'\}/);
+  assert.match(inDesignParagraphStyles, /onSetProperty\('footnoteContinueOnNextPage'/);
+  assert.match(documentCanvas, /allowPageContinuation: noteStyle\.footnoteContinueOnNextPage !== false/);
+  assert.match(exportRenderer, /\.omi-page-footnote \{ break-inside: avoid-page; page-break-inside: avoid; \}/);
+});
+
 test('a heading follows its first text line when that line introduces a footnote', () => {
   const layout = paginatePublicationBlocks([
     { top: 0, height: 50 },

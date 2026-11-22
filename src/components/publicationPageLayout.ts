@@ -269,6 +269,13 @@ function paginateStyledPages(
     // A continued footnote can occupy pages before the next reference fits.
     while (reservation(page) > 0 && (position + height + reserved() > metrics(page, pageSectionIds[page]).bodyHeight - 2
       || reservation(page) - separator + ids.length * lineHeight > capacity(page) + 0.5)) advance();
+    // For a keep-together note style, move the reference to a sheet where
+    // the entire new note group fits. Oversized notes still continue in
+    // complete lines, to avoid truncating or silently dropping content.
+    if (notes?.allowPageContinuation === false && newNoteHeight > 0) {
+      while (reservation(page) > 0 && newNoteHeight <= capacity(page)
+        && reservation(page) - separator + newNoteHeight > capacity(page) + 0.5) advance();
+    }
     for (const [noteIndex, id] of ids.entries()) {
       seen.add(id);
       let remaining = nonNegative(notes?.heights.get(id) ?? 0), offset = 0, notePage = page;
@@ -374,6 +381,8 @@ export interface PublicationFootnotes {
   heights: ReadonlyMap<string, number>;
   lineHeight: number;
   separatorHeight: number;
+  /** Defaults to true for backwards-compatible, line-by-line continuation. */
+  allowPageContinuation?: boolean;
 }
 
 /** Reserve footnote space while placing each reference line, before committing
@@ -455,6 +464,14 @@ function paginateWithFootnotes(
       || reserved(page) - separator + ids.length * lineHeight > noteCapacity + 0.5)) {
       page += 1;
       position = 0;
+    }
+    // Preserve whole footnotes when they fit on an otherwise available sheet.
+    // A note larger than a sheet's note area still has to continue.
+    if (notes.allowPageContinuation === false && newNoteHeight > 0 && newNoteHeight <= noteCapacity) {
+      while (reserved(page) > 0 && reserved(page) - separator + newNoteHeight > noteCapacity + 0.5) {
+        page += 1;
+        position = 0;
+      }
     }
     for (const [noteIndex, id] of ids.entries()) {
       seen.add(id);

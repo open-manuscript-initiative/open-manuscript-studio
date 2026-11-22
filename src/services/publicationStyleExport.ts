@@ -237,6 +237,7 @@ export function publicationParagraphStyleDefaults(
       preference: 50,
     },
     keepTogether: false,
+    footnoteContinueOnNextPage: true,
     keepWithPrevious: false,
     keepWithNext: false,
     keepWithNextLines: 0,
@@ -563,6 +564,7 @@ body { padding: 0; counter-reset: page ${Math.max(0, pageNumberStart - 1)}; }
 .omi-scholarly-article { width: auto; }
 .article-body h2, .article-body h3 { break-after: avoid-page; page-break-after: avoid; }
 figure, table { break-inside: avoid-page; page-break-inside: avoid; }
+${resolvePublicationParagraphStyle(style, style.paragraphStyles.items.find((item) => item.role === 'note')?.id).footnoteContinueOnNextPage === false ? '.omi-page-footnote { break-inside: avoid-page; page-break-inside: avoid; }' : ''}
 .article-notes, .footnotes { border-top: ${separator.enabled ? `${separator.width}pt solid currentColor` : '0'}; padding-top: 2mm; }
 @page { @footnote { border-top: ${separator.enabled ? `${separator.width}pt solid currentColor` : '0'}; padding-top: 2mm; } }
 .omi-print-running-header { display: flex; position: fixed; top: -${Math.max(4, topMargin - 5)}mm; left: 0; right: 0; align-items: center; justify-content: space-between; gap: 8mm; font-family: ${family}; font-size: ${style.runningHeaders.fontSize}pt; border-bottom: ${style.runningHeaders.rule.enabled ? `${style.runningHeaders.rule.width}pt solid currentColor` : '0'}; padding-bottom: 1.5mm; }
