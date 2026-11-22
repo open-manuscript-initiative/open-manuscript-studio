@@ -71,7 +71,6 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
   await blank.dragTo(thumbnails().first(), { sourcePosition: { x: 20, y: 20 }, targetPosition: { x: 20, y: 20 } });
   const events = await page.evaluate(
     () => (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents ?? []);
-  console.log('Publication page DnD events:', events);
   expect(events.find((event) => event.startsWith('dragstart:'))).toBe(`dragstart:${draggedId}`);
   await expect(thumbnails().first()).toHaveAttribute('data-thumbnail-id', /^inserted:/);
   await navigator.getByRole('button', { name: 'Move page later', exact: true }).click();
@@ -105,6 +104,10 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
   navigator = editor.locator('#publication-style-ribbon-panel-thumbnails .publication-page-navigator');
   await expect(navigator.locator('[data-thumbnail-id^="inserted:"]')).toHaveAttribute('data-thumbnail-style', 'plate');
   await page.setViewportSize({ width: 480, height: 900 });
+  // At mobile widths the Studio switches to its preview layout: the
+  // thumbnail navigator moves back inside the canvas, above the page.
+  navigator = editor.locator('.publication-document-canvas > .publication-page-navigator');
+  await expect(navigator).toBeVisible();
   await expect(navigator.getByRole('button', { name: 'Add page before', exact: true })).toBeVisible();
   expect(await navigator.evaluate((element) => element.scrollWidth <= element.clientWidth + 2)).toBe(true);
   expect(await editor.locator('.publication-document-canvas-stage').evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(50);
