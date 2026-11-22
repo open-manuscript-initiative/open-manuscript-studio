@@ -863,6 +863,7 @@ function PublicationStyleEditorWorkspace() {
         </button>
         <PublicationMeasurementSelector />
       </div> : null}
+      <div className={`publication-style-editor-shell${!previewOnly && !matterToolsOpen ? ' publication-style-editor-shell--with-ribbon' : ''}${openPanel ? ' publication-style-editor-shell--panel-open' : ''}`}>
       {!previewOnly && !matterToolsOpen ? <div className="publication-style-ribbon" ref={ribbonRef}>
         <div className="publication-style-ribbon-row">
           <div className="publication-style-ribbon-actions" role="toolbar" aria-label={copy.title}>
@@ -1361,6 +1362,7 @@ function PublicationStyleEditorWorkspace() {
           </div>
         ) : null}
       </div> : null}
+      <div className="publication-style-editor-main">
 
       {ojsTransferOpen ? <button type="button" className="studio-menu-secondary-action" onClick={() => setOjsTransferOpen(false)}>{ojsPublicationCopy(locale).close}</button> : null}
       <OjsPublicationTransferPanel key={manuscript.id} style={style} active={ojsTransferOpen} />
@@ -1394,6 +1396,8 @@ function PublicationStyleEditorWorkspace() {
             <PublicationFrameEditor key={manuscript.id} publicationStyle={style} onLayoutIssues={reportFrameIssues} />
           </section>
         ) : null}
+      </div>
+      </div>
       </div>
     </section>
   );
@@ -1784,6 +1788,7 @@ function PublicationRibbonMenuButton({
     <button
       type="button"
       className="publication-style-ribbon-menu-button"
+      aria-label={label}
       aria-haspopup="dialog"
       aria-expanded={open}
       aria-controls={`publication-style-ribbon-panel-${panelId}`}
