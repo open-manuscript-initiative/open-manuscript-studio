@@ -105,7 +105,7 @@ test('production Android App Links trust direct and Google Play signed builds', 
   assert.match(GOOGLE_PLAY_APP_SIGNING_SHA256, /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
   for (const workflowSource of [workflow, windowsWorkflow]) {
     const assetLinksTemplate = workflowSource.match(
-      /cat > "\$APP_LINK_ROOT\/\.well-known\/assetlinks\.json" <<'JSON'\r?\n([\s\S]*?)\r?\n\s+JSON/,
+      /cat > "\$assetlinks_next" <<'JSON'\r?\n([\s\S]*?)\r?\n\s+JSON/,
     );
 
     assert.ok(assetLinksTemplate, 'assetlinks.json deployment template is missing');
@@ -127,6 +127,9 @@ test('production Android App Links trust direct and Google Play signed builds', 
       GOOGLE_PLAY_APP_SIGNING_SHA256,
     ]);
   }
+  assert.match(workflow, /rsync -a --delete --exclude='\/\.well-known\/assetlinks\.json'/);
+  assert.match(workflow, /if cmp -s "\$assetlinks_next" "\$APP_LINK_ROOT\/\.well-known\/assetlinks\.json"; then/);
+  assert.match(workflow, /mv -f "\$assetlinks_next" "\$APP_LINK_ROOT\/\.well-known\/assetlinks\.json"/);
   assert.ok(workflow.includes(`grep -Fq '"${GOOGLE_PLAY_APP_SIGNING_SHA256}"'`));
 });
 

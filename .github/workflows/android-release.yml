@@ -68,11 +68,13 @@ jobs:
         run: |
           npm run schemas:generate
           npm run test:native-csp
+          node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/native-orcid-handoff.test.ts
           node --test tests/android-release-optimization.test.mjs
           node --test tests/android-agp91-test.test.mjs
           node --test tests/android-version-code.test.mjs
           npm run test:android-update
           python3 tests/verify-play-bundle.test.py
+          python3 tests/verify_android_assetlinks.test.py
           python3 tests/android-page-size.test.py
 
       - name: Configure Rust Android targets
@@ -287,6 +289,11 @@ jobs:
 
           print(f"Google Play credentials target canonical project: {actual_project}")
           PY
+
+      # A new versionCode must never require a manually applied Play Console link patch.
+      - name: Verify verified App Links before Play publication
+        if: ${{ inputs.publish_to_play }}
+        run: python3 scripts/verify_android_assetlinks.py
 
       - name: Upload AAB to Google Play
         if: ${{ inputs.publish_to_play }}
