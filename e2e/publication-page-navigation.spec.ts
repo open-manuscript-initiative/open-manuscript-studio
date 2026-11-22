@@ -51,9 +51,18 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
   await expect(blank).toHaveAttribute('data-thumbnail-style', 'plate');
   await expect(blank.locator('[data-style-letter]')).toHaveText('B');
   await expect(editor.locator('[data-inserted-page]')).toHaveCount(1);
-  // The thumbnails scroll independently. Aim inside the first card rather than
-  // its moving boundary while Chromium auto-scrolls the vertical list.
+  // Capture the actual browser drag/drop sequence if the native drag fails
+  // while Chromium auto-scrolls the vertically docked thumbnails.
+  await page.evaluate(() => {
+    (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents = [];
+    for (const type of ['dragstart', 'dragover', 'drop', 'dragend']) document.addEventListener(type, (event) => {
+      const target = event.target instanceof Element ? event.target.closest('[data-thumbnail-id]') : null;
+      if (target && type !== 'dragover') (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents?.push(`${type}:${target.getAttribute('data-thumbnail-id')}`);
+    }, { capture: true, once: false });
+  });
   await blank.dragTo(thumbnails().first(), { targetPosition: { x: 22, y: 22 } });
+  console.log('Publication page DnD events:', await page.evaluate(
+    () => (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents));
   await expect(thumbnails().first()).toHaveAttribute('data-thumbnail-id', /^inserted:/);
   await navigator.getByRole('button', { name: 'Move page later', exact: true }).click();
   await expect(thumbnails().first()).not.toHaveAttribute('data-thumbnail-id', /^inserted:/);
