@@ -22,7 +22,7 @@ impl<R: Runtime, T: Manager<R>> AndroidUpdaterExt<R> for T {
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("android-updater")
-        .invoke_handler(tauri::generate_handler![commands::install_update])
+        .invoke_handler(tauri::generate_handler![commands::install_update, commands::open_play_store])
         .setup(|app, api| {
             let updater = mobile::init(app, api)?;
             app.manage(updater);

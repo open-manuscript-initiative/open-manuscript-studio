@@ -1,4 +1,4 @@
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use tauri::{
     plugin::{PluginApi, PluginHandle},
     AppHandle, Runtime,
@@ -17,6 +17,15 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct AndroidUpdater<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> AndroidUpdater<R> {
+    pub async fn open_play_store(&self) -> crate::Result<()> {
+        // Android resolves a JS object; decode it explicitly instead of
+        // attempting to deserialize a JSON object into Rust's unit type.
+        let _: PlayStoreOpenResult = self.0
+            .run_mobile_plugin_async("openPlayStore", ())
+            .await?;
+        Ok(())
+    }
+
     pub async fn install_update(&self, url: String, sha256: String) -> crate::Result<()> {
         self.0
             .run_mobile_plugin_async("installUpdate", InstallUpdatePayload { url, sha256 })
@@ -29,4 +38,10 @@ impl<R: Runtime> AndroidUpdater<R> {
 struct InstallUpdatePayload {
     url: String,
     sha256: String,
+}
+
+#[derive(Deserialize)]
+struct PlayStoreOpenResult {
+    #[serde(rename = "status")]
+    _status: String,
 }
