@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "android-updater",
-  "description": "Allow the trusted Studio main window to download a verified Open Manuscript Studio release APK and hand it to the Android package installer.",
+  "description": "Allow the trusted Studio main window to install verified direct-distribution APK updates and open the Google Play listing for user-initiated feedback.",
   "windows": [
     "main"
   ],
@@ -9,6 +9,7 @@
     "android"
   ],
   "permissions": [
-    "android-updater:allow-install-update"
+    "android-updater:allow-install-update",
+    "android-updater:allow-open-play-store"
   ]
 }
