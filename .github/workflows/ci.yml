@@ -560,11 +560,16 @@ jobs:
               exit 1
             fi
 
-            rsync -a --delete app-link-site/ "$APP_LINK_ROOT/"
+            # Keep the verified Android association available during every web/API rollout.
+            # The certificate is app identity, not release/version metadata.
+            rsync -a --delete --exclude='/.well-known/assetlinks.json' app-link-site/ "$APP_LINK_ROOT/"
             mkdir -p "$APP_LINK_ROOT/.well-known"
             # Google Play re-signs distributed APKs with its App Signing key.
             # Certificate fingerprints are public association data, not secrets.
-            cat > "$APP_LINK_ROOT/.well-known/assetlinks.json" <<'JSON'
+            # Write next to the destination and replace atomically only if content changes.
+            # Never briefly serve a missing/partial file during an unrelated deployment.
+            assetlinks_next="$(mktemp "$APP_LINK_ROOT/.well-known/.assetlinks.XXXXXXXX")"
+            cat > "$assetlinks_next" <<'JSON'
             [
               {
                 "relation": ["delegate_permission/common.handle_all_urls"],
@@ -579,6 +584,14 @@ jobs:
               }
             ]
             JSON
+            chmod 0644 "$assetlinks_next"
+            if cmp -s "$assetlinks_next" "$APP_LINK_ROOT/.well-known/assetlinks.json"; then
+              rm -f "$assetlinks_next"
+              echo 'Android App Links association unchanged; preserving existing file.'
+            else
+              mv -f "$assetlinks_next" "$APP_LINK_ROOT/.well-known/assetlinks.json"
+              echo 'Android App Links association updated atomically after signing-key change.'
+            fi
 
             restart_api() {
               if systemctl restart omi-studio-api.service 2>/dev/null; then
