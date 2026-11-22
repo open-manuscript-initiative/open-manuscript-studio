@@ -14,8 +14,13 @@ test('icon-only section warnings, optional checker navigation, study order and i
   test.setTimeout(120_000);
   await installMockStudioApi(page); await signInToStudio(page);
   await page.getByRole('button', { name: /^New OMI study/ }).click();
-  await page.evaluate(async () => {
-    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+  // A successful click can precede the editor's mount on loaded CI runners.
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
+  await page.evaluate(() => {
+    // Chromium's inspector only holds evaluated promises weakly. Keep this
+    // import-and-mutate fixture alive until Playwright receives its result.
+    const setupPromise = (async () => {
+      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     const { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY } = await import('/src/services/publicationStyleExport.ts');
     const style = clonePublicationStyleTemplate();
     style.page.width = 120; style.page.height = 170;
@@ -28,8 +33,12 @@ test('icon-only section warnings, optional checker navigation, study order and i
         { id: 'long-a', type: 'paragraph', content: rich('A long paragraph continues across pages with its original text. '.repeat(100)) },
         { id: 'last-a', type: 'paragraph', content: rich('END_OF_A') },
       ] }, { id: 'study-b', title: 'Study B', blocks: [{ id: 'body-b', type: 'paragraph', content: rich('BODY_OF_B') }] }],
-    });
+      });
+    })();
+    Object.defineProperty(window, '__omiPublicationFlowSetup', { value: setupPromise, configurable: true });
+    return setupPromise;
   });
+  await page.evaluate(() => { Reflect.deleteProperty(window, '__omiPublicationFlowSetup'); });
   let editor = await openPublication(page);
   const heading = editor.locator(':is(h1,h2,h3,h4,h5,h6)[data-section-id="study-a"]').first();
   await expect.poll(() => heading.evaluate((element) => getComputedStyle(element, '::after').content)).toContain('⚠');
