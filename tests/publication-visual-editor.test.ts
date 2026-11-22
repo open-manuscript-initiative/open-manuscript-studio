@@ -732,3 +732,17 @@ test('a new reference waits for a page with room to start its note beside a carr
   assert.equal(layout.placements[1]?.pageIndex, 2);
   assert.deepEqual(layout.pageNotes?.[2], [{ id: 'next', offset: 0, height: 10 }]);
 });
+
+
+test('publication icon rail docks thumbnails, retains panels until toggled and allows resizing', () => {
+  assert.match(styleEditor, /panelId="thumbnails"/);
+  assert.match(styleEditor, /toggleSidebarPanel\('thumbnails'\)/);
+  assert.match(styleEditor, /current === panel \? null : panel/);
+  assert.doesNotMatch(styleEditor, /document\.addEventListener\('pointerdown', closeOnPointerDown, true\);/);
+  assert.match(styleEditor, /publication-style-side-resizer/);
+  assert.match(styleEditor, /onPointerMove=\{\(event\) =>/);
+  assert.match(styleEditor, /showRuler=\{rulerVisible\}/);
+  assert.match(documentCanvas, /createPortal\(pageNavigator, pageNavigatorTarget\)/);
+  assert.match(documentCanvas, /!previewOnly && showRuler \? <PublicationSectionRuler/);
+  assert.match(editorStyles, /publication-page-thumbnails \{[\s\S]*?flex-direction: column/);
+});
