@@ -101,6 +101,11 @@ jobs:
       - name: Run release hardening unit gates
         run: npm run test:release-hardening
 
+      - name: Verify Android App Links and Play association contracts
+        run: |
+          python3 tests/verify-play-bundle.test.py
+          python3 tests/verify_android_assetlinks.test.py
+
       - name: Install Playwright browser
         # Hosted runners already provide Chromium's runtime libraries. Avoid an
         # unrelated apt/font download blocking browser installation on DNS outages.
