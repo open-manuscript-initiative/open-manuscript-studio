@@ -3,6 +3,8 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { readLocalManuscriptBytes } from '../src/services/localManuscriptImport.ts';
 import { createAndroidDocumentReceiver } from '../src/services/androidDocumentOpening.ts';
+import { isWordDocxPackage } from '../src/services/androidOpenedDocumentType.ts';
+import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
 import { serializeOmiJson } from '../src/services/exportOmi.ts';
 import { buildOmiContainer } from '../src/services/omiContainer.ts';
 import { createAssetMetadata } from '../src/model/assets.ts';
@@ -41,6 +43,22 @@ test('shared reader rejects empty, non-OMI JSON and malformed archives before a 
   await assert.rejects(readLocalManuscriptBytes(new Uint8Array()), /0 bytes/);
   await assert.rejects(readLocalManuscriptBytes(encode('{"id":"fake","title":"Fake","sections":[]}')));
   await assert.rejects(readLocalManuscriptBytes(new Uint8Array([0x50, 0x4b, 3, 4, 0])));
+});
+
+test('Android detects Word DOCX from opaque content URIs without confusing OMI ZIP files', () => {
+  const word = createStoreZip([
+    textZipEntry('[Content_Types].xml', '<Types/>'),
+    textZipEntry('word/document.xml', '<w:document/>'),
+  ]);
+  const omi = createStoreZip([
+    textZipEntry('mimetype', 'application/vnd.openmanuscript.omi+zip'),
+    textZipEntry('manifest.json', '{}'),
+  ]);
+  assert.equal(isWordDocxPackage(word), true);
+  assert.equal(isWordDocxPackage(omi), false);
+  assert.equal(isWordDocxPackage(jsonBytes), false);
+  assert.equal(isWordDocxPackage(new Uint8Array([0x50, 0x4b, 3, 4, 0])), false);
+  assert.equal(isWordDocxPackage(word.subarray(0, word.length - 5)), false);
 });
 
 test('Android receiver handles cold start, warm opens, a repeated same URI, and failure recovery in order', async () => {
@@ -100,6 +118,10 @@ test('packaged native capability authorizes the actual binary read command witho
   assert.ok(!capability.permissions.includes('fs:scope-home-recursive'));
   const android = JSON.parse(readFileSync('src-tauri/tauri.android.conf.json', 'utf8'));
   assert.ok(android.bundle.fileAssociations.some((item: { mimeType: string }) => item.mimeType === 'application/octet-stream'));
+  assert.ok(android.bundle.fileAssociations.some((item: { mimeType: string; androidIntentActionFilters: string[] }) =>
+    item.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    && item.androidIntentActionFilters.includes('view')
+    && item.androidIntentActionFilters.includes('send')));
 });
 
 async function waitFor(condition: () => boolean) {

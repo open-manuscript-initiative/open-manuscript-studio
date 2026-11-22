@@ -4,6 +4,7 @@ import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 import { createVersionedTestManuscript } from '../tests/testManuscriptFixture';
 import { serializeOmiJson } from '../src/services/exportOmi';
 import { buildOmiContainer } from '../src/services/omiContainer';
+import { createStoreZip, textZipEntry } from '../src/services/simpleZip';
 import { createInitialVersioningEnvelope, extractManuscriptState } from '../src/model/versioning';
 
 const jsonUri = 'content://downloads/synthetic-json';
@@ -53,6 +54,30 @@ for (const coldStart of [true, false]) {
     await expect(page.getByRole('alert')).toHaveCount(0);
   });
 }
+
+test('Android Open with DOCX launches source review before creating an editable manuscript', async ({ page }) => {
+  const uri = 'content://downloads/opaque-word-document';
+  const docx = createStoreZip([
+    textZipEntry('[Content_Types].xml',
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>'),
+    textZipEntry('word/document.xml',
+      '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Android Word test paragraph</w:t></w:r></w:p></w:body></w:document>'),
+    textZipEntry('word/_rels/document.xml.rels',
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>'),
+  ]);
+  await page.setViewportSize({ width: 393, height: 851 });
+  await installMockAndroidRuntime(page, { pending: [uri], files: { [uri]: Array.from(docx) } });
+  await installMockStudioApi(page);
+  await page.goto('/');
+  await page.getByLabel('Email address').fill('editor@example.test');
+  await page.getByLabel('Password').fill('correct-horse-battery-staple');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.locator('[data-android-docx-import="review"]')).toBeVisible();
+  await expect(page.locator('[data-android-docx-import="review"] select')).toHaveValue('editorial');
+  await page.getByRole('button', { name: 'Create manuscript' }).click();
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
+  await expect(page.getByText('Android Word test paragraph')).toBeVisible();
+});
 
 declare global {
   interface Window {

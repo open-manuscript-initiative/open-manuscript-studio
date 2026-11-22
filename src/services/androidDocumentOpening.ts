@@ -1,5 +1,8 @@
 import { getStudioPlatform } from '../mobile/platform/platform';
 import { readLocalManuscriptBytes } from './localManuscriptImport';
+import { isWordDocxPackage } from './androidOpenedDocumentType';
+import { prepareOfficeImport, type OfficeImportReceipt } from './exchangeSession';
+import { parseDocxForStudio } from './docxImportStrategy';
 import type { OmiManuscript } from '../types/omi';
 
 interface DocumentReceiverPort {
@@ -10,6 +13,7 @@ interface DocumentReceiverPort {
 interface Receiver {
   open: (manuscript: OmiManuscript) => void;
   error: (error: unknown) => void;
+  importDocx?: (receipt: OfficeImportReceipt) => void;
 }
 
 /** One transport per WebView: subscribe before draining, serialize imports and
@@ -31,13 +35,31 @@ export function createAndroidDocumentReceiver(port: DocumentReceiverPort) {
         const uri = pending.shift()!;
         try {
           if (!uri.startsWith('content://')) throw new Error('Unsupported Android document location.');
-          const { manuscript } = await readLocalManuscriptBytes(await port.read(uri));
-          if (receiver !== current) {
-            pending.unshift(uri);
-            continue;
+          const bytes = await port.read(uri);
+          if (isWordDocxPackage(bytes)) {
+            if (!current.importDocx) throw new Error('Word import is not available in this view.');
+            // Android SAF URIs generally hide the original filename. The Word
+            // package signature determines the format, not the provider URI.
+            const file = new File([Uint8Array.from(bytes)], 'Android document.docx', {
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            });
+            const receipt = await prepareOfficeImport(file, 'docx', parseDocxForStudio);
+            if (receiver !== current) {
+              pending.unshift(uri);
+              continue;
+            }
+            // Keep the original bytes and ask for import-purpose confirmation;
+            // opening a Word file must never silently rewrite its source.
+            current.importDocx(receipt);
+          } else {
+            const { manuscript } = await readLocalManuscriptBytes(bytes);
+            if (receiver !== current) {
+              pending.unshift(uri);
+              continue;
+            }
+            // Open as a copy: an OS read grant is not permission to overwrite.
+            current.open(manuscript);
           }
-          // Open as a copy: an OS read grant is not permission to overwrite.
-          current.open(manuscript);
         } catch (error) {
           receiver?.error(error);
         }
@@ -64,8 +86,8 @@ export function createAndroidDocumentReceiver(port: DocumentReceiverPort) {
     }
   }
 
-  return (open: Receiver['open'], error: Receiver['error']): (() => void) => {
-    const current = { open, error };
+  return (open: Receiver['open'], error: Receiver['error'], importDocx?: Receiver['importDocx']): (() => void) => {
+    const current = { open, error, importDocx };
     receiver = current;
     if (!started) {
       started = true;
@@ -88,6 +110,8 @@ const connect = createAndroidDocumentReceiver({
   read: async (uri) => (await import('@tauri-apps/plugin-fs')).readFile(uri),
 });
 
-export function connectAndroidDocumentOpening(open: Receiver['open'], error: Receiver['error']): () => void {
-  return getStudioPlatform() === 'android' ? connect(open, error) : () => {};
+export function connectAndroidDocumentOpening(
+  open: Receiver['open'], error: Receiver['error'], importDocx?: Receiver['importDocx'],
+): () => void {
+  return getStudioPlatform() === 'android' ? connect(open, error, importDocx) : () => {};
 }

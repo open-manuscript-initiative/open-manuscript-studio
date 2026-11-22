@@ -3,6 +3,9 @@ import { getStudioPlatform } from '../mobile/platform/platform';
 import type { OmiManuscript } from '../types/omi';
 import { serializeOmiJson } from './exportOmi';
 import { readLocalManuscriptBytes } from './localManuscriptImport';
+import { isWordDocxPackage } from './androidOpenedDocumentType';
+import { prepareOfficeImport } from './exchangeSession';
+import { parseDocxForStudio } from './docxImportStrategy';
 
 const DESKTOP_OMI_FILTERS = [
   {
@@ -97,6 +100,17 @@ async function openManuscriptWithPicker(
   }
 
   const bytes = await readFile(selected);
+  if (android && isWordDocxPackage(bytes)) {
+    // The native document picker accepts arbitrary provider MIME types. Route
+    // Word files to the same explicit source-review flow as Android Open with,
+    // rather than feeding a DOCX ZIP to the strict OMI container parser.
+    const wordFile = new File([Uint8Array.from(bytes)], 'Android document.docx', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+    const receipt = await prepareOfficeImport(wordFile, 'docx', parseDocxForStudio);
+    window.dispatchEvent(new CustomEvent('omi-native-docx-import', { detail: receipt }));
+    return null;
+  }
   const { manuscript, isContainer } = await readLocalManuscriptBytes(bytes);
   // Container archives must never be overwritten by JSON Save operations.
   fileLocations.set(manuscript.id, rememberPath && !isContainer ? selected : null);
