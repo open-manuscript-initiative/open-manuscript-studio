@@ -2070,6 +2070,10 @@
 .publication-layout-checker button { max-width: 100%; text-align: left; white-space: normal; overflow-wrap: anywhere; }
 
 
+.publication-style-editor-header-status {
+  display: none;
+}
+
 /* Keep the canvas in the same editing session while moving the extensive
    publishing controls into a space-saving side rail on large screens. */
 .publication-style-editor-shell {
@@ -2098,6 +2102,34 @@
 }
 
 @media (min-width: 1151px) {
+  .publication-style-editor-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .publication-style-editor-header-status {
+    display: grid;
+    flex: 0 1 13rem;
+    gap: 0.1rem;
+    min-width: 0;
+    text-align: right;
+    font-size: 0.75rem;
+  }
+
+  .publication-style-editor-header-status strong,
+  .publication-style-editor-header-status span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .publication-style-editor-header-status span {
+    color: var(--studio-text-muted, #64748b);
+    font-size: 0.69rem;
+  }
+
   .publication-style-editor-shell--with-ribbon {
     display: grid;
     grid-template-columns: 3.5rem minmax(0, 1fr);
