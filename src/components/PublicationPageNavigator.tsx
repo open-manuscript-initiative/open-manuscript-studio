@@ -13,12 +13,15 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
   const { locale } = useTranslation(), copy = publicationPageNavigationCopy(locale);
   const [newStyle, setNewStyle] = useState('');
   const dragId = useRef<string | null>(null);
+  const dragTargetId = useRef<string | null>(null);
+  const dragCompleted = useRef(false);
+  const navigatorRef = useRef<HTMLDivElement>(null);
   const page = pages[selected] ?? pages[0];
   const selectedStyle = styles.some((style) => style.id === newStyle) ? newStyle : page?.styleId ?? styles[0]?.id ?? '';
   return <details className="publication-page-navigator" open>
     <summary>{copy.title} ({pages.length})</summary>
     <p>{help === 'frame' ? copy.frameHelp : copy.bodyHelp}</p>
-    <div className="publication-page-thumbnails" role="group" aria-label={copy.title}>
+    <div className="publication-page-thumbnails" role="group" aria-label={copy.title} ref={navigatorRef}>
       {pages.map((item, index) => {
         const styleIndex = Math.max(0, styles.findIndex((style) => style.id === item.styleId));
         const name = styles[styleIndex]?.name ?? copy.defaultStyle;
@@ -28,21 +31,52 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
           draggable={item.canMoveUp || item.canMoveDown} onClick={() => onSelect(index)}
           onDragStart={(event) => {
             dragId.current = item.id;
+            dragTargetId.current = null;
+            dragCompleted.current = false;
             event.dataTransfer.effectAllowed = 'move';
             event.dataTransfer.setData('application/x-omi-publication-page', item.id);
             event.dataTransfer.setData('text/plain', item.id);
           }}
-          onDragEnd={() => { dragId.current = null; }}
+          onDragEnd={(event) => {
+            // A vertically scrolling rail can lose the native drop event while
+            // the browser auto-scrolls. Finish the last valid drop target if
+            // the pointer is still over the page thumbnail list.
+            const sourceId = dragId.current;
+            if (sourceId && !dragCompleted.current && navigatorRef.current) {
+              const bounds = navigatorRef.current.getBoundingClientRect();
+              const overList = event.clientX >= bounds.left && event.clientX <= bounds.right
+                && event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+              const targetElement = overList ? document.elementFromPoint(event.clientX, event.clientY) : null;
+              const closest = targetElement instanceof Element ? targetElement.closest<HTMLElement>('[data-thumbnail-id]') : null;
+              const targetId = closest && navigatorRef.current.contains(closest)
+                ? closest.dataset.thumbnailId
+                : overList ? dragTargetId.current : null;
+              const from = pages.findIndex((candidate) => candidate.id === sourceId);
+              const to = pages.findIndex((candidate) => candidate.id === targetId);
+              if (from >= 0 && to >= 0 && from !== to) onMove(from, to);
+            }
+            dragId.current = null;
+            dragTargetId.current = null;
+          }}
           onDragOver={(event) => {
             const candidateId = dragId.current
               ?? (event.dataTransfer.types.includes('application/x-omi-publication-page') ? 'pending' : null);
-            if (candidateId && candidateId !== item.id) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }
+            if (candidateId && candidateId !== item.id) {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              dragTargetId.current = item.id;
+            }
           }}
           onDrop={(event) => {
             const sourceId = event.dataTransfer.getData('application/x-omi-publication-page') || dragId.current;
             const from = pages.findIndex((candidate) => candidate.id === sourceId);
-            if (from >= 0 && from !== index) { event.preventDefault(); onMove(from, index); }
+            if (from >= 0 && from !== index) {
+              event.preventDefault();
+              dragCompleted.current = true;
+              onMove(from, index);
+            }
             dragId.current = null;
+            dragTargetId.current = null;
           }}>
           <svg viewBox={`0 0 ${item.width} ${item.height}`} aria-hidden="true" focusable="false">
             <rect width={item.width} height={item.height} fill={item.background ?? '#fff'} />
