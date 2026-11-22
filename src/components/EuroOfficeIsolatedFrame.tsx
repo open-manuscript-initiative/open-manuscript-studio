@@ -8,6 +8,7 @@ interface IsolatedFrameProps {
   launch: EuroOfficeLaunch;
   title: string;
   onFailure: (message: string) => void;
+  onReady?: () => void;
 }
 
 /**
@@ -20,7 +21,7 @@ interface IsolatedFrameProps {
  * random channel. The sandbox
  * never grants same-origin privileges, forms or popups.
  */
-export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFrameProps) {
+export function EuroOfficeIsolatedFrame({ launch, title, onFailure, onReady }: IsolatedFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [target] = useState(() => {
     // Native dev shells may use Vite's relative API proxy without a configured
@@ -35,6 +36,8 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
 
   useEffect(() => {
     let started = false;
+    let failed = false;
+    let phase: 'host' | 'document' = 'host';
     let launchSent = false;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== 'null' ||
@@ -42,6 +45,8 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
           !event.data || event.data.scope !== SCOPE ||
           event.data.channel !== target.channel) return;
 
+      // A later DocsAPI error still matters after the document became ready.
+      if (failed || (started && event.data.action !== 'failed')) return;
       if (event.data.action === 'ready' && !launchSent) {
         launchSent = true;
         ref.current?.contentWindow?.postMessage({
@@ -50,21 +55,33 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
           action: 'launch',
           config: launch.config,
         }, '*');
+      } else if (event.data.action === 'app-ready') {
+        phase = 'document';
       } else if (event.data.action === 'started') {
         started = true;
+        onReady?.();
       } else if (event.data.action === 'failed') {
-        onFailure('The isolated EuroOffice editor could not start.');
+        failed = true;
+        const code = Number.isSafeInteger(event.data.errorCode) ? ` (code ${event.data.errorCode})` : '';
+        onFailure(event.data.reason === 'document-error'
+          ? `EuroOffice could not load this document${code}.`
+          : 'The isolated EuroOffice editor could not start.');
       }
     };
     window.addEventListener('message', onMessage);
     const timeout = window.setTimeout(() => {
-      if (!started) onFailure('The isolated EuroOffice editor did not respond.');
-    }, 30_000);
+      if (!started && !failed) {
+        failed = true;
+        onFailure(phase === 'document'
+          ? 'EuroOffice opened but the document did not become ready.'
+          : 'The isolated EuroOffice editor did not respond.');
+      }
+    }, 60_000);
     return () => {
       window.removeEventListener('message', onMessage);
       window.clearTimeout(timeout);
     };
-  }, [launch, onFailure, target]);
+  }, [launch, onFailure, onReady, target]);
 
   return (
     <iframe

@@ -41,9 +41,11 @@ function isolatedBootstrap(
   const channel = new URLSearchParams(win.location.search).get('channel');
   const scope = 'omi-eurooffice';
   let ready = false;
+  let launched = false;
+  let failed = false;
   let editor: { destroyEditor?: () => void } | undefined;
-  const report = (action: string) =>
-    win.parent.postMessage({ scope, channel, action }, '*');
+  const report = (action: string, reason?: string, errorCode?: number) =>
+    win.parent.postMessage({ scope, channel, action, reason, errorCode }, '*');
 
   win.addEventListener('message', (event) => {
     if (event.source !== win.parent || !allowedParents.includes(event.origin)) return;
@@ -61,6 +63,8 @@ function isolatedBootstrap(
     if (message.action !== 'launch' || !ready ||
         !message.config || typeof message.config !== 'object' ||
         typeof message.config.token !== 'string') return;
+    if (launched) return;
+    launched = true;
     try {
       editor?.destroyEditor?.();
       const host = doc.getElementById('editor');
@@ -71,10 +75,27 @@ function isolatedBootstrap(
       host.append(placeholder);
       const docsApi = win.DocsAPI;
       if (!docsApi) throw new Error('Editor API missing');
-      editor = new docsApi.DocEditor(placeholder.id, message.config);
-      report('started');
+      // DocsAPI.DocEditor returns before the embedded editor or document is
+      // usable. Only a real document-ready event can complete the native gate.
+      // Do not forward private error descriptions or document contents.
+      const previous = message.config.events as Record<string, unknown> | undefined;
+      editor = new docsApi.DocEditor(placeholder.id, {
+        ...message.config,
+        events: {
+          ...previous,
+          onAppReady: () => { if (!failed) report('app-ready'); },
+          onDocumentReady: () => { if (!failed) report('started'); },
+          onError: (event: { data?: { errorCode?: unknown } }) => {
+            if (failed) return;
+            failed = true;
+            const code = event?.data?.errorCode;
+            report('failed', 'document-error', typeof code === 'number' && Number.isSafeInteger(code) ? code : undefined);
+          },
+        },
+      });
     } catch {
-      report('failed');
+      failed = true;
+      report('failed', 'startup-error');
     }
   });
 
@@ -84,13 +105,13 @@ function isolatedBootstrap(
   script.onload = () => {
     const docsApi = win.DocsAPI;
     if (typeof docsApi?.DocEditor !== 'function') {
-      report('failed');
+      report('failed', 'script-error');
       return;
     }
     ready = true;
     report('ready');
   };
-  script.onerror = () => report('failed');
+  script.onerror = () => report('failed', 'script-error');
   doc.head.append(script);
 }
 

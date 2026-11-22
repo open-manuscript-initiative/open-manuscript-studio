@@ -10,6 +10,7 @@ import {
 } from '../services/euroOfficeApi';
 import { useTranslation } from '../i18n';
 import { isNativeStudioRuntime } from '../platform/nativeServerSelection';
+import { DEFAULT_STUDIO_API_ORIGIN, getNativeStudioServerOrigin } from '../services/studioServer';
 import { EuroOfficeIsolatedFrame } from './EuroOfficeIsolatedFrame';
 import './PlainDocumentWorkspace.css';
 
@@ -64,6 +65,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const fallbackDocumentTitle = copy.document;
   const [documents, setDocuments] = useState<PlainDocumentSummary[]>([]);
   const [launch, setLaunch] = useState<EuroOfficeLaunch | null>(null);
+  const [nativeEditorReady, setNativeEditorReady] = useState(false);
   const [title, setTitle] = useState('');
   const [editorTitle, setEditorTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -72,6 +74,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const [editorHost, setEditorHost] = useState<HTMLDivElement | null>(null);
   const nativeStudio = isNativeStudioRuntime();
   const handleIsolatedFailure = useCallback((message: string) => setError(message), []);
+  const handleIsolatedReady = useCallback(() => setNativeEditorReady(true), []);
 
   useEffect(() => {
     if (documentId) return;
@@ -93,6 +96,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
     setBusy(true);
     setError('');
     setLaunch(null);
+    setNativeEditorReady(false);
     const editorType = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767px)').matches
       ? 'mobile'
       : 'desktop';
@@ -127,6 +131,26 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
       editorHost.replaceChildren();
     };
   }, [editorHost, launch, nativeStudio]);
+
+  async function openInMobileBrowser(): Promise<void> {
+    try {
+      // Launch the selected institution's ordinary web UI, never the signed
+      // Office session or native bearer token. The user signs in separately.
+      const base = getNativeStudioServerOrigin() || DEFAULT_STUDIO_API_ORIGIN;
+      const url = new URL('/', base);
+      if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname))) {
+        throw new Error('The selected Studio server does not have a safe web address.');
+      }
+      const { openUrl } = await import('@tauri-apps/plugin-opener');
+      try {
+        await openUrl(url.toString(), 'inAppBrowser');
+      } catch {
+        await openUrl(url.toString());
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
 
   async function createDocument(): Promise<void> {
     setBusy(true);
@@ -188,12 +212,20 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
                 launch={launch}
                 title={editorTitle || copy.document}
                 onFailure={handleIsolatedFailure}
+                onReady={handleIsolatedReady}
               />
             ) : null}
           </div>
-          {busy ? <div className="plain-document-loading"><LoaderCircle size={22} className="plain-document-spinner" />{copy.loading}</div> : null}
-          {!busy && error ? <div className="plain-document-editor-error">{copy.editorUnavailable}</div> : null}
-          <span className="sr-only">{launch ? copy.autosave : ''}</span>
+          {busy || (nativeStudio && Boolean(launch) && !nativeEditorReady && !error) ? <div className="plain-document-loading"><LoaderCircle size={22} className="plain-document-spinner" />{copy.loading}</div> : null}
+          {!busy && error ? <div className="plain-document-editor-error">
+            <p>{copy.editorUnavailable}</p>
+            {nativeStudio ? (
+              <button type="button" className="plain-document-web-fallback" onClick={() => void openInMobileBrowser()}>
+                {copy.openInBrowser}
+              </button>
+            ) : null}
+          </div> : null}
+          <span className="sr-only">{launch && !error ? copy.autosave : ''}</span>
         </div>
       ) : (
         <section className="plain-document-list" aria-labelledby="plain-document-list-title">
@@ -225,17 +257,17 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
 function getCopy(locale: string) {
   if (locale === 'hu') return {
     workspace: 'Word-dokumentumok', documents: 'Dokumentumaim', document: 'Dokumentum', titleLabel: 'Dokumentum címe',
-    untitled: 'Névtelen dokumentum', create: 'Új DOCX létrehozása', description: 'Egyszerű, DOCX-formátumú dokumentumok szerkesztése a EuroOffice beágyazott szövegszerkesztőjével.',
-    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'A EuroOffice menti a módosításokat.', editorUnavailable: 'A EuroOffice szerkesztő nem érhető el.',
+    untitled: 'Névtelen dokumentum', create: 'Új DOCX létrehozása', description: 'Egyszerű, DOCX-formátumú dokumentumok szerkesztése az EuroOffice beágyazott szövegszerkesztőjével.',
+    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'Az EuroOffice menti a módosításokat.', editorUnavailable: 'Az EuroOffice szerkesztő nem érhető el.', openInBrowser: 'Megnyitás a mobilböngészőben (külön bejelentkezés)',
   };
   if (locale === 'de') return {
     workspace: 'Word-Dokumente', documents: 'Meine Dokumente', document: 'Dokument', titleLabel: 'Dokumenttitel',
     untitled: 'Unbenanntes Dokument', create: 'Neues DOCX erstellen', description: 'Einfache DOCX-Dokumente mit dem eingebetteten EuroOffice-Editor bearbeiten.',
-    loading: 'Wird geladen…', empty: 'Sie haben noch keine DOCX-Dokumente.', updated: 'Geändert', close: 'Schließen', actions: 'Dokumentaktionen', autosave: 'EuroOffice speichert Änderungen.', editorUnavailable: 'Der EuroOffice-Editor ist nicht verfügbar.',
+    loading: 'Wird geladen…', empty: 'Sie haben noch keine DOCX-Dokumente.', updated: 'Geändert', close: 'Schließen', actions: 'Dokumentaktionen', autosave: 'EuroOffice speichert Änderungen.', editorUnavailable: 'Der EuroOffice-Editor ist nicht verfügbar.', openInBrowser: 'Im mobilen Browser öffnen (separate Anmeldung)',
   };
   return {
     workspace: 'Word documents', documents: 'My documents', document: 'Document', titleLabel: 'Document title',
     untitled: 'Untitled document', create: 'Create DOCX document', description: 'Write ordinary DOCX documents with the embedded EuroOffice editor.',
-    loading: 'Loading…', empty: 'You do not have any DOCX documents yet.', updated: 'Updated', close: 'Close', actions: 'Document actions', autosave: 'EuroOffice saves your changes.', editorUnavailable: 'The EuroOffice editor is unavailable.',
+    loading: 'Loading…', empty: 'You do not have any DOCX documents yet.', updated: 'Updated', close: 'Close', actions: 'Document actions', autosave: 'EuroOffice saves your changes.', editorUnavailable: 'The EuroOffice editor is unavailable.', openInBrowser: 'Open in mobile browser (sign in separately)',
   };
 }
