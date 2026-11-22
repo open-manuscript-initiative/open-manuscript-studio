@@ -36,7 +36,8 @@ async function setup(page: Page) {
 test('body thumbnails navigate, move complete studies, insert after the last page, move/delete blanks and persist', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   let editor = await setup(page);
-  let navigator = editor.locator('.publication-document-canvas > .publication-page-navigator');
+  await editor.getByRole('button', { name: 'Page thumbnails', exact: true }).click();
+  let navigator = editor.locator('#publication-style-ribbon-panel-thumbnails .publication-page-navigator');
   const thumbnails = () => navigator.locator('[data-thumbnail-page]');
   await expect.poll(() => thumbnails().count()).toBeGreaterThan(2);
   await thumbnails().last().click();
@@ -79,7 +80,8 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
     useStudioStore.getState().checkpoint('manual'); await resumeLastSessionPersistence();
   });
   await page.reload(); editor = await openPublication(page);
-  navigator = editor.locator('.publication-document-canvas > .publication-page-navigator');
+  await editor.getByRole('button', { name: 'Page thumbnails', exact: true }).click();
+  navigator = editor.locator('#publication-style-ribbon-panel-thumbnails .publication-page-navigator');
   await expect(navigator.locator('[data-thumbnail-id^="inserted:"]')).toHaveAttribute('data-thumbnail-style', 'plate');
   await page.setViewportSize({ width: 480, height: 900 });
   await expect(navigator.getByRole('button', { name: 'Add page before', exact: true })).toBeVisible();
