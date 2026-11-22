@@ -2243,6 +2243,168 @@
   }
 }
 
+
+/* Compact desktop publishing workspace: permanent icon rail, persistent docked
+   settings/thumbnail panel and an always-visible document canvas. */
+.publication-style-editor {
+  padding: .35rem;
+}
+.publication-style-editor-heading {
+  padding: .12rem .3rem .25rem;
+}
+.publication-style-editor-heading h4 {
+  margin: 0;
+}
+.publication-style-editor-heading p {
+  display: none;
+}
+.publication-workspace-tabs {
+  padding: .2rem .3rem;
+  gap: .2rem;
+}
+.publication-workspace-tabs button {
+  min-height: 1.9rem;
+  padding: .18rem .55rem;
+}
+.publication-document-canvas-toolbar {
+  min-height: 2.25rem;
+  padding: .25rem .45rem;
+  gap: .4rem;
+}
+.publication-document-canvas-toolbar > div:first-child > span {
+  display: none;
+}
+.publication-document-canvas-status {
+  gap: .35rem;
+}
+.publication-document-canvas-stage {
+  padding-inline: .45rem;
+  padding-bottom: .6rem;
+}
+.publication-style-side-resizer {
+  display: none;
+}
+.publication-style-ribbon-action-button[aria-pressed="true"] {
+  border-color: rgba(109, 33, 48, .4);
+  background: rgba(109, 33, 48, .12);
+  color: #521721;
+}
+.publication-style-ribbon-menu-button:focus-visible,
+.publication-style-ribbon-action-button:focus-visible,
+.publication-style-side-resizer:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+@media (min-width: 1151px) {
+  .publication-style-editor-shell--with-ribbon.publication-style-editor-shell--panel-open {
+    grid-template-columns: min(calc(3.5rem + var(--omi-publication-panel-width, 330px)), 65vw) minmax(0, 1fr);
+  }
+  .publication-style-ribbon-panel--thumbnails {
+    display: flex;
+    flex-direction: column;
+    padding: .4rem;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-navigator {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0;
+    padding: .25rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-navigator > p {
+    margin: .3rem 0;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-thumbnails {
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 7rem;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: .25rem 0;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-thumbnails {
+    gap: .15rem;
+    overscroll-behavior-y: contain;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-thumbnail {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    gap: 2px;
+    padding: 2px;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-thumbnail svg {
+    width: 44px;
+    height: 58px;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-thumbnail-caption {
+    width: 44px;
+    line-height: 1.1;
+  }
+  @container (min-width: 340px) {
+    .publication-page-thumbnail svg { width: 65px; height: 90px; }
+    .publication-page-thumbnail-caption { width: 65px; }
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-style-legend {
+    max-height: 5.5rem;
+    overflow: auto;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-navigation-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .3rem;
+    align-items: stretch;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-navigation-actions label {
+    grid-column: 1 / -1;
+  }
+  .publication-style-ribbon-panel--thumbnails .publication-page-navigation-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .2rem;
+    min-width: 0;
+    padding: .25rem;
+  }
+  .publication-style-side-resizer {
+    position: absolute;
+    z-index: 90;
+    inset: 0 0 0 auto;
+    display: block;
+    width: .45rem;
+    cursor: col-resize;
+    touch-action: none;
+    background: transparent;
+  }
+  .publication-style-side-resizer:hover,
+  .publication-style-side-resizer:focus-visible {
+    background: rgba(109, 33, 48, .25);
+  }
+  .publication-style-ribbon-panel,
+  .publication-style-ribbon-panel--compact,
+  .publication-style-ribbon-panel--paragraph-styles {
+    scrollbar-width: thin;
+  }
+  .publication-style-ribbon-panel--thumbnails {
+    container-type: inline-size;
+  }
+  .publication-style-editor-layout > .publication-document-canvas--print:not(.publication-document-canvas--preview) {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}
+@container (max-width: 285px) {
+  .publication-style-ribbon-panel--thumbnails .publication-page-action-text,
+  .publication-style-ribbon-panel--thumbnails .publication-page-navigator > p {
+    display: none;
+  }
+}
 @media print {
   .publication-style-editor-shell--with-ribbon {
     display: block;

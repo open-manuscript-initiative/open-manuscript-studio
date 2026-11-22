@@ -1,4 +1,5 @@
 import { PublicationPageNavigator } from './PublicationPageNavigator';
+import { createPortal } from 'react-dom';
 import { placePublicationEmptyPage, type PublicationBodyPageThumbnail } from '../model/publicationPageNavigation';
 import { getStudyRootSectionId, partitionManuscriptStudies } from '../model/sectionStructure';
 import { stageMoveSectionToSibling } from '../app/sectionActions';
@@ -117,6 +118,8 @@ interface PublicationDocumentCanvasProps {
   onPageCountChange?: (manuscriptId: string, count: number) => void;
   onLayoutIssues?: PublicationLayoutIssueReporter;
   navigationTarget?: PublicationLayoutIssue | null;
+  pageNavigatorTarget?: HTMLElement | null;
+  showRuler?: boolean;
 }
 
 interface PublicationCanvasCopy {
@@ -149,6 +152,8 @@ export function PublicationDocumentCanvas({
   onPageCountChange,
   onLayoutIssues,
   navigationTarget,
+  pageNavigatorTarget,
+  showRuler = true,
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
@@ -976,7 +981,14 @@ export function PublicationDocumentCanvas({
     const source = navigationPages[from], target = navigationPages[to]; if (!source || !target || from === to) return;
     if (source.insertionId) {
       const insertion = pageCollection.insertions?.find((item) => item.id === source.insertionId);
-      if (insertion) onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, insertion, target, to < from ? 'before' : 'after') });
+      // The first displayed sheet always denotes the publication start, even
+      // when the title/front matter and the first paragraph share a measured page.
+      // Moving a blank to page 1 must precede the front matter, not only the
+      // first manuscript paragraph.
+      const destination = to === 0 && !target.insertionId
+        ? { ...target, firstBlockId: PUBLICATION_BODY_START }
+        : target;
+      if (insertion) onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, insertion, destination, to < from ? 'before' : 'after') });
     } else if (source.studyId) {
       const targetId = target.studyId !== source.studyId ? target.studyId : undefined;
       if (targetId) stageMoveSectionToSibling(source.studyId, targetId, to > from);
@@ -994,6 +1006,27 @@ export function PublicationDocumentCanvas({
     const frame = requestAnimationFrame(() => stageRef.current?.querySelector<HTMLElement>(`[data-page-number="${firstPageNumber + index}"]`)?.scrollIntoView({ block: 'center', inline: 'nearest' }));
     return () => cancelAnimationFrame(frame);
   }, [pagination.thumbnails, pagination.pageCount, firstPageNumber]);
+  // Reuse a single navigator in the preview and the desktop side dock.
+  // The portal preserves the canvas context without occupying a toolbar row.
+  const pageNavigator = viewMode === 'print' ? (
+    <PublicationPageNavigator pages={navigationPages}
+      styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
+      onSelect={selectThumbnail} onMove={moveThumbnail}
+      onInsert={(index, side, styleId) => {
+        const target = navigationPages[index]; if (!target) return;
+        const id = crypto.randomUUID();
+        const destination = index === 0 && side === 'before' && !target.insertionId
+          ? { ...target, firstBlockId: PUBLICATION_BODY_START }
+          : target;
+        onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, destination, side) });
+        setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
+      }}
+      onDelete={(index) => {
+        const id = navigationPages[index]?.insertionId;
+        if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
+        setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
+      }} />
+  ) : null;
   return (
     <PublicationPreviewContext.Provider value={previewOnly}>
     <section
@@ -1052,26 +1085,13 @@ export function PublicationDocumentCanvas({
         </div>
       </header>
 
-      {viewMode === 'print' ? <PublicationPageNavigator pages={navigationPages}
-        styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
-        onSelect={selectThumbnail} onMove={moveThumbnail}
-        onInsert={(index, side, styleId) => {
-          const target = navigationPages[index]; if (!target) return;
-          const id = crypto.randomUUID();
-          onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
-          setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
-        }}
-        onDelete={(index) => {
-          const id = navigationPages[index]?.insertionId;
-          if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
-          setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
-        }} /> : null}
+      {pageNavigatorTarget && pageNavigator ? createPortal(pageNavigator, pageNavigatorTarget) : previewOnly ? pageNavigator : null}
       <div
         ref={stageRef}
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
         aria-label={viewMode === 'print' ? copy.printLayout : copy.htmlLayout}
       >
-        {!previewOnly ? <PublicationSectionRuler
+        {!previewOnly && showRuler ? <PublicationSectionRuler
           locale={locale}
           viewMode={viewMode}
           widthPx={pageWidth}

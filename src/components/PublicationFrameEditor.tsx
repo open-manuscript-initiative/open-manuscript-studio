@@ -271,6 +271,7 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
     {flow.overflow.length ? <p className="omi-frame-overflow" role="status"><span role="img" aria-label={copy.overflow}>⚠</span></p> : null}
     {missingSources ? <p role="alert"><span role="img" aria-label={copy.missingGraphic}>⚠</span></p> : null}
     {message ? <p role="alert">{message}</p> : null}
+    <div className="omi-frame-layout-dock">
     <PublicationPageNavigator pages={thumbnails} styles={framePageStyles(layout)} selected={activePage} help="frame"
       onSelect={(index) => { setPageSelection(index); setSelectedId(''); }}
       onInsert={(index, side, styleId) => { commit(insertFramePage(layout, side === 'before' ? index - 1 : index, styleId, crypto.randomUUID()), true); setPageSelection(side === 'before' ? index : index + 1); setSelectedId(''); }}
@@ -363,6 +364,7 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
         </> : null}
         <small>{copy.saved}</small>
       </aside> : null}
+    </div>
     </div>
   </section>;
 }

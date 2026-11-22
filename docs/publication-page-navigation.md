@@ -1,6 +1,6 @@
 # Page thumbnails
 
-Open **Publication editor** in print view. Expand **Page thumbnails** above the page canvas and click a miniature to navigate to its sheet. The strip scrolls horizontally and can be collapsed to leave more editing space. The same navigator is available in **Frames and page styles**, including on narrow screens.
+Open **Publication editor** in print view and click the **Page thumbnails** icon in the left tool rail. On desktop, the miniature pages now appear in a vertically scrollable side panel beside the document, not above it. Click the same icon to close the panel, or another tool icon to switch panels. Drag the panel’s right edge horizontally (or focus the separator and use the arrow keys) to adjust its width and reveal more labels. On narrow screens the same navigator remains available in a compact popover. **Frames and page styles** continues to offer its own page navigator.
 
 Each miniature shows the measured text-line and graphic positions, its printed page number, and an uppercase page-style letter. The legend maps letters to style names: A, B, … Z, AA, AB, … . Letters follow the style list, so moving a page does not change its style letter. Renaming a style updates its legend and accessible page labels.
 

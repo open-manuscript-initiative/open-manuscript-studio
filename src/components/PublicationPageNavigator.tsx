@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { publicationPageNavigationCopy } from '../i18n/publicationPageNavigation';
 import { publicationPageStyleLetter, type PublicationPageThumbnail } from '../model/publicationPageNavigation';
@@ -12,12 +13,15 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
   const { locale } = useTranslation(), copy = publicationPageNavigationCopy(locale);
   const [newStyle, setNewStyle] = useState('');
   const dragId = useRef<string | null>(null);
+  const dragTargetId = useRef<string | null>(null);
+  const dragCompleted = useRef(false);
+  const navigatorRef = useRef<HTMLDivElement>(null);
   const page = pages[selected] ?? pages[0];
   const selectedStyle = styles.some((style) => style.id === newStyle) ? newStyle : page?.styleId ?? styles[0]?.id ?? '';
   return <details className="publication-page-navigator" open>
     <summary>{copy.title} ({pages.length})</summary>
     <p>{help === 'frame' ? copy.frameHelp : copy.bodyHelp}</p>
-    <div className="publication-page-thumbnails" role="group" aria-label={copy.title}>
+    <div className="publication-page-thumbnails" role="group" aria-label={copy.title} ref={navigatorRef}>
       {pages.map((item, index) => {
         const styleIndex = Math.max(0, styles.findIndex((style) => style.id === item.styleId));
         const name = styles[styleIndex]?.name ?? copy.defaultStyle;
@@ -25,10 +29,55 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
           data-thumbnail-style={item.styleId} aria-current={selected === index ? 'page' : undefined}
           aria-label={`${copy.page} ${item.number}: ${name}${item.label ? ` — ${item.label}` : ''}`}
           draggable={item.canMoveUp || item.canMoveDown} onClick={() => onSelect(index)}
-          onDragStart={(event) => { dragId.current = item.id; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', item.id); }}
-          onDragEnd={() => { dragId.current = null; }}
-          onDragOver={(event) => { if (dragId.current && dragId.current !== item.id) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } }}
-          onDrop={(event) => { event.preventDefault(); const from = pages.findIndex((candidate) => candidate.id === dragId.current); dragId.current = null; if (from >= 0 && from !== index) onMove(from, index); }}>
+          onDragStart={(event) => {
+            dragId.current = item.id;
+            dragTargetId.current = null;
+            dragCompleted.current = false;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('application/x-omi-publication-page', item.id);
+            event.dataTransfer.setData('text/plain', item.id);
+          }}
+          onDragEnd={(event) => {
+            // A vertically scrolling rail can lose the native drop event while
+            // the browser auto-scrolls. Finish the last valid drop target if
+            // the pointer is still over the page thumbnail list.
+            const sourceId = dragId.current;
+            if (sourceId && !dragCompleted.current && navigatorRef.current) {
+              const bounds = navigatorRef.current.getBoundingClientRect();
+              const overList = event.clientX >= bounds.left && event.clientX <= bounds.right
+                && event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+              const targetElement = overList ? document.elementFromPoint(event.clientX, event.clientY) : null;
+              const closest = targetElement instanceof Element ? targetElement.closest<HTMLElement>('[data-thumbnail-id]') : null;
+              const targetId = closest && navigatorRef.current.contains(closest)
+                ? closest.dataset.thumbnailId
+                : overList ? dragTargetId.current : null;
+              const from = pages.findIndex((candidate) => candidate.id === sourceId);
+              const to = pages.findIndex((candidate) => candidate.id === targetId);
+              if (from >= 0 && to >= 0 && from !== to) onMove(from, to);
+            }
+            dragId.current = null;
+            dragTargetId.current = null;
+          }}
+          onDragOver={(event) => {
+            const candidateId = dragId.current
+              ?? (event.dataTransfer.types.includes('application/x-omi-publication-page') ? 'pending' : null);
+            if (candidateId && candidateId !== item.id) {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              dragTargetId.current = item.id;
+            }
+          }}
+          onDrop={(event) => {
+            const sourceId = event.dataTransfer.getData('application/x-omi-publication-page') || dragId.current;
+            const from = pages.findIndex((candidate) => candidate.id === sourceId);
+            if (from >= 0 && from !== index) {
+              event.preventDefault();
+              dragCompleted.current = true;
+              onMove(from, index);
+            }
+            dragId.current = null;
+            dragTargetId.current = null;
+          }}>
           <svg viewBox={`0 0 ${item.width} ${item.height}`} aria-hidden="true" focusable="false">
             <rect width={item.width} height={item.height} fill={item.background ?? '#fff'} />
             {item.marks.map((mark, n) => <rect key={n} x={mark.x} y={mark.y} width={mark.width} height={mark.height}
@@ -42,11 +91,11 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
     <div className="publication-page-style-legend" aria-label={copy.styles}>{styles.map((style, index) => <span key={style.id}><strong>{publicationPageStyleLetter(index)}</strong> {style.name}</span>)}</div>
     <div className="publication-page-navigation-actions">
       <label>{copy.insertStyle}<select value={selectedStyle} onChange={(event) => setNewStyle(event.target.value)}>{styles.map((style, index) => <option key={style.id} value={style.id}>{publicationPageStyleLetter(index)} — {style.name}</option>)}</select></label>
-      <button type="button" disabled={!page?.canInsert} onClick={() => onInsert(selected, 'before', selectedStyle)}>{copy.before}</button>
-      <button type="button" disabled={!page?.canInsert} onClick={() => onInsert(selected, 'after', selectedStyle)}>{copy.after}</button>
-      <button type="button" disabled={!page?.canMoveUp} onClick={() => onMove(selected, page?.moveUpTarget ?? selected - 1)} aria-label={copy.up}>↑</button>
-      <button type="button" disabled={!page?.canMoveDown} onClick={() => onMove(selected, page?.moveDownTarget ?? selected + 1)} aria-label={copy.down}>↓</button>
-      <button type="button" disabled={!page?.canDelete} onClick={() => onDelete(selected)}>{copy.remove}</button>
+      <button type="button" aria-label={copy.before} title={copy.before} disabled={!page?.canInsert} onClick={() => onInsert(selected, 'before', selectedStyle)}><Plus size={15} aria-hidden="true" /><ArrowUp size={15} aria-hidden="true" /><span className="publication-page-action-text">{copy.before}</span></button>
+      <button type="button" aria-label={copy.after} title={copy.after} disabled={!page?.canInsert} onClick={() => onInsert(selected, 'after', selectedStyle)}><Plus size={15} aria-hidden="true" /><ArrowDown size={15} aria-hidden="true" /><span className="publication-page-action-text">{copy.after}</span></button>
+      <button type="button" disabled={!page?.canMoveUp} onClick={() => onMove(selected, page?.moveUpTarget ?? selected - 1)} aria-label={copy.up} title={copy.up}><ArrowUp size={16} aria-hidden="true" /></button>
+      <button type="button" disabled={!page?.canMoveDown} onClick={() => onMove(selected, page?.moveDownTarget ?? selected + 1)} aria-label={copy.down} title={copy.down}><ArrowDown size={16} aria-hidden="true" /></button>
+      <button type="button" aria-label={copy.remove} title={copy.remove} disabled={!page?.canDelete} onClick={() => onDelete(selected)}><Trash2 size={15} aria-hidden="true" /><span className="publication-page-action-text">{copy.remove}</span></button>
     </div>
   </details>;
 }

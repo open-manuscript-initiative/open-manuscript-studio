@@ -36,7 +36,8 @@ async function setup(page: Page) {
 test('body thumbnails navigate, move complete studies, insert after the last page, move/delete blanks and persist', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   let editor = await setup(page);
-  let navigator = editor.locator('.publication-document-canvas > .publication-page-navigator');
+  await editor.getByRole('button', { name: 'Page thumbnails', exact: true }).click();
+  let navigator = editor.locator('#publication-style-ribbon-panel-thumbnails .publication-page-navigator');
   const thumbnails = () => navigator.locator('[data-thumbnail-page]');
   await expect.poll(() => thumbnails().count()).toBeGreaterThan(2);
   await thumbnails().last().click();
@@ -50,7 +51,27 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
   await expect(blank).toHaveAttribute('data-thumbnail-style', 'plate');
   await expect(blank.locator('[data-style-letter]')).toHaveText('B');
   await expect(editor.locator('[data-inserted-page]')).toHaveCount(1);
-  await blank.dragTo(thumbnails().first());
+  // Capture the actual browser drag/drop sequence if the native drag fails
+  // while Chromium auto-scrolls the vertically docked thumbnails.
+  await page.evaluate(() => {
+    (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents = [];
+    for (const type of ['dragstart', 'dragover', 'drop', 'dragend']) document.addEventListener(type, (event) => {
+      const target = event.target instanceof Element ? event.target.closest('[data-thumbnail-id]') : null;
+      if (target && type !== 'dragover') (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents?.push(`${type}:${target.getAttribute('data-thumbnail-id')}`);
+    }, { capture: true, once: false });
+  });
+  // Both ends must be visible before the HTML5 drag starts. Otherwise
+  // Chromium scrolls the list underneath the starting pointer and may drag
+  // a neighbouring page rather than the requested inserted sheet.
+  await thumbnails().first().scrollIntoViewIfNeeded();
+  await blank.scrollIntoViewIfNeeded();
+  await expect(thumbnails().first()).toBeInViewport();
+  await expect(blank).toBeInViewport();
+  const draggedId = await blank.getAttribute('data-thumbnail-id');
+  await blank.dragTo(thumbnails().first(), { sourcePosition: { x: 20, y: 20 }, targetPosition: { x: 20, y: 20 } });
+  const events = await page.evaluate(
+    () => (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents ?? []);
+  expect(events.find((event) => event.startsWith('dragstart:'))).toBe(`dragstart:${draggedId}`);
   await expect(thumbnails().first()).toHaveAttribute('data-thumbnail-id', /^inserted:/);
   await navigator.getByRole('button', { name: 'Move page later', exact: true }).click();
   await expect(thumbnails().first()).not.toHaveAttribute('data-thumbnail-id', /^inserted:/);
@@ -79,9 +100,14 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
     useStudioStore.getState().checkpoint('manual'); await resumeLastSessionPersistence();
   });
   await page.reload(); editor = await openPublication(page);
-  navigator = editor.locator('.publication-document-canvas > .publication-page-navigator');
+  await editor.getByRole('button', { name: 'Page thumbnails', exact: true }).click();
+  navigator = editor.locator('#publication-style-ribbon-panel-thumbnails .publication-page-navigator');
   await expect(navigator.locator('[data-thumbnail-id^="inserted:"]')).toHaveAttribute('data-thumbnail-style', 'plate');
   await page.setViewportSize({ width: 480, height: 900 });
+  // At mobile widths the Studio switches to its preview layout: the
+  // thumbnail navigator moves back inside the canvas, above the page.
+  navigator = editor.locator('.publication-document-canvas > .publication-page-navigator');
+  await expect(navigator).toBeVisible();
   await expect(navigator.getByRole('button', { name: 'Add page before', exact: true })).toBeVisible();
   expect(await navigator.evaluate((element) => element.scrollWidth <= element.clientWidth + 2)).toBe(true);
   expect(await editor.locator('.publication-document-canvas-stage').evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThan(50);

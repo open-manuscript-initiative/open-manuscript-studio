@@ -1,6 +1,6 @@
 # Oldalminiatűrök
 
-A **Kiadványszerkesztő** nyomtatási nézetében az **Oldalminiatűrök** panel az oldalak fölött található. Kattints a miniatűrre a megfelelő oldal megnyitásához. A miniatűrsáv vízszintesen görgethető, és a címsorával összecsukható. A **Keretek és oldalstílusok** nézetben is használható, keskeny képernyőn is.
+A **Kiadványszerkesztő** nyomtatási nézetében kattints a bal oldali ikonsáv **Oldalminiatűrök** ikonjára. Asztali nézetben a miniatűrök a dokumentum mellett, függőlegesen görgethető oldalsó panelen jelennek meg, így nem csökkentik a dokumentum fölötti munkaterületet. Ugyanazzal az ikonnal bezárhatod, másik ikonnal pedig másik panelre válthatsz. A panel jobb szélét vízszintesen húzva állíthatod a szélességét és több feliratot jeleníthetsz meg; billentyűzettel a panelhatárra lépve a nyílbillentyűk is használhatók. Keskeny kijelzőn a miniatűrök kompakt felugró panelen érhetők el. A **Keretek és oldalstílusok** nézet saját oldalsó oldalnavigációja továbbra is használható.
 
 A miniatűrök a mért szövegsorok és grafikus elemek elhelyezkedését mutatják. Mellettük a nyomtatott oldalszám és az oldalstílus nagybetűs jele látható: A, B, … Z, AA, AB, … . A jelmagyarázat megadja a stílusok nevét. A betűk a stíluslistát követik, ezért az oldalak átrendezése nem változtatja meg őket. A stílus átnevezése frissíti a jelmagyarázatot és az akadálymentes oldalcímkéket.
 

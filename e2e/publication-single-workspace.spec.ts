@@ -96,7 +96,17 @@ for (const width of [1440, 393]) {
     await matter.getByLabel('Measurement units', { exact: true }).selectOption('pc');
     await editor.getByRole('tab', { name: 'Publication content', exact: true }).click();
     await expect(canvas).toBeVisible(); await expect(canvas).toHaveAttribute('data-workspace-identity', 'retained');
-    await expect(editor.getByLabel('Measurement units', { exact: true })).toHaveValue('pc');
+    if (width === 1440) {
+      // Desktop measurements live in the expandable icon rail, not the top bar.
+      const measurementToggle = editor.getByRole('button', { name: 'Measurement units', exact: true });
+      await measurementToggle.click();
+      await expect(editor.locator('#publication-style-ribbon-panel-units')
+        .getByRole('combobox', { name: 'Measurement units', exact: true })).toHaveValue('pc');
+      await measurementToggle.click();
+    } else {
+      // Mobile preview keeps the measurement control directly reachable.
+      await expect(editor.getByRole('combobox', { name: 'Measurement units', exact: true })).toHaveValue('pc');
+    }
     if (width === 1440) {
       await editor.getByRole('button', { name: 'Frames and page styles', exact: true }).click();
       const frames = editor.locator('.omi-frame-editor');

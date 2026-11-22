@@ -38,6 +38,33 @@ test('desktop publication controls occupy a vertical side rail and expand beside
   const collapsedAgain = await rail.boundingBox();
   expect(Math.abs(collapsedAgain!.width - collapsed!.width)).toBeLessThan(3);
 
+  // Only an explicit toggle or opening another rail item closes the side panel.
+  const rulerButton = rail.getByRole('button', { name: 'Ruler', exact: true });
+  await expect(rulerButton).toHaveAttribute('aria-pressed', 'true');
+  await rulerButton.click();
+  await expect(canvas.locator('.publication-section-ruler-shell')).toHaveCount(0);
+  await rulerButton.click();
+  await expect(canvas.locator('.publication-section-ruler-shell')).toBeVisible();
+
+  const thumbnailsButton = rail.getByRole('button', { name: 'Page thumbnails', exact: true });
+  await thumbnailsButton.click();
+  const thumbnailsPanel = rail.locator('#publication-style-ribbon-panel-thumbnails');
+  await expect(thumbnailsPanel.locator('.publication-page-navigator')).toBeVisible();
+  await canvas.locator('.publication-document-canvas-toolbar').click();
+  await expect(thumbnailsButton).toHaveAttribute('aria-expanded', 'true');
+
+  const separator = rail.getByRole('separator', { name: 'Sidebar width' });
+  const oldWidth = (await rail.boundingBox())!.width;
+  await separator.focus();
+  await separator.press('ArrowRight');
+  expect((await rail.boundingBox())!.width).toBeGreaterThan(oldWidth + 20);
+
+  await stylesButton.click();
+  await expect(thumbnailsPanel).toHaveCount(0);
+  await expect(rail.locator('#publication-style-ribbon-panel-styles')).toBeVisible();
+  await stylesButton.click();
+  await expect(rail.locator('#publication-style-ribbon-panel-styles')).toHaveCount(0);
+
   await page.setViewportSize({ width: 900, height: 900 });
   await expect(rail).not.toHaveCSS('display', 'grid');
   await expect(canvas).toBeVisible();
