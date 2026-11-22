@@ -636,7 +636,8 @@ export function PublicationDocumentCanvas({
           measuredBlocks,
           usablePageHeight,
           pageOverhead,
-          { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight },
+          { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight,
+            allowPageContinuation: noteStyle.footnoteContinueOnNextPage !== false },
           style.pageStyles ? metrics : undefined,
         );
         const sectionWarnings = layout.sectionWarnings ?? publicationSectionFitWarnings(measuredBlocks, layout,
