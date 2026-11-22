@@ -855,6 +855,20 @@ function PublicationStyleEditorWorkspace() {
         <button id="publication-content-tab" type="button" role="tab" tabIndex={matterToolsOpen ? -1 : 0} aria-selected={!matterToolsOpen} aria-controls="publication-content-workspace" onClick={() => { setMatterToolsOpen(false); setOpenPanel(null); }}>{copy.contentWorkspace}</button>
         <button id="publication-matter-tab" type="button" role="tab" tabIndex={matterToolsOpen ? 0 : -1} aria-selected={matterToolsOpen} aria-controls="publication-matter-workspace" onClick={() => { setMatterToolsOpen(true); setOpenPanel(null); }}>{getPublicationMatterCopy(locale).title}</button>
       </div> : null}
+      {previewOnly && !matterToolsOpen ? (
+        <div className="publication-frame-inspector-actions publication-frame-inspector-actions--preview">
+          <button type="button" className="publication-frame-inspector-toggle"
+            aria-label={frameCopy.tools}
+            aria-expanded={frameToolsOpen}
+            aria-controls="publication-frame-inspector-panel"
+            title={frameCopy.tools}
+            onClick={() => setFrameToolsOpen((current) => !current)}>
+            <SquareDashed size={17} aria-hidden="true" />
+            <span>{frameCopy.tools}</span>
+          </button>
+          <PublicationMeasurementSelector />
+        </div>
+      ) : null}
       {previewOnly && !matterToolsOpen ? <p className="publication-mobile-preview-note">{getVisualElementsCopy(locale).mobilePreviewNote}</p> : null}
       {previewOnly ? (
         <button
@@ -944,7 +958,9 @@ function PublicationStyleEditorWorkspace() {
             <PublicationRibbonActionButton label={sidebarCopy.ruler} pressed={rulerVisible} onClick={() => setRulerVisible((visible) => !visible)}>
               <Ruler size={18} aria-hidden="true" />
             </PublicationRibbonActionButton>
-            <PublicationRibbonActionButton label={frameCopy.tools} pressed={frameToolsOpen} onClick={() => { setOpenPanel(null); setFrameToolsOpen((visible) => !visible); }}>
+            <PublicationRibbonActionButton label={frameCopy.tools} pressed={frameToolsOpen}
+              expanded={frameToolsOpen} controls="publication-frame-inspector-panel"
+              onClick={() => { setOpenPanel(null); setFrameToolsOpen((visible) => !visible); }}>
               <SquareDashed size={18} aria-hidden="true" />
             </PublicationRibbonActionButton>
             <span className="publication-style-ribbon-separator" aria-hidden="true" />
@@ -1863,17 +1879,23 @@ function PublicationRibbonActionButton({
   onClick,
   children,
   pressed,
+  expanded,
+  controls,
 }: {
   label: string;
   onClick: () => void;
   children: ReactNode;
   pressed?: boolean;
+  expanded?: boolean;
+  controls?: string;
 }) {
   return (
     <button
       type="button"
       className="publication-style-ribbon-action-button"
       aria-pressed={pressed}
+      aria-expanded={expanded}
+      aria-controls={controls}
       aria-label={label}
       title={label}
       onClick={onClick}
