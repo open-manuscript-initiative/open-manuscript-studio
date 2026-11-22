@@ -17,6 +17,13 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct AndroidUpdater<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> AndroidUpdater<R> {
+    pub async fn open_play_store(&self) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin_async("openPlayStore", ())
+            .await
+            .map_err(Into::into)
+    }
+
     pub async fn install_update(&self, url: String, sha256: String) -> crate::Result<()> {
         self.0
             .run_mobile_plugin_async("installUpdate", InstallUpdatePayload { url, sha256 })
