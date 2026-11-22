@@ -329,6 +329,8 @@ export interface PublicationParagraphStyleProperties {
   hyphenation?: boolean;
   hyphenationSettings?: PublicationHyphenationSettings;
   keepTogether?: boolean;
+  /** Allow a paged footnote to continue on subsequent pages. Only used by the note role. */
+  footnoteContinueOnNextPage?: boolean;
   keepWithPrevious?: boolean;
   keepWithNext?: boolean;
   keepWithNextLines?: number;
@@ -644,6 +646,7 @@ function normalizeProperties(
   if (typeof value.hyphenation === 'boolean') result.hyphenation = value.hyphenation;
   result.hyphenationSettings = normalizeHyphenationSettings(value.hyphenationSettings);
   if (typeof value.keepTogether === 'boolean') result.keepTogether = value.keepTogether;
+  if (typeof value.footnoteContinueOnNextPage === 'boolean') result.footnoteContinueOnNextPage = value.footnoteContinueOnNextPage;
   if (typeof value.keepWithPrevious === 'boolean') result.keepWithPrevious = value.keepWithPrevious;
   if (typeof value.keepWithNext === 'boolean') result.keepWithNext = value.keepWithNext;
   if (finite(value.keepWithNextLines)) result.keepWithNextLines = integerAtLeast(value.keepWithNextLines, 0);
