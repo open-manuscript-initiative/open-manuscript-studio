@@ -57,7 +57,8 @@ test('section headers and individual page masters reflow, persist and feed PDF o
   await panel.getByRole('textbox', { name: 'Even page — left', exact: true }).fill('Author B — {{sectionTitle}}');
   await toggle.click();
   const guides = editor.locator('.publication-document-page-guide');
-  const navigator = editor.locator('.publication-document-canvas > .publication-page-navigator');
+  await editor.getByRole('button', { name: 'Page thumbnails', exact: true }).click();
+  const navigator = editor.locator('#publication-style-ribbon-panel-thumbnails .publication-page-navigator');
   await expect.poll(() => guides.filter({ has: page.locator('.publication-document-running-header', { hasText: 'Author A' }) }).count()).toBeGreaterThan(0);
   // Page guides are virtualized. Navigate to each study before checking its header.
   await navigator.getByRole('button', { name: /Second article/ }).first().click();
