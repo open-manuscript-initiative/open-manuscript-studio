@@ -3,6 +3,7 @@ package org.openmanuscript.studio.updater
 import android.Manifest
 import android.content.pm.PackageManager
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Handler
@@ -28,6 +29,36 @@ class InstallUpdateArgs {
 
 @TauriPlugin
 class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
+    /**
+     * Open the installed application's listing directly in Google Play. When
+     * Play is not installed, fall back to the HTTPS listing in a browser.
+     * The user chooses whether to submit private tester feedback.
+     */
+    @Command
+    fun openPlayStore(invoke: Invoke) {
+        Handler(Looper.getMainLooper()).post {
+            val listing = Uri.parse(
+                "https://play.google.com/store/apps/details?id=${activity.packageName}",
+            )
+            val playIntent = Intent(Intent.ACTION_VIEW, listing).apply {
+                setPackage("com.android.vending")
+            }
+            try {
+                activity.startActivity(playIntent)
+                invoke.resolve(JSObject().apply { put("status", "opened") })
+            } catch (_: ActivityNotFoundException) {
+                try {
+                    activity.startActivity(Intent(Intent.ACTION_VIEW, listing))
+                    invoke.resolve(JSObject().apply { put("status", "browser-opened") })
+                } catch (error: Exception) {
+                    invoke.reject(error.message ?: "Unable to open Google Play listing.")
+                }
+            } catch (error: Exception) {
+                invoke.reject(error.message ?: "Unable to open Google Play listing.")
+            }
+        }
+    }
+
     @Command
     fun installUpdate(invoke: Invoke) {
         // Play builds remove this permission in the merged application manifest.
