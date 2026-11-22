@@ -14,6 +14,16 @@ const docsApi = `window.DocsAPI = { DocEditor: function(id, config) {
   iframe.src = 'https://eurooffice.example.test/editor.html';
   if (config.type === 'mobile') iframe.style.position = 'fixed';
   target.parentNode.replaceChild(iframe, target);
+  // Native integration must wait for real DocsAPI lifecycle events rather
+  // than treating a synchronous constructor return as a loaded document.
+  setTimeout(() => config.events?.onAppReady?.(), 0);
+  setTimeout(() => {
+    if (config.document?.key === 'layout-failure') {
+      config.events?.onError?.({ data: { errorCode: -3, errorDescription: 'PRIVATE_TEST_VALUE' } });
+    } else {
+      config.events?.onDocumentReady?.();
+    }
+  }, 20);
   this.destroyEditor = function() {
     const placeholder = document.createElement('div');
     placeholder.id = id;
@@ -168,6 +178,7 @@ test('native Studio loads EuroOffice in a server-origin frame, never main DocsAP
     .frameLocator('iframe[name="frameEditor"]')
     .getByRole('button', { name: 'Edit document' });
   await expect(nestedEditor).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   const clicks = Number(await nestedEditor.getAttribute('data-edit-count'));
   await nestedEditor.click();
   await expect(nestedEditor).toHaveAttribute('data-edit-count', String(clicks + 1));
@@ -185,4 +196,39 @@ test('native Studio loads EuroOffice in a server-origin frame, never main DocsAP
   await page.getByRole('button', { name: 'Document actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Close', exact: true }).click();
   await expect(frame).toHaveCount(0);
+});
+
+
+test('native EuroOffice surfaces document-load errors without leaking private descriptions or tokens', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  await installEuroOffice(page);
+  const { html, csp } = buildEuroOfficeEmbedHost(
+    'https://eurooffice.example.test', 'http://localhost:5173',
+  );
+  await page.route('https://studio.openmanuscript.org/api/v1/eurooffice/embed-host**', route =>
+    route.fulfill({ contentType: 'text/html', headers: { 'Content-Security-Policy': csp }, body: html }));
+  await page.route('**/api/v1/eurooffice/documents/**/session?type=mobile', route =>
+    route.fulfill({ json: {
+      apiScriptUrl: 'https://eurooffice.example.test/web-apps/apps/api/documents/api.js',
+      config: {
+        type: 'mobile', width: '100%', height: '100%',
+        token: 'SECRET_TEST_TOKEN', documentType: 'word',
+        document: { title: 'Test.docx', key: 'layout-failure', fileType: 'docx',
+          url: 'https://eurooffice.example.test/source.docx' },
+        editorConfig: { lang: 'en', user: { id: 'synthetic', name: 'Test' } },
+      },
+      expiresAt: '2099-01-01T00:00:00Z',
+    } }));
+  await signInToStudio(page);
+  await page.evaluate(() => {
+    Object.defineProperty(window, 'isTauri', { value: true, configurable: true });
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
+  });
+  await page.getByRole('button', { name: /^Everyday DOCX documents/ }).click();
+  await page.getByRole('button', { name: /^Layout regression/ }).click();
+  const alert = page.getByRole('alert');
+  await expect(alert).toContainText('EuroOffice could not load this document (code -3).');
+  await expect(page.getByRole('button', { name: /Open in mobile browser/ })).toBeVisible();
+  await expect(alert).not.toContainText('PRIVATE_TEST_VALUE');
+  await expect(alert).not.toContainText('SECRET_TEST_TOKEN');
 });
