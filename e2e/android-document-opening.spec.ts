@@ -73,7 +73,7 @@ test('Android Open with DOCX launches source review before creating an editable 
   await page.getByLabel('Password').fill('correct-horse-battery-staple');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.locator('[data-android-docx-import="review"]')).toBeVisible();
-  await expect(page.getByText('Import a manuscript for editorial work')).toBeVisible();
+  await expect(page.locator('[data-android-docx-import="review"] select')).toHaveValue('editorial');
   await page.getByRole('button', { name: 'Create manuscript' }).click();
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
   await expect(page.getByText('Android Word test paragraph')).toBeVisible();
