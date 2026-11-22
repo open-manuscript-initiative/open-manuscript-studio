@@ -51,7 +51,9 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
   await expect(blank).toHaveAttribute('data-thumbnail-style', 'plate');
   await expect(blank.locator('[data-style-letter]')).toHaveText('B');
   await expect(editor.locator('[data-inserted-page]')).toHaveCount(1);
-  await blank.dragTo(thumbnails().first());
+  // The thumbnails scroll independently. Aim inside the first card rather than
+  // its moving boundary while Chromium auto-scrolls the vertical list.
+  await blank.dragTo(thumbnails().first(), { targetPosition: { x: 22, y: 22 } });
   await expect(thumbnails().first()).toHaveAttribute('data-thumbnail-id', /^inserted:/);
   await navigator.getByRole('button', { name: 'Move page later', exact: true }).click();
   await expect(thumbnails().first()).not.toHaveAttribute('data-thumbnail-id', /^inserted:/);
