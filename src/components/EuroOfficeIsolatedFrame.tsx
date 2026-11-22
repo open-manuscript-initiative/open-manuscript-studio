@@ -8,6 +8,7 @@ interface IsolatedFrameProps {
   launch: EuroOfficeLaunch;
   title: string;
   onFailure: (message: string) => void;
+  onReady?: () => void;
 }
 
 /**
@@ -20,7 +21,7 @@ interface IsolatedFrameProps {
  * random channel. The sandbox
  * never grants same-origin privileges, forms or popups.
  */
-export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFrameProps) {
+export function EuroOfficeIsolatedFrame({ launch, title, onFailure, onReady }: IsolatedFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [target] = useState(() => {
     // Native dev shells may use Vite's relative API proxy without a configured
@@ -58,6 +59,7 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
         phase = 'document';
       } else if (event.data.action === 'started') {
         started = true;
+        onReady?.();
       } else if (event.data.action === 'failed') {
         failed = true;
         const code = Number.isSafeInteger(event.data.errorCode) ? ` (code ${event.data.errorCode})` : '';
@@ -79,7 +81,7 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
       window.removeEventListener('message', onMessage);
       window.clearTimeout(timeout);
     };
-  }, [launch, onFailure, target]);
+  }, [launch, onFailure, onReady, target]);
 
   return (
     <iframe
