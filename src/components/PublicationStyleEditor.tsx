@@ -261,7 +261,7 @@ function PublicationStyleEditorWorkspace() {
   const [openPanel, setOpenPanel] = useState<PublicationRibbonPanel>(null);
   const [rulerVisible, setRulerVisible] = useState(true);
   const [thumbnailsTarget, setThumbnailsTarget] = useState<HTMLDivElement | null>(null);
-  const [sidebarWidth, setSidebarWidth] = useState(330);
+  const [sidebarWidth, setSidebarWidth] = useState(260);
   const resizingSidebar = useRef(false);
   const minSidebarWidth = 194;
   const maxSidebarWidth = 680;
