@@ -16,7 +16,7 @@
 .publication-page-navigation-actions button:disabled{opacity:.45;cursor:default}
 @media print{.publication-page-navigator{display:none}}
 
-.publication-style-editor-layout>.publication-document-canvas.publication-document-canvas--print{grid-template-rows:auto auto minmax(0,1fr)}
+.publication-style-editor-layout>.publication-document-canvas.publication-document-canvas--print.publication-document-canvas--preview{grid-template-rows:auto auto minmax(0,1fr)}
 .publication-page-navigation-actions select{max-width:100%;min-width:0}
 .publication-page-navigation-actions label{max-width:100%;min-width:0}
 
