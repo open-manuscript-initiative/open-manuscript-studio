@@ -44,7 +44,8 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
           !event.data || event.data.scope !== SCOPE ||
           event.data.channel !== target.channel) return;
 
-      if (failed || started) return;
+      // A later DocsAPI error still matters after the document became ready.
+      if (failed || (started && event.data.action !== 'failed')) return;
       if (event.data.action === 'ready' && !launchSent) {
         launchSent = true;
         ref.current?.contentWindow?.postMessage({
