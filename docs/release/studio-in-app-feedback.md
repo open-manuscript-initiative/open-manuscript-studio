@@ -6,6 +6,18 @@ The same **Send feedback / Visszajelzés küldése** action is available in the 
 
 A visszajelző űrlap a közös Súgó melletti menüpontból nyitható meg. A felhasználó hibát jelenthet, fejlesztést javasolhat, vagy beszámolhat egy teszt eredményéről. **A beküldött tesztjelentés nem bizonyítja a Google Play telepítést vagy használatot.**
 
+## Google Play feedback / Google Play-visszajelzés (Android)
+
+The Android Studio menu also offers a distinct **Feedback on Google Play / Visszajelzés a Google Playen** action. It opens the installed app's Google Play listing (package `org.openmanuscript.studio`). The native Android intent targets package `com.android.vending`; on devices without the Play Store it falls back to the HTTPS listing. The menu action is not shown on web, desktop or iOS. The existing in-app feedback form remains available on all platforms.
+
+Zárt vagy nyílt tesztelésnél a megfelelő Google-fiókkal feliratkozott tesztelő az alkalmazás adatlapján a **Privát visszajelzés a fejlesztőnek** lehetőséget választhatja. A Google Play nem biztosít dokumentált közvetlen mélyhivatkozást magára a privát űrlapra, így az alkalmazás csak az adatlapot nyitja meg. A felhasználónak magának kell beküldenie a visszajelzést.
+
+- No Play SDK, new Android permission, account credential, manuscript content, or diagnostic upload is introduced by this navigation.
+- Google Play receives data normally involved when the user visits the store listing. The action does not automatically submit feedback or prove installation, usage, tester activity or eligibility for production access.
+- Developers read tester submissions in **Play Console → Monitor and improve → Ratings and reviews → Testing feedback**.
+- Manual acceptance: install the Play-distributed closed-test AAB, open the Studio main menu, select the Google Play feedback action, verify the correct listing and private-feedback option with an opted-in account; test browser fallback on a device without the Play Store. Check that other platforms do not show the menu action.
+- Run `npm run test:android-update` for static/native-bridge routing and cross-platform guards. On-device behavior requires a real Android test.
+
 ## Data flow / Adatfolyam
 
 1. The authenticated client sends JSON to `POST /api/v1/feedback` using the selected server's normal Studio API transport, including native bearer authentication.
