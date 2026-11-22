@@ -999,6 +999,24 @@ export function PublicationDocumentCanvas({
     const frame = requestAnimationFrame(() => stageRef.current?.querySelector<HTMLElement>(`[data-page-number="${firstPageNumber + index}"]`)?.scrollIntoView({ block: 'center', inline: 'nearest' }));
     return () => cancelAnimationFrame(frame);
   }, [pagination.thumbnails, pagination.pageCount, firstPageNumber]);
+  // Reuse a single navigator in the preview and the desktop side dock.
+  // The portal preserves the canvas context without occupying a toolbar row.
+  const pageNavigator = viewMode === 'print' ? (
+    <PublicationPageNavigator pages={navigationPages}
+      styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
+      onSelect={selectThumbnail} onMove={moveThumbnail}
+      onInsert={(index, side, styleId) => {
+        const target = navigationPages[index]; if (!target) return;
+        const id = crypto.randomUUID();
+        onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
+        setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
+      }}
+      onDelete={(index) => {
+        const id = navigationPages[index]?.insertionId;
+        if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
+        setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
+      }} />
+  ) : null;
   return (
     <PublicationPreviewContext.Provider value={previewOnly}>
     <section
@@ -1057,37 +1075,7 @@ export function PublicationDocumentCanvas({
         </div>
       </header>
 
-      {viewMode === 'print' && (previewOnly || pageNavigatorTarget)
-        ? (pageNavigatorTarget ? createPortal(
-          <PublicationPageNavigator pages={navigationPages}
-            styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
-            onSelect={selectThumbnail} onMove={moveThumbnail}
-            onInsert={(index, side, styleId) => {
-              const target = navigationPages[index]; if (!target) return;
-              const id = crypto.randomUUID();
-              onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
-              setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
-            }}
-            onDelete={(index) => {
-              const id = navigationPages[index]?.insertionId;
-              if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
-              setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
-            }} />, pageNavigatorTarget)
-          : <PublicationPageNavigator pages={navigationPages}
-              styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
-              onSelect={selectThumbnail} onMove={moveThumbnail}
-              onInsert={(index, side, styleId) => {
-                const target = navigationPages[index]; if (!target) return;
-                const id = crypto.randomUUID();
-                onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
-                setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
-              }}
-              onDelete={(index) => {
-                const id = navigationPages[index]?.insertionId;
-                if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
-                setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
-              }} />)
-        : null}
+      {pageNavigatorTarget && pageNavigator ? createPortal(pageNavigator, pageNavigatorTarget) : previewOnly ? pageNavigator : null}
       <div
         ref={stageRef}
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
