@@ -64,7 +64,7 @@ export async function createEuroOfficeSession(
     return await readJson<EuroOfficeLaunch>(response);
   } catch (cause) {
     if (controller.signal.aborted) {
-      throw new Error('EuroOffice session request timed out.');
+      throw new Error('EuroOffice session request timed out.', { cause });
     }
     throw cause;
   } finally {
