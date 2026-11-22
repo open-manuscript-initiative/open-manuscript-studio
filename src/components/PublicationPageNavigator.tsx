@@ -26,10 +26,24 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
           data-thumbnail-style={item.styleId} aria-current={selected === index ? 'page' : undefined}
           aria-label={`${copy.page} ${item.number}: ${name}${item.label ? ` — ${item.label}` : ''}`}
           draggable={item.canMoveUp || item.canMoveDown} onClick={() => onSelect(index)}
-          onDragStart={(event) => { dragId.current = item.id; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', item.id); }}
+          onDragStart={(event) => {
+            dragId.current = item.id;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('application/x-omi-publication-page', item.id);
+            event.dataTransfer.setData('text/plain', item.id);
+          }}
           onDragEnd={() => { dragId.current = null; }}
-          onDragOver={(event) => { if (dragId.current && dragId.current !== item.id) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } }}
-          onDrop={(event) => { event.preventDefault(); const from = pages.findIndex((candidate) => candidate.id === dragId.current); dragId.current = null; if (from >= 0 && from !== index) onMove(from, index); }}>
+          onDragOver={(event) => {
+            const candidateId = dragId.current
+              ?? (event.dataTransfer.types.includes('application/x-omi-publication-page') ? 'pending' : null);
+            if (candidateId && candidateId !== item.id) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }
+          }}
+          onDrop={(event) => {
+            const sourceId = event.dataTransfer.getData('application/x-omi-publication-page') || dragId.current;
+            const from = pages.findIndex((candidate) => candidate.id === sourceId);
+            if (from >= 0 && from !== index) { event.preventDefault(); onMove(from, index); }
+            dragId.current = null;
+          }}>
           <svg viewBox={`0 0 ${item.width} ${item.height}`} aria-hidden="true" focusable="false">
             <rect width={item.width} height={item.height} fill={item.background ?? '#fff'} />
             {item.marks.map((mark, n) => <rect key={n} x={mark.x} y={mark.y} width={mark.width} height={mark.height}
