@@ -738,7 +738,7 @@ test('publication icon rail docks thumbnails, retains panels until toggled and a
   assert.match(styleEditor, /panelId="thumbnails"/);
   assert.match(styleEditor, /toggleSidebarPanel\('thumbnails'\)/);
   assert.match(styleEditor, /current === panel \? null : panel/);
-  assert.doesNotMatch(styleEditor, /document\.addEventListener\('pointerdown', closeOnPointerDown, true\);/);
+  assert.doesNotMatch(styleEditor.slice(styleEditor.indexOf('if (!openPanel) return;'), styleEditor.indexOf('function patchStyle')), /addEventListener\('pointerdown'/);
   assert.match(styleEditor, /publication-style-side-resizer/);
   assert.match(styleEditor, /onPointerMove=\{\(event\) =>/);
   assert.match(styleEditor, /showRuler=\{rulerVisible\}/);
