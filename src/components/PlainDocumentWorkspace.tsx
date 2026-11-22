@@ -65,6 +65,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const fallbackDocumentTitle = copy.document;
   const [documents, setDocuments] = useState<PlainDocumentSummary[]>([]);
   const [launch, setLaunch] = useState<EuroOfficeLaunch | null>(null);
+  const [nativeEditorReady, setNativeEditorReady] = useState(false);
   const [title, setTitle] = useState('');
   const [editorTitle, setEditorTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -73,6 +74,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const [editorHost, setEditorHost] = useState<HTMLDivElement | null>(null);
   const nativeStudio = isNativeStudioRuntime();
   const handleIsolatedFailure = useCallback((message: string) => setError(message), []);
+  const handleIsolatedReady = useCallback(() => setNativeEditorReady(true), []);
 
   useEffect(() => {
     if (documentId) return;
@@ -94,6 +96,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
     setBusy(true);
     setError('');
     setLaunch(null);
+    setNativeEditorReady(false);
     const editorType = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767px)').matches
       ? 'mobile'
       : 'desktop';
@@ -209,10 +212,11 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
                 launch={launch}
                 title={editorTitle || copy.document}
                 onFailure={handleIsolatedFailure}
+                onReady={handleIsolatedReady}
               />
             ) : null}
           </div>
-          {busy ? <div className="plain-document-loading"><LoaderCircle size={22} className="plain-document-spinner" />{copy.loading}</div> : null}
+          {busy || (nativeStudio && Boolean(launch) && !nativeEditorReady && !error) ? <div className="plain-document-loading"><LoaderCircle size={22} className="plain-document-spinner" />{copy.loading}</div> : null}
           {!busy && error ? <div className="plain-document-editor-error">
             <p>{copy.editorUnavailable}</p>
             {nativeStudio ? (
@@ -253,8 +257,8 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
 function getCopy(locale: string) {
   if (locale === 'hu') return {
     workspace: 'Word-dokumentumok', documents: 'Dokumentumaim', document: 'Dokumentum', titleLabel: 'Dokumentum címe',
-    untitled: 'Névtelen dokumentum', create: 'Új DOCX létrehozása', description: 'Egyszerű, DOCX-formátumú dokumentumok szerkesztése a EuroOffice beágyazott szövegszerkesztőjével.',
-    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'A EuroOffice menti a módosításokat.', editorUnavailable: 'A EuroOffice szerkesztő nem érhető el.', openInBrowser: 'Megnyitás a mobilböngészőben (külön bejelentkezés)',
+    untitled: 'Névtelen dokumentum', create: 'Új DOCX létrehozása', description: 'Egyszerű, DOCX-formátumú dokumentumok szerkesztése az EuroOffice beágyazott szövegszerkesztőjével.',
+    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'Az EuroOffice menti a módosításokat.', editorUnavailable: 'Az EuroOffice szerkesztő nem érhető el.', openInBrowser: 'Megnyitás a mobilböngészőben (külön bejelentkezés)',
   };
   if (locale === 'de') return {
     workspace: 'Word-Dokumente', documents: 'Meine Dokumente', document: 'Dokument', titleLabel: 'Dokumenttitel',
