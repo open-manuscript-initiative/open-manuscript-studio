@@ -23,7 +23,7 @@ const docsApi = `window.DocsAPI = { DocEditor: function(id, config) {
     } else {
       config.events?.onDocumentReady?.();
     }
-  }, 20);
+  }, config.document?.key === 'layout-delayed' ? 1500 : 20);
   this.destroyEditor = function() {
     const placeholder = document.createElement('div');
     placeholder.id = id;
@@ -231,4 +231,41 @@ test('native EuroOffice surfaces document-load errors without leaking private de
   await expect(page.getByRole('button', { name: /Open in mobile browser/ })).toBeVisible();
   await expect(alert).not.toContainText('PRIVATE_TEST_VALUE');
   await expect(alert).not.toContainText('SECRET_TEST_TOKEN');
+});
+
+
+test('native EuroOffice offers browser recovery while document readiness is still pending', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  await installEuroOffice(page);
+  const { html, csp } = buildEuroOfficeEmbedHost('https://eurooffice.example.test', 'http://localhost:5173');
+  await page.route('https://studio.openmanuscript.org/api/v1/eurooffice/embed-host**', route =>
+    route.fulfill({ contentType: 'text/html', headers: { 'Content-Security-Policy': csp }, body: html }));
+  await page.route('**/api/v1/eurooffice/documents/**/session?type=mobile', route =>
+    route.fulfill({ json: {
+      apiScriptUrl: 'https://eurooffice.example.test/web-apps/apps/api/documents/api.js',
+      config: {
+        type: 'mobile', width: '100%', height: '100%', token: 'synthetic-config-token',
+        documentType: 'word',
+        document: { title: 'Delayed.docx', key: 'layout-delayed', fileType: 'docx',
+          url: 'https://eurooffice.example.test/source.docx' },
+        editorConfig: { lang: 'en', user: { id: 'synthetic', name: 'Test' } },
+      },
+      expiresAt: '2099-01-01T00:00:00Z',
+    } }));
+  await signInToStudio(page);
+  await page.evaluate(() => {
+    Object.defineProperty(window, 'isTauri', { value: true, configurable: true });
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
+  });
+  await page.getByRole('button', { name: /^Everyday DOCX documents/ }).click();
+  await page.getByRole('button', { name: /^Layout regression/ }).click();
+
+  await expect(page.locator('.plain-document-loading')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Open in mobile browser/ })).toBeVisible();
+  await expect(page.locator('.plain-document-loading')).toContainText('Loading document…');
+  await expect(page.locator('.plain-document-loading')).toHaveCount(0);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.frameLocator('.plain-document-isolated-frame')
+    .frameLocator('iframe[name="frameEditor"]')
+    .getByRole('button', { name: 'Edit document' })).toBeVisible();
 });

@@ -10,6 +10,14 @@ The installed Tauri Android app uses a **sandboxed, unprivileged remote host** f
 4. `onAppReady` means the app frame loaded. Only `onDocumentReady` means the document is ready for editing. `onError` reports a numeric code only, not its potentially sensitive description. A bounded timeout covers a hung initialization.
 5. If the editor fails, Android offers to open the selected institutional Studio site in the browser. This does not transfer native tokens or open a private document via an unverified link; the user signs into the browser and navigates to their DOCX document.
 
+## Android loading state and known sandbox limitation
+
+When the native editor does not become ready, Studio now distinguishes session preparation, connection to the isolated host, startup of the Office editor, and loading the document. Session API requests have a separate 30-second cancellation limit; the iframe/document readiness watchdog remains 60 seconds. The browser recovery action is visible **during loading**, not only after the error timeout. It opens only the already-selected Studio server's web home page and sends no document token or manuscript data.
+
+The native iframe and the HTTP host CSP deliberately enforce an **opaque origin**, without `allow-same-origin`. This is ADR-030's security boundary: remote Office JavaScript must not acquire Studio API-origin storage/cookie authority. A real ONLYOFFICE editor may require its nested frame to retain its own origin, so the synthetic tests cannot demonstrate native Android compatibility in every deployment. **Do not add `allow-same-origin` on the existing API-origin host as a quick fix.** Investigate a dedicated cookieless Office host origin or an independent, unprivileged native editor view, then validate its cross-origin handshake and capability boundaries.
+
+If the UI remains on `Preparing EuroOffice session…`, first check the selected server API authentication/network request for the session. If it remains on `Connecting to EuroOffice…`, check whether the token-free embed-host frame loaded, CSP `frame-ancestors` matched the native origin, and any reverse proxy added `X-Frame-Options`. If it progresses to `Starting EuroOffice editor…`, inspect the Office API script, nested iframe and the sandbox/origin restrictions. If it reaches `Loading document…`, check the document server's real `onDocumentReady` and `onError` events, callback reachability, and any edition-specific mobile restrictions.
+
 ## Evidence to collect
 
 - Run `npx playwright test e2e/eurooffice-frame.mobile.spec.ts --project=mobile-chrome --retries=0`. This is synthetic browser coverage of the native branch and its error protocol; **it is not a physical Android WebView acceptance test**.
