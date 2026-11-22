@@ -835,6 +835,7 @@ export function PublicationDocumentCanvas({
     publicationCorrections,
     noteLineHeight,
     noteSeparatorHeight,
+    noteStyle.footnoteContinueOnNextPage,
     outerMargin,
     paginationDebounceMs,
     pageOverhead,
