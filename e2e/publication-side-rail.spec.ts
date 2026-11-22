@@ -23,7 +23,7 @@ test('desktop publication controls occupy a vertical side rail and expand beside
   const canvasBefore = await canvas.boundingBox();
   expect(collapsed).not.toBeNull();
   expect(canvasBefore).not.toBeNull();
-  expect(collapsed!.right).toBeLessThanOrEqual(canvasBefore!.x + 2);
+  expect(collapsed!.x + collapsed!.width).toBeLessThanOrEqual(canvasBefore!.x + 2);
 
   await stylesButton.click();
   await expect(stylesButton).toHaveAttribute('aria-expanded', 'true');
