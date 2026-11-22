@@ -981,7 +981,14 @@ export function PublicationDocumentCanvas({
     const source = navigationPages[from], target = navigationPages[to]; if (!source || !target || from === to) return;
     if (source.insertionId) {
       const insertion = pageCollection.insertions?.find((item) => item.id === source.insertionId);
-      if (insertion) onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, insertion, target, to < from ? 'before' : 'after') });
+      // The first displayed sheet always denotes the publication start, even
+      // when the title/front matter and the first paragraph share a measured page.
+      // Moving a blank to page 1 must precede the front matter, not only the
+      // first manuscript paragraph.
+      const destination = to === 0 && !target.insertionId
+        ? { ...target, firstBlockId: PUBLICATION_BODY_START }
+        : target;
+      if (insertion) onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, insertion, destination, to < from ? 'before' : 'after') });
     } else if (source.studyId) {
       const targetId = target.studyId !== source.studyId ? target.studyId : undefined;
       if (targetId) stageMoveSectionToSibling(source.studyId, targetId, to > from);
@@ -1008,7 +1015,10 @@ export function PublicationDocumentCanvas({
       onInsert={(index, side, styleId) => {
         const target = navigationPages[index]; if (!target) return;
         const id = crypto.randomUUID();
-        onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
+        const destination = index === 0 && side === 'before' && !target.insertionId
+          ? { ...target, firstBlockId: PUBLICATION_BODY_START }
+          : target;
+        onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, destination, side) });
         setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
       }}
       onDelete={(index) => {
