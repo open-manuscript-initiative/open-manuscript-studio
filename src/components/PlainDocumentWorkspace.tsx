@@ -67,6 +67,10 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const [launch, setLaunch] = useState<EuroOfficeLaunch | null>(null);
   const [nativeEditorReady, setNativeEditorReady] = useState(false);
   const [nativeEditorPhase, setNativeEditorPhase] = useState<'host' | 'editor' | 'document'>('host');
+  // A Community Edition server may not support the mobile editor UI. Do not
+  // rewrite signed Office config in the client: request a fresh desktop session.
+  const [desktopRetryDocumentId, setDesktopRetryDocumentId] = useState<string | null>(null);
+  const [sessionAttempt, setSessionAttempt] = useState(0);
   const [title, setTitle] = useState('');
   const [editorTitle, setEditorTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -74,6 +78,21 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [editorHost, setEditorHost] = useState<HTMLDivElement | null>(null);
   const nativeStudio = isNativeStudioRuntime();
+  const usingDesktopRetry = nativeStudio && Boolean(documentId) && desktopRetryDocumentId === documentId;
+  const mobileViewport = typeof window.matchMedia === 'function'
+    && window.matchMedia('(max-width: 767px)').matches;
+  const showDesktopRetry = nativeStudio && mobileViewport;
+
+  const retryOfficeWithDesktop = useCallback(() => {
+    if (!documentId) return;
+    if (desktopRetryDocumentId === documentId) {
+      // A second attempt must create a new signed Office session even if the
+      // previously selected mode is unchanged.
+      setSessionAttempt((attempt) => attempt + 1);
+    } else {
+      setDesktopRetryDocumentId(documentId);
+    }
+  }, [desktopRetryDocumentId, documentId]);
   const handleIsolatedFailure = useCallback((message: string) => setError(message), []);
   const handleIsolatedReady = useCallback(() => setNativeEditorReady(true), []);
   const handleIsolatedPhase = useCallback((phase: 'host' | 'script' | 'editor' | 'document') => {
@@ -102,9 +121,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
     setLaunch(null);
     setNativeEditorReady(false);
     setNativeEditorPhase('host');
-    const editorType = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767px)').matches
-      ? 'mobile'
-      : 'desktop';
+    const editorType = usingDesktopRetry || !mobileViewport ? 'desktop' : 'mobile';
     createEuroOfficeSession(documentId, editorType)
       .then(async (session) => {
         // Native Studio isolates external DocsAPI in a separate origin. Remote
@@ -121,7 +138,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
       })
       .finally(() => { if (!cancelled) setBusy(false); });
     return () => { cancelled = true; };
-  }, [documentId, fallbackDocumentTitle, nativeStudio]);
+  }, [documentId, fallbackDocumentTitle, mobileViewport, nativeStudio, sessionAttempt, usingDesktopRetry]);
 
   useEffect(() => {
     if (nativeStudio || !launch || !editorHost || !window.DocsAPI) return;
@@ -213,7 +230,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
           <div className="plain-document-editor-host" ref={nativeStudio ? undefined : setEditorHost}>
             {nativeStudio && launch ? (
               <EuroOfficeIsolatedFrame
-                key={documentId + ':' + launch.expiresAt}
+                key={documentId + ':' + sessionAttempt + ':' + launch.expiresAt}
                 launch={launch}
                 title={editorTitle || copy.document}
                 onFailure={handleIsolatedFailure}
@@ -228,6 +245,11 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
                 <LoaderCircle size={22} className="plain-document-spinner" aria-hidden="true" />
                 <span>{nativeStudio && busy ? copy.preparingSession : !nativeStudio ? copy.loading : nativeEditorPhase === 'host' ? copy.connectingOffice : nativeEditorPhase === 'editor' ? copy.startingOffice : copy.loadingDocument}</span>
               </div>
+              {showDesktopRetry ? (
+                <button type="button" className="plain-document-web-fallback" onClick={retryOfficeWithDesktop}>
+                  {usingDesktopRetry ? copy.retryDesktop : copy.tryDesktop}
+                </button>
+              ) : null}
               {nativeStudio ? (
                 <button type="button" className="plain-document-web-fallback" onClick={() => void openInMobileBrowser()}>
                   {copy.openInBrowser}
@@ -237,6 +259,11 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
           ) : null}
           {!busy && error ? <div className="plain-document-editor-error">
             <p>{copy.editorUnavailable}</p>
+            {showDesktopRetry ? (
+              <button type="button" className="plain-document-web-fallback" onClick={retryOfficeWithDesktop}>
+                {usingDesktopRetry ? copy.retryDesktop : copy.tryDesktop}
+              </button>
+            ) : null}
             {nativeStudio ? (
               <button type="button" className="plain-document-web-fallback" onClick={() => void openInMobileBrowser()}>
                 {copy.openInBrowser}
@@ -276,16 +303,16 @@ function getCopy(locale: string) {
   if (locale === 'hu') return {
     workspace: 'Word-dokumentumok', documents: 'Dokumentumaim', document: 'Dokumentum', titleLabel: 'Dokumentum címe',
     untitled: 'Névtelen dokumentum', create: 'Új DOCX létrehozása', description: 'Egyszerű, DOCX-formátumú dokumentumok szerkesztése az EuroOffice beágyazott szövegszerkesztőjével.',
-    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'Az EuroOffice menti a módosításokat.', editorUnavailable: 'Az EuroOffice szerkesztő nem érhető el.', openInBrowser: 'Megnyitás böngészőben (külön bejelentkezés)', preparingSession: 'EuroOffice-munkamenet előkészítése…', connectingOffice: 'Kapcsolódás az EuroOffice-hoz…', startingOffice: 'Az EuroOffice szerkesztő indítása…', loadingDocument: 'Dokumentum betöltése…',
+    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'Az EuroOffice menti a módosításokat.', editorUnavailable: 'Az EuroOffice szerkesztő nem érhető el.', openInBrowser: 'Megnyitás böngészőben (külön bejelentkezés)', preparingSession: 'EuroOffice-munkamenet előkészítése…', connectingOffice: 'Kapcsolódás az EuroOffice-hoz…', startingOffice: 'Az EuroOffice szerkesztő indítása…', loadingDocument: 'Dokumentum betöltése…', tryDesktop: 'Asztali szerkesztő kipróbálása', retryDesktop: 'Asztali szerkesztő újrapróbálása',
   };
   if (locale === 'de') return {
     workspace: 'Word-Dokumente', documents: 'Meine Dokumente', document: 'Dokument', titleLabel: 'Dokumenttitel',
     untitled: 'Unbenanntes Dokument', create: 'Neues DOCX erstellen', description: 'Einfache DOCX-Dokumente mit dem eingebetteten EuroOffice-Editor bearbeiten.',
-    loading: 'Wird geladen…', empty: 'Sie haben noch keine DOCX-Dokumente.', updated: 'Geändert', close: 'Schließen', actions: 'Dokumentaktionen', autosave: 'EuroOffice speichert Änderungen.', editorUnavailable: 'Der EuroOffice-Editor ist nicht verfügbar.', openInBrowser: 'Im mobilen Browser öffnen (separate Anmeldung)', preparingSession: 'EuroOffice-Sitzung wird vorbereitet…', connectingOffice: 'Verbindung zu EuroOffice…', startingOffice: 'EuroOffice-Editor wird gestartet…', loadingDocument: 'Dokument wird geladen…',
+    loading: 'Wird geladen…', empty: 'Sie haben noch keine DOCX-Dokumente.', updated: 'Geändert', close: 'Schließen', actions: 'Dokumentaktionen', autosave: 'EuroOffice speichert Änderungen.', editorUnavailable: 'Der EuroOffice-Editor ist nicht verfügbar.', openInBrowser: 'Im mobilen Browser öffnen (separate Anmeldung)', preparingSession: 'EuroOffice-Sitzung wird vorbereitet…', connectingOffice: 'Verbindung zu EuroOffice…', startingOffice: 'EuroOffice-Editor wird gestartet…', loadingDocument: 'Dokument wird geladen…', tryDesktop: 'Desktop-Editor versuchen', retryDesktop: 'Desktop-Editor erneut versuchen',
   };
   return {
     workspace: 'Word documents', documents: 'My documents', document: 'Document', titleLabel: 'Document title',
     untitled: 'Untitled document', create: 'Create DOCX document', description: 'Write ordinary DOCX documents with the embedded EuroOffice editor.',
-    loading: 'Loading…', empty: 'You do not have any DOCX documents yet.', updated: 'Updated', close: 'Close', actions: 'Document actions', autosave: 'EuroOffice saves your changes.', editorUnavailable: 'The EuroOffice editor is unavailable.', openInBrowser: 'Open in mobile browser (sign in separately)', preparingSession: 'Preparing EuroOffice session…', connectingOffice: 'Connecting to EuroOffice…', startingOffice: 'Starting EuroOffice editor…', loadingDocument: 'Loading document…',
+    loading: 'Loading…', empty: 'You do not have any DOCX documents yet.', updated: 'Updated', close: 'Close', actions: 'Document actions', autosave: 'EuroOffice saves your changes.', editorUnavailable: 'The EuroOffice editor is unavailable.', openInBrowser: 'Open in mobile browser (sign in separately)', preparingSession: 'Preparing EuroOffice session…', connectingOffice: 'Connecting to EuroOffice…', startingOffice: 'Starting EuroOffice editor…', loadingDocument: 'Loading document…', tryDesktop: 'Try desktop editor', retryDesktop: 'Retry desktop editor',
   };
 }

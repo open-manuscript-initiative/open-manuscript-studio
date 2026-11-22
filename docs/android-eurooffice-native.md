@@ -18,6 +18,39 @@ The native iframe and the HTTP host CSP deliberately enforce an **opaque origin*
 
 If the UI remains on `Preparing EuroOffice session…`, first check the selected server API authentication/network request for the session. If it remains on `Connecting to EuroOffice…`, check whether the token-free embed-host frame loaded, CSP `frame-ancestors` matched the native origin, and any reverse proxy added `X-Frame-Options`. If it progresses to `Starting EuroOffice editor…`, inspect the Office API script, nested iframe and the sandbox/origin restrictions. If it reaches `Loading document…`, check the document server's real `onDocumentReady` and `onError` events, callback reachability, and any edition-specific mobile restrictions.
 
+## Native Android desktop-mode retry (2026-11-22)
+
+The loading screen shown as **"Starting EuroOffice editor…"** means that the
+isolated host has loaded DocsAPI and answered the ready/launch handshake, but
+ONLYOFFICE has **not** yet raised `onAppReady`. It is not the Studio account
+sign-in screen. A separate mode/edition issue or the existing native iframe
+sandbox restrictions may block the nested Office application.
+
+ONLYOFFICE Docs documents its touch-optimized `type: "mobile"` editor as a
+feature of **Enterprise/Developer** editions. For Community Edition deployments,
+the native loading/error screen now offers **Try desktop editor**. This action:
+
+1. requests a fresh `type=desktop` document session from the same selected
+   Studio server with the existing native bearer authentication;
+2. receives a **new server-signed DocsAPI JWT** (the client never edits the
+   signed configuration or appends a token to a URL);
+3. mounts a fresh isolated editor iframe using the existing strict CSP, sandbox,
+   random postMessage channel and verified message source.
+
+No separate browser sign-in or downgrade of the main Tauri CSP is involved.
+This is a user-initiated compatibility attempt, **not a claim** that Community
+Edition's desktop UI is officially supported in Android WebView. If the actual
+ONLYOFFICE document editor requires a non-opaque host origin, both editor types
+may still fail. In that case the long-term solution is a dedicated, cookieless
+Office embedding origin with reviewed parent-message and content security
+boundaries, **not** enabling `allow-same-origin` for the existing Studio API
+origin.
+
+The **Open in mobile browser** recovery action stays available. Test the
+desktop retry and normal mobile editor on a real signed Android release with
+the actual EuroOffice container. Confirm edit/save/close/reopen with a fresh
+DOCX; a synthetic Chromium test is not enough to sign off compatibility.
+
 ## Evidence to collect
 
 - Run `npx playwright test e2e/eurooffice-frame.mobile.spec.ts --project=mobile-chrome --retries=0`. This is synthetic browser coverage of the native branch and its error protocol; **it is not a physical Android WebView acceptance test**.
