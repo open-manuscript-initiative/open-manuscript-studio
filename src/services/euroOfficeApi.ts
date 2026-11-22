@@ -52,10 +52,24 @@ export async function createEuroOfficeSession(
   documentId: string,
   editorType: EuroOfficeEditorType = 'desktop',
 ): Promise<EuroOfficeLaunch> {
-  const response = await apiFetch(
-    `/api/v1/eurooffice/documents/${encodeURIComponent(documentId)}/session?type=${editorType}`,
-  );
-  return readJson<EuroOfficeLaunch>(response);
+  // A hung session request previously left native Android on an unbounded
+  // loading overlay. Keep this timeout separate from DocsAPI readiness.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await apiFetch(
+      `/api/v1/eurooffice/documents/${encodeURIComponent(documentId)}/session?type=${editorType}`,
+      { signal: controller.signal },
+    );
+    return await readJson<EuroOfficeLaunch>(response);
+  } catch (cause) {
+    if (controller.signal.aborted) {
+      throw new Error('EuroOffice session request timed out.');
+    }
+    throw cause;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export function requestPlainDocumentWorkspace(documentId: string | null): void {
