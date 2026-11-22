@@ -1,4 +1,5 @@
 import { PublicationPageNavigator } from './PublicationPageNavigator';
+import { createPortal } from 'react-dom';
 import { placePublicationEmptyPage, type PublicationBodyPageThumbnail } from '../model/publicationPageNavigation';
 import { getStudyRootSectionId, partitionManuscriptStudies } from '../model/sectionStructure';
 import { stageMoveSectionToSibling } from '../app/sectionActions';
@@ -117,6 +118,8 @@ interface PublicationDocumentCanvasProps {
   onPageCountChange?: (manuscriptId: string, count: number) => void;
   onLayoutIssues?: PublicationLayoutIssueReporter;
   navigationTarget?: PublicationLayoutIssue | null;
+  pageNavigatorTarget?: HTMLElement | null;
+  showRuler?: boolean;
 }
 
 interface PublicationCanvasCopy {
@@ -149,6 +152,8 @@ export function PublicationDocumentCanvas({
   onPageCountChange,
   onLayoutIssues,
   navigationTarget,
+  pageNavigatorTarget,
+  showRuler = true,
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
@@ -1052,26 +1057,43 @@ export function PublicationDocumentCanvas({
         </div>
       </header>
 
-      {viewMode === 'print' ? <PublicationPageNavigator pages={navigationPages}
-        styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
-        onSelect={selectThumbnail} onMove={moveThumbnail}
-        onInsert={(index, side, styleId) => {
-          const target = navigationPages[index]; if (!target) return;
-          const id = crypto.randomUUID();
-          onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
-          setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
-        }}
-        onDelete={(index) => {
-          const id = navigationPages[index]?.insertionId;
-          if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
-          setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
-        }} /> : null}
+      {viewMode === 'print' && (previewOnly || pageNavigatorTarget)
+        ? (pageNavigatorTarget ? createPortal(
+          <PublicationPageNavigator pages={navigationPages}
+            styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
+            onSelect={selectThumbnail} onMove={moveThumbnail}
+            onInsert={(index, side, styleId) => {
+              const target = navigationPages[index]; if (!target) return;
+              const id = crypto.randomUUID();
+              onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
+              setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
+            }}
+            onDelete={(index) => {
+              const id = navigationPages[index]?.insertionId;
+              if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
+              setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
+            }} />, pageNavigatorTarget)
+          : <PublicationPageNavigator pages={navigationPages}
+              styles={[{ id: 'default', name: style.name }, ...pageCollection.styles]} selected={selectedThumbnail} help="body"
+              onSelect={selectThumbnail} onMove={moveThumbnail}
+              onInsert={(index, side, styleId) => {
+                const target = navigationPages[index]; if (!target) return;
+                const id = crypto.randomUUID();
+                onStyleChange?.({ ...style, pageStyles: placePublicationEmptyPage(pageCollection, { id, styleId: styleId === 'default' ? undefined : styleId }, target, side) });
+                setSelectedThumbnailId(`inserted:${id}`); pendingThumbnailNavigation.current = `inserted:${id}`;
+              }}
+              onDelete={(index) => {
+                const id = navigationPages[index]?.insertionId;
+                if (id) onStyleChange?.({ ...style, pageStyles: { ...pageCollection, insertions: pageCollection.insertions?.filter((item) => item.id !== id) } });
+                setSelectedThumbnailId(navigationPages[Math.max(0, index - 1)]?.id ?? '');
+              }} />)
+        : null}
       <div
         ref={stageRef}
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
         aria-label={viewMode === 'print' ? copy.printLayout : copy.htmlLayout}
       >
-        {!previewOnly ? <PublicationSectionRuler
+        {!previewOnly && showRuler ? <PublicationSectionRuler
           locale={locale}
           viewMode={viewMode}
           widthPx={pageWidth}
