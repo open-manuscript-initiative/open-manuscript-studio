@@ -269,3 +269,41 @@ test('native EuroOffice offers browser recovery while document readiness is stil
     .frameLocator('iframe[name="frameEditor"]')
     .getByRole('button', { name: 'Edit document' })).toBeVisible();
 });
+
+test('native Android retries with a fresh desktop editor session without separate browser login', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  const sessionTypes = await installEuroOffice(page);
+  const { html, csp } = buildEuroOfficeEmbedHost('https://eurooffice.example.test', 'http://localhost:5173');
+  await page.route('https://studio.openmanuscript.org/api/v1/eurooffice/embed-host**', route =>
+    route.fulfill({ contentType: 'text/html', headers: { 'Content-Security-Policy': csp }, body: html }));
+  // Emulate a mobile-edition editor that initializes but never announces a
+  // ready document; switching must request a different signed server session.
+  await page.route('**/api/v1/eurooffice/documents/**/session?type=mobile', route =>
+    route.fulfill({ json: {
+      apiScriptUrl: 'https://eurooffice.example.test/web-apps/apps/api/documents/api.js',
+      config: {
+        type: 'mobile', width: '100%', height: '100%', token: 'synthetic-mobile-token',
+        documentType: 'word',
+        document: { title: 'Delayed.docx', key: 'layout-delayed', fileType: 'docx',
+          url: 'https://eurooffice.example.test/source.docx' },
+        editorConfig: { lang: 'en', user: { id: 'synthetic', name: 'Test' } },
+      },
+      expiresAt: '2099-01-01T00:00:00Z',
+    } }));
+  await signInToStudio(page);
+  await page.evaluate(() => {
+    Object.defineProperty(window, 'isTauri', { value: true, configurable: true });
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
+  });
+  await page.getByRole('button', { name: /^Everyday DOCX documents/ }).click();
+  await page.getByRole('button', { name: /^Layout regression/ }).click();
+  await expect(page.getByRole('button', { name: 'Try desktop editor' })).toBeVisible();
+  await page.getByRole('button', { name: 'Try desktop editor' }).click();
+  await expect.poll(() => sessionTypes.at(-1)).toBe('desktop');
+  await expect(page.frameLocator('.plain-document-isolated-frame')
+    .frameLocator('iframe[name="frameEditor"]')
+    .getByRole('button', { name: 'Edit document' })).toBeVisible();
+  await expect(page.locator('.plain-document-loading')).toHaveCount(0);
+  await expect(page.locator('script[data-eurooffice-api="true"]')).toHaveCount(0);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
