@@ -2068,3 +2068,154 @@
 .publication-study-order li > span { flex: 1 1 10rem; overflow-wrap: anywhere; }
 .publication-layout-checker ul { display: grid; gap: .4rem; padding-left: 1.25rem; }
 .publication-layout-checker button { max-width: 100%; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+
+
+/* Keep the canvas in the same editing session while moving the extensive
+   publishing controls into a space-saving side rail on large screens. */
+.publication-style-editor-shell {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.publication-style-editor > .publication-style-editor-shell {
+  flex-shrink: 1;
+}
+
+.publication-style-editor-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.publication-style-editor-main > .publication-style-editor-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (min-width: 1151px) {
+  .publication-style-editor-shell--with-ribbon {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .publication-style-editor-shell--with-ribbon.publication-style-editor-shell--panel-open {
+    grid-template-columns: min(27rem, 43vw) minmax(0, 1fr);
+  }
+
+  .publication-style-editor-shell--with-ribbon > .publication-style-ribbon {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    border-right: 1px solid #cbd5e1;
+    border-bottom: 0;
+    box-shadow: 0.12rem 0 0.3rem rgba(15, 23, 42, 0.08);
+  }
+
+  .publication-style-ribbon-row {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0;
+    min-height: 0;
+    padding: 0.3rem 0.2rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+  }
+
+  .publication-style-ribbon-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .publication-style-ribbon-menu-button,
+  .publication-style-ribbon-action-button {
+    width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+  }
+
+  .publication-style-ribbon-menu-button > span,
+  .publication-style-ribbon-menu-button > svg:last-child {
+    display: none;
+  }
+
+  .publication-style-ribbon-separator {
+    align-self: center;
+    width: 2.25rem;
+    height: 1px;
+    margin: 0.3rem 0;
+  }
+
+  /* Still announce save/live-update feedback to assistive technologies. */
+  .publication-style-ribbon-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .publication-style-ribbon-panel,
+  .publication-style-ribbon-panel--compact,
+  .publication-style-ribbon-panel--paragraph-styles {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    top: auto;
+    left: auto;
+    width: 100%;
+    max-height: none;
+    min-height: 0;
+    padding: 0.8rem;
+    border: 0;
+    border-left: 1px solid #cbd5e1;
+    border-radius: 0;
+    box-shadow: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .publication-style-ribbon-panel .publication-style-grid,
+  .publication-style-ribbon-panel .publication-paragraph-style-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .publication-style-editor-shell--with-ribbon > .publication-style-editor-main {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .publication-style-editor-shell--with-ribbon .publication-document-canvas {
+    border-top: 1px solid #b8bec8;
+    border-radius: 0 0.45rem 0.45rem 0;
+  }
+}
+
+@media print {
+  .publication-style-editor-shell--with-ribbon {
+    display: block;
+  }
+  .publication-style-editor-shell--with-ribbon > .publication-style-ribbon {
+    display: none;
+  }
+}
