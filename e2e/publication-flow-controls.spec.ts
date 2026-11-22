@@ -16,28 +16,43 @@ test('icon-only section warnings, optional checker navigation, study order and i
   await page.getByRole('button', { name: /^New OMI study/ }).click();
   // A successful click can precede the editor's mount on loaded CI runners.
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
-  await page.evaluate(() => {
-    // Chromium's inspector only holds evaluated promises weakly. Keep this
-    // import-and-mutate fixture alive until Playwright receives its result.
-    const setupPromise = (async () => {
-      const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-      const { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY } = await import('/src/services/publicationStyleExport.ts');
-      const style = clonePublicationStyleTemplate();
-      style.page.width = 120; style.page.height = 170;
-      style.page.margins = { top: 20, bottom: 20, inner: 20, outer: 20 };
-      localStorage.setItem(PUBLICATION_STYLE_STORAGE_KEY, JSON.stringify(style));
-      const current = useStudioStore.getState().manuscript;
-      const rich = (text: string) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
-      useStudioStore.getState().loadManuscript({ ...current, title: 'Flow control trial',
-        sections: [{ id: 'study-a', title: 'Study A', blocks: [
-          { id: 'long-a', type: 'paragraph', content: rich('A long paragraph continues across pages with its original text. '.repeat(100)) },
-          { id: 'last-a', type: 'paragraph', content: rich('END_OF_A') },
-        ] }, { id: 'study-b', title: 'Study B', blocks: [{ id: 'body-b', type: 'paragraph', content: rich('BODY_OF_B') }] }],
-      });
-    })();
-    Object.defineProperty(window, '__omiPublicationFlowSetup', { value: setupPromise, configurable: true });
-    return setupPromise;
+  // Run the import-and-mutate fixture in a normal page module, not in an
+  // inspector evaluation whose returned Promise Chromium may garbage collect.
+  // Keep the state-changing setup single-shot: only poll a synchronous status.
+  await page.addScriptTag({
+    type: 'module',
+    content: `
+      void (async () => {
+        try {
+          const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+          const { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY } = await import('/src/services/publicationStyleExport.ts');
+          const style = clonePublicationStyleTemplate();
+          style.page.width = 120; style.page.height = 170;
+          style.page.margins = { top: 20, bottom: 20, inner: 20, outer: 20 };
+          localStorage.setItem(PUBLICATION_STYLE_STORAGE_KEY, JSON.stringify(style));
+          const current = useStudioStore.getState().manuscript;
+          const rich = (text) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
+          useStudioStore.getState().loadManuscript({ ...current, title: 'Flow control trial',
+            sections: [{ id: 'study-a', title: 'Study A', blocks: [
+              { id: 'long-a', type: 'paragraph', content: rich('A long paragraph continues across pages with its original text. '.repeat(100)) },
+              { id: 'last-a', type: 'paragraph', content: rich('END_OF_A') },
+            ] }, { id: 'study-b', title: 'Study B', blocks: [{ id: 'body-b', type: 'paragraph', content: rich('BODY_OF_B') }] }],
+          });
+          window.__omiPublicationFlowStore = useStudioStore;
+          window.__omiPublicationFlowSetup = { status: 'ready' };
+        } catch (error) {
+          window.__omiPublicationFlowSetup = {
+            status: 'error',
+            message: error instanceof Error ? (error.stack || error.message) : String(error),
+          };
+        }
+      })();
+    `,
   });
+  await expect.poll(() => page.evaluate(() => {
+    const setup = (window as Window & { __omiPublicationFlowSetup?: { status: string; message?: string } }).__omiPublicationFlowSetup;
+    return setup?.status === 'error' ? `error: ${setup.message ?? 'unknown'}` : setup?.status ?? 'pending';
+  }), { timeout: 30_000 }).toBe('ready');
   await page.evaluate(() => { Reflect.deleteProperty(window, '__omiPublicationFlowSetup'); });
   let editor = await openPublication(page);
   const heading = editor.locator(':is(h1,h2,h3,h4,h5,h6)[data-section-id="study-a"]').first();
@@ -53,9 +68,13 @@ test('icon-only section warnings, optional checker navigation, study order and i
   await editor.getByRole('button', { name: 'Page styles and section headers', exact: true }).click();
   await expect(panel.getByRole('checkbox', { name: 'Check layout', exact: true })).toBeChecked();
   await panel.getByRole('button', { name: 'Move study down: 1', exact: true }).click();
-  await expect.poll(() => page.evaluate(async () => {
-    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-    return useStudioStore.getState().manuscript.sections.map((item) => item.id);
+  await expect.poll(() => page.evaluate(() => {
+    const store = (window as Window & {
+      __omiPublicationFlowStore?: {
+        getState(): { manuscript: { sections: Array<{ id: string }> } };
+      };
+    }).__omiPublicationFlowStore;
+    return store?.getState().manuscript.sections.map((item) => item.id) ?? [];
   })).toEqual(['study-b', 'study-a']);
   await panel.getByRole('button', { name: 'Save current page settings as a style', exact: true }).click();
   await panel.getByRole('textbox', { name: 'Page style name', exact: true }).fill('Inserted plate');
@@ -65,10 +84,33 @@ test('icon-only section warnings, optional checker navigation, study order and i
   await panel.getByRole('button', { name: 'Insert page', exact: true }).click();
   await expect(editor.locator('[data-inserted-page]')).toHaveCount(1);
   await expect(editor.locator('[data-inserted-page]')).toHaveAttribute('data-page-style', styleId);
-  await page.evaluate(async () => {
-    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-    const { resumeLastSessionPersistence } = await import('/src/app/lastSessionPersistence.ts');
-    useStudioStore.getState().checkpoint('manual'); await resumeLastSessionPersistence();
+  // Persist from a page module as well; no dynamic-import Promise is returned
+  // to the inspector when the test checkpoints the updated manuscript.
+  await page.addScriptTag({
+    type: 'module',
+    content: `
+      void (async () => {
+        try {
+          const { resumeLastSessionPersistence } = await import('/src/app/lastSessionPersistence.ts');
+          window.__omiPublicationFlowStore.getState().checkpoint('manual');
+          await resumeLastSessionPersistence();
+          window.__omiPublicationFlowPersistence = { status: 'ready' };
+        } catch (error) {
+          window.__omiPublicationFlowPersistence = {
+            status: 'error',
+            message: error instanceof Error ? (error.stack || error.message) : String(error),
+          };
+        }
+      })();
+    `,
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const state = (window as Window & { __omiPublicationFlowPersistence?: { status: string; message?: string } }).__omiPublicationFlowPersistence;
+    return state?.status === 'error' ? `error: ${state.message ?? 'unknown'}` : state?.status ?? 'pending';
+  }), { timeout: 30_000 }).toBe('ready');
+  await page.evaluate(() => {
+    Reflect.deleteProperty(window, '__omiPublicationFlowPersistence');
+    Reflect.deleteProperty(window, '__omiPublicationFlowStore');
   });
   await page.reload(); editor = await openPublication(page);
   await expect(editor.locator('[data-inserted-page]')).toHaveCount(1);
