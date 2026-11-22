@@ -1,5 +1,7 @@
 import { PublicPrivacyPage } from './components/PrivacyNotice';
 import { createStudioDocumentSessions } from './app/documentSessions';
+import { clearDocumentClosedState } from './app/documentCloseState';
+import { applyDocxImportPlan } from './app/docxImportActions';
 import {
   useCallback,
   useSyncExternalStore,
@@ -21,6 +23,7 @@ import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
 import { ClosedDocumentScreen } from './components/ClosedDocumentScreen';
 import { ProofreadingController } from './components/ProofreadingController';
+import { ExternalDocumentSourceReview } from './components/ExternalDocumentSourceReview';
 import {
   DesktopDocumentTabs,
 } from './components/DesktopDocumentTabs';
@@ -47,6 +50,8 @@ import {
 import { MobileLayout } from './mobile/navigation/MobileLayout';
 import { isMobileStudio } from './mobile/platform/platform';
 import { connectAndroidDocumentOpening } from './services/androidDocumentOpening';
+import type { OfficeImportReceipt } from './services/exchangeSession';
+import type { DocumentImportMode } from './model/documentImportMode';
 import type { OjsAssignmentLaunchContext } from './services/ojsAssignmentApi';
 import {
   isNativeStudio,
@@ -58,7 +63,7 @@ import {
 
 import './styles/auth.css';
 import './styles/history.css';
-import { tCatalog } from './i18n';
+import { tCatalog, useTranslation } from './i18n';
 
 type AuthView = 'login' | 'register';
 type ExternalImportState =
@@ -153,6 +158,7 @@ export function App() {
 }
 
 function StudioApplication() {
+  const { locale } = useTranslation();
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const mobileStudio = isMobileStudio();
   const hasOpenDocument = useStudioStore((state) => state.hasOpenDocument);
@@ -162,6 +168,11 @@ function StudioApplication() {
   );
   const [menuOpen, setMenuOpen] = useState(false);
   const [localOpenError, setLocalOpenError] = useState<string | null>(null);
+  const [androidDocxReceipt, setAndroidDocxReceipt] = useState<OfficeImportReceipt | null>(null);
+  const [androidImportMode, setAndroidImportMode] = useState<DocumentImportMode>('editorial');
+  const [androidImportSource, setAndroidImportSource] = useState('');
+  const [androidIncludeSource, setAndroidIncludeSource] = useState(false);
+  const androidImportBase = useRef(useStudioStore.getState().manuscript);
   const [plainDocumentWorkspace, setPlainDocumentWorkspace] = useState<{
     open: boolean;
     documentId: string | null;
@@ -196,12 +207,21 @@ function StudioApplication() {
   useEffect(() => {
     if (reviewMode) return;
     return connectAndroidDocumentOpening((manuscript) => {
+      setAndroidDocxReceipt(null);
       forgetManuscriptFilePath(manuscript.id);
       loadManuscript(manuscript);
       setLocalOpenError(null);
       setPlainDocumentWorkspace({ open: false, documentId: null });
       setMenuOpen(false);
-    }, (error) => setLocalOpenError(error instanceof Error ? error.message : String(error)));
+    }, (error) => setLocalOpenError(error instanceof Error ? error.message : String(error)),
+    (receipt) => {
+      androidImportBase.current = useStudioStore.getState().manuscript;
+      setAndroidDocxReceipt(receipt);
+      setAndroidImportMode('editorial');
+      setAndroidImportSource(receipt.plan.fileName);
+      setAndroidIncludeSource(false);
+      setLocalOpenError(null);
+    });
   }, [loadManuscript, reviewMode]);
 
   useEffect(() => {
@@ -378,6 +398,44 @@ function StudioApplication() {
         <button type="button" onClick={() => setLocalOpenError(null)}>OK</button>
       </section>
     </main>;
+  }
+
+  if (androidDocxReceipt) {
+    return (
+      <main className="auth-page" data-android-docx-import="review">
+        <ExternalDocumentSourceReview
+          locale={locale}
+          summary={androidDocxReceipt.plan.title}
+          source={androidImportSource}
+          importMode={androidImportMode}
+          includeSource={androidIncludeSource}
+          onImportModeChange={setAndroidImportMode}
+          onIncludeSourceChange={setAndroidIncludeSource}
+          onSourceChange={setAndroidImportSource}
+          onCancel={() => setAndroidDocxReceipt(null)}
+          onConfirm={() => {
+            try {
+              if (androidImportBase.current !== useStudioStore.getState().manuscript) {
+                throw new Error('The active manuscript changed while importing the Word document.');
+              }
+              const id = applyDocxImportPlan(androidDocxReceipt.plan, {
+                importDetectedAuthors: androidDocxReceipt.plan.authors.length > 0,
+                source: androidImportSource,
+                importMode: androidImportMode,
+                includeSource: androidIncludeSource,
+              });
+              forgetManuscriptFilePath(id);
+              clearDocumentClosedState();
+              setPlainDocumentWorkspace({ open: false, documentId: null });
+              setMenuOpen(false);
+              setAndroidDocxReceipt(null);
+            } catch (error) {
+              setLocalOpenError(error instanceof Error ? error.message : String(error));
+            }
+          }}
+        />
+      </main>
+    );
   }
 
   if (externalImportState.status === 'loading') {
