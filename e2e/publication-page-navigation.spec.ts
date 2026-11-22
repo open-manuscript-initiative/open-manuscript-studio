@@ -60,9 +60,19 @@ test('body thumbnails navigate, move complete studies, insert after the last pag
       if (target && type !== 'dragover') (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents?.push(`${type}:${target.getAttribute('data-thumbnail-id')}`);
     }, { capture: true, once: false });
   });
-  await blank.dragTo(thumbnails().first(), { targetPosition: { x: 22, y: 22 } });
-  console.log('Publication page DnD events:', await page.evaluate(
-    () => (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents));
+  // Both ends must be visible before the HTML5 drag starts. Otherwise
+  // Chromium scrolls the list underneath the starting pointer and may drag
+  // a neighbouring page rather than the requested inserted sheet.
+  await thumbnails().first().scrollIntoViewIfNeeded();
+  await blank.scrollIntoViewIfNeeded();
+  await expect(thumbnails().first()).toBeInViewport();
+  await expect(blank).toBeInViewport();
+  const draggedId = await blank.getAttribute('data-thumbnail-id');
+  await blank.dragTo(thumbnails().first(), { sourcePosition: { x: 20, y: 20 }, targetPosition: { x: 20, y: 20 } });
+  const events = await page.evaluate(
+    () => (window as typeof window & { __omiPageDragEvents?: string[] }).__omiPageDragEvents ?? []);
+  console.log('Publication page DnD events:', events);
+  expect(events.find((event) => event.startsWith('dragstart:'))).toBe(`dragstart:${draggedId}`);
   await expect(thumbnails().first()).toHaveAttribute('data-thumbnail-id', /^inserted:/);
   await navigator.getByRole('button', { name: 'Move page later', exact: true }).click();
   await expect(thumbnails().first()).not.toHaveAttribute('data-thumbnail-id', /^inserted:/);
