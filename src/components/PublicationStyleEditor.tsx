@@ -36,6 +36,9 @@ import {
   Palette,
   Pilcrow,
   Plus,
+  PanelsLeftBottom,
+  Ruler,
+  DraftingCompass,
   RefreshCw,
   RotateCcw,
   Save,
@@ -45,7 +48,7 @@ import {
   Trash2,
   Type,
 } from 'lucide-react';
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { publicationParagraphStyleName } from '../model/publicationTextRoles';
@@ -89,7 +92,7 @@ import {
 import './PublicationStyleEditor.css';
 
 type PageOrientation = 'portrait' | 'landscape';
-type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'pageStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | null;
+type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'pageStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | 'thumbnails' | 'units' | null;
 type SystemFontLoadStatus = 'fallback' | 'loading' | 'loaded' | 'unsupported' | 'denied' | 'error';
 
 const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
@@ -256,6 +259,21 @@ function PublicationStyleEditorWorkspace() {
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState('');
   const [openPanel, setOpenPanel] = useState<PublicationRibbonPanel>(null);
+  const [rulerVisible, setRulerVisible] = useState(true);
+  const [thumbnailsTarget, setThumbnailsTarget] = useState<HTMLDivElement | null>(null);
+  const [sidebarWidth, setSidebarWidth] = useState(330);
+  const resizingSidebar = useRef(false);
+  const minSidebarWidth = 194;
+  const maxSidebarWidth = 680;
+  const sidebarCopy = locale === 'hu'
+    ? { thumbnails: 'Oldalminiatűrök', ruler: 'Vonalzó', units: 'Mértékegységek', resize: 'Oldalsó panel szélessége' }
+    : locale === 'de'
+      ? { thumbnails: 'Seitenminiaturen', ruler: 'Lineal', units: 'Maßeinheiten', resize: 'Breite des Seitenbereichs' }
+      : { thumbnails: 'Page thumbnails', ruler: 'Ruler', units: 'Measurement units', resize: 'Sidebar width' };
+  function toggleSidebarPanel(panel: Exclude<PublicationRibbonPanel, null>) {
+    setFrameToolsOpen(false);
+    setOpenPanel((current) => current === panel ? null : panel);
+  }
   const [documentViewMode, setDocumentViewMode] = useState<PublicationDocumentViewMode>(
     'print',
   );
@@ -340,19 +358,14 @@ function PublicationStyleEditorWorkspace() {
 
   useEffect(() => {
     if (!openPanel) return;
-    const closeOnPointerDown = (event: PointerEvent) => {
-      if (!ribbonRef.current?.contains(event.target as Node)) setOpenPanel(null);
-    };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
       event.stopPropagation();
       setOpenPanel(null);
     };
-    document.addEventListener('pointerdown', closeOnPointerDown, true);
     document.addEventListener('keydown', closeOnEscape, true);
     return () => {
-      document.removeEventListener('pointerdown', closeOnPointerDown, true);
       document.removeEventListener('keydown', closeOnEscape, true);
     };
   }, [openPanel]);
@@ -854,20 +867,8 @@ function PublicationStyleEditorWorkspace() {
           {ojsPublicationCopy(locale).title}
         </button>
       ) : null}
-      {!matterToolsOpen ? <div className="publication-frame-inspector-actions">
-        <button
-          type="button"
-          className="publication-frame-inspector-toggle"
-          aria-expanded={frameToolsOpen}
-          aria-controls="publication-frame-inspector-panel"
-          onClick={() => setFrameToolsOpen((open) => !open)}
-        >
-          <SquareDashed size={17} aria-hidden="true" />
-          <span>{frameCopy.tools}</span>
-        </button>
-        <PublicationMeasurementSelector />
-      </div> : null}
-      <div className={`publication-style-editor-shell${!previewOnly && !matterToolsOpen ? ' publication-style-editor-shell--with-ribbon' : ''}${openPanel ? ' publication-style-editor-shell--panel-open' : ''}`}>
+      <div className={`publication-style-editor-shell${!previewOnly && !matterToolsOpen ? ' publication-style-editor-shell--with-ribbon' : ''}${openPanel ? ' publication-style-editor-shell--panel-open' : ''}`}
+        style={{ '--omi-publication-panel-width': `${sidebarWidth}px` } as CSSProperties}>
       {!previewOnly && !matterToolsOpen ? <div className="publication-style-ribbon" ref={ribbonRef}>
         <div className="publication-style-ribbon-row">
           <div className="publication-style-ribbon-actions" role="toolbar" aria-label={copy.title}>
@@ -876,14 +877,14 @@ function PublicationStyleEditorWorkspace() {
               label={copy.styles}
               icon={<Palette size={18} aria-hidden="true" />}
               open={openPanel === 'styles'}
-              onToggle={() => setOpenPanel((current) => current === 'styles' ? null : 'styles')}
+              onToggle={() => toggleSidebarPanel('styles')}
             />
             <PublicationRibbonMenuButton
               panelId="paragraphStyles"
               label={copy.paragraphStyles}
               icon={<Pilcrow size={18} aria-hidden="true" />}
               open={openPanel === 'paragraphStyles'}
-              onToggle={() => setOpenPanel((current) => current === 'paragraphStyles' ? null : 'paragraphStyles')}
+              onToggle={() => toggleSidebarPanel('paragraphStyles')}
             />
             {documentViewMode === 'print' ? (
               <>
@@ -892,21 +893,28 @@ function PublicationStyleEditorWorkspace() {
                   label={publicationPageStylesCopy(locale).title}
                   icon={<Copy size={18} aria-hidden="true" />}
                   open={openPanel === 'pageStyles'}
-                  onToggle={() => setOpenPanel((current) => current === 'pageStyles' ? null : 'pageStyles')}
+                  onToggle={() => toggleSidebarPanel('pageStyles')}
+                />
+                <PublicationRibbonMenuButton
+                  panelId="thumbnails"
+                  label={sidebarCopy.thumbnails}
+                  icon={<PanelsLeftBottom size={18} aria-hidden="true" />}
+                  open={openPanel === 'thumbnails'}
+                  onToggle={() => toggleSidebarPanel('thumbnails')}
                 />
                 <PublicationRibbonMenuButton
                   panelId="page"
                   label={copy.page}
                   icon={<FileText size={18} aria-hidden="true" />}
                   open={openPanel === 'page'}
-                  onToggle={() => setOpenPanel((current) => current === 'page' ? null : 'page')}
+                  onToggle={() => toggleSidebarPanel('page')}
                 />
                 <PublicationRibbonMenuButton
                   panelId="margins"
                   label={copy.margins}
                   icon={<Move size={18} aria-hidden="true" />}
                   open={openPanel === 'margins'}
-                  onToggle={() => setOpenPanel((current) => current === 'margins' ? null : 'margins')}
+                  onToggle={() => toggleSidebarPanel('margins')}
                 />
               </>
             ) : null}
@@ -915,7 +923,7 @@ function PublicationStyleEditorWorkspace() {
               label={copy.typography}
               icon={<Type size={18} aria-hidden="true" />}
               open={openPanel === 'typography'}
-              onToggle={() => setOpenPanel((current) => current === 'typography' ? null : 'typography')}
+              onToggle={() => toggleSidebarPanel('typography')}
             />
             {documentViewMode === 'print' ? (
               <PublicationRibbonMenuButton
@@ -923,9 +931,22 @@ function PublicationStyleEditorWorkspace() {
                 label={copy.proofing}
                 icon={<Scissors size={18} aria-hidden="true" />}
                 open={openPanel === 'proofing'}
-                onToggle={() => setOpenPanel((current) => current === 'proofing' ? null : 'proofing')}
+                onToggle={() => toggleSidebarPanel('proofing')}
               />
             ) : null}
+            <PublicationRibbonMenuButton
+              panelId="units"
+              label={sidebarCopy.units}
+              icon={<DraftingCompass size={18} aria-hidden="true" />}
+              open={openPanel === 'units'}
+              onToggle={() => toggleSidebarPanel('units')}
+            />
+            <PublicationRibbonActionButton label={sidebarCopy.ruler} pressed={rulerVisible} onClick={() => setRulerVisible((visible) => !visible)}>
+              <Ruler size={18} aria-hidden="true" />
+            </PublicationRibbonActionButton>
+            <PublicationRibbonActionButton label={frameCopy.tools} pressed={frameToolsOpen} onClick={() => { setOpenPanel(null); setFrameToolsOpen((visible) => !visible); }}>
+              <SquareDashed size={18} aria-hidden="true" />
+            </PublicationRibbonActionButton>
             <span className="publication-style-ribbon-separator" aria-hidden="true" />
             <PublicationRibbonActionButton label={copy.save} onClick={() => { save(); setOpenPanel(null); }}>
               <Save size={18} aria-hidden="true" />
@@ -935,7 +956,7 @@ function PublicationStyleEditorWorkspace() {
               label={copy.export}
               icon={<Download size={18} aria-hidden="true" />}
               open={openPanel === 'export'}
-              onToggle={() => setOpenPanel((current) => current === 'export' ? null : 'export')}
+              onToggle={() => toggleSidebarPanel('export')}
             />
             <PublicationRibbonActionButton label={ojsPublicationCopy(locale).title} onClick={() => { setOjsTransferOpen(current => !current); setOpenPanel(null); }}>
               <FileCode2 size={18} aria-hidden="true" />
@@ -950,6 +971,16 @@ function PublicationStyleEditorWorkspace() {
           </div>
         </div>
 
+        {openPanel === 'thumbnails' ? (
+          <div id="publication-style-ribbon-panel-thumbnails" className="publication-style-ribbon-panel publication-style-ribbon-panel--thumbnails"
+            role="dialog" aria-label={sidebarCopy.thumbnails} ref={setThumbnailsTarget} />
+        ) : null}
+        {openPanel === 'units' ? (
+          <div id="publication-style-ribbon-panel-units" className="publication-style-ribbon-panel publication-style-ribbon-panel--compact"
+            role="dialog" aria-label={sidebarCopy.units}>
+            <PublicationMeasurementSelector />
+          </div>
+        ) : null}
         {openPanel === 'styles' ? (
           <div id="publication-style-ribbon-panel-styles" className="publication-style-ribbon-panel" role="dialog" aria-label={copy.styles}>
             <fieldset>
@@ -1365,6 +1396,25 @@ function PublicationStyleEditorWorkspace() {
             </fieldset>
           </div>
         ) : null}
+        {openPanel ? (
+          <div className="publication-style-side-resizer" role="separator" aria-orientation="vertical"
+            aria-label={sidebarCopy.resize} aria-valuemin={minSidebarWidth} aria-valuemax={maxSidebarWidth}
+            aria-valuenow={sidebarWidth} tabIndex={0}
+            onPointerDown={(event) => { if (event.button !== 0) return; resizingSidebar.current = true; event.currentTarget.setPointerCapture(event.pointerId); event.preventDefault(); }}
+            onPointerMove={(event) => {
+              if (!resizingSidebar.current) return;
+              const left = ribbonRef.current?.getBoundingClientRect().left ?? 0;
+              setSidebarWidth(Math.max(minSidebarWidth, Math.min(maxSidebarWidth, Math.round(event.clientX - left - 56))));
+            }}
+            onPointerUp={(event) => { resizingSidebar.current = false; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
+            onPointerCancel={() => { resizingSidebar.current = false; }}
+            onKeyDown={(event) => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+              event.preventDefault();
+              setSidebarWidth((width) => event.key === 'Home' ? minSidebarWidth : event.key === 'End' ? maxSidebarWidth
+                : Math.max(minSidebarWidth, Math.min(maxSidebarWidth, width + (event.key === 'ArrowRight' ? 28 : -28))));
+            }} />
+        ) : null}
       </div> : null}
       <div className="publication-style-editor-main">
 
@@ -1382,6 +1432,8 @@ function PublicationStyleEditorWorkspace() {
           onPageCountChange={handlePageCount}
           onLayoutIssues={reportBodyIssues}
           navigationTarget={layoutTarget}
+          pageNavigatorTarget={openPanel === 'thumbnails' ? thumbnailsTarget : null}
+          showRuler={rulerVisible}
         />
         {frameToolsOpen || checkerEnabled ? (
           <section
@@ -1810,15 +1862,18 @@ function PublicationRibbonActionButton({
   label,
   onClick,
   children,
+  pressed,
 }: {
   label: string;
   onClick: () => void;
   children: ReactNode;
+  pressed?: boolean;
 }) {
   return (
     <button
       type="button"
       className="publication-style-ribbon-action-button"
+      aria-pressed={pressed}
       aria-label={label}
       title={label}
       onClick={onClick}
