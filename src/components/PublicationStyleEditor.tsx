@@ -822,6 +822,10 @@ function PublicationStyleEditorWorkspace() {
           <h4 id="publication-style-editor-title">{copy.title}</h4>
           <p>{documentViewMode === 'html' ? copy.htmlDescription : copy.description}</p>
         </div>
+        <div className="publication-style-editor-header-status">
+          <strong title={style.name}>{style.name || copy.defaultNewName}</strong>
+          <span>{message || (saved ? copy.saved : copy.liveApplied)}</span>
+        </div>
       </div>
 
       {getDocumentStructureProfile(manuscript).kind === 'volume' ? <PublicationTemplatePanel locale={locale} style={style} onApplied={(next) => {
