@@ -9,6 +9,7 @@ interface IsolatedFrameProps {
   title: string;
   onFailure: (message: string) => void;
   onReady?: () => void;
+  onPhase?: (phase: 'host' | 'script' | 'editor' | 'document') => void;
 }
 
 /**
@@ -21,7 +22,7 @@ interface IsolatedFrameProps {
  * random channel. The sandbox
  * never grants same-origin privileges, forms or popups.
  */
-export function EuroOfficeIsolatedFrame({ launch, title, onFailure, onReady }: IsolatedFrameProps) {
+export function EuroOfficeIsolatedFrame({ launch, title, onFailure, onReady, onPhase }: IsolatedFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [target] = useState(() => {
     // Native dev shells may use Vite's relative API proxy without a configured
@@ -37,7 +38,7 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure, onReady }: I
   useEffect(() => {
     let started = false;
     let failed = false;
-    let phase: 'host' | 'document' = 'host';
+    let phase: 'host' | 'script' | 'editor' | 'document' = 'host';
     let launchSent = false;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== 'null' ||
@@ -49,6 +50,8 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure, onReady }: I
       if (failed || (started && event.data.action !== 'failed')) return;
       if (event.data.action === 'ready' && !launchSent) {
         launchSent = true;
+        phase = 'editor';
+        onPhase?.('editor');
         ref.current?.contentWindow?.postMessage({
           scope: SCOPE,
           channel: target.channel,
@@ -57,6 +60,7 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure, onReady }: I
         }, '*');
       } else if (event.data.action === 'app-ready') {
         phase = 'document';
+        onPhase?.('document');
       } else if (event.data.action === 'started') {
         started = true;
         onReady?.();
@@ -74,14 +78,16 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure, onReady }: I
         failed = true;
         onFailure(phase === 'document'
           ? 'EuroOffice opened but the document did not become ready.'
-          : 'The isolated EuroOffice editor did not respond.');
+          : phase === 'editor'
+            ? 'The EuroOffice API loaded, but the editor did not start.'
+            : 'The isolated EuroOffice editor did not respond.');
       }
     }, 60_000);
     return () => {
       window.removeEventListener('message', onMessage);
       window.clearTimeout(timeout);
     };
-  }, [launch, onFailure, onReady, target]);
+  }, [launch, onFailure, onReady, onPhase, target]);
 
   return (
     <iframe
