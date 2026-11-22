@@ -35,6 +35,8 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
 
   useEffect(() => {
     let started = false;
+    let failed = false;
+    let phase: 'host' | 'document' = 'host';
     let launchSent = false;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== 'null' ||
@@ -42,6 +44,7 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
           !event.data || event.data.scope !== SCOPE ||
           event.data.channel !== target.channel) return;
 
+      if (failed || started) return;
       if (event.data.action === 'ready' && !launchSent) {
         launchSent = true;
         ref.current?.contentWindow?.postMessage({
@@ -50,16 +53,27 @@ export function EuroOfficeIsolatedFrame({ launch, title, onFailure }: IsolatedFr
           action: 'launch',
           config: launch.config,
         }, '*');
+      } else if (event.data.action === 'app-ready') {
+        phase = 'document';
       } else if (event.data.action === 'started') {
         started = true;
       } else if (event.data.action === 'failed') {
-        onFailure('The isolated EuroOffice editor could not start.');
+        failed = true;
+        const code = Number.isSafeInteger(event.data.errorCode) ? ` (code ${event.data.errorCode})` : '';
+        onFailure(event.data.reason === 'document-error'
+          ? `EuroOffice could not load this document${code}.`
+          : 'The isolated EuroOffice editor could not start.');
       }
     };
     window.addEventListener('message', onMessage);
     const timeout = window.setTimeout(() => {
-      if (!started) onFailure('The isolated EuroOffice editor did not respond.');
-    }, 30_000);
+      if (!started && !failed) {
+        failed = true;
+        onFailure(phase === 'document'
+          ? 'EuroOffice opened but the document did not become ready.'
+          : 'The isolated EuroOffice editor did not respond.');
+      }
+    }, 60_000);
     return () => {
       window.removeEventListener('message', onMessage);
       window.clearTimeout(timeout);
