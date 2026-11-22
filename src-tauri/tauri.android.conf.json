@@ -62,6 +62,17 @@
           "view",
           "send"
         ]
+      },
+      {
+        "ext": [
+          "docx"
+        ],
+        "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "name": "Microsoft Word document",
+        "androidIntentActionFilters": [
+          "view",
+          "send"
+        ]
       }
     ]
   }
