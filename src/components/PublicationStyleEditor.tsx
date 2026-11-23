@@ -887,7 +887,7 @@ function PublicationStyleEditorWorkspace() {
     <PublicationGraphicsContext.Provider value={presentation ? 'screen' : previewOnly ? 'full' : viewOptions.graphicsMode}>
     <section
       ref={editorRoot}
-      className={`publication-style-editor${presentation ? ' publication-style-editor--presentation' : ''}`}
+      className={`publication-style-editor${previewOnly ? ' publication-style-editor--preview' : ''}${presentation ? ' publication-style-editor--presentation' : ''}`}
       data-graphics-mode={presentation ? 'screen' : viewOptions.graphicsMode}
       data-publication-page-count={bodyPageCount}
       aria-labelledby="publication-style-editor-title"
