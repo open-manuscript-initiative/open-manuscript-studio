@@ -16,8 +16,8 @@ test('release candidate uses one shared version across JS, native and lockfiles'
   assert.equal(lock.packages[''].version, app.version);
   assert.equal(tauri.version, app.version);
   assert.equal(android.version, app.version);
-  assert.match(read('src-tauri/Cargo.toml'), /^version = "1\.0\.0-rc\.2"$/m);
-  assert.match(read('src-tauri/Cargo.lock'), /\[\[package\]\]\nname = "open-manuscript-studio"\nversion = "1\.0\.0-rc\.2"/);
+  assert.match(read('src-tauri/Cargo.toml'), /^version = "1\.0\.0-rc\.3"$/m);
+  assert.match(read('src-tauri/Cargo.lock'), /\[\[package\]\]\nname = "open-manuscript-studio"\nversion = "1\.0\.0-rc\.3"/);
 });
 
 test('mobile and Windows package counters are incremented coherently', () => {
