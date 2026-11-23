@@ -331,3 +331,86 @@
     display: block;
   }
 }
+
+
+/* Compact/preview publication workspaces must grow with their controls.
+   The menu is the vertical scroll owner; the bounded page canvas keeps its
+   own scroll for long documents. This prevents thumbnails, the frame inspector
+   and the cover workspace from being clipped below the viewport. */
+@media (max-width: 1150px) {
+  .studio-menu-content--publication-editor {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor:not(.publication-style-editor--presentation) {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor:not(.publication-style-editor--presentation) :is(.publication-style-editor-shell, .publication-style-editor-main, .publication-style-editor-layout) {
+    flex: 0 0 auto;
+    height: auto;
+    overflow: visible;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor:not(.publication-style-editor--presentation) .publication-style-editor-layout > .publication-document-canvas {
+    height: auto;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor:not(.publication-style-editor--presentation) .publication-document-canvas-stage {
+    height: clamp(14rem, 58dvh, 44rem);
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor:not(.publication-style-editor--presentation) .publication-matter-workspace {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+}
+
+/* Android native preview also applies when a landscape device advertises a
+   desktop-sized CSS viewport. Keep desktop's fixed-height rail unaffected. */
+@media (min-width: 1151px) {
+  .studio-menu-content--publication-editor:has(.publication-style-editor--preview:not(.publication-style-editor--presentation)) {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor--preview:not(.publication-style-editor--presentation) {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor--preview:not(.publication-style-editor--presentation) :is(.publication-style-editor-shell, .publication-style-editor-main, .publication-style-editor-layout) {
+    flex: 0 0 auto;
+    height: auto;
+    overflow: visible;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor--preview:not(.publication-style-editor--presentation) .publication-style-editor-layout > .publication-document-canvas {
+    height: auto;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor--preview:not(.publication-style-editor--presentation) .publication-document-canvas-stage {
+    height: clamp(14rem, 58dvh, 44rem);
+    min-height: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor--preview:not(.publication-style-editor--presentation) .publication-matter-workspace {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+}
