@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-export type PublicationGraphicsMode = 'full' | 'simplified' | 'outlines';
+export type PublicationGraphicsMode = 'full' | 'simplified' | 'outlines' | 'screen';
 
 export interface PublicationViewOptions {
   graphicsMode: PublicationGraphicsMode;
