@@ -816,6 +816,7 @@ test('presentation loads screen-sized raster renditions without affecting the pr
   assert.match(assetBackedImage, /new IntersectionObserver/);
   assert.match(assetBackedImage, /if \(deferScreenImage\) return/);
   assert.match(assetBackedImage, /sourceDimensions\.current/);
+  assert.match(assetBackedImage, /decodeEmbeddedRaster\(visual\.src\)/);
   assert.match(assetBackedImage, /loading=\{lightweight \|\| screenResolution/);
   assert.match(frameEditor, /captureFullGraphics \? 'full' : graphicsMode/);
   assert.match(frameEditor, /captureFrameGraphicSnapshots/);
