@@ -26,6 +26,32 @@ Chart exports retain the rendered vector chart rather than the semantic HTML
 renderer's source-data table. Image exports reuse the existing integrity-checked
 self-contained PDF asset pipeline.
 
+## Charts in ordinary HTML publication exports
+
+In addition to fixed-layout graphic frames, the regular scholarly HTML exporter
+renders manuscript charts directly as **inline SVG**. It uses the same drawing
+component and the same editable source data as the Studio preview. The HTML
+document is self-contained and does not load chart libraries or run scripts.
+All ten supported chart families, the four palette presets, and the saved
+grid/legend/value-label settings are carried through.
+
+Each figure retains its stable manuscript block ID, caption and an accessible
+expandable source-data table. Table headers identify both columns and rows, and
+the summary is localized in English, Hungarian and German. The full source
+table is retained even if a preview limits the number of visibly plotted
+categories. If data cannot be rendered as numeric chart values, HTML falls back
+to the source table and emits a diagnostic rather than inventing a figure.
+The image is scalable and remains vector-based in print; no separate raster
+chart assets are required.
+
+JATS continues to preserve the semantic OMI chart JSON as media data and
+diagnoses the lack of a standardized chart graphic; JATS graphical rendering
+is not asserted by this HTML-export change.
+
+`tests/html-export.test.ts` exercises all chart families, source table access,
+markup safety, empty/non-numeric values, and determinism without modifying the
+manuscript.
+
 A text frame belongs to a story. Edit the story in the inspector; the text flows
 through its linked frames. **Copy manuscript text into story** explicitly copies
 plain text from the manuscript. This first version does not migrate inline rich
