@@ -813,6 +813,9 @@ test('presentation loads screen-sized raster renditions without affecting the pr
   assert.match(styleEditor, /data-graphics-mode=\{presentation \? 'screen' : viewOptions\.graphicsMode\}/);
   assert.match(visualBlockEditor, /screenResolution=\{graphicsMode === 'screen'\}/);
   assert.match(assetBackedImage, /screenImageRendition\(/);
+  assert.match(assetBackedImage, /new IntersectionObserver/);
+  assert.match(assetBackedImage, /if \(deferScreenImage\) return/);
+  assert.match(assetBackedImage, /sourceDimensions\.current/);
   assert.match(assetBackedImage, /loading=\{lightweight \|\| screenResolution/);
   assert.match(frameEditor, /captureFullGraphics \? 'full' : graphicsMode/);
   assert.match(frameEditor, /captureFrameGraphicSnapshots/);
