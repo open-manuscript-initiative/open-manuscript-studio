@@ -22,6 +22,20 @@ export interface VisualElementsCopy {
   chartLine: string;
   chartPie: string;
   chartScatter: string;
+  chartHorizontal: string;
+  chartStacked: string;
+  chartStacked100: string;
+  chartArea: string;
+  chartDonut: string;
+  chartRadar: string;
+  chartStyle: string;
+  chartStyleColor: string;
+  chartStyleEditorial: string;
+  chartStyleMonochrome: string;
+  chartStyleContrast: string;
+  chartShowGrid: string;
+  chartShowLegend: string;
+  chartShowValues: string;
   chartTitle: string;
   equationLatex: string;
   equationLabel: string;
@@ -67,7 +81,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     paste: 'Paste from Word / Excel', pasteHint: 'Paste a table, image or equation here from Word, Excel or another application.',
     importing: 'Importing…', importFailed: 'The file could not be imported.', noImportableElements: 'No supported visual elements were found.',
     chooseFile: 'Choose file', caption: 'Caption', altText: 'Alternative text', chartType: 'Chart type', chartBar: 'Bar', chartLine: 'Line',
-    chartPie: 'Pie', chartScatter: 'Scatter', chartTitle: 'Chart title', equationLatex: 'LaTeX source', equationLabel: 'Equation label',
+    chartPie: 'Pie', chartScatter: 'Scatter', chartHorizontal: 'Horizontal bar', chartStacked: 'Stacked bar', chartStacked100: '100% stacked', chartArea: 'Area', chartDonut: 'Doughnut', chartRadar: 'Radar', chartStyle: 'Chart style', chartStyleColor: 'Color', chartStyleEditorial: 'Editorial', chartStyleMonochrome: 'Grayscale', chartStyleContrast: 'High contrast', chartShowGrid: 'Gridlines', chartShowLegend: 'Legend', chartShowValues: 'Data labels', chartTitle: 'Chart title', equationLatex: 'LaTeX source', equationLabel: 'Equation label',
     addRow: 'Add row', addColumn: 'Add column', removeRow: 'Remove last row', removeColumn: 'Remove last column', createChart: 'Create chart from table',
     tableToText: 'Convert table to text', confirmTableToText: 'Convert this table to tab-separated text paragraphs?', deleteElement: 'Delete element', confirmDelete: 'Delete this element from the manuscript?', source: 'Source data', emptyChart: 'Add numeric source data to render the chart.',
     importedFrom: 'Imported from', fileFormats: 'Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported.',
@@ -79,7 +93,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     paste: 'Beillesztés Wordből / Excelből', pasteHint: 'Illesszen be ide táblázatot, képet vagy egyenletet Wordből, Excelből vagy más alkalmazásból.',
     importing: 'Importálás…', importFailed: 'A fájlt nem sikerült importálni.', noImportableElements: 'Nem található támogatott vizuális elem.',
     chooseFile: 'Fájl kiválasztása', caption: 'Képaláírás / felirat', altText: 'Alternatív szöveg', chartType: 'Grafikon típusa', chartBar: 'Oszlop', chartLine: 'Vonal',
-    chartPie: 'Kör', chartScatter: 'Pont', chartTitle: 'Grafikon címe', equationLatex: 'LaTeX-forrás', equationLabel: 'Egyenlet jelölése',
+    chartPie: 'Kör', chartScatter: 'Pont', chartHorizontal: 'Vízszintes sáv', chartStacked: 'Halmozott oszlop', chartStacked100: '100%-os halmozott', chartArea: 'Terület', chartDonut: 'Gyűrű', chartRadar: 'Radar', chartStyle: 'Grafikonstílus', chartStyleColor: 'Színes', chartStyleEditorial: 'Kiadvány', chartStyleMonochrome: 'Szürkeárnyalatos', chartStyleContrast: 'Nagy kontraszt', chartShowGrid: 'Rácsvonalak', chartShowLegend: 'Jelmagyarázat', chartShowValues: 'Értékfeliratok', chartTitle: 'Grafikon címe', equationLatex: 'LaTeX-forrás', equationLabel: 'Egyenlet jelölése',
     addRow: 'Sor hozzáadása', addColumn: 'Oszlop hozzáadása', removeRow: 'Utolsó sor törlése', removeColumn: 'Utolsó oszlop törlése', createChart: 'Grafikon készítése a táblázatból',
     tableToText: 'Táblázatból szöveg', confirmTableToText: 'A táblázat sorait tabulátorokkal tagolt szövegbekezdésekké alakítja?', deleteElement: 'Elem törlése', confirmDelete: 'Törli ezt az elemet a kéziratból?', source: 'Forrásadatok', emptyChart: 'Adjon meg numerikus forrásadatokat a grafikon megjelenítéséhez.',
     importedFrom: 'Importálva innen', fileFormats: 'Támogatott: képek, DOCX, XLSX, CSV/TSV, HTML és TeX.',
@@ -91,7 +105,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     paste: 'Aus Word / Excel einfügen', pasteHint: 'Fügen Sie hier eine Tabelle, ein Bild oder eine Gleichung aus Word, Excel oder einer anderen Anwendung ein.',
     importing: 'Importieren…', importFailed: 'Die Datei konnte nicht importiert werden.', noImportableElements: 'Keine unterstützten visuellen Elemente gefunden.',
     chooseFile: 'Datei auswählen', caption: 'Beschriftung', altText: 'Alternativtext', chartType: 'Diagrammtyp', chartBar: 'Balken', chartLine: 'Linie',
-    chartPie: 'Kreis', chartScatter: 'Streuung', chartTitle: 'Diagrammtitel', equationLatex: 'LaTeX-Quelle', equationLabel: 'Gleichungsbezeichnung',
+    chartPie: 'Kreis', chartScatter: 'Streuung', chartHorizontal: 'Horizontaler Balken', chartStacked: 'Gestapelte Säulen', chartStacked100: '100 % gestapelt', chartArea: 'Fläche', chartDonut: 'Ring', chartRadar: 'Radar', chartStyle: 'Diagrammstil', chartStyleColor: 'Farbig', chartStyleEditorial: 'Publikation', chartStyleMonochrome: 'Graustufen', chartStyleContrast: 'Hoher Kontrast', chartShowGrid: 'Gitternetz', chartShowLegend: 'Legende', chartShowValues: 'Datenbeschriftungen', chartTitle: 'Diagrammtitel', equationLatex: 'LaTeX-Quelle', equationLabel: 'Gleichungsbezeichnung',
     addRow: 'Zeile hinzufügen', addColumn: 'Spalte hinzufügen', removeRow: 'Letzte Zeile entfernen', removeColumn: 'Letzte Spalte entfernen', createChart: 'Diagramm aus Tabelle erstellen',
     tableToText: 'Tabelle in Text umwandeln', confirmTableToText: 'Diese Tabelle in tabulatorgetrennte Textabsätze umwandeln?', deleteElement: 'Element löschen', confirmDelete: 'Dieses Element aus dem Manuskript löschen?', source: 'Quelldaten', emptyChart: 'Fügen Sie numerische Quelldaten hinzu, um das Diagramm darzustellen.',
     importedFrom: 'Importiert aus', fileFormats: 'Unterstützt werden Bilder, DOCX, XLSX, CSV/TSV, HTML und TeX.',

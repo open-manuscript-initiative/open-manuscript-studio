@@ -411,11 +411,17 @@ export interface OmiTableBlockData {
   provenance?: OmiImportProvenance;
 }
 
-export type OmiChartType = 'bar' | 'line' | 'pie' | 'scatter';
+export type OmiChartType = 'bar' | 'horizontal-bar' | 'stacked-bar' | 'stacked-100' | 'line' | 'area' | 'pie' | 'donut' | 'scatter' | 'radar';
+export type OmiChartStyle = 'color' | 'editorial' | 'monochrome' | 'contrast';
 
 export interface OmiChartBlockData {
   kind: 'chart';
   chartType: OmiChartType;
+  /** Presentation only: source cells remain canonical and editable. */
+  stylePreset?: OmiChartStyle;
+  showGrid?: boolean;
+  showValues?: boolean;
+  showLegend?: boolean;
   /**
    * Source data table retained so imported spreadsheet charts remain editable.
    * Row 0 is interpreted as series headings and column 0 as category/x labels.

@@ -44,6 +44,27 @@ test('creates portable visual blocks without embedding presentation HTML', () =>
   assert.equal(table.content, '');
 });
 
+test('stores chart shape, publication palette and display toggles with editable source cells', () => {
+  const cells = [['Year', 'Articles', 'Reviews'], ['2025', '12', '4']];
+  for (const chartType of ['bar', 'horizontal-bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'pie', 'donut', 'scatter', 'radar'] as const) {
+    const block = createChartBlock(cells, {
+      chartType,
+      stylePreset: 'monochrome',
+      showGrid: false,
+      showValues: true,
+      showLegend: false,
+    });
+    assert.equal(block.visual?.kind, 'chart');
+    if (block.visual?.kind !== 'chart') continue;
+    assert.equal(block.visual.chartType, chartType);
+    assert.equal(block.visual.stylePreset, 'monochrome');
+    assert.equal(block.visual.showGrid, false);
+    assert.equal(block.visual.showValues, true);
+    assert.equal(block.visual.showLegend, false);
+    assert.deepEqual(block.visual.cells, cells);
+  }
+});
+
 test('parses quoted CSV and tab-separated Excel clipboard data', () => {
   assert.deepEqual(
     parseDelimitedTable('Name,Value\n"Alpha, beta",12', ','),

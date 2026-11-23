@@ -355,8 +355,8 @@ function isCells(value: unknown): value is string[][] {
   return Array.isArray(value) && value.every((row) => Array.isArray(row) && row.every((cell) => typeof cell === 'string'));
 }
 
-function isChartType(value: unknown): value is 'bar' | 'line' | 'pie' | 'scatter' | 'area' {
-  return value === 'bar' || value === 'line' || value === 'pie' || value === 'scatter' || value === 'area';
+function isChartType(value: unknown): value is 'bar' | 'horizontal-bar' | 'stacked-bar' | 'stacked-100' | 'line' | 'area' | 'pie' | 'donut' | 'scatter' | 'radar' {
+  return ['bar', 'horizontal-bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'pie', 'donut', 'scatter', 'radar'].includes(String(value));
 }
 
 function storedPlainText(content: string): string {

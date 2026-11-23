@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createAssetMetadata } from '../src/model/assets.ts';
+import { createChartBlock } from '../src/model/visualBlocks.ts';
 import { createCrossReference } from '../src/model/crossReferences.ts';
 import { getPublicationProfile } from '../src/model/publicationProfile.ts';
 import { createSemanticField } from '../src/model/semanticFields.ts';
@@ -22,6 +23,48 @@ import {
   createTestManuscript,
   createVersionedTestManuscript,
 } from './testManuscriptFixture.ts';
+
+test('HTML export embeds the actual vector figure for all ten chart types with accessible source data', () => {
+  const source = [
+    ['Year', 'Articles', 'Reviews'],
+    ['2024', '12', '4'],
+    ['2025', '18', '6'],
+    ['2026', '23', '9'],
+  ];
+  for (const chartType of ['bar', 'horizontal-bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'pie', 'donut', 'scatter', 'radar'] as const) {
+    const manuscript = createTestManuscript();
+    const block = createChartBlock(source, { chartType, stylePreset: 'monochrome', title: 'Data <script>alert(1)</script> & output', showValues: true, showGrid: false, showLegend: true }, 'chart-one');
+    manuscript.sections[0]!.blocks = [block];
+    const before = JSON.stringify(manuscript);
+    const result = renderHtmlArticle(manuscript);
+    assert.match(result.html, /<figure id="chart-chart-one" class="scholarly-chart"/);
+    assert.match(result.html, new RegExp('data-chart-type="' + chartType + '"'));
+    assert.match(result.html, /data-chart-style="monochrome"/);
+    assert.match(result.html, /<svg[^>]*role="img"[^>]*data-chart-type="/);
+    assert.match(result.html, /<details class="scholarly-chart-source"><summary>Chart source data<\/summary>/);
+    assert.match(result.html, /<thead><tr><th scope="col">Year<\/th>/);
+    assert.match(result.html, /<th scope="row">2024<\/th><td>12<\/td><td>4<\/td>/);
+    assert.match(result.html, /Data &lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; output/);
+    assert.doesNotMatch(result.html, /<script\b/i);
+    assert.equal(result.diagnostics.some(issue => issue.code === 'html-chart-data-table-fallback'), false);
+    assert.equal(result.diagnostics.some(issue => issue.code === 'html-chart-no-renderable-data'), false);
+    assert.deepEqual(validateHtmlStructure(result.html).filter(issue => issue.severity === 'error'), []);
+    assert.equal(JSON.stringify(manuscript), before);
+  }
+});
+
+test('HTML export preserves invalid or empty chart source as an accessible table and warns without losing data', () => {
+  const manuscript = createTestManuscript();
+  manuscript.sections[0]!.blocks = [createChartBlock(
+    [['Period', 'Count'], ['Early', ''], ['Late', 'not numeric']],
+    { chartType: 'bar' }, 'chart-no-data',
+  )];
+  const result = renderHtmlArticle(manuscript);
+  assert.doesNotMatch(result.html, /<svg[^>]*data-chart-type=/);
+  assert.match(result.html, /<table class="chart-data">/);
+  assert.match(result.html, /not numeric/);
+  assert.ok(result.diagnostics.some(issue => issue.code === 'html-chart-no-renderable-data'));
+});
 
 test('renders deterministic semantic HTML5 with front matter and traceability metadata', () => {
   const manuscript = createTestManuscript();

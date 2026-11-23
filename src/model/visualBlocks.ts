@@ -2,6 +2,7 @@ import type {
   OmiBlock,
   OmiTextBox,
   OmiChartType,
+  OmiChartStyle,
   OmiEquationBlockData,
   OmiImageBlockData,
   OmiMusicScoreBlockData,
@@ -54,6 +55,10 @@ export function createChartBlock(
   cells: string[][] = [['Category', 'Value'], ['', '']],
   options: {
     chartType?: OmiChartType;
+    stylePreset?: OmiChartStyle;
+    showGrid?: boolean;
+    showValues?: boolean;
+    showLegend?: boolean;
     title?: string;
     caption?: string;
     provenance?: OmiImportProvenance;
@@ -67,6 +72,10 @@ export function createChartBlock(
     visual: {
       kind: 'chart',
       chartType: options.chartType ?? 'bar',
+      stylePreset: options.stylePreset,
+      showGrid: options.showGrid,
+      showValues: options.showValues,
+      showLegend: options.showLegend,
       cells: normalizeCellMatrix(cells),
       title: options.title,
       caption: options.caption,
@@ -317,6 +326,8 @@ export function parseChartNumber(value: string): number {
     .replace(/\s+/g, '')
     .replace(/(?<=\d),(?=\d{1,2}$)/, '.')
     .replace(/[^0-9+\-.eE]/g, '');
+  // An empty or non-numeric source cell must not silently become a data point at zero.
+  if (!normalized || !/[0-9]/.test(normalized)) return Number.NaN;
   const numeric = Number(normalized);
   return Number.isFinite(numeric) ? numeric : Number.NaN;
 }

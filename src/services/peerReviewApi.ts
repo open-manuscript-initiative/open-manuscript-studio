@@ -147,7 +147,7 @@ export interface ReviewBibliographicRecord {
   url?: string;
 }
 
-export type ReviewChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'area';
+export type ReviewChartType = 'bar' | 'horizontal-bar' | 'stacked-bar' | 'stacked-100' | 'line' | 'area' | 'pie' | 'donut' | 'scatter' | 'radar';
 
 export type ReviewManuscriptBlock =
   | { type: 'heading'; text: string; level?: number; richText?: ReviewInlineSpan[] }

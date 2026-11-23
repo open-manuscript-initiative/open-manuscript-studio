@@ -56,7 +56,7 @@ export interface ReviewBibliographicRecord {
   url?: string;
 }
 
-export type ReviewChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'area';
+export type ReviewChartType = 'bar' | 'horizontal-bar' | 'stacked-bar' | 'stacked-100' | 'line' | 'area' | 'pie' | 'donut' | 'scatter' | 'radar';
 
 export type ReviewManuscriptBlock =
   | { type: 'heading'; text: string; level?: number; richText?: ReviewInlineSpan[] }
@@ -570,8 +570,8 @@ function isInlineSemantic(value: unknown): value is ReviewInlineSemantic {
 }
 
 function sanitizeChartType(value: unknown): ReviewChartType {
-  return value === 'line' || value === 'pie' || value === 'scatter' || value === 'area'
-    ? value
+  return typeof value === 'string' && (['bar', 'horizontal-bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'pie', 'donut', 'scatter', 'radar'] as string[]).includes(value)
+    ? value as ReviewChartType
     : 'bar';
 }
 
