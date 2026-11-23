@@ -5,8 +5,6 @@ export const euroOfficeRepository = {
   list: (userId: string) => prisma.plainDocument.findMany({ where: { userId }, select: { id: true, title: true, revision: true, createdAt: true, updatedAt: true }, orderBy: { updatedAt: 'desc' }, take: 100 }),
   create: (userId: string, title: string, content: Uint8Array) => prisma.plainDocument.create({ data: { userId, title, content: Uint8Array.from(content) }, select: { id: true, title: true, revision: true, createdAt: true, updatedAt: true } }),
   owned: (id: string, userId: string) => prisma.plainDocument.findFirst({ where: { id, userId }, select: { id: true, title: true, revision: true } }),
-  // Owner-scoped export of the canonical DOCX. No editor session is needed.
-  currentContent: (id: string, userId: string) => prisma.plainDocument.findFirst({ where: { id, userId }, select: { content: true } }),
   user: (id: string) => prisma.user.findUnique({ where: { id }, select: { fullName: true } }),
   session: (data: { documentId: string; userId: string; tokenHash: string; documentKey: string; baseRevision: number; expiresAt: Date }) => prisma.euroOfficeSession.create({ data }),
   capability: (documentId: string, tokenHash: string) => prisma.euroOfficeSession.findFirst({ where: { documentId, tokenHash, expiresAt: { gt: new Date() } }, include: { document: true } }),

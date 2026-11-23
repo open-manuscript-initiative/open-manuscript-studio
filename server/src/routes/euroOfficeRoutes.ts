@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { env } from '../config/env.js';
 import { buildEuroOfficeEmbedHost } from '../security/euroOfficeEmbedHost.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
-import { createEuroOfficeSession, createPlainDocument, listPlainDocuments, downloadPlainDocument, euroOfficeContent, saveEuroOfficeCallback, listEuroOfficeSaves, downloadEuroOfficeSave, EuroOfficeError, requireEuroOffice } from '../services/euroOfficeService.js';
+import { createEuroOfficeSession, createPlainDocument, listPlainDocuments, euroOfficeContent, saveEuroOfficeCallback, listEuroOfficeSaves, downloadEuroOfficeSave, EuroOfficeError, requireEuroOffice } from '../services/euroOfficeService.js';
 export const euroOfficeRouter = Router();
 const id = z.string().uuid();
 const token = z.string().min(1).max(128);
@@ -41,16 +41,6 @@ euroOfficeRouter.get('/eurooffice/embed-host', (_request, response) => {
 euroOfficeRouter.get('/eurooffice/status', requireSession, (_request, response) => { response.json({ enabled: env.EUROOFFICE_ENABLED }); });
 euroOfficeRouter.get('/eurooffice/documents', requireSession, async (request: AuthenticatedRequest, response) => {
   try { response.json(await listPlainDocuments(request.authUserId!)); } catch(error) { failure(response, error); }
-});
-// Existing DOCX exports remain available independently of the Office runtime.
-euroOfficeRouter.get('/eurooffice/documents/:documentId/download', requireSession, async (request: AuthenticatedRequest, response) => {
-  try {
-    const bytes = await downloadPlainDocument(request.authUserId!, id.parse(request.params.documentId));
-    content(response);
-    response.setHeader('Content-Disposition', 'attachment; filename="archived-document.docx"');
-    response.setHeader('Cache-Control', 'private, no-store');
-    response.send(Uint8Array.from(bytes));
-  } catch(error) { failure(response, error); }
 });
 euroOfficeRouter.post('/eurooffice/documents', requireSession, async (request: AuthenticatedRequest, response) => {
   try { const input = titleSchema.parse(request.body ?? {}); response.status(201).json(await createPlainDocument(request.authUserId!, input.title || 'Untitled document')); } catch(error) { failure(response, error); }
