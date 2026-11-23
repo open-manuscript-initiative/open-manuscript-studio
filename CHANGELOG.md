@@ -1,3 +1,12 @@
+## 1.0.0-rc.3 — 2026-11-23 (candidate builds; public release not yet approved)
+
+- Prepare a new source version for web, Windows, Linux, macOS and Android packaging. The version is **1.0.0-rc.3** across npm, Cargo, Tauri and lockfiles.
+- Include the merged [EuroOffice separation PR #971](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/971): no embedded Office editor or Office API routing in Studio. The separate EuroOffice service is managed independently. Native DOCX/ODT import/export remains available.
+- The candidate also contains current publication templates, cover sheets, named page styles, running headers, rich notes and OJS/OMP workflows from the source baseline; inclusion in source is not independent device certification.
+- Prepare Windows installer/MSIX identity **1.0.2.0**, Android direct versionCode floor **1395**, Android Release code offset **1205** (run 191 would become 1396), and experimental iOS build **28**.
+- No destructive database migration, OMI schema promotion or public-release/latest-tag promotion. Manual physical-device evidence, exact-SHA workflow checks, 14 release receipts and final owner Go/No-Go remain mandatory.
+- See [RC3 packaging, testing and release gates](docs/release/1.0.0-rc.3.md).
+
 ## Unreleased — Independent EuroOffice service
 
 - Remove the embedded general-purpose Office editor and workspace from Studio on web, desktop and Android.
