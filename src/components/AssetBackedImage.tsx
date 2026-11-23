@@ -14,16 +14,38 @@ export function AssetBackedImage({
   screenResolution?: boolean;
 }) {
   const manuscriptId = useStudioStore((state) => state.manuscript.id);
+  const placeholderRef = useRef<HTMLDivElement>(null);
+  const [nearViewport, setNearViewport] = useState(false);
+  // Deferred loading must include image decoding/raster resampling, not merely
+  // the <img> request after an expensive preview blob has already been built.
+  useEffect(() => {
+    if (!screenResolution || nearViewport) return;
+    const target = placeholderRef.current;
+    if (!target || typeof IntersectionObserver === 'undefined') {
+      setNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setNearViewport(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: '600px' });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [screenResolution, nearViewport]);
+  const deferScreenImage = screenResolution && !nearViewport;
   // Do not briefly mount the original full-resolution image on entering
   // presentation mode: wait for the device-sized rendition instead.
-  const [resolvedSrc, setResolvedSrc] = useState(screenResolution && visual.assetId ? '' : visual.src);
+  const [resolvedSrc, setResolvedSrc] = useState(screenResolution ? '' : visual.src);
   const sourceDimensions = useRef<RasterSize | undefined>(undefined);
 
   useEffect(() => {
     let disposed = false;
     let objectUrl: string | undefined;
     sourceDimensions.current = undefined;
-    setResolvedSrc(screenResolution && visual.assetId ? '' : visual.src);
+    setResolvedSrc(screenResolution ? '' : visual.src);
+    if (deferScreenImage) return () => undefined;
 
     if (!visual.assetId) return () => undefined;
 
@@ -58,9 +80,9 @@ export function AssetBackedImage({
       disposed = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [manuscriptId, visual.assetId, visual.mediaType, visual.src, visual.width, visual.height, screenResolution]);
+  }, [manuscriptId, visual.assetId, visual.mediaType, visual.src, visual.width, visual.height, screenResolution, deferScreenImage]);
 
-  return resolvedSrc ? (
+  return !deferScreenImage && resolvedSrc ? (
     <img
       src={resolvedSrc}
       alt={visual.alt}
@@ -76,7 +98,11 @@ export function AssetBackedImage({
     />
   ) : (
     <div
+      ref={placeholderRef}
       className="omi-image-asset-placeholder"
+      style={screenResolution && visual.width && visual.height
+        ? { aspectRatio: `${visual.width} / ${visual.height}` }
+        : undefined}
       role="img"
       aria-label={visual.alt || visual.fileName || 'Image asset'}
     />
