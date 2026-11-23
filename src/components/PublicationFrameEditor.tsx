@@ -10,7 +10,8 @@ import { getPublicationMatterFramesCopy } from '../i18n/publicationMatterFrames'
 import { PublicationFramePagePanel } from './PublicationFramePagePanel';
 import { createDefaultFlowFrameLayout, paginateAutomaticFrameLayout } from '../model/publicationAutoFlow';
 import { framePages, framePageStyle, framePageStyles, insertFramePage, deleteFramePage, moveFramePage, frameGraphicTransform, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader, updateFrameGraphicSize, type FrameGraphicTransform } from '../model/publicationFramePages';
-import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { Fragment, useContext, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { flushSync } from 'react-dom';
 import { useStudioStore } from '../app/useStudioStore';
 import { stageFrameLayout } from '../app/publicationFrameActions';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
@@ -26,6 +27,7 @@ import {
 import type { PublicationStyle } from '../services/publicationStyleExport';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import { VisualBlockEditor } from './VisualBlockEditor';
+import { PublicationGraphicsContext } from './publicationViewOptions';
 import type { OmiBlock, OmiVisualBlockData } from '../types/omi';
 import './PublicationFrameEditor.css';
 
@@ -46,6 +48,8 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues, showM
   const storyInput = useRef<HTMLTextAreaElement>(null);
   const layersCopy = getPublicationMatterFramesCopy(locale);
   const preview = usePublicationPreview();
+  const graphicsMode = useContext(PublicationGraphicsContext);
+  const [captureFullGraphics, setCaptureFullGraphics] = useState(false);
   const initial = useMemo(() => {
     const next = createDefaultFlowFrameLayout();
     next.styles[0]!.properties = { ...next.styles[0]!.properties, fontFamily: publicationStyle.fonts.body.family,
@@ -239,7 +243,19 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues, showM
     setExporting(true);
     try {
       const snapshot = structuredClone(layout);
-      const html = await buildFrameExport(manuscript, snapshot, stage.current ? captureFrameGraphicSnapshots(stage.current, snapshot) : new Map());
+      // The editor may show lightweight proxies (or only outlines), but the
+      // export must always capture the real vector charts. Flush both changes
+      // synchronously: the costly full renderer is never painted during editing.
+      let graphics = new Map<string, string>();
+      if (stage.current) {
+        if (graphicsMode !== 'full') flushSync(() => setCaptureFullGraphics(true));
+        try {
+          graphics = captureFrameGraphicSnapshots(stage.current, snapshot);
+        } finally {
+          if (graphicsMode !== 'full') flushSync(() => setCaptureFullGraphics(false));
+        }
+      }
+      const html = await buildFrameExport(manuscript, snapshot, graphics);
       useStudioStore.getState().checkpoint('export');
       const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
       if (target) {
@@ -307,7 +323,7 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues, showM
                     const ratio = image.naturalWidth / image.naturalHeight;
                     setGraphicAspects((current) => current[frame.sourceBlockId!] === ratio ? current : { ...current, [frame.sourceBlockId!]: ratio });
                   }
-                }}><div className="omi-frame-graphic-position" style={frameGraphicContentStyle(frame)}><div className="omi-frame-graphic-inner" style={frameGraphicInnerStyle(frame)}><PublicationPreviewContext.Provider value={true}>{graphic?.visual ? <VisualBlockEditor block={graphic as OmiBlock & { visual: OmiVisualBlockData }} sectionId="" blockIndex={0} /> : null}</PublicationPreviewContext.Provider></div></div></div>}
+                }}><div className="omi-frame-graphic-position" style={frameGraphicContentStyle(frame)}><div className="omi-frame-graphic-inner" style={frameGraphicInnerStyle(frame)}><PublicationPreviewContext.Provider value={true}><PublicationGraphicsContext.Provider value={captureFullGraphics ? 'full' : graphicsMode}>{graphic?.visual ? <VisualBlockEditor block={graphic as OmiBlock & { visual: OmiVisualBlockData }} sectionId="" blockIndex={0} /> : null}</PublicationGraphicsContext.Provider></PublicationPreviewContext.Provider></div></div></div>}
               </div>
               {!preview && selected?.id === frame.id ? <div className="omi-frame-selection" data-frame-selection-id={frame.id} style={{ position: 'absolute', left: `${frame.xMm}mm`, top: `${frame.yMm}mm`, width: `${frame.widthMm}mm`, height: `${frame.heightMm}mm`, transform: `rotate(${frame.rotation}deg)`, zIndex: 10000 }}>
                 <button type="button" className="omi-frame-move" aria-label={`${copy.name}: ${frame.name}`} onPointerDown={(event) => startDrag(event, frame, 'move')} {...dragEvents}
