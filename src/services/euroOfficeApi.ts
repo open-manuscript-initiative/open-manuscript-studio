@@ -36,6 +36,12 @@ export async function listPlainDocuments(): Promise<PlainDocumentSummary[]> {
   return data.documents;
 }
 
+export async function downloadPlainDocument(documentId: string): Promise<Blob> {
+  const response = await apiFetch(`/api/v1/eurooffice/documents/${encodeURIComponent(documentId)}/download`);
+  if (!response.ok) throw new Error(`DOCX export failed (HTTP ${response.status}).`);
+  return response.blob();
+}
+
 export async function createPlainDocument(title: string): Promise<PlainDocumentSummary> {
   const response = await apiFetch('/api/v1/eurooffice/documents', {
     method: 'POST',
@@ -72,8 +78,9 @@ export async function createEuroOfficeSession(
   }
 }
 
-export function requestPlainDocumentWorkspace(documentId: string | null): void {
-  window.dispatchEvent(new CustomEvent('omi-open-plain-document', { detail: { documentId } }));
+// Legacy archive is export-only; no Office runtime is loaded into Studio.
+export function requestLegacyOfficeArchive(): void {
+  window.dispatchEvent(new Event('omi-open-office-archive'));
 }
 
 export interface EuroOfficeSaveSummary { id: string; status: number; applied: boolean; contentHash: string; createdAt: string }

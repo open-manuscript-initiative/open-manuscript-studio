@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createAndOpenBlankOmiDocument, createAndOpenPublicationFromTemplate } from '../app/newDocumentActions';
 import { useTranslation } from '../i18n';
 import type { OmiVolumeKind } from '../model/documentProfile';
-import { euroOfficeEnabled, requestPlainDocumentWorkspace } from '../services/euroOfficeApi';
+import { listPlainDocuments, requestLegacyOfficeArchive } from '../services/euroOfficeApi';
 import { PublicationIdentifierFields } from './PublicationIdentifierFields';
 import type { OmiTitleMatter } from '../model/frontMatter';
 import type { PublicationKind } from '../model/publicationIdentifiers';
@@ -25,7 +25,7 @@ export function NewDocumentActions({
 }: NewDocumentActionsProps) {
   const { locale } = useTranslation();
   const copy = getCopy(locale);
-  const [euroOfficeAvailable, setEuroOfficeAvailable] = useState(false);
+  const [hasOfficeArchive, setHasOfficeArchive] = useState(false);
   const [volumeKind, setVolumeKind] = useState<OmiVolumeKind | null>(null);
   const [publicationKind, setPublicationKind] = useState<PublicationKind>('volume');
   const [title, setTitle] = useState('');
@@ -39,10 +39,10 @@ export function NewDocumentActions({
 
   useEffect(() => {
     let cancelled = false;
-    euroOfficeEnabled().then((enabled) => {
-      if (!cancelled) setEuroOfficeAvailable(enabled);
+    listPlainDocuments().then((documents) => {
+      if (!cancelled) setHasOfficeArchive(documents.length > 0);
     }).catch(() => {
-      if (!cancelled) setEuroOfficeAvailable(false);
+      if (!cancelled) setHasOfficeArchive(false);
     });
     return () => { cancelled = true; };
   }, []);
@@ -92,10 +92,10 @@ export function NewDocumentActions({
           <LibraryBig size={20} aria-hidden="true" />
           <span><strong>{copy.editedVolume}</strong><small>{copy.editedVolumeDescription}</small></span>
         </button>
-        {euroOfficeAvailable ? (
-          <button type="button" disabled={busy} onClick={() => { requestPlainDocumentWorkspace(null); onCreated?.(); }}>
+        {hasOfficeArchive ? (
+          <button type="button" disabled={busy} onClick={() => { requestLegacyOfficeArchive(); onCreated?.(); }}>
             <FileText size={20} aria-hidden="true" />
-            <span><strong>{copy.plainDocuments}</strong><small>{copy.plainDocumentsDescription}</small></span>
+            <span><strong>{copy.officeArchive}</strong><small>{copy.officeArchiveDescription}</small></span>
           </button>
         ) : null}
       </div>
@@ -127,7 +127,7 @@ export function NewDocumentActions({
 function getCopy(locale: string) {
   if (locale === 'hu') return {
     title: 'Új dokumentum',
-    description: 'Új OMI-tanulmány, kötet, folyóiratszám vagy DOCX-dokumentum létrehozása.',
+    description: 'Új OMI-tanulmány, kötet vagy folyóiratszám létrehozása.',
     publicationTitle: 'A kötet vagy folyóiratszám címe', create: 'Létrehozás', cancel: 'Mégse',
     study: 'Új OMI tanulmány',
     studyDescription: 'Önálló tanulmány saját címmel, metaadatokkal és tartalommal.',
@@ -135,12 +135,12 @@ function getCopy(locale: string) {
     monographDescription: 'Egyszerzős kötet fejezetekkel és közös apparátussal.',
     editedVolume: 'Új kötet / folyóiratszám',
     editedVolumeDescription: 'Több szerző külön szerkeszthető tanulmányai egy kiadványban.',
-    plainDocuments: 'Hétköznapi DOCX-dokumentumok',
-    plainDocumentsDescription: 'Natív Word-fájlok írása EuroOffice-szal, a Stúdión belül.',
+    officeArchive: 'Korábbi DOCX-fájlok exportálása',
+    officeArchiveDescription: 'A régi Office-munkaterület dokumentumainak és mentéseinek letöltése.',
   };
   if (locale === 'de') return {
     title: 'Neues Dokument',
-    description: 'Neuen OMI-Beitrag, Band, neues Zeitschriftenheft oder DOCX-Dokument erstellen.',
+    description: 'Neuen OMI-Beitrag, Band oder neues Zeitschriftenheft erstellen.',
     publicationTitle: 'Titel des Bandes oder Zeitschriftenhefts', create: 'Erstellen', cancel: 'Abbrechen',
     study: 'Neue OMI-Studie',
     studyDescription: 'Eigenständiger Beitrag mit eigenem Titel, Metadaten und Inhalt.',
@@ -148,12 +148,12 @@ function getCopy(locale: string) {
     monographDescription: 'Ein einbändiges Werk mit Kapiteln und gemeinsamem Apparat.',
     editedVolume: 'Neuer Band oder Heft',
     editedVolumeDescription: 'Getrennt bearbeitbare Beiträge mehrerer Autorinnen und Autoren.',
-    plainDocuments: 'Allgemeine DOCX-Dokumente',
-    plainDocumentsDescription: 'Word-Dateien nativ mit EuroOffice in Studio bearbeiten.',
+    officeArchive: 'Bisherige DOCX-Dateien exportieren',
+    officeArchiveDescription: 'Dokumente und Sicherungen aus dem früheren Office-Arbeitsbereich herunterladen.',
   };
   return {
     title: 'New document',
-    description: 'Create an OMI study, volume, journal issue or DOCX document.',
+    description: 'Create an OMI study, volume or journal issue.',
     publicationTitle: 'Volume or journal issue title', create: 'Create', cancel: 'Cancel',
     study: 'New OMI study',
     studyDescription: 'A standalone study with its own title, metadata, and content.',
@@ -161,7 +161,7 @@ function getCopy(locale: string) {
     monographDescription: 'A single-author volume with chapters and shared scholarly apparatus.',
     editedVolume: 'New volume or issue',
     editedVolumeDescription: 'A volume or journal issue with independently editable studies.',
-    plainDocuments: 'Everyday DOCX documents',
-    plainDocumentsDescription: 'Write native Word files with EuroOffice inside Studio.',
+    officeArchive: 'Export previous DOCX files',
+    officeArchiveDescription: 'Download documents and recovery saves from the former Office workspace.',
   };
 }

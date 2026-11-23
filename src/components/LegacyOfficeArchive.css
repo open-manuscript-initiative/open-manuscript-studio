@@ -1,0 +1,15 @@
+.omi-office-archive { max-width: 64rem; margin: 0 auto; padding: clamp(1rem, 3vw, 2rem); display: grid; gap: 1rem; }
+.omi-office-archive-header { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.omi-office-archive-header h1 { font-size: 1.4rem; margin: 0; }
+.omi-office-archive-header button, .omi-office-archive-document button, .omi-office-archive-save button { display: inline-flex; gap: .4rem; align-items: center; justify-content: center; padding: .55rem .75rem; border: 1px solid var(--color-border, #a1a1aa); border-radius: .5rem; background: var(--color-background, transparent); color: inherit; cursor: pointer; }
+.omi-office-archive button:disabled { opacity: .55; cursor: wait; }
+.omi-office-archive-hint { font-size: .9rem; opacity: .85; }
+.omi-office-archive-error { color: #b42318; }
+.omi-office-archive-documents { display: grid; gap: .75rem; }
+.omi-office-archive-document { border: 1px solid var(--color-border, #a1a1aa); border-radius: .65rem; padding: .9rem; }
+.omi-office-archive-document-main { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; }
+.omi-office-archive-document-title { min-width: 12rem; flex: 1; overflow-wrap: anywhere; display: grid; }
+.omi-office-archive-document-title small { opacity: .7; }
+.omi-office-archive-saves { margin-top: .8rem; padding-left: 1rem; display: grid; gap: .5rem; border-left: 2px solid var(--color-border, #a1a1aa); }
+.omi-office-archive-save { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; justify-content: space-between; font-size: .875rem; }
+@media (max-width: 500px) { .omi-office-archive-header { gap: .75rem; } .omi-office-archive-document-main button { flex: 1 1 9rem; } .omi-office-archive-document-title { flex-basis: calc(100% - 3rem); } }
