@@ -1,3 +1,4 @@
+import { ChartPreview } from './ChartPreview';
 import { TextBoxCanvas } from './TextBoxCanvas';
 import { createTextBox } from '../model/textBoxes';
 import { getTextBoxCopy } from '../i18n/textBoxes';
@@ -32,6 +33,7 @@ import type {
   OmiImageBlockData,
   OmiChartBlockData,
   OmiChartType,
+  OmiChartStyle,
   OmiTableBlockData,
   OmiTableCellFormat,
   OmiVisualBlockData,
@@ -157,8 +159,26 @@ export function VisualBlockEditor({
                 <option value="line">{copy.chartLine}</option>
                 <option value="pie">{copy.chartPie}</option>
                 <option value="scatter">{copy.chartScatter}</option>
+                <option value="horizontal-bar">{copy.chartHorizontal}</option>
+                <option value="stacked-bar">{copy.chartStacked}</option>
+                <option value="stacked-100">{copy.chartStacked100}</option>
+                <option value="area">{copy.chartArea}</option>
+                <option value="donut">{copy.chartDonut}</option>
+                <option value="radar">{copy.chartRadar}</option>
               </select>
             </label>
+            <label>
+              <span>{copy.chartStyle}</span>
+              <select value={visual.stylePreset ?? 'color'} onChange={(event) => update({ ...visual, stylePreset: event.target.value as OmiChartStyle })}>
+                <option value="color">{copy.chartStyleColor}</option>
+                <option value="editorial">{copy.chartStyleEditorial}</option>
+                <option value="monochrome">{copy.chartStyleMonochrome}</option>
+                <option value="contrast">{copy.chartStyleContrast}</option>
+              </select>
+            </label>
+            <label className="omi-chart-option"><input type="checkbox" checked={visual.showGrid ?? true} onChange={(event) => update({ ...visual, showGrid: event.target.checked })} /><span>{copy.chartShowGrid}</span></label>
+            <label className="omi-chart-option"><input type="checkbox" checked={visual.showLegend ?? true} onChange={(event) => update({ ...visual, showLegend: event.target.checked })} /><span>{copy.chartShowLegend}</span></label>
+            <label className="omi-chart-option"><input type="checkbox" checked={visual.showValues ?? false} onChange={(event) => update({ ...visual, showValues: event.target.checked })} /><span>{copy.chartShowValues}</span></label>
             <label>
               <span>{copy.chartTitle}</span>
               <input
@@ -449,145 +469,6 @@ function EditableGrid({
       </> : data.kind === 'table' && data.caption ? <p className="omi-table-preview-caption" style={continuationStyle(cells.length)}>{data.caption}</p> : null}
     </div>
   );
-}
-
-function ChartPreview({
-  data,
-  emptyLabel,
-}: {
-  data: OmiChartBlockData;
-  emptyLabel: string;
-}) {
-  const dataset = tableToChartDataset(data.cells);
-  if (dataset.series.length === 0 || dataset.labels.length === 0) {
-    return <div className="omi-chart-empty">{emptyLabel}</div>;
-  }
-
-  if (data.chartType === 'pie') {
-    const values = dataset.series[0]?.values.map((value) => Math.max(0, value)) ?? [];
-    const total = values.reduce((sum, value) => sum + value, 0);
-    if (total <= 0) return <div className="omi-chart-empty">{emptyLabel}</div>;
-    let angle = -Math.PI / 2;
-    return (
-      <svg className="omi-chart-svg" viewBox="0 0 640 320" role="img" aria-label={data.title ?? 'Pie chart'}>
-        {values.map((value, index) => {
-          const sweep = (value / total) * Math.PI * 2;
-          const start = polar(250, 155, 115, angle);
-          const end = polar(250, 155, 115, angle + sweep);
-          const large = sweep > Math.PI ? 1 : 0;
-          const path = `M 250 155 L ${start.x} ${start.y} A 115 115 0 ${large} 1 ${end.x} ${end.y} Z`;
-          angle += sweep;
-          return <path key={index} d={path} className={`omi-chart-series omi-chart-series--${index % 6}`} />;
-        })}
-        {dataset.labels.map((label, index) => (
-          <text key={label + index} x="400" y={50 + index * 22} className={`omi-chart-legend omi-chart-legend--${index % 6}`}>
-            {label}
-          </text>
-        ))}
-      </svg>
-    );
-  }
-
-  const allValues = dataset.series.flatMap((series) => series.values);
-  const minValue = Math.min(0, ...allValues);
-  const maxValue = Math.max(0, ...allValues);
-  const range = maxValue - minValue || 1;
-  const left = 58;
-  const top = 24;
-  const width = 550;
-  const height = 230;
-  const y = (value: number) => top + height - ((value - minValue) / range) * height;
-  const baseline = y(0);
-
-  if (data.chartType === 'scatter') {
-    const xValues = dataset.series[0]?.values ?? [];
-    const yValues = dataset.series[1]?.values ?? dataset.series[0]?.values ?? [];
-    const xMin = Math.min(...xValues);
-    const xMax = Math.max(...xValues);
-    const xRange = xMax - xMin || 1;
-    return (
-      <svg className="omi-chart-svg" viewBox="0 0 640 320" role="img" aria-label={data.title ?? 'Scatter chart'}>
-        <Axis left={left} top={top} width={width} height={height} baseline={baseline} />
-        {yValues.map((value, index) => {
-          const xValue = xValues[index] ?? index;
-          const cx = left + ((xValue - xMin) / xRange) * width;
-          return <circle key={index} cx={cx} cy={y(value)} r="5" className="omi-chart-series omi-chart-series--0" />;
-        })}
-      </svg>
-    );
-  }
-
-  if (data.chartType === 'line') {
-    return (
-      <svg className="omi-chart-svg" viewBox="0 0 640 320" role="img" aria-label={data.title ?? 'Line chart'}>
-        <Axis left={left} top={top} width={width} height={height} baseline={baseline} />
-        {dataset.series.map((series, seriesIndex) => {
-          const points = series.values.map((value, index) => {
-            const x = left + (dataset.labels.length <= 1 ? width / 2 : (index / (dataset.labels.length - 1)) * width);
-            return `${x},${y(value)}`;
-          }).join(' ');
-          return <polyline key={series.name} points={points} fill="none" className={`omi-chart-line omi-chart-series--${seriesIndex % 6}`} />;
-        })}
-        <CategoryLabels labels={dataset.labels} left={left} width={width} y={280} />
-      </svg>
-    );
-  }
-
-  const categoryWidth = width / Math.max(1, dataset.labels.length);
-  const seriesWidth = categoryWidth * 0.72 / Math.max(1, dataset.series.length);
-  return (
-    <svg className="omi-chart-svg" viewBox="0 0 640 320" role="img" aria-label={data.title ?? 'Bar chart'}>
-      <Axis left={left} top={top} width={width} height={height} baseline={baseline} />
-      {dataset.labels.map((label, categoryIndex) =>
-        dataset.series.map((series, seriesIndex) => {
-          const value = series.values[categoryIndex] ?? 0;
-          const valueY = y(value);
-          const x = left + categoryIndex * categoryWidth + categoryWidth * 0.14 + seriesIndex * seriesWidth;
-          return (
-            <rect
-              key={`${label}:${series.name}`}
-              x={x}
-              y={Math.min(valueY, baseline)}
-              width={Math.max(2, seriesWidth - 3)}
-              height={Math.max(1, Math.abs(baseline - valueY))}
-              className={`omi-chart-series omi-chart-series--${seriesIndex % 6}`}
-            />
-          );
-        }),
-      )}
-      <CategoryLabels labels={dataset.labels} left={left} width={width} y={280} />
-    </svg>
-  );
-}
-
-function Axis({ left, top, width, height, baseline }: { left: number; top: number; width: number; height: number; baseline: number }) {
-  return (
-    <g className="omi-chart-axis">
-      <line x1={left} y1={top} x2={left} y2={top + height} />
-      <line x1={left} y1={baseline} x2={left + width} y2={baseline} />
-    </g>
-  );
-}
-
-function CategoryLabels({ labels, left, width, y }: { labels: string[]; left: number; width: number; y: number }) {
-  return (
-    <g className="omi-chart-labels">
-      {labels.slice(0, 12).map((label, index) => (
-        <text
-          key={label + index}
-          x={left + ((index + 0.5) / labels.length) * width}
-          y={y}
-          textAnchor="middle"
-        >
-          {label.length > 14 ? `${label.slice(0, 12)}…` : label}
-        </text>
-      ))}
-    </g>
-  );
-}
-
-function polar(cx: number, cy: number, radius: number, angle: number): { x: number; y: number } {
-  return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
 }
 
 function visualLabel(
