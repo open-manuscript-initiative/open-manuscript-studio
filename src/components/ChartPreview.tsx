@@ -135,7 +135,10 @@ export function ChartPreview({ data, emptyLabel }: Props) {
   const label = data.title?.trim() || `Chart: ${chartType}`;
   const frame = (children: ReactNode) =>
     <svg className="omi-chart-svg" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={label} data-chart-type={chartType} data-chart-style={data.stylePreset ?? 'color'} style={{ fontFamily: data.stylePreset === 'editorial' ? 'Georgia, serif' : 'inherit' }}>
-      <title>{label}</title>{children}
+      <title>{label}</title>
+      {dataset.labels.length > MAX_VISIBLE ? <desc>First {MAX_VISIBLE} of {dataset.labels.length} categories shown; all source data is retained.</desc> : null}
+      {children}
+      {dataset.labels.length > MAX_VISIBLE ? <text x={WIDTH - 12} y={HEIGHT - 9} fontSize={10} textAnchor="end" fill="currentColor">{MAX_VISIBLE} / {dataset.labels.length}</text> : null}
     </svg>;
   if (isCircular) {
     const values = series[0]?.values ?? [];
@@ -149,7 +152,7 @@ export function ChartPreview({ data, emptyLabel }: Props) {
   const horizontal = chartType === 'horizontal-bar';
   const positiveTotals = visibleLabels.map((_, i) => series.reduce((sum, s) => sum + Math.max(0, s.values[i] ?? 0), 0));
   const negativeTotals = visibleLabels.map((_, i) => series.reduce((sum, s) => sum + Math.min(0, s.values[i] ?? 0), 0));
-  const min = chartType === 'stacked-100' ? 0 : stacked ? Math.min(0, ...negativeTotals) : Math.min(0, ...allValues);
+  const min = chartType === 'stacked-100' ? (negativeTotals.some(v => v < 0) ? -100 : 0) : stacked ? Math.min(0, ...negativeTotals) : Math.min(0, ...allValues);
   const max = chartType === 'stacked-100' ? 100 : stacked ? Math.max(1, ...positiveTotals) : Math.max(1, ...allValues);
   const axisY = (n: number) => top + height - scale(n, min, max, height);
   const axisX = (n: number) => left + scale(n, min, max, width);
@@ -201,7 +204,10 @@ export function ChartPreview({ data, emptyLabel }: Props) {
       let pos = 0, neg = 0;
       series.forEach((item, j) => {
         const raw = item.values[i] ?? 0;
-        const value = chartType === 'stacked-100' ? (positiveTotals[i] ? 100 * Math.max(0, raw) / positiveTotals[i] : 0) : raw;
+        const value = chartType === 'stacked-100'
+          ? raw < 0 ? (negativeTotals[i] ? 100 * raw / Math.abs(negativeTotals[i]) : 0)
+            : (positiveTotals[i] ? 100 * raw / positiveTotals[i] : 0)
+          : raw;
         const start = stacked ? (value < 0 ? neg : pos) : 0, end = start + value;
         if (stacked) { if (value < 0) neg = end; else pos = end; }
         const xx = left + i * band + (band - groupWidth) / 2 + (stacked ? 0 : j * groupWidth / series.length);
