@@ -25,13 +25,11 @@ import {
   createChartBlock,
   removeTableColumn,
   removeTableRow,
-  tableToChartDataset,
   updateTableCell,
 } from '../model/visualBlocks';
 import type {
   OmiBlock,
   OmiImageBlockData,
-  OmiChartBlockData,
   OmiChartType,
   OmiChartStyle,
   OmiTableBlockData,
