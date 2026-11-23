@@ -32,6 +32,9 @@ import {
   Download,
   FileCode2,
   FileText,
+  Eye,
+  Maximize2,
+  Minimize2,
   Move,
   Palette,
   Pilcrow,
@@ -89,10 +92,12 @@ import {
   PublicationDocumentCanvas,
   type PublicationDocumentViewMode,
 } from './PublicationDocumentCanvas';
+import { NON_PRINTING_MARKS_EVENT, readStoredNonPrintingMarks, setNonPrintingMarksVisibility } from '../editor/nonPrintingMarks';
+import { PublicationGraphicsContext, readPublicationViewOptions, savePublicationViewOptions, type PublicationViewOptions } from './publicationViewOptions';
 import './PublicationStyleEditor.css';
 
 type PageOrientation = 'portrait' | 'landscape';
-type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'pageStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | 'thumbnails' | 'units' | null;
+type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'pageStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | 'thumbnails' | 'units' | 'view' | null;
 type SystemFontLoadStatus = 'fallback' | 'loading' | 'loaded' | 'unsupported' | 'denied' | 'error';
 
 const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
@@ -260,6 +265,61 @@ function PublicationStyleEditorWorkspace() {
   const [message, setMessage] = useState('');
   const [openPanel, setOpenPanel] = useState<PublicationRibbonPanel>(null);
   const [rulerVisible, setRulerVisible] = useState(true);
+  const [viewOptions, setViewOptions] = useState<PublicationViewOptions>(readPublicationViewOptions);
+  const [showNonPrintingMarks, setShowNonPrintingMarks] = useState(readStoredNonPrintingMarks);
+  const [presentation, setPresentation] = useState(false);
+  const viewCopy = locale === 'hu'
+    ? { view: 'Nézet', graphics: 'Grafikus elemek', full: 'Teljes megjelenítés', simplified: 'Gyors, egyszerűsített nézet',
+      outlines: 'Csak grafikai keretek', aids: 'Szerkesztési segédjelek', nonPrintingMarks: 'Nem nyomtatható jelek',
+      marginBoundaries: 'Margóhatárok', alignmentGuides: 'Igazítóvonalak', presentation: 'Teljes képernyős bemutató', exit: 'Kilépés a bemutatóból' }
+    : locale === 'de'
+      ? { view: 'Ansicht', graphics: 'Grafische Elemente', full: 'Vollständige Darstellung', simplified: 'Schnelle vereinfachte Ansicht',
+        outlines: 'Nur Grafikrahmen', aids: 'Bearbeitungshilfen', nonPrintingMarks: 'Nicht druckbare Zeichen',
+        marginBoundaries: 'Randbegrenzungen', alignmentGuides: 'Hilfslinien', presentation: 'Vollbildpräsentation', exit: 'Präsentation beenden' }
+      : { view: 'View', graphics: 'Graphics', full: 'Full rendering', simplified: 'Fast simplified view',
+        outlines: 'Graphic outlines only', aids: 'Editing aids', nonPrintingMarks: 'Non-printing marks',
+        marginBoundaries: 'Margin boundaries', alignmentGuides: 'Alignment guides', presentation: 'Fullscreen presentation', exit: 'Exit presentation' };
+  useEffect(() => { savePublicationViewOptions(viewOptions); }, [viewOptions]);
+  useEffect(() => { setNonPrintingMarksVisibility(showNonPrintingMarks); }, [showNonPrintingMarks]);
+  useEffect(() => {
+    const sync = (event: Event) => setShowNonPrintingMarks((event as CustomEvent<boolean>).detail);
+    window.addEventListener(NON_PRINTING_MARKS_EVENT, sync);
+    return () => window.removeEventListener(NON_PRINTING_MARKS_EVENT, sync);
+  }, []);
+  useEffect(() => {
+    if (!presentation) return;
+    const onFullscreenChange = () => {
+      if (document.fullscreenElement && document.fullscreenElement !== editorRoot.current) setPresentation(false);
+      else if (!document.fullscreenElement && document.fullscreenEnabled) setPresentation(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPresentation(false);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [presentation]);
+  const onDisplayOptionChange = (key: 'nonPrintingMarks' | 'showMarginBoundaries' | 'showAlignmentGuides', value: boolean) => {
+    if (key === 'nonPrintingMarks') setShowNonPrintingMarks(value);
+    else setViewOptions((current) => ({ ...current, [key]: value }));
+  };
+  const enterPresentation = () => {
+    setOpenPanel(null);
+    setFrameToolsOpen(false);
+    setMatterToolsOpen(false);
+    setPresentation(true);
+    const element = editorRoot.current;
+    if (element?.requestFullscreen) void element.requestFullscreen().catch(() => {
+      // CSS fullscreen fallback stays available when the API is blocked.
+    });
+  };
+  const exitPresentation = () => {
+    setPresentation(false);
+    if (document.fullscreenElement === editorRoot.current) void document.exitFullscreen().catch(() => undefined);
+  };
   const [thumbnailsTarget, setThumbnailsTarget] = useState<HTMLDivElement | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const resizingSidebar = useRef(false);
@@ -824,12 +884,17 @@ function PublicationStyleEditorWorkspace() {
   }, [paragraphStyleAssignable, proofingSelection?.blockId, selectedParagraphStyleId]);
 
   return (
+    <PublicationGraphicsContext.Provider value={presentation ? 'screen' : previewOnly ? 'full' : viewOptions.graphicsMode}>
     <section
       ref={editorRoot}
-      className="publication-style-editor"
+      className={`publication-style-editor${presentation ? ' publication-style-editor--presentation' : ''}`}
+      data-graphics-mode={presentation ? 'screen' : viewOptions.graphicsMode}
       data-publication-page-count={bodyPageCount}
       aria-labelledby="publication-style-editor-title"
     >
+      {presentation ? <button type="button" className="publication-presentation-exit" onClick={exitPresentation} aria-label={viewCopy.exit}>
+        <Minimize2 size={18} aria-hidden="true" />{viewCopy.exit}
+      </button> : null}
       <div className="publication-profile-section-heading publication-style-editor-heading">
         <div>
           <h4 id="publication-style-editor-title">{copy.title}</h4>
@@ -949,6 +1014,13 @@ function PublicationStyleEditorWorkspace() {
               />
             ) : null}
             <PublicationRibbonMenuButton
+              panelId="view"
+              label={viewCopy.view}
+              icon={<Eye size={18} aria-hidden="true" />}
+              open={openPanel === 'view'}
+              onToggle={() => toggleSidebarPanel('view')}
+            />
+            <PublicationRibbonMenuButton
               panelId="units"
               label={sidebarCopy.units}
               icon={<DraftingCompass size={18} aria-hidden="true" />}
@@ -957,6 +1029,9 @@ function PublicationStyleEditorWorkspace() {
             />
             <PublicationRibbonActionButton label={sidebarCopy.ruler} pressed={rulerVisible} onClick={() => setRulerVisible((visible) => !visible)}>
               <Ruler size={18} aria-hidden="true" />
+            </PublicationRibbonActionButton>
+            <PublicationRibbonActionButton label={viewCopy.presentation} onClick={enterPresentation}>
+              <Maximize2 size={18} aria-hidden="true" />
             </PublicationRibbonActionButton>
             <PublicationRibbonActionButton label={frameCopy.tools} pressed={frameToolsOpen}
               expanded={frameToolsOpen} controls="publication-frame-inspector-panel"
@@ -995,6 +1070,35 @@ function PublicationStyleEditorWorkspace() {
           <div id="publication-style-ribbon-panel-units" className="publication-style-ribbon-panel publication-style-ribbon-panel--compact"
             role="dialog" aria-label={sidebarCopy.units}>
             <PublicationMeasurementSelector />
+          </div>
+        ) : null}
+        {openPanel === 'view' ? (
+          <div id="publication-style-ribbon-panel-view" className="publication-style-ribbon-panel publication-style-ribbon-panel--compact publication-view-panel" role="dialog" aria-label={viewCopy.view}>
+            <fieldset>
+              <legend>{viewCopy.graphics}</legend>
+              {(['full', 'simplified', 'outlines'] as const).map((mode) => (
+                <label key={mode} className="publication-view-option">
+                  <input type="radio" name="publication-graphics-mode" value={mode}
+                    checked={viewOptions.graphicsMode === mode}
+                    onChange={() => setViewOptions((current) => ({ ...current, graphicsMode: mode }))} />
+                  <span>{viewCopy[mode]}</span>
+                </label>
+              ))}
+            </fieldset>
+            <fieldset>
+              <legend>{viewCopy.aids}</legend>
+              {(['nonPrintingMarks', 'showMarginBoundaries', 'showAlignmentGuides'] as const).map((key) => (
+                <label key={key} className="publication-view-option">
+                  <input type="checkbox"
+                    checked={key === 'nonPrintingMarks' ? showNonPrintingMarks : viewOptions[key]}
+                    onChange={(event) => onDisplayOptionChange(key, event.target.checked)} />
+                  <span>{key === 'nonPrintingMarks' ? viewCopy.nonPrintingMarks : key === 'showMarginBoundaries' ? viewCopy.marginBoundaries : viewCopy.alignmentGuides}</span>
+                </label>
+              ))}
+            </fieldset>
+            <button type="button" className="publication-view-presentation" onClick={enterPresentation}>
+              <Maximize2 size={16} aria-hidden="true" />{viewCopy.presentation}
+            </button>
           </div>
         ) : null}
         {openPanel === 'styles' ? (
@@ -1450,6 +1554,9 @@ function PublicationStyleEditorWorkspace() {
           navigationTarget={layoutTarget}
           pageNavigatorTarget={openPanel === 'thumbnails' ? thumbnailsTarget : null}
           showRuler={rulerVisible}
+          presentation={presentation}
+          displayOptions={{ nonPrintingMarks: showNonPrintingMarks, showMarginBoundaries: viewOptions.showMarginBoundaries, showAlignmentGuides: viewOptions.showAlignmentGuides }}
+          onDisplayOptionChange={onDisplayOptionChange}
         />
         {frameToolsOpen || checkerEnabled ? (
           <section
@@ -1465,13 +1572,15 @@ function PublicationStyleEditorWorkspace() {
               </button>
             </div>
             <p className="publication-frame-inspector-advisory">{frameCopy.toolsHelp}</p>
-            <PublicationFrameEditor key={manuscript.id} publicationStyle={style} onLayoutIssues={reportFrameIssues} />
+            <PublicationFrameEditor key={manuscript.id} publicationStyle={style} onLayoutIssues={reportFrameIssues}
+              showMarginBoundaries={viewOptions.showMarginBoundaries} showAlignmentGuides={viewOptions.showAlignmentGuides} />
           </section>
         ) : null}
       </div>
       </div>
       </div>
     </section>
+    </PublicationGraphicsContext.Provider>
   );
 }
 

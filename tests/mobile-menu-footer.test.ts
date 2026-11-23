@@ -144,8 +144,10 @@ test('normal manuscript editing exposes a Word-style document zoom without chang
 test('non-printing manuscript marks are display-only, persistent and available in every rich-text editor', () => {
   assert.match(nonPrintingModel, /NON_PRINTING_MARKS_STORAGE_KEY = 'omi\.show-nonprinting-marks'/);
   assert.match(editorZoom, /aria-pressed=\{showNonPrintingMarks\}/);
-  assert.match(editorZoom, /NON_PRINTING_MARKS_CLASS/);
-  assert.match(editorZoom, /NON_PRINTING_MARKS_STORAGE_KEY/);
+  assert.match(editorZoom, /setNonPrintingMarksVisibility/);
+  assert.match(editorZoom, /NON_PRINTING_MARKS_EVENT/);
+  assert.match(nonPrintingModel, /NON_PRINTING_MARKS_CLASS/);
+  assert.match(nonPrintingModel, /NON_PRINTING_MARKS_STORAGE_KEY/);
   assert.match(editorZoom, /<Pilcrow size=\{18\}/);
   assert.match(nonPrintingExtension, /createNonPrintingMark\('↵', 'line-break'\)/);
   assert.match(nonPrintingExtension, /createNonPrintingMark\('¶', 'paragraph-end'\)/);
