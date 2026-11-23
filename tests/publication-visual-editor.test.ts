@@ -36,6 +36,26 @@ const sectionRuler = readFileSync(
   new URL('../src/components/PublicationSectionRuler.tsx', import.meta.url),
   'utf8',
 );
+const viewOptionsModule = readFileSync(
+  new URL('../src/components/publicationViewOptions.ts', import.meta.url),
+  'utf8',
+);
+const visualBlockEditor = readFileSync(
+  new URL('../src/components/VisualBlockEditor.tsx', import.meta.url),
+  'utf8',
+);
+const frameEditor = readFileSync(
+  new URL('../src/components/PublicationFrameEditor.tsx', import.meta.url),
+  'utf8',
+);
+const nonPrintingMarks = readFileSync(
+  new URL('../src/editor/nonPrintingMarks.ts', import.meta.url),
+  'utf8',
+);
+const zoomControl = readFileSync(
+  new URL('../src/components/EditorZoomControl.tsx', import.meta.url),
+  'utf8',
+);
 const htmlSectionsEditor = readFileSync(
   new URL('../src/components/PublicationHtmlSectionsEditor.tsx', import.meta.url),
   'utf8',
@@ -745,4 +765,40 @@ test('publication icon rail docks thumbnails, retains panels until toggled and a
   assert.match(documentCanvas, /createPortal\(pageNavigator, pageNavigatorTarget\)/);
   assert.match(documentCanvas, /!previewOnly && showRuler \? <PublicationSectionRuler/);
   assert.match(editorStyles, /publication-page-thumbnails \{[\s\S]*?flex-direction: column/);
+});
+
+
+test('publication editor view settings are local and provide fast or outlines-only graphics', () => {
+  assert.match(viewOptionsModule, /graphicsMode: 'simplified'/);
+  assert.match(viewOptionsModule, /createContext<PublicationGraphicsMode>\('full'\)/);
+  assert.match(viewOptionsModule, /window\.localStorage\.setItem\(PUBLICATION_VIEW_OPTIONS_KEY/);
+  assert.match(styleEditor, /PublicationGraphicsContext\.Provider value=\{presentation \|\| previewOnly \? 'full' : viewOptions\.graphicsMode\}/);
+  assert.match(styleEditor, /panelId="view"/);
+  assert.match(styleEditor, /'full', 'simplified', 'outlines'/);
+  assert.match(visualBlockEditor, /graphicsMode !== 'full' && visual\.kind !== 'table'/);
+  assert.match(visualBlockEditor, /lightweight \/>/);
+  assert.match(visualBlockEditor, /omi-visual-block--lightweight/);
+  assert.match(frameEditor, /<VisualBlockEditor/);
+  assert.match(editorStyles, /\.omi-visual-block--outlines/);
+});
+
+test('publication ruler controls local editing aids without adding them to exports', () => {
+  assert.match(sectionRuler, /onDisplayOptionChange\('nonPrintingMarks'/);
+  assert.match(sectionRuler, /onDisplayOptionChange\('showMarginBoundaries'/);
+  assert.match(sectionRuler, /onDisplayOptionChange\('showAlignmentGuides'/);
+  assert.match(documentCanvas, /displayOptions\?\.showMarginBoundaries/);
+  assert.match(documentCanvas, /displayOptions\?\.showAlignmentGuides/);
+  assert.match(frameEditor, /showMarginBoundaries = false, showAlignmentGuides = false/);
+  assert.match(nonPrintingMarks, /NON_PRINTING_MARKS_EVENT/);
+  assert.match(zoomControl, /window\.addEventListener\(NON_PRINTING_MARKS_EVENT, sync\)/);
+  assert.match(editorStyles, /@media print \{[\s\S]*\.publication-document-margin-boundary/);
+});
+
+test('fullscreen presentation keeps original graphics but disables manuscript edits', () => {
+  assert.match(styleEditor, /requestFullscreen\(\)/);
+  assert.match(styleEditor, /exitFullscreen\(\)/);
+  assert.match(styleEditor, /className="publication-presentation-exit"/);
+  assert.match(documentCanvas, /<PublicationPreviewContext\.Provider value=\{previewOnly \|\| presentation\}>/);
+  assert.match(documentCanvas, /editable=\{!previewOnly && !presentation\}/);
+  assert.match(editorStyles, /\.publication-style-editor--presentation/);
 });
