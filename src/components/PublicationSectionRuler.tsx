@@ -22,6 +22,8 @@ interface PublicationSectionRulerProps {
   leftMarginMm: number;
   rightMarginMm: number;
   rulerStepPx: number;
+  displayOptions?: { nonPrintingMarks: boolean; showMarginBoundaries: boolean; showAlignmentGuides: boolean };
+  onDisplayOptionChange?: (key: 'nonPrintingMarks' | 'showMarginBoundaries' | 'showAlignmentGuides', value: boolean) => void;
 }
 
 interface SectionRulerCopy {
@@ -32,6 +34,9 @@ interface SectionRulerCopy {
   clearTabs: string;
   rulerHint: string;
   noSection: string;
+  nonPrintingMarks: string;
+  marginBoundaries: string;
+  alignmentGuides: string;
 }
 
 export function PublicationSectionRuler({
@@ -42,6 +47,8 @@ export function PublicationSectionRuler({
   leftMarginMm,
   rightMarginMm,
   rulerStepPx,
+  displayOptions,
+  onDisplayOptionChange,
 }: PublicationSectionRulerProps) {
   const copy = rulerCopy(locale);
   const rulerRef = useRef<HTMLDivElement>(null);
@@ -159,6 +166,13 @@ export function PublicationSectionRuler({
         >
           {copy.clearTabs}
         </button>
+        {displayOptions && onDisplayOptionChange ? (
+          <div className="publication-ruler-visibility-options" role="group" aria-label={copy.sectionLayout}>
+            <label><input type="checkbox" checked={displayOptions.nonPrintingMarks} onChange={(event) => onDisplayOptionChange('nonPrintingMarks', event.target.checked)} />{copy.nonPrintingMarks}</label>
+            <label><input type="checkbox" checked={displayOptions.showMarginBoundaries} onChange={(event) => onDisplayOptionChange('showMarginBoundaries', event.target.checked)} />{copy.marginBoundaries}</label>
+            <label><input type="checkbox" checked={displayOptions.showAlignmentGuides} onChange={(event) => onDisplayOptionChange('showAlignmentGuides', event.target.checked)} />{copy.alignmentGuides}</label>
+          </div>
+        ) : null}
       </div>
 
       <div
@@ -222,6 +236,9 @@ function rulerCopy(locale: string): SectionRulerCopy {
       clearTabs: 'Tabulátorok törlése',
       rulerHint: 'Kattintson a vonalzóra tabulátor hozzáadásához vagy eltávolításához.',
       noSection: 'Nincs aktív szakasz.',
+      nonPrintingMarks: 'Nem nyomtatható jelek',
+      marginBoundaries: 'Margóhatárok',
+      alignmentGuides: 'Igazítóvonalak',
     };
   }
   if (language === 'de') {
@@ -233,6 +250,9 @@ function rulerCopy(locale: string): SectionRulerCopy {
       clearTabs: 'Tabstopps löschen',
       rulerHint: 'Auf das Lineal klicken, um einen Tabstopp hinzuzufügen oder zu entfernen.',
       noSection: 'Kein aktiver Abschnitt.',
+      nonPrintingMarks: 'Nicht druckbare Zeichen',
+      marginBoundaries: 'Randbegrenzungen',
+      alignmentGuides: 'Hilfslinien',
     };
   }
   return {
@@ -243,5 +263,8 @@ function rulerCopy(locale: string): SectionRulerCopy {
     clearTabs: 'Clear tabs',
     rulerHint: 'Click the ruler to add or remove a tab stop.',
     noSection: 'No active section.',
+    nonPrintingMarks: 'Non-printing marks',
+    marginBoundaries: 'Margin boundaries',
+    alignmentGuides: 'Alignment guides',
   };
 }
