@@ -209,6 +209,9 @@ const environmentSchema = z.object({
     (value) => typeof value === 'string' && !value.trim() ? undefined : value,
     z.string().trim().min(32).optional(),
   ),
+  // Legacy embedded editing is opt-in during migration. Existing documents and
+  // recovery snapshots remain downloadable even when the editor is disabled.
+  EUROOFFICE_EDITOR_ENABLED: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
 
   // Vivliostyle is an external, separately installed renderer. Keeping the
   // executable outside the Studio dependency graph lets deployments pin and
@@ -265,7 +268,7 @@ validateOrcidDeployment({
 
 export const env = {
   ...result.data,
-  EUROOFFICE_ENABLED: Boolean(result.data.EUROOFFICE_URL && result.data.EUROOFFICE_JWT_SECRET),
+  EUROOFFICE_ENABLED: Boolean(result.data.EUROOFFICE_EDITOR_ENABLED && result.data.EUROOFFICE_URL && result.data.EUROOFFICE_JWT_SECRET),
   ORCID_ENVIRONMENT: orcid.environment,
   ORCID_BASE_URL: orcid.baseUrl,
   ORCID_CLIENT_ID: orcidCredentials.clientId,

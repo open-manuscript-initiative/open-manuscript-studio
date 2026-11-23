@@ -12,11 +12,20 @@ export class EuroOfficeError extends Error {
   constructor(readonly code: string, readonly status: number) { super(code); }
 }
 export function requireEuroOffice(): void {
-  if (!env.EUROOFFICE_ENABLED) throw new EuroOfficeError('EUROOFFICE_NOT_CONFIGURED', 503);
+  if (!env.EUROOFFICE_ENABLED) throw new EuroOfficeError('EUROOFFICE_EDITOR_DISABLED', 503);
+}
+function requireConfiguredOffice(): void {
+  // Drain already-issued editor sessions without allowing new ones.
+  if (!env.EUROOFFICE_URL || !env.EUROOFFICE_JWT_SECRET) throw new EuroOfficeError('EUROOFFICE_NOT_CONFIGURED', 503);
 }
 const serialize = <T extends { createdAt: Date; updatedAt: Date }>(document: T) => ({ ...document, createdAt: document.createdAt.toISOString(), updatedAt: document.updatedAt.toISOString() });
 export async function listPlainDocuments(userId: string) {
-  requireEuroOffice(); return { documents: (await repository.list(userId)).map(serialize) };
+  return { documents: (await repository.list(userId)).map(serialize) };
+}
+export async function downloadPlainDocument(userId: string, documentId: string) {
+  const document = await repository.currentContent(documentId, userId);
+  if (!document) throw new EuroOfficeError('DOCUMENT_NOT_FOUND', 404);
+  return document.content;
 }
 export async function createPlainDocument(userId: string, title: string) {
   requireEuroOffice(); return { document: serialize(await repository.create(userId, title, createBlankDocx(title))) };
@@ -71,7 +80,7 @@ export async function createEuroOfficeSession(userId: string, documentId: string
   return { apiScriptUrl: `${serverUrl}/web-apps/apps/api/documents/api.js`, config: { ...config, token: jwt }, expiresAt: expiresAt.toISOString() };
 }
 async function capability(documentId: string, token: string) {
-  requireEuroOffice();
+  requireConfiguredOffice();
   const session = await repository.capability(documentId, digest(token));
   if (!session) throw new EuroOfficeError('DOCUMENT_NOT_FOUND', 404);
   return session;
@@ -106,12 +115,10 @@ export async function saveEuroOfficeCallback(documentId: string, token: string, 
   await repository.save({ documentId, userId: session.userId, documentKey: session.documentKey, baseRevision: session.baseRevision, callbackDigest, status: callback.status, bytes });
 }
 export async function listEuroOfficeSaves(userId: string, documentId: string) {
-  requireEuroOffice();
   if (!await repository.owned(documentId, userId)) throw new EuroOfficeError('DOCUMENT_NOT_FOUND', 404);
   return { saves: (await repository.saves(documentId, userId)).map(save => ({ ...save, createdAt: save.createdAt.toISOString() })) };
 }
 export async function downloadEuroOfficeSave(userId: string, documentId: string, saveId: string) {
-  requireEuroOffice();
   const save = await repository.savedContent(saveId, documentId, userId);
   if (!save) throw new EuroOfficeError('DOCUMENT_NOT_FOUND', 404);
   return save.content;
