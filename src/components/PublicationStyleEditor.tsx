@@ -884,11 +884,11 @@ function PublicationStyleEditorWorkspace() {
   }, [paragraphStyleAssignable, proofingSelection?.blockId, selectedParagraphStyleId]);
 
   return (
-    <PublicationGraphicsContext.Provider value={presentation || previewOnly ? 'full' : viewOptions.graphicsMode}>
+    <PublicationGraphicsContext.Provider value={presentation ? 'screen' : previewOnly ? 'full' : viewOptions.graphicsMode}>
     <section
       ref={editorRoot}
       className={`publication-style-editor${presentation ? ' publication-style-editor--presentation' : ''}`}
-      data-graphics-mode={presentation ? 'full' : viewOptions.graphicsMode}
+      data-graphics-mode={presentation ? 'screen' : viewOptions.graphicsMode}
       data-publication-page-count={bodyPageCount}
       aria-labelledby="publication-style-editor-title"
     >
