@@ -643,7 +643,7 @@ function renderChart(block: OmiBlock, state: RenderState): string {
 
   const captionText = visual.caption?.trim() || visual.title?.trim();
   const caption = captionText ? `<figcaption>${escapeHtml(captionText)}</figcaption>` : '';
-  const sourceLabel = localizedLabels(state.manuscript.language).chartSourceData;
+  const sourceLabel = localizedLabels(state.manuscript.locale).chartSourceData;
   const [header, ...dataRows] = visual.cells;
   const head = header
     ? `<thead><tr>${header.map((cell) => `<th scope="col">${escapeHtml(cell)}</th>`).join('')}</tr></thead>`
