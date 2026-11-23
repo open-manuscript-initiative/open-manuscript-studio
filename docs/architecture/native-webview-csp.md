@@ -1,4 +1,6 @@
-# Tauri main-WebView CSP and EuroOffice isolation
+# Tauri main-WebView CSP (historical EuroOffice isolation)
+
+> **Superseded for EuroOffice as of 2026-11-23.** EuroOffice is no longer embedded in web or native Studio, and the Studio API no longer mounts the Office routes. The EuroOffice host/handshake section below is a **historical record**, not a deployment procedure. The schema-generation and main-WebView CSP protections remain in force. See [ADR-032](adr-032-office-service-separation.md).
 
 ## Native startup and schema validation (2026-11-02)
 

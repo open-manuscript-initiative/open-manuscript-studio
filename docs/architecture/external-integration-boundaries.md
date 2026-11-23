@@ -1,3 +1,5 @@
+> **Historical EuroOffice bridge.** The Studio Office UI and API mounts were removed on 2026-11-23. Office-specific deployment/testing claims below describe the older code; Transkribus boundaries are still relevant. See [ADR-032](adr-032-office-service-separation.md).
+
 # External editor and recognition safety
 
 ## Deploy and rollback
