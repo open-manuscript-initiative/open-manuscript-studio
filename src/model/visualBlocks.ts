@@ -326,6 +326,8 @@ export function parseChartNumber(value: string): number {
     .replace(/\s+/g, '')
     .replace(/(?<=\d),(?=\d{1,2}$)/, '.')
     .replace(/[^0-9+\-.eE]/g, '');
+  // An empty or non-numeric source cell must not silently become a data point at zero.
+  if (!normalized || !/[0-9]/.test(normalized)) return Number.NaN;
   const numeric = Number(normalized);
   return Number.isFinite(numeric) ? numeric : Number.NaN;
 }
