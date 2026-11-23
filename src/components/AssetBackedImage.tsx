@@ -51,17 +51,22 @@ export function AssetBackedImage({
     setResolvedSrc(screenResolution ? '' : visual.src);
     if (deferScreenImage) return () => undefined;
 
-    if (!visual.assetId) return () => undefined;
+    const inlineRaster = screenResolution && /^data:image\/(?:png|jpeg|webp);base64,/i.test(visual.src);
+    if (!visual.assetId && !inlineRaster) return () => undefined;
 
-    void getAssetPayload(manuscriptId, visual.assetId)
-      .then(async (bytes) => {
+    // Legacy embedded raster images have no assetId; support those without
+    // touching external or potentially cross-origin image URLs.
+    const payload = visual.assetId
+      ? getAssetPayload(manuscriptId, visual.assetId)
+      : Promise.resolve(decodeEmbeddedRaster(visual.src));
+    void payload.then(async (bytes) => {
         if (!bytes || disposed) {
           if (!bytes && !disposed) setResolvedSrc(visual.src);
           return;
         }
         const result = screenResolution
           ? await screenImageRendition(
-              bytes, visual.mediaType || 'application/octet-stream',
+              bytes, visual.mediaType || visual.src.match(/^data:(image\/[^;,]+)/i)?.[1] || 'application/octet-stream',
               // Match the actual on-screen frame when possible rather than
               // preparing a viewport-wide bitmap for a small inline image.
               screenImageBudget(
@@ -117,4 +122,18 @@ export function AssetBackedImage({
       aria-label={visual.alt || visual.fileName || 'Image asset'}
     />
   );
+}
+
+/** Decode only inline raster payloads after the image enters the viewport. */
+function decodeEmbeddedRaster(src: string): Uint8Array | undefined {
+  const match = /^data:image\/(?:png|jpeg|webp);base64,/i.exec(src);
+  if (!match) return undefined;
+  try {
+    const binary = atob(src.slice(match[0].length));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  } catch {
+    return undefined;
+  }
 }
