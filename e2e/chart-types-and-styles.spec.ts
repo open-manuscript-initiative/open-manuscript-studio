@@ -23,7 +23,8 @@ test('editable chart families and publishing styles preserve their source data',
     });
   });
 
-  const editor = page.locator('.omi-visual-block--chart');
+  // The editor may add a caret paragraph before a visual block; identify the chart by its stable ID.
+  const editor = page.locator('.omi-visual-block--chart[data-block-id="chart-variants"]');
   await expect(editor.locator('svg[data-chart-type="bar"]')).toBeVisible();
   const type = editor.locator('.omi-chart-settings select').first();
   const style = editor.locator('.omi-chart-settings select').nth(1);
@@ -36,12 +37,17 @@ test('editable chart families and publishing styles preserve their source data',
   await expect(editor.locator('svg[data-chart-style="monochrome"]')).toBeVisible();
   await editor.locator('input[type="checkbox"]').nth(2).check();
 
-  const visual = await page.evaluate(async () => {
+  const readVisual = () => page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-    return useStudioStore.getState().manuscript.sections[0].blocks[0].visual;
+    // Do not assume the first manuscript block remains the graphic: the editor
+    // can insert text/caret blocks around structured visuals.
+    return useStudioStore.getState().manuscript.sections
+      .flatMap(section => section.blocks)
+      .find(block => block.id === 'chart-variants')?.visual;
   });
-  expect(visual?.kind).toBe('chart');
-  if (visual?.kind !== 'chart') return;
+  await expect.poll(async () => (await readVisual())?.kind).toBe('chart');
+  const visual = await readVisual();
+  if (visual?.kind !== 'chart') throw new Error('Chart block was not retained in manuscript state');
   expect(visual.chartType).toBe('radar');
   expect(visual.stylePreset).toBe('monochrome');
   expect(visual.showValues).toBe(true);
