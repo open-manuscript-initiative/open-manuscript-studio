@@ -16,6 +16,10 @@ export function AssetBackedImage({
   const manuscriptId = useStudioStore((state) => state.manuscript.id);
   const placeholderRef = useRef<HTMLDivElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
+  useEffect(() => {
+    // A new presentation session starts with only nearby images decoded.
+    if (!screenResolution) setNearViewport(false);
+  }, [screenResolution]);
   // Deferred loading must include image decoding/raster resampling, not merely
   // the <img> request after an expensive preview blob has already been built.
   useEffect(() => {
