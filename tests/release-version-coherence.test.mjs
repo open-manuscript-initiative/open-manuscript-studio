@@ -11,7 +11,7 @@ const android = json('src-tauri/tauri.android.conf.json');
 const ios = json('src-tauri/tauri.ios.conf.json');
 
 test('release candidate uses one shared version across JS, native and lockfiles', () => {
-  assert.equal(app.version, '1.0.0-rc.2');
+  assert.equal(app.version, '1.0.0-rc.3');
   assert.equal(lock.version, app.version);
   assert.equal(lock.packages[''].version, app.version);
   assert.equal(tauri.version, app.version);
@@ -21,14 +21,15 @@ test('release candidate uses one shared version across JS, native and lockfiles'
 });
 
 test('mobile and Windows package counters are incremented coherently', () => {
-  assert.equal(android.bundle.android.versionCode, 1359);
+  assert.equal(android.bundle.android.versionCode, 1395);
   assert.equal(ios.version, '1.0.0');
-  assert.equal(ios.bundle.iOS.bundleVersion, '27');
-  assert.equal(tauri.bundle.windows.wix.version, '1.0.1.0');
+  assert.equal(ios.bundle.iOS.bundleVersion, '28');
+  assert.equal(tauri.bundle.windows.wix.version, '1.0.2.0');
   const offset = Number(read('.github/workflows/android-release.yml').match(/ANDROID_VERSION_CODE_RUN_OFFSET: '(\d+)'/)[1]);
-  // Latest observed Android Release run is 156 (versionCode 1358).
-  assert.ok(android.bundle.android.versionCode > 1358);
-  assert.ok(offset + 157 > android.bundle.android.versionCode);
+  // Latest observed Android Release run is 190 (versionCode 1393).
+  // Keep the checked-in direct APK above that release and the next AAB code above the direct APK.
+  assert.ok(android.bundle.android.versionCode > 1393);
+  assert.ok(offset + 191 > android.bundle.android.versionCode);
 });
 
 test('release notes retain explicit security blockers, format stability and Go/No-Go', () => {

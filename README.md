@@ -4,9 +4,9 @@ The Validation view includes experimental OMI-SPEC-350 capability disclosures an
 
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
-> **Current status:** `1.0.0-rc.2` · release-candidate source preparation, unreleased; distribution still requires completed acceptance and owner approval.
+> **Current status:** `1.0.0-rc.3` · release-candidate source preparation, not a public release; distribution requires exact-build acceptance and owner approval.
 >
-> This candidate adds the desktop Document-menu layout fix and packages the merged import, role and translation improvements while keeping specifications Draft and the portable format at `OMI-SPEC-320@0.3.0`. See [the RC2 preparation notes](docs/release/1.0.0-rc.2.md) for package identities and distribution gates.
+> This candidate incorporates the EuroOffice separation (#971): Office editing operates independently, while Studio retains scholarly authoring and native DOCX/ODT import/export. It also includes the November publication-editor and note improvements. Specifications remain Draft and the portable format stays at `OMI-SPEC-320@0.3.0`. See [the RC3 preparation notes](docs/release/1.0.0-rc.3.md) for package identities and release gates.
 
 - Web Studio: https://studio.openmanuscript.org
 - Project website and specifications: https://openmanuscript.org

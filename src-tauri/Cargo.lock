@@ -2504,7 +2504,7 @@ dependencies = [
 
 [[package]]
 name = "open-manuscript-studio"
-version = "1.0.0-rc.2"
+version = "1.0.0-rc.3"
 dependencies = [
  "rustls",
  "serde",
