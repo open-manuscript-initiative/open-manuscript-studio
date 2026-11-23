@@ -42,6 +42,7 @@ import { AssetBackedImage } from './AssetBackedImage';
 import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
+import { PublicationGraphicsContext } from './publicationViewOptions';
 
 interface VisualBlockEditorProps {
   block: OmiBlock & { visual: OmiVisualBlockData };
@@ -58,6 +59,26 @@ export function VisualBlockEditor({
   const copy = getVisualElementsCopy(locale);
   const visual = block.visual;
   const previewOnly = useContext(PublicationPreviewContext);
+  const graphicsMode = useContext(PublicationGraphicsContext);
+
+  // A lightweight, non-editable proxy avoids chart, equation and text-box renderers
+  // while typesetting. Tables remain real text because they affect line measurement.
+  if ((graphicsMode === 'simplified' || graphicsMode === 'outlines') && visual.kind !== 'table') {
+    const label = visualLabel(visual.kind, copy);
+    const image = visual.kind === 'image' ? visual : null;
+    const description = image?.alt || (visual.kind === 'chart' ? visual.title : '')
+      || ('caption' in visual && typeof visual.caption === 'string' ? visual.caption : '') || label;
+    return (
+      <article className={`omi-visual-block omi-visual-block--lightweight omi-visual-block--${graphicsMode}`}
+        data-block-id={block.id} data-graphics-mode={graphicsMode}
+        aria-label={description}>
+        <div className="omi-visual-lightweight-placeholder" role="img" aria-label={description}>
+          {graphicsMode === 'simplified' && image ? <AssetBackedImage visual={image} lightweight /> : null}
+          {graphicsMode === 'simplified' ? <span className="omi-visual-lightweight-label">{label}{description !== label ? `: ${description}` : ''}</span> : null}
+        </div>
+      </article>
+    );
+  }
 
   function update(next: OmiVisualBlockData): void {
     if (!previewOnly) stageUpdateVisualBlock(block.id, next);
@@ -79,7 +100,7 @@ export function VisualBlockEditor({
 
       {visual.kind === 'image' ? (
         <figure className="omi-image-block">
-          <EditableImage visual={visual} readOnly={previewOnly} onChange={update} />
+          <EditableImage visual={visual} readOnly={previewOnly} screenResolution={graphicsMode === 'screen'} onChange={update} />
           <figcaption>
             <label>
               <span>{copy.altText}</span>
@@ -484,11 +505,16 @@ function visualLabel(
   }
 }
 
-function EditableImage({ visual, readOnly, onChange }: { visual: OmiImageBlockData; readOnly: boolean; onChange(visual: OmiImageBlockData): void }) {
+function EditableImage({ visual, readOnly, screenResolution = false, onChange }: {
+  visual: OmiImageBlockData;
+  readOnly: boolean;
+  screenResolution?: boolean;
+  onChange(visual: OmiImageBlockData): void;
+}) {
   const { locale } = useTranslation(); const copy = getTextBoxCopy(locale);
   const [size, setSize] = useState({ width: 600, height: 300 });
   const width = visual.width || size.width, height = visual.height || size.height;
   const dimensions = (w: number, h: number) => setSize((old) => old.width === w && old.height === h ? old : { width: w, height: h });
-  if (!visual.textBoxes?.length) return <><AssetBackedImage visual={visual} onDimensions={dimensions} />{!readOnly ? <button type="button" className="omi-text-box-add" onClick={() => onChange({ ...visual, width, height, textBoxes: [{ ...createTextBox(), x: 10, y: 10, width: Math.max(16, Math.min(240, width - 10)) }] })}>{copy.add}</button> : null}</>;
-  return <TextBoxCanvas boxes={visual.textBoxes} width={width} height={height} readOnly={readOnly} onChange={(textBoxes) => onChange({ ...visual, width, height, textBoxes })}><AssetBackedImage visual={visual} onDimensions={dimensions} /></TextBoxCanvas>;
+  if (!visual.textBoxes?.length) return <><AssetBackedImage visual={visual} screenResolution={screenResolution} onDimensions={dimensions} />{!readOnly ? <button type="button" className="omi-text-box-add" onClick={() => onChange({ ...visual, width, height, textBoxes: [{ ...createTextBox(), x: 10, y: 10, width: Math.max(16, Math.min(240, width - 10)) }] })}>{copy.add}</button> : null}</>;
+  return <TextBoxCanvas boxes={visual.textBoxes} width={width} height={height} readOnly={readOnly} onChange={(textBoxes) => onChange({ ...visual, width, height, textBoxes })}><AssetBackedImage visual={visual} screenResolution={screenResolution} onDimensions={dimensions} /></TextBoxCanvas>;
 }

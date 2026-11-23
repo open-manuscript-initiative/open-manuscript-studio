@@ -120,6 +120,9 @@ interface PublicationDocumentCanvasProps {
   navigationTarget?: PublicationLayoutIssue | null;
   pageNavigatorTarget?: HTMLElement | null;
   showRuler?: boolean;
+  presentation?: boolean;
+  displayOptions?: { nonPrintingMarks: boolean; showMarginBoundaries: boolean; showAlignmentGuides: boolean };
+  onDisplayOptionChange?: (key: 'nonPrintingMarks' | 'showMarginBoundaries' | 'showAlignmentGuides', value: boolean) => void;
 }
 
 interface PublicationCanvasCopy {
@@ -154,6 +157,9 @@ export function PublicationDocumentCanvas({
   navigationTarget,
   pageNavigatorTarget,
   showRuler = true,
+  presentation = false,
+  displayOptions,
+  onDisplayOptionChange,
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
@@ -1028,10 +1034,10 @@ export function PublicationDocumentCanvas({
       }} />
   ) : null;
   return (
-    <PublicationPreviewContext.Provider value={previewOnly}>
+    <PublicationPreviewContext.Provider value={previewOnly || presentation}>
     <section
       id={canvasId}
-      className={`publication-document-canvas publication-document-canvas--${viewMode}${previewOnly ? ' publication-document-canvas--preview' : ''}`}
+      className={`publication-document-canvas publication-document-canvas--${viewMode}${previewOnly ? ' publication-document-canvas--preview' : ''}${presentation ? ' publication-document-canvas--presentation' : ''}`}
       data-layout-checker-target={navigationTarget ? 'true' : undefined}
       data-layout-checker-section={navigationTarget?.sectionId}
       aria-labelledby="publication-document-canvas-title"
@@ -1091,7 +1097,7 @@ export function PublicationDocumentCanvas({
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
         aria-label={viewMode === 'print' ? copy.printLayout : copy.htmlLayout}
       >
-        {!previewOnly && showRuler ? <PublicationSectionRuler
+        {!previewOnly && !presentation && showRuler ? <PublicationSectionRuler
           locale={locale}
           viewMode={viewMode}
           widthPx={pageWidth}
@@ -1099,6 +1105,8 @@ export function PublicationDocumentCanvas({
           leftMarginMm={firstPageLeftMarginMm}
           rightMarginMm={firstPageRightMarginMm}
           rulerStepPx={5 * PIXELS_PER_MM * scale}
+          displayOptions={displayOptions}
+          onDisplayOptionChange={onDisplayOptionChange}
         /> : null}
         <article
           className={`publication-document-paper publication-document-paper--${viewMode}${facingPages && viewMode === 'print' ? ' publication-document-paper--spreads' : ''}`}
@@ -1142,6 +1150,13 @@ export function PublicationDocumentCanvas({
                   data-spread={geometry.spread}
                   data-page-label={copy.page(pageNumber)}
                 >
+                  {displayOptions?.showMarginBoundaries && !presentation ? (
+                    <span className="publication-document-margin-boundary"
+                      style={{ top: geometry.topMargin, right: geometry.right, bottom: geometry.bottomMargin, left: geometry.left }} />
+                  ) : null}
+                  {displayOptions?.showAlignmentGuides && !presentation ? (
+                    <span className="publication-document-alignment-guides" />
+                  ) : null}
                   {showRunningHeader ? (
                     <div className="publication-document-running-header" style={{ fontSize: resolved.runningHeaders.fontSize * PIXELS_PER_POINT * scale, borderBottomWidth: resolved.runningHeaders.rule.enabled ? resolved.runningHeaders.rule.width * PIXELS_PER_POINT * scale : 0 }}>
                       <span>{fillRunningHeaderTemplate(header.left, headerValues)}</span>
@@ -1246,14 +1261,14 @@ export function PublicationDocumentCanvas({
                     paragraphStyleNextById={paragraphStyleNextById}
                     defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
                     manuscriptLanguage={manuscript.locale}
-                    editable={!previewOnly}
+                    editable={!previewOnly && !presentation}
                   />
                 ) : (
                   <TablePaginationContext.Provider value={pagination.flowBreaks}>
                     <BlockEditor
                       blockId={`omi-publication-document-${manuscript.id}`}
                       blockType="manuscript"
-                      editable={!previewOnly}
+                      editable={!previewOnly && !presentation}
                       content={JSON.stringify(document)}
                       onUpdate={updateDocument}
                       manuscriptLanguage={manuscript.locale}

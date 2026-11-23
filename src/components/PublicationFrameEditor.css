@@ -125,3 +125,8 @@
     min-height: 0;
   }
 }
+
+.omi-frame-alignment-guides { position: absolute; z-index: 11; inset: 0; pointer-events: none; background:
+  linear-gradient(to right, transparent calc(50% - .5px), rgba(37,99,235,.35) 50%, transparent calc(50% + .5px)),
+  linear-gradient(to bottom, transparent calc(50% - .5px), rgba(37,99,235,.35) 50%, transparent calc(50% + .5px)); }
+@media print { .omi-frame-alignment-guides, .omi-frame-margin-guide { display: none !important; } }

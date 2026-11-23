@@ -2,9 +2,9 @@ import { Minus, Pilcrow, Plus, ZoomIn } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import {
-  NON_PRINTING_MARKS_CLASS,
-  NON_PRINTING_MARKS_STORAGE_KEY,
+  NON_PRINTING_MARKS_EVENT,
   readStoredNonPrintingMarks,
+  setNonPrintingMarksVisibility,
 } from '../editor/nonPrintingMarks';
 import {
   clampEditorZoom,
@@ -40,22 +40,16 @@ export function EditorZoomControl() {
   }, [zoom]);
 
   useEffect(() => {
-    document.documentElement.classList.toggle(
-      NON_PRINTING_MARKS_CLASS,
-      showNonPrintingMarks,
-    );
-    try {
-      window.localStorage.setItem(
-        NON_PRINTING_MARKS_STORAGE_KEY,
-        String(showNonPrintingMarks),
-      );
-    } catch {
-      // Device-local preference persistence is optional.
-    }
-    return () => {
-      document.documentElement.classList.remove(NON_PRINTING_MARKS_CLASS);
-    };
+    setNonPrintingMarksVisibility(showNonPrintingMarks);
   }, [showNonPrintingMarks]);
+
+  useEffect(() => {
+    const sync = (event: Event) => {
+      setShowNonPrintingMarks((event as CustomEvent<boolean>).detail);
+    };
+    window.addEventListener(NON_PRINTING_MARKS_EVENT, sync);
+    return () => window.removeEventListener(NON_PRINTING_MARKS_EVENT, sync);
+  }, []);
 
   const applyZoom = (next: number) => setZoom(clampEditorZoom(next));
 

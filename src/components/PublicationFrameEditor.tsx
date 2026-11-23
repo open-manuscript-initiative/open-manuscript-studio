@@ -10,7 +10,8 @@ import { getPublicationMatterFramesCopy } from '../i18n/publicationMatterFrames'
 import { PublicationFramePagePanel } from './PublicationFramePagePanel';
 import { createDefaultFlowFrameLayout, paginateAutomaticFrameLayout } from '../model/publicationAutoFlow';
 import { framePages, framePageStyle, framePageStyles, insertFramePage, deleteFramePage, moveFramePage, frameGraphicTransform, frameGraphicContentStyle, frameGraphicInnerStyle, frameRunningHeader, updateFrameGraphicSize, type FrameGraphicTransform } from '../model/publicationFramePages';
-import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { Fragment, useContext, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { flushSync } from 'react-dom';
 import { useStudioStore } from '../app/useStudioStore';
 import { stageFrameLayout } from '../app/publicationFrameActions';
 import { getPublicationFramesCopy } from '../i18n/publicationFrames';
@@ -26,6 +27,7 @@ import {
 import type { PublicationStyle } from '../services/publicationStyleExport';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import { VisualBlockEditor } from './VisualBlockEditor';
+import { PublicationGraphicsContext } from './publicationViewOptions';
 import type { OmiBlock, OmiVisualBlockData } from '../types/omi';
 import './PublicationFrameEditor.css';
 
@@ -34,13 +36,20 @@ interface Drag {
   kind: 'move' | 'resize' | 'point' | 'graphic-move' | 'graphic-resize'; point?: number; frame: PublicationFrame; graphic?: FrameGraphicTransform;
   layout: PublicationFrameLayout; x: number; y: number; pixelsPerMm: number;
 }
-export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { publicationStyle: PublicationStyle; onLayoutIssues?: PublicationLayoutIssueReporter }) {
+export function PublicationFrameEditor({ publicationStyle, onLayoutIssues, showMarginBoundaries = false, showAlignmentGuides = false }: {
+  publicationStyle: PublicationStyle;
+  onLayoutIssues?: PublicationLayoutIssueReporter;
+  showMarginBoundaries?: boolean;
+  showAlignmentGuides?: boolean;
+}) {
   const manuscript = useStudioStore((state) => state.manuscript);
   const { locale } = useTranslation(); const copy = getPublicationFramesCopy(locale);
   const paginationCopy = publicationPaginationCopy(locale);
   const storyInput = useRef<HTMLTextAreaElement>(null);
   const layersCopy = getPublicationMatterFramesCopy(locale);
   const preview = usePublicationPreview();
+  const graphicsMode = useContext(PublicationGraphicsContext);
+  const [captureFullGraphics, setCaptureFullGraphics] = useState(false);
   const initial = useMemo(() => {
     const next = createDefaultFlowFrameLayout();
     next.styles[0]!.properties = { ...next.styles[0]!.properties, fontFamily: publicationStyle.fonts.body.family,
@@ -234,7 +243,19 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
     setExporting(true);
     try {
       const snapshot = structuredClone(layout);
-      const html = await buildFrameExport(manuscript, snapshot, stage.current ? captureFrameGraphicSnapshots(stage.current, snapshot) : new Map());
+      // The editor may show lightweight proxies (or only outlines), but the
+      // export must always capture the real vector charts. Flush both changes
+      // synchronously: the costly full renderer is never painted during editing.
+      let graphics = new Map<string, string>();
+      if (stage.current) {
+        if (graphicsMode !== 'full') flushSync(() => setCaptureFullGraphics(true));
+        try {
+          graphics = captureFrameGraphicSnapshots(stage.current, snapshot);
+        } finally {
+          if (graphicsMode !== 'full') flushSync(() => setCaptureFullGraphics(false));
+        }
+      }
+      const html = await buildFrameExport(manuscript, snapshot, graphics);
       useStudioStore.getState().checkpoint('export');
       const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
       if (target) {
@@ -286,7 +307,8 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
           const pageStyle = framePageStyle(layout, pageIndex), header = frameRunningHeader(layout, pageIndex, manuscript.title), headerStyle = pageStyle.runningHeader;
           return <div key={page.id} className="omi-frame-editor-page" data-frame-page={pageIndex} data-page-style={pageStyle.id} aria-label={`${copy.page} ${pageIndex + 1}`} style={{ width: `${pageStyle.widthMm}mm`, height: `${pageStyle.heightMm}mm`, background: pageStyle.background, zoom: facingPages ? 1 : scale, ...(facingPages ? { position: 'absolute', left: `${spreadSheets.pages[pageIndex]!.x}mm`, top: `${spreadSheets.pages[pageIndex]!.top}mm`, margin: 0 } : {}) }}>
           {header ? <header className="omi-frame-running-header" style={{ top: `${headerStyle.topMm}mm`, height: `${headerStyle.heightMm}mm`, left: `${pageStyle.margins.left}mm`, right: `${pageStyle.margins.right}mm`, fontFamily: headerStyle.fontFamily, fontSize: `${headerStyle.fontSizePt}pt`, color: headerStyle.color }}><span>{header.left}</span><span>{header.center}</span><span>{header.right}</span></header> : null}
-          {!preview ? <div className="omi-frame-margin-guide" style={{ top: `${pageStyle.margins.top}mm`, right: `${pageStyle.margins.right}mm`, bottom: `${pageStyle.margins.bottom}mm`, left: `${pageStyle.margins.left}mm` }} /> : null}
+          {!preview && showMarginBoundaries ? <div className="omi-frame-margin-guide" style={{ top: `${pageStyle.margins.top}mm`, right: `${pageStyle.margins.right}mm`, bottom: `${pageStyle.margins.bottom}mm`, left: `${pageStyle.margins.left}mm` }} /> : null}
+          {!preview && showAlignmentGuides ? <div className="omi-frame-alignment-guides" aria-hidden="true" /> : null}
           {layout.frames.filter((frame) => frame.page === pageIndex).map((frame, layer) => {
             const properties = frameStyle(layout, frame), placed = flow.frames.find((item) => item.frameId === frame.id);
             const graphic = graphics.find((block) => block.id === frame.sourceBlockId);
@@ -301,7 +323,7 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
                     const ratio = image.naturalWidth / image.naturalHeight;
                     setGraphicAspects((current) => current[frame.sourceBlockId!] === ratio ? current : { ...current, [frame.sourceBlockId!]: ratio });
                   }
-                }}><div className="omi-frame-graphic-position" style={frameGraphicContentStyle(frame)}><div className="omi-frame-graphic-inner" style={frameGraphicInnerStyle(frame)}><PublicationPreviewContext.Provider value={true}>{graphic?.visual ? <VisualBlockEditor block={graphic as OmiBlock & { visual: OmiVisualBlockData }} sectionId="" blockIndex={0} /> : null}</PublicationPreviewContext.Provider></div></div></div>}
+                }}><div className="omi-frame-graphic-position" style={frameGraphicContentStyle(frame)}><div className="omi-frame-graphic-inner" style={frameGraphicInnerStyle(frame)}><PublicationPreviewContext.Provider value={true}><PublicationGraphicsContext.Provider value={captureFullGraphics ? 'full' : graphicsMode}>{graphic?.visual ? <VisualBlockEditor block={graphic as OmiBlock & { visual: OmiVisualBlockData }} sectionId="" blockIndex={0} /> : null}</PublicationGraphicsContext.Provider></PublicationPreviewContext.Provider></div></div></div>}
               </div>
               {!preview && selected?.id === frame.id ? <div className="omi-frame-selection" data-frame-selection-id={frame.id} style={{ position: 'absolute', left: `${frame.xMm}mm`, top: `${frame.yMm}mm`, width: `${frame.widthMm}mm`, height: `${frame.heightMm}mm`, transform: `rotate(${frame.rotation}deg)`, zIndex: 10000 }}>
                 <button type="button" className="omi-frame-move" aria-label={`${copy.name}: ${frame.name}`} onPointerDown={(event) => startDrag(event, frame, 'move')} {...dragEvents}
