@@ -41,6 +41,7 @@ import { AssetBackedImage } from './AssetBackedImage';
 import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
+import { PublicationGraphicsContext } from './publicationViewOptions';
 
 interface VisualBlockEditorProps {
   block: OmiBlock & { visual: OmiVisualBlockData };
@@ -57,6 +58,26 @@ export function VisualBlockEditor({
   const copy = getVisualElementsCopy(locale);
   const visual = block.visual;
   const previewOnly = useContext(PublicationPreviewContext);
+  const graphicsMode = useContext(PublicationGraphicsContext);
+
+  // A lightweight, non-editable proxy avoids chart, equation and text-box renderers
+  // while typesetting. Tables remain real text because they affect line measurement.
+  if (graphicsMode !== 'full' && visual.kind !== 'table') {
+    const label = visualLabel(visual.kind, copy);
+    const image = visual.kind === 'image' ? visual : null;
+    const description = image?.alt || (visual.kind === 'chart' ? visual.title : '')
+      || ('caption' in visual && typeof visual.caption === 'string' ? visual.caption : '') || label;
+    return (
+      <article className={`omi-visual-block omi-visual-block--lightweight omi-visual-block--${graphicsMode}`}
+        data-block-id={block.id} data-graphics-mode={graphicsMode}
+        aria-label={description}>
+        <div className="omi-visual-lightweight-placeholder" role="img" aria-label={description}>
+          {graphicsMode === 'simplified' && image ? <AssetBackedImage visual={image} lightweight /> : null}
+          {graphicsMode === 'simplified' ? <span className="omi-visual-lightweight-label">{label}{description !== label ? `: ${description}` : ''}</span> : null}
+        </div>
+      </article>
+    );
+  }
 
   function update(next: OmiVisualBlockData): void {
     if (!previewOnly) stageUpdateVisualBlock(block.id, next);
