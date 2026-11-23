@@ -58,37 +58,35 @@ const MODERN_ACTIVITY_CALL = `    WindowCompat.setDecorFitsSystemWindows(window,
       window.attributes = attributes
     }`;
 const ANDROID_CONTENT_INSETS_CALL = `    val content = findViewById<View>(android.R.id.content)
+    content.setBackgroundColor(Color.rgb(255, 254, 250))
+    val contentPaddingLeft = content.paddingLeft
+    val contentPaddingTop = content.paddingTop
+    val contentPaddingRight = content.paddingRight
     val contentPaddingBottom = content.paddingBottom
     ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
-      val navigationBarBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
-      view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, contentPaddingBottom + navigationBarBottom)
+      val safeAreaInsets = insets.getInsets(
+        WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+      )
+      view.setPadding(
+        contentPaddingLeft + safeAreaInsets.left,
+        contentPaddingTop + safeAreaInsets.top,
+        contentPaddingRight + safeAreaInsets.right,
+        contentPaddingBottom + safeAreaInsets.bottom
+      )
       WindowInsetsCompat.Builder(insets)
-        .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.NONE)
+        .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.NONE)
+        .setInsets(WindowInsetsCompat.Type.displayCutout(), Insets.NONE)
         .build()
     }
     ViewCompat.requestApplyInsets(content)`;
-const ANDROID_SYSTEM_BARS_CALL = `    window.statusBarColor = Color.rgb(255, 254, 250)
-    window.navigationBarColor = Color.rgb(255, 254, 250)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      window.isStatusBarContrastEnforced = false
+const ANDROID_SYSTEM_BARS_CALL = `    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       window.isNavigationBarContrastEnforced = false
     }
     WindowInsetsControllerCompat(window, window.decorView).apply {
       isAppearanceLightStatusBars = true
       isAppearanceLightNavigationBars = true
     }`;
-const ANDROID_INSETS_CALL = `${ANDROID_SYSTEM_BARS_CALL}
-    val content = findViewById<View>(android.R.id.content)
-    val contentPaddingBottom = content.paddingBottom
-    ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
-      val navigationBarBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
-      view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, contentPaddingBottom + navigationBarBottom)
-      WindowInsetsCompat.Builder(insets)
-        .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.NONE)
-        .build()
-    }
-    ViewCompat.requestApplyInsets(content)`;
-
+const ANDROID_INSETS_CALL = `${ANDROID_SYSTEM_BARS_CALL}\n${ANDROID_CONTENT_INSETS_CALL}`;
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -147,6 +145,20 @@ export function patchAndroidActivity(source) {
   const insetsStart = source.indexOf('    val content = findViewById<View>(android.R.id.content)');
   const requestInsets = '    ViewCompat.requestApplyInsets(content)';
 
+  // Upgrade already-generated Android projects without leaving deprecated bar
+  // setters or registering duplicate insets listeners on repeated builds.
+  const deprecatedBarsStart = source.indexOf('    window.statusBarColor = Color.rgb(255, 254, 250)');
+  if (deprecatedBarsStart !== -1) {
+    const deprecatedInsetsEnd = source.indexOf(requestInsets, deprecatedBarsStart);
+    if (deprecatedInsetsEnd === -1) {
+      throw new Error('Expected existing Android edge-to-edge setup is incomplete.');
+    }
+    return patchAndroidActivity(
+      source.slice(0, deprecatedBarsStart) +
+        ANDROID_INSETS_CALL +
+        source.slice(deprecatedInsetsEnd + requestInsets.length),
+    );
+  }
   if (source.includes(ANDROID_INSETS_CALL)) {
     const superIndex = source.indexOf(superCall);
     const insetsEnd = source.indexOf(requestInsets, insetsStart) + requestInsets.length;
