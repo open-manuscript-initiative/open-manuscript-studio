@@ -145,6 +145,26 @@
   font: inherit;
 }
 
+.omi-chart-settings .omi-chart-option {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: end;
+  min-height: 2.5rem;
+  cursor: pointer;
+}
+.omi-chart-settings .omi-chart-option input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--ifm-color-primary, #4263eb);
+}
+.omi-chart-svg text { user-select: none; }
+@media print {
+  .omi-chart-svg { break-inside: avoid; max-height: none; }
+}
 .omi-table-scroll {
   overflow: auto;
   max-width: 100%;
