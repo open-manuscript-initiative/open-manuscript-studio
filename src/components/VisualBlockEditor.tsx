@@ -30,6 +30,7 @@ import {
 import type {
   OmiBlock,
   OmiImageBlockData,
+  OmiChartBlockData,
   OmiChartType,
   OmiChartStyle,
   OmiTableBlockData,
