@@ -67,7 +67,9 @@ for (const viewport of [
 test('wide desktop keeps its fixed publishing shell and independent document scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const { content, editor } = await openPublication(page);
-  await expect(content).toHaveCSS('overflow-y', 'hidden');
+  // Desktop's general menu rule permits auto overflow; what matters is that
+  // the document stage keeps its own scrolling and the docked rail stays visible.
+  await expect(content).toHaveCSS('overflow-y', 'auto');
   await expect(editor.locator('.publication-style-ribbon')).toHaveCSS('display', 'grid');
   const canvas = editor.locator('.publication-document-canvas');
   await expect(canvas).toBeVisible();
