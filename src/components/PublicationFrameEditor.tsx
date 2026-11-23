@@ -34,7 +34,12 @@ interface Drag {
   kind: 'move' | 'resize' | 'point' | 'graphic-move' | 'graphic-resize'; point?: number; frame: PublicationFrame; graphic?: FrameGraphicTransform;
   layout: PublicationFrameLayout; x: number; y: number; pixelsPerMm: number;
 }
-export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { publicationStyle: PublicationStyle; onLayoutIssues?: PublicationLayoutIssueReporter }) {
+export function PublicationFrameEditor({ publicationStyle, onLayoutIssues, showMarginBoundaries = false, showAlignmentGuides = false }: {
+  publicationStyle: PublicationStyle;
+  onLayoutIssues?: PublicationLayoutIssueReporter;
+  showMarginBoundaries?: boolean;
+  showAlignmentGuides?: boolean;
+}) {
   const manuscript = useStudioStore((state) => state.manuscript);
   const { locale } = useTranslation(); const copy = getPublicationFramesCopy(locale);
   const paginationCopy = publicationPaginationCopy(locale);
@@ -286,7 +291,8 @@ export function PublicationFrameEditor({ publicationStyle, onLayoutIssues }: { p
           const pageStyle = framePageStyle(layout, pageIndex), header = frameRunningHeader(layout, pageIndex, manuscript.title), headerStyle = pageStyle.runningHeader;
           return <div key={page.id} className="omi-frame-editor-page" data-frame-page={pageIndex} data-page-style={pageStyle.id} aria-label={`${copy.page} ${pageIndex + 1}`} style={{ width: `${pageStyle.widthMm}mm`, height: `${pageStyle.heightMm}mm`, background: pageStyle.background, zoom: facingPages ? 1 : scale, ...(facingPages ? { position: 'absolute', left: `${spreadSheets.pages[pageIndex]!.x}mm`, top: `${spreadSheets.pages[pageIndex]!.top}mm`, margin: 0 } : {}) }}>
           {header ? <header className="omi-frame-running-header" style={{ top: `${headerStyle.topMm}mm`, height: `${headerStyle.heightMm}mm`, left: `${pageStyle.margins.left}mm`, right: `${pageStyle.margins.right}mm`, fontFamily: headerStyle.fontFamily, fontSize: `${headerStyle.fontSizePt}pt`, color: headerStyle.color }}><span>{header.left}</span><span>{header.center}</span><span>{header.right}</span></header> : null}
-          {!preview ? <div className="omi-frame-margin-guide" style={{ top: `${pageStyle.margins.top}mm`, right: `${pageStyle.margins.right}mm`, bottom: `${pageStyle.margins.bottom}mm`, left: `${pageStyle.margins.left}mm` }} /> : null}
+          {!preview && showMarginBoundaries ? <div className="omi-frame-margin-guide" style={{ top: `${pageStyle.margins.top}mm`, right: `${pageStyle.margins.right}mm`, bottom: `${pageStyle.margins.bottom}mm`, left: `${pageStyle.margins.left}mm` }} /> : null}
+          {!preview && showAlignmentGuides ? <div className="omi-frame-alignment-guides" aria-hidden="true" /> : null}
           {layout.frames.filter((frame) => frame.page === pageIndex).map((frame, layer) => {
             const properties = frameStyle(layout, frame), placed = flow.frames.find((item) => item.frameId === frame.id);
             const graphic = graphics.find((block) => block.id === frame.sourceBlockId);
