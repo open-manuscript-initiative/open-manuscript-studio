@@ -294,7 +294,7 @@ test('publication editor has no generic word processor mode', () => {
   assert.doesNotMatch(htmlSectionsEditor, /simpleMode|word-processing/);
   assert.doesNotMatch(studioMenu, /simple-editor|simpleWordProcessor/);
   assert.doesNotMatch(newDocumentActions, /simpleTextDocument|createSimpleTextDocument|editorMode/);
-  assert.match(newDocumentActions, /requestPlainDocumentWorkspace/);
+  assert.doesNotMatch(newDocumentActions, /EuroOffice|euroOffice|OfficeArchive|requestPlainDocumentWorkspace/);
   assert.match(newDocumentActions, /createAndOpenBlankOmiDocument/);
 });
 

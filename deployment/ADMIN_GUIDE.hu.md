@@ -101,16 +101,9 @@ Ellenőrizd böngészőből és a saját munkafolyamatoddal:
 
 Az opcionális szolgáltatások környezeti változóit a `server/.env.example` dokumentálja. A hitelesítési adatok a szerver saját `deployment/.env` fájljába kerüljenek; ne commitold őket.
 
-### EuroOffice hétköznapi DOCX-dokumentumokhoz
+### EuroOffice: önálló szolgáltatás
 
-Az EuroOffice Document Server külön szolgáltatásként működik; a DOCX-fájlokat és a bejelentkezett felhasználókhoz tartozó dokumentumlistát az OMI API kezeli. A beágyazott szerkesztő csak akkor jelenik meg a Stúdióban, ha mindkét érték be van állítva a `deployment/.env` fájlban:
-
-```env
-EUROOFFICE_URL=https://office.sajatdomain.hu
-EUROOFFICE_JWT_SECRET=AZ_EUROOFFICE_JWT_SECRET_ERTEKE
-```
-
-A `EUROOFFICE_JWT_SECRET` értéke egyezzen meg az EuroOffice konténer `JWT_SECRET` értékével, és legalább 32 karakter hosszú legyen. Mindkét kiszolgáló HTTPS-en legyen elérhető: a böngésző tölti be a EuroOffice szerkesztő API-ját, a EuroOffice pedig a `PUBLIC_ORIGIN` címen éri el az OMI API DOCX-letöltési és mentési útvonalait. A változók beállítása után indítsd újra az API-konténert. Az adatbázis-migrációt a telepítés induláskor automatikusan lefuttatja.
+Az EuroOffice már nem része az OMI Stúdió felületének. Az Office-szolgáltatás telepítése, felhasználókezelése és frissítése külön történik. A Stúdióhoz nem kell `EUROOFFICE_URL` és `EUROOFFICE_JWT_SECRET` változó. A DOCX-importot és -exportot a Stúdió saját eszközei végzik. Részletek: [ADR-032](../docs/architecture/adr-032-office-service-separation.md) és az [üzemeltetési útmutató](../docs/server/eurooffice-separation-runbook.md).
 
 ## Mentés és visszaállítás
 

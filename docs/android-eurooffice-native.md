@@ -1,3 +1,5 @@
+> **Historical — deprecated 2026-11-23.** The EuroOffice editor was removed from Studio's Android and web applications. Do not use these previous integration instructions for current deployments. See [ADR-032](architecture/adr-032-office-service-separation.md).
+
 # Android EuroOffice native embedding and failure recovery
 
 The installed Tauri Android app uses a **sandboxed, unprivileged remote host** for EuroOffice. The Studio web app loads DocsAPI in the normal web page. These are distinct paths: a successful mobile browser test is not sufficient native evidence.

@@ -1,3 +1,10 @@
+## Unreleased — Independent EuroOffice service
+
+- Remove the embedded general-purpose Office editor and workspace from Studio on web, desktop and Android.
+- Unmount Studio's EuroOffice API routes; Office no longer loads remote scripts or creates editor sessions in Studio.
+- Keep the native OMI DOCX/ODT imports and editorial/publishing workflows intact.
+- Preserve the old experimental database schema for a separate non-destructive cleanup. See [ADR-032](docs/architecture/adr-032-office-service-separation.md).
+
 ## Unreleased — Section running headers and page styles
 
 - Configure running headers per study/section, with inherited subsection settings, odd/even text, header typography and optional opening-page suppression.
