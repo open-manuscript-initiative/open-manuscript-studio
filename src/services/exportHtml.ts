@@ -642,7 +642,7 @@ function renderChart(block: OmiBlock, state: RenderState): string {
 
   return `<figure id="${htmlId('chart', block.id)}" class="scholarly-chart" data-chart-type="${escapeAttribute(
     visual.chartType,
-  )}">${caption}<table class="chart-data"><tbody>${rows}</tbody></table></figure>`;
+  )}" data-chart-style="${escapeAttribute(visual.stylePreset ?? 'color')}">${caption}<table class="chart-data"><tbody>${rows}</tbody></table></figure>`;
 }
 
 function renderEquation(block: OmiBlock, state: RenderState): string {
