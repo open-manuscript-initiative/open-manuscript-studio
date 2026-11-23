@@ -1,3 +1,6 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ChartPreview } from '../components/ChartPreview';
 import { publicationSpineWidth } from '../model/publicationSpine';
 import { matterFrameBoxStyle, matterImageStyle, type PublicationMatterFrame } from '../model/publicationMatterFrames';
 import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
@@ -621,28 +624,45 @@ function renderTable(block: OmiBlock, state: RenderState): string {
 function renderChart(block: OmiBlock, state: RenderState): string {
   if (block.visual?.kind !== 'chart') return '';
   const visual = block.visual;
-  state.diagnostics.push({
-    code: 'html-chart-data-table-fallback',
-    severity: 'warning',
-    message: `Chart ${block.id} is rendered as its accessible source-data table in the current HTML alpha renderer.`,
-    targetId: block.id,
-  });
+  // Render the *same* React SVG used by the manuscript and publication preview.
+  // React's server renderer escapes untrusted chart titles and category labels.
+  // No runtime JavaScript, external stylesheets or remote chart dependencies.
+  const rendered = renderToStaticMarkup(createElement(ChartPreview, {
+    data: visual,
+    emptyLabel: '',
+  }));
+  const svg = rendered.startsWith('<svg') ? rendered : '';
+  if (!svg) {
+    state.diagnostics.push({
+      code: 'html-chart-no-renderable-data',
+      severity: 'warning',
+      message: `Chart ${block.id} has no renderable numeric values; source data is retained as a table.`,
+      targetId: block.id,
+    });
+  }
+
   const captionText = visual.caption?.trim() || visual.title?.trim();
   const caption = captionText ? `<figcaption>${escapeHtml(captionText)}</figcaption>` : '';
-  const rows = visual.cells
-    .map((row, rowIndex) => {
-      const cells = row.map((cell, columnIndex) => {
-        const tag = rowIndex === 0 || columnIndex === 0 ? 'th' : 'td';
-        const scope = rowIndex === 0 ? ' scope="col"' : columnIndex === 0 ? ' scope="row"' : '';
-        return `<${tag}${scope}>${escapeHtml(cell)}</${tag}>`;
-      });
-      return `<tr>${cells.join('')}</tr>`;
-    })
-    .join('');
+  const sourceLabel = localizedLabels(state.manuscript.language).chartSourceData;
+  const [header, ...dataRows] = visual.cells;
+  const head = header
+    ? `<thead><tr>${header.map((cell) => `<th scope="col">${escapeHtml(cell)}</th>`).join('')}</tr></thead>`
+    : '';
+  const body = dataRows.map((row) =>
+    `<tr>${row.map((cell, index) => index === 0
+      ? `<th scope="row">${escapeHtml(cell)}</th>`
+      : `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`,
+  ).join('');
+  const table = `<table class="chart-data"><caption>${escapeHtml(sourceLabel)}</caption>${head}<tbody>${body}</tbody></table>`;
+  const source = svg
+    ? `<details class="scholarly-chart-source"><summary>${escapeHtml(sourceLabel)}</summary>${table}</details>`
+    : table;
 
-  return `<figure id="${htmlId('chart', block.id)}" class="scholarly-chart" data-chart-type="${escapeAttribute(
-    visual.chartType,
-  )}" data-chart-style="${escapeAttribute(visual.stylePreset ?? 'color')}">${caption}<table class="chart-data"><tbody>${rows}</tbody></table></figure>`;
+  return `<figure id="${htmlId('chart', block.id)}" class="scholarly-chart" data-omi-block-id="${escapeAttribute(
+    block.id,
+  )}" data-chart-type="${escapeAttribute(visual.chartType)}" data-chart-style="${escapeAttribute(visual.stylePreset ?? 'color')}">
+${indent([caption, svg, source].filter(Boolean).join('\n'), 1)}
+</figure>`;
 }
 
 function renderEquation(block: OmiBlock, state: RenderState): string {
@@ -1080,6 +1100,15 @@ a { color: inherit; text-decoration-thickness: .08em; text-underline-offset: .12
 .manuscript-section-body { text-align: ${alignment}; }
 .omi-tab { white-space: pre; }
 .scholarly-figure, .scholarly-table, .scholarly-chart, .scholarly-equation { break-inside: avoid; }
+.scholarly-chart .omi-chart-svg { display: block; width: 100%; height: auto; max-width: 100%; max-height: 390px; margin: 0.5rem auto; }
+.scholarly-chart .omi-chart-labels text { fill: currentColor; font-size: 11px; }
+.scholarly-chart .scholarly-chart-source { margin-top: 0.6rem; font-size: 0.85em; }
+.scholarly-chart .scholarly-chart-source summary { cursor: pointer; }
+.scholarly-chart .chart-data { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
+.scholarly-chart .chart-data caption { text-align: left; font-weight: 600; }
+.scholarly-chart .chart-data th, .scholarly-chart .chart-data td { border: 1px solid #a6a6a6; padding: 0.3em 0.5em; text-align: left; }
+@media print { .scholarly-chart .omi-chart-svg { max-height: none; } }
+
 .manuscript-section > h2, .manuscript-section > h3, .manuscript-section > h4, .manuscript-section > h5, .manuscript-section > h6 { break-after: avoid; text-align: left; }
 .section-number { margin-right: .45em; }
 p { orphans: 3; widows: 3; }
@@ -1223,6 +1252,7 @@ function localizedLabels(locale: string) {
       references: 'Hivatkozások',
       equation: 'Egyenlet',
       figure: 'Ábra',
+      chartSourceData: 'A grafikon forrásadatai',
     };
   }
   if (language === 'de') {
@@ -1233,6 +1263,7 @@ function localizedLabels(locale: string) {
       references: 'Literatur',
       equation: 'Gleichung',
       figure: 'Abbildung',
+      chartSourceData: 'Diagrammdaten',
     };
   }
   return {
@@ -1242,6 +1273,7 @@ function localizedLabels(locale: string) {
     references: 'References',
     equation: 'Equation',
     figure: 'Figure',
+    chartSourceData: 'Chart source data',
   };
 }
 
