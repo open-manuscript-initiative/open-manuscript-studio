@@ -1,10 +1,9 @@
-import { BookOpen, FilePlus2, FileText, LibraryBig } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { BookOpen, FilePlus2, LibraryBig } from 'lucide-react';
+import { useState } from 'react';
 
 import { createAndOpenBlankOmiDocument, createAndOpenPublicationFromTemplate } from '../app/newDocumentActions';
 import { useTranslation } from '../i18n';
 import type { OmiVolumeKind } from '../model/documentProfile';
-import { listPlainDocuments, requestLegacyOfficeArchive } from '../services/euroOfficeApi';
 import { PublicationIdentifierFields } from './PublicationIdentifierFields';
 import type { OmiTitleMatter } from '../model/frontMatter';
 import type { PublicationKind } from '../model/publicationIdentifiers';
@@ -25,7 +24,6 @@ export function NewDocumentActions({
 }: NewDocumentActionsProps) {
   const { locale } = useTranslation();
   const copy = getCopy(locale);
-  const [hasOfficeArchive, setHasOfficeArchive] = useState(false);
   const [volumeKind, setVolumeKind] = useState<OmiVolumeKind | null>(null);
   const [publicationKind, setPublicationKind] = useState<PublicationKind>('volume');
   const [title, setTitle] = useState('');
@@ -36,16 +34,6 @@ export function NewDocumentActions({
   const [template, setTemplate] = useState<PublicationTemplate>();
   const [busy, setBusy] = useState(false);
   const [templateError, setTemplateError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    listPlainDocuments().then((documents) => {
-      if (!cancelled) setHasOfficeArchive(documents.length > 0);
-    }).catch(() => {
-      if (!cancelled) setHasOfficeArchive(false);
-    });
-    return () => { cancelled = true; };
-  }, []);
 
   const createStudy = () => {
     createAndOpenBlankOmiDocument({ kind: 'study', locale });
@@ -92,12 +80,6 @@ export function NewDocumentActions({
           <LibraryBig size={20} aria-hidden="true" />
           <span><strong>{copy.editedVolume}</strong><small>{copy.editedVolumeDescription}</small></span>
         </button>
-        {hasOfficeArchive ? (
-          <button type="button" disabled={busy} onClick={() => { requestLegacyOfficeArchive(); onCreated?.(); }}>
-            <FileText size={20} aria-hidden="true" />
-            <span><strong>{copy.officeArchive}</strong><small>{copy.officeArchiveDescription}</small></span>
-          </button>
-        ) : null}
       </div>
       {volumeKind ? <form className="omi-new-publication-form" onSubmit={(event) => { event.preventDefault(); void createVolume(volumeKind); }}>
         <fieldset disabled={busy} className="omi-new-publication-template-fields">
@@ -135,8 +117,6 @@ function getCopy(locale: string) {
     monographDescription: 'Egyszerzős kötet fejezetekkel és közös apparátussal.',
     editedVolume: 'Új kötet / folyóiratszám',
     editedVolumeDescription: 'Több szerző külön szerkeszthető tanulmányai egy kiadványban.',
-    officeArchive: 'Korábbi DOCX-fájlok exportálása',
-    officeArchiveDescription: 'A régi Office-munkaterület dokumentumainak és mentéseinek letöltése.',
   };
   if (locale === 'de') return {
     title: 'Neues Dokument',
@@ -148,8 +128,6 @@ function getCopy(locale: string) {
     monographDescription: 'Ein einbändiges Werk mit Kapiteln und gemeinsamem Apparat.',
     editedVolume: 'Neuer Band oder Heft',
     editedVolumeDescription: 'Getrennt bearbeitbare Beiträge mehrerer Autorinnen und Autoren.',
-    officeArchive: 'Bisherige DOCX-Dateien exportieren',
-    officeArchiveDescription: 'Dokumente und Sicherungen aus dem früheren Office-Arbeitsbereich herunterladen.',
   };
   return {
     title: 'New document',
@@ -161,7 +139,5 @@ function getCopy(locale: string) {
     monographDescription: 'A single-author volume with chapters and shared scholarly apparatus.',
     editedVolume: 'New volume or issue',
     editedVolumeDescription: 'A volume or journal issue with independently editable studies.',
-    officeArchive: 'Export previous DOCX files',
-    officeArchiveDescription: 'Download documents and recovery saves from the former Office workspace.',
   };
 }

@@ -10,7 +10,6 @@ import './pdf-worker-environment-security.test.ts';
 import './integration-ip-security.test.ts';
 import './api-egress-shared-uid.test.ts';
 import './ssrf-outbound-transport.test.ts';
-import './eurooffice-callback-ssrf.test.ts';
 
 import { assertPortableOmiManuscript, toPortableOmiManuscript } from '../src/services/omiPortableFormat.ts';
 import { createReferenceManuscript } from './referenceManuscriptFixture.ts';
@@ -143,15 +142,11 @@ test('Tauri CSP restricts main WebView scripts and native IPC to bundled main we
   assert.equal(capabilities.windows, undefined, 'a main-window grant leaks to all native sub-WebViews');
   assert.equal(capabilities.remote, undefined, 'external provider pages must never have native capabilities');
 
-  const mainSource = readFileSync(
-    new URL('../src/components/PlainDocumentWorkspace.tsx', import.meta.url), 'utf8',
-  );
-  assert.match(mainSource, /if \(!nativeStudio\) await loadApiScript/);
-  assert.match(mainSource, /EuroOfficeIsolatedFrame/);
-  const isolatedSource = readFileSync(
-    new URL('../src/components/EuroOfficeIsolatedFrame.tsx', import.meta.url), 'utf8',
-  );
-  assert.match(isolatedSource, /event\.origin !== 'null'/);
-  assert.match(isolatedSource, /event\.source !== ref\.current\?\.contentWindow/);
-  assert.match(isolatedSource, /sandbox="allow-scripts allow-downloads"/);
+  // Generic Office editing must not be compiled into the Studio entrypoint.
+  const appSource = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  const newDocumentActions = readFileSync(new URL('../src/components/NewDocumentActions.tsx', import.meta.url), 'utf8');
+  const serverAppSource = readFileSync(new URL('../server/src/app.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(appSource, /PlainDocumentWorkspace|LegacyOfficeArchive|EuroOfficeIsolatedFrame/);
+  assert.doesNotMatch(newDocumentActions, /euroOfficeApi|requestPlainDocumentWorkspace|requestLegacyOfficeArchive/);
+  assert.doesNotMatch(serverAppSource, /euroOfficeRouter|euroOfficeRoutes/);
 });

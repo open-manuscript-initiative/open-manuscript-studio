@@ -69,7 +69,6 @@ import { referenceManagerRouter } from './routes/referenceManagerRoutes.js';
 import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
 import { editorialConnectorRouter } from './routes/editorialConnectorRoutes.js';
 import { directSubmissionRouter } from './routes/directSubmissionRoutes.js';
-import { euroOfficeRouter } from './routes/euroOfficeRoutes.js';
 import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
 import { transkribusRouter } from './routes/transkribusRoutes.js';
 import { requireSession } from './middleware/requireSession.js';
@@ -127,8 +126,6 @@ app.get('/api', (_request, response) => {
 app.use('/api/public/android-test', express.urlencoded({extended: false, limit: '2kb'}), androidTestSignupRouter);
 app.use('/api/v1/server-registry', serverRegistryRouter);
 app.use('/api/server-registry', serverRegistryRouter); // Compatibility facade; identical policy and limits.
-app.use('/api/v1', euroOfficeRouter);
-app.use('/api', euroOfficeRouter); // Legacy compatibility facade.
 app.use('/api/v1', studioModuleRouter);
 app.use('/api/v1', historyArchivesRouter);
 app.use('/api/v1', religiousTextsRouter);

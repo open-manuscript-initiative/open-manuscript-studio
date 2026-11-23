@@ -29,7 +29,6 @@ import {
 } from './components/DesktopDocumentTabs';
 import { StudioUpdatePrompt } from './components/DesktopUpdatePrompt';
 import { EditorPane } from './components/EditorPane';
-import { LegacyOfficeArchive } from './components/LegacyOfficeArchive';
 import { ReviewPortal } from './components/ReviewPortal';
 import { SearchReplaceOverlay } from './components/SearchReplaceOverlay';
 import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
@@ -181,9 +180,6 @@ function StudioApplication() {
     setAndroidIncludeSource(false);
     setLocalOpenError(null);
   }, []);
-  const [officeArchiveOpen, setOfficeArchiveOpen] = useState(() =>
-    new URLSearchParams(window.location.search).get('officeArchive') === '1',
-  );
   const navigateHome = useCallback(() => setMenuOpen(false), []);
   const [externalImportState, setExternalImportState] = useState<ExternalImportState>(() =>
     !reviewMode && (hasInitialOjsLaunch() || hasInitialOmpLaunch())
@@ -218,7 +214,6 @@ function StudioApplication() {
       forgetManuscriptFilePath(manuscript.id);
       loadManuscript(manuscript);
       setLocalOpenError(null);
-      setOfficeArchiveOpen(false);
       setMenuOpen(false);
     }, (error) => setLocalOpenError(error instanceof Error ? error.message : String(error)),
     beginAndroidDocxImport);
@@ -234,11 +229,6 @@ function StudioApplication() {
     return () => window.removeEventListener('omi-native-docx-import', onNativeDocx);
   }, [beginAndroidDocxImport, reviewMode]);
 
-  useEffect(() => {
-    const openArchive = () => setOfficeArchiveOpen(true);
-    window.addEventListener('omi-open-office-archive', openArchive);
-    return () => window.removeEventListener('omi-open-office-archive', openArchive);
-  }, []);
   // Effect cleanup must not discard a redeemed one-time token. Reuse the
   // request when React replays the effect while its first fetch is pending.
   const ojsHandoffRequests = useRef(new Map<string, Promise<AssignmentAwareLaunch | null>>());
@@ -430,7 +420,6 @@ function StudioApplication() {
               });
               forgetManuscriptFilePath(id);
               clearDocumentClosedState();
-              setOfficeArchiveOpen(false);
               setMenuOpen(false);
               setAndroidDocxReceipt(null);
             } catch (error) {
@@ -468,9 +457,6 @@ function StudioApplication() {
     );
   }
 
-  if (officeArchiveOpen) {
-    return <LegacyOfficeArchive onClose={() => setOfficeArchiveOpen(false)} />;
-  }
 
   if (!hasOpenDocument) return <ClosedDocumentScreen />;
 
