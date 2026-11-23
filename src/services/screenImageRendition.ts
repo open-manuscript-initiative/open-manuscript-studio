@@ -93,7 +93,9 @@ export async function screenImageRendition(
     const context = canvas.getContext('2d', { alpha: true });
     if (!context) return { blob, originalDimensions };
     context.drawImage(bitmap, 0, 0, target.width, target.height);
-    const screenBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.86));
+    const screenBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/webp', 0.86);
+    });
     return { blob: screenBlob || blob, originalDimensions };
   } catch {
     return { blob, originalDimensions };
