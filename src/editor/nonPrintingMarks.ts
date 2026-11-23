@@ -9,3 +9,20 @@ export function readStoredNonPrintingMarks(): boolean {
     return false;
   }
 }
+
+export const NON_PRINTING_MARKS_EVENT = 'omi:non-printing-marks-changed';
+
+/** Shared by the manuscript toolbar and publication ruler. */
+export function setNonPrintingMarksVisibility(visible: boolean): void {
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.toggle(NON_PRINTING_MARKS_CLASS, visible);
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(NON_PRINTING_MARKS_STORAGE_KEY, String(visible));
+    } catch {
+      // Local preferences can be unavailable in private browsing.
+    }
+    window.dispatchEvent(new CustomEvent<boolean>(NON_PRINTING_MARKS_EVENT, { detail: visible }));
+  }
+}
