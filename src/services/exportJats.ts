@@ -786,6 +786,10 @@ function renderChart(block: OmiBlock, state: RenderState): string {
   const caption = block.visual.caption?.trim() || block.visual.title?.trim();
   const chartPayload = JSON.stringify({
     chartType: block.visual.chartType,
+    stylePreset: block.visual.stylePreset,
+    showGrid: block.visual.showGrid,
+    showValues: block.visual.showValues,
+    showLegend: block.visual.showLegend,
     cells: block.visual.cells,
   });
   const dataUri = `data:application/vnd.omi.chart+json,${encodeURIComponent(chartPayload)}`;
