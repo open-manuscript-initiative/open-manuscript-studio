@@ -2413,3 +2413,50 @@
     display: none;
   }
 }
+
+
+/* Display-only publication view settings. They are never included in export CSS. */
+.publication-view-panel fieldset + fieldset { margin-top: .75rem; padding-top: .7rem; border-top: 1px solid #e2e8f0; }
+.publication-view-panel .publication-view-option { display: flex; align-items: center; gap: .55rem; padding: .35rem .1rem; color: #334155; font-size: .78rem; cursor: pointer; }
+.publication-view-panel .publication-view-option input { flex: 0 0 auto; width: 1rem; height: 1rem; min-height: 0; margin: 0; accent-color: #7c2d3f; }
+.publication-view-panel .publication-view-presentation { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; padding: .5rem .7rem; border: 1px solid #cbd5e1; border-radius: .4rem; background: #f8fafc; color: #334155; font: inherit; cursor: pointer; }
+.publication-view-panel .publication-view-presentation:hover { background: #e2e8f0; }
+.publication-ruler-visibility-options { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding-left: .5rem; border-left: 1px solid #cbd5e1; }
+.publication-section-ruler-controls .publication-ruler-visibility-options label { display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; cursor: pointer; }
+.publication-section-ruler-controls .publication-ruler-visibility-options input[type='checkbox'] { width: .9rem; height: .9rem; min-height: 0; margin: 0; accent-color: #7c2d3f; }
+
+.publication-document-margin-boundary { position: absolute; z-index: 2; box-sizing: border-box; border: 1px dashed rgba(20, 112, 155, .55); pointer-events: none; }
+.publication-document-alignment-guides { position: absolute; z-index: 2; inset: 0; pointer-events: none; background:
+  linear-gradient(to right, transparent calc(50% - .5px), rgba(37, 99, 235, .35) 50%, transparent calc(50% + .5px)),
+  linear-gradient(to bottom, transparent calc(50% - .5px), rgba(37, 99, 235, .35) 50%, transparent calc(50% + .5px)); }
+
+.omi-visual-block--lightweight { position: relative; box-sizing: border-box; margin: .5rem 0; padding: .25rem; border: 1px dashed rgba(100, 116, 139, .65); background: #f1f5f9; }
+.omi-visual-lightweight-placeholder { position: relative; display: flex; min-height: 5rem; max-height: 16rem; flex-direction: column; justify-content: center; align-items: center; gap: .3rem; overflow: hidden; color: #475569; }
+.omi-visual-lightweight-placeholder img { display: block; max-width: 100%; max-height: 12rem; width: auto; height: auto; object-fit: contain; }
+.omi-visual-lightweight-label { padding: .15rem .35rem; font: .72rem/1.35 system-ui, sans-serif; overflow-wrap: anywhere; text-align: center; }
+.omi-visual-block--outlines { border: 1px solid rgba(100, 116, 139, .75); background: transparent; }
+.omi-visual-block--outlines .omi-visual-lightweight-placeholder { min-height: 6rem; background: transparent; }
+.omi-visual-block--outlines .omi-visual-lightweight-placeholder::before,
+.omi-visual-block--outlines .omi-visual-lightweight-placeholder::after {
+  position: absolute; inset: 0; content: ''; pointer-events: none;
+  background: linear-gradient(to bottom right, transparent calc(50% - .5px), rgba(100, 116, 139, .38) 50%, transparent calc(50% + .5px));
+}
+.omi-visual-block--outlines .omi-visual-lightweight-placeholder::after { transform: scaleX(-1); }
+.omi-frame-graphic-content .omi-visual-block--lightweight { margin: 0; height: 100%; padding: 0; }
+.omi-frame-graphic-content .omi-visual-lightweight-placeholder { min-height: 100%; max-height: 100%; }
+.omi-frame-graphic-content .omi-visual-lightweight-placeholder img { max-height: 100%; }
+.publication-style-editor--presentation { position: fixed; inset: 0; z-index: 9999; display: flex; width: 100vw; height: 100dvh; margin: 0; padding: 0; box-sizing: border-box; overflow: hidden; border: 0; border-radius: 0; background: #d5d9df; }
+.publication-style-editor--presentation > :not(.publication-style-editor-shell):not(.publication-presentation-exit) { display: none !important; }
+.publication-style-editor--presentation .publication-style-editor-shell { display: flex !important; flex: 1 1 auto; width: 100%; min-height: 0; overflow: hidden; }
+.publication-style-editor--presentation .publication-style-ribbon { display: none !important; }
+.publication-style-editor--presentation .publication-style-editor-main { min-height: 0; }
+.publication-style-editor--presentation .publication-style-editor-layout { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+.publication-style-editor--presentation .publication-document-canvas { grid-template-rows: minmax(0, 1fr) !important; height: 100%; border: 0; border-radius: 0; }
+.publication-style-editor--presentation .publication-document-canvas-toolbar { display: none; }
+.publication-style-editor--presentation .publication-document-canvas-stage { height: 100%; min-height: 0; overflow: auto; }
+.publication-style-editor--presentation .publication-presentation-exit { position: absolute; top: .7rem; right: 1rem; z-index: 100; display: flex; align-items: center; gap: .4rem; padding: .4rem .65rem; border: 1px solid #94a3b8; border-radius: .4rem; background: rgba(255,255,255,.94); color: #1e293b; box-shadow: 0 .2rem .5rem #0002; font: .76rem system-ui, sans-serif; cursor: pointer; }
+.publication-style-editor--presentation .publication-document-content { caret-color: transparent; }
+@media print {
+  .publication-document-margin-boundary, .publication-document-alignment-guides,
+  .publication-ruler-visibility-options, .publication-presentation-exit { display: none !important; }
+}
