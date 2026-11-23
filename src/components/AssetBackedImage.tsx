@@ -62,7 +62,13 @@ export function AssetBackedImage({
         const result = screenResolution
           ? await screenImageRendition(
               bytes, visual.mediaType || 'application/octet-stream',
-              screenImageBudget(window.innerWidth, window.innerHeight, window.devicePixelRatio),
+              // Match the actual on-screen frame when possible rather than
+              // preparing a viewport-wide bitmap for a small inline image.
+              screenImageBudget(
+                Math.min(window.innerWidth, placeholderRef.current?.getBoundingClientRect().width || window.innerWidth),
+                Math.min(window.innerHeight, placeholderRef.current?.getBoundingClientRect().height || window.innerHeight),
+                window.devicePixelRatio,
+              ),
               Number.isFinite(visual.width) && Number.isFinite(visual.height)
                 && (visual.width ?? 0) > 0 && (visual.height ?? 0) > 0
                 ? { width: visual.width!, height: visual.height! }
