@@ -139,13 +139,18 @@ test('graphic frame exports retain the rendered vector chart and printable page 
   await menu.getByRole('button', { name: 'Frames and page styles', exact: true }).click();
   const editor = menu.locator('.omi-frame-editor');
   await editor.getByRole('button', { name: 'Add graphic frame' }).click();
-  await expect(editor.locator('.omi-chart-svg')).toBeVisible();
+  // Fast layout must not mount an expensive chart SVG during normal editing.
+  await expect(editor.locator('.omi-visual-block--lightweight')).toBeVisible();
+  await expect(editor.locator('.omi-chart-svg')).toHaveCount(0);
   const pending = page.waitForEvent('download');
   await editor.getByRole('button', { name: 'Download frame HTML' }).click();
   const download = await pending;
   const html = await readFile((await download.path())!, 'utf8');
   expect(html).toContain('omi-chart-svg'); expect(html).toContain('<rect');
   expect(html).not.toContain('<table');
+  // Export capture must restore the user's quick-view selection.
+  await expect(editor.locator('.omi-visual-block--lightweight')).toBeVisible();
+  await expect(editor.locator('.omi-chart-svg')).toHaveCount(0);
   const proof = await context.newPage();
   await proof.setContent(html);
   await proof.pdf({ path: testInfo.outputPath('frame-chart.pdf'), preferCSSPageSize: true });
