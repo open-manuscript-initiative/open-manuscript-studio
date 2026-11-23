@@ -763,7 +763,7 @@ test('publication icon rail docks thumbnails, retains panels until toggled and a
   assert.match(styleEditor, /onPointerMove=\{\(event\) =>/);
   assert.match(styleEditor, /showRuler=\{rulerVisible\}/);
   assert.match(documentCanvas, /createPortal\(pageNavigator, pageNavigatorTarget\)/);
-  assert.match(documentCanvas, /!previewOnly && showRuler \? <PublicationSectionRuler/);
+  assert.match(documentCanvas, /!previewOnly && !presentation && showRuler \? <PublicationSectionRuler/);
   assert.match(editorStyles, /publication-page-thumbnails \{[\s\S]*?flex-direction: column/);
 });
 
