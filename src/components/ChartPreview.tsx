@@ -62,8 +62,8 @@ function CategoryLabels({ labels, horizontal = false }: { labels: string[]; hori
   </g>;
 }
 
-function SectorChart({ data, labels, values, colors, donut, showValues, showLegend }: {
-  data: OmiChartBlockData; labels: string[]; values: number[]; colors: string[]; donut: boolean; showValues: boolean; showLegend: boolean
+function SectorChart({ labels, values, colors, donut, showValues, showLegend }: {
+  labels: string[]; values: number[]; colors: string[]; donut: boolean; showValues: boolean; showLegend: boolean
 }) {
   const total = values.reduce((sum, v) => sum + Math.max(0, v), 0);
   if (total <= 0) return null;
@@ -140,7 +140,7 @@ export function ChartPreview({ data, emptyLabel }: Props) {
   if (isCircular) {
     const values = series[0]?.values ?? [];
     if (!values.some(v => v > 0)) return <div className="omi-chart-empty">{emptyLabel}</div>;
-    return frame(<SectorChart data={data} labels={visibleLabels} values={values} colors={colors} donut={chartType === 'donut'} showValues={showValues} showLegend={showLegend} />);
+    return frame(<SectorChart labels={visibleLabels} values={values} colors={colors} donut={chartType === 'donut'} showValues={showValues} showLegend={showLegend} />);
   }
   if (isRadar) return frame(<RadarChart labels={visibleLabels} series={series} colors={colors} showLegend={showLegend} showGrid={showGrid} showValues={showValues} />);
   const { left, top, width, height } = PLOT;
