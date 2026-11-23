@@ -85,3 +85,31 @@ test('native-style preview remains scrollable even with a desktop-width viewport
   await expect(editor).toHaveCSS('overflow', 'visible');
   await expect(editor.locator('.publication-document-canvas-stage')).toHaveCSS('overflow-y', 'auto');
 });
+
+test('volume cover controls are reachable in the mobile publication workspace', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 740 });
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { createDocumentStructureProfile } = await import('/src/model/documentProfile.ts');
+    const state = useStudioStore.getState();
+    state.loadManuscript({ ...state.manuscript, documentStructure: createDocumentStructureProfile('volume') });
+  });
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
+  const editor = menu.locator('.publication-style-editor');
+  const content = menu.locator('.studio-menu-content--publication-editor');
+  await editor.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+  await expect(content).toHaveCSS('overflow-y', 'auto');
+  const matter = editor.locator('.omi-publication-matter-editor');
+  await expect(matter).toBeVisible();
+  await matter.getByRole('checkbox', { name: 'Include in publication' }).check();
+  const addTextFrame = matter.getByRole('button', { name: 'Add text frame', exact: true });
+  await addTextFrame.scrollIntoViewIfNeeded();
+  await expect(addTextFrame).toBeInViewport();
+  await editor.getByRole('tab', { name: 'Publication content', exact: true }).click();
+  await expect(editor.locator('.publication-document-canvas')).toBeVisible();
+});
