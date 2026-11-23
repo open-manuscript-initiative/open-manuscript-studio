@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { screenImageBudget, screenImageRendition, screenRenditionSize } from '../src/services/screenImageRendition.ts';
 
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
 import {
@@ -38,6 +39,10 @@ const sectionRuler = readFileSync(
 );
 const viewOptionsModule = readFileSync(
   new URL('../src/components/publicationViewOptions.ts', import.meta.url),
+  'utf8',
+);
+const assetBackedImage = readFileSync(
+  new URL('../src/components/AssetBackedImage.tsx', import.meta.url),
   'utf8',
 );
 const visualBlockEditor = readFileSync(
@@ -772,10 +777,10 @@ test('publication editor view settings are local and provide fast or outlines-on
   assert.match(viewOptionsModule, /graphicsMode: 'simplified'/);
   assert.match(viewOptionsModule, /createContext<PublicationGraphicsMode>\('full'\)/);
   assert.match(viewOptionsModule, /window\.localStorage\.setItem\(PUBLICATION_VIEW_OPTIONS_KEY/);
-  assert.match(styleEditor, /PublicationGraphicsContext\.Provider value=\{presentation \|\| previewOnly \? 'full' : viewOptions\.graphicsMode\}/);
+  assert.match(styleEditor, /PublicationGraphicsContext\.Provider value=\{presentation \? 'screen' : previewOnly \? 'full' : viewOptions\.graphicsMode\}/);
   assert.match(styleEditor, /panelId="view"/);
   assert.match(styleEditor, /'full', 'simplified', 'outlines'/);
-  assert.match(visualBlockEditor, /graphicsMode !== 'full' && visual\.kind !== 'table'/);
+  assert.match(visualBlockEditor, /\(graphicsMode === 'simplified' \|\| graphicsMode === 'outlines'\) && visual\.kind !== 'table'/);
   assert.match(visualBlockEditor, /lightweight \/>/);
   assert.match(visualBlockEditor, /omi-visual-block--lightweight/);
   assert.match(frameEditor, /<VisualBlockEditor/);
@@ -794,11 +799,46 @@ test('publication ruler controls local editing aids without adding them to expor
   assert.match(editorStyles, /@media print \{[\s\S]*\.publication-document-margin-boundary/);
 });
 
-test('fullscreen presentation keeps original graphics but disables manuscript edits', () => {
+test('fullscreen presentation uses screen graphics and disables manuscript edits', () => {
   assert.match(styleEditor, /requestFullscreen\(\)/);
   assert.match(styleEditor, /exitFullscreen\(\)/);
   assert.match(styleEditor, /className="publication-presentation-exit"/);
   assert.match(documentCanvas, /<PublicationPreviewContext\.Provider value=\{previewOnly \|\| presentation\}>/);
   assert.match(documentCanvas, /editable=\{!previewOnly && !presentation\}/);
   assert.match(editorStyles, /\.publication-style-editor--presentation/);
+});
+
+test('presentation loads screen-sized raster renditions without affecting the print sources', async () => {
+  assert.match(viewOptionsModule, /'full' \| 'simplified' \| 'outlines' \| 'screen'/);
+  assert.match(styleEditor, /data-graphics-mode=\{presentation \? 'screen' : viewOptions\.graphicsMode\}/);
+  assert.match(visualBlockEditor, /screenResolution=\{graphicsMode === 'screen'\}/);
+  assert.match(assetBackedImage, /screenImageRendition\(/);
+  assert.match(assetBackedImage, /loading=\{lightweight \|\| screenResolution/);
+  assert.match(frameEditor, /captureFullGraphics \? 'full' : graphicsMode/);
+  assert.match(frameEditor, /captureFrameGraphicSnapshots/);
+  assert.match(frameEditor, /buildFrameExport\(manuscript, snapshot, graphics\)/);
+
+  assert.equal(screenImageBudget(1920, 1080, 1), 1920);
+  assert.equal(screenImageBudget(1920, 1080, 2), 3840);
+  assert.equal(screenImageBudget(6000, 4000, 3), 4096);
+  assert.deepEqual(screenRenditionSize({ width: 900, height: 500 }, 1920), { width: 900, height: 500 });
+  const sized = screenRenditionSize({ width: 8000, height: 4000 }, 1920);
+  assert.deepEqual(sized, { width: 1920, height: 960 });
+  assert.ok(sized.width * sized.height <= 8_500_000);
+
+  // The decoder keeps original pixel metadata for precise image annotations.
+  const png = new Uint8Array(24);
+  png.set([137, 80, 78, 71, 13, 10, 26, 10], 0);
+  png.set([73, 72, 68, 82], 12);
+  new DataView(png.buffer).setUint32(16, 400);
+  new DataView(png.buffer).setUint32(20, 200);
+  const original = await screenImageRendition(png, 'image/png', 640);
+  assert.deepEqual(original.originalDimensions, { width: 400, height: 200 });
+  assert.equal(original.blob.size, png.length);
+
+  // Vectors stay vectors, even if they have intrinsic dimensions.
+  const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+  const vector = await screenImageRendition(svg, 'image/svg+xml', 640, { width: 3000, height: 2000 });
+  assert.equal(vector.blob.type, 'image/svg+xml');
+  assert.equal(vector.blob.size, svg.length);
 });
