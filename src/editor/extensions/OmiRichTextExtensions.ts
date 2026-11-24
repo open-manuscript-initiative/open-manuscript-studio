@@ -1,3 +1,4 @@
+import { PARAGRAPH_FORMAT_NAMES, normalizeParagraphValue, paragraphFormattingCss } from '../../model/directParagraphFormatting';
 import { DIRECT_FORMAT_NAMES, normalizeDirectValue, directFormattingCss, normalizeUnderlineStyle, underlineCss } from '../../model/directFormatting';
 import {
   Extension,
@@ -296,6 +297,28 @@ export const OMI_DIRECT_FORMATTING_EXTENSIONS = DIRECT_FORMAT_NAMES.map(name => 
   },
 }));
 
+export const OmiDirectParagraphFormattingExtension = Extension.create({
+  name: 'omiDirectParagraphFormatting',
+  addGlobalAttributes() {
+    return [{
+      types: ['paragraph'],
+      attributes: Object.fromEntries(PARAGRAPH_FORMAT_NAMES.map(name => [name, {
+        default: null,
+        parseHTML: (element: HTMLElement) => normalizeParagraphValue(name, element.getAttribute('data-' + name.toLowerCase())) ?? null,
+        renderHTML: (attrs: Record<string, unknown>) => {
+          const value = normalizeParagraphValue(name, attrs[name]);
+          if (value === undefined) return {};
+          // Tiptap merges styles from individual global attributes. Line height
+          // depends on both value and rule, so emit it only from the value.
+          const css = name === 'omiLineRule' ? '' : paragraphFormattingCss(
+            { [name]: value, ...(name === 'omiLineSpacing' ? { omiLineRule: attrs.omiLineRule } : {}) }, 'editor');
+          return { ['data-' + name.toLowerCase()]: String(value), ...(css ? { style: css } : {}) };
+        },
+      }])),
+    }];
+  },
+});
+
 export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiManuscriptBoundaryEditingExtension,
   OmiManuscriptSelectionExtension,
@@ -307,6 +330,7 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiLanguageExtension,
   OmiSourceFontExtension,
   ...OMI_DIRECT_FORMATTING_EXTENSIONS,
+  OmiDirectParagraphFormattingExtension,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
@@ -326,6 +350,7 @@ export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
   OmiLanguageExtension,
   OmiSourceFontExtension,
   ...OMI_DIRECT_FORMATTING_EXTENSIONS,
+  OmiDirectParagraphFormattingExtension,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
