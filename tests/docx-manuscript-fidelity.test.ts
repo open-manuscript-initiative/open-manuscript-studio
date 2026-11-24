@@ -10,6 +10,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { registerMasterFormattingContract } from './docx-master-formatting-contract.ts';
 import { registerAdvancedFormattingContracts } from './docx-advanced-formatting-contract.ts';
+import { registerParagraphNumberingExportContracts } from './paragraph-numbering-export-contract.ts';
 
 import {
   DOMParser as XmlDomParser,
@@ -752,3 +753,5 @@ test('inline enrichment retains formatted manual breaks, tabs and external hyper
 
 registerMasterFormattingContract();
 registerAdvancedFormattingContracts();
+
+registerParagraphNumberingExportContracts();
