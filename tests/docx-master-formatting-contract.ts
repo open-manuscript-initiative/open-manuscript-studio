@@ -26,7 +26,7 @@ const manifest = new URL('./fixtures/omi-formatting-test-manifest.json', import.
 
 // Only local test inputs and the Studio-generated result are opened. The ZIP
 // reader does not extract files to disk; it supports the two OOXML ZIP methods.
-function readWordPackage(bytes: Uint8Array): WordPackage {
+export function readWordPackage(bytes: Uint8Array): WordPackage {
   const zip = Buffer.from(bytes);
   let end = zip.length - 22;
   while (end >= Math.max(0, zip.length - 65557) && zip.readUInt32LE(end) !== 0x06054b50) end--;
