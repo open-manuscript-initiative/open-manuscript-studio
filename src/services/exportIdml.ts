@@ -696,6 +696,14 @@ function directParagraphAttributes(content: string): string {
     ] as const) setAttr(attrs, property, v(name));
     const align = v('omiAlign');
     if (align) attrs.Justification = ({left:'LeftAlign',center:'CenterAlign',right:'RightAlign',justify:'LeftJustified'} as Record<string,string>)[String(align)]!;
+    const widow = v('omiWidowControl');
+    if (widow !== undefined) { attrs.KeepFirstLines = widow ? 2 : 1; attrs.KeepLastLines = widow ? 2 : 1; }
+    const next = v('omiKeepNext');
+    if (next !== undefined) attrs.KeepWithNext = next ? 1 : 0;
+    const lines = v('omiKeepLines');
+    if (lines !== undefined) attrs.KeepAllLinesTogether = lines;
+    const before = v('omiPageBreakBefore');
+    if (before !== undefined) attrs.StartParagraph = before ? 'NextPage' : 'Anywhere';
     const line = v('omiLineSpacing');
     if (typeof line === 'number') {
       const rule = v('omiLineRule') ?? 'auto';
