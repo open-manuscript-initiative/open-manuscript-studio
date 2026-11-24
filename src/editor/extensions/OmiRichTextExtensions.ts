@@ -1,3 +1,4 @@
+import { normalizeSourceStyle } from '../../model/sourceWordStyles';
 import { PARAGRAPH_FORMAT_NAMES, normalizeParagraphValue, paragraphFormattingCss } from '../../model/directParagraphFormatting';
 import { DIRECT_FORMAT_NAMES, normalizeDirectValue, directFormattingCss, normalizeUnderlineStyle, underlineCss } from '../../model/directFormatting';
 import {
@@ -319,6 +320,34 @@ export const OmiDirectParagraphFormattingExtension = Extension.create({
   },
 });
 
+export const OmiSourceWordParagraphStyle = Extension.create({
+  name: 'omiSourceWordParagraphStyle',
+  addGlobalAttributes() {
+    return [{ types:['paragraph'], attributes: {
+      omiWordParagraphStyle: {
+        default:null,
+        parseHTML:(element:HTMLElement)=>normalizeSourceStyle(element.getAttribute('data-omi-word-paragraph-style')) ?? null,
+        renderHTML:(attrs:Record<string,unknown>)=>{
+          const definition=normalizeSourceStyle(attrs.omiWordParagraphStyle);
+          return definition ? {'data-omi-word-paragraph-style':definition} : {};
+        },
+      },
+    }}];
+  },
+});
+export const OmiSourceWordCharacterStyle = Mark.create({
+  name:'omiWordCharacterStyle',
+  inclusive:false,
+  addAttributes() {
+    return {definition:{default:null,parseHTML:(element:HTMLElement)=>normalizeSourceStyle(element.getAttribute('data-omi-word-character-style')) ?? null}};
+  },
+  parseHTML(){return [{tag:'span[data-omi-word-character-style]'}];},
+  renderHTML({mark}){
+    const definition=normalizeSourceStyle(mark.attrs.definition);
+    return ['span',definition?{'data-omi-word-character-style':definition}:{},0];
+  },
+});
+
 export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiManuscriptBoundaryEditingExtension,
   OmiManuscriptSelectionExtension,
@@ -331,6 +360,8 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiSourceFontExtension,
   ...OMI_DIRECT_FORMATTING_EXTENSIONS,
   OmiDirectParagraphFormattingExtension,
+  OmiSourceWordParagraphStyle,
+  OmiSourceWordCharacterStyle,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
@@ -351,6 +382,8 @@ export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
   OmiSourceFontExtension,
   ...OMI_DIRECT_FORMATTING_EXTENSIONS,
   OmiDirectParagraphFormattingExtension,
+  OmiSourceWordParagraphStyle,
+  OmiSourceWordCharacterStyle,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
