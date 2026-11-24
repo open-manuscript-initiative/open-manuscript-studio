@@ -209,7 +209,7 @@ export function registerAdvancedFormattingContracts(): void {
           await sub.test('review history retained internally', { todo: todo('Word review metadata import remains incomplete') }, () => assertPrivateReviewModel(item, reopened));
           await sub.test('public export does not expose native private review metadata', () => assertPublicReview(item, word.parts, [html, jats, print, ...[odt, idml].flatMap(parts => [...parts.values()].map(b => b.toString('utf8')))]));
         } else {
-          await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported || nativeParagraphContracts[item.id] ? false : todo(docxGap(item)) }, () => {
+          await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported || nativeParagraphContracts[item.id] || ['L06','L07','L08','L09'].includes(item.id) ? false : todo(docxGap(item)) }, () => {
             for (const expected of item.checks) assertNative(word.parts, expected);
           });
         }
