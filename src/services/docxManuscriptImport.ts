@@ -42,6 +42,7 @@ import type {
   OmiCitation,
   OmiCitationCluster,
   OmiImportProvenance,
+  OmiTableCellFormat,
   OmiSection,
 } from '../types/omi';
 
@@ -222,6 +223,7 @@ export async function parseDocxManuscript(
         section.blocks.push(
           createTableBlock(table.cells, {
             headerRows: table.headerRows,
+            cellFormats: table.cellFormats,
             provenance,
           }),
         );
@@ -1135,11 +1137,17 @@ function parseWordTable(table: Element): {
   cells: string[][];
   headerRows: number;
   mergedCells: boolean;
+  cellFormats: Record<string, OmiTableCellFormat>;
 } {
   const rows = directChildrenByLocalName(table, 'tr');
+  const cellFormats: Record<string, OmiTableCellFormat> = {};
   let mergedCells = false;
-  const cells = rows.map((row) =>
-    directChildrenByLocalName(row, 'tc').map((cell) => {
+  const cells = rows.map((row, rowIndex) =>
+    directChildrenByLocalName(row, 'tc').map((cell, columnIndex) => {
+      const properties = directChildrenByLocalName(cell, 'tcPr')[0];
+      const direction = properties && directChildrenByLocalName(properties, 'textDirection')[0];
+      const value = direction && attributeByLocalName(direction, 'val');
+      if (value === 'btLr' || value === 'tbRl') cellFormats[`${rowIndex}:${columnIndex}`] = {textRotation: value === 'btLr' ? -90 : 90};
       if (
         descendantsByLocalName(cell, 'gridSpan').length ||
         descendantsByLocalName(cell, 'vMerge').length
@@ -1169,10 +1177,16 @@ function parseWordTable(table: Element): {
         return value === '1' || value?.toLocaleLowerCase() === 'true';
       })
     : false;
-  const headerRows = rows[0] && (
-    descendantsByLocalName(rows[0], 'tblHeader').length > 0 || firstRowStyledAsHeader
-  ) ? 1 : 0;
-  return { cells: rectangularize(cells), headerRows, mergedCells };
+  let headerRows = 0;
+  for (const row of rows) {
+    const properties = directChildrenByLocalName(row, 'trPr')[0];
+    const header = properties && directChildrenByLocalName(properties, 'tblHeader')[0];
+    if (header) {
+      if (['0','false','off'].includes(attributeByLocalName(header,'val')?.toLowerCase() ?? '')) break;
+    } else if (headerRows !== 0 || !firstRowStyledAsHeader) break;
+    headerRows++;
+  }
+  return { cells: rectangularize(cells), headerRows, mergedCells, cellFormats };
 }
 
 function parseRelationships(xmlText: string): Map<string, Relationship> {
