@@ -923,3 +923,29 @@ test('source style normalization rejects unsafe IDs and resolves inheritance cyc
   const bundle={selected:'A',styles:[{id:'A',name:'A',kind:'paragraph',basedOn:'B',italic:true},{id:'B',name:'B',kind:'paragraph',basedOn:'A',bold:true}]};
   assert.deepEqual(resolveSourceStyle(bundle),{bold:true,italic:true});
 });
+
+
+test('hidden Word text survives editable notes and is removed from public note bodies without changing the original', async () => {
+  const source=makeDocx('<w:p><w:r><w:t>Public paragraph</w:t></w:r><w:r><w:footnoteReference w:id="1"/></w:r></w:p>',{
+    footnotes:'<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:footnote w:id="1"><w:p><w:r><w:t xml:space="preserve">Visible note </w:t></w:r><w:r><w:rPr><w:vanish/></w:rPr><w:t>HIDDEN-NOTE-SPECIMEN</w:t></w:r><w:r><w:rPr><w:vanish w:val="0"/></w:rPr><w:t>VISIBLE-OVERRIDE</w:t></w:r></w:p></w:footnote></w:footnotes>',
+  });
+  const plan=await parseDocxForStudio(source);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Hidden note regression'}),sections:plan.sections,annotations:plan.annotations};
+  const note=manuscript.annotations.find(a=>a.noteKind==='footnote')!;
+  assert.ok(note);
+  assert.match(note.bodyContent??'',/omiHiddenText/);
+  assert.match(note.body,/HIDDEN-NOTE-SPECIMEN/);
+  const snapshot=JSON.stringify(manuscript);
+  const projected=publicPublicationManuscript(manuscript);
+  const publicNote=projected.annotations.find(a=>a.id===note.id)!;
+  assert.ok(publicNote);
+  assert.ok(!publicNote.body.includes('HIDDEN-NOTE-SPECIMEN'));
+  assert.ok(!publicNote.bodyContent?.includes('HIDDEN-NOTE-SPECIMEN'));
+  assert.match(publicNote.body,/VISIBLE-OVERRIDE/);
+  assert.equal(JSON.stringify(manuscript),snapshot);
+  const docx=buildDocxExport(manuscript);
+  const parts=readZipParts(docx.bytes);
+  assert.match(parts.get('word/footnotes.xml')!.toString('utf8'),/<w:vanish\/>/);
+  assert.match(parts.get('word/footnotes.xml')!.toString('utf8'),/HIDDEN-NOTE-SPECIMEN/);
+  assert.ok(docx.warnings.some(warning=>warning.includes('Hidden formatting is not redaction')));
+});
