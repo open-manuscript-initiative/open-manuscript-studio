@@ -75,7 +75,7 @@ const nativeParagraphContracts: Record<string, Record<string, unknown>> = {
 function assertSupportedModel(item: AdvancedCase, manuscript: OmiManuscript): void {
   const paragraph = nativeParagraphContracts[item.id];
   if (paragraph) {
-    const block = modelBlocks(manuscript).find(candidate => candidate.content.includes(item.marker));
+    const block = modelBlocks(manuscript).find(candidate => candidate.content.includes('Typographic paragraph ' + item.id));
     assert.ok(block, 'Missing paragraph specimen ' + item.id);
     const root = JSON.parse(block.content) as { content?: Array<{ attrs?: Record<string, unknown> }> };
     for (const [name, value] of Object.entries(paragraph)) assert.equal(root.content?.[0]?.attrs?.[name], value, item.id + ' ' + name);
