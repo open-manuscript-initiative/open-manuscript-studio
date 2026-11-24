@@ -258,7 +258,7 @@ export const OmiSourceFontExtension = Mark.create({
       typeof HTMLAttributes.family === 'string' ? HTMLAttributes.family : null,
     );
     return family
-      ? ['span', { 'data-omi-source-font': family }, 0]
+      ? ['span', { 'data-omi-source-font': family, style: 'font-family:"' + family.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"' }, 0]
       : ['span', {}, 0];
   },
 });
