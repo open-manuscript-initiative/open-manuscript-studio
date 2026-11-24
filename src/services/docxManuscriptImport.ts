@@ -1415,10 +1415,6 @@ function directChildrenByLocalName(root: Element, name: string): Element[] {
   return Array.from(root.children).filter((element) => element.localName === name);
 }
 
-function firstDescendant(root: Element, name: string): Element | undefined {
-  return descendantsByLocalName(root, name)[0];
-}
-
 function attributeByLocalName(element: Element, name: string): string | undefined {
   return Array.from(element.attributes).find((attribute) => attribute.localName === name)?.value;
 }
