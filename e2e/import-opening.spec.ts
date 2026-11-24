@@ -176,3 +176,55 @@ test('canonical Word fixture: imported underline is recognized, removed and reap
   await underline.click();
   await expect(underlined).toHaveCount(1);
 });
+
+
+test('canonical Word fixture: six language marks can be changed and cleared in the shared toolbar', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await openDocumentMenu(page);
+  await page.locator('input[type="file"][accept^=".docx"]').setInputFiles('tests/fixtures/omi-formatting-master-test.docx');
+  const review = page.getByRole('region', { name: 'Review import source', exact: true });
+  await review.getByRole('combobox', { name: 'Import purpose' }).selectOption('own-work');
+  await review.getByRole('button', { name: 'Create manuscript', exact: true }).click();
+  const editor = page.locator('section.editor');
+  const tags = ['hu-HU', 'de-DE', 'en-GB', 'el-GR', 'he-IL', 'ar-SA'];
+  for (const [index, tag] of tags.entries()) {
+    const id = 'N0' + (index + 1);
+    await test.step(id + ' ' + tag, async () => {
+      const paragraph = editor.locator('.tiptap p').filter({ hasText: id + ' |' });
+      const marked = paragraph.locator('span[data-omi-language="' + tag + '"]');
+      await expect(marked).toHaveCount(1);
+      const sample = (await marked.textContent())!;
+      await marked.scrollIntoViewIfNeeded();
+      await marked.click();
+      await marked.evaluate(element => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const selection = document.getSelection()!;
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+
+      const toolbar = page.locator('.omi-rich-text-toolbar');
+      const more = toolbar.getByRole('button', { name: 'More text tools', exact: true });
+      const language = toolbar.locator('.omi-rich-text-language-editor');
+      if (await language.isVisible()) await more.click();
+      await more.click();
+      const select = language.locator('select');
+      await expect(select).toHaveValue(tag);
+      const alternative = await select.locator('option').evaluateAll((options, old) =>
+        options.map(option => (option as HTMLOptionElement).value).find(value => value !== old), tag);
+      expect(alternative, 'An alternative document language is needed to test editing').toBeTruthy();
+      await select.selectOption(alternative!);
+      await language.getByRole('button', { name: 'Apply', exact: true }).click();
+      await expect(paragraph.locator('span[data-omi-language="' + alternative + '"]')).toHaveCount(1);
+      await expect(marked).toHaveCount(0);
+      await language.getByRole('button', { name: 'Remove language mark', exact: true }).click();
+      await expect(paragraph.locator('span[data-omi-language]')).toHaveCount(0);
+      await expect(paragraph).toContainText(sample);
+      await toolbar.getByRole('button', { name: 'Cancel', exact: true }).click();
+    });
+  }
+});
