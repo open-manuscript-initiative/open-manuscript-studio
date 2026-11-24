@@ -553,8 +553,8 @@ function ParagraphDecorationControls({editor,locale}: {editor:Editor;locale:Supp
     </div>}
     {open==='tabs' && <div className="omi-direct-format-fields">
       <label>{l[11]}<input type="number" min="0" max="2000" step=".05" value={tabDraft.position} onChange={e=>setTabDraft({...tabDraft,position:Number(e.target.value)})}/></label>
-      <label>{l[12]}<select value={tabDraft.alignment} onChange={e=>setTabDraft({...tabDraft,alignment:e.target.value})}>{options(['left','center','right','decimal','clear'],[21,22,23,24,25])}</select></label>
-      <label>{l[13]}<select value={tabDraft.leader} onChange={e=>setTabDraft({...tabDraft,leader:e.target.value})}>{options(['none','dot','hyphen','underscore','middleDot','heavy'],[20,26,27,28,29,30])}</select></label>
+      <label>{l[12]}<select aria-label={l[12]} value={tabDraft.alignment} onChange={e=>setTabDraft({...tabDraft,alignment:e.target.value})}>{options(['left','center','right','decimal','clear'],[21,22,23,24,25])}</select></label>
+      <label>{l[13]}<select aria-label={l[13]} value={tabDraft.leader} onChange={e=>setTabDraft({...tabDraft,leader:e.target.value})}>{options(['none','dot','hyphen','underscore','middleDot','heavy'],[20,26,27,28,29,30])}</select></label>
       {button(l[14]+': '+l[2],<Plus size={16}/>,()=>set('omiParagraphTabs',[...tabs.filter(t=>t.position!==tabDraft.position),tabDraft]))}
       {tabs.map(t=><div key={t.position} className="omi-direct-format-field">
         <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>setTabDraft(t)}>{t.position} pt · {l[21+['left','center','right','decimal','clear'].indexOf(t.alignment)]}</button>
