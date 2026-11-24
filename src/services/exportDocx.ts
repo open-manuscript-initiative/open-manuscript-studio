@@ -1,3 +1,4 @@
+import { paragraphFormattingWordXml } from '../model/directParagraphFormatting';
 import { directFormattingFromMarks, directFormattingWordXml } from '../model/directFormatting';
 import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
@@ -136,7 +137,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           }
           return { kind, id };
         });
-        if (rendered) body.push(richParagraph(rendered, indexFields));
+        if (rendered) body.push(richParagraph(rendered, indexFields, block.content));
         else {
           const text = blockPlainText(block);
           if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
@@ -239,9 +240,15 @@ function wordStyledText(value: string, styleId?: string): string {
   return `<w:r>${rPr}<w:t xml:space="preserve">${xml(value)}</w:t></w:r>`;
 }
 
-function richParagraph(runs: readonly WordInlinePart[], suffix = ''): string {
+function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = ''): string {
+  let properties = '';
+  try {
+    const root = JSON.parse(content) as NoteJsonNode;
+    const paragraph = root.type === 'paragraph' ? root : root.content?.[0];
+    if (paragraph?.type === 'paragraph') properties = paragraphFormattingWordXml(paragraph.attrs);
+  } catch { /* Plain-text fallback has no local paragraph overrides. */ }
   const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id) : wordRun(run)).join('');
-  return `<w:p>${rendered}${suffix}</w:p>`;
+  return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${rendered}${suffix}</w:p>`;
 }
 
 type WordNoteKind = 'footnote' | 'endnote';
