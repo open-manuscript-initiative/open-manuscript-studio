@@ -1004,7 +1004,9 @@ test('native rectangular merged cells survive DOCX reopening without duplicating
   assert.equal(table.getElementsByTagName('w:gridSpan').length,2);
   assert.equal(table.getElementsByTagName('w:vMerge').length,2);
   inspect((await parseDocxForStudio(new File([new Uint8Array(output.bytes)],'merged.docx'))).sections);
-  const odt=readZipParts(buildOdtExport(manuscript).bytes).get('content.xml')!.toString('utf8');
+  const odtResult=buildOdtExport(manuscript);
+  const odt=readZipParts(odtResult.bytes).get('content.xml')!.toString('utf8');
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odtResult.bytes)],'merged.odt'))).sections);
   assert.match(odt,/table:number-rows-spanned="2" table:number-columns-spanned="2"/);
   assert.equal((odt.match(/<table:covered-table-cell\/>/g)??[]).length,3);
 });
