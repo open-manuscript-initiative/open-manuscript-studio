@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core';
-import { Bold, Italic, Underline, Superscript, Subscript, Link, Ellipsis, SlidersHorizontal, Code, CodeXml, CornerDownLeft, Eraser, Grip, List, ListOrdered, MoveDiagonal2, Pin, PinOff, Quote, RotateCcw, Strikethrough } from 'lucide-react';
+import { Bold, Italic, Underline, Superscript, Subscript, Link, Ellipsis, SlidersHorizontal, Pilcrow, Code, CodeXml, CornerDownLeft, Eraser, Grip, List, ListOrdered, MoveDiagonal2, Pin, PinOff, Quote, RotateCcw, Strikethrough } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import {
   useEffect,
@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import { DirectFormattingPanel, directFormattingLabel } from './DirectFormattingPanel';
+import { DirectFormattingPanel, directFormattingLabel, ParagraphFormattingPanel, paragraphFormattingLabel } from './DirectFormattingPanel';
 import { useSelectionToolbarLayout } from './useSelectionToolbarLayout';
 import { useFormattingStore } from '../editor/useFormattingEditor';
 
@@ -87,6 +87,7 @@ export function RichTextToolbar({
   const [revision, setRevision] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
   const [directOpen, setDirectOpen] = useState(false);
+  const [paragraphOpen, setParagraphOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkDraft, setLinkDraft] = useState('');
   const [linkError, setLinkError] = useState(false);
@@ -127,6 +128,7 @@ export function RichTextToolbar({
       setPosition(null);
       setMoreOpen(false);
       setDirectOpen(false);
+      setParagraphOpen(false);
       setLinkOpen(false);
       setLinkError(false);
       setLanguageError(false);
@@ -357,12 +359,14 @@ export function RichTextToolbar({
     setLinkError(false);
     setMoreOpen(false);
       setDirectOpen(false);
+      setParagraphOpen(false);
     setLinkOpen(true);
   }
 
   function closeExpandedMenu(): void {
     setMoreOpen(false);
       setDirectOpen(false);
+      setParagraphOpen(false);
     setLinkOpen(false);
     setLinkError(false);
     setLanguageError(false);
@@ -419,7 +423,7 @@ export function RichTextToolbar({
     setLanguageError(false);
   }
 
-  const expanded = moreOpen || linkOpen || directOpen;
+  const expanded = moreOpen || linkOpen || directOpen || paragraphOpen;
 
   const toolbar = (
     <div
@@ -525,6 +529,7 @@ export function RichTextToolbar({
           onClick={() => {
             setLinkOpen(false);
             setDirectOpen(false);
+            setParagraphOpen(false);
             setLanguageDraft(currentLanguage || manuscriptLanguage);
             setLanguageError(false);
             setMoreOpen((value) => !value);
@@ -539,9 +544,21 @@ export function RichTextToolbar({
           onClick={() => {
             setLinkOpen(false);
             setMoreOpen(false);
+            setParagraphOpen(false);
             setDirectOpen(value => !value);
           }}
         ><SlidersHorizontal size={17} aria-hidden="true" /></ToolbarButton> : null}
+        {editor.schema.nodes.paragraph?.spec.attrs?.omiAlign ? <ToolbarButton
+          label={paragraphFormattingLabel(locale)}
+          active={paragraphOpen}
+          onMouseDown={keepEditorSelection}
+          onClick={() => {
+            setLinkOpen(false);
+            setMoreOpen(false);
+            setDirectOpen(false);
+            setParagraphOpen(value => !value);
+          }}
+        ><Pilcrow size={17} aria-hidden="true" /></ToolbarButton> : null}
         {expanded ? (
           <button
             type="button"
@@ -596,6 +613,7 @@ export function RichTextToolbar({
       ) : null}
 
       {directOpen ? <DirectFormattingPanel editor={editor} locale={locale} /> : null}
+      {paragraphOpen ? <ParagraphFormattingPanel editor={editor} locale={locale} /> : null}
 
       {moreOpen ? (
         <div className="omi-rich-text-popover omi-rich-text-more-menu">
