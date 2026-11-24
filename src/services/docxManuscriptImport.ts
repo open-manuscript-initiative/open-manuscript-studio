@@ -838,6 +838,15 @@ function runMarks(run: Element): TiptapMark[] {
   if (enabledWordProperty(properties, 'b')) marks.push({ type: 'bold' });
   if (enabledWordProperty(properties, 'i')) marks.push({ type: 'italic' });
   if (enabledWordProperty(properties, 'strike')) marks.push({ type: 'strike' });
+  if (enabledWordProperty(properties, 'smallCaps')) marks.push({ type: 'omiSmallCaps' });
+  if (enabledWordProperty(properties, 'u')) marks.push({ type: 'omiUnderline' });
+  const fonts = directChildrenByLocalName(properties, 'rFonts')[0];
+  if (fonts) {
+    const family = ['hAnsi', 'ascii', 'eastAsia', 'cs']
+      .map((name) => attributeByLocalName(fonts, name)?.trim())
+      .find((value) => value && value.length <= 128 && !/[\u0000-\u001f\u007f]/.test(value));
+    if (family) marks.push({ type: 'omiSourceFont', attrs: { family } });
+  }
 
   const vertical = directChildrenByLocalName(properties, 'vertAlign')[0];
   const verticalValue = vertical ? attributeByLocalName(vertical, 'val') : undefined;
