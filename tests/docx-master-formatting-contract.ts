@@ -457,6 +457,9 @@ const directMarkCases: Record<string, { type: string; attrs: Record<string, unkn
 };
 
 const paragraphFormatCases: Record<string, Record<string, unknown>> = {
+  P12: { omiParagraphBackground: '#E2EFDA' },
+  P13: { omiParagraphBorders: JSON.stringify({ bottom: { style:'single', width:1, color:'#74243B', space:4 } }) },
+  P14: { omiParagraphTabs: JSON.stringify([{ position:340.15, alignment:'right', leader:'dot' }]) },
   P01: { omiAlign: 'left' }, P02: { omiAlign: 'center' },
   P03: { omiAlign: 'right' }, P04: { omiAlign: 'justify' },
   P05: { omiLeftIndent: 28.35 }, P06: { omiRightIndent: 56.7 },

@@ -217,3 +217,31 @@ test('shared character and paragraph icon panels edit independent properties and
   await expect(editor.locator('u[data-omi-underline-variant="double"]')).toHaveText('Select these words');
   await expect(paragraph).toHaveText('Select these words to format them.');
 });
+
+
+test('paragraph decoration icons edit independent background, border and tab definitions', async ({ page }) => {
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Paragraph formatting', exact: true }).click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  const paragraph = editor.locator('p').filter({ hasText: 'Select these words' });
+  await panel.getByLabel('Paragraph background', { exact:true }).fill('#e2efda');
+  await panel.getByRole('button',{name:'Apply: Paragraph background',exact:true}).click();
+  await expect(paragraph).toHaveAttribute('data-omiparagraphbackground','#E2EFDA');
+  await panel.getByRole('button',{name:'Borders',exact:true}).click();
+  await panel.getByRole('button',{name:'Apply: Borders',exact:true}).click();
+  await expect(paragraph).toHaveAttribute('data-omiparagraphborders',JSON.stringify({bottom:{style:'single',width:1,color:'#000000',space:4}}));
+  await panel.getByRole('button',{name:'Tab stops',exact:true}).click();
+  await panel.getByLabel('Position (pt)',{exact:true}).fill('340.15');
+  await panel.getByLabel('Alignment',{exact:true}).selectOption('right');
+  await panel.getByLabel('Leader',{exact:true}).selectOption('dot');
+  await panel.getByRole('button',{name:'Add: Tab stops',exact:true}).click();
+  await expect(paragraph).toHaveAttribute('data-omiparagraphtabs',JSON.stringify([{position:340.15,alignment:'right',leader:'dot'}]));
+  await expect(paragraph).toHaveAttribute('data-omiparagraphbackground','#E2EFDA');
+  await panel.getByRole('button',{name:'Remove: 340.15 pt',exact:true}).click();
+  await expect(paragraph).not.toHaveAttribute('data-omiparagraphtabs',/./);
+  await expect(paragraph).toHaveAttribute('data-omiparagraphborders',/bottom/);
+  await panel.getByRole('button',{name:'Reset paragraph formatting',exact:true}).click();
+  await expect(paragraph).not.toHaveAttribute('data-omiparagraphbackground',/./);
+  await expect(paragraph).not.toHaveAttribute('data-omiparagraphborders',/./);
+  await expect(paragraph).toHaveText('Select these words to format them.');
+});

@@ -1,3 +1,4 @@
+import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
 import { OdtZip } from './odtZip';
 import { DOMParser as XmlParser, type Document as XmlDocument, type Element as XmlElement, type Node as XmlNode } from '@xmldom/xmldom';
@@ -265,6 +266,7 @@ function applyOdtTextStyle(
 
 function odtParagraphAttrs(name: string, styles: Map<string, XmlElement>): { attrs?: Record<string, unknown> } {
   const properties = new Map<string, string>();
+  let tabs: XmlElement | undefined;
   const seen = new Set<string>();
   const visit = (id: string) => {
     if (!id || seen.has(id)) return;
@@ -273,10 +275,25 @@ function odtParagraphAttrs(name: string, styles: Map<string, XmlElement>): { att
     if (!style) return;
     visit(style.getAttribute('style:parent-style-name') ?? '');
     const element = Array.from(style.children).find(item => item.localName === 'paragraph-properties');
-    if (element) for (const attribute of Array.from(element.attributes)) properties.set(attribute.name, attribute.value);
+    if (element) {
+      for (const attribute of Array.from(element.attributes)) properties.set(attribute.name, attribute.value);
+      tabs = Array.from(element.children).find(child=>child.localName==='tab-stops') ?? tabs;
+    }
   };
   visit(name);
   const attrs = readOdtParagraphProperties(key => properties.get(key));
+  if (tabs) {
+    const list = Array.from(tabs.children).filter(child=>child.localName==='tab-stop').map(child=>{
+      const raw=child.getAttribute('style:position') ?? '';
+      const match=raw.match(/^(\d+(?:\.\d+)?)(pt|mm|cm|in)$/);
+      const units: Record<string,number>={pt:1,mm:72/25.4,cm:72/2.54,in:72};
+      const type=child.getAttribute('style:type') ?? 'left';
+      const leader: Record<string,string>={'.':'dot','-':'hyphen','_':'underscore','·':'middleDot'};
+      return {position:match?Number(match[1])*units[match[2]!]!:NaN,alignment:type==='char'?'decimal':type,leader:leader[child.getAttribute('style:leader-text') ?? '']??'none'};
+    });
+    const value=normalizeParagraphValue('omiParagraphTabs',list);
+    if(value!==undefined) attrs.omiParagraphTabs=value;
+  }
   return Object.keys(attrs).length ? { attrs } : {};
 }
 
