@@ -2,7 +2,7 @@
  * metadata, never inserted into the editable paragraph text. */
 export const LIST_FORMATS = ['decimal','upperRoman','lowerRoman','upperLetter','lowerLetter','decimalZero','bullet','none'] as const;
 export type ListFormat = typeof LIST_FORMATS[number];
-export const LIST_ATTRIBUTE_NAMES = ['omiListFormat','omiListLabel','omiListId','omiListLevel','omiListStart','omiListLeft','omiListHanging'] as const;
+export const LIST_ATTRIBUTE_NAMES = ['omiListFormat','omiListLabel','omiListId','omiListLevel','omiListStart','omiListOverrideStart','omiListLeft','omiListHanging'] as const;
 export type ListAttribute = typeof LIST_ATTRIBUTE_NAMES[number];
 
 export function normalizeListAttribute(name: ListAttribute, value: unknown): string | number | undefined {
@@ -12,8 +12,8 @@ export function normalizeListAttribute(name: ListAttribute, value: unknown): str
   if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return undefined;
   const n = Number(value);
   if (!Number.isSafeInteger(n)) return undefined;
-  const min = name === 'omiListStart' ? 1 : 0;
-  const max = name === 'omiListLevel' ? 8 : name === 'omiListStart' ? 999999 : 40000;
+  const min = (name === 'omiListStart' || name === 'omiListOverrideStart') ? 1 : 0;
+  const max = name === 'omiListLevel' ? 8 : (name === 'omiListStart' || name === 'omiListOverrideStart') ? 999999 : 40000;
   return n >= min && n <= max ? n : undefined;
 }
 export function listPresentation(attrs: Record<string, unknown> | undefined): { type?: string; style?: string } {
