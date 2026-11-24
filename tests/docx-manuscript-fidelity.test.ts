@@ -8,6 +8,7 @@ import { buildOmiContainer } from '../src/services/omiContainer.ts';
 import { inspectOmiContainer } from '../src/services/omiContainerImport.ts';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import { registerMasterFormattingContract } from './docx-master-formatting-contract.ts';
 
 import {
   DOMParser as XmlDomParser,
@@ -725,8 +726,4 @@ test('DOCX export/reimport retains compound formatting and imported source typef
   }
 });
 
-// Explicit coverage inventory: TODO means the exact feature is not yet asserted,
-// not that Studio supports it or that a regression test has passed.
-for (const item of masterManifest.cases.filter(item => !exactMasterMarks[item.id])) {
-  test.todo('Master fixture exact formatting: ' + item.id + ' ' + item.feature);
-}
+registerMasterFormattingContract();
