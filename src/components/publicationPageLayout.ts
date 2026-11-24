@@ -342,6 +342,51 @@ export function publicationSectionFitWarnings(blocks: readonly PublicationFlowBl
   return sectionWarnings;
 }
 
+
+/**
+ * A DOM Range is a glyph/run box, not a typographic line box. Different
+ * inline fonts and superscripts can return several rectangles for one line.
+ * Page spacers must only be inserted between complete, safe lines.
+ */
+export function coalescePublicationTextLines(
+  fragments: readonly PublicationFlowLine[],
+  text: string,
+  lineHeight: number,
+): PublicationFlowLine[] {
+  const leading = positive(lineHeight, 1);
+  const clusters: { center: number; top: number; bottom: number; offset: number }[] = [];
+  for (const fragment of [...fragments].sort((a, b) => (a.top + a.height / 2) - (b.top + b.height / 2))) {
+    const center = fragment.top + fragment.height / 2;
+    const previous = clusters.at(-1);
+    if (previous && Math.abs(center - previous.center) <= leading * 0.45) {
+      previous.top = Math.min(previous.top, fragment.top);
+      previous.bottom = Math.max(previous.bottom, fragment.top + fragment.height);
+      previous.offset = Math.min(previous.offset, fragment.textOffset);
+    } else {
+      clusters.push({ center, top: fragment.top, bottom: fragment.top + fragment.height, offset: fragment.textOffset });
+    }
+  }
+  const result: PublicationFlowLine[] = [];
+  const wordCharacter = /[\p{L}\p{M}\p{N}]/u;
+  for (const cluster of clusters) {
+    const top = Math.max(0, Math.min(cluster.top, cluster.center - leading / 2));
+    const bottom = Math.max(cluster.bottom, cluster.center + leading / 2, top + leading);
+    const previous = result.at(-1);
+    const before = text.slice(0, cluster.offset).match(/.$/su)?.[0] ?? '';
+    const after = text.slice(cluster.offset).match(/^./su)?.[0] ?? '';
+    // Inserting a block widget at an automatic/soft hyphen can make the
+    // browser lose that hyphen. Keep both visual lines on the same sheet.
+    // Literal visible hyphens remain legal breakpoints.
+    const insideWord = (wordCharacter.test(before) || before === '\u00ad') && wordCharacter.test(after);
+    if (previous && (insideWord || cluster.offset <= previous.textOffset)) {
+      previous.height = Math.max(previous.top + previous.height, bottom) - previous.top;
+    } else {
+      result.push({ textOffset: cluster.offset, top, height: bottom - top });
+    }
+  }
+  return result;
+}
+
 function normalizeLines(
   lines: readonly PublicationFlowLine[] | undefined,
   blockHeight: number,
