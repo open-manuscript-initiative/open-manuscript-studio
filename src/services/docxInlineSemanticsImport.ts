@@ -76,6 +76,12 @@ async function readRichParagraphCandidates(file: File): Promise<RichParagraphCan
 
   const candidates: RichParagraphCandidate[] = [];
   for (const paragraph of structuredBodyParagraphs(body)) {
+    // This text-only enrichment cannot represent line breaks, tabs, or link/field
+    // boundaries. The structural importer already retains them; never replace
+    // those paragraphs (or queue them against an unrelated plain paragraph).
+    if (['br', 'cr', 'tab', 'hyperlink', 'fldSimple', 'fldChar', 'instrText'].some(
+      (name) => descendantsByLocalName(paragraph, name).length > 0,
+    )) continue;
     const segments = parseParagraphRuns(paragraph, styles);
     const text = segments.map((segment) => segment.text).join('');
     if (!text.trim()) continue;
@@ -128,6 +134,8 @@ function enrichPlanBlocks(
 function isSafeSimpleTextBlock(block: OmiBlock): boolean {
   if (block.visual) return false;
   if (block.type !== 'paragraph' && block.type !== 'quote') return false;
+  if (/"type"\s*:\s*"(?:hardBreak|omiTab|omiLink)"/.test(block.content)) return false;
+  if (storedPlainText(block.content).includes('\t')) return false;
   if (/"type"\s*:\s*"omi(?:Note|Citation|CrossReference)"/.test(block.content)) {
     return false;
   }

@@ -8,6 +8,7 @@ import { buildOmiContainer } from '../src/services/omiContainer.ts';
 import { inspectOmiContainer } from '../src/services/omiContainerImport.ts';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import { registerMasterFormattingContract } from './docx-master-formatting-contract.ts';
 
 import {
   DOMParser as XmlDomParser,
@@ -725,8 +726,27 @@ test('DOCX export/reimport retains compound formatting and imported source typef
   }
 });
 
-// Explicit coverage inventory: TODO means the exact feature is not yet asserted,
-// not that Studio supports it or that a regression test has passed.
-for (const item of masterManifest.cases.filter(item => !exactMasterMarks[item.id])) {
-  test.todo('Master fixture exact formatting: ' + item.id + ' ' + item.feature);
-}
+test('inline enrichment retains formatted manual breaks, tabs and external hyperlinks', async () => {
+  const file = makeDocx(
+    '<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>First line</w:t><w:br/><w:t>Second line</w:t><w:tab/><w:t>Value</w:t></w:r></w:p>'
+    + '<w:p><w:hyperlink r:id="rIdLink"><w:r><w:rPr><w:i/></w:rPr><w:t>Linked source</w:t></w:r></w:hyperlink></w:p>',
+    { relationships: '<Relationship Id="rIdLink" Target="https://example.org/source" TargetMode="External"/>' },
+  );
+  const plan = await parseDocxForStudio(file);
+  const blocks = plan.sections.flatMap(section => section.blocks);
+  const first = blocks.find(block => block.content.includes('First line'));
+  const second = blocks.find(block => block.content.includes('Linked source'));
+  assert.ok(first && second);
+  const firstDoc = JSON.parse(first.content) as MasterTextNode;
+  const secondDoc = JSON.parse(second.content) as MasterTextNode;
+  assert.ok(findNodeTypes(firstDoc).includes('hardBreak'));
+  assert.ok(collectText(firstDoc).includes('\t'));
+  const textNodes = findNodes(firstDoc, 'text') as MasterTextNode[];
+  assert.ok(hasMasterMark(textNodes.filter(node => node.text?.includes('First line')), { type: 'bold' }));
+  assert.ok(hasMasterMark(textNodes.filter(node => node.text?.includes('Second line')), { type: 'bold' }));
+  const linkNodes = findNodes(secondDoc, 'text') as MasterTextNode[];
+  assert.ok(hasMasterMark(linkNodes, { type: 'italic' }));
+  assert.ok(hasMasterMark(linkNodes, { type: 'omiLink', attrs: { href: 'https://example.org/source' } }));
+});
+
+registerMasterFormattingContract();
