@@ -245,3 +245,29 @@ test('paragraph decoration icons edit independent background, border and tab def
   await expect(paragraph).not.toHaveAttribute('data-omiparagraphborders',/./);
   await expect(paragraph).toHaveText('Select these words to format them.');
 });
+
+
+test('native list numbering controls set Roman format, start, custom label and explicit restart', async ({page}) => {
+  const {editor,toolbar} = await openToolbar(page);
+  await toolbar.getByRole('button',{name:'Paragraph formatting',exact:true}).click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  await panel.getByRole('button',{name:'Numbered list',exact:true}).click();
+  const list = editor.locator('ol').filter({hasText:'Select these words'});
+  await expect(list).toHaveCount(1);
+  await selectText(editor);
+  if (!(await panel.isVisible())) await toolbar.getByRole('button',{name:'Paragraph formatting',exact:true}).click();
+  await panel.getByRole('button',{name:'List numbering',exact:true}).click();
+  await panel.getByLabel('Number format',{exact:true}).selectOption('upperRoman');
+  await panel.getByLabel('Start at',{exact:true}).fill('3');
+  await panel.getByLabel('Number label (%1–%9)',{exact:true}).fill('Article %1)');
+  await panel.getByRole('button',{name:'Apply: List numbering',exact:true}).click();
+  await expect(list).toHaveAttribute('data-omilistformat','upperRoman');
+  await expect(list).toHaveAttribute('start','3');
+  await expect(list).toHaveAttribute('data-omilistlabel','Article %1)');
+  const previous = await list.getAttribute('data-omilistid');
+  expect(previous).toBeTruthy();
+  await panel.getByRole('button',{name:'Restart sequence',exact:true}).click();
+  await expect(list).not.toHaveAttribute('data-omilistid',previous!);
+  await expect(list).toHaveAttribute('data-omilistoverridestart','3');
+  await expect(list.locator('li')).toHaveText('Select these words to format them.');
+});

@@ -1,3 +1,4 @@
+import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
@@ -68,11 +69,10 @@ interface WordStyle {
 interface WordListInfo {
   level: number;
   ordered: boolean;
+  attrs: Record<string, unknown>;
 }
 
-interface ParsedListParagraph {
-  level: number;
-  ordered: boolean;
+interface ParsedListParagraph extends WordListInfo {
   content: TiptapNode[];
 }
 
@@ -972,6 +972,7 @@ function consumeList(
   const ordered = first?.ordered ?? false;
   const node: TiptapNode = {
     type: ordered ? 'orderedList' : 'bulletList',
+    attrs: first?.attrs,
     content: [],
   };
   let index = startIndex;
@@ -989,7 +990,7 @@ function consumeList(
       continue;
     }
 
-    if (item.ordered !== ordered) break;
+    if (item.ordered !== ordered || item.attrs.omiListId !== first?.attrs.omiListId) break;
     node.content?.push({
       type: 'listItem',
       content: [{ type: 'paragraph', content: item.content }],
@@ -1024,57 +1025,85 @@ async function readStyles(archive: DocxZipArchive): Promise<Map<string, WordStyl
   return styles;
 }
 
-async function readNumbering(
-  archive: DocxZipArchive,
-): Promise<Map<string, Map<number, boolean>>> {
+type WordNumbering = Map<string, Map<number, Record<string, unknown>>>;
+
+function readNumberingLevel(level: Element): Record<string, unknown> {
+  const read = (name: string) => {
+    const child = directChildrenByLocalName(level,name)[0];
+    return child ? attributeByLocalName(child,'val') : undefined;
+  };
+  const attrs: Record<string, unknown> = {};
+  const set = (name: Parameters<typeof normalizeListAttribute>[0], value: unknown) => {
+    const normalized = normalizeListAttribute(name,value);
+    if (normalized !== undefined) attrs[name] = normalized;
+  };
+  set('omiListFormat',read('numFmt'));
+  set('omiListLabel',read('lvlText'));
+  set('omiListStart',read('start'));
+  const pPr = directChildrenByLocalName(level,'pPr')[0];
+  const ind = pPr && directChildrenByLocalName(pPr,'ind')[0];
+  if (ind) {
+    set('omiListLeft',attributeByLocalName(ind,'left') ?? attributeByLocalName(ind,'start'));
+    set('omiListHanging',attributeByLocalName(ind,'hanging'));
+  }
+  return attrs;
+}
+
+async function readNumbering(archive: DocxZipArchive): Promise<WordNumbering> {
   if (!archive.has('word/numbering.xml')) return new Map();
   const document = parseXml(await archive.text('word/numbering.xml'));
-  const abstractFormats = new Map<string, Map<number, boolean>>();
-
-  for (const abstract of descendantsByLocalName(document, 'abstractNum')) {
-    const id = attributeByLocalName(abstract, 'abstractNumId');
+  const abstractFormats: WordNumbering = new Map();
+  for (const abstract of descendantsByLocalName(document,'abstractNum')) {
+    const id = attributeByLocalName(abstract,'abstractNumId');
     if (!id) continue;
-    const levels = new Map<number, boolean>();
-    for (const level of directChildrenByLocalName(abstract, 'lvl')) {
-      const ilvl = Number(attributeByLocalName(level, 'ilvl') ?? 0);
-      const format = firstDescendant(level, 'numFmt');
-      const value = format ? attributeByLocalName(format, 'val') : undefined;
-      levels.set(ilvl, !/^(?:bullet|none)$/i.test(value ?? 'decimal'));
+    const levels = new Map<number,Record<string,unknown>>();
+    for (const level of directChildrenByLocalName(abstract,'lvl')) {
+      const index = normalizeListAttribute('omiListLevel',attributeByLocalName(level,'ilvl') ?? 0);
+      if (typeof index === 'number') levels.set(index,readNumberingLevel(level));
     }
-    abstractFormats.set(id, levels);
+    abstractFormats.set(id,levels);
   }
-
-  const result = new Map<string, Map<number, boolean>>();
-  for (const num of descendantsByLocalName(document, 'num')) {
-    const numId = attributeByLocalName(num, 'numId');
-    const abstractIdElement = directChildrenByLocalName(num, 'abstractNumId')[0];
-    const abstractId = abstractIdElement
-      ? attributeByLocalName(abstractIdElement, 'val')
-      : undefined;
-    if (numId && abstractId && abstractFormats.has(abstractId)) {
-      result.set(numId, abstractFormats.get(abstractId) ?? new Map());
+  const result: WordNumbering = new Map();
+  for (const num of descendantsByLocalName(document,'num')) {
+    const id = attributeByLocalName(num,'numId');
+    const abstract = directChildrenByLocalName(num,'abstractNumId')[0];
+    const abstractId = abstract && attributeByLocalName(abstract,'val');
+    if (!id || !abstractId) continue;
+    const levels = new Map<number, Record<string, unknown>>([...(abstractFormats.get(abstractId) ?? [])].map(([level,attrs])=>[level,{...attrs}]));
+    for (const override of directChildrenByLocalName(num,'lvlOverride')) {
+      const index = normalizeListAttribute('omiListLevel',attributeByLocalName(override,'ilvl'));
+      if (typeof index !== 'number') continue;
+      const level = directChildrenByLocalName(override,'lvl')[0];
+      const start = directChildrenByLocalName(override,'startOverride')[0];
+      const attrs = {...levels.get(index),...(level ? readNumberingLevel(level) : {})};
+      const value = start && normalizeListAttribute('omiListStart',attributeByLocalName(start,'val'));
+      if (value !== undefined) { attrs.omiListStart = value; attrs.omiListOverrideStart = value; }
+      levels.set(index,attrs);
     }
+    // Scope source numId values to this import to avoid collisions when
+    // independently imported documents are subsequently combined.
+    const group = crypto.randomUUID();
+    for (const attrs of levels.values()) attrs.omiListId = group;
+    result.set(id,levels);
   }
-
   return result;
 }
 
-function paragraphListInfo(
-  paragraph: Element,
-  numbering: Map<string, Map<number, boolean>>,
-): WordListInfo | undefined {
-  const pPr = directChildrenByLocalName(paragraph, 'pPr')[0];
-  const numPr = pPr ? directChildrenByLocalName(pPr, 'numPr')[0] : undefined;
+function paragraphListInfo(paragraph: Element, numbering: WordNumbering): WordListInfo | undefined {
+  const pPr = directChildrenByLocalName(paragraph,'pPr')[0];
+  const numPr = pPr && directChildrenByLocalName(pPr,'numPr')[0];
   if (!numPr) return undefined;
-  const numIdElement = directChildrenByLocalName(numPr, 'numId')[0];
-  const levelElement = directChildrenByLocalName(numPr, 'ilvl')[0];
-  const numId = numIdElement ? attributeByLocalName(numIdElement, 'val') : undefined;
-  if (!numId || numId === '0') return undefined;
-  const level = Math.max(0, Number(levelElement ? attributeByLocalName(levelElement, 'val') : 0) || 0);
-  return {
-    level,
-    ordered: numbering.get(numId)?.get(level) ?? true,
-  };
+  const idElement = directChildrenByLocalName(numPr,'numId')[0];
+  const levelElement = directChildrenByLocalName(numPr,'ilvl')[0];
+  const id = idElement && attributeByLocalName(idElement,'val');
+  if (!id || id === '0') return undefined;
+  const rawLevel = normalizeListAttribute('omiListLevel',levelElement ? attributeByLocalName(levelElement,'val') : 0);
+  const level = typeof rawLevel === 'number' ? rawLevel : 0;
+  const definition = numbering.get(id)?.get(level);
+  const ordered = definition?.omiListFormat !== 'bullet' && definition?.omiListFormat !== 'none';
+  const attrs: Record<string,unknown> = {...definition,omiListLevel:level};
+  if (ordered && typeof definition?.omiListStart === 'number' && definition.omiListStart !== 1) attrs.start = definition.omiListStart;
+  return {level,ordered,attrs};
 }
 
 function resolveParagraphStyle(
@@ -1384,10 +1413,6 @@ function descendantsByLocalName(root: Document | Element, name: string): Element
 
 function directChildrenByLocalName(root: Element, name: string): Element[] {
   return Array.from(root.children).filter((element) => element.localName === name);
-}
-
-function firstDescendant(root: Element, name: string): Element | undefined {
-  return descendantsByLocalName(root, name)[0];
 }
 
 function attributeByLocalName(element: Element, name: string): string | undefined {
