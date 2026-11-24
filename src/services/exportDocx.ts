@@ -5,6 +5,7 @@ import { officeMetadataConversion, metadataConversionWarnings, type MetadataConv
 import {
   extractOmiInlineRuns,
   inlineLanguageFromMarks,
+  inlineSourceFontFamilyFromMarks,
   semanticKindsFromMarks,
   type OmiInlineRun,
   type OmiInlineSemanticKind,
@@ -282,6 +283,7 @@ function renderJsonNode(
       text: node.text,
       semantics: semanticKindsFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
+      sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks),
     }];
   }
   if (node.type === 'hardBreak') return [{ text: '\n', semantics: [] }];
@@ -322,8 +324,26 @@ function wordRun(run: OmiInlineRun): string {
   const lang = run.language
     ? `<w:lang w:val="${xml(run.language)}"/>`
     : '';
-  const rPr = styleId || lang
-    ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${lang}</w:rPr>`
+  // A named character style represents only one semantic (or strong+emphasis).
+  // Write the remaining semantics as direct Word properties rather than losing them.
+  const styleSemantics = styleId === 'OMIStrongEmphasis'
+    ? ['strong', 'emphasis']
+    : run.semantics.filter((kind) => WORD_STYLE_IDS[kind] === styleId);
+  const extras = run.semantics.filter((kind) => !styleSemantics.includes(kind));
+  const properties: Partial<Record<OmiInlineSemanticKind, string>> = {
+    strong: '<w:b/>',
+    emphasis: '<w:i/>',
+    strike: '<w:strike/>',
+    underline: '<w:u w:val="single"/>',
+    'small-caps': '<w:smallCaps/>',
+    superscript: '<w:vertAlign w:val="superscript"/>',
+    subscript: '<w:vertAlign w:val="subscript"/>',
+  };
+  const family = run.sourceFontFamily || (extras.includes('code') ? 'Courier New' : undefined);
+  const font = family ? `<w:rFonts w:ascii="${xml(family)}" w:hAnsi="${xml(family)}"/>` : '';
+  const direct = extras.map((kind) => properties[kind] ?? '').join('');
+  const rPr = styleId || lang || font || direct
+    ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${font}${direct}${lang}</w:rPr>`
     : '';
 
   return run.text
