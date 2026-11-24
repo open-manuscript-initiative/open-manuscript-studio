@@ -1,3 +1,4 @@
+import { tableMergeLayout } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
@@ -43,6 +44,7 @@ import type {
   OmiCitationCluster,
   OmiImportProvenance,
   OmiTableCellFormat,
+  OmiTableCellMerge,
   OmiSection,
 } from '../types/omi';
 
@@ -224,6 +226,7 @@ export async function parseDocxManuscript(
           createTableBlock(table.cells, {
             headerRows: table.headerRows,
             cellFormats: table.cellFormats,
+            cellMerges: table.cellMerges,
             provenance,
           }),
         );
@@ -1138,31 +1141,53 @@ function parseWordTable(table: Element): {
   headerRows: number;
   mergedCells: boolean;
   cellFormats: Record<string, OmiTableCellFormat>;
+  cellMerges: OmiTableCellMerge[];
 } {
   const rows = directChildrenByLocalName(table, 'tr');
   const cellFormats: Record<string, OmiTableCellFormat> = {};
   let mergedCells = false;
-  const cells = rows.map((row, rowIndex) =>
-    directChildrenByLocalName(row, 'tc').map((cell, columnIndex) => {
-      const properties = directChildrenByLocalName(cell, 'tcPr')[0];
-      const direction = properties && directChildrenByLocalName(properties, 'textDirection')[0];
-      const value = direction && attributeByLocalName(direction, 'val');
-      if (value === 'btLr' || value === 'tbRl') cellFormats[`${rowIndex}:${columnIndex}`] = {textRotation: value === 'btLr' ? -90 : 90};
-      if (
-        descendantsByLocalName(cell, 'gridSpan').length ||
-        descendantsByLocalName(cell, 'vMerge').length
-      ) {
-        mergedCells = true;
+  const merges: OmiTableCellMerge[] = [];
+  let active = new Map<number,OmiTableCellMerge>();
+  const cells = rows.map((row,rowIndex)=>{
+    const next = new Map<number,OmiTableCellMerge>();
+    const values:string[]=[];
+    const rowProperties=directChildrenByLocalName(row,'trPr')[0];
+    const before=rowProperties && directChildrenByLocalName(rowProperties,'gridBefore')[0];
+    const offset=before ? Number(attributeByLocalName(before,'val')) : 0;
+    if(Number.isSafeInteger(offset) && offset>0 && offset<=1000) for(let i=0;i<offset;i++) values.push('');
+    for(const cell of directChildrenByLocalName(row,'tc')){
+      const columnIndex=values.length;
+      const properties=directChildrenByLocalName(cell,'tcPr')[0];
+      const prop=(name:string)=>properties && directChildrenByLocalName(properties,name)[0];
+      const direction=prop('textDirection');
+      const value=direction && attributeByLocalName(direction,'val');
+      if(value==='btLr'||value==='tbRl') cellFormats[`${rowIndex}:${columnIndex}`]={textRotation:value==='btLr'?-90:90};
+      const span=prop('gridSpan');
+      const rawSpan=span?Number(attributeByLocalName(span,'val')):1;
+      const colSpan=Number.isSafeInteger(rawSpan)&&rawSpan>=1&&rawSpan<=1000?rawSpan:1;
+      if(rawSpan!==colSpan) mergedCells=true;
+      if(values.length+colSpan>10000 || (rowIndex+1)*(values.length+colSpan)>10000) throw new Error('Table exceeds the 10000-cell import limit.');
+      const text=descendantsByLocalName(cell,'p').map(paragraph=>paragraphPlainText(paragraph).trim()).filter(Boolean).join('\n');
+      const vertical=prop('vMerge');
+      const mode=vertical?(attributeByLocalName(vertical,'val')??'continue'):undefined;
+      const prior=active.get(columnIndex);
+      if(mode==='continue' && prior && prior.colSpan===colSpan && text===''){
+        prior.rowSpan++;
+        next.set(columnIndex,prior);
+      }else{
+        if(mode==='continue') mergedCells=true;
+        if(mode==='restart'||colSpan>1){
+          const merge={row:rowIndex,column:columnIndex,rowSpan:1,colSpan};
+          merges.push(merge);
+          if(mode==='restart') next.set(columnIndex,merge);
+        }
       }
-      // Keep paragraph boundaries inside cells. A cell can contain separate
-      // paragraphs (for example, a citation followed by its annotation); a
-      // plain concatenation silently changes their meaning during import.
-      return descendantsByLocalName(cell, 'p')
-        .map((paragraph) => paragraphPlainText(paragraph).trim())
-        .filter(Boolean)
-        .join('\n');
-    }),
-  );
+      values.push(text);
+      for(let i=1;i<colSpan;i++) values.push('');
+    }
+    active=next;
+    return values;
+  });
 
   // Word commonly marks the first row as a header through the table style's
   // tblLook instead of an explicit w:tblHeader row property. Preserve both
@@ -1186,7 +1211,12 @@ function parseWordTable(table: Element): {
     } else if (headerRows !== 0 || !firstRowStyledAsHeader) break;
     headerRows++;
   }
-  return { cells: rectangularize(cells), headerRows, mergedCells, cellFormats };
+  const width=cells.reduce((max,row)=>Math.max(max,row.length),0);
+  if(width*cells.length>10000) throw new Error('Table exceeds the 10000-cell import limit.');
+  const matrix=rectangularize(cells);
+  const candidates=merges.filter(m=>m.rowSpan>1||m.colSpan>1);
+  const cellMerges=tableMergeLayout(matrix,candidates,headerRows).merges;
+  return {cells:matrix,headerRows,mergedCells:mergedCells||cellMerges.length!==candidates.length,cellFormats,cellMerges};
 }
 
 function parseRelationships(xmlText: string): Map<string, Relationship> {
