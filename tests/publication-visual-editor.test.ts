@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { screenImageBudget, screenImageRendition, screenRenditionSize } from '../src/services/screenImageRendition.ts';
 
-import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
+import { coalescePublicationTextLines, paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
 import {
   resolvePublicationParagraphStyle,
   type PublicationParagraphStyleCollection,
@@ -845,4 +845,52 @@ test('presentation loads screen-sized raster renditions without affecting the pr
   const vector = await screenImageRendition(svg, 'image/svg+xml', 640, { width: 3000, height: 2000 });
   assert.equal(vector.blob.type, 'image/svg+xml');
   assert.equal(vector.blob.size, svg.length);
+});
+
+test('print pagination coalesces different inline glyph boxes into a single full line', () => {
+  const lines = coalescePublicationTextLines([
+    { top: 2, height: 14, textOffset: 0 },
+    { top: 0, height: 10, textOffset: 4 },
+    { top: 22, height: 14, textOffset: 8 },
+  ], 'First a second', 20);
+  assert.equal(lines.length, 2);
+  assert.equal(lines[0]!.textOffset, 0);
+  assert.equal(lines[1]!.textOffset, 8);
+  assert.ok(lines.every((line) => line.height >= 20));
+});
+
+test('automatic hyphenation does not produce a bare mid-word page break', () => {
+  const lines = coalescePublicationTextLines([
+    { top: 0, height: 16, textOffset: 0 },
+    { top: 20, height: 16, textOffset: 3 },
+    { top: 40, height: 16, textOffset: 6 },
+  ], 'révén további', 20);
+  assert.deepEqual(lines.map((line) => line.textOffset), [0, 6]);
+  assert.ok(lines[0]!.height >= 40 - 2);
+  const layout = paginatePublicationBlocks([
+    { top: 0, height: 30 },
+    { top: 30, height: 60, splittable: true, lines },
+  ], 65, 20);
+  assert.equal(layout.flowBreaks.some((point) => point.textOffset === 3), false);
+});
+
+test('literal hyphens remain legal line boundaries', () => {
+  const lines = coalescePublicationTextLines([
+    { top: 0, height: 16, textOffset: 0 },
+    { top: 20, height: 16, textOffset: 4 },
+  ], 'well-known', 20);
+  assert.deepEqual(lines.map((line) => line.textOffset), [0, 4]);
+});
+
+test('full line geometry leaves space for a footnote at a page boundary', () => {
+  const lines = coalescePublicationTextLines([
+    { top: 2, height: 12, textOffset: 0 },
+    { top: 22, height: 12, textOffset: 6 },
+  ], 'First second', 20);
+  lines[1]!.noteIds = ['note'];
+  const layout = paginatePublicationBlocks([
+    { top: 0, height: 40, splittable: true, lines },
+  ], 60, 20, { heights: new Map([['note', 20]]), lineHeight: 10, separatorHeight: 5 });
+  assert.equal(layout.flowBreaks[0]?.textOffset, 6);
+  assert.equal(layout.pageNotes?.[1]?.[0]?.id, 'note');
 });
