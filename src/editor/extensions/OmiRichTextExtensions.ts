@@ -1,3 +1,4 @@
+import { DIRECT_FORMAT_NAMES, normalizeDirectValue, directFormattingCss, normalizeUnderlineStyle, underlineCss } from '../../model/directFormatting';
 import {
   Extension,
   Mark,
@@ -174,7 +175,9 @@ export const OmiSmallCapsExtension = Mark.create({
 
 export const OmiUnderlineExtension = Mark.create({
   name: 'omiUnderline',
-
+  addAttributes() {
+    return { variant: { default: null, parseHTML: (element: HTMLElement) => normalizeUnderlineStyle(element.getAttribute('data-omi-underline-variant')) ?? null } };
+  },
   parseHTML() {
     return [
       { tag: 'u' },
@@ -186,8 +189,9 @@ export const OmiUnderlineExtension = Mark.create({
     ];
   },
 
-  renderHTML() {
-    return ['u', { 'data-omi-underline': 'true' }, 0];
+  renderHTML({ mark }) {
+    const variant = normalizeUnderlineStyle(mark.attrs.variant);
+    return ['u', { 'data-omi-underline': 'true', ...(variant ? { 'data-omi-underline-variant': variant, style: underlineCss(variant) } : {}) }, 0];
   },
 });
 
@@ -279,6 +283,19 @@ export const OmiBlockTypeMenuExtension = Extension.create({
   },
 });
 
+/** Individual marks let editing one attribute preserve all other selected formatting. */
+export const OMI_DIRECT_FORMATTING_EXTENSIONS = DIRECT_FORMAT_NAMES.map(name => Mark.create({
+  name,
+  addAttributes() {
+    return { value: { default: null, parseHTML: (element: HTMLElement) => normalizeDirectValue(name, element.getAttribute('data-omi-format-value')) ?? null } };
+  },
+  parseHTML() { return [{ tag: 'span[data-omi-format="' + name + '"]' }]; },
+  renderHTML({ mark }) {
+    const value = normalizeDirectValue(name, mark.attrs.value);
+    return value === undefined ? ['span', {}, 0] : ['span', { 'data-omi-format': name, 'data-omi-format-value': String(value), style: directFormattingCss(name, value) }, 0];
+  },
+}));
+
 export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiManuscriptBoundaryEditingExtension,
   OmiManuscriptSelectionExtension,
@@ -289,6 +306,7 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiUnderlineExtension,
   OmiLanguageExtension,
   OmiSourceFontExtension,
+  ...OMI_DIRECT_FORMATTING_EXTENSIONS,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
@@ -307,6 +325,7 @@ export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
   OmiUnderlineExtension,
   OmiLanguageExtension,
   OmiSourceFontExtension,
+  ...OMI_DIRECT_FORMATTING_EXTENSIONS,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
