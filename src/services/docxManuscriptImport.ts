@@ -844,7 +844,7 @@ function runMarks(run: Element): TiptapMark[] {
   if (fonts) {
     const family = ['hAnsi', 'ascii', 'eastAsia', 'cs']
       .map((name) => attributeByLocalName(fonts, name)?.trim())
-      .find((value) => value && value.length <= 128 && !/[\u0000-\u001f\u007f]/.test(value));
+      .find((value) => value && value.length <= 128 && Array.from(value).every((character) => { const code = character.charCodeAt(0); return code >= 32 && code !== 127; }));
     if (family) marks.push({ type: 'omiSourceFont', attrs: { family } });
   }
 
