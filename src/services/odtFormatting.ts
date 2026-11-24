@@ -1,5 +1,5 @@
 import { normalizeDirectValue, type DirectFormat } from '../model/directFormatting';
-import { normalizeParagraphValue, type ParagraphFormat } from '../model/directParagraphFormatting';
+import { normalizeParagraphValue, paragraphBorders, BORDER_SIDES, type ParagraphFormat } from '../model/directParagraphFormatting';
 import type { OmiInlineRun } from '../model/inlineSemantics';
 import { normalizeInlineLanguageTag } from '../model/richText';
 
@@ -47,6 +47,12 @@ export function odtCharacterProperties(run: OmiInlineRun): Properties {
 export function odtParagraphProperties(attrs: Record<string, unknown> | undefined): Properties {
   const p: Properties = {};
   const v = (name: ParagraphFormat) => normalizeParagraphValue(name, attrs?.[name]);
+  const background = v('omiParagraphBackground');
+  if (typeof background === 'string') p['fo:background-color'] = background;
+  for (const [side,b] of Object.entries(paragraphBorders(attrs))) {
+    p['fo:border-' + side] = b.style === 'nil' ? 'none' : b.width + 'pt ' + (b.style === 'single' ? 'solid' : b.style) + ' ' + b.color;
+    if (b.style !== 'nil') p['fo:padding-' + side] = b.space + 'pt';
+  }
   if (v('omiAlign')) p['fo:text-align'] = String(v('omiAlign'));
   for (const [name, property] of [
     ['omiLeftIndent','fo:margin-left'], ['omiRightIndent','fo:margin-right'], ['omiFirstLineIndent','fo:text-indent'],
@@ -78,6 +84,15 @@ const lengthPt = (raw: string | undefined): number | undefined => {
 export function readOdtParagraphProperties(read: (name: string) => string | undefined): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   const add = (name: ParagraphFormat, raw: unknown) => { const v = normalizeParagraphValue(name, raw); if (v !== undefined) result[name] = v; };
+  add('omiParagraphBackground',read('fo:background-color'));
+  const borders: Record<string,unknown> = {};
+  for (const side of BORDER_SIDES) {
+    const raw = read('fo:border-' + side) ?? read('fo:border');
+    if (raw === 'none') { borders[side] = {style:'nil',width:1,color:'#000000',space:0}; continue; }
+    const match = raw?.match(/^(\S+)\s+(solid|double|dotted|dashed)\s+(#[0-9a-f]{6})$/i);
+    if (match) borders[side] = {width:lengthPt(match[1]),style:match[2] === 'solid'?'single':match[2],color:match[3],space:lengthPt(read('fo:padding-'+side) ?? read('fo:padding')) ?? 0};
+  }
+  if (Object.keys(borders).length) add('omiParagraphBorders',borders);
   const alignment = read('fo:text-align');
   add('omiAlign', alignment === 'start' ? 'left' : alignment === 'end' ? 'right' : alignment);
   for (const [name, property] of [
