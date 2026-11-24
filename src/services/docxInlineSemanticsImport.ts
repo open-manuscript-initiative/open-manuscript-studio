@@ -1,4 +1,4 @@
-import { readWordParagraphFormatting } from '../model/directParagraphFormatting';
+import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import {
   wordCharacterStyleSemantics,
@@ -94,6 +94,10 @@ async function readRichParagraphCandidates(file: File): Promise<RichParagraphCan
       const item = directChildrenByLocalName(pPr, property)[0];
       return item ? attributeByLocalName(item, attribute) : undefined;
     }, property => directChildrenByLocalName(pPr, property).length > 0) : {};
+    if (pPr) Object.assign(attrs, readWordParagraphDecoration((parent, name) => {
+      const container = directChildrenByLocalName(pPr, parent)[0];
+      return container ? directChildrenByLocalName(container, name).map(element => Object.fromEntries(Array.from(element.attributes).map(attribute => [attribute.localName, attribute.value]))) : [];
+    }));
     candidates.push({
       text,
       content: JSON.stringify({
