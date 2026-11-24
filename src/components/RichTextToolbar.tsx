@@ -127,8 +127,8 @@ export function RichTextToolbar({
     const closeToolbar = () => {
       setPosition(null);
       setMoreOpen(false);
-      setDirectOpen(false);
-      setParagraphOpen(false);
+    setDirectOpen(false);
+    setParagraphOpen(false);
       setLinkOpen(false);
       setLinkError(false);
       setLanguageError(false);
@@ -358,15 +358,15 @@ export function RichTextToolbar({
     setLinkDraft(typeof href === 'string' ? href : '');
     setLinkError(false);
     setMoreOpen(false);
-      setDirectOpen(false);
-      setParagraphOpen(false);
+    setDirectOpen(false);
+    setParagraphOpen(false);
     setLinkOpen(true);
   }
 
   function closeExpandedMenu(): void {
     setMoreOpen(false);
-      setDirectOpen(false);
-      setParagraphOpen(false);
+    setDirectOpen(false);
+    setParagraphOpen(false);
     setLinkOpen(false);
     setLinkError(false);
     setLanguageError(false);
