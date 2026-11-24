@@ -1,0 +1,1012 @@
+{
+  "version": "2.0-advanced",
+  "source": "Independently authored minimal WordprocessingML specimens; generated on demand",
+  "cases": [
+    {
+      "id": "C24",
+      "group": "typography",
+      "feature": "Character width 80 percent",
+      "marker": "OMI-C24-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-C24-anchor</w:t></w:r></w:p><w:p><w:r><w:rPr><w:w w:val=\"80\"/></w:rPr><w:t>Árvíztűrő AV fi ffi</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "rPr/w",
+          "attrs": {
+            "val": "80"
+          }
+        }
+      ],
+      "parts": {},
+      "sample": "Árvíztűrő AV fi ffi"
+    },
+    {
+      "id": "C25",
+      "group": "typography",
+      "feature": "Kerning from 12 pt",
+      "marker": "OMI-C25-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-C25-anchor</w:t></w:r></w:p><w:p><w:r><w:rPr><w:kern w:val=\"24\"/></w:rPr><w:t>Árvíztűrő AV fi ffi</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "rPr/kern",
+          "attrs": {
+            "val": "24"
+          }
+        }
+      ],
+      "parts": {},
+      "sample": "Árvíztűrő AV fi ffi"
+    },
+    {
+      "id": "C26",
+      "group": "typography",
+      "feature": "Hidden text",
+      "marker": "OMI-C26-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-C26-anchor</w:t></w:r></w:p><w:p><w:r><w:rPr><w:vanish/></w:rPr><w:t>PRIVATE-HIDDEN-TEST</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "rPr/vanish",
+          "attrs": {}
+        }
+      ],
+      "parts": {},
+      "sample": "PRIVATE-HIDDEN-TEST"
+    },
+    {
+      "id": "C27",
+      "group": "typography",
+      "feature": "Standard and contextual ligatures",
+      "marker": "OMI-C27-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-C27-anchor</w:t></w:r></w:p><w:p><w:r><w:rPr><w14:ligatures w14:val=\"standardContextual\"/></w:rPr><w:t>Árvíztűrő AV fi ffi</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "rPr/ligatures",
+          "attrs": {
+            "val": "standardContextual"
+          }
+        }
+      ],
+      "parts": {},
+      "sample": "Árvíztűrő AV fi ffi"
+    },
+    {
+      "id": "C28",
+      "group": "multilingual",
+      "feature": "Decomposed Unicode and combining marks",
+      "marker": "OMI-C28-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-C28-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">á ö́ ἅ</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "r/t",
+          "attrs": {},
+          "text": "á ö́ ἅ"
+        }
+      ],
+      "parts": {},
+      "sample": "á ö́ ἅ",
+      "nativeSupported": true
+    },
+    {
+      "id": "P15",
+      "group": "typography",
+      "feature": "Widow/orphan control",
+      "marker": "OMI-P15-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-P15-anchor</w:t></w:r></w:p><w:p><w:pPr><w:widowControl w:val=\"1\"/></w:pPr><w:r><w:t xml:space=\"preserve\">Typographic paragraph P15</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Following paragraph P15</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/widowControl",
+          "attrs": {
+            "val": "1"
+          }
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "P16",
+      "group": "typography",
+      "feature": "Keep with next",
+      "marker": "OMI-P16-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-P16-anchor</w:t></w:r></w:p><w:p><w:pPr><w:keepNext/></w:pPr><w:r><w:t xml:space=\"preserve\">Typographic paragraph P16</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Following paragraph P16</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/keepNext",
+          "attrs": {}
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "P17",
+      "group": "typography",
+      "feature": "Keep paragraph lines together",
+      "marker": "OMI-P17-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-P17-anchor</w:t></w:r></w:p><w:p><w:pPr><w:keepLines/></w:pPr><w:r><w:t xml:space=\"preserve\">Typographic paragraph P17</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Following paragraph P17</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/keepLines",
+          "attrs": {}
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "P18",
+      "group": "typography",
+      "feature": "Page break before paragraph",
+      "marker": "OMI-P18-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-P18-anchor</w:t></w:r></w:p><w:p><w:pPr><w:pageBreakBefore/></w:pPr><w:r><w:t xml:space=\"preserve\">Typographic paragraph P18</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Following paragraph P18</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/pageBreakBefore",
+          "attrs": {}
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "P19",
+      "group": "typography",
+      "feature": "Automatic hyphenation",
+      "marker": "OMI-P19-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-P19-anchor</w:t></w:r></w:p><w:p><w:pPr><w:suppressAutoHyphens w:val=\"0\"/></w:pPr><w:r><w:t xml:space=\"preserve\">Typographic paragraph P19</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Following paragraph P19</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/suppressAutoHyphens",
+          "attrs": {
+            "val": "0"
+          }
+        },
+        {
+          "part": "word/settings.xml",
+          "path": "settings/autoHyphenation",
+          "attrs": {
+            "val": "1"
+          }
+        }
+      ],
+      "parts": {
+        "word/settings.xml": "<w:settings xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:autoHyphenation w:val=\"1\"/></w:settings>"
+      }
+    },
+    {
+      "id": "P20",
+      "group": "typography",
+      "feature": "Exact 14 pt line spacing",
+      "marker": "OMI-P20-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-P20-anchor</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:line=\"280\" w:lineRule=\"exact\"/></w:pPr><w:r><w:t xml:space=\"preserve\">Typographic paragraph P20</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Following paragraph P20</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/spacing",
+          "attrs": {
+            "line": "280",
+            "lineRule": "exact"
+          }
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "P21",
+      "group": "typography",
+      "feature": "At least 14 pt line spacing",
+      "marker": "OMI-P21-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-P21-anchor</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:line=\"280\" w:lineRule=\"atLeast\"/></w:pPr><w:r><w:t xml:space=\"preserve\">Typographic paragraph P21</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Following paragraph P21</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/spacing",
+          "attrs": {
+            "line": "280",
+            "lineRule": "atLeast"
+          }
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "S03",
+      "group": "styles-numbering",
+      "feature": "Inherited styles",
+      "marker": "OMI-S03-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-S03-anchor</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val=\"Derived\"/></w:pPr><w:r><w:t xml:space=\"preserve\">Inherited bold and italic</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/pStyle",
+          "attrs": {
+            "val": "Derived"
+          }
+        },
+        {
+          "part": "word/styles.xml",
+          "path": "style/basedOn",
+          "attrs": {
+            "val": "Base"
+          }
+        },
+        {
+          "part": "word/styles.xml",
+          "path": "style/rPr/b",
+          "attrs": {}
+        },
+        {
+          "part": "word/styles.xml",
+          "path": "style/rPr/i",
+          "attrs": {}
+        }
+      ],
+      "parts": {
+        "word/styles.xml": "<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:style w:type=\"paragraph\" w:styleId=\"Base\"><w:name w:val=\"Base\"/><w:rPr><w:b/></w:rPr></w:style><w:style w:type=\"paragraph\" w:styleId=\"Derived\"><w:name w:val=\"Derived\"/><w:basedOn w:val=\"Base\"/><w:next w:val=\"Body\"/><w:rPr><w:i/></w:rPr></w:style><w:style w:type=\"paragraph\" w:styleId=\"Body\"><w:name w:val=\"Body\"/></w:style></w:styles>"
+      }
+    },
+    {
+      "id": "S04",
+      "group": "styles-numbering",
+      "feature": "Next paragraph style",
+      "marker": "OMI-S04-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-S04-anchor</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val=\"Derived\"/></w:pPr><w:r><w:t xml:space=\"preserve\">Heading-like paragraph</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val=\"Body\"/></w:pPr><w:r><w:t xml:space=\"preserve\">Body after heading</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/styles.xml",
+          "path": "style/next",
+          "attrs": {
+            "val": "Body"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "pPr/pStyle",
+          "attrs": {
+            "val": "Body"
+          }
+        }
+      ],
+      "parts": {
+        "word/styles.xml": "<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:style w:type=\"paragraph\" w:styleId=\"Base\"><w:name w:val=\"Base\"/><w:rPr><w:b/></w:rPr></w:style><w:style w:type=\"paragraph\" w:styleId=\"Derived\"><w:name w:val=\"Derived\"/><w:basedOn w:val=\"Base\"/><w:next w:val=\"Body\"/><w:rPr><w:i/></w:rPr></w:style><w:style w:type=\"paragraph\" w:styleId=\"Body\"><w:name w:val=\"Body\"/></w:style></w:styles>"
+      }
+    },
+    {
+      "id": "S05",
+      "group": "styles-numbering",
+      "feature": "Direct formatting overrides inherited style",
+      "marker": "OMI-S05-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-S05-anchor</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val=\"Derived\"/></w:pPr><w:r><w:rPr><w:b w:val=\"0\"/></w:rPr><w:t>Not bold; still italic</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "pPr/pStyle",
+          "attrs": {
+            "val": "Derived"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "rPr/b",
+          "attrs": {
+            "val": "0"
+          }
+        },
+        {
+          "part": "word/styles.xml",
+          "path": "style/rPr/b",
+          "attrs": {}
+        }
+      ],
+      "parts": {
+        "word/styles.xml": "<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:style w:type=\"paragraph\" w:styleId=\"Base\"><w:name w:val=\"Base\"/><w:rPr><w:b/></w:rPr></w:style><w:style w:type=\"paragraph\" w:styleId=\"Derived\"><w:name w:val=\"Derived\"/><w:basedOn w:val=\"Base\"/><w:next w:val=\"Body\"/><w:rPr><w:i/></w:rPr></w:style><w:style w:type=\"paragraph\" w:styleId=\"Body\"><w:name w:val=\"Body\"/></w:style></w:styles>"
+      }
+    },
+    {
+      "id": "L06",
+      "group": "styles-numbering",
+      "feature": "True multilevel list",
+      "marker": "OMI-L06-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-L06-anchor</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"1\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">Level one</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"1\"/><w:numId w:val=\"1\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">Level two</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"2\"/><w:numId w:val=\"1\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">Level three</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "numPr/ilvl",
+          "attrs": {
+            "val": "1"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "numPr/ilvl",
+          "attrs": {
+            "val": "2"
+          }
+        },
+        {
+          "part": "word/numbering.xml",
+          "path": "lvl/lvlText",
+          "attrs": {
+            "val": "%1.%2.%3."
+          }
+        }
+      ],
+      "parts": {
+        "word/numbering.xml": "<w:numbering xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:abstractNum w:abstractNumId=\"1\"><w:multiLevelType w:val=\"multilevel\"/><w:lvl w:ilvl=\"0\"><w:start w:val=\"1\"/><w:numFmt w:val=\"decimal\"/><w:lvlText w:val=\"%1.\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"720\" w:hanging=\"360\"/></w:pPr></w:lvl><w:lvl w:ilvl=\"1\"><w:start w:val=\"1\"/><w:numFmt w:val=\"decimal\"/><w:lvlText w:val=\"%1.%2.\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"1440\" w:hanging=\"360\"/></w:pPr></w:lvl><w:lvl w:ilvl=\"2\"><w:start w:val=\"1\"/><w:numFmt w:val=\"decimal\"/><w:lvlText w:val=\"%1.%2.%3.\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"2160\" w:hanging=\"360\"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId=\"1\"><w:abstractNumId w:val=\"1\"/></w:num></w:numbering>"
+      }
+    },
+    {
+      "id": "L07",
+      "group": "styles-numbering",
+      "feature": "Restart numbering",
+      "marker": "OMI-L07-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-L07-anchor</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"1\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">First</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"1\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">Second</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">New sequence</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"2\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">Restart</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "numPr/numId",
+          "attrs": {
+            "val": "2"
+          }
+        },
+        {
+          "part": "word/numbering.xml",
+          "path": "lvlOverride/startOverride",
+          "attrs": {
+            "val": "1"
+          }
+        }
+      ],
+      "parts": {
+        "word/numbering.xml": "<w:numbering xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:abstractNum w:abstractNumId=\"1\"><w:multiLevelType w:val=\"multilevel\"/><w:lvl w:ilvl=\"0\"><w:start w:val=\"1\"/><w:numFmt w:val=\"decimal\"/><w:lvlText w:val=\"%1.\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"720\" w:hanging=\"360\"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId=\"1\"><w:abstractNumId w:val=\"1\"/></w:num><w:num w:numId=\"2\"><w:abstractNumId w:val=\"1\"/><w:lvlOverride w:ilvl=\"0\"><w:startOverride w:val=\"1\"/></w:lvlOverride></w:num></w:numbering>"
+      }
+    },
+    {
+      "id": "L08",
+      "group": "styles-numbering",
+      "feature": "Custom numbering label",
+      "marker": "OMI-L08-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-L08-anchor</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"1\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">Custom item</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/numbering.xml",
+          "path": "lvl/lvlText",
+          "attrs": {
+            "val": "Article %1)"
+          }
+        }
+      ],
+      "parts": {
+        "word/numbering.xml": "<w:numbering xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:abstractNum w:abstractNumId=\"1\"><w:multiLevelType w:val=\"multilevel\"/><w:lvl w:ilvl=\"0\"><w:start w:val=\"1\"/><w:numFmt w:val=\"decimal\"/><w:lvlText w:val=\"Article %1)\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"720\" w:hanging=\"360\"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId=\"1\"><w:abstractNumId w:val=\"1\"/></w:num></w:numbering>"
+      }
+    },
+    {
+      "id": "L09",
+      "group": "styles-numbering",
+      "feature": "Upper Roman numbering",
+      "marker": "OMI-L09-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-L09-anchor</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"1\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">Roman item</w:t></w:r></w:p><w:p><w:pPr><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"1\"/></w:numPr></w:pPr><w:r><w:t xml:space=\"preserve\">Next Roman item</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/numbering.xml",
+          "path": "lvl/numFmt",
+          "attrs": {
+            "val": "upperRoman"
+          }
+        }
+      ],
+      "parts": {
+        "word/numbering.xml": "<w:numbering xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:abstractNum w:abstractNumId=\"1\"><w:multiLevelType w:val=\"multilevel\"/><w:lvl w:ilvl=\"0\"><w:start w:val=\"1\"/><w:numFmt w:val=\"upperRoman\"/><w:lvlText w:val=\"%1.\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"720\" w:hanging=\"360\"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId=\"1\"><w:abstractNumId w:val=\"1\"/></w:num></w:numbering>"
+      }
+    },
+    {
+      "id": "F03",
+      "group": "notes-citations",
+      "feature": "Multiparagraph footnote",
+      "marker": "OMI-F03-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-F03-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Note anchor</w:t></w:r><w:r><w:footnoteReference w:id=\"1\"/></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "r/footnoteReference",
+          "attrs": {
+            "id": "1"
+          }
+        },
+        {
+          "part": "word/footnotes.xml",
+          "path": "footnote/p/r/t",
+          "attrs": {},
+          "text": "First note paragraph"
+        },
+        {
+          "part": "word/footnotes.xml",
+          "path": "footnote/p/r/t",
+          "attrs": {},
+          "text": "Second note paragraph"
+        }
+      ],
+      "parts": {
+        "word/footnotes.xml": "<w:footnotes xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:footnote w:type=\"separator\" w:id=\"-1\"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type=\"continuationSeparator\" w:id=\"0\"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id=\"1\"><w:p><w:r><w:t xml:space=\"preserve\">First note paragraph</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Second note paragraph</w:t></w:r></w:p></w:footnote></w:footnotes>"
+      }
+    },
+    {
+      "id": "F04",
+      "group": "notes-citations",
+      "feature": "Long footnote permitted to continue across pages",
+      "marker": "OMI-F04-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-F04-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Note anchor</w:t></w:r><w:r><w:footnoteReference w:id=\"1\"/></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/footnotes.xml",
+          "path": "footnote/p/pPr/keepLines",
+          "attrs": {
+            "val": "0"
+          }
+        },
+        {
+          "part": "word/footnotes.xml",
+          "path": "footnote/p/r/t",
+          "attrs": {},
+          "text": "FOOTNOTE-END"
+        }
+      ],
+      "parts": {
+        "word/footnotes.xml": "<w:footnotes xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:footnote w:type=\"separator\" w:id=\"-1\"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type=\"continuationSeparator\" w:id=\"0\"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id=\"1\"><w:p><w:pPr><w:keepLines w:val=\"0\"/></w:pPr><w:r><w:t xml:space=\"preserve\">FOOTNOTE-START Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. Long footnote material for pagination. </w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">FOOTNOTE-END</w:t></w:r></w:p></w:footnote></w:footnotes>"
+      },
+      "manual": "Render PDF and verify continuation on another page, with no overlap or lost text."
+    },
+    {
+      "id": "F05",
+      "group": "notes-citations",
+      "feature": "Footnote numbering restarts per section",
+      "marker": "OMI-F05-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-F05-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Note anchor</w:t></w:r><w:r><w:footnoteReference w:id=\"1\"/></w:r></w:p><w:p><w:pPr><w:sectPr><w:footnotePr><w:numRestart w:val=\"eachSect\"/></w:footnotePr><w:type w:val=\"nextPage\"/></w:sectPr></w:pPr></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "sectPr/footnotePr/numRestart",
+          "attrs": {
+            "val": "eachSect"
+          }
+        }
+      ],
+      "parts": {
+        "word/footnotes.xml": "<w:footnotes xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:footnote w:type=\"separator\" w:id=\"-1\"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type=\"continuationSeparator\" w:id=\"0\"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id=\"1\"><w:p><w:r><w:t xml:space=\"preserve\">Restartable footnote</w:t></w:r></w:p></w:footnote></w:footnotes>"
+      }
+    },
+    {
+      "id": "F06",
+      "group": "notes-citations",
+      "feature": "Star-marked funding note",
+      "marker": "OMI-F06-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-F06-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Note anchor</w:t></w:r><w:r><w:footnoteReference w:id=\"1\" w:customMarkFollows=\"1\"/><w:t>*</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "r/footnoteReference",
+          "attrs": {
+            "id": "1",
+            "customMarkFollows": "1"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "r/t",
+          "attrs": {},
+          "text": "*"
+        },
+        {
+          "part": "word/footnotes.xml",
+          "path": "footnote/p/r/t",
+          "attrs": {},
+          "text": "Funding disclosure"
+        }
+      ],
+      "parts": {
+        "word/footnotes.xml": "<w:footnotes xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:footnote w:type=\"separator\" w:id=\"-1\"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type=\"continuationSeparator\" w:id=\"0\"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id=\"1\"><w:p><w:r><w:t xml:space=\"preserve\">Funding disclosure</w:t></w:r></w:p></w:footnote></w:footnotes>"
+      }
+    },
+    {
+      "id": "F07",
+      "group": "notes-citations",
+      "feature": "Inline author note (Word interchange convention)",
+      "marker": "OMI-F07-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-F07-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Text with inline note</w:t></w:r></w:p><w:p><w:r><w:rPr><w:rStyle w:val=\"OMIInlineNote\"/></w:rPr><w:t>Inline author note</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "rPr/rStyle",
+          "attrs": {
+            "val": "OMIInlineNote"
+          }
+        },
+        {
+          "part": "word/styles.xml",
+          "path": "style/name",
+          "attrs": {
+            "val": "OMI Inline Note"
+          }
+        }
+      ],
+      "parts": {
+        "word/styles.xml": "<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:style w:type=\"character\" w:styleId=\"OMIInlineNote\"><w:name w:val=\"OMI Inline Note\"/><w:rPr><w:i/></w:rPr></w:style></w:styles>"
+      },
+      "manual": "Word has no native OMI author-note type; test mapping separately, not as a standardized OOXML note."
+    },
+    {
+      "id": "T02",
+      "group": "tables-graphics",
+      "feature": "Vertically merged cells",
+      "marker": "OMI-T02-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-T02-anchor</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w=\"9000\" w:type=\"dxa\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"4500\"/><w:gridCol w:w=\"4500\"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:vMerge w:val=\"restart\"/></w:tcPr><w:p><w:r><w:t xml:space=\"preserve\">Merged</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">A</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:tc><w:tcPr><w:vMerge/></w:tcPr><w:p><w:r><w:t xml:space=\"preserve\"></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">B</w:t></w:r></w:p></w:tc></w:tr></w:tbl>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "tcPr/vMerge",
+          "attrs": {
+            "val": "restart"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "tcPr/vMerge",
+          "attrs": {}
+        },
+        {
+          "part": "word/document.xml",
+          "path": "tc/p/r/t",
+          "attrs": {},
+          "text": "B"
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "T03",
+      "group": "tables-graphics",
+      "feature": "Repeating table header",
+      "marker": "OMI-T03-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-T03-anchor</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w=\"9000\" w:type=\"dxa\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"4500\"/><w:gridCol w:w=\"4500\"/></w:tblGrid><w:tr><w:trPr><w:tblHeader/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Header A</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Header B</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">A</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">B</w:t></w:r></w:p></w:tc></w:tr></w:tbl>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "trPr/tblHeader",
+          "attrs": {}
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "T04",
+      "group": "tables-graphics",
+      "feature": "Multipage table, non-splitting rows",
+      "marker": "OMI-T04-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-T04-anchor</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w=\"9000\" w:type=\"dxa\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"4500\"/><w:gridCol w:w=\"4500\"/></w:tblGrid><w:tr><w:trPr><w:tblHeader/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Repeated header</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Value</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 1</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 1</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 2</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 2</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 3</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 3</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 4</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 4</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 5</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 5</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 6</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 6</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 7</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 7</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 8</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 8</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 9</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 9</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 10</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 10</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 11</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 11</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 12</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 12</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 13</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 13</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 14</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 14</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 15</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 15</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 16</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 16</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 17</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 17</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 18</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 18</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 19</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 19</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 20</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 20</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 21</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 21</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 22</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 22</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 23</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 23</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 24</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 24</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 25</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 25</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 26</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 26</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 27</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 27</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 28</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 28</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 29</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 29</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 30</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 30</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 31</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 31</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 32</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 32</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 33</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 33</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 34</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 34</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 35</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 35</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 36</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 36</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 37</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 37</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 38</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 38</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 39</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 39</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 40</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 40</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 41</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 41</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 42</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 42</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 43</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 43</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 44</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 44</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 45</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 45</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 46</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 46</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 47</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 47</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 48</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 48</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 49</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 49</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 50</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 50</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 51</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 51</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 52</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 52</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 53</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 53</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 54</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 54</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 55</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 55</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 56</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 56</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 57</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 57</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 58</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 58</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 59</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 59</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 60</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 60</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 61</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 61</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 62</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 62</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 63</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 63</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 64</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 64</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 65</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 65</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 66</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 66</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 67</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 67</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 68</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 68</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 69</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 69</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 70</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 70</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 71</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 71</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 72</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 72</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 73</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 73</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 74</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 74</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 75</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 75</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 76</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 76</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 77</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 77</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 78</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 78</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 79</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 79</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 80</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 80</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 81</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 81</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 82</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 82</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 83</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 83</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 84</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 84</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Row 85</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Content 85</w:t></w:r></w:p></w:tc></w:tr></w:tbl>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "trPr/tblHeader",
+          "attrs": {}
+        },
+        {
+          "part": "word/document.xml",
+          "path": "trPr/cantSplit",
+          "attrs": {}
+        },
+        {
+          "part": "word/document.xml",
+          "path": "tc/p/r/t",
+          "attrs": {},
+          "text": "Row 85"
+        }
+      ],
+      "parts": {},
+      "manual": "Verify PDF page count, repeated header and row continuity."
+    },
+    {
+      "id": "T05",
+      "group": "tables-graphics",
+      "feature": "Rotated cell text",
+      "marker": "OMI-T05-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-T05-anchor</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w=\"9000\" w:type=\"dxa\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"4500\"/><w:gridCol w:w=\"4500\"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:textDirection w:val=\"btLr\"/></w:tcPr><w:p><w:r><w:t xml:space=\"preserve\">Vertical</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Horizontal</w:t></w:r></w:p></w:tc></w:tr></w:tbl>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "tcPr/textDirection",
+          "attrs": {
+            "val": "btLr"
+          }
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "T06",
+      "group": "tables-graphics",
+      "feature": "Nested table",
+      "marker": "OMI-T06-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-T06-anchor</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w=\"9000\" w:type=\"dxa\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"4500\"/><w:gridCol w:w=\"4500\"/></w:tblGrid><w:tr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Outer cell</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w=\"9000\" w:type=\"dxa\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"4500\"/><w:gridCol w:w=\"4500\"/></w:tblGrid><w:tr><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Nested A</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Nested B</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:r><w:t xml:space=\"preserve\">After nested table</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">Outer B</w:t></w:r></w:p></w:tc></w:tr></w:tbl>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "tc/tbl/tr/tc/p/r/t",
+          "attrs": {},
+          "text": "Nested A"
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "I02",
+      "group": "tables-graphics",
+      "feature": "Floating image with square wrapping",
+      "marker": "OMI-I02-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-I02-anchor</w:t></w:r></w:p><w:p><w:r><w:drawing><wp:anchor distT=\"0\" distB=\"0\" distL=\"114300\" distR=\"114300\" simplePos=\"0\" relativeHeight=\"0\" behindDoc=\"0\" locked=\"0\" layoutInCell=\"1\" allowOverlap=\"0\"><wp:simplePos x=\"0\" y=\"0\"/><wp:positionH relativeFrom=\"column\"><wp:align>left</wp:align></wp:positionH><wp:positionV relativeFrom=\"paragraph\"><wp:posOffset>0</wp:posOffset></wp:positionV><wp:extent cx=\"914400\" cy=\"457200\"/><wp:wrapSquare wrapText=\"bothSides\"/><wp:docPr id=\"1\" name=\"Wrapped image\" descr=\"Wrapped test image\"/><a:graphic><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:pic><pic:nvPicPr><pic:cNvPr id=\"1\" name=\"Test pixel\"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed=\"rIdImage\"/><a:srcRect l=\"1000\" t=\"2000\" r=\"3000\" b=\"4000\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"914400\" cy=\"457200\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r><w:r><w:t xml:space=\"preserve\">Text around image</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "anchor/wrapSquare",
+          "attrs": {
+            "wrapText": "bothSides"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "blip",
+          "attrs": {
+            "embed": "rIdImage"
+          }
+        }
+      ],
+      "parts": {
+        "word/media/image.png": {
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII="
+        }
+      }
+    },
+    {
+      "id": "I03",
+      "group": "tables-graphics",
+      "feature": "Image dimensions and cropping",
+      "marker": "OMI-I03-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-I03-anchor</w:t></w:r></w:p><w:p><w:r><w:drawing><wp:inline><wp:extent cx=\"914400\" cy=\"457200\"/><wp:docPr id=\"1\" name=\"Cropped image\" descr=\"Cropped test image\"/><a:graphic><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:pic><pic:nvPicPr><pic:cNvPr id=\"1\" name=\"Test pixel\"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed=\"rIdImage\"/><a:srcRect l=\"1000\" t=\"2000\" r=\"3000\" b=\"4000\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"914400\" cy=\"457200\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "inline/extent",
+          "attrs": {
+            "cx": "914400",
+            "cy": "457200"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "blipFill/srcRect",
+          "attrs": {
+            "l": "1000",
+            "t": "2000",
+            "r": "3000",
+            "b": "4000"
+          }
+        }
+      ],
+      "parts": {
+        "word/media/image.png": {
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII="
+        }
+      }
+    },
+    {
+      "id": "X05",
+      "group": "page-layout",
+      "feature": "Different odd and even page headers",
+      "marker": "OMI-X05-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X05-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Header specimen</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "sectPr/headerReference",
+          "attrs": {
+            "type": "default",
+            "id": "rIdHeader1"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "sectPr/headerReference",
+          "attrs": {
+            "type": "even",
+            "id": "rIdHeader2"
+          }
+        },
+        {
+          "part": "word/settings.xml",
+          "path": "settings/evenAndOddHeaders",
+          "attrs": {}
+        },
+        {
+          "part": "word/header1.xml",
+          "path": "hdr/p/r/t",
+          "attrs": {},
+          "text": "ODD HEADER"
+        },
+        {
+          "part": "word/header2.xml",
+          "path": "hdr/p/r/t",
+          "attrs": {},
+          "text": "EVEN HEADER"
+        }
+      ],
+      "parts": {
+        "word/header1.xml": "<w:hdr xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:p><w:r><w:t xml:space=\"preserve\">ODD HEADER</w:t></w:r></w:p></w:hdr>",
+        "word/header2.xml": "<w:hdr xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:p><w:r><w:t xml:space=\"preserve\">EVEN HEADER</w:t></w:r></w:p></w:hdr>",
+        "word/settings.xml": "<w:settings xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:evenAndOddHeaders/></w:settings>"
+      },
+      "section": "<w:headerReference w:type=\"default\" r:id=\"rIdHeader1\"/><w:headerReference w:type=\"even\" r:id=\"rIdHeader2\"/>"
+    },
+    {
+      "id": "X06",
+      "group": "page-layout",
+      "feature": "Different section page sizes",
+      "marker": "OMI-X06-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X06-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">A4 section</w:t></w:r></w:p><w:p><w:pPr><w:sectPr><w:type w:val=\"nextPage\"/><w:pgSz w:w=\"11906\" w:h=\"16838\"/></w:sectPr></w:pPr></w:p><w:p><w:r><w:t xml:space=\"preserve\">A5 section</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "sectPr/pgSz",
+          "attrs": {
+            "w": "11906",
+            "h": "16838"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "sectPr/pgSz",
+          "attrs": {
+            "w": "8391",
+            "h": "11906"
+          }
+        }
+      ],
+      "parts": {},
+      "section": "<w:pgSz w:w=\"8391\" w:h=\"11906\"/>"
+    },
+    {
+      "id": "X07",
+      "group": "page-layout",
+      "feature": "Two-column section",
+      "marker": "OMI-X07-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X07-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Column text</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "sectPr/cols",
+          "attrs": {
+            "num": "2",
+            "space": "720"
+          }
+        }
+      ],
+      "parts": {},
+      "section": "<w:cols w:num=\"2\" w:space=\"720\"/>"
+    },
+    {
+      "id": "X08",
+      "group": "page-layout",
+      "feature": "Continuous section break",
+      "marker": "OMI-X08-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X08-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Before continuous break</w:t></w:r></w:p><w:p><w:pPr><w:sectPr><w:type w:val=\"continuous\"/></w:sectPr></w:pPr></w:p><w:p><w:r><w:t xml:space=\"preserve\">After continuous break</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "sectPr/type",
+          "attrs": {
+            "val": "continuous"
+          }
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "X09",
+      "group": "page-layout",
+      "feature": "Automatic page numbering starts at 11",
+      "marker": "OMI-X09-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X09-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Page number specimen</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "sectPr/pgNumType",
+          "attrs": {
+            "start": "11"
+          }
+        },
+        {
+          "part": "word/footer1.xml",
+          "path": "fldSimple",
+          "attrs": {
+            "instr": " PAGE "
+          }
+        }
+      ],
+      "parts": {
+        "word/footer1.xml": "<w:ftr xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:p><w:fldSimple w:instr=\" PAGE \"><w:r><w:t>11</w:t></w:r></w:fldSimple></w:p></w:ftr>"
+      },
+      "section": "<w:footerReference w:type=\"default\" r:id=\"rIdFooter1\"/><w:pgNumType w:start=\"11\"/>"
+    },
+    {
+      "id": "X10",
+      "group": "page-layout",
+      "feature": "Automatic table of contents",
+      "marker": "OMI-X10-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X10-anchor</w:t></w:r></w:p><w:p><w:fldSimple w:instr=\" TOC \\o &quot;1-3&quot; \"><w:r><w:t>Chapter 1</w:t></w:r></w:fldSimple></w:p><w:p><w:pPr><w:pStyle w:val=\"Heading1\"/></w:pPr><w:r><w:t xml:space=\"preserve\">Chapter 1</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "fldSimple",
+          "attrs": {
+            "instr": " TOC \\o \"1-3\" "
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "pPr/pStyle",
+          "attrs": {
+            "val": "Heading1"
+          }
+        }
+      ],
+      "parts": {
+        "word/styles.xml": "<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:style w:type=\"paragraph\" w:styleId=\"Heading1\"><w:name w:val=\"heading 1\"/><w:pPr><w:outlineLvl w:val=\"0\"/></w:pPr></w:style></w:styles>"
+      }
+    },
+    {
+      "id": "X11",
+      "group": "page-layout",
+      "feature": "Subject/name index and XE field",
+      "marker": "OMI-X11-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X11-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Indexed person</w:t></w:r><w:fldSimple w:instr=\" XE &quot;Example Person&quot; \"/></w:p><w:p><w:fldSimple w:instr=\" INDEX \"><w:r><w:t>Example Person 1</w:t></w:r></w:fldSimple></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "fldSimple",
+          "attrs": {
+            "instr": " XE \"Example Person\" "
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "fldSimple",
+          "attrs": {
+            "instr": " INDEX "
+          }
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "X12",
+      "group": "page-layout",
+      "feature": "Linked legacy Word text boxes",
+      "marker": "OMI-X12-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X12-anchor</w:t></w:r></w:p><w:p><w:r><w:pict><v:shape id=\"Box1\" style=\"position:absolute;width:100pt;height:40pt;mso-next-textbox:#Box2\"><v:textbox><w:txbxContent><w:p><w:r><w:t xml:space=\"preserve\">Linked story start</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape><v:shape id=\"Box2\" style=\"position:absolute;width:100pt;height:40pt\"><v:textbox><w:txbxContent><w:p><w:r><w:t xml:space=\"preserve\">Linked story continuation</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "shape",
+          "attrs": {
+            "id": "Box1",
+            "style": "position:absolute;width:100pt;height:40pt;mso-next-textbox:#Box2"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "shape",
+          "attrs": {
+            "id": "Box2"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "txbxContent/p/r/t",
+          "attrs": {},
+          "text": "Linked story continuation"
+        }
+      ],
+      "parts": {}
+    },
+    {
+      "id": "R03",
+      "group": "review",
+      "feature": "Threaded comments with reply relationship",
+      "marker": "OMI-R03-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-R03-anchor</w:t></w:r></w:p><w:p><w:commentRangeStart w:id=\"1\"/><w:r><w:t xml:space=\"preserve\">Review target</w:t></w:r><w:commentRangeEnd w:id=\"1\"/><w:r><w:commentReference w:id=\"1\"/></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "commentRangeStart",
+          "attrs": {
+            "id": "1"
+          }
+        },
+        {
+          "part": "word/comments.xml",
+          "path": "comment",
+          "attrs": {
+            "id": "2"
+          }
+        },
+        {
+          "part": "word/commentsExtended.xml",
+          "path": "commentEx",
+          "attrs": {
+            "paraId": "22222222",
+            "paraIdParent": "11111111"
+          }
+        }
+      ],
+      "parts": {
+        "word/comments.xml": "<w:comments xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:comment w:id=\"1\" w:author=\"QA\"><w:p w14:paraId=\"11111111\"><w:r><w:t xml:space=\"preserve\">Review root</w:t></w:r></w:p></w:comment><w:comment w:id=\"2\" w:author=\"QA\"><w:p w14:paraId=\"22222222\"><w:r><w:t xml:space=\"preserve\">Review reply</w:t></w:r></w:p></w:comment></w:comments>",
+        "word/commentsExtended.xml": "<w15:commentsEx xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w15:commentEx w15:paraId=\"11111111\" w15:done=\"0\"/><w15:commentEx w15:paraId=\"22222222\" w15:paraIdParent=\"11111111\" w15:done=\"0\"/></w15:commentsEx>"
+      },
+      "privateReview": true
+    },
+    {
+      "id": "R04",
+      "group": "review",
+      "feature": "Tracked formatting change",
+      "marker": "OMI-R04-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-R04-anchor</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/><w:rPrChange w:id=\"1\" w:author=\"QA\" w:date=\"2026-01-01T00:00:00Z\"><w:rPr><w:i/></w:rPr></w:rPrChange></w:rPr><w:t>Formatting revision</w:t></w:r></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "rPr/b",
+          "attrs": {}
+        },
+        {
+          "part": "word/document.xml",
+          "path": "rPrChange",
+          "attrs": {
+            "id": "1",
+            "author": "QA"
+          }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "rPrChange/rPr/i",
+          "attrs": {}
+        }
+      ],
+      "parts": {},
+      "privateReview": true
+    },
+    {
+      "id": "E02",
+      "group": "mathematics",
+      "feature": "Nested fraction, radical and superscript",
+      "marker": "OMI-E02-anchor",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-E02-anchor</w:t></w:r></w:p><w:p><m:oMath><m:f><m:num><m:rad><m:deg/><m:e><m:r><m:t>x</m:t></m:r></m:e></m:rad></m:num><m:den><m:sSup><m:e><m:r><m:t>y</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup></m:den></m:f></m:oMath></w:p>",
+      "checks": [
+        {
+          "part": "word/document.xml",
+          "path": "f/num/rad/e/r/t",
+          "attrs": {},
+          "text": "x"
+        },
+        {
+          "part": "word/document.xml",
+          "path": "f/den/sSup/sup/r/t",
+          "attrs": {},
+          "text": "2"
+        }
+      ],
+      "parts": {}
+    }
+  ]
+}
