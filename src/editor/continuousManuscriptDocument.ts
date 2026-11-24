@@ -326,6 +326,12 @@ export function stripContinuousAttributes(node: JSONContent): JSONContent {
     for (const name of PARAGRAPH_FORMAT_NAMES) if (attrs[name] == null) delete attrs[name];
     next.attrs = Object.keys(attrs).length ? attrs : undefined;
   }
+  if (next.marks) next.marks = next.marks.map(mark => {
+    if (mark.type !== 'omiUnderline' || mark.attrs?.variant != null) return mark;
+    const attrs = { ...mark.attrs };
+    delete attrs.variant;
+    return { ...mark, attrs: Object.keys(attrs).length ? attrs : undefined };
+  });
   if (next.content) next.content = next.content.map(stripContinuousAttributes);
   return next;
 }
