@@ -410,7 +410,21 @@ function assertModel(manuscript: OmiManuscript, item: Case): void {
     const rich = JSON.parse(annotation.bodyContent ?? '{}') as Node;
     assert.ok(nodes(rich).some(n => n.marks?.some(m => m.type === 'italic')), 'Rich note italic lost');
   }
-  if (item.id === 'X02') assert.ok(modelText(p).includes('Hivatkozási cél'));
+  if (item.id.startsWith('L')) {
+    const listType = item.id === 'L01' || item.id === 'L02' ? 'bulletList' : 'orderedList';
+    assert.ok(blocks(manuscript).some(block => nodes(json(block)).some(n => n.type === listType
+      && nodes(n).some(li => li.type === 'listItem' && modelText(li).startsWith(item.id + ' |')))), 'Case has been flattened instead of imported as a list');
+  }
+  if (item.id === 'S01') {
+    const block = blocks(manuscript).find(b => modelText(json(b)).startsWith(item.id + ' |'));
+    assert.ok(block?.paragraphStyleId, 'Named paragraph style is missing');
+  }
+  if (item.id === 'S02') assertModelMark(p, item.sample!, 'italic');
+  if (item.id === 'X02') {
+    assert.ok(modelText(p).includes('Hivatkozási cél'));
+    assert.ok(nodes(p).some(n => n.type === 'omiCrossReference'), 'REF field was flattened to text');
+    assert.ok(manuscript.crossReferences?.some(ref => ref.targetKind === 'bookmark'), 'No semantic bookmark cross-reference');
+  }
   if (item.id === 'X03') assertModelMark(p, 'Open Manuscript Initiative', 'omiLink', { href: 'https://openmanuscript.org/' });
 }
 
@@ -429,6 +443,9 @@ function wordGap(id: string): string | undefined {
 }
 function modelGap(id: string): string | undefined {
   if (id === 'R01' || id === 'R02') return 'Word review metadata is not imported as editable OMI review objects yet';
+  if (id.startsWith('L')) return 'Style-based numbering is currently flattened on import';
+  if (id === 'S01') return 'Named Word paragraph style is not attached to the OMI block';
+  if (id === 'X02') return 'REF fields are currently flattened on import';
   if (id === 'X03') return 'Inline semantic enrichment may lose Word hyperlink anchors';
   return undefined;
 }
@@ -459,7 +476,7 @@ export function registerMasterFormattingContract(): void {
     const projected = { ...imported, sections: projectContinuousManuscriptDocument(editorDocument, imported.sections) };
     const reopened = parseOmiJson(serializeOmiJson(projected));
     for (const item of remaining) {
-      await t.test(item.id + ' import and editor projection/save/reopen', { todo: todo(modelGap(item.id)) }, () => {
+      await t.test(item.id + ' model retention after import, editor projection and save/reopen', { todo: todo(modelGap(item.id)) }, () => {
         for (const manuscript of [imported, projected, reopened]) assertModel(manuscript, item);
       });
     }
