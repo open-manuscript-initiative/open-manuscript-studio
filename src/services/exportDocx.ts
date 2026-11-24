@@ -215,7 +215,7 @@ ${characterStylesXml()}
 }
 
 
-type NumberingGroup = { id: number; levels: Map<number,string> };
+type NumberingGroup = { id: number; levels: Map<number,string>; overrides: Map<number,number> };
 class WordListNumbering {
   private readonly groups: NumberingGroup[] = [];
   private readonly bySource = new Map<string,NumberingGroup>();
@@ -235,16 +235,18 @@ class WordListNumbering {
     const definition = '<w:lvl w:ilvl="' + level + '"><w:start w:val="' + start + '"/><w:numFmt w:val="' + format + '"/><w:lvlText w:val="' + xml(String(label)) + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' + left + '" w:hanging="' + hanging + '"/></w:pPr></w:lvl>';
     let group = typeof source === 'string' ? this.bySource.get(source) : parent;
     if (!group || (group.levels.has(level) && group.levels.get(level) !== definition)) {
-      group = {id:this.groups.length+1,levels:new Map(parent?.levels ?? [])};
+      group = {id:this.groups.length+1,levels:new Map(parent?.levels ?? []),overrides:new Map(parent?.overrides ?? [])};
       this.groups.push(group);
       if (typeof source === 'string') this.bySource.set(source,group);
     }
     group.levels.set(level,definition);
+    const override = v('omiListOverrideStart');
+    if (typeof override === 'number') group.overrides.set(level,override);
     return {group,level};
   }
   xml(): string {
     const abstracts = this.groups.map(group => '<w:abstractNum w:abstractNumId="' + group.id + '"><w:multiLevelType w:val="multilevel"/>' + [...group.levels].sort(([a],[b])=>a-b).map(([,definition])=>definition).join('') + '</w:abstractNum>').join('');
-    const nums = this.groups.map(group=>'<w:num w:numId="' + group.id + '"><w:abstractNumId w:val="' + group.id + '"/></w:num>').join('');
+    const nums = this.groups.map(group=>'<w:num w:numId="' + group.id + '"><w:abstractNumId w:val="' + group.id + '"/>' + [...group.overrides].sort(([a],[b])=>a-b).map(([level,start])=>'<w:lvlOverride w:ilvl="'+level+'"><w:startOverride w:val="'+start+'"/></w:lvlOverride>').join('') + '</w:num>').join('');
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' + abstracts + nums + '</w:numbering>';
   }
 }
