@@ -67,6 +67,7 @@ import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
 import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
+  coalescePublicationTextLines,
   paginatePublicationBlocks,
   publicationSectionFitWarnings,
   type PublicationPageLayout,
@@ -579,8 +580,9 @@ export function PublicationDocumentCanvas({
                 .filter((spacer) => spacer.top < rect.top - 0.5)
                 .reduce((sum, spacer) => sum + spacer.height, 0);
               const top = rect.top - elementRect.top - removedSpace;
+              const distance = (candidate: PublicationFlowLine) => Math.max(candidate.top - top, top - candidate.top - candidate.height, 0);
               const line = lines.reduce<PublicationFlowLine | undefined>((nearest, candidate) => (
-                !nearest || Math.abs(candidate.top - top) < Math.abs(nearest.top - top) ? candidate : nearest
+                !nearest || distance(candidate) < distance(nearest) ? candidate : nearest
               ), undefined);
               if (line) line.noteIds = [...(line.noteIds ?? []), anchor.dataset.noteId!];
             }
@@ -1319,8 +1321,10 @@ export function PublicationDocumentCanvas({
           {viewMode === 'print' ? (
             <div ref={noteMeasureRef} className="publication-page-footnotes publication-page-footnotes--measure" aria-hidden="true" style={{ width: contentWidth }}>
               {notes.map((note) => (
-                <div className="publication-page-note" data-publication-note-id={note.id} key={note.id}>
-                  <span className="publication-page-note-label">{note.label}</span><span className="omi-publication-note-body" dangerouslySetInnerHTML={{ __html: note.html }} />
+                <div data-publication-note-id={note.id} key={note.id} style={{ display: 'flow-root' }}>
+                  <div className="publication-page-note">
+                    <span className="publication-page-note-label">{note.label}</span><span className="omi-publication-note-body" dangerouslySetInnerHTML={{ __html: note.html }} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -1343,8 +1347,10 @@ export function PublicationDocumentCanvas({
                     <div key={`${fragment.id}-${fragment.offset}`} className="publication-page-note-fragment"
                       data-publication-note-id={note.id} data-note-continuation={fragment.offset > 0 || undefined}
                       style={{ height: fragment.height }}>
-                      <div className="publication-page-note" style={{ transform: `translateY(-${fragment.offset}px)` }}>
-                        <span className="publication-page-note-label">{note.label}</span><span className="omi-publication-note-body" dangerouslySetInnerHTML={{ __html: note.html }} />
+                      <div style={{ display: 'flow-root', transform: `translateY(-${fragment.offset}px)` }}>
+                        <div className="publication-page-note">
+                          <span className="publication-page-note-label">{note.label}</span><span className="omi-publication-note-body" dangerouslySetInnerHTML={{ __html: note.html }} />
+                        </div>
                       </div>
                     </div>
                   ) : null;
@@ -1536,6 +1542,7 @@ function measurePublicationLines(element: HTMLElement): PublicationFlowLine[] {
   }));
   const runs: Array<{ node: Text; start: number }> = [];
   let textOffset = 0;
+  let text = '';
 
   const visit = (node: Node): void => {
     if (node instanceof HTMLElement) {
@@ -1546,6 +1553,7 @@ function measurePublicationLines(element: HTMLElement): PublicationFlowLine[] {
       ) return;
       if (node.tagName === 'BR') {
         textOffset += 1;
+        text += '\n';
         return;
       }
     }
@@ -1554,6 +1562,7 @@ function measurePublicationLines(element: HTMLElement): PublicationFlowLine[] {
       if (textNode.data.length) {
         runs.push({ node: textNode, start: textOffset });
         textOffset += textNode.data.length;
+        text += textNode.data;
       }
       return;
     }
@@ -1590,14 +1599,9 @@ function measurePublicationLines(element: HTMLElement): PublicationFlowLine[] {
     }
   }
 
-  const lines = measured
-    .sort((left, right) => left.top - right.top || left.textOffset - right.textOffset)
-    .filter((line, index, values) => (
-      index === 0 || Math.abs(line.top - values[index - 1]!.top) > 0.5
-    ));
-  if (lines.length) return lines;
-
   const lineHeight = Number.parseFloat(ownerDocument.defaultView?.getComputedStyle(element).lineHeight ?? '');
+  const lines = coalescePublicationTextLines(measured, text, lineHeight);
+  if (lines.length) return lines;
   return [{
     textOffset: 0,
     top: 0,
