@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { normalizeDirectValue } from '../model/directFormatting';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { publicationFirstPageNumber } from '../model/publicationSpreads';
@@ -41,6 +42,7 @@ export function buildIdmlExport(
   manuscript: OmiManuscript,
   publicationStyle?: PublicationStyle,
 ): IdmlExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'IDML');
@@ -88,7 +90,7 @@ export function buildIdmlExport(
           for (const run of runs) {
             const direct = run.directFormatting;
             if (!direct) continue;
-            if (direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || direct.omiKerning !== undefined || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
+            if (direct.omiLigatures !== undefined || direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || direct.omiKerning !== undefined || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
               warnings.push(`Some direct typography in block ${block.id} has no exact IDML mapping; review in InDesign.`);
               break;
             }

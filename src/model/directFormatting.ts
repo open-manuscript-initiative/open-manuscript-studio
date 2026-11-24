@@ -14,6 +14,8 @@ export const DIRECT_FORMATS = {
   omiDoubleStrike: { toggle: true },
   omiOutline: { toggle: true },
   omiShadow: { toggle: true },
+  omiHiddenText: { toggle: true },
+  omiLigatures: { choices: ['none','standard','contextual','historical','discretional','standardContextual','standardHistorical','standardDiscretional','contextualHistorical','contextualDiscretional','historicalDiscretional','standardContextualHistorical','standardContextualDiscretional','standardHistoricalDiscretional','contextualHistoricalDiscretional','all'] },
 } as const;
 export type DirectFormat = keyof typeof DIRECT_FORMATS;
 export type DirectValue = string | number | boolean;
@@ -70,6 +72,18 @@ export function directFormattingCss(name: DirectFormat, raw: unknown): string {
     case 'omiDoubleStrike': return 'text-decoration:line-through double';
     case 'omiOutline': return '-webkit-text-stroke:0.5px currentColor;color:transparent';
     case 'omiShadow': return 'text-shadow:1px 1px 1px #888';
+    case 'omiHiddenText': return 'text-decoration:underline dotted;opacity:0.65';
+    case 'omiLigatures': {
+      if (value === 'none') return 'font-variant-ligatures:none';
+      const flags = String(value).toLowerCase();
+      const has = (name: string) => value === 'all' || flags.includes(name);
+      return 'font-variant-ligatures:' + [
+        has('standard') ? 'common-ligatures' : 'no-common-ligatures',
+        has('contextual') ? 'contextual' : 'no-contextual',
+        has('historical') ? 'historical-ligatures' : 'no-historical-ligatures',
+        has('discretional') ? 'discretionary-ligatures' : 'no-discretionary-ligatures',
+      ].join(' ');
+    }
   }
 }
 export function underlineCss(value: unknown): string {
@@ -90,11 +104,13 @@ export function directFormattingWordXml(input: DirectFormatting): string {
     v('omiDoubleStrike') ? '<w:dstrike/>' : '',
     v('omiOutline') ? '<w:outline/>' : '',
     v('omiShadow') ? '<w:shadow/>' : '',
+    v('omiHiddenText') ? '<w:vanish/>' : '',
     color('omiTextColor') ? '<w:color w:val="' + color('omiTextColor') + '"/>' : '',
     numeric('omiTracking', 'spacing', 20), numeric('omiCharacterScale', 'w', 1), numeric('omiKerning', 'kern', 2),
     numeric('omiBaseline', 'position', 2), numeric('omiFontSize', 'sz', 2),
     v('omiHighlight') ? '<w:highlight w:val="' + v('omiHighlight') + '"/>' : '',
     underline ? '<w:u w:val="' + underline + '"/>' : '',
     color('omiCharacterBackground') ? '<w:shd w:val="clear" w:fill="' + color('omiCharacterBackground') + '"/>' : '',
+    v('omiLigatures') ? '<w14:ligatures w14:val="' + v('omiLigatures') + '"/>' : '',
   ].join('');
 }

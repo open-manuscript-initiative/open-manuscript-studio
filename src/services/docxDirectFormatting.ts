@@ -20,10 +20,11 @@ export function wordDirectFormatting(read: (property: string, attribute?: string
   number('kern', 'omiKerning', 2);
   add('omiTextColor', read('color'));
   add('omiHighlight', read('highlight'));
+  add('omiLigatures', read('ligatures'));
   add('omiCharacterBackground', read('shd', 'fill'));
   for (const [property, type] of [
     ['caps', 'omiUppercase'], ['dstrike', 'omiDoubleStrike'],
-    ['outline', 'omiOutline'], ['shadow', 'omiShadow'],
+    ['outline', 'omiOutline'], ['shadow', 'omiShadow'], ['vanish', 'omiHiddenText'],
   ] as const) if (exists(property) && !/^(?:0|false|off|none)$/i.test(read(property) ?? 'true')) add(type, true);
   const underline = normalizeUnderlineStyle(read('u'));
   if (underline) result.push({ type: 'omiUnderline', attrs: { variant: underline } });

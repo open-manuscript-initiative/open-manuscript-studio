@@ -1,7 +1,7 @@
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { normalizeSourceStyle, sourceStyleBundle } from '../model/sourceWordStyles';
 import type { Editor } from '@tiptap/core';
-import { Unlink, RotateCcw, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
+import { EyeOff, Unlink, RotateCcw, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { normalizeParagraphValue, paragraphBorders, paragraphTabs, BORDER_SIDES, type ParagraphFormat, type ParagraphBorder, type ParagraphTab } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
@@ -70,16 +70,105 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
     <button type="button" aria-label={reset + ': ' + label} title={reset} onMouseDown={e => e.preventDefault()} onClick={() => { if (paragraph) editor.chain().focus().updateAttributes('paragraph', { [name]: null }).run(); else applyMark(editor, name, null); setEditing(false); }}><RemoveFormatting size={15} aria-hidden="true" /></button>
   </div>;
 }
+const ADVANCED_CHARACTER_LABELS: Record<string, Labels> = {
+  "en": [
+    "Hidden text",
+    "Ligatures",
+    "None",
+    "Standard",
+    "Contextual",
+    "Historical",
+    "Discretionary",
+    "All"
+  ],
+  "hu": [
+    "Rejtett szöveg",
+    "Ligatúrák",
+    "Nincs",
+    "Szabványos",
+    "Környezetfüggő",
+    "Történeti",
+    "Választható",
+    "Mindegyik"
+  ],
+  "de": [
+    "Ausgeblendeter Text",
+    "Ligaturen",
+    "Keine",
+    "Standard",
+    "Kontextabhängig",
+    "Historisch",
+    "Bedingt",
+    "Alle"
+  ],
+  "fr": [
+    "Texte masqué",
+    "Ligatures",
+    "Aucune",
+    "Standard",
+    "Contextuelles",
+    "Historiques",
+    "Discrétionnaires",
+    "Toutes"
+  ],
+  "it": [
+    "Testo nascosto",
+    "Legature",
+    "Nessuna",
+    "Standard",
+    "Contestuali",
+    "Storiche",
+    "Discrezionali",
+    "Tutte"
+  ],
+  "es": [
+    "Texto oculto",
+    "Ligaduras",
+    "Ninguna",
+    "Estándar",
+    "Contextuales",
+    "Históricas",
+    "Discrecionales",
+    "Todas"
+  ],
+  "nl": [
+    "Verborgen tekst",
+    "Ligaturen",
+    "Geen",
+    "Standaard",
+    "Contextueel",
+    "Historisch",
+    "Optioneel",
+    "Alle"
+  ],
+  "pl": [
+    "Tekst ukryty",
+    "Ligatury",
+    "Brak",
+    "Standardowe",
+    "Kontekstowe",
+    "Historyczne",
+    "Opcjonalne",
+    "Wszystkie"
+  ]
+};
+function ligatureLabel(value: string, l: Labels): string {
+  if (value === 'none') return l[2]!;
+  if (value === 'all') return l[7]!;
+  return ['standard','contextual','historical','discretional'].flatMap((part,i)=>value.toLowerCase().includes(part)?[l[i+3]!]:[]).join(' + ');
+}
 export function DirectFormattingPanel({ editor, locale }: { editor: Editor; locale: SupportedLocale }) {
   const l = labels(locale);
+  const advanced = ADVANCED_CHARACTER_LABELS[locale] ?? ADVANCED_CHARACTER_LABELS.en!;
   const copy = getRichTextCopy(locale);
   const common = { editor, copy, reset: l[19]!, mixed: l[20]! };
   const field = (name: DirectFormat, index: number, icon: ReactNode, kind: 'number' | 'color' = 'number', defaultValue = '') =>
     <FormatField key={name} {...common} name={name} label={l[index]!} icon={icon} kind={kind} defaultValue={defaultValue} normalize={v => normalizeDirectValue(name, v)} />;
-  const toggle = (name: DirectFormat, index: number, icon: ReactNode) => {
+  const toggle = (name: DirectFormat, index: number | string, icon: ReactNode) => {
+    const label = typeof index === 'number' ? l[index] : index;
     const state = selectedValue(editor, name, 'value');
     const active = editor.isActive(name);
-    return <button type="button" key={name} title={l[index]} aria-label={l[index]} aria-pressed={state.mixed ? 'mixed' : active} className={active ? 'is-active' : ''} onMouseDown={e => e.preventDefault()} onClick={() => applyMark(editor, name, active ? null : { value: true })}>{icon}</button>;
+    return <button type="button" key={name} title={label} aria-label={label} aria-pressed={state.mixed ? 'mixed' : active} className={active ? 'is-active' : ''} onMouseDown={e => e.preventDefault()} onClick={() => applyMark(editor, name, active ? null : { value: true })}>{icon}</button>;
   };
   return <div className="omi-rich-text-popover omi-direct-formatting" aria-label={l[0]}>
     <div className="omi-rich-text-command-grid">
@@ -87,6 +176,7 @@ export function DirectFormattingPanel({ editor, locale }: { editor: Editor; loca
       {toggle('omiDoubleStrike', 14, <span aria-hidden="true" style={{ textDecoration: 'line-through double' }}>S</span>)}
       {toggle('omiOutline', 15, <span aria-hidden="true" style={{ WebkitTextStroke: '0.7px currentColor', color: 'transparent' }}>A</span>)}
       {toggle('omiShadow', 16, <span aria-hidden="true" style={{ textShadow: '1px 1px 1px #888' }}>A</span>)}
+      {toggle('omiHiddenText', advanced[0]!, <EyeOff size={17} aria-hidden="true" />)}
     </div>
     <div className="omi-direct-format-fields">
       <SourceStyleControls editor={editor} locale={locale} kind="character"/>
@@ -105,6 +195,9 @@ export function DirectFormattingPanel({ editor, locale }: { editor: Editor; loca
         normalize={v => v === 'single' ? 'single' : normalizeUnderlineStyle(v)} />
       {field('omiCharacterScale', 17, <LetterText size={16} aria-hidden="true" />, 'number', '100')}
       {field('omiKerning', 18, <Strikethrough size={16} aria-hidden="true" />, 'number', '0')}
+      <FormatField {...common} name="omiLigatures" label={advanced[1]!} icon={<span aria-hidden="true">ﬁ</span>} defaultValue="standardContextual"
+        choices={DIRECT_FORMATS.omiLigatures.choices.map(value=>({value,label:ligatureLabel(value,advanced)}))}
+        normalize={value=>normalizeDirectValue('omiLigatures',value)}/>
     </div>
   </div>;
 }

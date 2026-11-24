@@ -576,6 +576,7 @@ function applyMarks(
   state: RenderState,
   plainText: string,
 ): string {
+  if (marks.some(mark=>mark.type==='omiHiddenText' && mark.attrs?.value===true)) return '';
   let output = input;
 
   for (const mark of marks) {
