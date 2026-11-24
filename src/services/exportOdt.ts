@@ -100,6 +100,7 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
   } catch { /* legacy plain-text blocks use the regular inline renderer */ }
   const runs = extractOmiInlineRuns(block.content);
   if (!runs.length) return '';
+  if (runs.some(run => run.directFormatting?.omiBaseline !== undefined || run.directFormatting?.omiKerning !== undefined || (run.directFormatting?.omiHighlight && run.directFormatting?.omiCharacterBackground))) warnings.push(`Some direct typography in block ${block.id} has no exact ODT mapping; review in the target editor.`);
   let attrs: Record<string, unknown> | undefined;
   try { const root = JSON.parse(block.content) as OdtJsonNode; attrs = (root.type === 'paragraph' ? root : root.content?.[0])?.attrs; } catch { /* Plain text. */ }
   const style = stylesRegistry.paragraph(attrs);
@@ -114,6 +115,7 @@ function renderOdtNode(node: OdtJsonNode, notes: Map<string, OmiManuscript['anno
     if (typeof href === 'string') run.link = href;
     return renderRun(run, notes, usedNotes, stylesRegistry);
   }
+  if (node.type === 'omiCitation' || node.type === 'omiCrossReference') return typeof node.attrs?.label === 'string' ? escape(node.attrs.label) : '';
   if (node.type === 'hardBreak') return '<text:line-break/>';
   if (node.type === 'omiTab') return '<text:tab/>';
   if (node.type === 'omiNote') {
