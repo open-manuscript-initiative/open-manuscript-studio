@@ -1,4 +1,3 @@
-import { readZipParts } from './docx-master-formatting-contract.ts';
 import { buildIdmlExport } from '../src/services/exportIdml.ts';
 import assert from 'node:assert/strict';
 import { MANUSCRIPT_IMPORT_ORIGIN } from '../src/model/manuscriptImportOrigin.ts';
@@ -10,7 +9,7 @@ import { buildOmiContainer } from '../src/services/omiContainer.ts';
 import { inspectOmiContainer } from '../src/services/omiContainerImport.ts';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { registerMasterFormattingContract } from './docx-master-formatting-contract.ts';
+import { readZipParts, registerMasterFormattingContract } from './docx-master-formatting-contract.ts';
 import { registerAdvancedFormattingContracts } from './docx-advanced-formatting-contract.ts';
 
 import {
