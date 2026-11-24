@@ -290,3 +290,89 @@ test('clamps unsafe or out-of-range compatibility values', () => {
   assert.equal(properties.characterStroke?.widthPt, 0);
   assert.equal(properties.characterStroke?.tint, 0);
 });
+
+
+test('P01–P11/P15–P19: inherited paragraph typography produces target-specific CSS and survives reset', () => {
+  const style = clonePublicationStyleTemplate();
+  const body = style.paragraphStyles.defaultStyleId;
+  style.paragraphStyles.items.push(
+    { id: 'qa-parent', name: 'QA base', basedOnId: body, nextStyleId: body, properties: {
+      fontSize: 11, lineHeight: 16, alignment: 'justify', leftIndent: 10, rightIndent: 20,
+      firstLineIndent: 5, spaceBefore: 6, spaceAfter: 9, widows: 3, orphans: 4,
+      keepTogether: true, keepWithNext: true, hyphenation: true, language: 'hu-HU',
+    } },
+    { id: 'qa-child', name: 'QA derived', basedOnId: 'qa-parent', nextStyleId: body, properties: {
+      alignment: 'right', firstLineIndent: -5, hyphenation: false,
+    } },
+  );
+  const restored = normalizePublicationStyle(JSON.parse(JSON.stringify(style)));
+  const child = restored.paragraphStyles.items.find(item => item.id === 'qa-child')!;
+  const resolved = resolvePublicationParagraphStyle(restored, child.id, 'en-GB');
+  assert.equal(resolved.language, 'hu-HU');
+  assert.equal(resolved.firstLineIndent, -5);
+  assert.equal(resolved.alignment, 'right');
+  assert.equal(resolved.hyphenation, false);
+  assert.equal(resolved.leftIndent, 10);
+  assert.equal(resolved.rightIndent, 20);
+  assert.equal(resolved.spaceBefore, 6);
+  assert.equal(resolved.spaceAfter, 9);
+  assert.equal(resolved.lineHeight, 16);
+  const rule = (target: 'html' | 'print', id: string) => {
+    const css = buildPublicationStyleCss(restored, target);
+    const line = css.split('\n').find(l => l.includes('data-omi-paragraph-style-id') && l.includes(id) && l.includes('text-indent:'));
+    assert.ok(line, 'Missing style rule for ' + id);
+    return line;
+  };
+  assert.match(rule('print', 'qa-parent'), /text-align:\s*justify/);
+  assert.match(rule('html', 'qa-parent'), /text-align:\s*left/);
+  assert.match(rule('print', 'qa-child'), /text-align:\s*right/);
+  assert.match(rule('html', 'qa-child'), /text-align:\s*right/);
+  assert.match(rule('print', 'qa-child'), /text-indent:\s*-5mm/);
+  for (const property of [/margin-left:\s*10mm/, /margin-right:\s*20mm/, /margin-top:\s*6pt/, /margin-bottom:\s*9pt/, /line-height:\s*16pt/, /widows:\s*3/, /orphans:\s*4/, /break-inside:\s*avoid-page/, /break-after:\s*avoid-page/]) {
+    assert.match(rule('print', 'qa-child'), property);
+  }
+  assert.match(rule('print', 'qa-parent'), /hyphens:\s*auto/);
+  assert.match(rule('print', 'qa-child'), /hyphens:\s*none/);
+  assert.match(rule('html', 'qa-parent'), /hyphens:\s*none/);
+  assert.doesNotMatch(rule('html', 'qa-child'), /break-(?:inside|after):\s*avoid-page/);
+  child.properties = {};
+  const reset = resolvePublicationParagraphStyle(restored, child.id, 'en-GB');
+  assert.equal(reset.alignment, 'justify');
+  assert.equal(reset.firstLineIndent, 5);
+  assert.equal(reset.hyphenation, true);
+  assert.equal(child.nextStyleId, body);
+  for (const alignment of ['left', 'center', 'right'] as const) {
+    child.properties = { alignment };
+    assert.match(rule('html', 'qa-child'), new RegExp('text-align:\\s*' + alignment));
+    assert.match(rule('print', 'qa-child'), new RegExp('text-align:\\s*' + alignment));
+  }
+});
+
+test('S03–S05 and L07–L09: named styles retain numbering overrides and inherit remaining settings after reopen', () => {
+  const style = clonePublicationStyleTemplate();
+  const body = style.paragraphStyles.defaultStyleId;
+  style.paragraphStyles.items.push(
+    { id: 'qa-list-parent', name: 'Legal list', basedOnId: body, nextStyleId: body, properties: {
+      bulletsAndNumbering: { type: 'numbers', listName: 'Legal', level: 1, format: 'upper-roman', numberExpression: '^#.', startAt: 3, leftIndentMm: 8 },
+      hyphenationSettings: { minimumWordLength: 8, minimumPrefix: 3, minimumSuffix: 3 },
+    } },
+    { id: 'qa-list-child', name: 'Legal sublevel', basedOnId: 'qa-list-parent', nextStyleId: 'qa-list-parent', properties: {
+      bulletsAndNumbering: { level: 2, restartAfterLevel: 1, numberExpression: '^1.^#)', startAt: 1 },
+      hyphenationSettings: { minimumSuffix: 4 },
+    } },
+  );
+  const reopened = normalizePublicationStyle(JSON.parse(JSON.stringify(style)));
+  const child = reopened.paragraphStyles.items.find(item => item.id === 'qa-list-child')!;
+  assert.equal(child.nextStyleId, 'qa-list-parent');
+  const resolved = resolvePublicationParagraphStyle(reopened, child.id);
+  for (const [key, value] of Object.entries({ type: 'numbers', listName: 'Legal', level: 2, format: 'upper-roman', numberExpression: '^1.^#)', startAt: 1, restartAfterLevel: 1, leftIndentMm: 8 })) {
+    assert.equal(resolved.bulletsAndNumbering[key as keyof typeof resolved.bulletsAndNumbering], value);
+  }
+  assert.equal(resolved.hyphenationSettings.minimumWordLength, 8);
+  assert.equal(resolved.hyphenationSettings.minimumPrefix, 3);
+  assert.equal(resolved.hyphenationSettings.minimumSuffix, 4);
+  child.properties = {};
+  assert.equal(resolvePublicationParagraphStyle(reopened, child.id).bulletsAndNumbering.startAt, 3);
+  assert.equal(resolvePublicationParagraphStyle(reopened, child.id).bulletsAndNumbering.level, 1);
+  assert.equal(resolvePublicationParagraphStyle(reopened, child.id).bulletsAndNumbering.numberExpression, '^#.');
+});
