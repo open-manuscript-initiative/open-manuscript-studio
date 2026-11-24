@@ -136,8 +136,13 @@ test('Android Activity patch uses non-deprecated edge-to-edge APIs', () => {
   const patched = patchAndroidActivity(generatedActivity);
   assert.match(patched, /androidx\.core\.view\.WindowCompat/);
   assert.match(patched, /LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS/);
-  assert.match(patched, /WindowInsetsCompat\.Type\.navigationBars\(\)/);
-  assert.match(patched, /contentPaddingBottom \+ navigationBarBottom/);
+  assert.match(patched, /WindowInsetsCompat\.Type\.systemBars\(\)/);
+  assert.match(patched, /WindowInsetsCompat\.Type\.displayCutout\(\)/);
+  assert.match(patched, /contentPaddingTop \+ safeAreaInsets\.top/);
+  assert.match(patched, /contentPaddingLeft \+ safeAreaInsets\.left/);
+  assert.match(patched, /content\.setBackgroundColor\(Color\.rgb/);
+  assert.match(patched, /contentPaddingBottom \+ safeAreaInsets\.bottom/);
+  assert.doesNotMatch(patched, /window\.(?:statusBarColor|navigationBarColor|isStatusBarContrastEnforced)/);
   assert.match(patched, /WindowInsetsCompat\.Builder\(insets\)/);
   assert.doesNotMatch(patched, /androidx\.activity\.enableEdgeToEdge/);
   assert.doesNotMatch(patched, /LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES/);
@@ -147,6 +152,33 @@ test('Android Activity patch uses non-deprecated edge-to-edge APIs', () => {
     'the Android content view must exist before attaching the system inset listener',
   );
   assert.equal(patchAndroidActivity(patched), patched);
+  const obsoleteBarSetup = `    window.statusBarColor = Color.rgb(255, 254, 250)
+    window.navigationBarColor = Color.rgb(255, 254, 250)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      window.isStatusBarContrastEnforced = false
+      window.isNavigationBarContrastEnforced = false
+    }
+    WindowInsetsControllerCompat(window, window.decorView).apply {
+      isAppearanceLightStatusBars = true
+      isAppearanceLightNavigationBars = true
+    }
+    val content = findViewById<View>(android.R.id.content)
+    val contentPaddingBottom = content.paddingBottom
+    ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+      val navigationBarBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+      view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, contentPaddingBottom + navigationBarBottom)
+      WindowInsetsCompat.Builder(insets)
+        .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.NONE)
+        .build()
+    }
+    ViewCompat.requestApplyInsets(content)`;
+  const modernStart = patched.indexOf('    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)');
+  const modernEnd = patched.indexOf('    ViewCompat.requestApplyInsets(content)') +
+    '    ViewCompat.requestApplyInsets(content)'.length;
+  const previouslyGenerated = patched.slice(0, modernStart) + obsoleteBarSetup + patched.slice(modernEnd);
+  const migrated = patchAndroidActivity(previouslyGenerated);
+  assert.equal(migrated, patched, 'existing generated Android projects must migrate in place');
+  assert.equal(patchAndroidActivity(migrated), migrated);
   const requestInsets = '    ViewCompat.requestApplyInsets(content)';
   const contentStart = patched.indexOf('    val content = findViewById');
   const insetsEnd = patched.indexOf(requestInsets, contentStart) + requestInsets.length;
