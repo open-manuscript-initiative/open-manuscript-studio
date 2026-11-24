@@ -90,7 +90,7 @@ export function buildIdmlExport(
           for (const run of runs) {
             const direct = run.directFormatting;
             if (!direct) continue;
-            if (direct.omiLigatures !== undefined || direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || direct.omiKerning !== undefined || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
+            if (idmlLigatureMappingIsPartial(direct.omiLigatures) || direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || (direct.omiKerning !== undefined && direct.omiKerning !== 0) || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
               warnings.push(`Some direct typography in block ${block.id} has no exact IDML mapping; review in InDesign.`);
               break;
             }
@@ -663,6 +663,16 @@ function idmlDirectCharacterAttributes(run: OmiInlineRun, colors?: Set<string>):
   setAttr(attrs, 'BaselineShift', normalizeDirectValue('omiBaseline', d.omiBaseline));
   setAttr(attrs, 'HorizontalScale', normalizeDirectValue('omiCharacterScale', d.omiCharacterScale));
   if (typeof size === 'number' && typeof tracking === 'number') attrs.Tracking = Math.round(tracking / size * 1000);
+  const kerning = normalizeDirectValue('omiKerning', d.omiKerning);
+  if (typeof kerning === 'number') attrs.KerningMethod = kerning === 0 ? '$ID/None' : '$ID/Metrics';
+  const ligatures = normalizeDirectValue('omiLigatures', d.omiLigatures);
+  if (typeof ligatures === 'string') {
+    const flags = ligatures.toLowerCase();
+    attrs.Ligatures = ligatures === 'all' || flags.includes('standard');
+    attrs.OTFDiscretionaryLigature = ligatures === 'all' || flags.includes('discretional');
+    // Word contextual ligatures and InDesign contextual alternates are
+    // different OpenType features; never translate one into the other.
+  }
   if (d.omiUppercase) attrs.Capitalization = 'AllCaps';
   if (d.omiDoubleStrike) attrs.StrikeThru = true;
   if (run.semantics.includes('underline')) attrs.Underline = true;
@@ -676,6 +686,10 @@ function idmlDirectCharacterAttributes(run: OmiInlineRun, colors?: Set<string>):
     attrs.FillColor = 'Color/OMI-' + color.slice(1);
   }
   return idmlLocalAttributes(attrs);
+}
+function idmlLigatureMappingIsPartial(raw: unknown): boolean {
+  const value = normalizeDirectValue('omiLigatures', raw);
+  return typeof value === 'string' && (value === 'all' || /contextual|historical/i.test(value));
 }
 function idmlLocalAttributes(attrs: Record<string, string | number | boolean>): string {
   return Object.entries(attrs).map(([name, value]) => ' ' + name + '="' + xml(String(value)) + '"').join('');
