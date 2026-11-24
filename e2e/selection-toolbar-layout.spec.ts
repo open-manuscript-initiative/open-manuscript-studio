@@ -271,3 +271,26 @@ test('native list numbering controls set Roman format, start, custom label and e
   await expect(list).toHaveAttribute('data-omilistoverridestart','3');
   await expect(list.locator('li')).toHaveText('Select these words to format them.');
 });
+
+
+test('ligature controls and hidden text icon preserve independent typography and editable text', async ({page}) => {
+  const {editor,toolbar}=await openToolbar(page);
+  await toolbar.getByRole('button',{name:'Character formatting',exact:true}).click();
+  const panel=toolbar.locator('.omi-direct-formatting');
+  await panel.getByRole('combobox',{name:'Ligatures',exact:true}).selectOption('standardContextual');
+  await panel.getByRole('button',{name:'Apply: Ligatures',exact:true}).click();
+  const ligatures=editor.locator('[data-omi-format="omiLigatures"][data-omi-format-value="standardContextual"]');
+  await expect(ligatures).toHaveText('Select these words');
+  const hidden=panel.getByRole('button',{name:'Hidden text',exact:true});
+  await hidden.click();
+  await expect(hidden).toHaveAttribute('aria-pressed','true');
+  const marked=editor.locator('[data-omi-format="omiHiddenText"]');
+  await expect(marked).toHaveText('Select these words');
+  await expect(ligatures).toHaveText('Select these words');
+  await hidden.click();
+  await expect(marked).toHaveCount(0);
+  await expect(ligatures).toHaveText('Select these words');
+  await panel.getByRole('button',{name:'Reset: Ligatures',exact:true}).click();
+  await expect(ligatures).toHaveCount(0);
+  await expect(editor.locator('p').filter({hasText:'Select these words'})).toHaveText('Select these words to format them.');
+});
