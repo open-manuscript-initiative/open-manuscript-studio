@@ -949,3 +949,32 @@ test('hidden Word text survives editable notes and is removed from public note b
   assert.match(parts.get('word/footnotes.xml')!.toString('utf8'),/HIDDEN-NOTE-SPECIMEN/);
   assert.ok(docx.warnings.some(warning=>warning.includes('Hidden formatting is not redaction')));
 });
+
+test('DOCX roundtrip retains consecutive header rows, explicit off and both quarter-turns', async () => {
+  const cell=(text:string,rotation='')=>'<w:tc>'+(rotation?'<w:tcPr><w:textDirection w:val="'+rotation+'"/></w:tcPr>':'')+'<w:p><w:r><w:t>'+text+'</w:t></w:r></w:p></w:tc>';
+  const row=(left:string,right:string,header:string)=>'<w:tr>'+header+left+right+'</w:tr>';
+  const source=makeDocx('<w:p><w:r><w:t>Table specimen</w:t></w:r></w:p><w:tbl>'
+    +row(cell('First header','btLr'),cell('Header B'),'<w:trPr><w:tblHeader/></w:trPr>')
+    +row(cell('Second header','tbRl'),cell('Header D'),'<w:trPr><w:tblHeader w:val="1"/></w:trPr>')
+    +row(cell('Body A'),cell('Body B'),'<w:trPr><w:tblHeader w:val="0"/></w:trPr>')
+    +row(cell('Body C'),cell('Body D'),'<w:trPr><w:tblHeader/></w:trPr>')+'</w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const visual=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(visual?.kind==='table');
+    assert.equal(visual.headerRows,2);
+    assert.deepEqual(visual.cellFormats,{'0:0':{textRotation:-90},'1:0':{textRotation:90}});
+    assert.deepEqual(visual.cells,[['First header','Header B'],['Second header','Header D'],['Body A','Body B'],['Body C','Body D']]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Native table regression'}),sections:plan.sections};
+  const exported=buildDocxExport(manuscript);
+  const xml=new XmlDomParser().parseFromString(readZipParts(exported.bytes).get('word/document.xml')!.toString('utf8'),'application/xml');
+  const table=xml.getElementsByTagName('w:tbl').item(0);
+  assert.ok(table);
+  assert.equal(table.getElementsByTagName('w:tblHeader').length,2);
+  assert.equal(table.getElementsByTagName('w:tr').length,4);
+  assert.equal(table.getElementsByTagName('w:tc').length,8);
+  const reopened=await parseDocxForStudio(new File([new Uint8Array(exported.bytes)],'native-table.docx'));
+  inspect(reopened.sections);
+});
