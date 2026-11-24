@@ -340,7 +340,7 @@ function noteParagraphStyle(id: string, name: string): string {
 
 function wordRun(run: OmiInlineRun, sourceStyles?: SourceWordStyleRegistry, sourceParagraph?: unknown): string {
   const imported = sourceStyles?.register(run.sourceWordStyle);
-  const styleId = imported ?? wordCharacterStyleId(run.semantics);
+  const styleId = imported ?? (sourceParagraph ? undefined : wordCharacterStyleId(run.semantics));
   const paragraphStyle = resolveSourceStyle(sourceParagraph);
   const characterStyle = resolveSourceStyle(run.sourceWordStyle);
   const inheritedBold = Boolean(paragraphStyle.bold) !== Boolean(characterStyle.bold);
