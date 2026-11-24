@@ -1,4 +1,4 @@
-import { directFormattingFromMarks, normalizeDirectValue, type DirectFormat, type FormattingMark } from '../model/directFormatting';
+import { normalizeDirectValue, type DirectFormat } from '../model/directFormatting';
 import { normalizeParagraphValue, type ParagraphFormat } from '../model/directParagraphFormatting';
 import type { OmiInlineRun } from '../model/inlineSemantics';
 import { normalizeInlineLanguageTag } from '../model/richText';
@@ -65,7 +65,7 @@ export function odtParagraphProperties(attrs: Record<string, unknown> | undefine
 const lengthPt = (raw: string | undefined): number | undefined => {
   const m = raw?.trim().match(/^(-?(?:\d+(?:\.\d+)?|\.\d+))(pt|cm|mm|in|pc)$/);
   if (!m) return undefined;
-  return Number(m[1]) * ({pt:1, cm:72/2.54, mm:72/25.4, in:72, pc:12}[m[2]!] ?? 1);
+  return Number(m[1]) * (({pt:1, cm:72/2.54, mm:72/25.4, in:72, pc:12} as Record<string, number>)[m[2]!] ?? 1);
 };
 export function readOdtParagraphProperties(read: (name: string) => string | undefined): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -84,8 +84,8 @@ export function readOdtParagraphProperties(read: (name: string) => string | unde
   else if (line && /^\d+(?:\.\d+)?%$/.test(line)) { add('omiLineRule','auto'); add('omiLineSpacing',parseFloat(line)/100); }
   return result;
 }
-export function readOdtDirectProperties(read: (name: string) => string | undefined, styleName: string): FormattingMark[] {
-  const marks: FormattingMark[] = [];
+export function readOdtDirectProperties(read: (name: string) => string | undefined, styleName: string): Array<{ type: string; attrs?: Record<string, unknown> }> {
+  const marks: Array<{ type: string; attrs?: Record<string, unknown> }> = [];
   const add = (type: DirectFormat, raw: unknown) => { const value = normalizeDirectValue(type, raw); if (value !== undefined) marks.push({ type, attrs: { value } }); };
   add('omiFontSize', lengthPt(read('fo:font-size')));
   add('omiTracking', lengthPt(read('fo:letter-spacing')));
@@ -117,5 +117,5 @@ export function readOdtDirectProperties(read: (name: string) => string | undefin
   return marks;
 }
 export function odtRunHasDirectFormatting(run: OmiInlineRun): boolean {
-  return Object.keys(run.directFormatting ?? directFormattingFromMarks(undefined)).length > 0;
+  return Object.keys(run.directFormatting ?? {}).length > 0;
 }
