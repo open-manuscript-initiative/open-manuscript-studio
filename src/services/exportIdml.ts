@@ -90,7 +90,7 @@ export function buildIdmlExport(
           for (const run of runs) {
             const direct = run.directFormatting;
             if (!direct) continue;
-            if (direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || direct.omiKerning !== undefined || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
+            if (direct.omiLigatures !== undefined || direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || direct.omiKerning !== undefined || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
               warnings.push(`Some direct typography in block ${block.id} has no exact IDML mapping; review in InDesign.`);
               break;
             }
