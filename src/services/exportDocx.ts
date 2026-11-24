@@ -45,7 +45,7 @@ export interface DocxExportResult {
  * calculate and deduplicate page numbers from the final pagination.
  */
 export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
-  manuscript = publicPublicationManuscript(manuscript);
+  manuscript = publicPublicationManuscript(manuscript, { preserveHiddenText: true });
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const metadataConversion = officeMetadataConversion(manuscript, context);
@@ -175,7 +175,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   }
 
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -410,7 +410,7 @@ function renderWordNotes(kind: WordNoteKind, notes: readonly { id: number; body:
   const reference = kind === 'footnote' ? 'footnoteRef' : 'endnoteRef';
   const separator = kind === 'footnote' ? 'footnote' : 'endnote';
   const notesXml = notes.map((note) => `<w:${item} w:id="${note.id}"><w:p><w:pPr><w:pStyle w:val="${kind === 'footnote' ? 'FootnoteText' : 'EndnoteText'}"/></w:pPr><w:r><w:rPr><w:rStyle w:val="${kind === 'footnote' ? 'FootnoteReference' : 'EndnoteReference'}"/></w:rPr><w:${reference}/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>${note.body}</w:p></w:${item}>`).join('');
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:${separator} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:${separator}><w:${separator} w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${separator}>${notesXml}</w:${root}>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:${separator} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:${separator}><w:${separator} w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${separator}>${notesXml}</w:${root}>`;
 }
 
 function noteParagraphStyle(id: string, name: string): string {
