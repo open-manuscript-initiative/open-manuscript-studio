@@ -117,6 +117,80 @@ const PARAGRAPH_LABELS: Record<string, Labels> = {
   nl: ['Alineaopmaak','Links uitlijnen','Centreren','Rechts uitlijnen','Uitvullen','Inspringing links (pt)','Inspringing rechts (pt)','Eerste regel (pt)','Ruimte voor (pt)','Ruimte na (pt)','Regelafstand','Type regelafstand','Meervoudig','Exact (pt)','Minimaal (pt)','Lijstniveau verhogen','Lijstniveau verlagen','Alineaopmaak herstellen'],
   pl: ['Formatowanie akapitu','Wyrównaj do lewej','Wyśrodkuj','Wyrównaj do prawej','Wyjustuj','Wcięcie lewe (pt)','Wcięcie prawe (pt)','Wcięcie pierwszego wiersza (pt)','Odstęp przed (pt)','Odstęp po (pt)','Interlinia','Rodzaj interlinii','Wielokrotna','Dokładna (pt)','Co najmniej (pt)','Zwiększ poziom listy','Zmniejsz poziom listy','Resetuj akapit'],
 };
+const PAGINATION_LABELS: Record<string, readonly string[]> = {
+  "en": [
+    "Widow/orphan control",
+    "Keep with next",
+    "Keep lines together",
+    "Page break before",
+    "Inherit",
+    "On",
+    "Off"
+  ],
+  "hu": [
+    "Fattyú- és árvasorok tiltása",
+    "Együtt a következővel",
+    "Sorok együtt tartása",
+    "Oldaltörés előtte",
+    "Öröklés",
+    "Be",
+    "Ki"
+  ],
+  "de": [
+    "Schusterjungen/Hurenkinder vermeiden",
+    "Mit nächstem Absatz zusammenhalten",
+    "Zeilen zusammenhalten",
+    "Seitenumbruch davor",
+    "Vererben",
+    "Ein",
+    "Aus"
+  ],
+  "fr": [
+    "Éviter les veuves et orphelines",
+    "Avec le paragraphe suivant",
+    "Lignes solidaires",
+    "Saut de page avant",
+    "Hériter",
+    "Activé",
+    "Désactivé"
+  ],
+  "it": [
+    "Controllo righe isolate",
+    "Mantieni con successivo",
+    "Mantieni righe unite",
+    "Interruzione di pagina prima",
+    "Eredita",
+    "Attivo",
+    "Disattivo"
+  ],
+  "es": [
+    "Control de viudas y huérfanas",
+    "Mantener con el siguiente",
+    "Mantener líneas juntas",
+    "Salto de página anterior",
+    "Heredar",
+    "Activado",
+    "Desactivado"
+  ],
+  "nl": [
+    "Weduwen en wezen voorkomen",
+    "Bij volgende houden",
+    "Regels bijeenhouden",
+    "Pagina-einde ervoor",
+    "Overnemen",
+    "Aan",
+    "Uit"
+  ],
+  "pl": [
+    "Kontrola wdów i sierot",
+    "Razem z następnym",
+    "Zachowaj wiersze razem",
+    "Podział strony przed",
+    "Dziedzicz",
+    "Włącz",
+    "Wyłącz"
+  ]
+};
 const paragraphLabels = (locale: SupportedLocale) => PARAGRAPH_LABELS[locale] ?? PARAGRAPH_LABELS.en!;
 export function paragraphFormattingLabel(locale: SupportedLocale): string { return paragraphLabels(locale)[0]!; }
 
@@ -129,6 +203,7 @@ function selectedParagraphValue(editor: Editor, name: string): { value: string; 
 }
 export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; locale: SupportedLocale }) {
   const l = paragraphLabels(locale);
+  const pagination = PAGINATION_LABELS[locale] ?? PAGINATION_LABELS.en!;
   const copy = getRichTextCopy(locale);
   const common = { editor, copy, reset: labels(locale)[19]!, mixed: labels(locale)[20]!, paragraph: true };
   const align = selectedParagraphValue(editor, 'omiAlign');
@@ -146,7 +221,7 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
       {command(l[15]!, <IndentIncrease size={17} />, () => editor.chain().focus().sinkListItem('listItem').run(), false, !editor.can().sinkListItem('listItem'))}
       {command(l[16]!, <IndentDecrease size={17} />, () => editor.chain().focus().liftListItem('listItem').run(), false, !editor.can().liftListItem('listItem'))}
       {command(l[17]!, <RemoveFormatting size={17} />, () => editor.chain().focus().updateAttributes('paragraph', {
-        omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null,
+        omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null, omiWidowControl: null, omiKeepNext: null, omiKeepLines: null, omiPageBreakBefore: null,
       }).run())}
     </div>
     <div className="omi-direct-format-fields">
@@ -159,6 +234,17 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
         choices={['auto', 'exact', 'atLeast'].map((value, i) => ({ value, label: l[12 + i]! }))}
         normalize={value => normalizeParagraphValue('omiLineRule', value)} />
       {field('omiLineSpacing', 10, '1.5')}
+      {(['omiWidowControl','omiKeepNext','omiKeepLines','omiPageBreakBefore'] as const).map((name, index) => {
+        const selected = selectedParagraphValue(editor, name);
+        return <label key={name} className="omi-direct-format-field">
+          <span>{pagination[index]}</span>
+          <select aria-label={pagination[index]} value={selected.mixed ? 'mixed' : selected.value}
+            onChange={event => editor.chain().focus().updateAttributes('paragraph', { [name]: event.target.value === '' ? null : event.target.value === 'true' }).run()}>
+            {selected.mixed && <option value="mixed" disabled>{labels(locale)[20]}</option>}
+            <option value="">{pagination[4]}</option><option value="true">{pagination[5]}</option><option value="false">{pagination[6]}</option>
+          </select>
+        </label>;
+      })}
     </div>
   </div>;
 }
