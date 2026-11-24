@@ -1,3 +1,4 @@
+import { normalizeSourceStyle, resolveSourceStyle, type SourceStyle } from '../model/sourceWordStyles';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import {
@@ -24,6 +25,7 @@ interface CharacterStyle {
   name?: string;
   basedOn?: string;
   semantics: DocxInlineSemantic[];
+  source: SourceStyle;
 }
 
 interface TiptapMark {
@@ -84,12 +86,13 @@ async function readRichParagraphCandidates(file: File): Promise<RichParagraphCan
     if (['br', 'cr', 'tab', 'hyperlink', 'fldSimple', 'fldChar', 'instrText'].some(
       (name) => descendantsByLocalName(paragraph, name).length > 0,
     )) continue;
-    const segments = parseParagraphRuns(paragraph, styles);
+    const pPr = directChildrenByLocalName(paragraph, 'pPr')[0];
+    const pStyle = pPr && directChildrenByLocalName(pPr,'pStyle')[0];
+    const paragraphStyle = importedStyle(pStyle && attributeByLocalName(pStyle,'val'), styles, 'paragraph');
+    const segments = parseParagraphRuns(paragraph, styles, paragraphStyle);
     const text = segments.map((segment) => segment.text).join('');
     if (!text.trim()) continue;
-    if (!segments.some((segment) => segment.marks.length > 0)) continue;
-
-    const pPr = directChildrenByLocalName(paragraph, 'pPr')[0];
+    if (!paragraphStyle && !segments.some((segment) => segment.marks.length > 0)) continue;
     const attrs = pPr ? readWordParagraphFormatting((property, attribute) => {
       const item = directChildrenByLocalName(pPr, property)[0];
       return item ? attributeByLocalName(item, attribute) : undefined;
@@ -98,6 +101,7 @@ async function readRichParagraphCandidates(file: File): Promise<RichParagraphCan
       const container = directChildrenByLocalName(pPr, parent)[0];
       return container ? directChildrenByLocalName(container, name).map(element => Object.fromEntries(Array.from(element.attributes).map(attribute => [attribute.localName, attribute.value]))) : [];
     }));
+    if (paragraphStyle) attrs.omiWordParagraphStyle = paragraphStyle;
     candidates.push({
       text,
       content: JSON.stringify({
@@ -160,6 +164,7 @@ function isSafeSimpleTextBlock(block: OmiBlock): boolean {
 function parseParagraphRuns(
   paragraph: Element,
   styles: ReadonlyMap<string, CharacterStyle>,
+  paragraphStyle?: string,
 ): WordRunSegment[] {
   const result: WordRunSegment[] = [];
 
@@ -180,11 +185,28 @@ function parseParagraphRuns(
     const inherited = styleId
       ? resolveCharacterStyleSemantics(styleId, styles)
       : [];
+    const characterStyle = importedStyle(styleId,styles,'character');
+    const p = resolveSourceStyle(paragraphStyle), c = resolveSourceStyle(characterStyle);
     const semantics = Array.from(new Set([...inherited, ...direct]));
+    // Named custom style toggles and absolute direct overrides must not be
+    // collapsed into a union: an explicit w:b=0 cancels inherited bold.
+    for (const [property,semantic] of [['b','strong'],['i','emphasis']] as const) {
+      const key = property === 'b' ? 'bold' : 'italic';
+      const explicit = properties && directChildrenByLocalName(properties,property)[0];
+      const enabled = explicit ? enabledWordProperty(properties!,property) : c[key] !== undefined ? Boolean(p[key]) !== c[key] : p[key];
+      if (enabled === undefined) continue;
+      const index = semantics.indexOf(semantic);
+      if (enabled && index < 0) semantics.push(semantic);
+      if (!enabled && index >= 0) semantics.splice(index,1);
+    }
     const marks: TiptapMark[] = mergeWordDirectFormatting(semantics.flatMap(toTiptapMark), properties ? wordDirectFormatting(
       (property, attribute = 'val') => { const item = directChildrenByLocalName(properties, property)[0]; return item ? attributeByLocalName(item, attribute) : undefined; },
       (property) => directChildrenByLocalName(properties, property).length > 0,
     ) : []);
+    const inheritedColor = c.color ?? p.color;
+    const colorElement = properties && directChildrenByLocalName(properties,'color')[0];
+    if (inheritedColor && !colorElement && !marks.some(m=>m.type==='omiTextColor')) marks.push({type:'omiTextColor',attrs:{value:inheritedColor}});
+    if (characterStyle) marks.push({type:'omiWordCharacterStyle',attrs:{definition:characterStyle}});
     const sourceFontFamily = properties
       ? sourceFontFamilyFromRunProperties(properties)
       : undefined;
@@ -217,7 +239,7 @@ function parseCharacterStyles(xml: string): Map<string, CharacterStyle> {
 
   for (const style of descendantsByLocalName(document, 'style')) {
     const type = attributeByLocalName(style, 'type');
-    if (type && type !== 'character') continue;
+    if (type !== 'character' && type !== 'paragraph') continue;
     const id = attributeByLocalName(style, 'styleId');
     if (!id) continue;
     const nameElement = directChildrenByLocalName(style, 'name')[0];
@@ -225,10 +247,15 @@ function parseCharacterStyles(xml: string): Map<string, CharacterStyle> {
     const name = nameElement ? attributeByLocalName(nameElement, 'val') : undefined;
     const rPr = directChildrenByLocalName(style, 'rPr')[0];
     const semantics = [
-      ...wordCharacterStyleSemantics(id, name),
+      ...(type === 'character' ? wordCharacterStyleSemantics(id, name) : []),
       ...(rPr ? semanticsFromRunProperties(rPr) : []),
     ];
+    const next = directChildrenByLocalName(style,'next')[0];
+    const color = rPr && directChildrenByLocalName(rPr,'color')[0];
+    const flag = (key:string) => rPr && directChildrenByLocalName(rPr,key)[0] ? enabledWordProperty(rPr,key) : undefined;
+    const rawColor = color && attributeByLocalName(color,'val');
     result.set(id, {
+      source: {id,name:name ?? id,kind:type,basedOn:basedOnElement && attributeByLocalName(basedOnElement,'val'),next:next && attributeByLocalName(next,'val'),bold:flag('b'),italic:flag('i'),color:rawColor && /^([0-9a-f]{6})$/i.test(rawColor) ? '#'+rawColor : undefined},
       id,
       name,
       basedOn: basedOnElement ? attributeByLocalName(basedOnElement, 'val') : undefined,
@@ -237,6 +264,28 @@ function parseCharacterStyles(xml: string): Map<string, CharacterStyle> {
   }
 
   return result;
+}
+
+
+function importedStyle(id: string | undefined, styles: ReadonlyMap<string,CharacterStyle>, kind: SourceStyle['kind']): string | undefined {
+  if (!id || styles.get(id)?.source.kind !== kind) return undefined;
+  // Studio's own exported semantic styles are already represented by native
+  // marks. Do not add redundant source metadata on repeated DOCX imports.
+  if (/^(?:Normal|DefaultParagraphFont|Title|Subtitle|Author|Heading[1-9]|FootnoteText|EndnoteText|FootnoteReference|EndnoteReference|FundingNote|OMIStrong|OMIEmphasis|OMIStrongEmphasis|OMIStrike|OMIUnderline|OMISmallCaps|OMISuperscript|OMISubscript|OMICode|OMIAuthorGivenName|OMIAuthorFamilyName)$/.test(id)) return undefined;
+  const definitions: SourceStyle[]=[];
+  const seen=new Set<string>();
+  const pending=[id];
+  while(pending.length && definitions.length < 64) {
+    const key=pending.shift()!;
+    if(seen.has(key)) continue;
+    seen.add(key);
+    const definition=styles.get(key)?.source;
+    if(!definition) continue;
+    definitions.push(definition);
+    if(definition.basedOn) pending.push(definition.basedOn);
+    if(definition.next) pending.push(definition.next);
+  }
+  return normalizeSourceStyle({selected:id,styles:definitions});
 }
 
 function resolveCharacterStyleSemantics(
