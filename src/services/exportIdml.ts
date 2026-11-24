@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { normalizeDirectValue } from '../model/directFormatting';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { publicationFirstPageNumber } from '../model/publicationSpreads';
@@ -41,6 +42,7 @@ export function buildIdmlExport(
   manuscript: OmiManuscript,
   publicationStyle?: PublicationStyle,
 ): IdmlExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'IDML');
