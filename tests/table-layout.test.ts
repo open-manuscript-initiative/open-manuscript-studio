@@ -85,3 +85,32 @@ test('native table header counts are bounded and do not mutate cells', async () 
   assert.equal(tableHeaderRows(cells,8),2);
   assert.deepEqual(cells,[['H'],['A']]);
 });
+
+test('cell merges retain the matrix and reject overlap, nonempty cells and header crossing', async () => {
+  const {extendTableMerge,splitTableMerge,tableMergeLayout}=await import('../src/model/tableLayout.ts');
+  const cells=[['Header',''],['Anchor',''],['','']];
+  const horizontal=extendTableMerge(cells,undefined,0,0,'right',1);
+  assert.deepEqual(horizontal,[{row:0,column:0,rowSpan:1,colSpan:2}]);
+  assert.equal(extendTableMerge(cells,horizontal,0,0,'down',1),undefined);
+  const vertical=extendTableMerge(cells,horizontal,1,0,'down',1);
+  assert.ok(vertical);
+  const rectangle=extendTableMerge(cells,vertical,1,0,'right',1);
+  assert.ok(rectangle);
+  assert.equal(tableMergeLayout(cells,rectangle,1).covered(2,1),true);
+  assert.deepEqual(splitTableMerge(cells,rectangle,2,1,1),horizontal);
+  assert.equal(extendTableMerge([['A','B']],undefined,0,0,'right'),undefined);
+  assert.equal(tableMergeLayout([['A','B']],[{row:0,column:0,rowSpan:1,colSpan:2}]).merges.length,0);
+  assert.equal(tableMergeLayout(cells,[{row:0,column:0,rowSpan:Infinity,colSpan:2}]).merges.length,0);
+  const manuscript=createVersionedTestManuscript();
+  const block=createTableBlock(cells,{headerRows:1,cellMerges:rectangle},'merged-test');
+  manuscript.sections[0]!.blocks.push(block);
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const visual=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(visual?.kind==='table');
+  assert.deepEqual(visual.cellMerges,rectangle);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<th scope="colgroup" colspan="2">Header<\/th>/);
+    assert.match(html,/<td rowspan="2" colspan="2">Anchor<\/td>/);
+  }
+  assert.deepEqual(cells,[['Header',''],['Anchor',''],['','']]);
+});
