@@ -1,5 +1,6 @@
+import { normalizeSourceStyle, sourceStyleBundle } from '../model/sourceWordStyles';
 import type { Editor } from '@tiptap/core';
-import { PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
+import { Unlink, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { normalizeParagraphValue, paragraphBorders, paragraphTabs, BORDER_SIDES, type ParagraphFormat, type ParagraphBorder, type ParagraphTab } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
@@ -87,6 +88,7 @@ export function DirectFormattingPanel({ editor, locale }: { editor: Editor; loca
       {toggle('omiShadow', 16, <span aria-hidden="true" style={{ textShadow: '1px 1px 1px #888' }}>A</span>)}
     </div>
     <div className="omi-direct-format-fields">
+      <SourceStyleControls editor={editor} locale={locale} kind="character"/>
       <FormatField {...common} name="omiSourceFont" attribute="family" label={l[1]!} icon={<Type size={16} aria-hidden="true" />}
         normalize={v => { const value = v.trim(); return value && value.length <= 128 && Array.from(value).every(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127) ? value : undefined; }} />
       {field('omiFontSize', 2, <LetterText size={16} aria-hidden="true" />, 'number', '12')}
@@ -234,6 +236,7 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
         choices={['auto', 'exact', 'atLeast'].map((value, i) => ({ value, label: l[12 + i]! }))}
         normalize={value => normalizeParagraphValue('omiLineRule', value)} />
       {field('omiLineSpacing', 10, '1.5')}
+      <SourceStyleControls editor={editor} locale={locale} kind="paragraph"/>
       <ParagraphDecorationControls editor={editor} locale={locale}/>
       {(['omiWidowControl','omiKeepNext','omiKeepLines','omiPageBreakBefore'] as const).map((name, index) => {
         const selected = selectedParagraphValue(editor, name);
@@ -562,4 +565,92 @@ function ParagraphDecorationControls({editor,locale}: {editor:Editor;locale:Supp
       </div>)}
     </div>}
   </>;
+}
+
+const SOURCE_STYLE_LABELS:Record<string,Labels>={
+  "en": [
+    "Source paragraph style",
+    "Source character style",
+    "Based on",
+    "Next style",
+    "Detach source style"
+  ],
+  "hu": [
+    "Forrás-bekezdésstílus",
+    "Forrás-karakterstílus",
+    "Alapstílus",
+    "Következő stílus",
+    "Forrásstílus leválasztása"
+  ],
+  "de": [
+    "Quell-Absatzformat",
+    "Quell-Zeichenformat",
+    "Basiert auf",
+    "Folgeformat",
+    "Quellformat lösen"
+  ],
+  "fr": [
+    "Style de paragraphe source",
+    "Style de caractère source",
+    "Basé sur",
+    "Style suivant",
+    "Dissocier le style source"
+  ],
+  "it": [
+    "Stile paragrafo sorgente",
+    "Stile carattere sorgente",
+    "Basato su",
+    "Stile successivo",
+    "Scollega stile sorgente"
+  ],
+  "es": [
+    "Estilo de párrafo de origen",
+    "Estilo de carácter de origen",
+    "Basado en",
+    "Estilo siguiente",
+    "Desvincular estilo de origen"
+  ],
+  "nl": [
+    "Bronalineaopmaak",
+    "Brontekenopmaak",
+    "Gebaseerd op",
+    "Volgende stijl",
+    "Bronstijl loskoppelen"
+  ],
+  "pl": [
+    "Źródłowy styl akapitu",
+    "Źródłowy styl znaku",
+    "Na podstawie",
+    "Następny styl",
+    "Odłącz styl źródłowy"
+  ]
+};
+
+function SourceStyleControls({editor,locale,kind}:{editor:Editor;locale:SupportedLocale;kind:'paragraph'|'character'}) {
+  const l=SOURCE_STYLE_LABELS[locale]??SOURCE_STYLE_LABELS.en!;
+  const copy=getRichTextCopy(locale);
+  const current=kind==='paragraph' ? selectedParagraphValue(editor,'omiWordParagraphStyle') : selectedValue(editor,'omiWordCharacterStyle','definition');
+  const bundle=sourceStyleBundle(current.value);
+  const selected=bundle?.styles.find(style=>style.id===bundle.selected);
+  if(!selected||!bundle) return null;
+  return <SourceStyleFields key={current.value} editor={editor} kind={kind} locale={locale} bundle={bundle} selected={selected.id} applyLabel={copy.apply} labels={l}/>;
+}
+function SourceStyleFields({editor,kind,locale,bundle,selected,applyLabel,labels:l}:{
+  editor:Editor;kind:'paragraph'|'character';locale:SupportedLocale;bundle:NonNullable<ReturnType<typeof sourceStyleBundle>>;selected:string;applyLabel:string;labels:Labels;
+}) {
+  const style=bundle.styles.find(item=>item.id===selected)!;
+  const [name,setName]=useState(style.name);
+  const label=l[kind==='paragraph'?0:1]!;
+  const definition=normalizeSourceStyle({...bundle,styles:bundle.styles.map(item=>item.id===selected?{...item,name}:item)});
+  const apply=(value:string|null)=>{
+    if(kind==='paragraph') editor.chain().focus().updateAttributes('paragraph',{omiWordParagraphStyle:value}).run();
+    else applyMark(editor,'omiWordCharacterStyle',value===null?null:{definition:value});
+  };
+  return <div className="omi-direct-format-field" lang={locale}>
+    <label><span>{label}</span><input aria-label={label} value={name} maxLength={160} onChange={e=>setName(e.target.value)}/></label>
+    {style.basedOn && <small>{l[2]}: {bundle.styles.find(item=>item.id===style.basedOn)?.name??style.basedOn}</small>}
+    {style.next && <small>{l[3]}: {bundle.styles.find(item=>item.id===style.next)?.name??style.next}</small>}
+    <button type="button" title={applyLabel} aria-label={applyLabel+': '+label} disabled={!definition||name===style.name} onMouseDown={e=>e.preventDefault()} onClick={()=>{if(definition)apply(definition);}}>✓</button>
+    <button type="button" title={l[4]} aria-label={l[4]} onMouseDown={e=>e.preventDefault()} onClick={()=>apply(null)}><Unlink size={16} aria-hidden="true"/></button>
+  </div>;
 }
