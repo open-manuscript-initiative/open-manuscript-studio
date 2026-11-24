@@ -84,7 +84,8 @@ function assertIdmlStyle(parts: Map<string, string>, text: string, style: string
 function assertOdtStyle(parts: Map<string, string>, text: string, property: string[], expectedStyle?: string): void {
   const content = xml(part(parts, 'content.xml'));
   const styles = [content, xml(part(parts, 'styles.xml'))].flatMap(doc => elements(doc, 'style'));
-  const spans = elements(content, 'span').filter(el => el.textContent === text);
+  // Adjacent runs with identical formatting may be merged, including the bold case label.
+  const spans = elements(content, 'span').filter(el => el.textContent?.includes(text));
   assert.ok(spans.some(span => {
     const name = attr(span, 'style-name');
     if (expectedStyle && name !== expectedStyle) return false;
@@ -112,10 +113,16 @@ export function registerFormattingExportContracts(): void {
       const odtResult = buildOdtExport(manuscript);
       const odt = storedParts(odtResult.bytes);
       const idml = storedParts(buildIdmlExport(manuscript).bytes);
-      const htmlSample = item.id === 'C09' ? '<span style="font-variant:small-caps">' + sample + '</span>' : '<' + item.html + '>' + sample + '</' + item.html + '>';
-      await t.test(item.id + ' HTML5 exact sample markup', () => assert.ok(html.includes(htmlSample)));
-      await t.test(item.id + ' JATS exact sample markup', () => assert.ok(jats.includes('<' + item.jats + '>' + sample + '</' + item.jats + '>')));
-      await t.test(item.id + ' PDF print HTML exact sample markup', () => assert.ok(print.includes(htmlSample)));
+      // In C01 the fixture label and sample are both bold. An exporter may
+      // combine their adjacent identical runs. Accept either boundary, but
+      // still require the entire sample to be inside the exact semantic tag.
+      const markedSample = (tag: string, attributes = '') => [sample, ...(item.id === 'C01' ? ['C01 | Félkövér – ' + sample] : [])]
+        .map(text => '<' + tag + attributes + '>' + text + '</' + tag + '>');
+      const htmlSamples = markedSample(item.html, item.id === 'C09' ? ' style="font-variant:small-caps"' : '');
+      const jatsSamples = markedSample(item.jats);
+      await t.test(item.id + ' HTML5 exact sample markup', () => assert.ok(htmlSamples.some(value => html.includes(value))));
+      await t.test(item.id + ' JATS exact sample markup', () => assert.ok(jatsSamples.some(value => jats.includes(value))));
+      await t.test(item.id + ' PDF print HTML exact sample markup', () => assert.ok(htmlSamples.some(value => print.includes(value))));
       await t.test(item.id + ' IDML applied style and definition', () => assertIdmlStyle(idml, sample, item.idml, item.idmlProperty));
       await t.test(item.id + ' ODT applied style and reimport', { todo: item.odt ? false : todo('Exact ODT small caps or vertical position remains an acceptance gap') }, async () => {
         assertOdtStyle(odt, sample, item.odtProperty, item.odt ?? undefined);
@@ -171,7 +178,8 @@ export function registerFormattingExportContracts(): void {
       }));
     });
     await t.test('N09 JATS keeps the line-break character without inventing a visual layout', () => {
-      assert.ok(renderJatsArticle(specimen('N09')).xml.includes('Első sor\nMásodik sor'));
+      const source = renderJatsArticle(specimen('N09')).xml;
+      assert.ok(elements(xml(source), 'p').some(p => p.textContent?.includes('Első sor\nMásodik sor')), 'Decoded XML paragraph must preserve the exact line break');
     });
   });
 }
