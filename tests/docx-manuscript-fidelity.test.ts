@@ -649,7 +649,8 @@ for (const format of ['docx', 'odt'] as const) {
 const masterFixture = new URL('./fixtures/omi-formatting-master-test.docx', import.meta.url);
 const masterManifest = JSON.parse(readFileSync(new URL('./fixtures/omi-formatting-test-manifest.json', import.meta.url), 'utf8')) as {
   version: string;
-  cases: Array<{ id: string; feature: string; sample?: string; checks: string[] }>;
+  cases: Array<{ id: string; feature: string; sample?: string; checks?: string[] }>;
+  default_checks: string[];
 };
 const exactMasterMarks: Record<string, { type: string; attrs?: Record<string, unknown> }> = {
   C01: { type: 'bold' },
@@ -668,7 +669,7 @@ test('master formatting fixture declares all 65 distinct cases and five checks',
   assert.equal(new Set(masterManifest.cases.map(item => item.id)).size, 65);
   for (const item of masterManifest.cases) {
     assert.match(item.id, /^[A-Z][0-9]{2}$/);
-    assert.deepEqual(item.checks, ['import', 'edit', 'remove_or_reset', 'save_reopen', 'export_supported_formats']);
+    assert.deepEqual(item.checks ?? masterManifest.default_checks, ['import', 'edit', 'remove_or_reset', 'save_reopen', 'export_supported_formats']);
   }
 });
 
