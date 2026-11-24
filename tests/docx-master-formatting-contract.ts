@@ -26,7 +26,7 @@ const manifest = new URL('./fixtures/omi-formatting-test-manifest.json', import.
 
 // Only local test inputs and the Studio-generated result are opened. The ZIP
 // reader does not extract files to disk; it supports the two OOXML ZIP methods.
-export function readWordPackage(bytes: Uint8Array): WordPackage {
+export function readZipParts(bytes: Uint8Array): Map<string, Buffer> {
   const zip = Buffer.from(bytes);
   let end = zip.length - 22;
   while (end >= Math.max(0, zip.length - 65557) && zip.readUInt32LE(end) !== 0x06054b50) end--;
@@ -53,6 +53,11 @@ export function readWordPackage(bytes: Uint8Array): WordPackage {
     parts.set(name, data);
     offset += 46 + nameLength + extraLength + commentLength;
   }
+  return parts;
+}
+
+export function readWordPackage(bytes: Uint8Array): WordPackage {
+  const parts = readZipParts(bytes);
   const document = xmlPart(parts, 'word/document.xml');
   assert.ok(document, 'Missing word/document.xml');
   return { parts, document, styles: xmlPart(parts, 'word/styles.xml'), numbering: xmlPart(parts, 'word/numbering.xml'), relations: xmlPart(parts, 'word/_rels/document.xml.rels') };
