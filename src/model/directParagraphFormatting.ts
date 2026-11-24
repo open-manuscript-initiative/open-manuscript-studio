@@ -72,7 +72,7 @@ export function paragraphFormattingWordXml(attrs: Record<string, unknown> | unde
     + (indent ? '<w:ind' + indent + '/>' : '')
     + (align ? '<w:jc w:val="' + (align === 'justify' ? 'both' : align) + '"/>' : '');
 }
-export function readWordParagraphFormatting(read: (property: string, attribute: string) => string | undefined): Record<string, unknown> {
+export function readWordParagraphFormatting(read: (property: string, attribute: string) => string | undefined, exists: (property: string) => boolean = () => false): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   const add = (name: ParagraphFormat, raw: unknown) => {
     const value = normalizeParagraphValue(name, raw);
@@ -99,7 +99,7 @@ export function readWordParagraphFormatting(read: (property: string, attribute: 
     ['omiWidowControl','widowControl'], ['omiKeepNext','keepNext'], ['omiKeepLines','keepLines'], ['omiPageBreakBefore','pageBreakBefore'],
   ] as const) {
     const raw = read(property,'val');
-    if (raw !== undefined) add(name, !/^(?:0|false|off)$/i.test(raw));
+    if (raw !== undefined || exists(property)) add(name, !/^(?:0|false|off)$/i.test(raw ?? '1'));
   }
   return result;
 }
