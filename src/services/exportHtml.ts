@@ -1,3 +1,4 @@
+import { paragraphFormattingCss } from '../model/directParagraphFormatting';
 import { DIRECT_FORMAT_NAMES, directFormattingCss, underlineCss, type DirectFormat } from '../model/directFormatting';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -791,8 +792,10 @@ function renderJsonNode(node: JsonNode, state: RenderState): string {
   switch (node.type) {
     case 'doc':
       return children();
-    case 'paragraph':
-      return `<p>${children()}</p>`;
+    case 'paragraph': {
+      const css = paragraphFormattingCss(node.attrs, state.pagedNotes ? 'print' : 'html');
+      return `<p${css ? ` style="${css}"` : ''}>${children()}</p>`;
+    }
     case 'blockquote':
       return `<blockquote>${children()}</blockquote>`;
     case 'bulletList':
