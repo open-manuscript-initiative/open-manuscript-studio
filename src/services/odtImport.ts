@@ -255,10 +255,15 @@ function applyOdtTextStyle(
   }
   const position = properties.getAttribute('style:text-position');
   if (position) {
-    marks = marks.filter((mark) => !['omiSuperscript', 'omiSubscript'].includes(mark.type));
-    if (/^super\b/.test(position) || parseFloat(position) > 0) marks.push({ type: 'omiSuperscript' });
-    else if (/^sub\b/.test(position) || parseFloat(position) < 0) marks.push({ type: 'omiSubscript' });
+    marks = marks.filter((mark) => !['omiSuperscript', 'omiSubscript', 'omiBaseline'].includes(mark.type));
+    // An explicit 100% glyph size is a baseline shift, not semantic super/subscript.
+    if (!/^[-+]?(?:\d+(?:\.\d+)?|\.\d+)%\s+100%$/.test(position.trim())) {
+      if (/^super\b/.test(position) || parseFloat(position) > 0) marks.push({ type: 'omiSuperscript' });
+      else if (/^sub\b/.test(position) || parseFloat(position) < 0) marks.push({ type: 'omiSubscript' });
+    }
   }
+  const kerning = properties.getAttribute('style:letter-kerning');
+  if (kerning === 'true' || kerning === '1') marks = marks.filter(mark => mark.type !== 'omiKerning');
   const direct = readOdtDirectProperties(attribute => properties.getAttribute(attribute) ?? undefined, name);
   if (properties.getAttribute('style:text-line-through-type') === 'double') marks = marks.filter(mark => mark.type !== 'strike');
   return [...new Map([...marks, ...direct].map((mark) => [mark.type, mark])).values()];

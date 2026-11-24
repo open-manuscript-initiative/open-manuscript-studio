@@ -31,6 +31,16 @@ export function odtCharacterProperties(run: OmiInlineRun): Properties {
   ] as const) {
     const v = value(name); if (v !== undefined) p[property] = String(v) + unit;
   }
+  const kerning = value('omiKerning');
+  // ODF has an enable/disable switch, not Word's minimum point size.
+  if (typeof kerning === 'number') p['style:letter-kerning'] = String(kerning > 0);
+  const baseline = value('omiBaseline');
+  const size = value('omiFontSize');
+  // A full-size percentage shift must not resize the characters. Without
+  // an explicit size or when combined with super/subscript, keep the warning.
+  if (typeof baseline === 'number' && typeof size === 'number' && !has('superscript') && !has('subscript')) {
+    p['style:text-position'] = String(Math.round(baseline / size * 100 * 10000) / 10000) + '% 100%';
+  }
   const highlight = value('omiHighlight');
   if (typeof highlight === 'string') p['fo:background-color'] = HIGHLIGHTS[highlight]!;
   if (run.sourceFontFamily) p['fo:font-family'] = run.sourceFontFamily;
@@ -118,7 +128,12 @@ export function readOdtParagraphProperties(read: (name: string) => string | unde
 export function readOdtDirectProperties(read: (name: string) => string | undefined, styleName: string): Array<{ type: string; attrs?: Record<string, unknown> }> {
   const marks: Array<{ type: string; attrs?: Record<string, unknown> }> = [];
   const add = (type: DirectFormat, raw: unknown) => { const value = normalizeDirectValue(type, raw); if (value !== undefined) marks.push({ type, attrs: { value } }); };
-  add('omiFontSize', lengthPt(read('fo:font-size')));
+  const size = lengthPt(read('fo:font-size'));
+  add('omiFontSize', size);
+  const position = read('style:text-position')?.trim().match(/^(-?(?:\d+(?:\.\d+)?|\.\d+))%\s+100%$/);
+  if (position && size !== undefined && size > 0) add('omiBaseline', Number(position[1]) * size / 100);
+  // Enabled ODF kerning does not encode a numeric Word threshold.
+  if (read('style:letter-kerning') === 'false' || read('style:letter-kerning') === '0') add('omiKerning', 0);
   add('omiTracking', lengthPt(read('fo:letter-spacing')));
   const scale = read('style:text-scale');
   if (scale && /^\d+(?:\.\d+)?%$/.test(scale)) add('omiCharacterScale',parseFloat(scale));

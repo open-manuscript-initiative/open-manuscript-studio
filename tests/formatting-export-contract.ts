@@ -183,3 +183,52 @@ export function registerFormattingExportContracts(): void {
     });
   });
 }
+
+test('native ODT baseline shift and kerning, and IDML ligature flags are applied to actual runs', async () => {
+  const manuscript = createTestManuscript();
+  const run = (text: string, values: Record<string, string | number>): RichNode => ({
+    type: 'text', text, marks: Object.entries(values).map(([type,value]) => ({type,attrs:{value}})),
+  });
+  manuscript.sections[0]!.blocks[0]!.content = JSON.stringify({ type:'doc', content:[{type:'paragraph',content:[
+    run('Raised specimen', {omiFontSize:12,omiBaseline:3,omiKerning:0,omiLigatures:'standardDiscretional'}),
+    run('Lowered specimen', {omiFontSize:12,omiBaseline:-2,omiKerning:12,omiLigatures:'none'}),
+    run('Context specimen', {omiLigatures:'standardContextual'}),
+    run('Unformatted specimen', {}),
+  ]}]});
+  const odt = buildOdtExport(manuscript);
+  const odtParts = storedParts(odt.bytes);
+  assertOdtStyle(odtParts,'Raised specimen',['text-position','25% 100%']);
+  assertOdtStyle(odtParts,'Raised specimen',['letter-kerning','false']);
+  assertOdtStyle(odtParts,'Lowered specimen',['text-position','-16.6667% 100%']);
+  assertOdtStyle(odtParts,'Lowered specimen',['letter-kerning','true']);
+  assert.ok(odt.warnings.some(w=>w.includes('no exact ODT mapping')));
+  const reopened = await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'advanced.odt'));
+  const texts = reopened.sections.flatMap(s=>s.blocks).flatMap(b=>{
+    try { return nodes(JSON.parse(b.content) as RichNode); } catch { return []; }
+  });
+  for (const [text,shift] of [['Raised specimen',3],['Lowered specimen',-2]] as const) {
+    const actual = texts.find(n=>n.text?.includes(text));
+    assert.ok(actual);
+    assert.equal(actual.marks?.find(m=>m.type==='omiBaseline')?.attrs?.value,shift);
+    assert.ok(!actual.marks?.some(m=>['omiSuperscript','omiSubscript'].includes(m.type)));
+  }
+  assert.equal(texts.find(n=>n.text?.includes('Raised specimen'))?.marks?.find(m=>m.type==='omiKerning')?.attrs?.value,0);
+  assert.ok(!texts.find(n=>n.text?.includes('Lowered specimen'))?.marks?.some(m=>m.type==='omiKerning'));
+  const idml = buildIdmlExport(manuscript);
+  const ranges = [...storedParts(idml.bytes)].filter(([name])=>/^Stories\/.*\.xml$/.test(name)).flatMap(([,source])=>elements(xml(source),'CharacterStyleRange'));
+  const range = (text:string) => {
+    const actual = ranges.find(el=>el.textContent?.includes(text));
+    assert.ok(actual, text); return actual;
+  };
+  assert.equal(attr(range('Raised specimen'),'Ligatures'),'true');
+  assert.equal(attr(range('Raised specimen'),'OTFDiscretionaryLigature'),'true');
+  assert.equal(attr(range('Raised specimen'),'KerningMethod'),'$ID/None');
+  assert.equal(attr(range('Lowered specimen'),'Ligatures'),'false');
+  assert.equal(attr(range('Lowered specimen'),'OTFDiscretionaryLigature'),'false');
+  assert.equal(attr(range('Lowered specimen'),'KerningMethod'),'$ID/Metrics');
+  assert.equal(attr(range('Context specimen'),'Ligatures'),'true');
+  assert.equal(attr(range('Context specimen'),'OTFDiscretionaryLigature'),'false');
+  assert.equal(attr(range('Context specimen'),'OTFContextualAlternate'),undefined);
+  assert.equal(attr(range('Unformatted specimen'),'Ligatures'),undefined);
+  assert.ok(idml.warnings.some(w=>w.includes('no exact IDML mapping')));
+});
