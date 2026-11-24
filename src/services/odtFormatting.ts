@@ -60,6 +60,14 @@ export function odtParagraphProperties(attrs: Record<string, unknown> | undefine
     if (rule === 'atLeast') p['style:line-height-at-least'] = line + 'pt';
     else p['fo:line-height'] = rule === 'exact' ? line + 'pt' : Number(line) * 100 + '%';
   }
+  const widow = v('omiWidowControl');
+  if (widow !== undefined) { p['fo:widows'] = widow ? '2' : '1'; p['fo:orphans'] = widow ? '2' : '1'; }
+  const next = v('omiKeepNext');
+  if (next !== undefined) p['fo:keep-with-next'] = next ? 'always' : 'auto';
+  const lines = v('omiKeepLines');
+  if (lines !== undefined) p['fo:keep-together'] = lines ? 'always' : 'auto';
+  const before = v('omiPageBreakBefore');
+  if (before !== undefined) p['fo:break-before'] = before ? 'page' : 'auto';
   return p;
 }
 const lengthPt = (raw: string | undefined): number | undefined => {
@@ -82,6 +90,14 @@ export function readOdtParagraphProperties(read: (name: string) => string | unde
   if (min !== undefined) { add('omiLineRule','atLeast'); add('omiLineSpacing',min); }
   else if (exact !== undefined) { add('omiLineRule','exact'); add('omiLineSpacing',exact); }
   else if (line && /^\d+(?:\.\d+)?%$/.test(line)) { add('omiLineRule','auto'); add('omiLineSpacing',parseFloat(line)/100); }
+  const widows = read('fo:widows'); const orphans = read('fo:orphans');
+  if (widows !== undefined || orphans !== undefined) add('omiWidowControl', Number(widows ?? 0) > 1 || Number(orphans ?? 0) > 1);
+  for (const [name, property, enabled] of [
+    ['omiKeepNext','fo:keep-with-next','always'], ['omiKeepLines','fo:keep-together','always'], ['omiPageBreakBefore','fo:break-before','page'],
+  ] as const) {
+    const value = read(property);
+    if (value === enabled || value === 'auto') add(name,value === enabled);
+  }
   return result;
 }
 export function readOdtDirectProperties(read: (name: string) => string | undefined, styleName: string): Array<{ type: string; attrs?: Record<string, unknown> }> {
