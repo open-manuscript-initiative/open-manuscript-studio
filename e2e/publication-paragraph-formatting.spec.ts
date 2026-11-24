@@ -12,13 +12,15 @@ test('custom paragraph styles can be created, edited, inherited and reset in the
   const editor = menu.locator('.publication-style-editor');
   await editor.getByRole('button', { name: 'Paragraph styles', exact: true }).click();
   const panel = editor.locator('#publication-style-ribbon-panel-paragraphStyles');
+  // Native select options share the same accessible names as style-list buttons.
+  const styleList = panel.getByRole('listbox', { name: 'Paragraph styles', exact: true });
   const settings = panel.locator('.indesign-paragraph-style-settings');
   const category = (name: string) => settings.locator('nav').getByRole('button', { name, exact: true });
   const pane = settings.locator('.indesign-paragraph-style-category-pane');
   await panel.getByRole('button', { name: 'New paragraph style', exact: true }).click();
   await category('General').click();
   await pane.getByRole('textbox', { name: 'Style name', exact: true }).fill('QA base style');
-  await expect(panel.getByRole('option', { name: 'QA base style', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(styleList.getByRole('option', { name: 'QA base style', exact: true })).toHaveAttribute('aria-selected', 'true');
   await category('Indents and spacing').click();
   await pane.getByRole('combobox', { name: 'Alignment', exact: true }).selectOption('right');
   await pane.getByRole('spinbutton', { name: /^Left indent/ }).fill('10');
@@ -52,8 +54,8 @@ test('custom paragraph styles can be created, edited, inherited and reset in the
   await pane.getByRole('textbox', { name: 'Number expression', exact: true }).fill('^1.^#)');
   await pane.getByRole('spinbutton', { name: 'Start at', exact: true }).fill('3');
   await pane.getByRole('spinbutton', { name: 'Restart after level', exact: true }).fill('1');
-  await panel.getByRole('option', { name: 'QA base style', exact: true }).click();
-  await panel.getByRole('option', { name: 'QA derived style', exact: true }).click();
+  await styleList.getByRole('option', { name: 'QA base style', exact: true }).click();
+  await styleList.getByRole('option', { name: 'QA derived style', exact: true }).click();
   await category('Bullets and numbering').click();
   await expect(pane.getByRole('combobox', { name: 'List type', exact: true })).toHaveValue('numbers');
   await expect(pane.getByRole('spinbutton', { name: 'Level', exact: true })).toHaveValue('2');
