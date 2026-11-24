@@ -608,7 +608,7 @@ function getBlockTypeCopy(): BlockTypeCopy {
 
 function normalizeSourceFontFamily(value: string | null): string | null {
   const family = value?.trim();
-  return family && family.length <= 128 && !/[\\u0000-\\u001f\\u007f]/.test(family)
+  return family && family.length <= 128 && !/[\u0000-\u001f\u007f]/.test(family)
     ? family
     : null;
 }
