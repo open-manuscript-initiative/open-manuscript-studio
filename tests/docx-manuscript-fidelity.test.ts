@@ -872,3 +872,54 @@ test('paragraph decoration attributes reject invalid colors, CSS and duplicated 
   assert.equal(paragraphFormattingCss({omiParagraphBackground:'#000000;display:none'},'html'),'');
   assert.equal(paragraphFormattingWordXml({omiParagraphBackground:'"><bad/>'}),'');
 });
+
+
+test('named character styles preserve identity, inherited color, and cancellation across DOCX reopen', async () => {
+  const styles = '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+    + '<w:style w:type="character" w:styleId="SourceBase"><w:name w:val="Source base"/><w:rPr><w:color w:val="246B70"/></w:rPr></w:style>'
+    + '<w:style w:type="character" w:styleId="SourceAccent"><w:name w:val="Source accent"/><w:basedOn w:val="SourceBase"/><w:rPr><w:i/></w:rPr></w:style></w:styles>';
+  const source = makeDocx('<w:p><w:r><w:rPr><w:rStyle w:val="SourceAccent"/></w:rPr><w:t>Source accent specimen</w:t></w:r>'
+    + '<w:r><w:rPr><w:rStyle w:val="SourceAccent"/><w:i w:val="0"/></w:rPr><w:t> Plain override specimen</w:t></w:r></w:p>',
+    { entries:[textZipEntry('word/styles.xml',styles)] });
+  const plan=await parseDocxForStudio(source);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Source styles regression'}),sections:plan.sections};
+  const inspect=(sections:typeof plan.sections)=>{
+    const block=sections.flatMap(section=>section.blocks).find(b=>b.content.includes('Source accent specimen'));
+    assert.ok(block);
+    const nodes=findNodes(JSON.parse(block.content),'text');
+    const accent=nodes.find(n=>n.text==='Source accent specimen');
+    const plain=nodes.find(n=>n.text===' Plain override specimen');
+    assert.ok(accent&&plain);
+    for(const node of [accent,plain]) {
+      const mark=node.marks?.find(m=>m.type==='omiWordCharacterStyle');
+      assert.ok(mark);
+      const bundle=JSON.parse(String(mark.attrs?.definition));
+      assert.equal(bundle.selected,'SourceAccent');
+      assert.equal(bundle.styles.find((style:{id:string})=>style.id==='SourceAccent').basedOn,'SourceBase');
+      assert.equal(node.marks?.find(m=>m.type==='omiTextColor')?.attrs?.value,'#246B70');
+    }
+    assert.ok(accent.marks?.some(m=>m.type==='italic'));
+    assert.ok(!plain.marks?.some(m=>m.type==='italic'));
+  };
+  inspect(plan.sections);
+  const result=buildDocxExport(manuscript);
+  const parts=readZipParts(result.bytes);
+  const document=new XmlDomParser().parseFromString(parts.get('word/document.xml')!.toString('utf8'),'application/xml');
+  const run=Array.from(document.getElementsByTagName('w:r')).find(el=>el.textContent===' Plain override specimen')!;
+  assert.ok(run);
+  assert.equal(run.getElementsByTagName('w:rStyle').item(0)?.getAttribute('w:val'),'SourceAccent');
+  assert.equal(run.getElementsByTagName('w:i').item(0)?.getAttribute('w:val'),'0');
+  const exportedStyles=new XmlDomParser().parseFromString(parts.get('word/styles.xml')!.toString('utf8'),'application/xml');
+  const accent=Array.from(exportedStyles.getElementsByTagName('w:style')).find(el=>el.getAttribute('w:styleId')==='SourceAccent')!;
+  assert.ok(accent);
+  assert.equal(accent.getElementsByTagName('w:basedOn').item(0)?.getAttribute('w:val'),'SourceBase');
+  const reopened=await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'source-styles.docx'));
+  inspect(reopened.sections);
+});
+
+test('source style normalization rejects unsafe IDs and resolves inheritance cycles deterministically', async () => {
+  const {normalizeSourceStyle,resolveSourceStyle}=await import('../src/model/sourceWordStyles.ts');
+  assert.equal(normalizeSourceStyle({selected:'"><bad/>',styles:[]}),undefined);
+  const bundle={selected:'A',styles:[{id:'A',name:'A',kind:'paragraph',basedOn:'B',italic:true},{id:'B',name:'B',kind:'paragraph',basedOn:'A',bold:true}]};
+  assert.deepEqual(resolveSourceStyle(bundle),{bold:true,italic:true});
+});

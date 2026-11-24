@@ -1,3 +1,4 @@
+import { normalizeSourceStyle } from './sourceWordStyles';
 import { directFormattingFromMarks, type DirectFormatting } from './directFormatting';
 export type OmiInlineSemanticKind =
   | 'strong'
@@ -18,6 +19,7 @@ export interface OmiInlineRun {
   text: string;
   semantics: OmiInlineSemanticKind[];
   sourceFontFamily?: string;
+  sourceWordStyle?: string;
   directFormatting?: DirectFormatting;
   language?: string;
   link?: string;
@@ -104,6 +106,10 @@ export function inlineSourceFontFamilyFromMarks(
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
+export function inlineSourceWordStyle(marks: readonly OmiInlineMarkLike[] | undefined): string | undefined {
+  return normalizeSourceStyle(marks?.find(mark=>mark.type==='omiWordCharacterStyle')?.attrs?.definition);
+}
+
 export function inlineLinkFromMarks(
   marks: readonly OmiInlineMarkLike[] | undefined,
 ): string | undefined {
@@ -149,6 +155,7 @@ function walk(node: JsonNode, runs: OmiInlineRun[]): void {
       text: node.text,
       semantics: semanticKindsFromMarks(node.marks),
       sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks),
+      sourceWordStyle: inlineSourceWordStyle(node.marks),
       directFormatting: directFormattingFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
       link: inlineLinkFromMarks(node.marks),
@@ -207,6 +214,7 @@ function coalesceRuns(runs: readonly OmiInlineRun[]): OmiInlineRun[] {
     if (
       previous &&
       previous.sourceFontFamily === run.sourceFontFamily &&
+      previous.sourceWordStyle === run.sourceWordStyle &&
       JSON.stringify(previous.directFormatting ?? {}) === JSON.stringify(run.directFormatting ?? {}) &&
       previous.language === run.language &&
       previous.link === run.link &&

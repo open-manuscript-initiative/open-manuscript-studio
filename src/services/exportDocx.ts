@@ -1,4 +1,6 @@
 import { normalizeListAttribute } from '../model/directListFormatting';
+import { SourceWordStyleRegistry } from './sourceWordStyleExport';
+import { resolveSourceStyle } from '../model/sourceWordStyles';
 import { paragraphFormattingWordXml } from '../model/directParagraphFormatting';
 import { directFormattingFromMarks, directFormattingWordXml } from '../model/directFormatting';
 import { visualTextBoxText } from '../model/textBoxes';
@@ -9,6 +11,7 @@ import {
   extractOmiInlineRuns,
   inlineLanguageFromMarks,
   inlineSourceFontFamilyFromMarks,
+  inlineSourceWordStyle,
   semanticKindsFromMarks,
   type OmiInlineRun,
   type OmiInlineSemanticKind,
@@ -49,6 +52,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'DOCX');
   const warnings: string[] = [...metadataConversionWarnings(metadataConversion), ...semanticLossWarnings(semanticLosses)];
   const body: string[] = [];
+  const sourceStyles = new SourceWordStyleRegistry();
   const numbering = new WordListNumbering();
   const fundingStatement = profile.rules.notes.fundingStarNote
     ? getManuscriptFundingStatement(manuscript)
@@ -139,10 +143,10 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           }
           return { kind, id };
         };
-        const lists = renderWordLists(block.content, numbering, resolveNote, indexFields);
+        const lists = renderWordLists(block.content, numbering, resolveNote, indexFields, sourceStyles);
         if (lists !== undefined) { body.push(lists); continue; }
         const rendered = renderWordContent(block.content, resolveNote);
-        if (rendered) body.push(richParagraph(rendered, indexFields, block.content));
+        if (rendered) body.push(richParagraph(rendered, indexFields, block.content, sourceStyles));
         else {
           const text = blockPlainText(block);
           if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
@@ -181,7 +185,7 @@ ${style('Title', 'Title', 32, true)}${style('Subtitle', 'Subtitle', 24, false)}$
 ${noteParagraphStyle('FootnoteText', 'footnote text')}${noteParagraphStyle('EndnoteText', 'endnote text')}
 ${characterStyle('FootnoteReference', 'footnote reference', '<w:vertAlign w:val="superscript"/>')}${characterStyle('EndnoteReference', 'endnote reference', '<w:vertAlign w:val="superscript"/>')}
 ${[1,2,3,4,5,6].map((level) => headingStyle(level)).join('')}
-${characterStylesXml()}
+${characterStylesXml()}${sourceStyles.xml()}
 </w:styles>`;
 
   const settingsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -213,7 +217,6 @@ ${characterStylesXml()}
     metadataConversion,
   };
 }
-
 
 type NumberingGroup = { id: number; levels: Map<number,string>; overrides: Map<number,number> };
 class WordListNumbering {
@@ -250,7 +253,7 @@ class WordListNumbering {
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' + abstracts + nums + '</w:numbering>';
   }
 }
-function renderWordLists(content: string, numbering: WordListNumbering, resolveNote: (id:string)=>WordNoteReference|undefined, suffix: string): string | undefined {
+function renderWordLists(content: string, numbering: WordListNumbering, resolveNote: (id:string)=>WordNoteReference|undefined, suffix: string, sourceStyles: SourceWordStyleRegistry): string | undefined {
   let root: NoteJsonNode;
   try { root = JSON.parse(content) as NoteJsonNode; } catch { return undefined; }
   const list = (node: NoteJsonNode) => node.type === 'orderedList' || node.type === 'bulletList';
@@ -261,8 +264,10 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
     const runs = renderJsonNode(node,resolveNote);
     const last = runs.at(-1);
     if (last && !('kind' in last) && last.text === '\n') runs.pop();
-    const properties = numPr + paragraphFormattingWordXml(node.attrs);
-    output.push('<w:p>' + (properties ? '<w:pPr>'+properties+'</w:pPr>' : '') + runs.map(run=>'kind' in run ? wordNoteReference(run.kind,run.id) : wordRun(run)).join('') + (output.length === 0 ? suffix : '') + '</w:p>');
+    const sourceParagraph = node.attrs?.omiWordParagraphStyle;
+    const styleId = sourceStyles.register(sourceParagraph);
+    const properties = (styleId ? '<w:pStyle w:val="'+styleId+'"/>' : '') + numPr + paragraphFormattingWordXml(node.attrs);
+    output.push('<w:p>' + (properties ? '<w:pPr>'+properties+'</w:pPr>' : '') + runs.map(run=>'kind' in run ? wordNoteReference(run.kind,run.id) : wordRun(run, sourceStyles, sourceParagraph)).join('') + (output.length === 0 ? suffix : '') + '</w:p>');
   };
   const renderList = (node: NoteJsonNode, depth: number, parent?: NumberingGroup) => {
     const {group,level} = numbering.register(node,depth,parent);
@@ -318,14 +323,19 @@ function wordStyledText(value: string, styleId?: string): string {
   return `<w:r>${rPr}<w:t xml:space="preserve">${xml(value)}</w:t></w:r>`;
 }
 
-function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = ''): string {
+function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '', sourceStyles?: SourceWordStyleRegistry): string {
   let properties = '';
+  let sourceParagraph: unknown;
   try {
     const root = JSON.parse(content) as NoteJsonNode;
     const paragraph = root.type === 'paragraph' ? root : root.content?.[0];
-    if (paragraph?.type === 'paragraph') properties = paragraphFormattingWordXml(paragraph.attrs);
+    if (paragraph?.type === 'paragraph') {
+      sourceParagraph = paragraph.attrs?.omiWordParagraphStyle;
+      const id = sourceStyles?.register(sourceParagraph);
+      properties = (id ? `<w:pStyle w:val="${id}"/>` : '') + paragraphFormattingWordXml(paragraph.attrs);
+    }
   } catch { /* Plain-text fallback has no local paragraph overrides. */ }
-  const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id) : wordRun(run)).join('');
+  const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id) : wordRun(run, sourceStyles, sourceParagraph)).join('');
   return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${rendered}${suffix}</w:p>`;
 }
 
@@ -370,6 +380,7 @@ function renderJsonNode(
       semantics: semanticKindsFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
       sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks),
+      sourceWordStyle: inlineSourceWordStyle(node.marks),
       directFormatting: directFormattingFromMarks(node.marks),
     }];
   }
@@ -406,8 +417,13 @@ function noteParagraphStyle(id: string, name: string): string {
   return `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>`;
 }
 
-function wordRun(run: OmiInlineRun): string {
-  const styleId = wordCharacterStyleId(run.semantics);
+function wordRun(run: OmiInlineRun, sourceStyles?: SourceWordStyleRegistry, sourceParagraph?: unknown): string {
+  const imported = sourceStyles?.register(run.sourceWordStyle);
+  const styleId = imported ?? (sourceParagraph ? undefined : wordCharacterStyleId(run.semantics));
+  const paragraphStyle = resolveSourceStyle(sourceParagraph);
+  const characterStyle = resolveSourceStyle(run.sourceWordStyle);
+  const inheritedBold = Boolean(paragraphStyle.bold) !== Boolean(characterStyle.bold);
+  const inheritedItalic = Boolean(paragraphStyle.italic) !== Boolean(characterStyle.italic);
   const lang = run.language
     ? `<w:lang w:val="${xml(run.language)}"/>`
     : '';
@@ -429,7 +445,10 @@ function wordRun(run: OmiInlineRun): string {
   const family = run.sourceFontFamily || (extras.includes('code') ? 'Courier New' : undefined);
   const font = family ? `<w:rFonts w:ascii="${xml(family)}" w:hAnsi="${xml(family)}"/>` : '';
   const direct = extras.filter(kind => kind !== 'underline' || !run.directFormatting?.underlineStyle).map((kind) => properties[kind] ?? '').join('')
-    + directFormattingWordXml(run.directFormatting ?? {});
+    + (inheritedBold && !run.semantics.includes('strong') ? '<w:b w:val="0"/>' : '')
+    + (inheritedItalic && !run.semantics.includes('emphasis') ? '<w:i w:val="0"/>' : '')
+    + directFormattingWordXml(run.directFormatting ?? {})
+    + ((paragraphStyle.color || characterStyle.color) && !run.directFormatting?.omiTextColor ? '<w:color w:val="auto"/>' : '');
   const rPr = styleId || lang || font || direct
     ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${font}${direct}${lang}</w:rPr>`
     : '';

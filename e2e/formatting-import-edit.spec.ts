@@ -16,10 +16,13 @@ function nativeFormattingDocx(): Buffer {
   const ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
   const body = formats.map(item => '<w:p><w:r><w:rPr>' + item.property + '</w:rPr><w:t>' + sample(item.id) + '</w:t></w:r></w:p>').join('')
     + '<w:p><w:r><w:rPr><w:b/><w:i/><w:u w:val="single"/></w:rPr><w:t>COMPOUND_MARKS_TEXT</w:t></w:r></w:p>'
+    + '<w:p><w:pPr><w:pStyle w:val="SourceDerived"/></w:pPr><w:r><w:t>SOURCE_STYLE_SAMPLE</w:t></w:r></w:p>'
     + '<w:p><w:r><w:t>UNFORMATTED_CONTROL</w:t></w:r></w:p>';
+  const styles = '<w:styles xmlns:w="' + ns + '"><w:style w:type="paragraph" w:styleId="SourceBase"><w:name w:val="Source base"/><w:rPr><w:b/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="SourceDerived"><w:name w:val="Source derived"/><w:basedOn w:val="SourceBase"/><w:rPr><w:i/></w:rPr></w:style></w:styles>';
   return Buffer.from(createStoreZip([
     textZipEntry('[Content_Types].xml', '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'),
     textZipEntry('_rels/.rels', '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'),
+    textZipEntry('word/styles.xml', styles),
     textZipEntry('word/document.xml', '<w:document xmlns:w="' + ns + '"><w:body>' + body + '<w:sectPr/></w:body></w:document>'),
   ]));
 }
@@ -95,3 +98,24 @@ for (const width of [1440, 393]) {
     for (const item of formats) await expect(editor.locator('.tiptap p').filter({ hasText: sample(item.id) }).locator(item.selector)).toHaveText(sample(item.id));
   });
 }
+
+
+test('imported source paragraph style can be renamed and detached without losing effective marks', async ({page}) => {
+  const editor=await importFixture(page,1440);
+  const paragraph=editor.locator('.tiptap p').filter({hasText:'SOURCE_STYLE_SAMPLE'});
+  await expect(paragraph.locator('strong')).toHaveText('SOURCE_STYLE_SAMPLE');
+  await expect(paragraph.locator('em')).toHaveText('SOURCE_STYLE_SAMPLE');
+  await selectParagraph(paragraph);
+  const toolbar=page.locator('.omi-rich-text-toolbar');
+  await toolbar.getByRole('button',{name:'Paragraph formatting',exact:true}).click();
+  const panel=toolbar.locator('.omi-direct-formatting');
+  const name=panel.getByRole('textbox',{name:'Source paragraph style',exact:true});
+  await expect(name).toHaveValue('Source derived');
+  await name.fill('Renamed source style');
+  await panel.getByRole('button',{name:'Apply: Source paragraph style',exact:true}).click();
+  await expect(paragraph).toHaveAttribute('data-omi-word-paragraph-style',/Renamed source style/);
+  await panel.getByRole('button',{name:'Detach source style',exact:true}).click();
+  await expect(paragraph).not.toHaveAttribute('data-omi-word-paragraph-style',/./);
+  await expect(paragraph.locator('strong')).toHaveText('SOURCE_STYLE_SAMPLE');
+  await expect(paragraph.locator('em')).toHaveText('SOURCE_STYLE_SAMPLE');
+});

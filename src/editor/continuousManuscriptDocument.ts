@@ -323,6 +323,7 @@ export function stripContinuousAttributes(node: JSONContent): JSONContent {
     delete attrs.omiNextParagraphStyleId;
     delete attrs.omiTabStopsMm;
     delete attrs.omiVisual;
+    if (attrs.omiWordParagraphStyle == null) delete attrs.omiWordParagraphStyle;
     // Schema defaults must not become explicit local overrides on save.
     for (const name of [...PARAGRAPH_FORMAT_NAMES, ...LIST_ATTRIBUTE_NAMES]) if (attrs[name] == null) delete attrs[name];
     next.attrs = Object.keys(attrs).length ? attrs : undefined;
