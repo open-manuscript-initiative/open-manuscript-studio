@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { registerPrintHyphenationContracts } from './print-hyphenation-contract.ts';
 import { PUBLICATION_TEXT_ROLES, publicationParagraphStyleName, withPublicationTextRoles } from '../src/model/publicationTextRoles.ts';
 import { buildPublicationStyleCss, buildPublicationTextRoleCss, clonePublicationStyleTemplate, normalizePublicationStyle, publicationInlineStyleProperties, publicationNoteCitationRules, resolvePublicationParagraphStyle } from '../src/services/publicationStyleExport.ts';
 
@@ -376,3 +377,5 @@ test('S03–S05 and L07–L09: named styles retain numbering overrides and inher
   assert.equal(resolvePublicationParagraphStyle(reopened, child.id).bulletsAndNumbering.level, 1);
   assert.equal(resolvePublicationParagraphStyle(reopened, child.id).bulletsAndNumbering.numberExpression, '^#.');
 });
+
+registerPrintHyphenationContracts();
