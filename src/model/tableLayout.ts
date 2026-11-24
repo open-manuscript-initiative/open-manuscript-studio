@@ -56,3 +56,8 @@ export function tableCellTextStyle(rotation: Required<OmiTableCellFormat>['textR
     minHeight: '1.3em',
   } as const;
 }
+
+/** Header rows are a contiguous prefix of the table. */
+export function tableHeaderRows(cells: readonly (readonly string[])[], count: unknown): number {
+  return typeof count === 'number' && Number.isFinite(count) ? Math.max(0, Math.min(cells.length, Math.trunc(count))) : 0;
+}
