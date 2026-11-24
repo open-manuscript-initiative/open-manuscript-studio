@@ -1,0 +1,776 @@
+{
+  "version": "1.0",
+  "cases": [
+    {
+      "id": "C01",
+      "feature": "Félkövér",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C02",
+      "feature": "Dőlt",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C03",
+      "feature": "Aláhúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C04",
+      "feature": "Dupla aláhúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C05",
+      "feature": "Pontozott aláhúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C06",
+      "feature": "Hullámos aláhúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C07",
+      "feature": "Áthúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C08",
+      "feature": "Dupla áthúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C09",
+      "feature": "Kiskapitális",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C10",
+      "feature": "Nagybetűs megjelenítés",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C11",
+      "feature": "Felső index",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C12",
+      "feature": "Alsó index",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C13",
+      "feature": "Emelt szöveg",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C14",
+      "feature": "Süllyesztett szöveg",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C15",
+      "feature": "Ritkított betűköz",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C16",
+      "feature": "Sűrített betűköz",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C17",
+      "feature": "Betűméret 16 pt",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C18",
+      "feature": "Betűcsalád",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C19",
+      "feature": "Betűszín",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C20",
+      "feature": "Kiemelés",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C21",
+      "feature": "Karakterháttér",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C22",
+      "feature": "Körvonal",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "C23",
+      "feature": "Árnyék",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P01",
+      "feature": "Balra zárt",
+      "sample": "Ez egy hosszabb próbaszöveg, amely több soron át mutatja meg a bekezdés igazítását és a szavak közötti térköz viselkedését.",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P02",
+      "feature": "Középre zárt",
+      "sample": "Ez egy hosszabb próbaszöveg, amely több soron át mutatja meg a bekezdés igazítását és a szavak közötti térköz viselkedését.",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P03",
+      "feature": "Jobbra zárt",
+      "sample": "Ez egy hosszabb próbaszöveg, amely több soron át mutatja meg a bekezdés igazítását és a szavak közötti térköz viselkedését.",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P04",
+      "feature": "Sorkizárt",
+      "sample": "Ez egy hosszabb próbaszöveg, amely több soron át mutatja meg a bekezdés igazítását és a szavak közötti térköz viselkedését.",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P05",
+      "feature": "Bal behúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P06",
+      "feature": "Jobb behúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P07",
+      "feature": "Első sor",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P08",
+      "feature": "Függő behúzás",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P09",
+      "feature": "Másfeles sorköz",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P10",
+      "feature": "Térköz előtte",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P11",
+      "feature": "Térköz utána",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P12",
+      "feature": "Bekezdésháttér",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P13",
+      "feature": "Bekezdésszegély",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "P14",
+      "feature": "Tabulátor pontozott kitöltéssel",
+      "sample": "Tétel\t123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "S01",
+      "feature": "Egyéni bekezdésstílus",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "S02",
+      "feature": "Egyéni karakterstílus",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "L01",
+      "feature": "List Bullet",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "L02",
+      "feature": "List Bullet 2",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "L03",
+      "feature": "List Number",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "L04",
+      "feature": "List Number 2",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "L05",
+      "feature": "List Number",
+      "sample": "Árvíztűrő tükörfúrógép – Manuscript 123",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N01",
+      "feature": "hu-HU",
+      "sample": "Árvíztűrő tükörfúrógép",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N02",
+      "feature": "de-DE",
+      "sample": "Überlieferung und Quellenkritik",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N03",
+      "feature": "en-GB",
+      "sample": "Scholarly publishing",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N04",
+      "feature": "el-GR",
+      "sample": "Ελληνικά",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N05",
+      "feature": "he-IL",
+      "sample": "שלום עולם",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N06",
+      "feature": "ar-SA",
+      "sample": "مرحبا بالعالم",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N07",
+      "feature": "Speciális karakterek",
+      "sample": "– — … § ¶ † ‡ ° ± × ÷ ≈ ≠ ≤ ≥ → ← α β γ δ μ π Ω",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N08",
+      "feature": "Nem törhető szóköz és kötőjel",
+      "sample": "10 kg | 2026‑ban | kézi­elválasztás",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N09",
+      "feature": "Kézi sortörés",
+      "sample": "Első sor\nMásodik sor",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "N10",
+      "feature": "Vegyes karakterformázás",
+      "sample": "normál ",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "R01",
+      "feature": "Megjegyzés",
+      "sample": "Megjegyzéssel ellátott szöveg",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "R02",
+      "feature": "Változáskövetés",
+      "sample": "",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "F01",
+      "feature": "Lábjegyzet",
+      "sample": "Lábjegyzet horgonya[[FN]]",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "F02",
+      "feature": "Végjegyzet",
+      "sample": "Végjegyzet horgonya[[EN]]",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "T01",
+      "feature": "table"
+    },
+    {
+      "id": "I01",
+      "feature": "embedded image with alt text"
+    },
+    {
+      "id": "X01",
+      "feature": "Könyvjelző",
+      "sample": "Hivatkozási cél",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "X02",
+      "feature": "REF mező",
+      "sample": "",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "X03",
+      "feature": "Hiperhivatkozás",
+      "sample": "",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "E01",
+      "feature": "Natív OMML képlet",
+      "sample": "",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    },
+    {
+      "id": "X04",
+      "feature": "Új szakasz",
+      "sample": "A szakasztörés után önálló fejléc következik.",
+      "checks": [
+        "import",
+        "edit",
+        "remove_or_reset",
+        "save_reopen",
+        "export_supported_formats"
+      ]
+    }
+  ],
+  "default_checks": [
+    "import",
+    "edit",
+    "remove_or_reset",
+    "save_reopen",
+    "export_supported_formats"
+  ]
+}
