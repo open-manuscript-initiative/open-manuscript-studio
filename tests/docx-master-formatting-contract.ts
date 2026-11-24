@@ -386,6 +386,8 @@ function assertModel(manuscript: OmiManuscript, item: Case): void {
     return;
   }
   const p = modelCase(manuscript, item.id);
+  const direct = directMarkCases[item.id];
+  if (direct) assertModelMark(p, item.sample!, direct.type, direct.attrs);
   const sample = item.sample?.replace(/\[\[(?:FN|EN)\]\]/g, '');
   if (sample) assert.ok(modelText(p).includes(sample), 'Sample text changed');
   if (/^N0[1-6]$/.test(item.id)) assertModelMark(p, item.sample!, 'omiLanguage', { lang: item.feature });
@@ -435,7 +437,26 @@ function assertModel(manuscript: OmiManuscript, item: Case): void {
 
 // Gaps are not empty TODOs. Node executes the assertion, reporting actual
 // failure as TODO with a reason. Strict mode makes every assertion blocking.
+const directMarkCases: Record<string, { type: string; attrs: Record<string, unknown> }> = {
+  C04: { type: 'omiUnderline', attrs: { variant: 'double' } },
+  C05: { type: 'omiUnderline', attrs: { variant: 'dotted' } },
+  C06: { type: 'omiUnderline', attrs: { variant: 'wave' } },
+  C08: { type: 'omiDoubleStrike', attrs: { value: true } },
+  C10: { type: 'omiUppercase', attrs: { value: true } },
+  C13: { type: 'omiBaseline', attrs: { value: 3 } },
+  C14: { type: 'omiBaseline', attrs: { value: -3 } },
+  C15: { type: 'omiTracking', attrs: { value: 2 } },
+  C16: { type: 'omiTracking', attrs: { value: -0.75 } },
+  C17: { type: 'omiFontSize', attrs: { value: 16 } },
+  C19: { type: 'omiTextColor', attrs: { value: '#A02040' } },
+  C20: { type: 'omiHighlight', attrs: { value: 'yellow' } },
+  C21: { type: 'omiCharacterBackground', attrs: { value: '#B7DEE8' } },
+  C22: { type: 'omiOutline', attrs: { value: true } },
+  C23: { type: 'omiShadow', attrs: { value: true } },
+};
+
 function wordGap(id: string): string | undefined {
+  if (directMarkCases[id]) return undefined;
   if (id.startsWith('C')) return 'Exact direct character typography is not represented/exported yet';
   if (id.startsWith('P')) return 'Native paragraph layout properties are not round-tripped yet';
   if (id.startsWith('S')) return 'Custom Word style identity and color are not round-tripped yet';
