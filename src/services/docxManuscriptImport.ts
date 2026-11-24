@@ -1,3 +1,4 @@
+import { readWordParagraphFormatting } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
 import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
@@ -410,6 +411,12 @@ export async function parseDocxManuscript(
       const type = isQuoteStyle(style?.id, style?.name)
         ? 'quote'
         : 'paragraph';
+      const pPr = directChildrenByLocalName(child, 'pPr')[0];
+      const paragraphAttrs = pPr ? readWordParagraphFormatting((property, attribute) => {
+        const item = directChildrenByLocalName(pPr, property)[0];
+        return item ? attributeByLocalName(item, attribute) : undefined;
+      }) : {};
+      const attrs = Object.keys(paragraphAttrs).length ? { attrs: paragraphAttrs } : {};
       const tiptapContent = isCodeStyle(style?.id, style?.name) && plainText
         ? {
             type: 'doc',
@@ -421,13 +428,13 @@ export async function parseDocxManuscript(
               content: [
                 {
                   type: 'blockquote',
-                  content: [{ type: 'paragraph', content: inline }],
+                  content: [{ type: 'paragraph', ...attrs, content: inline }],
                 },
               ],
             }
           : {
               type: 'doc',
-              content: [{ type: 'paragraph', content: inline }],
+              content: [{ type: 'paragraph', ...attrs, content: inline }],
             };
 
       section.blocks.push({
