@@ -1069,7 +1069,7 @@ async function readNumbering(archive: DocxZipArchive): Promise<WordNumbering> {
     const abstract = directChildrenByLocalName(num,'abstractNumId')[0];
     const abstractId = abstract && attributeByLocalName(abstract,'val');
     if (!id || !abstractId) continue;
-    const levels = new Map([...abstractFormats.get(abstractId) ?? []].map(([level,attrs])=>[level,{...attrs}]));
+    const levels = new Map<number, Record<string, unknown>>([...(abstractFormats.get(abstractId) ?? [])].map(([level,attrs])=>[level,{...attrs}]));
     for (const override of directChildrenByLocalName(num,'lvlOverride')) {
       const index = normalizeListAttribute('omiListLevel',attributeByLocalName(override,'ilvl'));
       if (typeof index !== 'number') continue;
@@ -1077,7 +1077,7 @@ async function readNumbering(archive: DocxZipArchive): Promise<WordNumbering> {
       const start = directChildrenByLocalName(override,'startOverride')[0];
       const attrs = {...levels.get(index),...(level ? readNumberingLevel(level) : {})};
       const value = start && normalizeListAttribute('omiListStart',attributeByLocalName(start,'val'));
-      if (value !== undefined) attrs.omiListStart = value;
+      if (value !== undefined) { attrs.omiListStart = value; attrs.omiListOverrideStart = value; }
       levels.set(index,attrs);
     }
     // Scope source numId values to this import to avoid collisions when
