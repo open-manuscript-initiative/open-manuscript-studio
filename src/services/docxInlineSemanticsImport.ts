@@ -1,3 +1,4 @@
+import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import {
   wordCharacterStyleSemantics,
   type DocxInlineSemantic,
@@ -169,7 +170,10 @@ function parseParagraphRuns(
       ? resolveCharacterStyleSemantics(styleId, styles)
       : [];
     const semantics = Array.from(new Set([...inherited, ...direct]));
-    const marks: TiptapMark[] = semantics.flatMap(toTiptapMark);
+    const marks: TiptapMark[] = mergeWordDirectFormatting(semantics.flatMap(toTiptapMark), properties ? wordDirectFormatting(
+      (property, attribute = 'val') => { const item = directChildrenByLocalName(properties, property)[0]; return item ? attributeByLocalName(item, attribute) : undefined; },
+      (property) => directChildrenByLocalName(properties, property).length > 0,
+    ) : []);
     const sourceFontFamily = properties
       ? sourceFontFamilyFromRunProperties(properties)
       : undefined;
