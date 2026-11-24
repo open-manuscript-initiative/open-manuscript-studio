@@ -833,3 +833,42 @@ test('IDML native local typography points, tracking, scaling and color resources
   assert.equal(color.getAttribute('Space'),'RGB');
   assert.equal(color.getAttribute('ColorValue'),'160 32 64');
 });
+
+
+test('P12–P14 native ODT paragraph decoration and tab-stop roundtrip', async () => {
+  const file = makeDocx('<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="8" w:color="74243B" w:space="4"/></w:pBdr><w:shd w:val="clear" w:fill="E2EFDA"/><w:tabs><w:tab w:val="right" w:pos="6803" w:leader="dot"/></w:tabs></w:pPr><w:r><w:t>Decoration specimen</w:t><w:tab/><w:t>123</w:t></w:r></w:p>');
+  const plan = await parseDocxForStudio(file);
+  const manuscript = {...createBlankManuscript({kind:'study',locale:'en',title:'Paragraph decorations'}),sections:plan.sections};
+  const odt = buildOdtExport(manuscript);
+  const parts = readZipParts(odt.bytes);
+  const doc = new XmlDomParser().parseFromString(parts.get('content.xml')!.toString('utf8'),'application/xml');
+  const paragraph = Array.from(doc.getElementsByTagName('text:p')).find(el=>el.textContent?.includes('Decoration specimen'))!;
+  assert.ok(paragraph);
+  const style = Array.from(doc.getElementsByTagName('style:style')).find(el=>el.getAttribute('style:name')===paragraph.getAttribute('text:style-name'))!;
+  assert.ok(style);
+  const props=style.getElementsByTagName('style:paragraph-properties').item(0)!;
+  assert.equal(props.getAttribute('fo:background-color'),'#E2EFDA');
+  assert.equal(props.getAttribute('fo:border-bottom'),'1pt solid #74243B');
+  assert.equal(props.getAttribute('fo:padding-bottom'),'4pt');
+  const tab=props.getElementsByTagName('style:tab-stop').item(0)!;
+  assert.equal(tab.getAttribute('style:position'),'340.15pt');
+  assert.equal(tab.getAttribute('style:type'),'right');
+  assert.equal(tab.getAttribute('style:leader-text'),'.');
+  assert.equal(paragraph.getElementsByTagName('text:tab').length,1);
+  const reopened=await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'decorations.odt'));
+  const block=reopened.sections.flatMap(s=>s.blocks).find(b=>b.content.includes('Decoration specimen'))!;
+  assert.ok(block);
+  const root=JSON.parse(block.content);
+  assert.equal(root.content[0].attrs.omiParagraphBackground,'#E2EFDA');
+  assert.equal(root.content[0].attrs.omiParagraphBorders,JSON.stringify({bottom:{style:'single',width:1,color:'#74243B',space:4}}));
+  assert.equal(root.content[0].attrs.omiParagraphTabs,JSON.stringify([{position:340.15,alignment:'right',leader:'dot'}]));
+});
+
+test('paragraph decoration attributes reject invalid colors, CSS and duplicated tab stops', async () => {
+  const {normalizeParagraphValue,paragraphFormattingCss,paragraphFormattingWordXml}=await import('../src/model/directParagraphFormatting.ts');
+  assert.equal(normalizeParagraphValue('omiParagraphBackground','#000000;display:none'),undefined);
+  assert.equal(normalizeParagraphValue('omiParagraphBorders',{bottom:{style:'single',width:1,color:'"><bad/>',space:4}}),undefined);
+  assert.equal(normalizeParagraphValue('omiParagraphTabs',[{position:72,alignment:'left',leader:'none'},{position:72,alignment:'right',leader:'dot'}]),undefined);
+  assert.equal(paragraphFormattingCss({omiParagraphBackground:'#000000;display:none'},'html'),'');
+  assert.equal(paragraphFormattingWordXml({omiParagraphBackground:'"><bad/>'}),'');
+});
