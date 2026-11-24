@@ -1,3 +1,4 @@
+import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
 import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
 import {
@@ -861,7 +862,10 @@ function runMarks(run: Element): TiptapMark[] {
     marks.push({ type: 'omiLanguage', attrs: { lang: languageValue } });
   }
 
-  return marks;
+  return mergeWordDirectFormatting(marks, wordDirectFormatting(
+    (property, attribute = 'val') => { const item = directChildrenByLocalName(properties, property)[0]; return item ? attributeByLocalName(item, attribute) : undefined; },
+    (property) => directChildrenByLocalName(properties, property).length > 0,
+  ));
 }
 
 function enabledWordProperty(properties: Element, name: string): boolean {
