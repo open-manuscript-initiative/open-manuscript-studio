@@ -137,6 +137,16 @@ export function registerAdvancedFormattingContracts(): void {
     assert.equal(new Set([...original.cases, ...advancedCases].map(item => item.id)).size, 107);
     assert.equal(new Set(advancedCases.map(item => item.group)).size, 8);
     assert.ok(advancedCases.every(item => item.checks.length > 0));
+    const archive = readZipParts(readFileSync(new URL('./fixtures/formatting/omi-advanced-formatting-corpus.zip', import.meta.url)));
+    assert.equal(archive.size, 43);
+    for (const item of advancedCases) {
+      const downloaded = archive.get(item.group + '/' + item.id + '.docx');
+      assert.ok(downloaded, item.id + ' missing from downloadable corpus');
+      const packaged = readZipParts(downloaded);
+      const generated = readZipParts(createAdvancedDocx(item));
+      // ZIP timestamps may differ. Every inner OPC part must be byte-identical.
+      assert.deepEqual(packaged, generated, item.id + ' archive differs from its authoritative specimen');
+    }
   });
 
   test('advanced formatting: 42 isolated Word fixtures, import and publication contracts', async t => {
