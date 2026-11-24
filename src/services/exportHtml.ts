@@ -1,3 +1,4 @@
+import { listPresentation, normalizeListAttribute } from '../model/directListFormatting';
 import { paragraphFormattingCss } from '../model/directParagraphFormatting';
 import { DIRECT_FORMAT_NAMES, directFormattingCss, underlineCss, type DirectFormat } from '../model/directFormatting';
 import { createElement } from 'react';
@@ -801,8 +802,9 @@ function renderJsonNode(node: JsonNode, state: RenderState): string {
     case 'bulletList':
       return `<ul>${children()}</ul>`;
     case 'orderedList': {
-      const start = integerAttr(node.attrs, 'start');
-      return `<ol${start && start !== 1 ? ` start="${start}"` : ''}>${children()}</ol>`;
+      const start = normalizeListAttribute('omiListStart',node.attrs?.start ?? node.attrs?.omiListStart);
+      const presentation = listPresentation(node.attrs);
+      return `<ol${start && start !== 1 ? ` start="${start}"` : ''}${presentation.type ? ` type="${presentation.type}"` : ''}${presentation.style ? ` style="${presentation.style}"` : ''}>${children()}</ol>`;
     }
     case 'listItem':
       return `<li>${children()}</li>`;
