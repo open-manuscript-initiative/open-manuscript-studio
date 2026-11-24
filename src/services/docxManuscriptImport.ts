@@ -1,4 +1,4 @@
-import { readWordParagraphFormatting } from '../model/directParagraphFormatting';
+import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
 import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
@@ -416,6 +416,10 @@ export async function parseDocxManuscript(
         const item = directChildrenByLocalName(pPr, property)[0];
         return item ? attributeByLocalName(item, attribute) : undefined;
       }, property => directChildrenByLocalName(pPr, property).length > 0) : {};
+    if (pPr) Object.assign(paragraphAttrs, readWordParagraphDecoration((parent, name) => {
+      const container = directChildrenByLocalName(pPr, parent)[0];
+      return container ? directChildrenByLocalName(container, name).map(element => Object.fromEntries(Array.from(element.attributes).map(attribute => [attribute.localName, attribute.value]))) : [];
+    }));
       const attrs = Object.keys(paragraphAttrs).length ? { attrs: paragraphAttrs } : {};
       const tiptapContent = isCodeStyle(style?.id, style?.name) && plainText
         ? {
