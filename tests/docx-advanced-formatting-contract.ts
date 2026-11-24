@@ -17,6 +17,7 @@ import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { renderJatsArticle } from '../src/services/exportJats.ts';
 import { buildPdfPrintDocument } from '../src/services/exportPdf.ts';
 import type { OmiManuscript } from '../src/types/omi.ts';
+import { createPersonAgent, createContribution } from '../src/model/identity.ts';
 
 const strict = process.env.OMI_FORMATTING_STRICT === '1';
 function todo(reason: string): string | false { return strict ? false : reason; }
@@ -169,12 +170,21 @@ export function registerAdvancedFormattingContracts(): void {
             assertSupportedModel(item, manuscript);
           }
         });
-        const word = readWordPackage(buildDocxExport(reopened).bytes);
-        const html = renderHtmlArticle(reopened).html;
-        const jats = renderJatsArticle(reopened).xml;
-        const print = buildPdfPrintDocument(reopened);
-        const odt = readZipParts(buildOdtExport(reopened).bytes);
-        const idml = readZipParts(buildIdmlExport(reopened).bytes);
+        // The independently authored DOCX specimens intentionally have no author
+        // metadata. Add a synthetic contributor only to the publication test view,
+        // after import/persistence assertions; never bypass the publication gate.
+        const author = createPersonAgent({ givenName: 'Fixture', familyName: 'Author' }, 'advanced-fixture-author', reopened.createdAt);
+        const publication: OmiManuscript = {
+          ...reopened,
+          agents: [...reopened.agents, author],
+          contributions: [...reopened.contributions, createContribution(author.id, reopened.id, ['author'], 1, 'advanced-fixture-contribution', reopened.createdAt)],
+        };
+        const word = readWordPackage(buildDocxExport(publication).bytes);
+        const html = renderHtmlArticle(publication).html;
+        const jats = renderJatsArticle(publication).xml;
+        const print = buildPdfPrintDocument(publication);
+        const odt = readZipParts(buildOdtExport(publication).bytes);
+        const idml = readZipParts(buildIdmlExport(publication).bytes);
         await sub.test('six export paths retain case anchor (PDF print HTML, not rendered pages)', () => {
           assertMarker(word.parts, item.marker);
           assertMarker(odt, item.marker);
