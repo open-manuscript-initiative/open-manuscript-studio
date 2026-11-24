@@ -1,7 +1,7 @@
 import type { Editor } from '@tiptap/core';
-import { AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
+import { PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { normalizeParagraphValue, type ParagraphFormat } from '../model/directParagraphFormatting';
+import { normalizeParagraphValue, paragraphBorders, paragraphTabs, BORDER_SIDES, type ParagraphFormat, type ParagraphBorder, type ParagraphTab } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
 import { getRichTextCopy } from '../i18n/richText';
 import type { SupportedLocale } from '../i18n/types';
@@ -221,7 +221,7 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
       {command(l[15]!, <IndentIncrease size={17} />, () => editor.chain().focus().sinkListItem('listItem').run(), false, !editor.can().sinkListItem('listItem'))}
       {command(l[16]!, <IndentDecrease size={17} />, () => editor.chain().focus().liftListItem('listItem').run(), false, !editor.can().liftListItem('listItem'))}
       {command(l[17]!, <RemoveFormatting size={17} />, () => editor.chain().focus().updateAttributes('paragraph', {
-        omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null, omiWidowControl: null, omiKeepNext: null, omiKeepLines: null, omiPageBreakBefore: null,
+        omiParagraphBackground:null, omiParagraphBorders:null, omiParagraphTabs:null, omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null, omiWidowControl: null, omiKeepNext: null, omiKeepLines: null, omiPageBreakBefore: null,
       }).run())}
     </div>
     <div className="omi-direct-format-fields">
@@ -234,6 +234,7 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
         choices={['auto', 'exact', 'atLeast'].map((value, i) => ({ value, label: l[12 + i]! }))}
         normalize={value => normalizeParagraphValue('omiLineRule', value)} />
       {field('omiLineSpacing', 10, '1.5')}
+      <ParagraphDecorationControls editor={editor} locale={locale}/>
       {(['omiWidowControl','omiKeepNext','omiKeepLines','omiPageBreakBefore'] as const).map((name, index) => {
         const selected = selectedParagraphValue(editor, name);
         return <label key={name} className="omi-direct-format-field">
@@ -247,4 +248,318 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
       })}
     </div>
   </div>;
+}
+
+const DECORATION_LABELS: Record<string, Labels> = {
+  "en": [
+    "Paragraph background",
+    "Borders",
+    "Tab stops",
+    "Top",
+    "Left",
+    "Bottom",
+    "Right",
+    "Style",
+    "Width (pt)",
+    "Color",
+    "Distance (pt)",
+    "Position (pt)",
+    "Alignment",
+    "Leader",
+    "Add",
+    "Remove",
+    "Single",
+    "Double",
+    "Dotted",
+    "Dashed",
+    "None",
+    "Left",
+    "Center",
+    "Right",
+    "Decimal",
+    "Clear",
+    "Dots",
+    "Hyphens",
+    "Underscore",
+    "Middle dots",
+    "Heavy"
+  ],
+  "hu": [
+    "Bekezdésháttér",
+    "Szegélyek",
+    "Tabulátorok",
+    "Felső",
+    "Bal",
+    "Alsó",
+    "Jobb",
+    "Típus",
+    "Vastagság (pt)",
+    "Szín",
+    "Távolság (pt)",
+    "Pozíció (pt)",
+    "Igazítás",
+    "Kitöltőkarakter",
+    "Hozzáadás",
+    "Eltávolítás",
+    "Egyszeres",
+    "Dupla",
+    "Pontozott",
+    "Szaggatott",
+    "Nincs",
+    "Balra",
+    "Középre",
+    "Jobbra",
+    "Tizedes",
+    "Törlés",
+    "Pontok",
+    "Kötőjelek",
+    "Aláhúzás",
+    "Középpontok",
+    "Vastag"
+  ],
+  "de": [
+    "Absatzhintergrund",
+    "Rahmen",
+    "Tabstopps",
+    "Oben",
+    "Links",
+    "Unten",
+    "Rechts",
+    "Stil",
+    "Breite (pt)",
+    "Farbe",
+    "Abstand (pt)",
+    "Position (pt)",
+    "Ausrichtung",
+    "Füllzeichen",
+    "Hinzufügen",
+    "Entfernen",
+    "Einfach",
+    "Doppelt",
+    "Gepunktet",
+    "Gestrichelt",
+    "Keine",
+    "Links",
+    "Zentriert",
+    "Rechts",
+    "Dezimal",
+    "Löschen",
+    "Punkte",
+    "Bindestriche",
+    "Unterstrich",
+    "Mittelpunkte",
+    "Dick"
+  ],
+  "fr": [
+    "Arrière-plan du paragraphe",
+    "Bordures",
+    "Tabulations",
+    "Haut",
+    "Gauche",
+    "Bas",
+    "Droite",
+    "Style",
+    "Épaisseur (pt)",
+    "Couleur",
+    "Distance (pt)",
+    "Position (pt)",
+    "Alignement",
+    "Caractère de suite",
+    "Ajouter",
+    "Supprimer",
+    "Simple",
+    "Double",
+    "Pointillé",
+    "Tirets",
+    "Aucun",
+    "Gauche",
+    "Centre",
+    "Droite",
+    "Décimal",
+    "Effacer",
+    "Points",
+    "Tirets",
+    "Souligné",
+    "Points médians",
+    "Épais"
+  ],
+  "it": [
+    "Sfondo paragrafo",
+    "Bordi",
+    "Tabulazioni",
+    "Alto",
+    "Sinistra",
+    "Basso",
+    "Destra",
+    "Stile",
+    "Spessore (pt)",
+    "Colore",
+    "Distanza (pt)",
+    "Posizione (pt)",
+    "Allineamento",
+    "Riempimento",
+    "Aggiungi",
+    "Rimuovi",
+    "Singolo",
+    "Doppio",
+    "Punteggiato",
+    "Tratteggiato",
+    "Nessuno",
+    "Sinistra",
+    "Centro",
+    "Destra",
+    "Decimale",
+    "Cancella",
+    "Punti",
+    "Trattini",
+    "Sottolineato",
+    "Punti medi",
+    "Spesso"
+  ],
+  "es": [
+    "Fondo de párrafo",
+    "Bordes",
+    "Tabulaciones",
+    "Superior",
+    "Izquierdo",
+    "Inferior",
+    "Derecho",
+    "Estilo",
+    "Grosor (pt)",
+    "Color",
+    "Distancia (pt)",
+    "Posición (pt)",
+    "Alineación",
+    "Relleno",
+    "Añadir",
+    "Eliminar",
+    "Sencillo",
+    "Doble",
+    "Punteado",
+    "Discontinuo",
+    "Ninguno",
+    "Izquierda",
+    "Centro",
+    "Derecha",
+    "Decimal",
+    "Borrar",
+    "Puntos",
+    "Guiones",
+    "Subrayado",
+    "Puntos medios",
+    "Grueso"
+  ],
+  "nl": [
+    "Alinea-achtergrond",
+    "Randen",
+    "Tabstops",
+    "Boven",
+    "Links",
+    "Onder",
+    "Rechts",
+    "Stijl",
+    "Dikte (pt)",
+    "Kleur",
+    "Afstand (pt)",
+    "Positie (pt)",
+    "Uitlijning",
+    "Opvulteken",
+    "Toevoegen",
+    "Verwijderen",
+    "Enkel",
+    "Dubbel",
+    "Gestippeld",
+    "Gestreept",
+    "Geen",
+    "Links",
+    "Midden",
+    "Rechts",
+    "Decimaal",
+    "Wissen",
+    "Punten",
+    "Streepjes",
+    "Onderstreping",
+    "Middenpunten",
+    "Dik"
+  ],
+  "pl": [
+    "Tło akapitu",
+    "Obramowanie",
+    "Tabulatory",
+    "Góra",
+    "Lewo",
+    "Dół",
+    "Prawo",
+    "Styl",
+    "Grubość (pt)",
+    "Kolor",
+    "Odstęp (pt)",
+    "Pozycja (pt)",
+    "Wyrównanie",
+    "Znak wiodący",
+    "Dodaj",
+    "Usuń",
+    "Pojedynczy",
+    "Podwójny",
+    "Kropkowany",
+    "Kreskowany",
+    "Brak",
+    "Lewo",
+    "Środek",
+    "Prawo",
+    "Dziesiętny",
+    "Wyczyść",
+    "Kropki",
+    "Kreski",
+    "Podkreślenie",
+    "Punkty środkowe",
+    "Gruby"
+  ]
+};
+
+function ParagraphDecorationControls({editor,locale}: {editor:Editor;locale:SupportedLocale}) {
+  const l=DECORATION_LABELS[locale] ?? DECORATION_LABELS.en!;
+  const copy=getRichTextCopy(locale);
+  const [open,setOpen]=useState<'borders'|'tabs'|null>(null);
+  const current=editor.getAttributes('paragraph');
+  const borders=paragraphBorders(current), tabs=paragraphTabs(current);
+  const [side,setSide]=useState<(typeof BORDER_SIDES)[number]>('bottom');
+  const [borderDraft,setBorderDraft]=useState<ParagraphBorder>({style:'single',width:1,color:'#000000',space:4});
+  const [tabDraft,setTabDraft]=useState<ParagraphTab>({position:72,alignment:'left',leader:'none'});
+  const border=borders[side] ?? borderDraft;
+  const set=(name:ParagraphFormat,value:unknown)=>{
+    const normalized=value===null?null:normalizeParagraphValue(name,value);
+    if(normalized!==undefined) editor.chain().focus().updateAttributes('paragraph',{[name]:normalized}).run();
+  };
+  const patchBorder=(patch:Partial<ParagraphBorder>)=>{
+    const next={...border,...patch};setBorderDraft(next);set('omiParagraphBorders',{...borders,[side]:next});
+  };
+  const button=(label:string,icon:ReactNode,run:()=>void,active=false)=><button type="button" aria-label={label} title={label} aria-pressed={active} onMouseDown={e=>e.preventDefault()} onClick={run}>{icon}</button>;
+  const options=(values:string[],names:number[])=>values.map((v,i)=><option key={v} value={v}>{l[names[i]!]}</option>);
+  return <>
+    <FormatField editor={editor} paragraph name="omiParagraphBackground" label={l[0]!} icon={<PaintBucket size={16}/>} copy={copy} reset={labels(locale)[19]!} mixed={labels(locale)[20]!} kind="color" defaultValue="#ffffff" normalize={v=>normalizeParagraphValue('omiParagraphBackground',v)}/>
+    <div className="omi-rich-text-command-grid">
+      {button(l[1]!,<Square size={17}/>,()=>setOpen(open==='borders'?null:'borders'),open==='borders')}
+      {button(l[2]!,<ArrowRightToLine size={17}/>,()=>setOpen(open==='tabs'?null:'tabs'),open==='tabs')}
+    </div>
+    {open==='borders' && <div className="omi-direct-format-fields">
+      <label>{l[1]}<select aria-label={l[1]} value={side} onChange={e=>setSide(e.target.value as typeof side)}>{options([...BORDER_SIDES],[3,4,5,6])}</select></label>
+      <label>{l[7]}<select aria-label={l[7]} value={border.style} onChange={e=>patchBorder({style:e.target.value})}>{options(['single','double','dotted','dashed','nil'],[16,17,18,19,20])}</select></label>
+      <label>{l[8]}<input type="number" min=".125" max="12" step=".125" value={border.width} onChange={e=>patchBorder({width:Number(e.target.value)})}/></label>
+      <label>{l[9]}<input type="color" value={border.color} onChange={e=>patchBorder({color:e.target.value})}/></label>
+      <label>{l[10]}<input type="number" min="0" max="31" value={border.space} onChange={e=>patchBorder({space:Number(e.target.value)})}/></label>
+      {button(copy.apply+': '+l[1],<Plus size={16}/>,()=>set('omiParagraphBorders',{...borders,[side]:border}))}
+      {button(l[15]+': '+l[1],<Trash2 size={16}/>,()=>{const next={...borders};delete next[side];set('omiParagraphBorders',Object.keys(next).length?next:null);})}
+    </div>}
+    {open==='tabs' && <div className="omi-direct-format-fields">
+      <label>{l[11]}<input type="number" min="0" max="2000" step=".05" value={tabDraft.position} onChange={e=>setTabDraft({...tabDraft,position:Number(e.target.value)})}/></label>
+      <label>{l[12]}<select value={tabDraft.alignment} onChange={e=>setTabDraft({...tabDraft,alignment:e.target.value})}>{options(['left','center','right','decimal','clear'],[21,22,23,24,25])}</select></label>
+      <label>{l[13]}<select value={tabDraft.leader} onChange={e=>setTabDraft({...tabDraft,leader:e.target.value})}>{options(['none','dot','hyphen','underscore','middleDot','heavy'],[20,26,27,28,29,30])}</select></label>
+      {button(l[14]+': '+l[2],<Plus size={16}/>,()=>set('omiParagraphTabs',[...tabs.filter(t=>t.position!==tabDraft.position),tabDraft]))}
+      {tabs.map(t=><div key={t.position} className="omi-direct-format-field">
+        <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>setTabDraft(t)}>{t.position} pt · {l[21+['left','center','right','decimal','clear'].indexOf(t.alignment)]}</button>
+        {button(l[15]+': '+t.position+' pt',<Trash2 size={15}/>,()=>set('omiParagraphTabs',tabs.length===1?null:tabs.filter(x=>x.position!==t.position)))}
+      </div>)}
+    </div>}
+  </>;
 }
