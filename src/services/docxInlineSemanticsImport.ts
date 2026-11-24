@@ -280,7 +280,7 @@ function sourceFontFamilyFromRunProperties(properties: Element): string | undefi
   if (!fonts) return undefined;
   const family = ['hAnsi', 'ascii', 'eastAsia', 'cs']
     .map((name) => attributeByLocalName(fonts, name)?.trim())
-    .find((value) => value && value.length <= 128 && !/[\\u0000-\\u001f\\u007f]/.test(value));
+    .find((value) => value && value.length <= 128 && !/[\u0000-\u001f\u007f]/.test(value));
   return family || undefined;
 }
 
