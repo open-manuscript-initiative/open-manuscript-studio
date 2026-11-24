@@ -1,3 +1,4 @@
+import { directFormattingFromMarks, directFormattingWordXml } from '../model/directFormatting';
 import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -284,6 +285,7 @@ function renderJsonNode(
       semantics: semanticKindsFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
       sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks),
+      directFormatting: directFormattingFromMarks(node.marks),
     }];
   }
   if (node.type === 'hardBreak') return [{ text: '\n', semantics: [] }];
@@ -341,7 +343,8 @@ function wordRun(run: OmiInlineRun): string {
   };
   const family = run.sourceFontFamily || (extras.includes('code') ? 'Courier New' : undefined);
   const font = family ? `<w:rFonts w:ascii="${xml(family)}" w:hAnsi="${xml(family)}"/>` : '';
-  const direct = extras.map((kind) => properties[kind] ?? '').join('');
+  const direct = extras.filter(kind => kind !== 'underline' || !run.directFormatting?.underlineStyle).map((kind) => properties[kind] ?? '').join('')
+    + directFormattingWordXml(run.directFormatting ?? {});
   const rPr = styleId || lang || font || direct
     ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${font}${direct}${lang}</w:rPr>`
     : '';
