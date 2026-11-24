@@ -1040,6 +1040,7 @@ function applyMarks(
   escapedText: string,
   marks: Array<{ type?: string; attrs?: Record<string, unknown> }>,
 ): string {
+  if (marks.some(mark=>mark.type==='omiHiddenText' && mark.attrs?.value===true)) return '';
   return marks.reduce((output, mark) => {
     switch (mark.type) {
       case 'bold':
