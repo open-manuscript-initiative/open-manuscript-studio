@@ -1,3 +1,4 @@
+import { LIST_ATTRIBUTE_NAMES } from '../model/directListFormatting';
 import { PARAGRAPH_FORMAT_NAMES } from '../model/directParagraphFormatting';
 import type { JSONContent } from '@tiptap/core';
 
@@ -323,7 +324,7 @@ export function stripContinuousAttributes(node: JSONContent): JSONContent {
     delete attrs.omiTabStopsMm;
     delete attrs.omiVisual;
     // Schema defaults must not become explicit local overrides on save.
-    for (const name of PARAGRAPH_FORMAT_NAMES) if (attrs[name] == null) delete attrs[name];
+    for (const name of [...PARAGRAPH_FORMAT_NAMES, ...LIST_ATTRIBUTE_NAMES]) if (attrs[name] == null) delete attrs[name];
     next.attrs = Object.keys(attrs).length ? attrs : undefined;
   }
   if (next.marks) next.marks = next.marks.map(mark => {
