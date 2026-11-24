@@ -1,3 +1,4 @@
+import { sourceStyleBundle } from '../src/model/sourceWordStyles.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -81,6 +82,21 @@ function assertSupportedModel(item: AdvancedCase, manuscript: OmiManuscript): vo
     for (const [name, value] of Object.entries(paragraph)) assert.equal(root.content?.[0]?.attrs?.[name], value, item.id + ' ' + name);
   }
 
+  if (['S03','S04','S05'].includes(item.id)) {
+    const sample = item.id === 'S03' ? 'Inherited bold and italic' : item.id === 'S04' ? 'Heading-like paragraph' : 'Not bold; still italic';
+    const block = modelBlocks(manuscript).find(candidate => candidate.content.includes(sample));
+    assert.ok(block);
+    const root = JSON.parse(block.content) as {content?: Array<{attrs?: Record<string,unknown>; content?: Array<{text?:string; marks?:Array<{type:string}>}>}>};
+    const p = root.content?.[0];
+    const bundle = sourceStyleBundle(p?.attrs?.omiWordParagraphStyle);
+    assert.equal(bundle?.selected,'Derived');
+    assert.equal(bundle?.styles.find(style=>style.id==='Derived')?.basedOn,'Base');
+    assert.equal(bundle?.styles.find(style=>style.id==='Derived')?.next,'Body');
+    const run = p?.content?.find(node=>node.text===sample);
+    assert.ok(run);
+    assert.equal(run.marks?.some(mark=>mark.type==='bold') ?? false,item.id!=='S05');
+    assert.ok(run.marks?.some(mark=>mark.type==='italic'));
+  }
   if (item.id === 'C28') assert.ok(modelText(manuscript).includes(item.sample!));
   if (item.id === 'L06') {
     assert.ok(modelBlocks(manuscript).some(block => {
@@ -209,7 +225,7 @@ export function registerAdvancedFormattingContracts(): void {
           await sub.test('review history retained internally', { todo: todo('Word review metadata import remains incomplete') }, () => assertPrivateReviewModel(item, reopened));
           await sub.test('public export does not expose native private review metadata', () => assertPublicReview(item, word.parts, [html, jats, print, ...[odt, idml].flatMap(parts => [...parts.values()].map(b => b.toString('utf8')))]));
         } else {
-          await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported || nativeParagraphContracts[item.id] ? false : todo(docxGap(item)) }, () => {
+          await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported || nativeParagraphContracts[item.id] || ['S03','S04','S05'].includes(item.id) ? false : todo(docxGap(item)) }, () => {
             for (const expected of item.checks) assertNative(word.parts, expected);
           });
         }
