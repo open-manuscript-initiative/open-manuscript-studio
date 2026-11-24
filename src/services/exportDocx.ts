@@ -51,6 +51,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const metadataConversion = officeMetadataConversion(manuscript, context);
   const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'DOCX');
   const warnings: string[] = [...metadataConversionWarnings(metadataConversion), ...semanticLossWarnings(semanticLosses)];
+  if (JSON.stringify(manuscript).includes('"omiHiddenText"')) warnings.push('Editable DOCX preserves hidden text. Hidden formatting is not redaction; do not distribute this file as a redacted document.');
   const body: string[] = [];
   const sourceStyles = new SourceWordStyleRegistry();
   const numbering = new WordListNumbering();
