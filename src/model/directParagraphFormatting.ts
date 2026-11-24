@@ -47,7 +47,7 @@ function normalizeDecoration(kind: 'borders' | 'tabs', input: unknown): string |
       for (const side of BORDER_SIDES) {
         const b = (parsed as Record<string, ParagraphBorder>)[side];
         if (!b) continue;
-        const width = bounded(b.width, 0.125, 12), space = bounded(b.space, 0, 31);
+        const width = typeof b.width === 'number' && Number.isFinite(b.width) && b.width >= 0.125 && b.width <= 12 ? Math.round(b.width * 8) / 8 : undefined, space = bounded(b.space, 0, 31);
         if (width === undefined || space === undefined || !['single','double','dotted','dashed','nil'].includes(b.style) || !/^#[0-9a-f]{6}$/i.test(b.color)) return undefined;
         result[side] = { style:b.style, width, color:b.color.toUpperCase(), space };
       }
