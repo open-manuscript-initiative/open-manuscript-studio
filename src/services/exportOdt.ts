@@ -1,3 +1,4 @@
+import { paragraphTabs } from '../model/directParagraphFormatting';
 import { odtCharacterProperties, odtParagraphProperties, odtRunHasDirectFormatting } from './odtFormatting';
 import { directFormattingFromMarks } from '../model/directFormatting';
 import { visualTextBoxText } from '../model/textBoxes';
@@ -156,14 +157,14 @@ function renderRun(run: OmiInlineRun, notes: Map<string, OmiManuscript['annotati
 
 /** Per-export style registry; no shared mutable state or arbitrary XML. */
 class AutomaticStyles {
-  private readonly definitions = new Map<string, { name: string; family: 'text' | 'paragraph'; properties: Record<string, string> }>();
-  private register(family: 'text' | 'paragraph', properties: Record<string, string>, prefix: string): string | undefined {
-    if (!Object.keys(properties).length) return undefined;
-    const key = JSON.stringify([family, prefix, Object.entries(properties).sort(([a], [b]) => a.localeCompare(b))]);
+  private readonly definitions = new Map<string, { name: string; family: 'text' | 'paragraph'; properties: Record<string, string>; children: string }>();
+  private register(family: 'text' | 'paragraph', properties: Record<string, string>, prefix: string, children = ''): string | undefined {
+    if (!Object.keys(properties).length && !children) return undefined;
+    const key = JSON.stringify([family, prefix, children, Object.entries(properties).sort(([a], [b]) => a.localeCompare(b))]);
     const existing = this.definitions.get(key);
     if (existing) return existing.name;
     const name = prefix + (this.definitions.size + 1);
-    this.definitions.set(key, { name, family, properties });
+    this.definitions.set(key, { name, family, properties, children });
     return name;
   }
   character(run: OmiInlineRun): string | undefined {
@@ -175,13 +176,16 @@ class AutomaticStyles {
     return this.register('text', odtCharacterProperties(run), run.directFormatting?.omiHighlight ? 'OMIHighlight' : 'OMIChar');
   }
   paragraph(attrs: Record<string, unknown> | undefined): string | undefined {
-    return this.register('paragraph', odtParagraphProperties(attrs), 'OMIPara');
+    const tabs = paragraphTabs(attrs).filter(t=>t.alignment!=='clear');
+    const leader: Record<string,string> = {dot:'.',hyphen:'-',underscore:'_',middleDot:'·',heavy:'_'};
+    const content = tabs.map(t=>'<style:tab-stop style:position="'+t.position+'pt" style:type="'+(t.alignment==='decimal'?'char':t.alignment)+'"'+(t.alignment==='decimal'?' style:char="."':'')+(t.leader==='none'?'':' style:leader-style="solid" style:leader-text="'+leader[t.leader]+'"')+'/>').join('');
+    return this.register('paragraph', odtParagraphProperties(attrs), 'OMIPara', content?'<style:tab-stops>'+content+'</style:tab-stops>':'');
   }
   xml(): string {
-    return [...this.definitions.values()].map(({ name, family, properties }) => {
+    return [...this.definitions.values()].map(({ name, family, properties, children }) => {
       const tag = family === 'text' ? 'style:text-properties' : 'style:paragraph-properties';
       const attributes = Object.entries(properties).map(([key, value]) => ' ' + key + '="' + escape(value) + '"').join('');
-      return '<style:style style:name="' + name + '" style:family="' + family + '"><' + tag + attributes + '/></style:style>';
+      return '<style:style style:name="' + name + '" style:family="' + family + '"><' + tag + attributes + (children ? '>' + children + '</' + tag + '>' : '/>') + '</style:style>';
     }).join('');
   }
 }
