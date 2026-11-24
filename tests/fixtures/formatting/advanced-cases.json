@@ -466,7 +466,7 @@
       "group": "notes-citations",
       "feature": "Footnote numbering restarts per section",
       "marker": "OMI-F05-anchor",
-      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-F05-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Note anchor</w:t></w:r><w:r><w:footnoteReference w:id=\"1\"/></w:r></w:p><w:p><w:pPr><w:sectPr><w:footnotePr><w:numRestart w:val=\"eachSect\"/></w:footnotePr><w:type w:val=\"nextPage\"/></w:sectPr></w:pPr></w:p>",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-F05-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Note anchor</w:t></w:r><w:r><w:footnoteReference w:id=\"1\"/></w:r></w:p><w:p><w:pPr><w:sectPr><w:footnotePr><w:numRestart w:val=\"eachSect\"/></w:footnotePr><w:type w:val=\"nextPage\"/></w:sectPr></w:pPr></w:p><w:p><w:r><w:t>Second section note anchor</w:t></w:r><w:r><w:footnoteReference w:id=\"2\"/></w:r></w:p>",
       "checks": [
         {
           "part": "word/document.xml",
@@ -474,11 +474,26 @@
           "attrs": {
             "val": "eachSect"
           }
+        },
+        {
+          "part": "word/document.xml",
+          "path": "r/footnoteReference",
+          "attrs": {
+            "id": "2"
+          }
+        },
+        {
+          "part": "word/footnotes.xml",
+          "path": "footnote",
+          "attrs": {
+            "id": "2"
+          }
         }
       ],
       "parts": {
-        "word/footnotes.xml": "<w:footnotes xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:footnote w:type=\"separator\" w:id=\"-1\"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type=\"continuationSeparator\" w:id=\"0\"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id=\"1\"><w:p><w:r><w:t xml:space=\"preserve\">Restartable footnote</w:t></w:r></w:p></w:footnote></w:footnotes>"
-      }
+        "word/footnotes.xml": "<w:footnotes xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:footnote w:type=\"separator\" w:id=\"-1\"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type=\"continuationSeparator\" w:id=\"0\"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id=\"1\"><w:p><w:r><w:t xml:space=\"preserve\">Restartable footnote</w:t></w:r></w:p></w:footnote><w:footnote w:id=\"2\"><w:p><w:r><w:t>Second section footnote</w:t></w:r></w:p></w:footnote></w:footnotes>"
+      },
+      "section": "<w:footnotePr><w:numRestart w:val=\"eachSect\"/></w:footnotePr>"
     },
     {
       "id": "F06",
@@ -509,7 +524,7 @@
         }
       ],
       "parts": {
-        "word/footnotes.xml": "<w:footnotes xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:footnote w:type=\"separator\" w:id=\"-1\"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type=\"continuationSeparator\" w:id=\"0\"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id=\"1\"><w:p><w:r><w:t xml:space=\"preserve\">Funding disclosure</w:t></w:r></w:p></w:footnote></w:footnotes>"
+        "word/footnotes.xml": "<w:footnotes xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"><w:footnote w:type=\"separator\" w:id=\"-1\"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type=\"continuationSeparator\" w:id=\"0\"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id=\"1\"><w:p><w:r><w:t xml:space=\"preserve\">*</w:t></w:r><w:r><w:t xml:space=\"preserve\">Funding disclosure</w:t></w:r></w:p></w:footnote></w:footnotes>"
       }
     },
     {
@@ -544,7 +559,7 @@
       "group": "tables-graphics",
       "feature": "Vertically merged cells",
       "marker": "OMI-T02-anchor",
-      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-T02-anchor</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w=\"9000\" w:type=\"dxa\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"4500\"/><w:gridCol w:w=\"4500\"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:vMerge w:val=\"restart\"/></w:tcPr><w:p><w:r><w:t xml:space=\"preserve\">Merged</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">A</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:tc><w:tcPr><w:vMerge/></w:tcPr><w:p><w:r><w:t xml:space=\"preserve\"></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">B</w:t></w:r></w:p></w:tc></w:tr></w:tbl>",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-T02-anchor</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w=\"9000\" w:type=\"dxa\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"4500\"/><w:gridCol w:w=\"4500\"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:vMerge w:val=\"restart\"/></w:tcPr><w:p><w:r><w:t xml:space=\"preserve\">Merged</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">A</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:tc><w:tcPr><w:vMerge w:val=\"continue\"/></w:tcPr><w:p><w:r><w:t xml:space=\"preserve\"></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t xml:space=\"preserve\">B</w:t></w:r></w:p></w:tc></w:tr></w:tbl>",
       "checks": [
         {
           "part": "word/document.xml",
@@ -556,7 +571,9 @@
         {
           "part": "word/document.xml",
           "path": "tcPr/vMerge",
-          "attrs": {}
+          "attrs": {
+            "val": "continue"
+          }
         },
         {
           "part": "word/document.xml",
@@ -707,7 +724,7 @@
       "group": "page-layout",
       "feature": "Different odd and even page headers",
       "marker": "OMI-X05-anchor",
-      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X05-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Header specimen</w:t></w:r></w:p>",
+      "body": "<w:p><w:r><w:t xml:space=\"preserve\">OMI-X05-anchor</w:t></w:r></w:p><w:p><w:r><w:t xml:space=\"preserve\">Header specimen</w:t></w:r></w:p><w:p><w:pPr><w:pageBreakBefore/></w:pPr><w:r><w:t>Even page specimen</w:t></w:r></w:p>",
       "checks": [
         {
           "part": "word/document.xml",
