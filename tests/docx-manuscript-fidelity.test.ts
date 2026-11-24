@@ -30,8 +30,10 @@ import { createBlankManuscript } from '../src/document/createBlankManuscript.ts'
 import { buildDocxExport } from '../src/services/exportDocx.ts';
 import { buildOdtExport } from '../src/services/exportOdt.ts';
 import { parseOdtForStudio } from '../src/services/odtImport.ts';
+import { registerFormattingExportContracts } from './formatting-export-contract.ts';
 
 installXmlDomGlobals();
+registerFormattingExportContracts();
 
 test('does not create an undeletable synthetic heading for an untitled DOCX section', async () => {
   const file = makeDocx('<w:p><w:r><w:t>First imported paragraph</w:t></w:r></w:p>');
