@@ -93,7 +93,7 @@ async function readRichParagraphCandidates(file: File): Promise<RichParagraphCan
     const attrs = pPr ? readWordParagraphFormatting((property, attribute) => {
       const item = directChildrenByLocalName(pPr, property)[0];
       return item ? attributeByLocalName(item, attribute) : undefined;
-    }) : {};
+    }, property => directChildrenByLocalName(pPr, property).length > 0) : {};
     candidates.push({
       text,
       content: JSON.stringify({
