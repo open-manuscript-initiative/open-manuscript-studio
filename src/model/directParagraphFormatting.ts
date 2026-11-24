@@ -9,11 +9,16 @@ export const PARAGRAPH_FORMATS = {
   omiSpaceAfter: { min: 0, max: 1000 },
   omiLineSpacing: { min: 0.05, max: 1000 },
   omiLineRule: { choices: ['auto', 'exact', 'atLeast'] },
+  omiWidowControl: { toggle: true },
+  omiKeepNext: { toggle: true },
+  omiKeepLines: { toggle: true },
+  omiPageBreakBefore: { toggle: true },
 } as const;
 export type ParagraphFormat = keyof typeof PARAGRAPH_FORMATS;
 export const PARAGRAPH_FORMAT_NAMES = Object.keys(PARAGRAPH_FORMATS) as ParagraphFormat[];
-export function normalizeParagraphValue(name: ParagraphFormat, input: unknown): string | number | undefined {
+export function normalizeParagraphValue(name: ParagraphFormat, input: unknown): string | number | boolean | undefined {
   const definition = PARAGRAPH_FORMATS[name];
+  if ('toggle' in definition) return input === true || input === 'true' ? true : input === false || input === 'false' ? false : undefined;
   if ('choices' in definition) return typeof input === 'string' && (definition.choices as readonly string[]).includes(input) ? input : undefined;
   if (typeof input !== 'number' && (typeof input !== 'string' || !input.trim())) return undefined;
   const value = Number(input);
@@ -32,6 +37,16 @@ export function paragraphFormattingCss(attrs: Record<string, unknown> | undefine
   point('omiFirstLineIndent', 'text-indent'); point('omiSpaceBefore', 'margin-top'); point('omiSpaceAfter', 'margin-bottom');
   const line = v('omiLineSpacing');
   if (line !== undefined) css.push('line-height:' + line + (v('omiLineRule') === 'auto' || !v('omiLineRule') ? '' : 'pt'));
+  if (target === 'print') {
+    const widow = v('omiWidowControl');
+    if (widow !== undefined) css.push('widows:' + (widow ? 2 : 1), 'orphans:' + (widow ? 2 : 1));
+    const next = v('omiKeepNext');
+    if (next !== undefined) css.push('break-after:' + (next ? 'avoid-page' : 'auto'));
+    const lines = v('omiKeepLines');
+    if (lines !== undefined) css.push('break-inside:' + (lines ? 'avoid-page' : 'auto'));
+    const before = v('omiPageBreakBefore');
+    if (before !== undefined) css.push('break-before:' + (before ? 'page' : 'auto'));
+  }
   return css.join(';');
 }
 export function paragraphFormattingWordXml(attrs: Record<string, unknown> | undefined): string {
@@ -48,7 +63,12 @@ export function paragraphFormattingWordXml(attrs: Record<string, unknown> | unde
   const rule = v('omiLineRule') ?? 'auto';
   const spacing = word('omiSpaceBefore', 'before') + word('omiSpaceAfter', 'after')
     + (line === undefined ? '' : ' w:line="' + Math.round(Number(line) * (rule === 'auto' ? 240 : 20)) + '" w:lineRule="' + rule + '"');
-  return (spacing ? '<w:spacing' + spacing + '/>' : '')
+  const flag = (name: ParagraphFormat, tag: string) => {
+    const value = v(name);
+    return value === undefined ? '' : '<w:' + tag + ' w:val="' + (value ? '1' : '0') + '"/>';
+  };
+  return flag('omiKeepNext','keepNext') + flag('omiKeepLines','keepLines') + flag('omiPageBreakBefore','pageBreakBefore') + flag('omiWidowControl','widowControl')
+    + (spacing ? '<w:spacing' + spacing + '/>' : '')
     + (indent ? '<w:ind' + indent + '/>' : '')
     + (align ? '<w:jc w:val="' + (align === 'justify' ? 'both' : align) + '"/>' : '');
 }
@@ -74,6 +94,12 @@ export function readWordParagraphFormatting(read: (property: string, attribute: 
     const rule = read('spacing', 'lineRule') ?? 'auto';
     add('omiLineRule', rule);
     number('spacing', 'line', 'omiLineSpacing', rule === 'auto' ? 240 : 20);
+  }
+  for (const [name, property] of [
+    ['omiWidowControl','widowControl'], ['omiKeepNext','keepNext'], ['omiKeepLines','keepLines'], ['omiPageBreakBefore','pageBreakBefore'],
+  ] as const) {
+    const raw = read(property,'val');
+    if (raw !== undefined) add(name, !/^(?:0|false|off)$/i.test(raw));
   }
   return result;
 }
