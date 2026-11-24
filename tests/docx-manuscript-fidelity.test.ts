@@ -9,6 +9,7 @@ import { inspectOmiContainer } from '../src/services/omiContainerImport.ts';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { registerMasterFormattingContract } from './docx-master-formatting-contract.ts';
+import { registerAdvancedFormattingContracts } from './docx-advanced-formatting-contract.ts';
 
 import {
   DOMParser as XmlDomParser,
@@ -752,3 +753,4 @@ test('inline enrichment retains formatted manual breaks, tabs and external hyper
 });
 
 registerMasterFormattingContract();
+registerAdvancedFormattingContracts();
