@@ -415,7 +415,7 @@ export async function parseDocxManuscript(
       const paragraphAttrs = pPr ? readWordParagraphFormatting((property, attribute) => {
         const item = directChildrenByLocalName(pPr, property)[0];
         return item ? attributeByLocalName(item, attribute) : undefined;
-      }) : {};
+      }, property => directChildrenByLocalName(pPr, property).length > 0) : {};
       const attrs = Object.keys(paragraphAttrs).length ? { attrs: paragraphAttrs } : {};
       const tiptapContent = isCodeStyle(style?.id, style?.name) && plainText
         ? {
