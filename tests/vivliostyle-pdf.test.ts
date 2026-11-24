@@ -228,6 +228,123 @@ if (process.env.OMI_RUN_VIVLIOSTYLE_SMOKE === '1') {
     } finally { await rm(directory, { recursive: true, force: true }); }
   });
 
+  // Render actual paged PDF artifacts, not just the print HTML. These
+  // acceptance contracts stay visible as TODO until the production renderer
+  // demonstrates the expected multi-page behaviour; strict mode blocks on them.
+  test('F04 and T04: rendered page continuity and non-overlap contracts', async t => {
+    const { buildPdfPrintDocument } = await import('../src/services/exportPdf.ts');
+    const { createTestManuscript } = await import('./testManuscriptFixture.ts');
+    const { createTableBlock } = await import('../src/model/visualBlocks.ts');
+    const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const execute = promisify(execFile);
+    const strict = process.env.OMI_FORMATTING_STRICT === '1';
+    const directory = await mkdtemp(join(tmpdir(), 'omi-rendered-formatting-'));
+    const fresh = () => {
+      const manuscript = createTestManuscript();
+      manuscript.abstract = ''; manuscript.keywords = []; manuscript.annotations = [];
+      manuscript.bibliographicRecords = [];
+      return manuscript;
+    };
+    type Word = { text: string; xMin: number; yMin: number; xMax: number; yMax: number };
+    async function extractPages(html: string, name: string): Promise<Word[][]> {
+      const result = await renderVivliostylePdf(html);
+      assert.equal(new TextDecoder().decode(result.bytes.subarray(0, 5)), '%PDF-');
+      const path = join(directory, name + '.pdf');
+      await writeFile(path, result.bytes);
+      const { stdout } = await execute(process.env.PDFTOTEXT_BIN || 'pdftotext', ['-bbox', path, '-']);
+      const pages = [...stdout.matchAll(/<page\b[^>]*>([\s\S]*?)<\/page>/g)].map(page =>
+        [...page[1]!.matchAll(/<word\b([^>]*)>([^<]*)<\/word>/g)].map(word => {
+          const number = (attribute: string) => {
+            const value = Number(word[1]!.match(new RegExp(attribute + '="([^"]+)"'))?.[1]);
+            assert.ok(Number.isFinite(value), 'Missing word bounding box ' + attribute);
+            return value;
+          };
+          return { text: word[2]!, xMin: number('xMin'), yMin: number('yMin'), xMax: number('xMax'), yMax: number('yMax') };
+        }));
+      assert.ok(pages.length > 0);
+      return pages;
+    }
+    const locate = (pages: Word[][], token: string) => pages.flatMap((words, page) => words.filter(word => word.text === token).map(word => ({ ...word, page })));
+    const rich = (text: string) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
+    try {
+      await t.test('F04 long note retains all unique words, continues to another sheet and never covers body text', {
+        todo: strict ? false : 'Long-note page splitting and overlap are open rendered-PDF acceptance criteria',
+      }, async () => {
+        const manuscript = fresh();
+        const tokens = Array.from({ length: 260 }, (_, index) => 'NOTE' + String(index + 1).padStart(4, '0'));
+        const bodyTokens = Array.from({ length: 60 }, (_, index) => 'BODY' + String(index + 1).padStart(4, '0'));
+        manuscript.sections = [{ id: 'note-section', title: 'Long footnote', blocks: [
+          { id: 'anchor', type: 'paragraph', content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NOTEANCHOR' }, { type: 'omiNote', attrs: { noteId: 'long-note' } }] }] }) },
+          ...bodyTokens.map((token, index) => ({ id: 'body-' + index, type: 'paragraph' as const, content: rich(token + ' Ordinary body paragraph.') })),
+        ] }];
+        const paragraphs = Array.from({ length: 26 }, (_, index) => tokens.slice(index * 10, index * 10 + 10).map(token => token + ' footnote material with a sufficiently long source citation.').join(' '));
+        manuscript.annotations = [{ id: 'long-note', type: 'note', noteKind: 'footnote', targetBlockId: 'anchor', body: paragraphs.join('\n'), renderingHint: 'footnote',
+          bodyContent: JSON.stringify({ type: 'doc', content: paragraphs.map(text => ({ type: 'paragraph', content: [{ type: 'text', text }] })) }) }];
+        const pages = await extractPages(buildPdfPrintDocument(manuscript), 'long-note');
+        const first = locate(pages, tokens[0]!);
+        const last = locate(pages, tokens.at(-1)!);
+        const anchor = locate(pages, 'NOTEANCHOR');
+        assert.equal(anchor.length, 1);
+        assert.equal(first.length, 1);
+        assert.equal(last.length, 1);
+        assert.equal(first[0]!.page, anchor[0]!.page, 'The beginning of the note belongs on its anchor page');
+        assert.ok(last[0]!.page > first[0]!.page, 'The note must continue across pages');
+        assert.ok(first[0]!.yMin > anchor[0]!.yMax);
+        let previousPage = -1;
+        for (const token of tokens) {
+          const matches = locate(pages, token);
+          assert.equal(matches.length, 1, token + ' was lost or duplicated');
+          assert.ok(matches[0]!.page >= previousPage, token + ' appears out of order');
+          previousPage = matches[0]!.page;
+        }
+        for (const token of bodyTokens) assert.equal(locate(pages, token).length, 1, token + ' was lost or duplicated');
+        for (const words of pages) {
+          const body = words.filter(word => /^BODY\d{4}$/.test(word.text) || word.text === 'NOTEANCHOR');
+          const note = words.filter(word => /^NOTE\d{4}$/.test(word.text));
+          if (body.length && note.length) assert.ok(Math.max(...body.map(w => w.yMax)) <= Math.min(...note.map(w => w.yMin)) + .5, 'Body and note vertical bounds overlap');
+        }
+      });
+      await t.test('T04 repeated header and 85 table rows survive PDF pagination without loss, duplicates or reordered cells', {
+        todo: strict ? false : 'Multi-page table header repetition and row pagination must be verified in the real renderer',
+      }, async () => {
+        const manuscript = fresh();
+        const rows = Array.from({ length: 85 }, (_, index) => ['ROW' + String(index + 1).padStart(3, '0'), 'VALUE' + String(index + 1).padStart(3, '0')]);
+        manuscript.sections = [{ id: 'table-section', title: 'Long table', blocks: [
+          createTableBlock([['TABLEHEADER', 'VALUEHEADER'], ...rows], { headerRows: 1 }, 'multipage-table'),
+        ] }];
+        const pages = await extractPages(buildPdfPrintDocument(manuscript), 'long-table');
+        const dataPages = pages.map((words, page) => ({ words, page })).filter(({ words }) => words.some(word => /^ROW\d{3}$/.test(word.text)));
+        assert.ok(dataPages.length >= 2, 'The fixture must span at least two pages');
+        let previousPage = -1;
+        for (const [label, value] of rows) {
+          const left = locate(pages, label!);
+          const right = locate(pages, value!);
+          assert.equal(left.length, 1, label + ' was lost or duplicated');
+          assert.equal(right.length, 1, value + ' was lost or duplicated');
+          assert.equal(left[0]!.page, right[0]!.page, 'Table row was split');
+          assert.ok(left[0]!.page >= previousPage, 'Row order changed');
+          assert.ok(Math.abs(left[0]!.yMin - right[0]!.yMin) < 2, 'Cell baselines do not align');
+          assert.ok(left[0]!.xMax <= right[0]!.xMin, 'Cell bounding boxes overlap');
+          previousPage = left[0]!.page;
+        }
+        for (const { words } of dataPages) {
+          const header = words.filter(word => word.text === 'TABLEHEADER');
+          const valueHeader = words.filter(word => word.text === 'VALUEHEADER');
+          assert.equal(header.length, 1, 'Header must repeat once per table page');
+          assert.equal(valueHeader.length, 1);
+          const firstRow = Math.min(...words.filter(word => /^ROW\d{3}$/.test(word.text)).map(word => word.yMin));
+          assert.ok(header[0]!.yMax <= firstRow + .5, 'Repeated header overlaps the first row');
+        }
+      });
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   test('pinned Vivliostyle CLI renders a real PDF artifact', async () => {
     const artifact = await renderVivliostylePdf(
       '<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A5;margin:15mm}h1{break-after:avoid}</style></head><body><h1>OMI PDF smoke test</h1><p>Vivliostyle paged-media artifact.</p></body></html>',

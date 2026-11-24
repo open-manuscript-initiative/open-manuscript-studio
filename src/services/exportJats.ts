@@ -554,7 +554,9 @@ function renderInlineNode(node: JsonNode, state: RenderState): string {
         node.text ?? '',
       );
     case 'hardBreak':
-      return '\n';
+      // A literal newline is modified by the XML indentation pass. Preserve
+      // the semantic line break as a character reference in mixed content.
+      return '&#10;';
     case 'omiTab':
       return ' ';
     case 'omiCitation':
