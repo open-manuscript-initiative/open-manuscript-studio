@@ -140,3 +140,39 @@ for (const width of [1440, 393]) {
     await expect(page.locator('section.editor')).toContainText('Test paragraph.');
   });
 }
+
+
+test('canonical Word fixture: imported underline is recognized, removed and reapplied by the toolbar', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await openDocumentMenu(page);
+  await page.locator('input[type="file"][accept^=".docx"]').setInputFiles('tests/fixtures/omi-formatting-master-test.docx');
+  const review = page.getByRole('region', { name: 'Review import source', exact: true });
+  await review.getByRole('combobox', { name: 'Import purpose' }).selectOption('own-work');
+  await review.getByRole('button', { name: 'Create manuscript', exact: true }).click();
+  const editor = page.locator('section.editor');
+  const paragraph = editor.locator('.tiptap p').filter({ hasText: 'C03 |' });
+  await expect(paragraph).toBeVisible();
+  const underlined = paragraph.locator('u[data-omi-underline]');
+  await expect(underlined).toHaveCount(1);
+  await underlined.scrollIntoViewIfNeeded();
+  await underlined.click();
+  await underlined.evaluate(element => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const selection = document.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  const toolbar = page.locator('.omi-rich-text-toolbar');
+  const underline = toolbar.getByRole('button', { name: 'Underline', exact: true });
+  await expect(underline).toHaveAttribute('aria-pressed', 'true');
+  await underline.click();
+  await expect(underlined).toHaveCount(0);
+  await expect(paragraph).toContainText('Árvíztűrő tükörfúrógép – Manuscript 123');
+  await expect(underline).toHaveAttribute('aria-pressed', 'false');
+  await underline.click();
+  await expect(underlined).toHaveCount(1);
+});

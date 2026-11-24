@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core';
-import { Grip, MoveDiagonal2, Pin, PinOff, RotateCcw } from 'lucide-react';
+import { Code, CodeXml, CornerDownLeft, Eraser, Grip, List, ListOrdered, MoveDiagonal2, Pin, PinOff, Quote, RotateCcw, Strikethrough } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import {
   useEffect,
@@ -478,7 +478,7 @@ export function RichTextToolbar({
         >
           <em>I</em>
         </ToolbarButton>
-        {inHeader ? <>
+        <>
           <ToolbarButton label={copy.underline} active={editor.isActive('omiUnderline')}
             onMouseDown={keepEditorSelection}
             onClick={() => editor.chain().focus().toggleMark('omiUnderline').run()}><u>U</u></ToolbarButton>
@@ -488,7 +488,7 @@ export function RichTextToolbar({
           <ToolbarButton label={copy.smallCaps} active={editor.isActive('omiSmallCaps')}
             onMouseDown={keepEditorSelection}
             onClick={() => editor.chain().focus().toggleMark('omiSmallCaps').run()}><span style={{ fontVariant: 'small-caps' }}>Aa</span></ToolbarButton>
-        </> : null}
+        </>
         <ToolbarButton
           label={copy.superscript}
           active={editor.isActive('omiSuperscript')}
@@ -583,41 +583,49 @@ export function RichTextToolbar({
         <div className="omi-rich-text-popover omi-rich-text-more-menu">
           <div className="omi-rich-text-command-grid">
             <CommandButton
+              icon={<Strikethrough size={17} aria-hidden="true" />}
               label={copy.strike}
               active={editor.isActive('strike')}
               onClick={() => editor.chain().focus().toggleStrike().run()}
             />
             <CommandButton
+              icon={<List size={17} aria-hidden="true" />}
               label={copy.bulletList}
               active={editor.isActive('bulletList')}
               onClick={() => editor.chain().focus().toggleBulletList().run()}
             />
             <CommandButton
+              icon={<ListOrdered size={17} aria-hidden="true" />}
               label={copy.orderedList}
               active={editor.isActive('orderedList')}
               onClick={() => editor.chain().focus().toggleOrderedList().run()}
             />
             <CommandButton
+              icon={<Quote size={17} aria-hidden="true" />}
               label={copy.blockquote}
               active={editor.isActive('blockquote')}
               onClick={() => editor.chain().focus().toggleBlockquote().run()}
             />
             <CommandButton
+              icon={<Code size={17} aria-hidden="true" />}
               label={copy.inlineCode}
               active={editor.isActive('code')}
               onClick={() => editor.chain().focus().toggleCode().run()}
             />
             <CommandButton
+              icon={<CodeXml size={17} aria-hidden="true" />}
               label={copy.codeBlock}
               active={editor.isActive('codeBlock')}
               onClick={() => editor.chain().focus().toggleCodeBlock().run()}
             />
             <CommandButton
+              icon={<CornerDownLeft size={17} aria-hidden="true" />}
               label={copy.hardBreak}
               active={false}
               onClick={() => editor.chain().focus().setHardBreak().run()}
             />
             <CommandButton
+              icon={<Eraser size={17} aria-hidden="true" />}
               label={copy.clearMarks}
               active={false}
               onClick={() => editor.chain().focus().unsetAllMarks().run()}
@@ -722,10 +730,12 @@ function ToolbarButton({
 }
 
 function CommandButton({
+  icon,
   label,
   active,
   onClick,
 }: {
+  icon: ReactNode;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -735,10 +745,12 @@ function CommandButton({
       type="button"
       className={active ? 'is-active' : ''}
       aria-pressed={active}
+      aria-label={label}
+      title={label}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
     >
-      {label}
+      {icon}
     </button>
   );
 }

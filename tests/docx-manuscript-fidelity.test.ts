@@ -7,6 +7,7 @@ import { commitManuscriptRevision, extractManuscriptState, revertManuscriptToRev
 import { buildOmiContainer } from '../src/services/omiContainer.ts';
 import { inspectOmiContainer } from '../src/services/omiContainerImport.ts';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 
 import {
   DOMParser as XmlDomParser,
@@ -641,4 +642,91 @@ for (const format of ['docx', 'odt'] as const) {
       if (hasNamedSection) assert.match(JSON.stringify(headings[0]), /Methods/);
     });
   }
+}
+
+
+// The canonical Word fixture is deliberately independent of Studio's exporter.
+const masterFixture = new URL('./fixtures/omi-formatting-master-test.docx', import.meta.url);
+const masterManifest = JSON.parse(readFileSync(new URL('./fixtures/omi-formatting-test-manifest.json', import.meta.url), 'utf8')) as {
+  version: string;
+  cases: Array<{ id: string; feature: string; sample?: string; checks?: string[] }>;
+  default_checks: string[];
+};
+const exactMasterMarks: Record<string, { type: string; attrs?: Record<string, unknown> }> = {
+  C01: { type: 'bold' },
+  C02: { type: 'italic' },
+  C03: { type: 'omiUnderline' },
+  C07: { type: 'strike' },
+  C09: { type: 'omiSmallCaps' },
+  C11: { type: 'omiSuperscript' },
+  C12: { type: 'omiSubscript' },
+  C18: { type: 'omiSourceFont', attrs: { family: 'Liberation Mono' } },
+};
+
+test('master formatting fixture declares all 65 distinct cases and five checks', () => {
+  assert.equal(masterManifest.version, '1.0');
+  assert.equal(masterManifest.cases.length, 65);
+  assert.equal(new Set(masterManifest.cases.map(item => item.id)).size, 65);
+  for (const item of masterManifest.cases) {
+    assert.match(item.id, /^[A-Z][0-9]{2}$/);
+    assert.deepEqual(item.checks ?? masterManifest.default_checks, ['import', 'edit', 'remove_or_reset', 'save_reopen', 'export_supported_formats']);
+  }
+});
+
+function openMasterFixture(): File {
+  return new File([new Uint8Array(readFileSync(masterFixture))], 'omi-formatting-master-test.docx', {
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  });
+}
+
+type MasterTextNode = TiptapNode & { marks?: Array<{ type: string; attrs?: Record<string, unknown> }> };
+function masterSampleNodes(sections: DocxManuscriptImportPlan['sections'], id: string, sample: string): MasterTextNode[] {
+  for (const block of sections.flatMap(section => section.blocks)) {
+    if (!block.content.includes(id + ' |')) continue;
+    let node: TiptapNode;
+    try { node = JSON.parse(block.content) as TiptapNode; } catch { continue; }
+    if (!collectText(node).includes(id + ' |')) continue;
+    return (findNodes(node, 'text') as MasterTextNode[]).filter(item => item.text?.includes(sample));
+  }
+  return [];
+}
+
+function hasMasterMark(nodes: MasterTextNode[], expected: { type: string; attrs?: Record<string, unknown> }): boolean {
+  return nodes.some(node => node.marks?.some(mark => mark.type === expected.type
+    && Object.entries(expected.attrs ?? {}).every(([key, value]) => mark.attrs?.[key] === value)));
+}
+
+test('imports supported master-fixture marks and preserves them through OMI save/reopen', async (t) => {
+  const plan = await parseDocxForStudio(openMasterFixture());
+  const manuscript = { ...createBlankManuscript({ kind: 'study', locale: 'hu', title: 'Formatting master' }), sections: plan.sections, annotations: plan.annotations };
+  const reopened = parseOmiJson(serializeOmiJson(manuscript));
+  for (const item of masterManifest.cases.filter(item => exactMasterMarks[item.id])) {
+    await t.test(item.id + ' ' + item.feature, () => {
+      const expected = exactMasterMarks[item.id]!;
+      assert.ok(hasMasterMark(masterSampleNodes(plan.sections, item.id, item.sample!), expected), 'Imported sample is missing the expected mark');
+      assert.ok(hasMasterMark(masterSampleNodes(reopened.sections, item.id, item.sample!), expected), 'OMI save/reopen lost the mark');
+    });
+  }
+});
+
+test('DOCX export/reimport retains compound formatting and imported source typeface', async () => {
+  const file = makeDocx('<w:p><w:r><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:smallCaps/><w:rFonts w:ascii="Liberation Mono" w:hAnsi="Liberation Mono"/></w:rPr><w:t>Compound formatting</w:t></w:r></w:p>');
+  const original = await parseDocxForStudio(file);
+  const manuscript = { ...createBlankManuscript({ kind: 'study', locale: 'en', title: 'Compound formatting test' }), sections: original.sections };
+  const exported = buildDocxExport(manuscript);
+  const roundtrip = await parseDocxForStudio(new File([new Uint8Array(exported.bytes)], 'roundtrip.docx'));
+  for (const plan of [original, roundtrip]) {
+    const block = plan.sections.flatMap(section => section.blocks).find(block => block.content.includes('Compound formatting'));
+    assert.ok(block);
+    const nodes = findNodes(JSON.parse(block.content), 'text') as MasterTextNode[];
+    for (const mark of [{ type: 'bold' }, { type: 'italic' }, { type: 'omiUnderline' }, { type: 'omiSmallCaps' }, { type: 'omiSourceFont', attrs: { family: 'Liberation Mono' } }]) {
+      assert.ok(hasMasterMark(nodes, mark), 'Missing ' + mark.type);
+    }
+  }
+});
+
+// Explicit coverage inventory: TODO means the exact feature is not yet asserted,
+// not that Studio supports it or that a regression test has passed.
+for (const item of masterManifest.cases.filter(item => !exactMasterMarks[item.id])) {
+  test.todo('Master fixture exact formatting: ' + item.id + ' ' + item.feature);
 }
