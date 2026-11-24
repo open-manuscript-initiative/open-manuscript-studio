@@ -1,3 +1,4 @@
+import { PARAGRAPH_FORMAT_NAMES } from '../model/directParagraphFormatting';
 import type { JSONContent } from '@tiptap/core';
 
 import { getSectionDepth, withParentSectionId } from '../model/sectionStructure';
@@ -321,8 +322,11 @@ export function stripContinuousAttributes(node: JSONContent): JSONContent {
     delete attrs.omiNextParagraphStyleId;
     delete attrs.omiTabStopsMm;
     delete attrs.omiVisual;
+    // Schema defaults must not become explicit local overrides on save.
+    for (const name of PARAGRAPH_FORMAT_NAMES) if (attrs[name] == null) delete attrs[name];
     next.attrs = Object.keys(attrs).length ? attrs : undefined;
   }
+  if (next.content) next.content = next.content.map(stripContinuousAttributes);
   return next;
 }
 
