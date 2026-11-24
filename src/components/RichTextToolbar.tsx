@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core';
-import { Code, CodeXml, CornerDownLeft, Eraser, Grip, List, ListOrdered, MoveDiagonal2, Pin, PinOff, Quote, RotateCcw, Strikethrough } from 'lucide-react';
+import { Bold, Italic, Underline, Superscript, Subscript, Link, Ellipsis, SlidersHorizontal, Pilcrow, Code, CodeXml, CornerDownLeft, Eraser, Grip, List, ListOrdered, MoveDiagonal2, Pin, PinOff, Quote, RotateCcw, Strikethrough } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import {
   useEffect,
@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { DirectFormattingPanel, directFormattingLabel, ParagraphFormattingPanel, paragraphFormattingLabel } from './DirectFormattingPanel';
 import { useSelectionToolbarLayout } from './useSelectionToolbarLayout';
 import { useFormattingStore } from '../editor/useFormattingEditor';
 
@@ -85,6 +86,8 @@ export function RichTextToolbar({
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
   const [revision, setRevision] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [directOpen, setDirectOpen] = useState(false);
+  const [paragraphOpen, setParagraphOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkDraft, setLinkDraft] = useState('');
   const [linkError, setLinkError] = useState(false);
@@ -124,6 +127,8 @@ export function RichTextToolbar({
     const closeToolbar = () => {
       setPosition(null);
       setMoreOpen(false);
+    setDirectOpen(false);
+    setParagraphOpen(false);
       setLinkOpen(false);
       setLinkError(false);
       setLanguageError(false);
@@ -353,11 +358,15 @@ export function RichTextToolbar({
     setLinkDraft(typeof href === 'string' ? href : '');
     setLinkError(false);
     setMoreOpen(false);
+    setDirectOpen(false);
+    setParagraphOpen(false);
     setLinkOpen(true);
   }
 
   function closeExpandedMenu(): void {
     setMoreOpen(false);
+    setDirectOpen(false);
+    setParagraphOpen(false);
     setLinkOpen(false);
     setLinkError(false);
     setLanguageError(false);
@@ -414,7 +423,7 @@ export function RichTextToolbar({
     setLanguageError(false);
   }
 
-  const expanded = moreOpen || linkOpen;
+  const expanded = moreOpen || linkOpen || directOpen || paragraphOpen;
 
   const toolbar = (
     <div
@@ -468,7 +477,7 @@ export function RichTextToolbar({
           onMouseDown={keepEditorSelection}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
-          <strong>B</strong>
+          <Bold size={17} aria-hidden="true" />
         </ToolbarButton>
         <ToolbarButton
           label={copy.italic}
@@ -476,15 +485,15 @@ export function RichTextToolbar({
           onMouseDown={keepEditorSelection}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
-          <em>I</em>
+          <Italic size={17} aria-hidden="true" />
         </ToolbarButton>
         <>
           <ToolbarButton label={copy.underline} active={editor.isActive('omiUnderline')}
             onMouseDown={keepEditorSelection}
-            onClick={() => editor.chain().focus().toggleMark('omiUnderline').run()}><u>U</u></ToolbarButton>
+            onClick={() => editor.chain().focus().toggleMark('omiUnderline').run()}><Underline size={17} aria-hidden="true" /></ToolbarButton>
           <ToolbarButton label={copy.strike} active={editor.isActive('strike')}
             onMouseDown={keepEditorSelection}
-            onClick={() => editor.chain().focus().toggleStrike().run()}><s>S</s></ToolbarButton>
+            onClick={() => editor.chain().focus().toggleStrike().run()}><Strikethrough size={17} aria-hidden="true" /></ToolbarButton>
           <ToolbarButton label={copy.smallCaps} active={editor.isActive('omiSmallCaps')}
             onMouseDown={keepEditorSelection}
             onClick={() => editor.chain().focus().toggleMark('omiSmallCaps').run()}><span style={{ fontVariant: 'small-caps' }}>Aa</span></ToolbarButton>
@@ -495,7 +504,7 @@ export function RichTextToolbar({
           onMouseDown={keepEditorSelection}
           onClick={() => toggleMark('omiSuperscript')}
         >
-          x²
+          <Superscript size={17} aria-hidden="true" />
         </ToolbarButton>
         <ToolbarButton
           label={copy.subscript}
@@ -503,7 +512,7 @@ export function RichTextToolbar({
           onMouseDown={keepEditorSelection}
           onClick={() => toggleMark('omiSubscript')}
         >
-          x₂
+          <Subscript size={17} aria-hidden="true" />
         </ToolbarButton>
         <ToolbarButton
           label={copy.link}
@@ -511,7 +520,7 @@ export function RichTextToolbar({
           onMouseDown={keepEditorSelection}
           onClick={openLinkEditor}
         >
-          ↗
+          <Link size={17} aria-hidden="true" />
         </ToolbarButton>
         <ToolbarButton
           label={copy.more}
@@ -519,13 +528,37 @@ export function RichTextToolbar({
           onMouseDown={keepEditorSelection}
           onClick={() => {
             setLinkOpen(false);
+            setDirectOpen(false);
+            setParagraphOpen(false);
             setLanguageDraft(currentLanguage || manuscriptLanguage);
             setLanguageError(false);
             setMoreOpen((value) => !value);
           }}
         >
-          ⋯
+          <Ellipsis size={17} aria-hidden="true" />
         </ToolbarButton>
+        {editor.schema.marks.omiFontSize ? <ToolbarButton
+          label={directFormattingLabel(locale)}
+          active={directOpen}
+          onMouseDown={keepEditorSelection}
+          onClick={() => {
+            setLinkOpen(false);
+            setMoreOpen(false);
+            setParagraphOpen(false);
+            setDirectOpen(value => !value);
+          }}
+        ><SlidersHorizontal size={17} aria-hidden="true" /></ToolbarButton> : null}
+        {editor.schema.nodes.paragraph?.spec.attrs?.omiAlign ? <ToolbarButton
+          label={paragraphFormattingLabel(locale)}
+          active={paragraphOpen}
+          onMouseDown={keepEditorSelection}
+          onClick={() => {
+            setLinkOpen(false);
+            setMoreOpen(false);
+            setDirectOpen(false);
+            setParagraphOpen(value => !value);
+          }}
+        ><Pilcrow size={17} aria-hidden="true" /></ToolbarButton> : null}
         {expanded ? (
           <button
             type="button"
@@ -578,6 +611,9 @@ export function RichTextToolbar({
           </div>
         </div>
       ) : null}
+
+      {directOpen ? <DirectFormattingPanel editor={editor} locale={locale} /> : null}
+      {paragraphOpen ? <ParagraphFormattingPanel editor={editor} locale={locale} /> : null}
 
       {moreOpen ? (
         <div className="omi-rich-text-popover omi-rich-text-more-menu">

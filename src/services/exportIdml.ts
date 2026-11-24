@@ -1,3 +1,5 @@
+import { normalizeDirectValue } from '../model/directFormatting';
+import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { publicationFirstPageNumber } from '../model/publicationSpreads';
 import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
@@ -44,6 +46,7 @@ export function buildIdmlExport(
   const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'IDML');
   const warnings: string[] = semanticLossWarnings(semanticLosses);
   const storyParts: string[] = [];
+  const directColors = new Set<string>();
   const publishableAnnotations = manuscript.annotations.filter((note) =>
     note.type === 'note' && note.renderingHint !== 'hidden' && !note.visibility);
   const annotationsById = new Map(publishableAnnotations.map((note) => [note.id, note]));
@@ -81,7 +84,15 @@ export function buildIdmlExport(
         );
         const runs = extractOmiInlineRuns(block.content);
         if (runs.length) {
-          storyParts.push(styledRunsParagraph(runs, paragraphStyleId, annotationsById, renderedFootnoteIds));
+          storyParts.push(styledRunsParagraph(runs, paragraphStyleId, annotationsById, renderedFootnoteIds, directColors, directParagraphAttributes(block.content)));
+          for (const run of runs) {
+            const direct = run.directFormatting;
+            if (!direct) continue;
+            if (direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || direct.omiKerning !== undefined || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
+              warnings.push(`Some direct typography in block ${block.id} has no exact IDML mapping; review in InDesign.`);
+              break;
+            }
+          }
         } else {
           const text = blockPlainText(block);
           if (text) storyParts.push(styledParagraph(text, paragraphStyleId));
@@ -176,7 +187,7 @@ export function buildIdmlExport(
 </idPkg:Preferences>`;
   const fontsXml = buildFontsXml(publicationStyle, context.sections);
   const graphicXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<idPkg:Graphic xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><Color Self="Color/Black" Model="Process" Space="CMYK" ColorValue="0 0 0 100" ColorOverride="Specialblack" Name="Black"/></idPkg:Graphic>`;
+<idPkg:Graphic xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><Color Self="Color/Black" Model="Process" Space="CMYK" ColorValue="0 0 0 100" ColorOverride="Specialblack" Name="Black"/>${[...directColors].sort().map(idmlDirectColor).join('')}</idPkg:Graphic>`;
   const containerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="designmap.xml" media-type="text/xml"/></rootfiles></container>`;
 
@@ -608,6 +619,8 @@ function styledRunsParagraph(
   styleName: string,
   annotationsById?: ReadonlyMap<string, OmiManuscript['annotations'][number]>,
   renderedFootnoteIds?: Set<string>,
+  directColors?: Set<string>,
+  paragraphAttributes = '',
 ): string {
   const content = runs
     .flatMap((run) => {
@@ -625,14 +638,80 @@ function styledRunsParagraph(
       return splitGreekSourceFontRanges(run).map((range) => {
       const charStyle = omiCharacterStyleName(run.semantics) ?? '$ID/[None]';
       const language = run.language ? ` AppliedLanguage="${xml(run.language)}"` : '';
+      const direct = idmlDirectCharacterAttributes(run, directColors);
       const properties = range.fontFamily
         ? `<Properties><AppliedFont type="string">${xml(range.fontFamily)}</AppliedFont></Properties>`
         : '';
-      return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(charStyle)}"${language}>${properties}<Content>${xml(range.text)}</Content></CharacterStyleRange>`;
+      return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(charStyle)}"${language}${direct}>${properties}<Content>${xml(range.text)}</Content></CharacterStyleRange>`;
       });
     })
     .join('');
-  return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}">${content}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
+  return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}"${paragraphAttributes}>${content}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
+}
+
+
+/** Native local IDML overrides. Tracking is measured in 1/1000 em, not
+ * points; without a known run size a point-based value cannot be exact. */
+function idmlDirectCharacterAttributes(run: OmiInlineRun, colors?: Set<string>): string {
+  const d = run.directFormatting ?? {};
+  const attrs: Record<string, string | number | boolean> = {};
+  const size = normalizeDirectValue('omiFontSize', d.omiFontSize);
+  const tracking = normalizeDirectValue('omiTracking', d.omiTracking);
+  setAttr(attrs, 'PointSize', size);
+  setAttr(attrs, 'BaselineShift', normalizeDirectValue('omiBaseline', d.omiBaseline));
+  setAttr(attrs, 'HorizontalScale', normalizeDirectValue('omiCharacterScale', d.omiCharacterScale));
+  if (typeof size === 'number' && typeof tracking === 'number') attrs.Tracking = Math.round(tracking / size * 1000);
+  if (d.omiUppercase) attrs.Capitalization = 'AllCaps';
+  if (d.omiDoubleStrike) attrs.StrikeThru = true;
+  if (run.semantics.includes('underline')) attrs.Underline = true;
+  if (run.semantics.includes('strike')) attrs.StrikeThru = true;
+  if (run.semantics.includes('small-caps') && !d.omiUppercase) attrs.Capitalization = 'SmallCaps';
+  if (run.semantics.includes('superscript')) attrs.Position = 'Superscript';
+  if (run.semantics.includes('subscript')) attrs.Position = 'Subscript';
+  const color = normalizeDirectValue('omiTextColor', d.omiTextColor);
+  if (typeof color === 'string' && colors) {
+    colors.add(color);
+    attrs.FillColor = 'Color/OMI-' + color.slice(1);
+  }
+  return idmlLocalAttributes(attrs);
+}
+function idmlLocalAttributes(attrs: Record<string, string | number | boolean>): string {
+  return Object.entries(attrs).map(([name, value]) => ' ' + name + '="' + xml(String(value)) + '"').join('');
+}
+function idmlDirectColor(color: string): string {
+  const rgb = [1,3,5].map(index => parseInt(color.slice(index,index+2),16)).join(' ');
+  const name = 'OMI-' + color.slice(1);
+  return '<Color Self="Color/' + name + '" Model="Process" Space="RGB" ColorValue="' + rgb + '" Name="' + name + '"/>';
+}
+function directParagraphAttributes(content: string): string {
+  try {
+    const root = JSON.parse(content) as { type?: string; attrs?: Record<string, unknown>; content?: Array<{ type?: string; attrs?: Record<string, unknown> }> };
+    const node = root.type === 'paragraph' ? root : root.content?.[0];
+    if (node?.type !== 'paragraph') return '';
+    const v = (name: Parameters<typeof normalizeParagraphValue>[0]) => normalizeParagraphValue(name, node.attrs?.[name]);
+    const attrs: Record<string, string | number | boolean> = {};
+    for (const [name, property] of [
+      ['omiLeftIndent','LeftIndent'], ['omiRightIndent','RightIndent'], ['omiFirstLineIndent','FirstLineIndent'],
+      ['omiSpaceBefore','SpaceBefore'], ['omiSpaceAfter','SpaceAfter'],
+    ] as const) setAttr(attrs, property, v(name));
+    const align = v('omiAlign');
+    if (align) attrs.Justification = ({left:'LeftAlign',center:'CenterAlign',right:'RightAlign',justify:'LeftJustified'} as Record<string,string>)[String(align)]!;
+    const widow = v('omiWidowControl');
+    if (widow !== undefined) { attrs.KeepFirstLines = widow ? 2 : 1; attrs.KeepLastLines = widow ? 2 : 1; }
+    const next = v('omiKeepNext');
+    if (next !== undefined) attrs.KeepWithNext = next ? 1 : 0;
+    const lines = v('omiKeepLines');
+    if (lines !== undefined) attrs.KeepAllLinesTogether = lines;
+    const before = v('omiPageBreakBefore');
+    if (before !== undefined) attrs.StartParagraph = before ? 'NextPage' : 'Anywhere';
+    const line = v('omiLineSpacing');
+    if (typeof line === 'number') {
+      const rule = v('omiLineRule') ?? 'auto';
+      if (rule === 'exact') attrs.Leading = line;
+      else if (rule === 'auto') { attrs.Leading = 'Auto'; attrs.AutoLeading = line * 100; }
+    }
+    return idmlLocalAttributes(attrs);
+  } catch { return ''; }
 }
 
 interface IdmlFontRange {

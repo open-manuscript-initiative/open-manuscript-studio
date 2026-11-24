@@ -490,3 +490,53 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
   }
 }
+
+/* Compact direct typography inspector shared by floating and header toolbars. */
+.omi-rich-text-toolbar .omi-direct-formatting {
+  max-height: min(48dvh, 28rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.omi-direct-format-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: .35rem .6rem;
+  margin-top: .35rem;
+}
+.omi-direct-format-field {
+  display: flex;
+  align-items: end;
+  gap: .2rem;
+  min-width: 0;
+}
+.omi-direct-format-field label {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .2rem;
+  align-items: center;
+  font-size: .75rem;
+}
+.omi-direct-format-field label input,
+.omi-direct-format-field label select {
+  grid-column: 1 / -1;
+  min-width: 0;
+  width: 100%;
+  min-height: 2rem;
+  box-sizing: border-box;
+}
+.omi-direct-format-field button {
+  flex: 0 0 auto;
+  min-height: 2rem;
+  min-width: 2rem;
+  display: inline-grid;
+  place-items: center;
+}
+.omi-direct-format-field button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.omi-rich-text-toolbar button[aria-pressed="mixed"] {
+  border-style: dashed;
+}

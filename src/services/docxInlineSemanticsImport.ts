@@ -1,3 +1,5 @@
+import { readWordParagraphFormatting } from '../model/directParagraphFormatting';
+import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import {
   wordCharacterStyleSemantics,
   type DocxInlineSemantic,
@@ -87,12 +89,18 @@ async function readRichParagraphCandidates(file: File): Promise<RichParagraphCan
     if (!text.trim()) continue;
     if (!segments.some((segment) => segment.marks.length > 0)) continue;
 
+    const pPr = directChildrenByLocalName(paragraph, 'pPr')[0];
+    const attrs = pPr ? readWordParagraphFormatting((property, attribute) => {
+      const item = directChildrenByLocalName(pPr, property)[0];
+      return item ? attributeByLocalName(item, attribute) : undefined;
+    }, property => directChildrenByLocalName(pPr, property).length > 0) : {};
     candidates.push({
       text,
       content: JSON.stringify({
         type: 'doc',
         content: [{
           type: 'paragraph',
+          ...(Object.keys(attrs).length ? { attrs } : {}),
           content: segments
             .filter((segment) => segment.text)
             .map((segment) => ({
@@ -169,7 +177,10 @@ function parseParagraphRuns(
       ? resolveCharacterStyleSemantics(styleId, styles)
       : [];
     const semantics = Array.from(new Set([...inherited, ...direct]));
-    const marks: TiptapMark[] = semantics.flatMap(toTiptapMark);
+    const marks: TiptapMark[] = mergeWordDirectFormatting(semantics.flatMap(toTiptapMark), properties ? wordDirectFormatting(
+      (property, attribute = 'val') => { const item = directChildrenByLocalName(properties, property)[0]; return item ? attributeByLocalName(item, attribute) : undefined; },
+      (property) => directChildrenByLocalName(properties, property).length > 0,
+    ) : []);
     const sourceFontFamily = properties
       ? sourceFontFamilyFromRunProperties(properties)
       : undefined;

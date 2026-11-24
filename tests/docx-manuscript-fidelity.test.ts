@@ -1,3 +1,4 @@
+import { buildIdmlExport } from '../src/services/exportIdml.ts';
 import assert from 'node:assert/strict';
 import { MANUSCRIPT_IMPORT_ORIGIN } from '../src/model/manuscriptImportOrigin.ts';
 import { parseOmiJson, parsePortableOmiState, toPortableOmiState } from '../src/services/omiPortableFormat.ts';
@@ -8,7 +9,7 @@ import { buildOmiContainer } from '../src/services/omiContainer.ts';
 import { inspectOmiContainer } from '../src/services/omiContainerImport.ts';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { registerMasterFormattingContract } from './docx-master-formatting-contract.ts';
+import { readZipParts, registerMasterFormattingContract } from './docx-master-formatting-contract.ts';
 import { registerAdvancedFormattingContracts } from './docx-advanced-formatting-contract.ts';
 import { registerParagraphNumberingExportContracts } from './paragraph-numbering-export-contract.ts';
 
@@ -757,3 +758,78 @@ registerMasterFormattingContract();
 registerAdvancedFormattingContracts();
 
 registerParagraphNumberingExportContracts();
+
+
+test('DOCX to ODT retains compound typography, language and paragraph geometry after ODT reimport', async () => {
+  const source = makeDocx('<w:p><w:pPr><w:spacing w:before="160" w:after="240" w:line="360" w:lineRule="auto"/><w:ind w:left="360" w:right="120" w:hanging="120"/><w:jc w:val="both"/></w:pPr>'
+    + '<w:r><w:rPr><w:b/><w:i/><w:smallCaps/><w:u w:val="double"/><w:sz w:val="32"/><w:color w:val="A02040"/><w:spacing w:val="30"/><w:rFonts w:ascii="Liberation Serif"/><w:lang w:val="de-DE"/></w:rPr><w:t>Compound specimen</w:t></w:r>'
+    + '<w:r><w:rPr><w:vertAlign w:val="superscript"/><w:highlight w:val="yellow"/></w:rPr><w:t>SUPSPEC</w:t></w:r>'
+    + '<w:r><w:rPr><w:vertAlign w:val="subscript"/><w:shd w:val="clear" w:fill="B7DEE8"/></w:rPr><w:t>SUBSPEC</w:t></w:r></w:p>');
+  const plan = await parseDocxForStudio(source);
+  const manuscript = { ...createBlankManuscript({ kind: 'study', locale: 'en', title: 'ODT typography regression' }), sections: plan.sections };
+  const result = buildOdtExport(manuscript);
+  const parts = readZipParts(result.bytes);
+  const xml = parts.get('content.xml')!.toString('utf8');
+  const doc = new XmlDomParser().parseFromString(xml, 'application/xml');
+  const elements = (name: string) => Array.from(doc.getElementsByTagNameNS('*', name));
+  const styleFor = (tag: string, value: string) => {
+    const node = elements(tag).find(item => item.textContent?.includes(value) && item.hasAttribute('text:style-name'));
+    assert.ok(node, 'Missing styled specimen ' + value);
+    const style = elements('style').find(item => item.getAttribute('style:name') === node.getAttribute('text:style-name'));
+    assert.ok(style, 'Missing definition for ' + value);
+    const props = Array.from(style.children)[0];
+    assert.ok(props);
+    return props;
+  };
+  const main = styleFor('span', 'Compound specimen');
+  for (const [key, value] of Object.entries({
+    'fo:font-weight': 'bold', 'fo:font-style': 'italic', 'fo:font-variant': 'small-caps',
+    'style:text-underline-type': 'double', 'fo:font-size': '16pt', 'fo:color': '#A02040',
+    'fo:letter-spacing': '1.5pt', 'fo:font-family': 'Liberation Serif', 'fo:language': 'de', 'fo:country': 'DE',
+  })) assert.equal(main.getAttribute(key), value, key);
+  assert.equal(styleFor('span', 'SUPSPEC').getAttribute('style:text-position'), 'super 58%');
+  assert.equal(styleFor('span', 'SUBSPEC').getAttribute('style:text-position'), 'sub 58%');
+  const paragraph = styleFor('p', 'Compound specimen');
+  for (const [key, value] of Object.entries({
+    'fo:text-align': 'justify', 'fo:margin-left': '18pt', 'fo:margin-right': '6pt',
+    'fo:text-indent': '-6pt', 'fo:margin-top': '8pt', 'fo:margin-bottom': '12pt', 'fo:line-height': '150%',
+  })) assert.equal(paragraph.getAttribute(key), value, key);
+  const reopened = await parseOdtForStudio(new File([new Uint8Array(result.bytes)], 'roundtrip.odt'));
+  const block = reopened.sections.flatMap(section => section.blocks).find(block => block.content.includes('Compound specimen'))!;
+  assert.ok(block);
+  const root = JSON.parse(block.content);
+  const nodes = findNodes(root, 'text') as MasterTextNode[];
+  const marks = (sample: string, expected: Array<{ type: string; attrs?: Record<string, unknown> }>) => {
+    for (const mark of expected) assert.ok(hasMasterMark(nodes.filter(node => node.text?.includes(sample)), mark), 'Missing ' + mark.type + ' on ' + sample);
+  };
+  marks('Compound specimen', [
+    {type:'bold'}, {type:'italic'}, {type:'omiSmallCaps'}, {type:'omiUnderline',attrs:{variant:'double'}},
+    {type:'omiFontSize',attrs:{value:16}}, {type:'omiTextColor',attrs:{value:'#A02040'}}, {type:'omiTracking',attrs:{value:1.5}},
+    {type:'omiSourceFont',attrs:{family:'Liberation Serif'}}, {type:'omiLanguage',attrs:{lang:'de-DE'}},
+  ]);
+  marks('SUPSPEC', [{type:'omiSuperscript'}, {type:'omiHighlight',attrs:{value:'yellow'}}]);
+  marks('SUBSPEC', [{type:'omiSubscript'}, {type:'omiCharacterBackground',attrs:{value:'#B7DEE8'}}]);
+  const attrs = root.content[0].attrs;
+  assert.deepEqual(attrs, { omiAlign:'justify', omiLeftIndent:18, omiRightIndent:6, omiFirstLineIndent:-6,
+    omiSpaceBefore:8, omiSpaceAfter:12, omiLineRule:'auto', omiLineSpacing:1.5 });
+});
+
+test('IDML native local typography points, tracking, scaling and color resources are attached to the actual run', async () => {
+  const source = makeDocx('<w:p><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:left="240"/><w:jc w:val="right"/></w:pPr>'
+    + '<w:r><w:rPr><w:sz w:val="40"/><w:spacing w:val="20"/><w:position w:val="6"/><w:w w:val="90"/><w:color w:val="A02040"/><w:caps/></w:rPr><w:t>IDMLSPECIMEN</w:t></w:r></w:p>');
+  const plan = await parseDocxForStudio(source);
+  const manuscript = { ...createBlankManuscript({ kind:'study', locale:'en', title:'IDML typography regression' }), sections:plan.sections };
+  const parts = readZipParts(buildIdmlExport(manuscript).bytes);
+  const story = [...parts].find(([name]) => name.startsWith('Stories/'))![1];
+  const document = new XmlDomParser().parseFromString(story.toString('utf8'), 'application/xml');
+  const range = Array.from(document.getElementsByTagName('CharacterStyleRange')).find(node => node.textContent === 'IDMLSPECIMEN')!;
+  assert.ok(range);
+  for (const [key,value] of Object.entries({ PointSize:'20', Tracking:'50', BaselineShift:'3', HorizontalScale:'90', Capitalization:'AllCaps', FillColor:'Color/OMI-A02040' })) assert.equal(range.getAttribute(key),value,key);
+  const parent = range.parentNode as unknown as Element;
+  for (const [key,value] of Object.entries({ LeftIndent:'12', Leading:'18', Justification:'RightAlign' })) assert.equal(parent.getAttribute(key),value,key);
+  const colors = new XmlDomParser().parseFromString(parts.get('Resources/Graphic.xml')!.toString('utf8'),'application/xml');
+  const color = Array.from(colors.getElementsByTagName('Color')).find(node => node.getAttribute('Self') === range.getAttribute('FillColor'))!;
+  assert.ok(color);
+  assert.equal(color.getAttribute('Space'),'RGB');
+  assert.equal(color.getAttribute('ColorValue'),'160 32 64');
+});

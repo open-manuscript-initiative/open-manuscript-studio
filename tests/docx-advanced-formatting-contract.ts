@@ -66,7 +66,21 @@ function listDepth(node: RichNode, depth = 0): number {
   const next = depth + (node.type === 'orderedList' || node.type === 'bulletList' ? 1 : 0);
   return Math.max(next, ...(node.content ?? []).map(child => listDepth(child, next)));
 }
+const nativeParagraphContracts: Record<string, Record<string, unknown>> = {
+  P15: { omiWidowControl: true }, P16: { omiKeepNext: true },
+  P17: { omiKeepLines: true }, P18: { omiPageBreakBefore: true },
+  P20: { omiLineSpacing: 14, omiLineRule: 'exact' },
+  P21: { omiLineSpacing: 14, omiLineRule: 'atLeast' },
+};
 function assertSupportedModel(item: AdvancedCase, manuscript: OmiManuscript): void {
+  const paragraph = nativeParagraphContracts[item.id];
+  if (paragraph) {
+    const block = modelBlocks(manuscript).find(candidate => candidate.content.includes('Typographic paragraph ' + item.id));
+    assert.ok(block, 'Missing paragraph specimen ' + item.id);
+    const root = JSON.parse(block.content) as { content?: Array<{ attrs?: Record<string, unknown> }> };
+    for (const [name, value] of Object.entries(paragraph)) assert.equal(root.content?.[0]?.attrs?.[name], value, item.id + ' ' + name);
+  }
+
   if (item.id === 'C28') assert.ok(modelText(manuscript).includes(item.sample!));
   if (item.id === 'L06') {
     assert.ok(modelBlocks(manuscript).some(block => {
@@ -195,7 +209,7 @@ export function registerAdvancedFormattingContracts(): void {
           await sub.test('review history retained internally', { todo: todo('Word review metadata import remains incomplete') }, () => assertPrivateReviewModel(item, reopened));
           await sub.test('public export does not expose native private review metadata', () => assertPublicReview(item, word.parts, [html, jats, print, ...[odt, idml].flatMap(parts => [...parts.values()].map(b => b.toString('utf8')))]));
         } else {
-          await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported ? false : todo(docxGap(item)) }, () => {
+          await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported || nativeParagraphContracts[item.id] ? false : todo(docxGap(item)) }, () => {
             for (const expected of item.checks) assertNative(word.parts, expected);
           });
         }

@@ -1,8 +1,10 @@
+import { odtCharacterProperties, odtParagraphProperties, odtRunHasDirectFormatting } from './odtFormatting';
+import { directFormattingFromMarks } from '../model/directFormatting';
 import { visualTextBoxText } from '../model/textBoxes';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { officeMetadataConversion, metadataConversionWarnings, type MetadataConversionObservation } from '../model/metadataConversion';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
-import { extractOmiInlineRuns, semanticKindsFromMarks, type OmiInlineRun } from '../model/inlineSemantics';
+import { extractOmiInlineRuns, semanticKindsFromMarks, inlineLanguageFromMarks, inlineSourceFontFamilyFromMarks, type OmiInlineRun } from '../model/inlineSemantics';
 import { isNoteAnnotation, getNoteKind } from '../model/notes';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
@@ -21,6 +23,7 @@ export function buildOdtExport(source: OmiManuscript): OdtExportResult {
   const warnings: string[] = [...diagnostics.map(diagnostic => diagnostic.message), ...metadataConversionWarnings(metadataConversion)];
   const notes = new Map(manuscript.annotations.filter(isNoteAnnotation).map((note) => [note.id, note]));
   const usedNotes = new Set<string>();
+  const stylesRegistry = new AutomaticStyles();
   const images: Array<{ path: string; bytes: Uint8Array; mediaType: string }> = [];
   const body = [
     `<text:p text:style-name="OMITitle">${escape(context.title)}</text:p>`,
@@ -28,10 +31,10 @@ export function buildOdtExport(source: OmiManuscript): OdtExportResult {
     ...(context.contributors.length ? [`<text:p text:style-name="OMIAuthor">${context.contributors.map((person) => escape(person.displayName)).join(', ')}</text:p>`] : []),
     ...(context.abstract ? [`<text:h text:outline-level="1">${escape(label(context.locale, 'abstract'))}</text:h>`, `<text:p>${escape(context.abstract)}</text:p>`] : []),
     ...(context.keywords.length ? [`<text:p><text:span text:style-name="OMIStrong">${escape(label(context.locale, 'keywords'))}: </text:span>${context.keywords.map(escape).join('; ')}</text:p>`] : []),
-    ...context.sections.flatMap((section) => renderSection(section, notes, usedNotes, warnings, images)),
+    ...context.sections.flatMap((section) => renderSection(section, notes, usedNotes, warnings, images, stylesRegistry)),
   ].join('');
 
-  const content = `<?xml version="1.0" encoding="UTF-8"?>\n<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.3"><office:automatic-styles/><office:body><office:text text:use-soft-page-breaks="true">${body}</office:text></office:body></office:document-content>`;
+  const content = `<?xml version="1.0" encoding="UTF-8"?>\n<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.3"><office:automatic-styles>${stylesRegistry.xml()}</office:automatic-styles><office:body><office:text text:use-soft-page-breaks="true">${body}</office:text></office:body></office:document-content>`;
   const styles = `<?xml version="1.0" encoding="UTF-8"?><office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.3"><office:styles><style:default-style style:family="paragraph"><style:paragraph-properties fo:margin-bottom="0.16in"/><style:text-properties style:font-name="Liberation Serif" fo:font-size="12pt"/></style:default-style>${paragraphStyle('OMITitle', 1, '22pt', true)}${paragraphStyle('OMISubtitle', 2, '14pt', false)}${paragraphStyle('OMIAuthor', 2, '11pt', false)}${[1,2,3,4,5,6].map((level) => paragraphStyle(`OMIHeading${level}`, level, `${Math.max(12, 18 - level)}pt`, true)).join('')}<text:list-style style:name="OMIBullets"><text:list-level-style-bullet text:level="1" text:bullet-char="•"/></text:list-style><text:list-style style:name="OMINumbers"><text:list-level-style-number text:level="1" style:num-format="1"/></text:list-style><style:style style:name="OMIStrong" style:family="text"><style:text-properties fo:font-weight="bold"/></style:style><style:style style:name="OMIEmphasis" style:family="text"><style:text-properties fo:font-style="italic"/></style:style><style:style style:name="OMIUnderline" style:family="text"><style:text-properties style:text-underline-style="solid"/></style:style><style:style style:name="OMIStrike" style:family="text"><style:text-properties style:text-line-through-style="solid"/></style:style></office:styles></office:document-styles>`;
   const metadata = `<?xml version="1.0" encoding="UTF-8"?><office:document-meta xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" office:version="1.3"><office:meta><dc:title>${escape(context.title)}</dc:title><dc:language>${escape(context.locale || 'en')}</dc:language><meta:generator>Open Manuscript Studio</meta:generator>${context.contributors.map((person) => `<dc:creator>${escape(person.displayName)}</dc:creator>`).join('')}${context.keywords.map((keyword) => `<meta:keyword>${escape(keyword)}</meta:keyword>`).join('')}${context.abstract ? `<dc:description>${escape(context.abstract)}</dc:description>` : ''}</office:meta></office:document-meta>`;
   const manifest = `<?xml version="1.0" encoding="UTF-8"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3"><manifest:file-entry manifest:full-path="/" manifest:media-type="${MIME}"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/>${images.map((image) => `<manifest:file-entry manifest:full-path="${image.path}" manifest:media-type="${image.mediaType}"/>`).join('')}</manifest:manifest>`;
@@ -48,17 +51,17 @@ export function buildOdtExport(source: OmiManuscript): OdtExportResult {
   return { bytes, blob: new Blob([copy.buffer], { type: MIME }), fileName: `${fileStem(manuscript)}.odt`, warnings, diagnostics, metadataConversion };
 }
 
-function renderSection(section: ReturnType<typeof buildPublicationRenderingContext>['sections'][number], notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>, warnings: string[], images: Array<{ path: string; bytes: Uint8Array; mediaType: string }>): string[] {
+function renderSection(section: ReturnType<typeof buildPublicationRenderingContext>['sections'][number], notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>, warnings: string[], images: Array<{ path: string; bytes: Uint8Array; mediaType: string }>, stylesRegistry: AutomaticStyles): string[] {
   const level = Math.min(6, Math.max(1, section.depth + 1));
   const heading = section.number ? `${section.number} ${section.title}` : section.title;
   return [
     ...(section.title.trim() ? [`<text:h text:style-name="OMIHeading${level}" text:outline-level="${level}">${escape(heading)}</text:h>`] : []),
-    ...section.blocks.map((block) => renderBlock(block, notes, usedNotes, warnings, images)),
-    ...section.children.flatMap((child) => renderSection(child, notes, usedNotes, warnings, images)),
+    ...section.blocks.map((block) => renderBlock(block, notes, usedNotes, warnings, images, stylesRegistry)),
+    ...section.children.flatMap((child) => renderSection(child, notes, usedNotes, warnings, images, stylesRegistry)),
   ];
 }
 
-function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>, warnings: string[], images: Array<{ path: string; bytes: Uint8Array; mediaType: string }>): string {
+function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>, warnings: string[], images: Array<{ path: string; bytes: Uint8Array; mediaType: string }>, stylesRegistry: AutomaticStyles): string {
   if (block.visual?.kind === 'text-box') {
     warnings.push(`Text box ${block.id} is preserved as semantic text; graphical placement is unsupported in ODT.`);
     return `<text:p>${escape(visualTextBoxText(block.visual))}</text:p>`;
@@ -92,51 +95,95 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
   try {
     const document = JSON.parse(block.content) as OdtJsonNode;
     if ((document.content ?? []).some((node) => node.type === 'bulletList' || node.type === 'orderedList')) {
-      return (document.content ?? []).map((node) => renderOdtNode(node, notes, usedNotes)).join('');
+      return (document.content ?? []).map((node) => renderOdtNode(node, notes, usedNotes, stylesRegistry)).join('');
     }
   } catch { /* legacy plain-text blocks use the regular inline renderer */ }
   const runs = extractOmiInlineRuns(block.content);
   if (!runs.length) return '';
-  return `<text:p>${runs.map((run) => renderRun(run, notes, usedNotes)).join('')}</text:p>`;
+  if (runs.some(run => run.directFormatting?.omiBaseline !== undefined || run.directFormatting?.omiKerning !== undefined || (run.directFormatting?.omiHighlight && run.directFormatting?.omiCharacterBackground))) warnings.push(`Some direct typography in block ${block.id} has no exact ODT mapping; review in the target editor.`);
+  let attrs: Record<string, unknown> | undefined;
+  try { const root = JSON.parse(block.content) as OdtJsonNode; attrs = (root.type === 'paragraph' ? root : root.content?.[0])?.attrs; } catch { /* Plain text. */ }
+  const style = stylesRegistry.paragraph(attrs);
+  return `<text:p${style ? ` text:style-name="${style}"` : ''}>${runs.map((run) => renderRun(run, notes, usedNotes, stylesRegistry)).join('')}</text:p>`;
 }
 
 interface OdtJsonNode { type?: string; text?: string; attrs?: Record<string, unknown>; marks?: Array<{ type?: string; attrs?: Record<string, unknown> }>; content?: OdtJsonNode[] }
-function renderOdtNode(node: OdtJsonNode, notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>): string {
+function renderOdtNode(node: OdtJsonNode, notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>, stylesRegistry: AutomaticStyles): string {
   if (node.type === 'text') {
-    const run: OmiInlineRun = { text: node.text ?? '', semantics: semanticKindsFromMarks(node.marks) };
+    const run: OmiInlineRun = { text: node.text ?? '', semantics: semanticKindsFromMarks(node.marks), language: inlineLanguageFromMarks(node.marks), sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks), directFormatting: directFormattingFromMarks(node.marks) };
     const href = node.marks?.find((mark) => mark.type === 'omiLink' || mark.type === 'link')?.attrs?.href;
     if (typeof href === 'string') run.link = href;
-    return renderRun(run, notes, usedNotes);
+    return renderRun(run, notes, usedNotes, stylesRegistry);
   }
+  if (node.type === 'omiCitation' || node.type === 'omiCrossReference') return typeof node.attrs?.label === 'string' ? escape(node.attrs.label) : '';
   if (node.type === 'hardBreak') return '<text:line-break/>';
   if (node.type === 'omiTab') return '<text:tab/>';
   if (node.type === 'omiNote') {
     const noteId = node.attrs?.noteId;
-    return typeof noteId === 'string' ? renderRun({ text: '', semantics: [], noteId }, notes, usedNotes) : '';
+    return typeof noteId === 'string' ? renderRun({ text: '', semantics: [], noteId }, notes, usedNotes, stylesRegistry) : '';
   }
-  const children = (node.content ?? []).map((child) => renderOdtNode(child, notes, usedNotes)).join('');
+  const children = (node.content ?? []).map((child) => renderOdtNode(child, notes, usedNotes, stylesRegistry)).join('');
   if (node.type === 'bulletList' || node.type === 'orderedList') return `<text:list text:style-name="${node.type === 'orderedList' ? 'OMINumbers' : 'OMIBullets'}">${children}</text:list>`;
   if (node.type === 'listItem') return `<text:list-item>${children}</text:list-item>`;
-  if (node.type === 'paragraph') return `<text:p>${children}</text:p>`;
+  if (node.type === 'paragraph') {
+    const style = stylesRegistry.paragraph(node.attrs);
+    return `<text:p${style ? ` text:style-name="${style}"` : ''}>${children}</text:p>`;
+  }
   if (node.type === 'blockquote') return `<text:p text:style-name="OMIQuote">${children}</text:p>`;
   return children;
 }
 
-function renderRun(run: OmiInlineRun, notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>): string {
+function renderRun(run: OmiInlineRun, notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>, stylesRegistry: AutomaticStyles): string {
   let value = escape(run.text);
   if (run.noteId) {
     const note = notes.get(run.noteId);
     if (note) {
       usedNotes.add(note.id);
       const noteClass = getNoteKind(note) === 'endnote' ? 'endnote' : 'footnote';
-      const body = escape(note.body);
-      value += `<text:note text:note-class="${noteClass}" text:id="${safeId(note.id)}"><text:note-citation/><text:note-body><text:p>${body}</text:p></text:note-body></text:note>`;
+      let body = `<text:p>${escape(note.body)}</text:p>`;
+      if (note.bodyContent) {
+        try { body = (JSON.parse(note.bodyContent) as OdtJsonNode).content?.map(node => renderOdtNode(node, new Map(), usedNotes, stylesRegistry)).join('') || body; } catch { /* Preserve plain note fallback. */ }
+      }
+      value += `<text:note text:note-class="${noteClass}" text:id="${safeId(note.id)}"><text:note-citation/><text:note-body>${body}</text:note-body></text:note>`;
     }
   }
-  const style = (run.semantics ?? []).map((semantic) => ({ strong: 'OMIStrong', emphasis: 'OMIEmphasis', underline: 'OMIUnderline', strike: 'OMIStrike' } as Record<string, string>)[semantic]).filter(Boolean).at(-1);
+  const style = stylesRegistry.character(run);
   if (style) value = `<text:span text:style-name="${style}">${value}</text:span>`;
   if (run.link && /^(https?:|mailto:)/i.test(run.link)) value = `<text:a xlink:type="simple" xlink:href="${escape(run.link)}">${value}</text:a>`;
   return value.replace(/\n/g, '<text:line-break/>').replace(/\t/g, '<text:tab/>');
+}
+
+
+/** Per-export style registry; no shared mutable state or arbitrary XML. */
+class AutomaticStyles {
+  private readonly definitions = new Map<string, { name: string; family: 'text' | 'paragraph'; properties: Record<string, string> }>();
+  private register(family: 'text' | 'paragraph', properties: Record<string, string>, prefix: string): string | undefined {
+    if (!Object.keys(properties).length) return undefined;
+    const key = JSON.stringify([family, prefix, Object.entries(properties).sort(([a], [b]) => a.localeCompare(b))]);
+    const existing = this.definitions.get(key);
+    if (existing) return existing.name;
+    const name = prefix + (this.definitions.size + 1);
+    this.definitions.set(key, { name, family, properties });
+    return name;
+  }
+  character(run: OmiInlineRun): string | undefined {
+    const staticNames: Record<string, string> = { strong:'OMIStrong', emphasis:'OMIEmphasis', underline:'OMIUnderline', strike:'OMIStrike' };
+    if (run.semantics.length === 1 && !run.language && !run.sourceFontFamily && !odtRunHasDirectFormatting(run)) {
+      const name = staticNames[run.semantics[0]!];
+      if (name) return name;
+    }
+    return this.register('text', odtCharacterProperties(run), run.directFormatting?.omiHighlight ? 'OMIHighlight' : 'OMIChar');
+  }
+  paragraph(attrs: Record<string, unknown> | undefined): string | undefined {
+    return this.register('paragraph', odtParagraphProperties(attrs), 'OMIPara');
+  }
+  xml(): string {
+    return [...this.definitions.values()].map(({ name, family, properties }) => {
+      const tag = family === 'text' ? 'style:text-properties' : 'style:paragraph-properties';
+      const attributes = Object.entries(properties).map(([key, value]) => ' ' + key + '="' + escape(value) + '"').join('');
+      return '<style:style style:name="' + name + '" style:family="' + family + '"><' + tag + attributes + '/></style:style>';
+    }).join('');
+  }
 }
 
 function paragraphStyle(name: string, outline: number, size: string, bold: boolean): string {

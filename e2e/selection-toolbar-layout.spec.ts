@@ -186,3 +186,34 @@ test('panel placement also works with the keyboard and can return to selection f
   await expect(pin).toHaveAttribute('aria-pressed', 'false');
   await expect(toolbar).toHaveAttribute('data-pinned', 'false');
 });
+
+
+test('shared character and paragraph icon panels edit independent properties and restore inherited formatting', async ({ page }) => {
+  const { editor, toolbar } = await openToolbar(page);
+  const character = toolbar.getByRole('button', { name: 'Character formatting', exact: true });
+  await character.click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  const size = panel.getByRole('spinbutton', { name: 'Font size (pt)', exact: true });
+  await size.fill('16');
+  await panel.getByRole('button', { name: 'Apply: Font size (pt)', exact: true }).click();
+  await expect(editor.locator('[data-omi-format="omiFontSize"][data-omi-format-value="16"]')).toHaveText('Select these words');
+  await panel.getByRole('combobox', { name: 'Underline style', exact: true }).selectOption('double');
+  await panel.getByRole('button', { name: 'Apply: Underline style', exact: true }).click();
+  await expect(editor.locator('u[data-omi-underline-variant="double"]')).toHaveText('Select these words');
+  await panel.getByRole('button', { name: 'Reset: Font size (pt)', exact: true }).click();
+  await expect(editor.locator('[data-omi-format="omiFontSize"]')).toHaveCount(0);
+  await expect(editor.locator('u[data-omi-underline-variant="double"]')).toHaveText('Select these words');
+  await toolbar.getByRole('button', { name: 'Paragraph formatting', exact: true }).click();
+  await panel.getByRole('button', { name: 'Align right', exact: true }).click();
+  const paragraph = editor.locator('p').filter({ hasText: 'Select these words' });
+  await expect(paragraph).toHaveAttribute('data-omialign', 'right');
+  await panel.getByRole('spinbutton', { name: 'Left indent (pt)', exact: true }).fill('18');
+  await panel.getByRole('button', { name: 'Apply: Left indent (pt)', exact: true }).click();
+  await expect(paragraph).toHaveAttribute('data-omileftindent', '18');
+  await expect(paragraph).toHaveAttribute('data-omialign', 'right');
+  await panel.getByRole('button', { name: 'Reset paragraph formatting', exact: true }).click();
+  await expect(paragraph).not.toHaveAttribute('data-omialign', 'right');
+  await expect(paragraph).not.toHaveAttribute('data-omileftindent', '18');
+  await expect(editor.locator('u[data-omi-underline-variant="double"]')).toHaveText('Select these words');
+  await expect(paragraph).toHaveText('Select these words to format them.');
+});

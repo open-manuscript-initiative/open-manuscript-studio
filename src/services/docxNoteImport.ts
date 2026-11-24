@@ -1,3 +1,4 @@
+import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import { DOMParser, type Element } from '@xmldom/xmldom';
 import { parseWordHyperlinkInstruction, wordCharacterStyleSemantics } from '../model/docxImport';
 import { noteBodyPlainText, type NoteJsonNode } from '../model/noteRichText';
@@ -123,7 +124,7 @@ function applyProperties(properties: Element | undefined, inherited: Mark[]): Ma
   let marks = [...inherited];
   for (const [property, type] of [
     ['b', 'bold'], ['i', 'italic'], ['u', 'omiUnderline'],
-    ['strike', 'strike'], ['dstrike', 'strike'], ['smallCaps', 'omiSmallCaps'],
+    ['strike', 'strike'], ['smallCaps', 'omiSmallCaps'],
   ]) {
     const item = child(properties, property!);
     if (!item) continue;
@@ -141,7 +142,10 @@ function applyProperties(properties: Element | undefined, inherited: Mark[]): Ma
   const fonts = child(properties, 'rFonts');
   const family = attr(fonts, 'ascii') ?? attr(fonts, 'hAnsi');
   if (family) marks = mergeMarks(marks, [{ type: 'omiSourceFont', attrs: { family } }]);
-  return marks;
+  return mergeWordDirectFormatting(marks, wordDirectFormatting(
+    (property, attribute = 'val') => attr(child(properties, property), attribute),
+    (property) => Boolean(child(properties, property)),
+  ));
 }
 
 function mergeMarks(left: Mark[], right: Mark[]): Mark[] {

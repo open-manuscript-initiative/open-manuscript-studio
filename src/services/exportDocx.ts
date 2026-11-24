@@ -1,3 +1,5 @@
+import { paragraphFormattingWordXml } from '../model/directParagraphFormatting';
+import { directFormattingFromMarks, directFormattingWordXml } from '../model/directFormatting';
 import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -135,7 +137,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           }
           return { kind, id };
         });
-        if (rendered) body.push(richParagraph(rendered, indexFields));
+        if (rendered) body.push(richParagraph(rendered, indexFields, block.content));
         else {
           const text = blockPlainText(block);
           if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
@@ -238,9 +240,15 @@ function wordStyledText(value: string, styleId?: string): string {
   return `<w:r>${rPr}<w:t xml:space="preserve">${xml(value)}</w:t></w:r>`;
 }
 
-function richParagraph(runs: readonly WordInlinePart[], suffix = ''): string {
+function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = ''): string {
+  let properties = '';
+  try {
+    const root = JSON.parse(content) as NoteJsonNode;
+    const paragraph = root.type === 'paragraph' ? root : root.content?.[0];
+    if (paragraph?.type === 'paragraph') properties = paragraphFormattingWordXml(paragraph.attrs);
+  } catch { /* Plain-text fallback has no local paragraph overrides. */ }
   const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id) : wordRun(run)).join('');
-  return `<w:p>${rendered}${suffix}</w:p>`;
+  return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${rendered}${suffix}</w:p>`;
 }
 
 type WordNoteKind = 'footnote' | 'endnote';
@@ -284,6 +292,7 @@ function renderJsonNode(
       semantics: semanticKindsFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
       sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks),
+      directFormatting: directFormattingFromMarks(node.marks),
     }];
   }
   if (node.type === 'hardBreak') return [{ text: '\n', semantics: [] }];
@@ -341,7 +350,8 @@ function wordRun(run: OmiInlineRun): string {
   };
   const family = run.sourceFontFamily || (extras.includes('code') ? 'Courier New' : undefined);
   const font = family ? `<w:rFonts w:ascii="${xml(family)}" w:hAnsi="${xml(family)}"/>` : '';
-  const direct = extras.map((kind) => properties[kind] ?? '').join('');
+  const direct = extras.filter(kind => kind !== 'underline' || !run.directFormatting?.underlineStyle).map((kind) => properties[kind] ?? '').join('')
+    + directFormattingWordXml(run.directFormatting ?? {});
   const rPr = styleId || lang || font || direct
     ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${font}${direct}${lang}</w:rPr>`
     : '';

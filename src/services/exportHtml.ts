@@ -1,3 +1,5 @@
+import { paragraphFormattingCss } from '../model/directParagraphFormatting';
+import { DIRECT_FORMAT_NAMES, directFormattingCss, underlineCss, type DirectFormat } from '../model/directFormatting';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ChartPreview } from '../components/ChartPreview';
@@ -790,8 +792,10 @@ function renderJsonNode(node: JsonNode, state: RenderState): string {
   switch (node.type) {
     case 'doc':
       return children();
-    case 'paragraph':
-      return `<p>${children()}</p>`;
+    case 'paragraph': {
+      const css = paragraphFormattingCss(node.attrs, state.pagedNotes ? 'print' : 'html');
+      return `<p${css ? ` style="${css}"` : ''}>${children()}</p>`;
+    }
     case 'blockquote':
       return `<blockquote>${children()}</blockquote>`;
     case 'bulletList':
@@ -1040,8 +1044,10 @@ function applyMarks(
         return `<strong>${output}</strong>`;
       case 'italic':
         return `<em>${output}</em>`;
-      case 'omiUnderline':
-        return `<u>${output}</u>`;
+      case 'omiUnderline': {
+        const css = underlineCss(mark.attrs?.variant);
+        return css ? `<u style="${css}">${output}</u>` : `<u>${output}</u>`;
+      }
       case 'omiSmallCaps':
         return `<span style="font-variant:small-caps">${output}</span>`;
       case 'strike':
@@ -1062,8 +1068,10 @@ function applyMarks(
           ? `<a href="${escapeAttribute(href)}" rel="external">${output}</a>`
           : output;
       }
-      default:
-        return output;
+      default: {
+        const css = DIRECT_FORMAT_NAMES.includes(mark.type as DirectFormat) ? directFormattingCss(mark.type as DirectFormat, mark.attrs?.value) : '';
+        return css ? `<span style="${css}">${output}</span>` : output;
+      }
     }
   }, escapedText);
 }
