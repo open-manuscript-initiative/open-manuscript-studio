@@ -1,3 +1,4 @@
+import { tableMergeLayout } from '../model/tableLayout';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
 import { OdtZip } from './odtZip';
@@ -8,7 +9,7 @@ import { createImageBlock, createTableBlock } from '../model/visualBlocks';
 import { noteBodyPlainText, type NoteJsonNode } from '../model/noteRichText';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import { withParentSectionId } from '../model/sectionStructure';
-import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection } from '../types/omi';
+import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge } from '../types/omi';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 import { createEmptyDocxImportStats, mergeDetectedAuthors, parseDetectedAuthors, type DocxImportWarning } from '../model/docxImport';
 
@@ -70,11 +71,35 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
       continue;
     }
     if (child.localName === 'table') {
-      const rows = Array.from(child.getElementsByTagNameNS('*', 'table-row')).map((row) =>
-        Array.from(row.children).filter((cell) => cell.localName === 'table-cell' || cell.localName === 'covered-table-cell')
-          .map((cell) => plainText(cell).trim()),
-      ).filter((row) => row.length > 0);
-      if (rows.length) { ensureSection(sections).blocks.push(createTableBlock(rows, { provenance })); stats.tables += 1; }
+      const rows: string[][] = [];
+      const merges: OmiTableCellMerge[] = [];
+      let headerRows=0, bodyStarted=false;
+      const rowElements=Array.from(child.getElementsByTagNameNS('*','table-row')).filter(row=>{
+        let owner=row.parentNode;
+        while(owner && owner.nodeType===1 && (owner as XmlElement).localName!=='table') owner=owner.parentNode;
+        return owner===child;
+      });
+      for(const row of rowElements){
+        const values:string[]=[];
+        for(const cell of Array.from(row.children).filter(c=>c.localName==='table-cell'||c.localName==='covered-table-cell')){
+          const col=values.length;
+          const rowSpan=Number(cell.getAttribute('table:number-rows-spanned')||1);
+          const colSpan=Number(cell.getAttribute('table:number-columns-spanned')||1);
+          if(cell.localName==='table-cell' && (rowSpan>1||colSpan>1)) merges.push({row:rows.length,column:col,rowSpan,colSpan});
+          values.push(plainText(cell).trim());
+        }
+        if(!values.length) continue;
+        if(!bodyStarted && (row.parentNode as XmlElement | null)?.localName==='table-header-rows') headerRows++; else bodyStarted=true;
+        rows.push(values);
+      }
+      if(rows.length){
+        const width=rows.reduce((max,row)=>Math.max(max,row.length),0);
+        if(width*rows.length>10000) throw new Error('Table exceeds the 10000-cell import limit.');
+        const cells=rows.map(row=>Array.from({length:width},(_,c)=>row[c]??''));
+        const cellMerges=tableMergeLayout(cells,merges,headerRows).merges;
+        if(cellMerges.length!==merges.length) warnings.push({code:'merged-table-cells',severity:'warning',message:'Some ODT cell merges could not be preserved without hiding data.'});
+        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges})); stats.tables+=1;
+      }
       frontMatter = false;
       continue;
     }
