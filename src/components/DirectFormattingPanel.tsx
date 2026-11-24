@@ -1,6 +1,7 @@
+import { normalizeListAttribute } from '../model/directListFormatting';
 import { normalizeSourceStyle, sourceStyleBundle } from '../model/sourceWordStyles';
 import type { Editor } from '@tiptap/core';
-import { Unlink, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
+import { Unlink, RotateCcw, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { normalizeParagraphValue, paragraphBorders, paragraphTabs, BORDER_SIDES, type ParagraphFormat, type ParagraphBorder, type ParagraphTab } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
@@ -236,6 +237,7 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
         choices={['auto', 'exact', 'atLeast'].map((value, i) => ({ value, label: l[12 + i]! }))}
         normalize={value => normalizeParagraphValue('omiLineRule', value)} />
       {field('omiLineSpacing', 10, '1.5')}
+      <ListNumberingControls editor={editor} locale={locale}/>
       <SourceStyleControls editor={editor} locale={locale} kind="paragraph"/>
       <ParagraphDecorationControls editor={editor} locale={locale}/>
       {(['omiWidowControl','omiKeepNext','omiKeepLines','omiPageBreakBefore'] as const).map((name, index) => {
@@ -652,5 +654,162 @@ function SourceStyleFields({editor,kind,locale,bundle,selected,applyLabel,labels
     {style.next && <small>{l[3]}: {bundle.styles.find(item=>item.id===style.next)?.name??style.next}</small>}
     <button type="button" title={applyLabel} aria-label={applyLabel+': '+label} disabled={!definition||name===style.name} onMouseDown={e=>e.preventDefault()} onClick={()=>{if(definition)apply(definition);}}>✓</button>
     <button type="button" title={l[4]} aria-label={l[4]} onMouseDown={e=>e.preventDefault()} onClick={()=>apply(null)}><Unlink size={16} aria-hidden="true"/></button>
+  </div>;
+}
+
+const NUMBERING_LABELS: Record<string, Labels> = {
+  "en": [
+    "List numbering",
+    "Number format",
+    "Start at",
+    "Number label (%1–%9)",
+    "Restart sequence",
+    "Decimal",
+    "Roman (I, II)",
+    "Roman (i, ii)",
+    "Letters (A, B)",
+    "Letters (a, b)",
+    "Leading zero"
+  ],
+  "hu": [
+    "Listaszámozás",
+    "Számozás formátuma",
+    "Kezdőérték",
+    "Számozási minta (%1–%9)",
+    "Számozás újraindítása",
+    "Arab számok",
+    "Római (I, II)",
+    "Római (i, ii)",
+    "Betűk (A, B)",
+    "Betűk (a, b)",
+    "Vezető nulla"
+  ],
+  "de": [
+    "Listennummerierung",
+    "Zahlenformat",
+    "Beginnen bei",
+    "Nummernmuster (%1–%9)",
+    "Nummerierung neu starten",
+    "Dezimal",
+    "Römisch (I, II)",
+    "Römisch (i, ii)",
+    "Buchstaben (A, B)",
+    "Buchstaben (a, b)",
+    "Führende Null"
+  ],
+  "fr": [
+    "Numérotation de liste",
+    "Format de numéro",
+    "Commencer à",
+    "Motif (%1–%9)",
+    "Recommencer la numérotation",
+    "Décimal",
+    "Romain (I, II)",
+    "Romain (i, ii)",
+    "Lettres (A, B)",
+    "Lettres (a, b)",
+    "Zéro initial"
+  ],
+  "it": [
+    "Numerazione elenco",
+    "Formato numerico",
+    "Inizia da",
+    "Modello (%1–%9)",
+    "Riavvia numerazione",
+    "Decimale",
+    "Romano (I, II)",
+    "Romano (i, ii)",
+    "Lettere (A, B)",
+    "Lettere (a, b)",
+    "Zero iniziale"
+  ],
+  "es": [
+    "Numeración de lista",
+    "Formato numérico",
+    "Empezar en",
+    "Patrón (%1–%9)",
+    "Reiniciar numeración",
+    "Decimal",
+    "Romano (I, II)",
+    "Romano (i, ii)",
+    "Letras (A, B)",
+    "Letras (a, b)",
+    "Cero inicial"
+  ],
+  "nl": [
+    "Lijstnummering",
+    "Getalnotatie",
+    "Begin bij",
+    "Nummerpatroon (%1–%9)",
+    "Nummering opnieuw beginnen",
+    "Decimaal",
+    "Romeins (I, II)",
+    "Romeins (i, ii)",
+    "Letters (A, B)",
+    "Letters (a, b)",
+    "Voorloopnul"
+  ],
+  "pl": [
+    "Numeracja listy",
+    "Format numeru",
+    "Zacznij od",
+    "Wzór (%1–%9)",
+    "Rozpocznij numerację ponownie",
+    "Dziesiętny",
+    "Rzymski (I, II)",
+    "Rzymski (i, ii)",
+    "Litery (A, B)",
+    "Litery (a, b)",
+    "Zero wiodące"
+  ]
+};
+
+function ListNumberingControls({editor,locale}: {editor:Editor;locale:SupportedLocale}) {
+  const l = NUMBERING_LABELS[locale] ?? NUMBERING_LABELS.en!;
+  const [open,setOpen] = useState(false);
+  const from = editor.state.selection.$from;
+  let depth = from.depth;
+  while (depth > 0 && !['orderedList','bulletList'].includes(from.node(depth).type.name)) depth--;
+  const node = depth > 0 ? from.node(depth) : undefined;
+  const position = depth > 0 ? from.before(depth) : -1;
+  const enabled = node?.type.name === 'orderedList';
+  const attrs = node?.attrs ?? {};
+  const level = normalizeListAttribute('omiListLevel',attrs.omiListLevel) ?? 0;
+  return <div>
+    <button type="button" aria-label={l[0]} title={l[0]} aria-pressed={open && enabled} disabled={!enabled}
+      onMouseDown={event=>event.preventDefault()} onClick={()=>setOpen(value=>!value)}><ListOrdered size={17} aria-hidden="true"/></button>
+    {open && enabled && <NumberingFields key={JSON.stringify([position,attrs.omiListFormat,attrs.omiListLabel,attrs.start,attrs.omiListId])}
+      editor={editor} locale={locale} position={position} attrs={attrs} level={Number(level)}/>}
+  </div>;
+}
+function NumberingFields({editor,locale,position,attrs,level}: {editor:Editor;locale:SupportedLocale;position:number;attrs:Record<string,unknown>;level:number}) {
+  const l = NUMBERING_LABELS[locale] ?? NUMBERING_LABELS.en!;
+  const copy = getRichTextCopy(locale);
+  const [format,setFormat] = useState(String(attrs.omiListFormat ?? 'decimal'));
+  const [start,setStart] = useState(String(attrs.start ?? attrs.omiListStart ?? 1));
+  const [label,setLabel] = useState(String(attrs.omiListLabel ?? '%'+(level+1)+'.'));
+  const formats = ['decimal','upperRoman','lowerRoman','upperLetter','lowerLetter','decimalZero'];
+  const n = normalizeListAttribute('omiListStart',start);
+  const valid = typeof n === 'number' && normalizeListAttribute('omiListFormat',format) !== undefined && normalizeListAttribute('omiListLabel',label) !== undefined;
+  const apply = (restart:boolean) => {
+    if(!valid || typeof n !== 'number') return;
+    editor.chain().focus().command(({tr,dispatch})=>{
+      const node = tr.doc.nodeAt(position);
+      if(node?.type.name !== 'orderedList') return false;
+      const changedStart = n !== (node.attrs.start ?? node.attrs.omiListStart ?? 1);
+      if(dispatch) tr.setNodeMarkup(position,undefined,{...node.attrs,omiListFormat:format,omiListLabel:label,start:n,omiListStart:n,
+        ...(restart || changedStart ? {omiListId:crypto.randomUUID(),omiListOverrideStart:n} : {})});
+      return true;
+    }).run();
+  };
+  return <div className="omi-direct-format-fields">
+    <label>{l[1]}<select aria-label={l[1]} value={format} onChange={e=>setFormat(e.target.value)}>
+      {!formats.includes(format) && <option value={format}>{format}</option>}
+      {formats.map((value,i)=><option key={value} value={value}>{l[i+5]}</option>)}
+    </select></label>
+    <label>{l[2]}<input aria-label={l[2]} type="number" min="1" max="999999" value={start} onChange={e=>setStart(e.target.value)}/></label>
+    <label>{l[3]}<input aria-label={l[3]} maxLength={128} value={label} onChange={e=>setLabel(e.target.value)}/></label>
+    <button type="button" disabled={!valid} aria-label={copy.apply+': '+l[0]} title={copy.apply} onMouseDown={e=>e.preventDefault()} onClick={()=>apply(false)}>✓</button>
+    <button type="button" disabled={!valid} aria-label={l[4]} title={l[4]} onMouseDown={e=>e.preventDefault()} onClick={()=>apply(true)}><RotateCcw size={16} aria-hidden="true"/></button>
   </div>;
 }

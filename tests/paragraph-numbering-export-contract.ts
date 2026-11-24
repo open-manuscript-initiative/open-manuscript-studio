@@ -12,8 +12,6 @@ import { readZipParts } from './docx-master-formatting-contract.ts';
 import { createTestManuscript } from './testManuscriptFixture.ts';
 import { clonePublicationStyleTemplate } from '../src/services/publicationStyleExport.ts';
 
-const strict = process.env.OMI_FORMATTING_STRICT === '1';
-function todo(reason: string): string | false { return strict ? false : reason; }
 function xml(text: string): Document {
   return new DOMParser().parseFromString(text, 'application/xml') as unknown as Document;
 }
@@ -44,6 +42,24 @@ export function registerParagraphNumberingExportContracts(): void {
     await t.test('HTML nesting', () => {
       assert.match(html, /<ol\b[^>]*>[\s\S]*?Level one[\s\S]*?<ol\b[^>]*>[\s\S]*?Level two[\s\S]*?<ol\b[^>]*>[\s\S]*?Level three[\s\S]*?<\/ol>[\s\S]*?<\/ol>[\s\S]*?<\/ol>/);
     });
+    await t.test('DOCX native three-level numbering and one shared sequence', () => {
+      const parts = readZipParts(buildDocxExport(manuscript).bytes);
+      const body = xml(parts.get('word/document.xml')!.toString('utf8'));
+      const numbering = xml(parts.get('word/numbering.xml')!.toString('utf8'));
+      const ids = ['Level one','Level two','Level three'].map((sample,index) => {
+        const p = elements(body,'p').find(el=>el.textContent === sample);
+        assert.ok(p, 'Missing independent list paragraph '+sample);
+        assert.equal(attr(elements(p,'ilvl')[0]!,'val'),String(index));
+        return attr(elements(p,'numId')[0]!,'val');
+      });
+      assert.ok(ids[0]);
+      assert.equal(new Set(ids).size,1);
+      const instance = elements(numbering,'num').find(el=>attr(el,'numId')===ids[0])!;
+      const abstract = elements(numbering,'abstractNum').find(el=>attr(el,'abstractNumId')===attr(elements(instance,'abstractNumId')[0]!,'val'))!;
+      assert.deepEqual(elements(abstract,'lvl').map(el=>attr(elements(el,'lvlText')[0]!,'val')),['%1.','%1.%2.','%1.%2.%3.']);
+      assert.match(parts.get('word/_rels/document.xml.rels')!.toString('utf8'),/Target="numbering.xml"/);
+      assert.match(parts.get('[Content_Types].xml')!.toString('utf8'),/PartName="\/word\/numbering.xml"/);
+    });
     await t.test('JATS nesting', () => {
       const document = xml(renderJatsArticle(manuscript).xml);
       const lists = elements(document, 'list').filter(e => attr(e, 'list-type') === 'order' && e.textContent?.includes('Level three'));
@@ -55,14 +71,14 @@ export function registerParagraphNumberingExportContracts(): void {
     });
   });
 
-  test('L07–L09: native DOCX numbering restart, custom label and Roman format are exact export requirements', async t => {
+  test('L07–L09: native DOCX numbering restart, custom label and Roman format survive export', async t => {
     for (const id of ['L07', 'L08', 'L09']) {
       const item = advancedCases.find(c => c.id === id)!;
       const plan = await parseDocxForStudio(new File([new Uint8Array(createAdvancedDocx(item))], id + '.docx'));
       const manuscript = createTestManuscript();
       manuscript.sections = plan.sections;
       const exported = readZipParts(buildDocxExport(manuscript).bytes);
-      await t.test(id, { todo: todo('Native DOCX numbering definitions are not yet round-tripped') }, () => {
+      await t.test(id, () => {
         const numbering = exported.get('word/numbering.xml');
         assert.ok(numbering, 'Missing native numbering part');
         const doc = xml(numbering.toString('utf8'));
@@ -94,6 +110,7 @@ export function registerParagraphNumberingExportContracts(): void {
           assert.equal(attr(elements(level('Custom item').result, 'lvlText')[0]!, 'val'), 'Article %1)');
         } else {
           assert.equal(attr(elements(level('Roman item').result, 'numFmt')[0]!, 'val'), 'upperRoman');
+          assert.match(renderHtmlArticle(manuscript).html, /<ol[^>]*type="I"/);
         }
       });
     }
@@ -128,3 +145,12 @@ export function registerParagraphNumberingExportContracts(): void {
       elements(xml(bytes.toString('utf8')), 'ParagraphStyleRange').some(e => attr(e, 'AppliedParagraphStyle') === 'ParagraphStyle/qa-derived' && e.textContent?.includes('Test paragraph.'))));
   });
 }
+
+test('list metadata validation rejects unsafe IDs, labels and invalid levels', async () => {
+  const { normalizeListAttribute } = await import('../src/model/directListFormatting.ts');
+  assert.equal(normalizeListAttribute('omiListId','"><x/>'),undefined);
+  assert.equal(normalizeListAttribute('omiListLabel','x\n'),undefined);
+  assert.equal(normalizeListAttribute('omiListLevel',9),undefined);
+  assert.equal(normalizeListAttribute('omiListStart',0),undefined);
+  assert.equal(normalizeListAttribute('omiListLabel','Article %1)'), 'Article %1)');
+});

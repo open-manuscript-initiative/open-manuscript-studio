@@ -1,3 +1,4 @@
+import { LIST_ATTRIBUTE_NAMES, normalizeListAttribute, listPresentation } from '../../model/directListFormatting';
 import { normalizeSourceStyle } from '../../model/sourceWordStyles';
 import { PARAGRAPH_FORMAT_NAMES, normalizeParagraphValue, paragraphFormattingCss } from '../../model/directParagraphFormatting';
 import { DIRECT_FORMAT_NAMES, normalizeDirectValue, directFormattingCss, normalizeUnderlineStyle, underlineCss } from '../../model/directFormatting';
@@ -348,6 +349,24 @@ export const OmiSourceWordCharacterStyle = Mark.create({
   },
 });
 
+export const OmiListFormattingExtension = Extension.create({
+  name: 'omiListFormatting',
+  addGlobalAttributes() {
+    return [{
+      types: ['orderedList','bulletList'],
+      attributes: Object.fromEntries(LIST_ATTRIBUTE_NAMES.map(name => [name, {
+        default: null,
+        parseHTML: (element: HTMLElement) => normalizeListAttribute(name,element.getAttribute('data-'+name.toLowerCase())) ?? null,
+        renderHTML: (attrs: Record<string, unknown>) => {
+          const value = normalizeListAttribute(name,attrs[name]);
+          if (value === undefined) return {};
+          return { ['data-'+name.toLowerCase()]: String(value), ...(name === 'omiListFormat' ? listPresentation(attrs) : {}) };
+        },
+      }])),
+    }];
+  },
+});
+
 export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiManuscriptBoundaryEditingExtension,
   OmiManuscriptSelectionExtension,
@@ -362,6 +381,7 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiDirectParagraphFormattingExtension,
   OmiSourceWordParagraphStyle,
   OmiSourceWordCharacterStyle,
+  OmiListFormattingExtension,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
@@ -384,6 +404,7 @@ export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
   OmiDirectParagraphFormattingExtension,
   OmiSourceWordParagraphStyle,
   OmiSourceWordCharacterStyle,
+  OmiListFormattingExtension,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,

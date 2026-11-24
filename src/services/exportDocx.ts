@@ -1,3 +1,4 @@
+import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
 import { paragraphFormattingWordXml } from '../model/directParagraphFormatting';
@@ -52,6 +53,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const warnings: string[] = [...metadataConversionWarnings(metadataConversion), ...semanticLossWarnings(semanticLosses)];
   const body: string[] = [];
   const sourceStyles = new SourceWordStyleRegistry();
+  const numbering = new WordListNumbering();
   const fundingStatement = profile.rules.notes.fundingStarNote
     ? getManuscriptFundingStatement(manuscript)
     : '';
@@ -98,7 +100,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           warnings.push(`Structured ${block.visual.kind} object ${block.id} was exported as descriptive text in DOCX.`);
           continue;
         }
-        const rendered = renderWordContent(block.content, (noteId) => {
+        const resolveNote = (noteId: string): WordNoteReference | undefined => {
           const note = annotationsById.get(noteId);
           if (!note) {
             warnings.push(`DOCX note anchor ${noteId} has no matching OMI note.`);
@@ -140,7 +142,10 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
             target.push({ id, body: noteBody });
           }
           return { kind, id };
-        });
+        };
+        const lists = renderWordLists(block.content, numbering, resolveNote, indexFields, sourceStyles);
+        if (lists !== undefined) { body.push(lists); continue; }
+        const rendered = renderWordContent(block.content, resolveNote);
         if (rendered) body.push(richParagraph(rendered, indexFields, block.content, sourceStyles));
         else {
           const text = blockPlainText(block);
@@ -190,12 +195,13 @@ ${characterStylesXml()}${sourceStyles.xml()}
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(context.title)}</dc:title><dc:language>${xml(context.locale)}</dc:language><cp:lastModifiedBy>Open Manuscript Studio</cp:lastModifiedBy><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`;
 
   const entries = [
-    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${footnotes.length ? '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' : ''}${endnotes.length ? '<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' : ''}</Types>`),
+    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>${numbering.size ? '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' : ''}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${footnotes.length ? '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' : ''}${endnotes.length ? '<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' : ''}</Types>`),
     textZipEntry('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`),
-    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}</Relationships>`),
+    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${numbering.size ? '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : ''}${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}</Relationships>`),
     textZipEntry('word/document.xml', documentXml),
     textZipEntry('word/styles.xml', stylesXml),
     textZipEntry('word/settings.xml', settingsXml),
+    ...(numbering.size ? [textZipEntry('word/numbering.xml', numbering.xml())] : []),
     textZipEntry('docProps/core.xml', core),
     ...(footnotes.length ? [textZipEntry('word/footnotes.xml', renderWordNotes('footnote', footnotes))] : []),
     ...(endnotes.length ? [textZipEntry('word/endnotes.xml', renderWordNotes('endnote', endnotes))] : []),
@@ -210,6 +216,79 @@ ${characterStylesXml()}${sourceStyles.xml()}
     warnings,
     metadataConversion,
   };
+}
+
+type NumberingGroup = { id: number; levels: Map<number,string>; overrides: Map<number,number> };
+class WordListNumbering {
+  private readonly groups: NumberingGroup[] = [];
+  private readonly bySource = new Map<string,NumberingGroup>();
+  get size(): number { return this.groups.length; }
+  register(node: NoteJsonNode, depth: number, parent?: NumberingGroup): { group: NumberingGroup; level: number } {
+    const attrs = node.attrs;
+    const v = (name: Parameters<typeof normalizeListAttribute>[0]) => normalizeListAttribute(name,attrs?.[name]);
+    // The tree depth reflects current editing (including indent/outdent).
+    // Imported roots can themselves start at a non-zero Word level.
+    const level = Math.min(8, Math.max(0, depth));
+    const source = v('omiListId');
+    const format = v('omiListFormat') ?? (node.type === 'bulletList' ? 'bullet' : 'decimal');
+    const start = normalizeListAttribute('omiListStart',attrs?.start) ?? v('omiListStart') ?? 1;
+    const label = v('omiListLabel') ?? (node.type === 'bulletList' ? '•' : '%' + (level+1) + '.');
+    const left = v('omiListLeft') ?? (level+1)*720;
+    const hanging = v('omiListHanging') ?? 360;
+    const definition = '<w:lvl w:ilvl="' + level + '"><w:start w:val="' + start + '"/><w:numFmt w:val="' + format + '"/><w:lvlText w:val="' + xml(String(label)) + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' + left + '" w:hanging="' + hanging + '"/></w:pPr></w:lvl>';
+    let group = typeof source === 'string' ? this.bySource.get(source) : parent;
+    if (!group || (group.levels.has(level) && group.levels.get(level) !== definition)) {
+      group = {id:this.groups.length+1,levels:new Map(parent?.levels ?? []),overrides:new Map(parent?.overrides ?? [])};
+      this.groups.push(group);
+      if (typeof source === 'string') this.bySource.set(source,group);
+    }
+    group.levels.set(level,definition);
+    const override = v('omiListOverrideStart');
+    if (typeof override === 'number') group.overrides.set(level,override);
+    return {group,level};
+  }
+  xml(): string {
+    const abstracts = this.groups.map(group => '<w:abstractNum w:abstractNumId="' + group.id + '"><w:multiLevelType w:val="multilevel"/>' + [...group.levels].sort(([a],[b])=>a-b).map(([,definition])=>definition).join('') + '</w:abstractNum>').join('');
+    const nums = this.groups.map(group=>'<w:num w:numId="' + group.id + '"><w:abstractNumId w:val="' + group.id + '"/>' + [...group.overrides].sort(([a],[b])=>a-b).map(([level,start])=>'<w:lvlOverride w:ilvl="'+level+'"><w:startOverride w:val="'+start+'"/></w:lvlOverride>').join('') + '</w:num>').join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' + abstracts + nums + '</w:numbering>';
+  }
+}
+function renderWordLists(content: string, numbering: WordListNumbering, resolveNote: (id:string)=>WordNoteReference|undefined, suffix: string, sourceStyles: SourceWordStyleRegistry): string | undefined {
+  let root: NoteJsonNode;
+  try { root = JSON.parse(content) as NoteJsonNode; } catch { return undefined; }
+  const list = (node: NoteJsonNode) => node.type === 'orderedList' || node.type === 'bulletList';
+  const nodes = root.type === 'doc' ? root.content ?? [] : [root];
+  if (!nodes.some(list)) return undefined;
+  const output: string[] = [];
+  const renderParagraph = (node: NoteJsonNode, numPr = '') => {
+    const runs = renderJsonNode(node,resolveNote);
+    const last = runs.at(-1);
+    if (last && !('kind' in last) && last.text === '\n') runs.pop();
+    const sourceParagraph = node.attrs?.omiWordParagraphStyle;
+    const styleId = sourceStyles.register(sourceParagraph);
+    const properties = (styleId ? '<w:pStyle w:val="'+styleId+'"/>' : '') + numPr + paragraphFormattingWordXml(node.attrs);
+    output.push('<w:p>' + (properties ? '<w:pPr>'+properties+'</w:pPr>' : '') + runs.map(run=>'kind' in run ? wordNoteReference(run.kind,run.id) : wordRun(run, sourceStyles, sourceParagraph)).join('') + (output.length === 0 ? suffix : '') + '</w:p>');
+  };
+  const renderList = (node: NoteJsonNode, depth: number, parent?: NumberingGroup) => {
+    const {group,level} = numbering.register(node,depth,parent);
+    for (const item of node.content ?? []) {
+      if (item.type !== 'listItem') continue;
+      let first = true;
+      for (const child of item.content ?? []) {
+        if (list(child)) { renderList(child,level+1,group); continue; }
+        const numPr = first ? '<w:numPr><w:ilvl w:val="'+level+'"/><w:numId w:val="'+group.id+'"/></w:numPr>' : '';
+        renderParagraph(child,numPr);
+        first = false;
+      }
+    }
+  };
+  for (const node of nodes) {
+    if (list(node)) {
+      const level = normalizeListAttribute('omiListLevel',node.attrs?.omiListLevel);
+      renderList(node,typeof level === 'number' ? level : 0);
+    } else renderParagraph(node);
+  }
+  return output.join('');
 }
 
 function paragraph(value: string, styleId?: string, suffix = ''): string {
