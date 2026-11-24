@@ -1,3 +1,4 @@
+import { tableMergeLayout, tableHeaderRows } from '../model/tableLayout';
 import { paragraphTabs } from '../model/directParagraphFormatting';
 import { odtCharacterProperties, odtParagraphProperties, odtRunHasDirectFormatting } from './odtFormatting';
 import { directFormattingFromMarks } from '../model/directFormatting';
@@ -85,8 +86,15 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
     return `<text:p>[Image${block.visual.alt ? `: ${escape(block.visual.alt)}` : ''}] ${escape(visualTextBoxText(block.visual))}</text:p>`;
   }
   if (block.visual?.kind === 'table') {
-    const rows = block.visual.cells.map((row) => `<table:table-row>${row.map((cell) => `<table:table-cell office:value-type="string"><text:p>${escape(cell)}</text:p></table:table-cell>`).join('')}</table:table-row>`).join('');
-    return `<table:table table:name="OMITable${safeId(block.id)}">${rows}</table:table>`;
+    const headerRows=tableHeaderRows(block.visual.cells,block.visual.headerRows);
+    const layout=tableMergeLayout(block.visual.cells,block.visual.cellMerges,headerRows);
+    const rows=block.visual.cells.map((row,r)=>'<table:table-row>'+row.map((cell,c)=>{
+      if(layout.covered(r,c)) return '<table:covered-table-cell/>';
+      const m=layout.at(r,c);
+      return '<table:table-cell office:value-type="string"'+(m&&m.rowSpan>1?' table:number-rows-spanned="'+m.rowSpan+'"':'')+(m&&m.colSpan>1?' table:number-columns-spanned="'+m.colSpan+'"':'')+'><text:p>'+escape(cell)+'</text:p></table:table-cell>';
+    }).join('')+'</table:table-row>');
+    const head=headerRows?'<table:table-header-rows>'+rows.slice(0,headerRows).join('')+'</table:table-header-rows>':'';
+    return `<table:table table:name="OMITable${safeId(block.id)}">${head}${rows.slice(headerRows).join('')}</table:table>`;
   }
   if (block.visual) {
     const caption = 'caption' in block.visual ? block.visual.caption : undefined;
