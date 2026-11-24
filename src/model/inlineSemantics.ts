@@ -1,3 +1,4 @@
+import { directFormattingFromMarks, type DirectFormatting } from './directFormatting';
 export type OmiInlineSemanticKind =
   | 'strong'
   | 'emphasis'
@@ -17,6 +18,7 @@ export interface OmiInlineRun {
   text: string;
   semantics: OmiInlineSemanticKind[];
   sourceFontFamily?: string;
+  directFormatting?: DirectFormatting;
   language?: string;
   link?: string;
   noteId?: string;
@@ -147,6 +149,7 @@ function walk(node: JsonNode, runs: OmiInlineRun[]): void {
       text: node.text,
       semantics: semanticKindsFromMarks(node.marks),
       sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks),
+      directFormatting: directFormattingFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
       link: inlineLinkFromMarks(node.marks),
     });
@@ -204,6 +207,7 @@ function coalesceRuns(runs: readonly OmiInlineRun[]): OmiInlineRun[] {
     if (
       previous &&
       previous.sourceFontFamily === run.sourceFontFamily &&
+      JSON.stringify(previous.directFormatting ?? {}) === JSON.stringify(run.directFormatting ?? {}) &&
       previous.language === run.language &&
       previous.link === run.link &&
       previous.noteId === run.noteId &&
