@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core';
-import { Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { normalizeParagraphValue, type ParagraphFormat } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
 import { getRichTextCopy } from '../i18n/richText';
 import type { SupportedLocale } from '../i18n/types';
@@ -35,20 +36,21 @@ function applyMark(editor: Editor, name: string, attrs: Record<string, unknown> 
   else chain.unsetMark(name).run();
 }
 
-function FormatField({ editor, name, attribute = 'value', label, icon, copy, reset, mixed, kind = 'text', choices, defaultValue, normalize }: {
-  editor: Editor; name: string; attribute?: string; label: string; icon: ReactNode;
+function FormatField({ editor, name, paragraph = false, attribute = 'value', label, icon, copy, reset, mixed, kind = 'text', choices, defaultValue, normalize }: {
+  editor: Editor; name: string; paragraph?: boolean; attribute?: string; label: string; icon: ReactNode;
   copy: ReturnType<typeof getRichTextCopy>; reset: string; mixed: string;
   kind?: 'text' | 'number' | 'color'; choices?: { value: string; label: string }[];
   defaultValue?: string; normalize: (value: string) => unknown;
 }) {
-  const current = selectedValue(editor, name, attribute);
+  const current = paragraph ? selectedParagraphValue(editor, name) : selectedValue(editor, name, attribute);
   const [draft, setDraft] = useState(current.value || defaultValue || '');
   const [editing, setEditing] = useState(false);
   const value = editing ? draft : current.value || defaultValue || '';
   const normalized = normalize(value);
   const apply = () => {
     if (normalized === undefined || normalized === null) return;
-    applyMark(editor, name, { [attribute]: normalized });
+    if (paragraph) editor.chain().focus().updateAttributes('paragraph', { [name]: normalized }).run();
+    else applyMark(editor, name, { [attribute]: normalized });
     setEditing(false);
   };
   const update = (next: string) => { setDraft(next); setEditing(true); };
@@ -63,7 +65,7 @@ function FormatField({ editor, name, attribute = 'value', label, icon, copy, res
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); apply(); } }} />}
     </label>
     <button type="button" aria-label={copy.apply + ': ' + label} title={copy.apply} disabled={normalized === undefined || normalized === null} onMouseDown={e => e.preventDefault()} onClick={apply}>✓</button>
-    <button type="button" aria-label={reset + ': ' + label} title={reset} onMouseDown={e => e.preventDefault()} onClick={() => { applyMark(editor, name, null); setEditing(false); }}><RemoveFormatting size={15} aria-hidden="true" /></button>
+    <button type="button" aria-label={reset + ': ' + label} title={reset} onMouseDown={e => e.preventDefault()} onClick={() => { if (paragraph) editor.chain().focus().updateAttributes('paragraph', { [name]: null }).run(); else applyMark(editor, name, null); setEditing(false); }}><RemoveFormatting size={15} aria-hidden="true" /></button>
   </div>;
 }
 export function DirectFormattingPanel({ editor, locale }: { editor: Editor; locale: SupportedLocale }) {
@@ -100,6 +102,63 @@ export function DirectFormattingPanel({ editor, locale }: { editor: Editor; loca
         normalize={v => v === 'single' ? 'single' : normalizeUnderlineStyle(v)} />
       {field('omiCharacterScale', 17, <LetterText size={16} aria-hidden="true" />, 'number', '100')}
       {field('omiKerning', 18, <Strikethrough size={16} aria-hidden="true" />, 'number', '0')}
+    </div>
+  </div>;
+}
+
+
+const PARAGRAPH_LABELS: Record<string, Labels> = {
+  en: ['Paragraph formatting','Align left','Align center','Align right','Justify','Left indent (pt)','Right indent (pt)','First line indent (pt)','Space before (pt)','Space after (pt)','Line spacing','Line spacing rule','Multiple','Exact (pt)','At least (pt)','Increase list level','Decrease list level','Reset paragraph formatting'],
+  hu: ['Bekezdésformázás','Balra zárt','Középre zárt','Jobbra zárt','Sorkizárt','Bal behúzás (pt)','Jobb behúzás (pt)','Első sor behúzása (pt)','Térköz előtte (pt)','Térköz utána (pt)','Sorköz','Sorköz típusa','Többszörös','Pontos (pt)','Legalább (pt)','Listaszint növelése','Listaszint csökkentése','Bekezdésformázás törlése'],
+  de: ['Absatzformatierung','Linksbündig','Zentriert','Rechtsbündig','Blocksatz','Linker Einzug (pt)','Rechter Einzug (pt)','Erstzeileneinzug (pt)','Abstand davor (pt)','Abstand danach (pt)','Zeilenabstand','Zeilenabstandsart','Mehrfach','Genau (pt)','Mindestens (pt)','Listenebene erhöhen','Listenebene verringern','Absatzformatierung zurücksetzen'],
+  fr: ['Mise en forme du paragraphe','Aligner à gauche','Centrer','Aligner à droite','Justifier','Retrait gauche (pt)','Retrait droit (pt)','Retrait première ligne (pt)','Espacement avant (pt)','Espacement après (pt)','Interligne','Type d’interligne','Multiple','Exact (pt)','Au moins (pt)','Augmenter le niveau de liste','Réduire le niveau de liste','Réinitialiser le paragraphe'],
+  it: ['Formattazione paragrafo','Allinea a sinistra','Centra','Allinea a destra','Giustifica','Rientro sinistro (pt)','Rientro destro (pt)','Rientro prima riga (pt)','Spazio prima (pt)','Spazio dopo (pt)','Interlinea','Tipo di interlinea','Multipla','Esatta (pt)','Almeno (pt)','Aumenta livello elenco','Riduci livello elenco','Ripristina paragrafo'],
+  es: ['Formato de párrafo','Alinear a la izquierda','Centrar','Alinear a la derecha','Justificar','Sangría izquierda (pt)','Sangría derecha (pt)','Sangría primera línea (pt)','Espacio antes (pt)','Espacio después (pt)','Interlineado','Tipo de interlineado','Múltiple','Exacto (pt)','Mínimo (pt)','Aumentar nivel de lista','Reducir nivel de lista','Restablecer párrafo'],
+  nl: ['Alineaopmaak','Links uitlijnen','Centreren','Rechts uitlijnen','Uitvullen','Inspringing links (pt)','Inspringing rechts (pt)','Eerste regel (pt)','Ruimte voor (pt)','Ruimte na (pt)','Regelafstand','Type regelafstand','Meervoudig','Exact (pt)','Minimaal (pt)','Lijstniveau verhogen','Lijstniveau verlagen','Alineaopmaak herstellen'],
+  pl: ['Formatowanie akapitu','Wyrównaj do lewej','Wyśrodkuj','Wyrównaj do prawej','Wyjustuj','Wcięcie lewe (pt)','Wcięcie prawe (pt)','Wcięcie pierwszego wiersza (pt)','Odstęp przed (pt)','Odstęp po (pt)','Interlinia','Rodzaj interlinii','Wielokrotna','Dokładna (pt)','Co najmniej (pt)','Zwiększ poziom listy','Zmniejsz poziom listy','Resetuj akapit'],
+};
+const paragraphLabels = (locale: SupportedLocale) => PARAGRAPH_LABELS[locale] ?? PARAGRAPH_LABELS.en!;
+export function paragraphFormattingLabel(locale: SupportedLocale): string { return paragraphLabels(locale)[0]!; }
+
+function selectedParagraphValue(editor: Editor, name: string): { value: string; mixed: boolean } {
+  const { from, to, empty } = editor.state.selection;
+  if (empty) return { value: String(editor.getAttributes('paragraph')[name] ?? ''), mixed: false };
+  const values = new Set<string>();
+  editor.state.doc.nodesBetween(from, to, node => { if (node.type.name === 'paragraph') values.add(String(node.attrs[name] ?? '')); });
+  return { value: values.size === 1 ? [...values][0]! : '', mixed: values.size > 1 };
+}
+export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; locale: SupportedLocale }) {
+  const l = paragraphLabels(locale);
+  const copy = getRichTextCopy(locale);
+  const common = { editor, copy, reset: labels(locale)[19]!, mixed: labels(locale)[20]!, paragraph: true };
+  const align = selectedParagraphValue(editor, 'omiAlign');
+  const field = (name: ParagraphFormat, index: number, fallback = '0') => <FormatField key={name} {...common}
+    name={name} label={l[index]!} icon={<Pilcrow size={15} aria-hidden="true" />} kind="number" defaultValue={fallback} normalize={value => normalizeParagraphValue(name, value)} />;
+  const command = (label: string, icon: ReactNode, run: () => void, active = false, disabled = false) =>
+    <button key={label} type="button" title={label} aria-label={label} aria-pressed={active} disabled={disabled}
+      className={active ? 'is-active' : ''} onMouseDown={e => e.preventDefault()} onClick={run}>{icon}</button>;
+  return <div className="omi-rich-text-popover omi-direct-formatting" aria-label={l[0]}>
+    <div className="omi-rich-text-command-grid">
+      {(['left', 'center', 'right', 'justify'] as const).map((value, i) => command(l[i + 1]!, [<AlignLeft size={17} />, <AlignCenter size={17} />, <AlignRight size={17} />, <AlignJustify size={17} />][i],
+        () => editor.chain().focus().updateAttributes('paragraph', { omiAlign: value }).run(), align.value === value))}
+      {command(copy.bulletList, <List size={17} />, () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'))}
+      {command(copy.orderedList, <ListOrdered size={17} />, () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'))}
+      {command(l[15]!, <IndentIncrease size={17} />, () => editor.chain().focus().sinkListItem('listItem').run(), false, !editor.can().sinkListItem('listItem'))}
+      {command(l[16]!, <IndentDecrease size={17} />, () => editor.chain().focus().liftListItem('listItem').run(), false, !editor.can().liftListItem('listItem'))}
+      {command(l[17]!, <RemoveFormatting size={17} />, () => editor.chain().focus().updateAttributes('paragraph', {
+        omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null,
+      }).run())}
+    </div>
+    <div className="omi-direct-format-fields">
+      {field('omiLeftIndent', 5)}
+      {field('omiRightIndent', 6)}
+      {field('omiFirstLineIndent', 7)}
+      {field('omiSpaceBefore', 8)}
+      {field('omiSpaceAfter', 9)}
+      <FormatField {...common} name="omiLineRule" label={l[11]!} icon={<Pilcrow size={15} aria-hidden="true" />} defaultValue="auto"
+        choices={['auto', 'exact', 'atLeast'].map((value, i) => ({ value, label: l[12 + i]! }))}
+        normalize={value => normalizeParagraphValue('omiLineRule', value)} />
+      {field('omiLineSpacing', 10, '1.5')}
     </div>
   </div>;
 }
