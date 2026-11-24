@@ -707,7 +707,7 @@ function NumberingFields({editor,locale,position,attrs,level}: {editor:Editor;lo
       if(node?.type.name !== 'orderedList') return false;
       const changedStart = n !== (node.attrs.start ?? node.attrs.omiListStart ?? 1);
       if(dispatch) tr.setNodeMarkup(position,undefined,{...node.attrs,omiListFormat:format,omiListLabel:label,start:n,omiListStart:n,
-        ...(restart || changedStart ? {omiListId:crypto.randomUUID()} : {})});
+        ...(restart || changedStart ? {omiListId:crypto.randomUUID(),omiListOverrideStart:n} : {})});
       return true;
     }).run();
   };
