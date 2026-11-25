@@ -1,3 +1,5 @@
+import { readWordRunningPart } from './docxRunningMatterImport';
+import { RUNNING_VARIANTS, type RunningVariants } from '../model/wordRunningMatter';
 import { readWordSectionLayout } from '../model/wordSectionLayout';
 import { tableCellPlainText, normalizeCellParagraphAttrs, tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight, MAX_NESTED_TABLE_DEPTH, parseTableCellContent } from '../model/tableLayout';
 import { importedSourceStyle, type SourceStyle } from '../model/sourceWordStyles';
@@ -241,7 +243,13 @@ export async function parseDocxManuscript(
   let index = 0;
   let pendingSection=false;
   let physicalIndex=0,physicalStart=0;
-  const applyPhysicalLayout=()=>{
+  const runningPartCache=new Map<string,RunningVariants['default']>();
+  const onOff=(root:Element|undefined,tag:string):boolean|undefined=>{
+    const el=root&&directChildrenByLocalName(root,tag)[0];
+    if(!el)return undefined;
+    return !/^(?:0|false|off)$/i.test(attributeByLocalName(el,'val')??'1');
+  };
+  const applyPhysicalLayout=async()=>{
     const props=nativeSections[physicalIndex++];
     if(!props&&nativeSections.length===0)return;
     const read=(tag:string,attr:string)=>{const node=props&&directChildrenByLocalName(props,tag)[0];return node?attributeByLocalName(node,attr):undefined;};
@@ -249,7 +257,35 @@ export async function parseDocxManuscript(
     const count=Number(read('cols','num')??1);
     const rawGap=read('cols','space'),gap=rawGap===undefined?undefined:Number(rawGap)*25.4/1440;
     if(count>3||count<1||read('cols','equalWidth')==='0')warnings.push(warning('word-section-columns-partial'));
-    if(props&&directChildrenByLocalName(props,'headerReference').length+directChildrenByLocalName(props,'footerReference').length>0)warnings.push(warning('word-section-headers-footers-not-imported'));
+    const evenAndOdd=onOff(settings,'evenAndOddHeaders'),differentFirstPage=onOff(props,'titlePg');
+    if(evenAndOdd!==undefined)wordSection.evenAndOddHeaders=evenAndOdd;
+    if(differentFirstPage!==undefined)wordSection.differentFirstPage=differentFirstPage;
+    if(props)for(const kind of ['header','footer'] as const){
+      const variants:RunningVariants={};
+      for(const reference of directChildrenByLocalName(props,kind+'Reference')){
+        const variant=attributeByLocalName(reference,'type');
+        const id=attributeByLocalName(reference,'id');
+        const rel=id?relationships.get(id):undefined;
+        // Only internal package parts of the expected relationship kind.
+        // No network or external target resolution, traversal or raw XML reuse.
+        const target=rel?.target.replace(/^\.\//,'').replace(/^\/word\//,'').replace(/^word\//,'');
+        if(!RUNNING_VARIANTS.includes(variant as typeof RUNNING_VARIANTS[number])||!rel||rel.targetMode?.toLowerCase()==='external'||!rel.type?.endsWith('/'+kind)||!target||!/^[-a-z0-9_]+\.xml$/i.test(target)||!archive.has('word/'+target)){
+          warnings.push(warning('word-running-matter-reference-not-supported'));continue;
+        }
+        const key=kind+':'+target;
+        try{
+          if(!runningPartCache.has(key)){
+            const xml=await archive.text('word/'+target);
+            if(xml.length>1000000||/<!DOCTYPE\b|<!ENTITY\b/i.test(xml)){warnings.push(warning('word-running-matter-part-not-supported'));runningPartCache.set(key,undefined);}
+            else runningPartCache.set(key,readWordRunningPart(parseXml(xml).documentElement,kind,()=>warnings.push(warning('word-running-matter-formatting-partial'))));
+          }
+          const paragraphs=runningPartCache.get(key);
+          if(paragraphs)variants[variant as typeof RUNNING_VARIANTS[number]]=structuredClone(paragraphs);
+          else warnings.push(warning('word-running-matter-part-not-supported'));
+        }catch{warnings.push(warning('word-running-matter-part-not-supported'));}
+      }
+      if(Object.keys(variants).length)wordSection[kind==='header'?'headers':'footers']=variants;
+    }
     for(const section of sections.slice(physicalStart))section.layout={...section.layout,wordSection,...(count===2||count===3?{columns:count,...(gap!==undefined&&Number.isFinite(gap)&&gap>=0&&gap<=50?{columnGapMm:gap}:{})}:{})};
     physicalStart=sections.length;
   };
@@ -258,7 +294,7 @@ export async function parseDocxManuscript(
     const child = children[index];
     if (!child) break;
     if(pendingSection){
-      applyPhysicalLayout();
+      await applyPhysicalLayout();
       const nextHeading=child.localName==='p'&&resolveParagraphHeadingLevel(child,resolveParagraphStyle(child,styles))!==undefined&&!paragraphHasNoteReference(child)&&paragraphPlainText(child).trim();
       headingStack.length=0;
       if(!nextHeading&&sections.at(-1)?.blocks.length){sections.push({id:crypto.randomUUID(),title:'',blocks:[]});stats.sections+=1;}
@@ -518,7 +554,7 @@ export async function parseDocxManuscript(
     index += 1;
   }
 
-  if(physicalStart<sections.length)applyPhysicalLayout();
+  if(physicalStart<sections.length)await applyPhysicalLayout();
   for (const section of sections) {
     if (section.blocks.length === 0) {
       section.blocks.push(createEmptyParagraphBlock());
