@@ -1,3 +1,4 @@
+import { normalizeListAttribute } from '../model/directListFormatting';
 import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder, normalizeTableRowHeight, tableCellPlainText, normalizeCellParagraphAttrs } from '../model/tableLayout';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
@@ -287,15 +288,17 @@ function parseInlineChildren(root: XmlElement, blockId: string, annotations: Omi
 function parseOdtList(root: XmlElement, ordered: boolean, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[], listStyleTypes: Map<string, boolean>, textStyles: Map<string, XmlElement>): Array<Record<string, unknown>> {
   const listItems = Array.from(root.children).filter((node) => node.localName === 'list-item' || node.localName === 'list-header');
   if (!listItems.length) return [];
+  const start=ordered?normalizeListAttribute('omiListStart',listItems[0]?.getAttribute('text:start-value')):undefined;
   return [{
     type: ordered ? 'orderedList' : 'bulletList',
+    ...(typeof start==='number'&&start!==1?{attrs:{start}}:{}),
     content: listItems.map((item) => ({
       type: 'listItem',
       content: Array.from(item.children).flatMap((child) => {
         if (child.localName === 'p' || child.localName === 'h') return [{ type: 'paragraph', ...odtParagraphAttrs(child.getAttribute('text:style-name') ?? '', textStyles), content: parseInlineChildren(child, blockId, annotations, stats, provenance, warnings, textStyles, listStyleTypes) }];
         if (child.localName === 'list') {
           const styleName = child.getAttribute('text:style-name') ?? '';
-          return parseOdtList(child, listStyleTypes.get(styleName) ?? false, blockId, annotations, stats, provenance, warnings, listStyleTypes, textStyles);
+          return parseOdtList(child, listStyleTypes.get(styleName) ?? ordered, blockId, annotations, stats, provenance, warnings, listStyleTypes, textStyles);
         }
         return [];
       }),
