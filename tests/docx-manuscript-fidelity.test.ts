@@ -1579,3 +1579,25 @@ test('Word each-section note restart survives physical section import and native
     assert.doesNotMatch(readZipParts(continuous.bytes).get('word/document.xml')!.toString('utf8'),/w:numRestart/);
   }finally{useStudioStore.setState(previous,true);}
 });
+
+test('native custom starred notes preserve separate label, text and automatic numbering',async()=>{
+  const {buildNoteNumberMap,buildNoteLabelMap}=await import('../src/model/notes.ts');
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const body='<w:p><w:r><w:t>Disclosure anchor</w:t><w:footnoteReference w:id="1" w:customMarkFollows="1"/><w:t>*</w:t><w:t> after marker</w:t><w:footnoteReference w:id="2"/></w:r></w:p>';
+  const footnotes='<w:footnotes xmlns:w="'+ns+'"><w:footnote w:id="1"><w:p><w:r><w:t>*</w:t></w:r><w:r><w:t>Funding disclosure</w:t></w:r></w:p></w:footnote><w:footnote w:id="2"><w:p><w:r><w:footnoteRef/><w:t>Ordinary note</w:t></w:r></w:p></w:footnote></w:footnotes>';
+  const plan=await parseDocxForStudio(makeDocx(body,{footnotes}));
+  assert.equal(plan.annotations[0]?.noteCustomMark,'*');
+  assert.equal(plan.annotations[0]?.body,'Funding disclosure');
+  assert.equal(plan.annotations[1]?.body,'Ordinary note');
+  const manuscript=parseOmiJson(serializeOmiJson({...createBlankManuscript({kind:'study',locale:'en',title:'Star note'}),sections:plan.sections,annotations:plan.annotations}));
+  assert.deepEqual([...buildNoteNumberMap(manuscript).values()],[1]);
+  assert.deepEqual([...buildNoteLabelMap(manuscript).values()],['*','1']);
+  const result=buildDocxExport(manuscript);
+  const parts=readZipParts(result.bytes);
+  assert.match(parts.get('word/document.xml')!.toString('utf8'),/<w:footnoteReference w:id="1" w:customMarkFollows="1"\/><w:t>\*<\/w:t>/);
+  assert.match(parts.get('word/document.xml')!.toString('utf8'),/<w:footnoteReference w:id="2"\/>/);
+  const reopened=await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'star-note.docx'));
+  assert.equal(reopened.annotations[0]?.noteCustomMark,'*');
+  assert.equal(reopened.annotations[0]?.body,'Funding disclosure');
+  assert.equal(reopened.annotations[1]?.body,'Ordinary note');
+});
