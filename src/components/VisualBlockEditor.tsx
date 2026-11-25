@@ -1,5 +1,5 @@
 import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tiptap/react';
-import { generateHTML } from '@tiptap/core';
+import { generateHTML, Node as TiptapNode } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
 import { getRichTextCopy } from '../i18n/richText';
@@ -50,7 +50,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -297,9 +297,23 @@ function pitchY(note: OmiMusicScoreBlockData['notes'][number]): number {
   return 93 - ((note.octave - 4) * 7 + (order[note.step] ?? 0)) * 3;
 }
 
-const cellExtensions=()=>[StarterKit.configure({heading:false,blockquote:false,codeBlock:false,horizontalRule:false,link:false,underline:false}),...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter(e=>!['omiBlockTypeMenu','omiSourceWordParagraphStyle','omiWordCharacterStyle'].includes(e.name))];
+const NestedCellTableNode=TiptapNode.create({
+  name:'omiCellTable',group:'block',atom:true,selectable:true,draggable:true,
+  addAttributes(){return {table:{default:null,rendered:false}};},
+  renderHTML({node}){
+    const table=cellNestedTable({type:'omiCellTable',attrs:node.attrs});
+    if(!table) return ['div',{'data-omi-nested-table':'invalid'}];
+    const layout=tableMergeLayout(table.cells,table.cellMerges,table.headerRows);
+    return ['table',{'data-omi-nested-table':'true',class:'omi-table-editor'},['tbody',...table.cells.map((row,r)=>['tr',...row.flatMap((value,c)=>{
+      if(layout.covered(r,c)) return [];
+      const merge=layout.at(r,c);
+      return [[r<(table.headerRows??0)?'th':'td',{...(merge?{rowspan:merge.rowSpan,colspan:merge.colSpan}:{})},value]];
+    })])]] as import('@tiptap/pm/model').DOMOutputSpec;
+  },
+});
+const cellExtensions=()=>[NestedCellTableNode,StarterKit.configure({heading:false,blockquote:false,codeBlock:false,horizontalRule:false,link:false,underline:false}),...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter(e=>!['omiBlockTypeMenu','omiSourceWordParagraphStyle','omiWordCharacterStyle'].includes(e.name))];
 
-function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:NoteJsonNode)=>void;label:string}){
+function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(doc:NoteJsonNode)=>void;label:string;depth:number}){
   const {locale}=useTranslation();
   const copy=getRichTextCopy(locale);
   const change=useRef(onChange);change.current=onChange;
@@ -325,6 +339,7 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
       <button type="button" title={copy.bulletList} aria-label={copy.bulletList} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleBulletList().run()}>•</button>
       <button type="button" title={copy.orderedList} aria-label={copy.orderedList} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleOrderedList().run()}>1.</button>
       <button type="button" title={visualCopy.cellListIndent} aria-label={visualCopy.cellListIndent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().sinkListItem('listItem').run()}>→</button>
+      {depth<MAX_NESTED_TABLE_DEPTH?<button type="button" title={visualCopy.insertNestedTable} aria-label={visualCopy.insertNestedTable} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().insertContent({type:'omiCellTable',attrs:{table:{kind:'table',cells:[['',''],['','']],headerRows:0}}}).run()}>{visualCopy.insertNestedTable}</button>:null}
       <button type="button" title={visualCopy.cellListOutdent} aria-label={visualCopy.cellListOutdent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().liftListItem('listItem').run()}>←</button>
     </div>
     <details>
@@ -352,8 +367,10 @@ function EditableGrid({
   onChange,
   copy,
   blockId,
+  depth=0,
 }: {
   blockId?: string;
+  depth?:number;
   data: OmiTableBlockData | OmiChartBlockData;
   onChange: (next: typeof data) => void;
   copy: ReturnType<typeof getVisualElementsCopy>;
@@ -379,7 +396,7 @@ function EditableGrid({
   const selectedDoc=data.kind==='table'?tableCellDocument(data,selectedRow,selectedColumn):undefined;
   const columnWidths = data.kind === 'table' ? data.columnWidths : undefined;
   const widths = tableColumnWidths(cells, columnWidths);
-  const pageBreaks = useContext(TablePaginationContext).filter((item) => item.targetBlockId === blockId);
+  const pageBreaks = useContext(TablePaginationContext).filter((item) => depth===0&&item.targetBlockId === blockId);
   const continuationStyle = (row: number): CSSProperties | undefined => {
     const offset = [...pageBreaks].reverse().find((item) => item.textOffset <= row);
     return offset?.shiftX !== undefined || offset?.shiftY !== undefined ? {
@@ -590,12 +607,26 @@ function EditableGrid({
           <small>{copy.mergeHint}</small>
           <details>
             <summary>{copy.editCellText}</summary>
-            <RichCellEditor key={selectedRow+':'+selectedColumn} doc={selectedDoc??plainTableCellDocument(cells[selectedRow]?.[selectedColumn]??'')} label={copy.editCellText} onChange={doc=>{
+            <RichCellEditor depth={depth} key={selectedRow+':'+selectedColumn} doc={selectedDoc??plainTableCellDocument(cells[selectedRow]?.[selectedColumn]??'')} label={copy.editCellText} onChange={doc=>{
               const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(doc));
               const content=pruneTableCellContent(nextCells,data.cellContent);
               content[selectedRow+':'+selectedColumn]=JSON.stringify(doc);
               onChange({...data,cells:nextCells,cellContent:content});
             }}/>
+            {selectedDoc?.content?.map((node,index)=>{
+              const nested=cellNestedTable(node);
+              if(!nested||depth>=MAX_NESTED_TABLE_DEPTH) return null;
+              return <details key={index} onClick={event=>event.stopPropagation()}><summary>{copy.editNestedTable} {index+1}</summary><EditableGrid depth={depth+1} data={nested} copy={copy} onChange={next=>{
+                if(next.kind!=='table') return;
+                const doc={...selectedDoc,content:selectedDoc.content?.map((item,i)=>i===index?{type:'omiCellTable',attrs:{table:next}}:item)};
+                const valid=parseTableCellContent(JSON.stringify(doc),depth);
+                if(!valid) return;
+                const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(valid));
+                const content=pruneTableCellContent(nextCells,data.cellContent);
+                content[selectedRow+':'+selectedColumn]=JSON.stringify(valid);
+                onChange({...data,cells:nextCells,cellContent:content});
+              }}/></details>;
+            })}
           </details>
         </details>
       ) : null}
