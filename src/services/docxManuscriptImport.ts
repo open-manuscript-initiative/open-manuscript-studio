@@ -1157,7 +1157,10 @@ async function extractParagraphVisuals(
     const bytes = await archive.bytes(archivePath);
     const mediaType = inferMediaTypeFromFileName(archivePath);
     let drawing: Element | null = blip;
-    while (drawing && drawing.localName !== 'inline' && drawing.localName !== 'anchor') drawing = drawing.parentElement;
+    while (drawing && drawing.localName !== 'inline' && drawing.localName !== 'anchor') {
+      const parent: Node | null = drawing.parentNode;
+      drawing = parent?.nodeType === 1 ? parent as Element : null;
+    }
     const docPr = descendantsByLocalName(drawing ?? paragraph, 'docPr')[0];
     const wordPicture = drawing ? readWordPictureLayout(drawing) : undefined;
     blocks.push(
