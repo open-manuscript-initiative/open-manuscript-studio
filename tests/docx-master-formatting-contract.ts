@@ -487,7 +487,7 @@ function wordGap(id: string): string | undefined {
   return undefined;
 }
 function modelGap(id: string): string | undefined {
-  if (id === 'R01' || id === 'R02') return 'Word review metadata is not imported as editable OMI review objects yet';
+  // R01/R02 private comments and block revisions are mandatory.
   // L01–L05 model retention is now mandatory.
   // S01 checks the portable source style bundle, not the unrelated publisher style ID.
   // X02 semantic REF retention is now mandatory.
