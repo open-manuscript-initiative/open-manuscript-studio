@@ -1795,3 +1795,44 @@ test('simple and complex Word TOC fields remain semantic and regenerate native i
   assert.equal(wordTocInstruction({...plan.tableOfContents!,minLevel:0}),undefined);
   assert.equal(wordTocInstruction({...plan.tableOfContents!,source:{format:'docx-toc',instruction:'INCLUDETEXT unsafe',wordHyperlinks:false}}),' TOC \\o "2-4" \\u \\n ');
 });
+
+test('simple XE and INDEX fields preserve independent index types, hierarchical terms and locations',async()=>{
+  const xe=(instruction:string)=>'<w:fldSimple w:instr="'+instruction.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"/>';
+  const index=(instruction:string)=>'<w:p><w:fldSimple w:instr="'+instruction.replace(/"/g,'&quot;')+'"><w:r><w:t>Generated cache 999</w:t></w:r></w:fldSimple></w:p>';
+  const body='<w:p><w:r><w:t>Person specimen</w:t></w:r>'+xe(' XE "Example Person" ')+'</w:p>'
+    +'<w:p><w:r><w:t>Subject specimen</w:t></w:r>'+xe(' XE "History:Sources" \\f "S" ')+'</w:p>'
+    +'<w:p><w:r><w:t>Literal colon specimen</w:t></w:r>'+xe(' XE "Time\\: period:Records" \\f "S" ')+'</w:p>'
+    +index(' INDEX ')+index(' INDEX \\f "S" \\c "2" ');
+  const inspect=(plan:DocxManuscriptImportPlan)=>{
+    assert.equal(plan.indexEntries?.length,3);
+    assert.equal(plan.generatedIndexes?.length,2);
+    assert.equal(plan.indexDefinitions?.length,1);
+    const def=plan.indexDefinitions![0]!;
+    assert.equal(def.wordType,'S');
+    assert.deepEqual(plan.indexEntries!.map(e=>e.terms),[['Example Person'],['History','Sources'],['Time: period','Records']]);
+    assert.deepEqual(plan.indexEntries!.map(e=>e.indexId),[undefined,def.id,def.id]);
+    assert.deepEqual(plan.generatedIndexes!.map(e=>e.indexId),[undefined,def.id]);
+    assert.equal(plan.generatedIndexes![1]!.wordColumns,2);
+    const blocks=plan.sections.flatMap(s=>s.blocks);
+    for(const [i,label] of ['Person specimen','Subject specimen','Literal colon specimen'].entries()){
+      assert.ok(blocks.find(b=>b.id===plan.indexEntries![i]!.targetBlockId)?.content.includes(label),label);
+    }
+    assert.ok(blocks.every(b=>!b.content.includes('Generated cache 999')));
+  };
+  const plan=await parseDocxForStudio(makeDocx(body));
+  inspect(plan);
+  const previous=useStudioStore.getState();
+  try{
+    applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
+    const manuscript=parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    assert.equal(manuscript.indexDefinitions?.[0]?.wordType,'S');
+    assert.equal(manuscript.indexEntries?.length,3);
+    const word=buildDocxExport(manuscript);
+    const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+    assert.ok(xml.includes('w:instr=" XE &quot;Example Person&quot; "'));
+    assert.ok(xml.includes('w:instr=" XE &quot;History:Sources&quot; \\f &quot;S&quot; "'));
+    assert.ok(xml.includes('w:instr=" INDEX \\f &quot;S&quot; \\c &quot;2&quot; " w:dirty="true"'));
+    assert.doesNotMatch(xml,/Generated cache 999/);
+    inspect(await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'separate-indexes.docx')));
+  }finally{useStudioStore.setState(previous,true);}
+});
