@@ -1,4 +1,6 @@
 import { importIdmlTables } from '../services/idmlTableImport';
+import { applyDefaultPublicationTableStyle } from '../model/tableAppearancePresets';
+import { loadPublicationStyle } from '../services/publicationStyleExport';
 import { createTextBox } from '../model/textBoxes';
 import {
   BarChart3,
@@ -229,7 +231,11 @@ export function VisualInsertPanel({
           {copy.image}
         </button>
         <button type="button" onClick={() => insert([createTextBoxBlock(createTextBox())])}><span aria-hidden="true">T</span>{copy.textBox}</button>
-        <button type="button" onClick={() => insert([createTableBlock()])}>
+        <button type="button" onClick={() => {
+          const block=createTableBlock();
+          if(block.visual?.kind==='table')block.visual=applyDefaultPublicationTableStyle(block.visual,loadPublicationStyle(manuscript).tableStyles);
+          insert([block]);
+        }}>
           <Table2 size={17} aria-hidden="true" />
           {copy.table}
         </button>
