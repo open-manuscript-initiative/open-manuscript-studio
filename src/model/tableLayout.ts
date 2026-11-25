@@ -1,3 +1,4 @@
+import { LIST_ATTRIBUTE_NAMES, normalizeListAttribute } from './directListFormatting';
 import { normalizeParagraphValue, type ParagraphFormat } from './directParagraphFormatting';
 import type { NoteJsonNode } from './noteRichText';
 import { DIRECT_FORMAT_NAMES, normalizeDirectValue, type DirectFormat, normalizeUnderlineStyle } from './directFormatting';
@@ -240,15 +241,40 @@ export function tableRowHeightStyle(height:OmiTableRowHeight): {height?:string} 
   return height.mode==='auto'?{}:{height:height.heightPt+'pt'};
 }
 
-/** Cell documents are deliberately limited to paragraphs and inline text. */
+/** Cell documents support paragraphs and nested lists, with bounded list depth. */
 export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
   if(typeof value!=='string') return undefined;
   try {
     const root=JSON.parse(value) as NoteJsonNode;
     if(root?.type!=='doc'||!Array.isArray(root.content)||!root.content.length) return undefined;
-    if(!root.content.every(p=>p?.type==='paragraph'&&(p.content===undefined||Array.isArray(p.content)&&p.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab')))) return undefined;
+    const paragraphs:NoteJsonNode[]=[];
+    const validBlock=(node:NoteJsonNode,depth:number):boolean=>{
+      if(depth>8||!node||typeof node!=='object') return false;
+      if(node.type==='paragraph'){
+        if(node.content!==undefined&&(!Array.isArray(node.content)||!node.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab'))) return false;
+        paragraphs.push(node);
+        return true;
+      }
+      if(node.type!=='bulletList'&&node.type!=='orderedList') return false;
+      const attrs:Record<string,unknown>={};
+      for(const name of LIST_ATTRIBUTE_NAMES){
+        const value=normalizeListAttribute(name,node.attrs?.[name]);
+        if(value!==undefined) attrs[name]=value;
+      }
+      if(node.type==='orderedList'){
+        const start=normalizeListAttribute('omiListStart',node.attrs?.start??attrs.omiListStart);
+        if(start!==undefined) attrs.start=start;
+      }
+      if(Object.keys(attrs).length) node.attrs=attrs;else delete node.attrs;
+      return Array.isArray(node.content)&&node.content.length>0&&node.content.every(item=>{
+        if(item?.type!=='listItem'||!Array.isArray(item.content)||item.content[0]?.type!=='paragraph') return false;
+        delete item.attrs;
+        return item.content.every(child=>validBlock(child,depth+1));
+      });
+    };
+    if(!root.content.every(node=>validBlock(node,0))) return undefined;
     const marksAllowed=new Set(['bold','italic','strike','code','omiSmallCaps','omiSuperscript','omiSubscript']);
-    for(const p of root.content){
+    for(const p of paragraphs){
       const attrs=normalizeCellParagraphAttrs(p.attrs);
       if(Object.keys(attrs).length) p.attrs=attrs; else delete p.attrs;
       for(const n of p.content??[]){
@@ -282,7 +308,13 @@ export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
   } catch {return undefined;}
 }
 export function tableCellPlainText(doc:NoteJsonNode):string {
-  return (doc.content??[]).map(p=>(p.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.text??'').join('')).join('\n');
+  const paragraphs:string[]=[];
+  const visit=(node:NoteJsonNode)=>{
+    if(node.type==='paragraph') paragraphs.push((node.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.text??'').join(''));
+    else for(const child of node.content??[]) visit(child);
+  };
+  visit(doc);
+  return paragraphs.join('\n');
 }
 export function plainTableCellDocument(text:string):NoteJsonNode {
   return {type:'doc',content:text.split('\n').map(line=>({type:'paragraph',content:line?[{type:'text',text:line}]:[]}))};
@@ -318,4 +350,10 @@ export function normalizeCellParagraphAttrs(attrs:Record<string,unknown>|undefin
 }
 export function effectiveCellParagraphAttrs(attrs:Record<string,unknown>|undefined,alignment:OmiTableCellFormat['horizontalAlign']):Record<string,unknown>{
   return {...(alignment?{omiAlign:alignment}:{}),...normalizeCellParagraphAttrs(attrs)};
+}
+
+/** Apply cell alignment to every paragraph, including paragraphs in list items. */
+export function cellDocumentWithDefaults(doc:NoteJsonNode,alignment:OmiTableCellFormat['horizontalAlign']):NoteJsonNode{
+  const visit=(node:NoteJsonNode):NoteJsonNode=>node.type==='paragraph'?{...node,attrs:effectiveCellParagraphAttrs(node.attrs,alignment)}:{...node,...(node.content?{content:node.content.map(visit)}:{})};
+  return visit(doc);
 }
