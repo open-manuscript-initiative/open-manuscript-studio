@@ -112,6 +112,7 @@ export function VisualBlockEditor({
 
   const tableHasNotes=visual.kind==='table'&&collectNoteAnchorsInBlock('',sectionId,block.id,visual).length>0;
   const tableHasCitations=visual.kind==='table'&&tableCitationAnchors(visual).length>0;
+  const tableHasNestedTables=visual.kind==='table'&&Object.values(visual.cellContent??{}).some(content=>content.includes('"omiCellTable"'));
   function update(next: OmiVisualBlockData,insertion?:TableNoteInsertion,citation?:CitationClusterCreation): boolean {
     if(previewOnly) return false;
     if(citation){
@@ -200,7 +201,7 @@ export function VisualBlockEditor({
             {tableTextDelimiter === 'custom' ? <input aria-label={conversionLabels[5]} maxLength={1} value={customTableTextDelimiter} onChange={event => setCustomTableTextDelimiter(event.target.value)} /> : null}
             <button
               type="button"
-              disabled={tableHasNotes||tableHasCitations||effectiveDelimiter.length!==1||/[\r\n"]/.test(effectiveDelimiter)}
+              disabled={tableHasNotes||tableHasCitations||tableHasNestedTables||effectiveDelimiter.length!==1||/[\r\n"]/.test(effectiveDelimiter)}
               title={tableHasCitations?copy.cellCitationProtected:tableHasNotes?copy.cellNoteProtected:undefined}
               onClick={() => {
                 if (window.confirm(copy.confirmTableToText)) {
