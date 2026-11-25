@@ -79,6 +79,7 @@ interface WordListInfo {
 
 interface ParsedListParagraph extends WordListInfo {
   content: TiptapNode[];
+  paragraphAttrs?: Record<string,unknown>;
 }
 
 interface TiptapMark {
@@ -222,7 +223,7 @@ export async function parseDocxManuscript(
 
     if (child.localName === 'tbl') {
       const section = ensureSection(sections);
-      const table = parseWordTable(child);
+      const table = parseWordTable(child,numbering);
       if (table.cells.length) {
         section.blocks.push(
           createTableBlock(table.cells, {
@@ -1004,7 +1005,7 @@ function consumeList(
     if (item.ordered !== ordered || item.attrs.omiListId !== first?.attrs.omiListId) break;
     node.content?.push({
       type: 'listItem',
-      content: [{ type: 'paragraph', content: item.content }],
+      content: [{ type: 'paragraph', ...(item.paragraphAttrs?{attrs:item.paragraphAttrs}:{}), content: item.content }],
     });
     index += 1;
   }
@@ -1142,7 +1143,7 @@ function resolveParagraphHeadingLevel(
   );
 }
 
-function parseWordTable(table: Element): {
+function parseWordTable(table: Element,numbering:WordNumbering): {
   cells: string[][];
   headerRows: number;
   mergedCells: boolean;
@@ -1233,7 +1234,7 @@ function parseWordTable(table: Element): {
       // runs use the same mark decoder as the manuscript body.
       const cellParagraphs=directChildrenByLocalName(cell,'p');
       const nested=descendantsByLocalName(cell,'tbl').length>0;
-      const doc={type:'doc',content:cellParagraphs.map(p=>{
+      const parsedParagraphs=cellParagraphs.map(p=>{
         const pp=directChildrenByLocalName(p,'pPr')[0];
         const attrs=pp?normalizeCellParagraphAttrs({
           ...readWordParagraphFormatting((property,attribute)=>{
@@ -1254,8 +1255,22 @@ function parseWordTable(table: Element): {
           if(node.localName==='br'||node.localName==='cr') return [{type:'hardBreak'}];
           return [];
         });
-      })};})};
-      const rich=!nested&&doc.content.length>0&&doc.content.some(p=>p.attrs||p.content.some(n=>n.marks?.length||n.type!=='text')||doc.content.length>1);
+      })};});
+      const nodes:TiptapNode[]=[];
+      let listItems:ParsedListParagraph[]=[];
+      const flush=()=>{if(listItems.length){nodes.push(...buildListNodes(listItems));listItems=[];}};
+      parsedParagraphs.forEach((paragraph,index)=>{
+        const source=cellParagraphs[index]!;
+        const info=paragraphListInfo(source,numbering);
+        if(info){
+          const numPr=directChildrenByLocalName(directChildrenByLocalName(source,'pPr')[0]!,'numPr')[0]!;
+          const id=attributeByLocalName(directChildrenByLocalName(numPr,'numId')[0]!,'val');
+          listItems.push({...info,attrs:{...info.attrs,omiListId:info.attrs.omiListId??'word-'+id},content:paragraph.content,paragraphAttrs:paragraph.attrs});
+        }else{flush();nodes.push(paragraph);}
+      });
+      flush();
+      const doc={type:'doc',content:nodes};
+      const rich=!nested&&nodes.length>0&&nodes.some(p=>p.type!=='paragraph'||p.attrs||p.content?.some(n=>n.marks?.length||n.type!=='text')||nodes.length>1);
       const text=rich?tableCellPlainText(doc):descendantsByLocalName(cell,'p').map(paragraph=>paragraphPlainText(paragraph).trim()).filter(Boolean).join('\n');
       if(rich) cellContent[`${rowIndex}:${columnIndex}`]=JSON.stringify(doc);
       const vertical=prop('vMerge');
