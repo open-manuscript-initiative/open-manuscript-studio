@@ -46,6 +46,7 @@ export async function extractWordIndexData(file: File): Promise<{
   };
   for (const {instruction,fieldForm} of instructions) {
     const normalized = instruction.trim();
+    if(!/^(?:XE|INDEX)\b/i.test(normalized))continue;
     const indexId=identify(normalized);
     if (/^XE\b/i.test(normalized)) {
       const parsed = parseXeInstruction(normalized);
