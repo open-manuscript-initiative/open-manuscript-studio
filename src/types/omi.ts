@@ -391,6 +391,13 @@ export interface OmiImageBlockData {
   provenance?: OmiImportProvenance;
 }
 
+export type OmiTableCellSide = 'top' | 'right' | 'bottom' | 'left';
+export interface OmiTableCellBorder {
+  style: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+  widthPt?: number;
+  color?: string;
+}
+
 export interface OmiTableCellFormat {
   textRotation?: -90 | 0 | 90 | 180;
   textDirection?: 'auto' | 'ltr' | 'rtl';
@@ -398,6 +405,9 @@ export interface OmiTableCellFormat {
   verticalAlign?: 'top' | 'middle' | 'bottom';
   /** Explicit solid RGB cell background, independent of character highlighting. */
   backgroundColor?: string;
+  /** Physical sides, in typographic points; missing sides inherit. */
+  borders?: Partial<Record<OmiTableCellSide,OmiTableCellBorder>>;
+  paddingPt?: Partial<Record<OmiTableCellSide,number>>;
 }
 
 export interface OmiTableCellMerge {
