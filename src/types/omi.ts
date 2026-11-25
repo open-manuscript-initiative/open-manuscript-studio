@@ -438,6 +438,8 @@ export interface OmiTableBlockData {
   fontSizeReduction?: 0 | 1;
   /** Sparse cell formatting, keyed by zero-based row:column coordinates. */
   cellFormats?: Record<string, OmiTableCellFormat>;
+  /** Sparse rich cell documents (Tiptap JSON); cells remains the plain-text projection. */
+  cellContent?: Record<string,string>;
   /** Merged rectangles; covered matrix positions must remain empty. */
   cellMerges?: OmiTableCellMerge[];
   caption?: string;
