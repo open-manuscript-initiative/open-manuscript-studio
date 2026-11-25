@@ -1,3 +1,4 @@
+import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model/wordTextBoxLink';
 import { normalizeWordCrossReferenceField } from '../model/wordCrossReference';
 import { normalizeWordSectionLayout } from '../model/wordSectionLayout';
 import { WORD_HYPHENATION_EXTENSION, validateWordHyphenation } from '../model/wordHyphenation';
@@ -448,6 +449,7 @@ function validateBlock(
   const visual = isRecord(value.visual) ? value.visual : undefined;
   const boxes = visual?.kind === 'text-box' ? [visual.textBox] : Array.isArray(visual?.textBoxes) ? visual.textBoxes : [];
   for (const box of boxes) {
+    if(isRecord(box)&&isRecord(box.extensions)&&box.extensions[WORD_TEXT_BOX_LINK_EXTENSION]!==undefined&&!normalizeWordTextBoxLink(box.extensions[WORD_TEXT_BOX_LINK_EXTENSION]))invalid(`${path}/visual has invalid Word text-box link metadata.`);
     if (isRecord(box) && box.contentProfile === TEXT_BOX_CONTENT_PROFILE
       && decodeTextBoxContent(String(box.content), TEXT_BOX_CONTENT_PROFILE).diagnostics.includes('text-box-invalid-content')) {
       invalid(`${path}/visual has invalid profiled text-box content.`);
