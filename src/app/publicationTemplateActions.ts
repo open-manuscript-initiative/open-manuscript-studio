@@ -1,3 +1,4 @@
+import { refreshPublicationTables } from '../model/tableAppearancePresets';
 import { useStudioStore } from './useStudioStore';
 import { getAppliedPublicationTemplate, PUBLICATION_TEMPLATE_EXTENSION, type PublicationTemplate } from '../model/publicationTemplates';
 import { prepareTemplatedPublication } from '../services/publicationTemplates';
@@ -28,6 +29,7 @@ export function stageAppliedPublicationStyle(style: PublicationStyle): void {
   const profile = manuscript.embeddedPublicationProfile;
   stageTemplateState({
     ...extractManuscriptState(manuscript),
+    sections: refreshPublicationTables(manuscript.sections, applied.style?.tableStyles, style.tableStyles),
     embeddedPublicationProfile: profile ? { ...profile, publicationStyle: structuredClone(style) } : profile,
     extensions: { ...manuscript.extensions, [PUBLICATION_TEMPLATE_EXTENSION]: { ...applied, style: structuredClone(style) } },
   }, 'Changed publication template style');
