@@ -40,6 +40,8 @@ export interface VisualElementsCopy {
   equationLatex: string;
   equationLabel: string;
   cellFormatting: string;
+  insertNestedTable: string;
+  editNestedTable: string;
   cellListIndent: string;
   cellListOutdent: string;
   cellParagraphFormatting: string;
@@ -130,6 +132,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     cellEdges: "Cell borders and padding", cellEdgeUnit: "Unit", cellBorderStyle: "Border style", cellBorderNone: "No border", cellBorderSolid: "Solid", cellBorderDashed: "Dashed", cellBorderDotted: "Dotted", cellBorderDouble: "Double", cellBorderWidth: "Line width", cellBorderColor: "Border color", cellPadding: "Inner padding",
     cellParagraphFormatting: "Paragraph formatting", cellParagraphLeftIndent: "Left indent", cellParagraphRightIndent: "Right indent", cellParagraphFirstIndent: "First-line indent", cellParagraphBefore: "Space before", cellParagraphAfter: "Space after", cellParagraphLineSpacing: "Line spacing", cellParagraphLineRule: "Line spacing mode",
     cellListIndent: "Increase list level", cellListOutdent: "Decrease list level",
+    insertNestedTable: "Insert nested table", editNestedTable: "Edit nested table",
     cellFormatting: 'Cell formatting', cellRow: 'Cell row', cellColumn: 'Cell column', textRotation: 'Text rotation', rotationNone: 'No rotation', rotationClockwise: '90° clockwise', rotationCounterclockwise: '90° counterclockwise', rotationUpsideDown: '180° upside down', textDirection: 'Writing direction', directionAuto: 'Automatic', directionLtr: 'Left to right', directionRtl: 'Right to left', editCellText: 'Selected cell text', mobilePreviewNote: 'Mobile shows the current publication layout. Full editing is available on a desktop.',
     mergeRight: "Merge right", mergeDown: "Merge down", splitCell: "Split cell", mergeHint: "Only empty adjacent cells can be merged; split first to change a conflicting header boundary.",
     rowHeightMode: "Row height mode", rowHeightAuto: "Automatic", rowHeightMinimum: "At least", rowHeightExact: "Exact", rowHeightValue: "Row height", rowHeightExactHint: "The Studio and HTML/PDF retain all text and expand the row if needed. Exact DOCX/ODT rows may clip text; review the exported document.",
@@ -149,6 +152,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     cellEdges: "Cellaszegélyek és belső margók", cellEdgeUnit: "Mértékegység", cellBorderStyle: "Szegély típusa", cellBorderNone: "Nincs szegély", cellBorderSolid: "Folytonos", cellBorderDashed: "Szaggatott", cellBorderDotted: "Pontozott", cellBorderDouble: "Dupla", cellBorderWidth: "Vonalvastagság", cellBorderColor: "Szegélyszín", cellPadding: "Belső margó",
     cellParagraphFormatting: "Bekezdésformázás", cellParagraphLeftIndent: "Bal oldali behúzás", cellParagraphRightIndent: "Jobb oldali behúzás", cellParagraphFirstIndent: "Első sor behúzása", cellParagraphBefore: "Térköz előtte", cellParagraphAfter: "Térköz utána", cellParagraphLineSpacing: "Sorköz", cellParagraphLineRule: "Sorköz módja",
     cellListIndent: "Listaszint növelése", cellListOutdent: "Listaszint csökkentése",
+    insertNestedTable: "Beágyazott táblázat beszúrása", editNestedTable: "Beágyazott táblázat szerkesztése",
     cellFormatting: 'Cellaformázás', cellRow: 'Cella sora', cellColumn: 'Cella oszlopa', textRotation: 'Szöveg elforgatása', rotationNone: 'Nincs elforgatás', rotationClockwise: '90° jobbra', rotationCounterclockwise: '90° balra', rotationUpsideDown: '180° fejjel lefelé', textDirection: 'Írásirány', directionAuto: 'Automatikus', directionLtr: 'Balról jobbra', directionRtl: 'Jobbról balra', editCellText: 'Kijelölt cella szövege', mobilePreviewNote: 'Mobilon a kiadvány aktuális elrendezése tekinthető meg. A teljes szerkesztés asztali gépen érhető el.',
     mergeRight: "Egyesítés jobbra", mergeDown: "Egyesítés lefelé", splitCell: "Cella szétválasztása", mergeHint: "Csak üres szomszédos cellák egyesíthetők; a fejléc határának módosítása előtt válassza szét az érintett cellát.",
     rowHeightMode: "Sormagasság módja", rowHeightAuto: "Automatikus", rowHeightMinimum: "Minimális", rowHeightExact: "Rögzített", rowHeightValue: "Sormagasság", rowHeightExactHint: "A Stúdió és a HTML/PDF szükség esetén megnöveli a sort, hogy minden szöveg látható maradjon. A rögzített DOCX/ODT-sor levághatja a szöveget; ellenőrizze az exportot.",
@@ -168,6 +172,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     cellEdges: "Zellrahmen und Innenabstände", cellEdgeUnit: "Maßeinheit", cellBorderStyle: "Rahmenart", cellBorderNone: "Kein Rahmen", cellBorderSolid: "Durchgezogen", cellBorderDashed: "Gestrichelt", cellBorderDotted: "Gepunktet", cellBorderDouble: "Doppelt", cellBorderWidth: "Linienstärke", cellBorderColor: "Rahmenfarbe", cellPadding: "Innenabstand",
     cellParagraphFormatting: "Absatzformatierung", cellParagraphLeftIndent: "Linker Einzug", cellParagraphRightIndent: "Rechter Einzug", cellParagraphFirstIndent: "Erstzeileneinzug", cellParagraphBefore: "Abstand davor", cellParagraphAfter: "Abstand danach", cellParagraphLineSpacing: "Zeilenabstand", cellParagraphLineRule: "Zeilenabstandsmodus",
     cellListIndent: "Listenebene erhöhen", cellListOutdent: "Listenebene verringern",
+    insertNestedTable: "Verschachtelte Tabelle einfügen", editNestedTable: "Verschachtelte Tabelle bearbeiten",
     cellFormatting: 'Zellformatierung', cellRow: 'Zellzeile', cellColumn: 'Zellspalte', textRotation: 'Textdrehung', rotationNone: 'Keine Drehung', rotationClockwise: '90° im Uhrzeigersinn', rotationCounterclockwise: '90° gegen den Uhrzeigersinn', rotationUpsideDown: '180° auf dem Kopf', textDirection: 'Schreibrichtung', directionAuto: 'Automatisch', directionLtr: 'Links nach rechts', directionRtl: 'Rechts nach links', editCellText: 'Text der ausgewählten Zelle', mobilePreviewNote: 'Mobil wird das aktuelle Publikationslayout angezeigt. Die vollständige Bearbeitung ist am Desktop verfügbar.',
     mergeRight: "Nach rechts verbinden", mergeDown: "Nach unten verbinden", splitCell: "Zelle teilen", mergeHint: "Nur leere Nachbarzellen können verbunden werden; vor einer Änderung der Kopfzeilengrenze die betroffene Zelle teilen.",
     rowHeightMode: "Zeilenhöhenmodus", rowHeightAuto: "Automatisch", rowHeightMinimum: "Mindestens", rowHeightExact: "Genau", rowHeightValue: "Zeilenhöhe", rowHeightExactHint: "Studio und HTML/PDF vergrößern die Zeile bei Bedarf. Exakte DOCX/ODT-Zeilen können Text abschneiden; Export prüfen.",
@@ -239,6 +244,13 @@ export function getVisualElementsCopy(locale: string): VisualElementsCopy {
     nl: {"cellListIndent":"Lijstniveau verhogen","cellListOutdent":"Lijstniveau verlagen"},
     pl: {"cellListIndent":"Zwiększ poziom listy","cellListOutdent":"Zmniejsz poziom listy"},
   };
+  const nestedTableCopies:Record<string,Pick<VisualElementsCopy,'insertNestedTable'|'editNestedTable'>>={
+    fr: {"insertNestedTable":"Insérer un tableau imbriqué","editNestedTable":"Modifier le tableau imbriqué"},
+    it: {"insertNestedTable":"Inserisci tabella annidata","editNestedTable":"Modifica tabella annidata"},
+    es: {"insertNestedTable":"Insertar tabla anidada","editNestedTable":"Editar tabla anidada"},
+    nl: {"insertNestedTable":"Geneste tabel invoegen","editNestedTable":"Geneste tabel bewerken"},
+    pl: {"insertNestedTable":"Wstaw tabelę zagnieżdżoną","editNestedTable":"Edytuj tabelę zagnieżdżoną"},
+  };
   const merge=mergeCopies[language];
-  return {...translated,...rowCopies[language],...appearanceCopies[language],...edgeCopies[language],...heightCopies[language],...paragraphCopies[language],...cellListCopies[language],tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
+  return {...translated,...rowCopies[language],...appearanceCopies[language],...edgeCopies[language],...heightCopies[language],...paragraphCopies[language],...cellListCopies[language],...nestedTableCopies[language],tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
 }
