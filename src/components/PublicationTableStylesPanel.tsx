@@ -2,10 +2,10 @@ import { useState, type CSSProperties } from 'react';
 import type { VisualElementsCopy } from '../i18n/visualElements';
 import type { OmiTableCellFormat } from '../types/omi';
 import { tableCellAppearanceStyle, tableCellFormat, tableCellTextStyle } from '../model/tableLayout';
-import { BUILTIN_TABLE_STYLES, MAX_TABLE_CONDITIONS, derivePublicationTablePreset, duplicatePublicationTablePreset, normalizePublicationTableStyles, normalizePresetFormat, normalizeTableCondition, publicationTableStylePreview, putPublicationTablePreset, removePublicationTablePreset, replacePublicationTablePreset, resolvePublicationTablePreset, type PublicationTableStyles, type TableStyleRegion, type TableConditionOperator } from '../model/tableAppearancePresets';
+import { BUILTIN_TABLE_STYLES, MAX_TABLE_CONDITIONS, derivePublicationTablePreset, duplicatePublicationTablePreset, renamePublicationTablePreset, normalizePublicationTableStyles, normalizePresetFormat, normalizeTableCondition, publicationTableStylePreview, putPublicationTablePreset, removePublicationTablePreset, replacePublicationTablePreset, resolvePublicationTablePreset, type PublicationTableStyles, type TableStyleRegion, type TableConditionOperator } from '../model/tableAppearancePresets';
 
-type Props={catalog?:PublicationTableStyles;copy:VisualElementsCopy;onChange:(catalog:PublicationTableStyles)=>void};
-export function PublicationTableStylesPanel({catalog:source,copy,onChange}:Props){
+type Props={catalog?:PublicationTableStyles;copy:VisualElementsCopy;onChange:(catalog:PublicationTableStyles)=>void;onRename:(catalog:PublicationTableStyles,from:string,to:string)=>void};
+export function PublicationTableStylesPanel({catalog:source,copy,onChange,onRename}:Props){
   const catalog=normalizePublicationTableStyles(source)??{items:[]};
   const [selection,setSelection]=useState('');
   const [name,setName]=useState('');
@@ -57,6 +57,7 @@ export function PublicationTableStylesPanel({catalog:source,copy,onChange}:Props
       <button type="button" disabled={!name.trim()} onClick={create}>{copy.newTableStyle}</button>
       <button type="button" disabled={!preset||!name.trim()} onClick={()=>{if(preset){const next=duplicatePublicationTablePreset(catalog,preset.name,name.trim());commit(next,next?name.trim():undefined);if(next)setName('');}}}>{copy.duplicateTableStyle}</button>
       <button type="button" disabled={preset?.kind!=='table'||!name.trim()} onClick={()=>{if(preset?.kind==='table'){const next=derivePublicationTablePreset(catalog,name.trim(),preset.name);commit(next,next?name.trim():undefined);if(next)setName('');}}}>{copy.deriveTableStyle}</button>
+      <button type="button" disabled={!preset||!name.trim()||name.trim()===preset.name} onClick={()=>{if(!preset)return;const to=name.trim();const next=renamePublicationTablePreset(catalog,preset.name,to);if(!next){setError(true);return;}try{onRename(next,preset.name,to);setSelection(to);setName('');setError(false);}catch{setError(true);}}}>{copy.renameTableStyle}</button>
       <button type="button" disabled={!preset} onClick={()=>{if(preset)commit(removePublicationTablePreset(catalog,preset.name),'');}}>{copy.removeStyleFromPublication}</button>
     </div>
     {preset?<><div className="publication-style-grid">
