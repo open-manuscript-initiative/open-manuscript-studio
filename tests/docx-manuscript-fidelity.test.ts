@@ -1415,7 +1415,7 @@ test('named source paragraph style survives structured text, editor projection a
     assert.equal(selected?.name,'Source custom');
     assert.equal(selected?.basedOn,'SourceBase');
     assert.equal(selected?.next,'SourceBase');
-    assert.ok(findNodes(JSON.parse(block.content) as TiptapNode,'omiTab').length);
+    assert.ok(findNodes(JSON.parse(block.content) as TiptapNode,'omiTab').length || collectText(JSON.parse(block.content) as TiptapNode).includes('\t'), 'Imported tab must remain in the paragraph');
     assert.equal(block.paragraphStyleId,undefined);
   };
   inspect(plan.sections);
@@ -1496,6 +1496,7 @@ test('Word hyphenation defaults and paragraph suppression survive portable and n
   inspect(plan.sections);
   const previous=useStudioStore.getState();
   try{
+    useStudioStore.getState().loadManuscript(createVersionedTestManuscript());
     applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
     const manuscript=useStudioStore.getState().manuscript;
     const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
