@@ -233,6 +233,7 @@ export function stageConvertTableToText(blockId: string, delimiter = '\t'): bool
     const located = findBlock(state.manuscript, blockId);
     if (!located || located.block.visual?.kind !== 'table') return state;
     if (tableCitationAnchors(located.block.visual).length || collectNoteAnchorsInBlock('', located.sectionId, blockId, located.block.visual).length) return state;
+    if (Object.values(located.block.visual.cellContent ?? {}).some(content => content.includes('"omiCellTable"'))) return state;
 
     const replacement = tableRowsToParagraphBlocks(
       located.block.visual.cells,
