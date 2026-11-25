@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
+import { useStudioStore } from '../app/useStudioStore';
+import { stageAppliedPublicationStyle } from '../app/publicationTemplateActions';
+import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
+import { loadPublicationStyle } from '../services/publicationStyleExport';
 import type { OmiTableBlockData } from '../types/omi';
 import type { VisualElementsCopy } from '../i18n/visualElements';
 import type { TableCellPosition } from '../model/tableLayout';
-import { applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, type TableAppearancePreset } from '../model/tableAppearancePresets';
+import { applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
 
 function loadPresets():TableAppearancePreset[]{
   try{return readAppearancePresets(localStorage.getItem(TABLE_STYLE_STORAGE_KEY));}catch{return [];}
 }
 export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiTableBlockData;start:TableCellPosition;end:TableCellPosition;copy:VisualElementsCopy;onChange:(next:OmiTableBlockData)=>void}){
+  const manuscript=useStudioStore(state=>state.manuscript);
+  const catalog=normalizePublicationTableStyles(getAppliedPublicationTemplate(manuscript)?.style.tableStyles)??{items:[]};
   const [presets,setPresets]=useState(loadPresets);
   const [selected,setSelected]=useState('builtin:grid');
   const [name,setName]=useState('');
@@ -20,7 +26,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
     return ()=>window.removeEventListener('storage',refresh);
   },[]);
   const builtins=[{key:'builtin:grid',label:copy.tableStyleGrid,preset:BUILTIN_TABLE_STYLES.grid},{key:'builtin:minimal',label:copy.tableStyleMinimal,preset:BUILTIN_TABLE_STYLES.minimal},{key:'builtin:banded',label:copy.tableStyleBanded,preset:BUILTIN_TABLE_STYLES.banded}];
-  const choices=[...builtins,...presets.map(preset=>({key:'custom:'+preset.name,label:preset.name+' ('+(preset.kind==='cell'?copy.cellStyleLabel:copy.tableStyleLabel)+')',preset}))];
+  const choices=[...builtins,...presets.map(preset=>({key:'custom:'+preset.name,label:preset.name+' ('+(preset.kind==='cell'?copy.cellStyleLabel:copy.tableStyleLabel)+')',preset})),...catalog.items.map(preset=>({key:'publication:'+preset.name,label:copy.publicationTableStyles+': '+preset.name+(preset.name===catalog.defaultTableStyle?' ★':''),preset}))];
   const choice=choices.find(item=>item.key===selected);
   function persist(next:TableAppearancePreset[]):boolean{
     try{localStorage.setItem(TABLE_STYLE_STORAGE_KEY,JSON.stringify(next));setPresets(next);setError(false);return true;}catch{setError(true);return false;}
@@ -30,6 +36,20 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
     const current=loadPresets();
     if(!preset||current.length>=MAX_TABLE_PRESETS||current.some(p=>p.name===preset.name)){setError(true);return;}
     if(persist([...current,preset])){setSelected('custom:'+preset.name);setName('');}
+  }
+  function persistPublication(next:PublicationTableStyles){
+    const current=useStudioStore.getState().manuscript;
+    if(current.id!==manuscript.id){setError(true);return;}
+    const style=loadPublicationStyle(current);
+    try{stageAppliedPublicationStyle({...style,tableStyles:next});setError(false);}catch{setError(true);}
+  }
+  function copyToPublication(){
+    if(!choice)return;
+    const current=useStudioStore.getState().manuscript;
+    const existing=normalizePublicationTableStyles(getAppliedPublicationTemplate(current)?.style.tableStyles);
+    const next=putPublicationTablePreset(existing,choice.preset);
+    if(!next){setError(true);return;}
+    persistPublication(next);setSelected('publication:'+choice.preset.name);
   }
   function remove(){
     if(!choice||!selected.startsWith('custom:'))return;
@@ -46,6 +66,12 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
       <button type="button" disabled={!choice||!selected.startsWith('custom:')} onClick={remove}>{copy.deleteTableStyle}</button>
     </div>
     <small>{copy.tableStyleApplyHint}</small>
+    <div className="omi-table-cell-formatting-fields">
+      <button type="button" disabled={!choice||selected.startsWith('publication:')} onClick={copyToPublication}>{copy.saveStyleToPublication}</button>
+      <button type="button" disabled={!choice||!selected.startsWith('publication:')} onClick={()=>{if(choice){persistPublication(removePublicationTablePreset(catalog,choice.preset.name));setSelected('builtin:grid');}}}>{copy.removeStyleFromPublication}</button>
+      <label><span>{copy.defaultPublicationTableStyle}</span><select value={catalog.defaultTableStyle??''} onChange={event=>persistPublication({items:catalog.items,...(event.target.value?{defaultTableStyle:event.target.value}:{})})}><option value="">{copy.noDefaultPublicationTableStyle}</option>{catalog.items.filter(p=>p.kind==='table').map(p=><option key={p.name} value={p.name}>{p.name}</option>)}</select></label>
+    </div>
+    <small>{copy.publicationTableStyleHint}</small>
     <div className="omi-table-cell-formatting-fields">
       <label><span>{copy.tableStyleName}</span><input maxLength={80} value={name} onChange={event=>{setName(event.target.value);setError(false);}}/></label>
       <label><span>{copy.tableStyleSaveAs}</span><select value={kind} onChange={event=>setKind(event.target.value==='table'?'table':'cell')}>
