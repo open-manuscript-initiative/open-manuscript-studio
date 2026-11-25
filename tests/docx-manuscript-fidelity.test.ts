@@ -1633,3 +1633,50 @@ test('native Word physical sections preserve page geometry, columns and restart 
   assert.equal((xml.match(/<w:sectPr>/g)??[]).length,2);
   inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'section-geometry.docx'))).sections);
 });
+
+test('Word running header/footer variants and page fields survive portable roundtrip',async()=>{
+  const {normalizeRunningVariants}=await import('../src/model/wordRunningMatter.ts');
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships/';
+  const header=(content:string)=>'<w:hdr xmlns:w="'+ns+'"><w:p>'+content+'</w:p></w:hdr>';
+  const footer=(content:string)=>'<w:ftr xmlns:w="'+ns+'"><w:p>'+content+'</w:p></w:ftr>';
+  const text=(s:string)=>'<w:r><w:t>'+s+'</w:t></w:r>';
+  const field=(name:string)=>'<w:fldSimple w:instr=" '+name+' ">'+text('99')+'</w:fldSimple>';
+  const complex='<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> NUMPAGES </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>'+text('99')+'<w:r><w:fldChar w:fldCharType="end"/></w:r>';
+  const refs='<w:headerReference w:type="default" r:id="odd"/><w:headerReference w:type="even" r:id="even"/><w:headerReference w:type="first" r:id="first"/><w:footerReference w:type="default" r:id="footer"/>';
+  const plan=await parseDocxForStudio(makeDocx('<w:p>'+text('Running matter specimen')+'</w:p><w:sectPr>'+refs+'<w:pgNumType w:start="11"/><w:titlePg/></w:sectPr>',{
+    relationships:['odd','even','first','footer'].map(id=>'<Relationship Id="'+id+'" Type="'+rel+(id==='footer'?'footer':'header')+'" Target="'+id+'.xml"/>').join(''),
+    entries:[textZipEntry('word/odd.xml',header(text('ODD &amp; HEADER'))),textZipEntry('word/even.xml',header(text('EVEN HEADER'))),textZipEntry('word/first.xml',header(text('FIRST HEADER'))),textZipEntry('word/footer.xml',footer('<w:pPr><w:jc w:val="center"/></w:pPr>'+field('PAGE')+text(' of ')+complex+text(' / ')+field('SECTIONPAGES'))),textZipEntry('word/settings.xml','<w:settings xmlns:w="'+ns+'"><w:evenAndOddHeaders/></w:settings>')]
+  }));
+  const inspect=(sections:typeof plan.sections)=>{
+    const native=sections[0]?.layout?.wordSection;
+    assert.equal(native?.evenAndOddHeaders,true);
+    assert.equal(native?.differentFirstPage,true);
+    assert.equal(native?.pageNumberStart,11);
+    assert.deepEqual(native?.headers?.default,[{tokens:[{kind:'text',text:'ODD & HEADER'}]}]);
+    assert.deepEqual(native?.headers?.even,[{tokens:[{kind:'text',text:'EVEN HEADER'}]}]);
+    assert.deepEqual(native?.headers?.first,[{tokens:[{kind:'text',text:'FIRST HEADER'}]}]);
+    assert.deepEqual(native?.footers?.default,[{align:'center',tokens:[{kind:'field',field:'PAGE'},{kind:'text',text:' of '},{kind:'field',field:'NUMPAGES'},{kind:'text',text:' / '},{kind:'field',field:'SECTIONPAGES'}]}]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Running matter'}),sections:plan.sections};
+  const reopened=parseOmiJson(serializeOmiJson({...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)}));
+  inspect(reopened.sections);
+  const word=buildDocxExport(reopened);
+  const parts=readZipParts(word.bytes);
+  const document=parts.get('word/document.xml')!.toString('utf8');
+  assert.match(document,/<w:headerReference w:type="default" r:id="rIdHeader1"\/>/);
+  assert.match(document,/<w:headerReference w:type="even" r:id="rIdHeader2"\/>/);
+  assert.match(document,/<w:headerReference w:type="first" r:id="rIdHeader3"\/>/);
+  assert.match(document,/<w:footerReference w:type="default" r:id="rIdFooter1"\/>/);
+  assert.match(document,/<w:titlePg\/>/);
+  assert.match(parts.get('word/settings.xml')!.toString('utf8'),/<w:evenAndOddHeaders\/>/);
+  assert.match(parts.get('word/header1.xml')!.toString('utf8'),/ODD &amp; HEADER/);
+  assert.match(parts.get('word/header2.xml')!.toString('utf8'),/EVEN HEADER/);
+  assert.match(parts.get('word/footer1.xml')!.toString('utf8'),/w:instr=" PAGE "[\s\S]*w:instr=" NUMPAGES "[\s\S]*w:instr=" SECTIONPAGES "/);
+  assert.match(parts.get('word/_rels/document.xml.rels')!.toString('utf8'),/Id="rIdFooter1"[^>]*Target="footer1.xml"/);
+  assert.match(parts.get('[Content_Types].xml')!.toString('utf8'),/PartName="\/word\/footer1.xml"/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'running-matter.docx'))).sections);
+  assert.equal(normalizeRunningVariants({default:[{tokens:[{kind:'field',field:'INCLUDETEXT'}]}]}),undefined);
+  assert.equal(normalizeRunningVariants({default:[{tokens:[{kind:'text',text:'a'.repeat(32001)}]}]}),undefined);
+});
