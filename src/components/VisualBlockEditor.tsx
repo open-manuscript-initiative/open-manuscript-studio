@@ -43,7 +43,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -311,6 +311,7 @@ function EditableGrid({
   const selectedMerge=mergeLayout.at(rawRow,rawColumn);
   const selectedRow=selectedMerge?.row??rawRow;
   const selectedColumn=selectedMerge?.column??rawColumn;
+  const selectedRowSplit=data.kind==='table'?data.rowSplitOverrides?.[String(rawRow)]:undefined;
   const mergeRight=extendTableMerge(cells,mergeLayout.merges,selectedRow,selectedColumn,'right',headerCount);
   const mergeDown=extendTableMerge(cells,mergeLayout.merges,selectedRow,selectedColumn,'down',headerCount);
   const cellFormats = data.kind === 'table' ? data.cellFormats : undefined;
@@ -375,7 +376,7 @@ function EditableGrid({
                     <td colSpan={widths.length}><div style={{ height: item.height }} /></td>
                   </tr>
                 ))}
-                <tr key={rowIndex} style={continuationStyle(rowIndex)}>
+                <tr key={rowIndex} data-omi-row-split={data.kind==='table'?tableRowSplitPolicy(data,rowIndex):undefined} style={continuationStyle(rowIndex)}>
                   {row.map((cell, columnIndex) => {
                     if(mergeLayout.covered(rowIndex,columnIndex)) return null;
                     const merge=mergeLayout.at(rowIndex,columnIndex);
@@ -457,7 +458,7 @@ function EditableGrid({
         </button>
         <button type="button" onClick={() => {
           const nextCells = removeTableRow(cells, cells.length - 1);
-          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
+          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
         }}>
           {copy.removeRow}
         </button>
@@ -485,6 +486,21 @@ function EditableGrid({
           </div>
           <small>{copy.mergeHint}</small>
           {selectedFormat.textRotation !== 0 ? <label className="omi-table-cell-text-editor"><span>{copy.editCellText}</span><textarea rows={2} dir={selectedFormat.textDirection} value={cells[selectedRow]?.[selectedColumn] ?? ''} onChange={(event) => onChange({ ...data, cells: updateTableCell(cells, selectedRow, selectedColumn, event.target.value) })} /></label> : null}
+        </details>
+      ) : null}
+      {data.kind === 'table' ? (
+        <details className="omi-table-cell-formatting" style={continuationStyle(cells.length)}>
+          <summary>{copy.rowPagination}</summary>
+          <div className="omi-table-cell-formatting-fields">
+            <label><span>{copy.rowSplitDefault}</span><select value={tableRowSplitDefault(data.rowSplitDefault)} onChange={event=>onChange({...data,rowSplitDefault:event.target.value==='allow'?'allow':'keep'})}>
+              <option value="keep">{copy.rowSplitKeep}</option><option value="allow">{copy.rowSplitAllow}</option>
+            </select></label>
+            <label><span>{copy.cellRow}</span><input type="number" min={1} max={cells.length} value={rawRow+1} onChange={event=>{if(Number.isFinite(event.target.valueAsNumber)) setSelection({row:Math.max(0,event.target.valueAsNumber-1),column:rawColumn});}}/></label>
+            <label><span>{copy.rowSplitSelected}</span><select value={selectedRowSplit==='keep'||selectedRowSplit==='allow'?selectedRowSplit:'inherit'} onChange={event=>onChange({...data,rowSplitOverrides:setTableRowSplitOverride(data,rawRow,event.target.value==='keep'?'keep':event.target.value==='allow'?'allow':'inherit')})}>
+              <option value="inherit">{copy.rowSplitInherit}</option><option value="keep">{copy.rowSplitKeep}</option><option value="allow">{copy.rowSplitAllow}</option>
+            </select></label>
+          </div>
+          <small>{copy.rowSplitHint}</small>
         </details>
       ) : null}
       {data.kind === 'table' ? (
