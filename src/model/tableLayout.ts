@@ -38,6 +38,13 @@ export function tableCellFormat(formats: Record<string, OmiTableCellFormat> | un
   };
 }
 
+export function prunePublicationCellStyles(cells:readonly (readonly string[])[],bindings?:Record<string,string>):Record<string,string>{
+  return Object.fromEntries(Object.entries(bindings??{}).filter(([key,name])=>{
+    const match=/^(0|[1-9][0-9]*):(0|[1-9][0-9]*)$/.exec(key);
+    return !!match&&cells[Number(match[1])]?.[Number(match[2])]!==undefined&&typeof name==='string'&&name.length>0&&name.length<=80&&name.trim()===name;
+  }));
+}
+
 export function pruneTableCellFormats(cells: readonly (readonly string[])[], formats?: Record<string, OmiTableCellFormat>): Record<string, OmiTableCellFormat> {
   return Object.fromEntries(Object.entries(formats ?? {}).filter(([key]) => {
     const match = /^(\d+):(\d+)$/.exec(key);
@@ -408,6 +415,8 @@ export function normalizeNestedCellTable(value:unknown,depth=1,budget={cells:100
       content[key]=JSON.stringify(doc);
     }
   }
+  const bindings=prunePublicationCellStyles(cells,raw.publicationCellStyles);
+  if(Object.keys(bindings).length) table.publicationCellStyles=bindings;
   if(Object.keys(formats).length) table.cellFormats=formats;
   if(Object.keys(content).length) table.cellContent=content;
   const merges=tableMergeLayout(cells,raw.cellMerges,table.headerRows).merges;
@@ -525,6 +534,7 @@ export function reorderTableAxis(table:OmiTableBlockData,axis:TableReorderAxis,i
   if(merges&&tableMergeLayout(cells,merges,table.headerRows).merges.length!==merges.length) return undefined;
   const next:OmiTableBlockData={...table,cells,
     ...(table.cellFormats?{cellFormats:remapCells(table.cellFormats)}:{}),
+    ...(table.publicationCellStyles?{publicationCellStyles:remapCells(prunePublicationCellStyles(table.cells,table.publicationCellStyles))}:{}),
     ...(table.cellContent?{cellContent:remapCells(table.cellContent)}:{}),
     ...(table.cellMerges?{cellMerges:merges}:{}),
     ...(axis==='row'&&table.rowHeights?{rowHeights:remapRows(table.rowHeights)}:{}),
