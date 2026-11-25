@@ -288,3 +288,31 @@ test('rich table list trees preserve nested items and plain projection without n
     assert.ok(!html.includes('SECRET'));
   }
 });
+
+test('nested table documents retain source order and redact nested hidden runs in public output',async()=>{
+  const {parseTableCellContent,tableCellPlainText,tableCellDocument,cellNestedTable}=await import('../src/model/tableLayout.ts');
+  const {publicPublicationManuscript}=await import('../src/model/publicationAnnotations.ts');
+  const para=(text:string)=>({type:'paragraph',content:[{type:'text',text}]});
+  const secret={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Visible'},{type:'text',text:' SECRET',marks:[{type:'omiHiddenText',attrs:{value:true}}]}]}]};
+  const doc={type:'doc',content:[para('Before'),{type:'omiCellTable',attrs:{table:{kind:'table',headerRows:0,cells:[['Visible SECRET','B']],cellContent:{'0:0':JSON.stringify(secret)}}}},para('After')]};
+  const valid=parseTableCellContent(JSON.stringify(doc));
+  assert.ok(valid);
+  assert.equal(tableCellPlainText(valid),'Before\nVisible SECRET\tB\nAfter');
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([[tableCellPlainText(valid)]],{headerRows:0,cellContent:{'0:0':JSON.stringify(valid)}},'nested-table'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const outer=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(outer?.kind==='table');
+  assert.deepEqual(tableCellDocument(outer,0,0),valid);
+  const projected=publicPublicationManuscript(reopened).sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(projected?.kind==='table');
+  assert.equal(projected.cells[0]?.[0],'Before\nVisible\tB\nAfter');
+  const node=tableCellDocument(projected,0,0)?.content?.[1];
+  assert.ok(node);
+  assert.deepEqual(cellNestedTable(node)?.cells,[['Visible','B']]);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<p>Before<\/p><table[\s\S]*?<td><p>Visible<\/p><\/td><td>B<\/td>[\s\S]*?<\/table><p>After<\/p>/);
+    assert.ok(!html.includes('SECRET'));
+  }
+  assert.equal(parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'omiCellTable',attrs:{table:{kind:'table',cells:[['a'],['b','c']]}}}]})),undefined);
+});
