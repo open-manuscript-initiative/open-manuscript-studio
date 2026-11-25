@@ -203,3 +203,27 @@ test('row heights retain native semantics and keep browser content visible', asy
     assert.match(html,/<tr data-omi-row-height="exact" style="height:6pt"><td>Long text that must remain visible<\/td>/);
   }
 });
+
+test('rich cell documents remain compatible with the plain matrix and public hidden text projection', async () => {
+  const {tableCellDocument,tableCellPlainText,pruneTableCellContent}=await import('../src/model/tableLayout.ts');
+  const {publicPublicationManuscript}=await import('../src/model/publicationAnnotations.ts');
+  const doc={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Bold',marks:[{type:'bold'}]},{type:'text',text:' private',marks:[{type:'omiHiddenText',attrs:{value:true}}]}]},{type:'paragraph',content:[{type:'text',text:'Second',marks:[{type:'italic'}]}]}]};
+  const plain=tableCellPlainText(doc);
+  assert.equal(plain,'Bold private\nSecond');
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([[plain,'Other']],{headerRows:0,cellContent:{'0:0':JSON.stringify(doc)}},'rich-cell'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const table=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(tableCellDocument(table,0,0),doc);
+  assert.deepEqual(pruneTableCellContent([['Changed']],table.cellContent),{});
+  const projected=publicPublicationManuscript(reopened).sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(projected?.kind==='table');
+  assert.equal(projected.cells[0]?.[0],'Bold\nSecond');
+  assert.equal(table.cells[0]?.[0],plain);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<strong>Bold<\/strong>/);
+    assert.match(html,/<em>Second<\/em>/);
+    assert.ok(!html.includes('Bold private'));
+  }
+});
