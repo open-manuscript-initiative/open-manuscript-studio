@@ -159,7 +159,7 @@ function StudyEditor({
           study.rootSectionId,
           projectedStudy,
         ));
-  }, [documentWide, study.rootSectionId]);
+  }, [documentWide, study.rootSectionId, projectionCache]);
 
   const handleProofingSelection = useCallback(
     (selection: ProofingSelection | null) =>
