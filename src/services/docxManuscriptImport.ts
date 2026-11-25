@@ -45,6 +45,7 @@ import type {
   OmiImportProvenance,
   OmiTableCellFormat,
   OmiTableCellMerge,
+  OmiTableRowSplitPolicy,
   OmiSection,
 } from '../types/omi';
 
@@ -227,6 +228,8 @@ export async function parseDocxManuscript(
             headerRows: table.headerRows,
             cellFormats: table.cellFormats,
             cellMerges: table.cellMerges,
+            rowSplitDefault: 'allow',
+            rowSplitOverrides: table.rowSplitOverrides,
             provenance,
           }),
         );
@@ -1142,16 +1145,20 @@ function parseWordTable(table: Element): {
   mergedCells: boolean;
   cellFormats: Record<string, OmiTableCellFormat>;
   cellMerges: OmiTableCellMerge[];
+  rowSplitOverrides: Record<string,OmiTableRowSplitPolicy>;
 } {
   const rows = directChildrenByLocalName(table, 'tr');
   const cellFormats: Record<string, OmiTableCellFormat> = {};
   let mergedCells = false;
   const merges: OmiTableCellMerge[] = [];
+  const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
   let active = new Map<number,OmiTableCellMerge>();
   const cells = rows.map((row,rowIndex)=>{
     const next = new Map<number,OmiTableCellMerge>();
     const values:string[]=[];
     const rowProperties=directChildrenByLocalName(row,'trPr')[0];
+    const cantSplit=rowProperties && directChildrenByLocalName(rowProperties,'cantSplit')[0];
+    if(cantSplit) rowSplitOverrides[String(rowIndex)]=['0','false','off'].includes(attributeByLocalName(cantSplit,'val')?.toLowerCase()??'')?'allow':'keep';
     const before=rowProperties && directChildrenByLocalName(rowProperties,'gridBefore')[0];
     const offset=before ? Number(attributeByLocalName(before,'val')) : 0;
     if(Number.isSafeInteger(offset) && offset>0 && offset<=1000) for(let i=0;i<offset;i++) values.push('');
@@ -1216,7 +1223,7 @@ function parseWordTable(table: Element): {
   const matrix=rectangularize(cells);
   const candidates=merges.filter(m=>m.rowSpan>1||m.colSpan>1);
   const cellMerges=tableMergeLayout(matrix,candidates,headerRows).merges;
-  return {cells:matrix,headerRows,mergedCells:mergedCells||cellMerges.length!==candidates.length,cellFormats,cellMerges};
+  return {cells:matrix,headerRows,mergedCells:mergedCells||cellMerges.length!==candidates.length,cellFormats,cellMerges,rowSplitOverrides};
 }
 
 function parseRelationships(xmlText: string): Map<string, Relationship> {
