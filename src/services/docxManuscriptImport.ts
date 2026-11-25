@@ -1,4 +1,4 @@
-import { tableMergeLayout } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
@@ -1168,7 +1168,27 @@ function parseWordTable(table: Element): {
       const prop=(name:string)=>properties && directChildrenByLocalName(properties,name)[0];
       const direction=prop('textDirection');
       const value=direction && attributeByLocalName(direction,'val');
-      if(value==='btLr'||value==='tbRl') cellFormats[`${rowIndex}:${columnIndex}`]={textRotation:value==='btLr'?-90:90};
+      const format: OmiTableCellFormat = {};
+      if(value==='btLr'||value==='tbRl') format.textRotation=value==='btLr'?-90:90;
+      const valign=prop('vAlign');
+      const va=valign && attributeByLocalName(valign,'val');
+      const shading=prop('shd');
+      const fill=shading && attributeByLocalName(shading,'fill');
+      const pattern=shading && attributeByLocalName(shading,'val');
+      const paragraphs=directChildrenByLocalName(cell,'p');
+      const aligns=paragraphs.map(p=>{
+        const pp=directChildrenByLocalName(p,'pPr')[0];
+        const jc=pp && directChildrenByLocalName(pp,'jc')[0];
+        return jc && attributeByLocalName(jc,'val');
+      });
+      const alignment=aligns[0];
+      const appearance=normalizeTableCellAppearance({
+        horizontalAlign:aligns.every(a=>a===alignment)?(alignment==='both'?'justify':alignment as OmiTableCellFormat['horizontalAlign']):undefined,
+        verticalAlign:va==='center'?'middle':va as OmiTableCellFormat['verticalAlign'],
+        backgroundColor:fill && (!pattern||pattern==='clear') && !attributeByLocalName(shading!,'themeFill')?'#'+fill:undefined,
+      });
+      Object.assign(format,appearance);
+      if(Object.keys(format).length) cellFormats[`${rowIndex}:${columnIndex}`]=format;
       const span=prop('gridSpan');
       const rawSpan=span?Number(attributeByLocalName(span,'val')):1;
       const colSpan=Number.isSafeInteger(rawSpan)&&rawSpan>=1&&rawSpan<=1000?rawSpan:1;
