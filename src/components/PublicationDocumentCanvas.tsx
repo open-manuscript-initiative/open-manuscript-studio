@@ -42,7 +42,7 @@ import {
 } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
 import {
-  buildNoteNumberMap,
+  buildNoteLabelMap,
   collectNoteAnchorsInBlock,
   getNoteKind,
   sortNotesByDocumentOrder,
@@ -354,7 +354,7 @@ export function PublicationDocumentCanvas({
     for (const blockId of cache.keys()) {
       if (!activeBlockIds.has(blockId)) cache.delete(blockId);
     }
-    return buildNoteNumberMap({
+    return buildNoteLabelMap({
       sections: manuscriptSections,
       documentStructure: manuscriptDocumentStructure,
       annotations: manuscriptAnnotations,
