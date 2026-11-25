@@ -1010,3 +1010,35 @@ test('native rectangular merged cells survive DOCX reopening without duplicating
   assert.match(odt,/table:number-rows-spanned="2" table:number-columns-spanned="2"/);
   assert.equal((odt.match(/<table:covered-table-cell\/>/g)??[]).length,3);
 });
+
+test('Word and ODT preserve row pagination policies including explicit off and missing Word properties', async () => {
+  const row=(text:string,props='')=>'<w:tr>'+(props?'<w:trPr>'+props+'</w:trPr>':'')+'<w:tc><w:p><w:r><w:t>'+text+'</w:t></w:r></w:p></w:tc></w:tr>';
+  const source=makeDocx('<w:p><w:r><w:t>Pagination specimen</w:t></w:r></w:p><w:tbl>'
+    +row('Header','<w:tblHeader/>')+row('Keep','<w:cantSplit/>')+row('Allow','<w:cantSplit w:val="0"/>')+row('Default')+'</w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const getTable=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table'); return v;
+  };
+  const original=getTable(plan.sections);
+  assert.equal(original.rowSplitDefault,'allow');
+  assert.deepEqual(original.rowSplitOverrides,{'1':'keep','2':'allow'});
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Row pagination'}),sections:plan.sections};
+  const docx=buildDocxExport(manuscript);
+  const word=new XmlDomParser().parseFromString(readZipParts(docx.bytes).get('word/document.xml')!.toString('utf8'),'application/xml');
+  const table=word.getElementsByTagName('w:tbl').item(0);
+  assert.ok(table);
+  const rows=Array.from({length:4},(_,i)=>table.getElementsByTagName('w:tr').item(i)!);
+  assert.deepEqual(rows.map(r=>r.getElementsByTagName('w:cantSplit').item(0)?.getAttribute('w:val')||''),['0','','0','0']);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/<style:table-row-properties fo:keep-together="always"\/>/);
+  assert.match(odtXml,/<style:table-row-properties fo:keep-together="auto"\/>/);
+  const {tableRowSplitPolicy}=await import('../src/model/tableLayout.ts');
+  for(const reopened of [await parseDocxForStudio(new File([new Uint8Array(docx.bytes)],'rows.docx')),await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'rows.odt'))]){
+    const v=getTable(reopened.sections);
+    assert.equal(v.headerRows,1);
+    assert.deepEqual(v.cells,original.cells);
+    assert.deepEqual(v.cells.map((_,i)=>tableRowSplitPolicy(v,i)),['allow','keep','allow','allow']);
+  }
+});
