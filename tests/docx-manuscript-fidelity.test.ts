@@ -1975,7 +1975,7 @@ test('Word review comments and reversible tracked changes survive OMI persistenc
         assert.equal(root.targetText,'Review target');
         assert.equal(root.visibility,'editor_only');
       }else{
-        const change=reopened.proofing?.changes[0]!;
+        const change=reopened.proofing?.changes[0];
         assert.ok(change);
         assert.match(change.before,/"italic"/);
         assert.match(change.after,/"bold"/);
