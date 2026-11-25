@@ -129,7 +129,7 @@ export function buildIdmlExport(
           for (const run of runs) {
             const direct = run.directFormatting;
             if (!direct) continue;
-            if (idmlLigatureMappingIsPartial(direct.omiLigatures) || direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || (direct.omiKerning !== undefined && direct.omiKerning !== 0) || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
+            if (idmlLigatureMappingIsPartial(direct.omiLigatures) || direct.omiTextDirection !== undefined || direct.underlineStyle || direct.omiDoubleStrike || direct.omiOutline || direct.omiShadow || direct.omiHighlight || direct.omiCharacterBackground || (direct.omiKerning !== undefined && direct.omiKerning !== 0) || (direct.omiTracking !== undefined && direct.omiFontSize === undefined)) {
               warnings.push(`Some direct typography in block ${block.id} has no exact IDML mapping; review in InDesign.`);
               break;
             }
@@ -908,10 +908,10 @@ function idmlTableParagraph(table:OmiTableBlockData,width:number,context:IdmlTab
         if(run.sourceFontFamily)context.fonts.add(run.sourceFontFamily);
         if(run.link)context.report('table-link-projected-as-text','preserves visible link text, not the hyperlink destination.');
         const d=run.directFormatting;
-        if(d&&(idmlLigatureMappingIsPartial(d.omiLigatures)||d.underlineStyle||d.omiDoubleStrike||d.omiOutline||d.omiShadow||d.omiHighlight||d.omiCharacterBackground||(d.omiKerning!==undefined&&d.omiKerning!==0)||(d.omiTracking!==undefined&&d.omiFontSize===undefined)))context.report('table-direct-typography-partial','some cell character overrides have no exact mapping.');
+        if(d&&(idmlLigatureMappingIsPartial(d.omiLigatures)||d.omiTextDirection!==undefined||d.underlineStyle||d.omiDoubleStrike||d.omiOutline||d.omiShadow||d.omiHighlight||d.omiCharacterBackground||(d.omiKerning!==undefined&&d.omiKerning!==0)||(d.omiTracking!==undefined&&d.omiFontSize===undefined)))context.report('table-direct-typography-partial','some cell character overrides have no exact mapping.');
       }
       const paragraphAttrs=effectiveCellParagraphAttrs(node.attrs,format.horizontalAlign);
-      if(paragraphAttrs.omiLineRule==='atLeast'||paragraphAttrs.omiParagraphBackground||paragraphAttrs.omiParagraphBorders||paragraphAttrs.omiParagraphTabs)context.report('table-paragraph-typography-partial','some cell paragraph overrides have no exact mapping.');
+      if(paragraphAttrs.omiParagraphDirection||paragraphAttrs.omiLineRule==='atLeast'||paragraphAttrs.omiParagraphBackground||paragraphAttrs.omiParagraphBorders||paragraphAttrs.omiParagraphTabs)context.report('table-paragraph-typography-partial','some cell paragraph overrides have no exact mapping.');
       const attrs=directParagraphAttributes(JSON.stringify({type:'paragraph',attrs:paragraphAttrs}));
       // Explicit paragraph indents take precedence over list defaults.
       const listAttrs=list?Object.fromEntries(Object.entries(list.attrs).filter(([key])=>!attrs.includes(' '+key+'='))):{};
