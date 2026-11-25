@@ -1,3 +1,4 @@
+import { normalizeWordSectionLayout } from '../model/wordSectionLayout';
 import { WORD_HYPHENATION_EXTENSION, validateWordHyphenation } from '../model/wordHyphenation';
 import { TEXT_BOX_CONTENT_PROFILE, decodeTextBoxContent } from '../model/textBoxContent';
 import { FRAME_LAYOUT_EXTENSION, validateFrameLayout } from '../model/publicationFrames';
@@ -387,6 +388,10 @@ function validateSectionLayout(
   path: string,
 ): void {
   if (!isRecord(value)) invalid(`${path} must be an object.`);
+  if(value.wordSection!==undefined){
+    const normalized=normalizeWordSectionLayout(value.wordSection);
+    if(!normalized||!isRecord(value.wordSection)||Object.keys(value.wordSection).length!==Object.keys(normalized).length|| (isRecord(value.wordSection.margins)&&Object.keys(value.wordSection.margins).length!==Object.keys(normalized.margins??{}).length))invalid(`${path}/wordSection contains unsupported values.`);
+  }
 
   if (value.columns !== undefined) {
     const columns = Number(value.columns);
