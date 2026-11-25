@@ -318,7 +318,7 @@ function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(d
   const copy=getRichTextCopy(locale);
   const change=useRef(onChange);change.current=onChange;
   const editor=useEditor({extensions:cellExtensions(),content:doc as JSONContent,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
-    const parsed=parseTableCellContent(JSON.stringify(current.getJSON()));
+    const parsed=parseTableCellContent(JSON.stringify(current.getJSON()),depth);
     if(parsed) change.current(parsed);
   }});
   useFormattingEditor(editor);
@@ -618,7 +618,7 @@ function EditableGrid({
               if(!nested||depth>=MAX_NESTED_TABLE_DEPTH) return null;
               return <details key={index} onClick={event=>event.stopPropagation()}><summary>{copy.editNestedTable} {index+1}</summary><EditableGrid depth={depth+1} data={nested} copy={copy} onChange={next=>{
                 if(next.kind!=='table') return;
-                const doc={...selectedDoc,content:selectedDoc.content?.map((item,i)=>i===index?{type:'omiCellTable',attrs:{table:next}}:item)};
+                const doc={...selectedDoc,content:selectedDoc?.content?.map((item,i)=>i===index?{type:'omiCellTable',attrs:{table:next}}:item)};
                 const valid=parseTableCellContent(JSON.stringify(doc),depth);
                 if(!valid) return;
                 const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(valid));
