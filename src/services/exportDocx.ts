@@ -1,3 +1,4 @@
+import { normalizeExternalHref } from '../model/richText';
 import { toPortableBookmarkName } from '../model/namedAnchors';
 import { normalizeWordCrossReferenceField, type WordCrossReferenceField } from '../model/wordCrossReference';
 import { RUNNING_VARIANTS, normalizeRunningVariants, type RunningKind, type RunningParagraph } from '../model/wordRunningMatter';
@@ -20,6 +21,8 @@ import { officeMetadataConversion, metadataConversionWarnings, type MetadataConv
 import {
   extractOmiInlineRuns,
   inlineLanguageFromMarks,
+  inlineLinkFromMarks,
+  inlineLinkTitleFromMarks,
   inlineSourceFontFamilyFromMarks,
   inlineSourceWordStyle,
   semanticKindsFromMarks,
@@ -66,6 +69,9 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const bookmarkRegistry=new WordBookmarkRegistry(manuscript,context.sections,warnings);
   const resolveCrossReference=(id:string)=>bookmarkRegistry.reference(id);
   const sourceStyles = new SourceWordStyleRegistry();
+  const documentLinks=new WordHyperlinkRegistry(warnings);
+  const footnoteLinks=new WordHyperlinkRegistry(warnings);
+  const endnoteLinks=new WordHyperlinkRegistry(warnings);
   const numbering = new WordListNumbering();
   const fundingStatement = profile.rules.notes.fundingStarNote
     ? getManuscriptFundingStatement(manuscript)
@@ -163,7 +169,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
         if (block.visual?.kind === 'table' && block.visual.cells.length && block.visual.cells.some(row=>row.length)) {
           if (indexFields) body.push(paragraph('', undefined, indexFields));
           if (block.visual.caption?.trim()) body.push(paragraph(block.visual.caption));
-          body.push(wordTable(block.visual, warnings, numbering, sourceStyles,resolveNote));
+          body.push(wordTable(block.visual, warnings, numbering, sourceStyles,resolveNote,9026,documentLinks));
           continue;
         }
         if (block.visual) {
@@ -172,10 +178,10 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           warnings.push(`Structured ${block.visual.kind} object ${block.id} was exported as descriptive text in DOCX.`);
           continue;
         }
-        const lists = renderWordLists(block.content, numbering, resolveNote, indexFields, sourceStyles,resolveCrossReference);
+        const lists = renderWordLists(block.content, numbering, resolveNote, indexFields, sourceStyles,resolveCrossReference,documentLinks);
         if (lists !== undefined) { body.push(bookmarkRegistry.wrap(block.id,lists)); continue; }
         const rendered = renderWordContent(block.content, resolveNote,resolveCrossReference);
-        if (rendered.length) body.push(bookmarkRegistry.wrap(block.id,richParagraph(rendered, indexFields, block.content, sourceStyles)));
+        if (rendered.length) body.push(bookmarkRegistry.wrap(block.id,richParagraph(rendered, indexFields, block.content, sourceStyles,documentLinks)));
         else {
           const text = blockPlainText(block);
           if (text || indexFields||bookmarkRegistry.has(block.id)) body.push(bookmarkRegistry.wrap(block.id,paragraph(text, undefined, indexFields)));
@@ -230,18 +236,23 @@ ${characterStylesXml()}${sourceStyles.xml()}
   const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(context.title)}</dc:title><dc:language>${xml(context.locale)}</dc:language><cp:lastModifiedBy>Open Manuscript Studio</cp:lastModifiedBy><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`;
 
+  // Render note parts first so their own relationship registries are complete.
+  const footnoteXml=footnotes.length?renderWordNotes('footnote',footnotes,continueFootnotes,footnoteLinks):undefined;
+  const endnoteXml=endnotes.length?renderWordNotes('endnote',endnotes,true,endnoteLinks):undefined;
   const entries = [
     textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>${numbering.size ? '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' : ''}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${footnotes.length ? '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' : ''}${endnotes.length ? '<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' : ''}${runningParts.contentTypes()}</Types>`),
     textZipEntry('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`),
-    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${numbering.size ? '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : ''}${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}${runningParts.relationships()}</Relationships>`),
+    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${numbering.size ? '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : ''}${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}${runningParts.relationships()}${documentLinks.relationships()}</Relationships>`),
     textZipEntry('word/document.xml', documentXml),
     textZipEntry('word/styles.xml', stylesXml),
     textZipEntry('word/settings.xml', settingsXml),
     ...runningParts.entries(),
     ...(numbering.size ? [textZipEntry('word/numbering.xml', numbering.xml())] : []),
     textZipEntry('docProps/core.xml', core),
-    ...(footnotes.length ? [textZipEntry('word/footnotes.xml', renderWordNotes('footnote', footnotes, continueFootnotes))] : []),
-    ...(endnotes.length ? [textZipEntry('word/endnotes.xml', renderWordNotes('endnote', endnotes))] : []),
+    ...(footnoteXml?[textZipEntry('word/footnotes.xml',footnoteXml)]:[]),
+    ...(endnoteXml?[textZipEntry('word/endnotes.xml',endnoteXml)]:[]),
+    ...footnoteLinks.entries('footnotes'),
+    ...endnoteLinks.entries('endnotes'),
   ];
   const bytes = createStoreZip(entries);
   const copy = bytes.slice();
@@ -295,6 +306,26 @@ class WordRunningMatterRegistry{
 
 /** Allocate unique, case-insensitive Word names for semantic block/section targets.
  * No source XML or arbitrary field instructions are copied. */
+/** Relationships are local to the containing document/footnote/endnote part. */
+class WordHyperlinkRegistry{
+  private readonly ids=new Map<string,string>();
+  constructor(private readonly warnings:string[]){}
+  wrap(href:string|undefined,title:string|undefined,content:string):string{
+    if(!href||!content)return content;
+    const target=normalizeExternalHref(href);
+    if(!target||! /^(https?:|mailto:)/i.test(target)){
+      if(!this.warnings.includes('Unsupported hyperlink target preserved as text in DOCX.'))this.warnings.push('Unsupported hyperlink target preserved as text in DOCX.');
+      return content;
+    }
+    let id=this.ids.get(target);
+    if(!id){id='rIdHyperlink'+(this.ids.size+1);this.ids.set(target,id);}
+    const tooltip=typeof title==='string'&&title.length<=1024&&!/[\u0000-\u001F]/.test(title)?' w:tooltip="'+xml(title)+'"':'';
+    return '<w:hyperlink r:id="'+id+'"'+tooltip+'>'+content+'</w:hyperlink>';
+  }
+  relationships():string{return [...this.ids].map(([target,id])=>'<Relationship Id="'+id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="'+xml(target)+'" TargetMode="External"/>').join('');}
+  entries(part:'footnotes'|'endnotes'){return this.ids.size?[textZipEntry('word/_rels/'+part+'.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+this.relationships()+'</Relationships>')]:[];}
+}
+
 class WordBookmarkRegistry {
   private readonly byId=new Map<string,{id:number;name:string;targetId:string}>();
   private readonly byTarget=new Map<string,Array<{id:number;name:string}>>();
@@ -368,7 +399,7 @@ class WordListNumbering {
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' + abstracts + nums + '</w:numbering>';
   }
 }
-function renderWordLists(content: string, numbering: WordListNumbering, resolveNote: (id:string)=>WordNoteReference|undefined, suffix: string, sourceStyles: SourceWordStyleRegistry,resolveCrossReference?:ResolveWordCrossReference): string | undefined {
+function renderWordLists(content: string, numbering: WordListNumbering, resolveNote: (id:string)=>WordNoteReference|undefined, suffix: string, sourceStyles: SourceWordStyleRegistry,resolveCrossReference?:ResolveWordCrossReference,links?:WordHyperlinkRegistry): string | undefined {
   let root: NoteJsonNode;
   try { root = JSON.parse(content) as NoteJsonNode; } catch { return undefined; }
   const list = (node: NoteJsonNode) => node.type === 'orderedList' || node.type === 'bulletList';
@@ -382,7 +413,7 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
     const sourceParagraph = node.attrs?.omiWordParagraphStyle;
     const styleId = sourceStyles.register(sourceParagraph);
     const properties = (styleId ? '<w:pStyle w:val="'+styleId+'"/>' : '') + numPr + paragraphFormattingWordXml(node.attrs);
-    output.push('<w:p>' + (properties ? '<w:pPr>'+properties+'</w:pPr>' : '') + runs.map(run=>'kind' in run ? wordNoteReference(run.kind,run.id,run.customMark) : wordRun(run, sourceStyles, sourceParagraph)).join('') + (output.length === 0 ? suffix : '') + '</w:p>');
+    output.push('<w:p>' + (properties ? '<w:pPr>'+properties+'</w:pPr>' : '') + runs.map(run=>'kind' in run ? wordNoteReference(run.kind,run.id,run.customMark) : wordRun(run, sourceStyles, sourceParagraph,links)).join('') + (output.length === 0 ? suffix : '') + '</w:p>');
   };
   const renderList = (node: NoteJsonNode, depth: number, parent?: NumberingGroup) => {
     const {group,level} = numbering.register(node,depth,parent);
@@ -407,7 +438,7 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
 }
 
 /** Native editable tables; the model intentionally stores plain rectangular cells. */
-function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordListNumbering,sourceStyles:SourceWordStyleRegistry,resolveNote:(id:string)=>WordNoteReference|undefined,availableWidth=9026): string {
+function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordListNumbering,sourceStyles:SourceWordStyleRegistry,resolveNote:(id:string)=>WordNoteReference|undefined,availableWidth=9026,links?:WordHyperlinkRegistry): string {
   const widths = tableColumnWidths(table.cells, table.columnWidths).map(percent=>Math.max(1,Math.round(percent*availableWidth/100)));
   const headerRows = tableHeaderRows(table.cells, table.headerRows);
   const layout = tableMergeLayout(table.cells,table.cellMerges,headerRows);
@@ -445,9 +476,9 @@ function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordLi
       const doc=continuing?undefined:tableCellDocument(table,r,c);
       const rich=doc?.content?.map(p=>{
         const nested=cellNestedTable(p);
-        if(nested) return wordTable(nested,warnings,numbering,sourceStyles,resolveNote,Math.max(1,cellWidth));
-        if(p.type==='orderedList'||p.type==='bulletList') return renderWordLists(JSON.stringify({type:'doc',content:[cellDocumentWithDefaults(p,format.horizontalAlign)]}),numbering,resolveNote,'',sourceStyles)??'';
-        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':renderJsonNode(n,resolveNote).map(run=>'kind' in run?wordNoteReference(run.kind,run.id,run.customMark):wordRun(run,undefined,{})).join('')).join('');
+        if(nested) return wordTable(nested,warnings,numbering,sourceStyles,resolveNote,Math.max(1,cellWidth),links);
+        if(p.type==='orderedList'||p.type==='bulletList') return renderWordLists(JSON.stringify({type:'doc',content:[cellDocumentWithDefaults(p,format.horizontalAlign)]}),numbering,resolveNote,'',sourceStyles,undefined,links)??'';
+        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':renderJsonNode(n,resolveNote).map(run=>'kind' in run?wordNoteReference(run.kind,run.id,run.customMark):wordRun(run,undefined,{},links)).join('')).join('');
         const properties=paragraphFormattingWordXml(effectiveCellParagraphAttrs(p.attrs,format.horizontalAlign));
         return '<w:p>'+(properties?'<w:pPr>'+properties+'</w:pPr>':'')+runs+'</w:p>';
       }).join('');
@@ -503,7 +534,7 @@ function wordStyledText(value: string, styleId?: string): string {
   return `<w:r>${rPr}<w:t xml:space="preserve">${xml(value)}</w:t></w:r>`;
 }
 
-function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '', sourceStyles?: SourceWordStyleRegistry): string {
+function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '', sourceStyles?: SourceWordStyleRegistry,links?:WordHyperlinkRegistry): string {
   let properties = '';
   let sourceParagraph: unknown;
   try {
@@ -515,7 +546,7 @@ function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '
       properties = (id ? `<w:pStyle w:val="${id}"/>` : '') + paragraphFormattingWordXml(paragraph.attrs);
     }
   } catch { /* Plain-text fallback has no local paragraph overrides. */ }
-  const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id, run.customMark) : wordRun(run, sourceStyles, sourceParagraph)).join('');
+  const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id, run.customMark) : wordRun(run, sourceStyles, sourceParagraph,links)).join('');
   return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${rendered}${suffix}</w:p>`;
 }
 
@@ -549,11 +580,11 @@ function renderWordContent(
   }
 }
 
-function renderJsonContent(document: NoteJsonNode): string {
+function renderJsonContent(document: NoteJsonNode,links?:WordHyperlinkRegistry): string {
   const runs = renderJsonNode(document);
   const last = runs.at(-1);
   if (last && !('kind' in last) && last.text === '\n') runs.pop();
-  return runs.map((run) => 'kind' in run ? '' : wordRun(run)).join('');
+  return runs.map((run) => 'kind' in run ? '' : wordRun(run,undefined,undefined,links)).join('');
 }
 
 function renderJsonNode(
@@ -566,6 +597,8 @@ function renderJsonNode(
       text: node.text,
       semantics: semanticKindsFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
+      link:inlineLinkFromMarks(node.marks),
+      linkTitle:inlineLinkTitleFromMarks(node.marks),
       sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks),
       sourceWordStyle: inlineSourceWordStyle(node.marks),
       directFormatting: directFormattingFromMarks(node.marks),
@@ -594,7 +627,7 @@ function renderJsonNode(
   return children;
 }
 
-function renderWordNotes(kind: WordNoteKind, notes: readonly WordNoteBody[], allowContinuation = true): string {
+function renderWordNotes(kind: WordNoteKind, notes: readonly WordNoteBody[], allowContinuation = true,links?:WordHyperlinkRegistry): string {
   const root = kind === 'footnote' ? 'footnotes' : 'endnotes';
   const item = kind === 'footnote' ? 'footnote' : 'endnote';
   const reference = kind === 'footnote' ? 'footnoteRef' : 'endnoteRef';
@@ -616,21 +649,22 @@ function renderWordNotes(kind: WordNoteKind, notes: readonly WordNoteBody[], all
         if(attrs.omiKeepLines===undefined)attrs.omiKeepLines=!allowContinuation;
         if(!allowContinuation&&index<paragraphs.length-1&&attrs.omiKeepNext===undefined)attrs.omiKeepNext=true;
       }
-      return `<w:p><w:pPr><w:pStyle w:val="${note.funding?'FundingNote':kind==='footnote'?'FootnoteText':'EndnoteText'}"/>${paragraphFormattingWordXml(attrs)}</w:pPr>${index===0?marker:''}${renderJsonContent(p)}</w:p>`;
+      return `<w:p><w:pPr><w:pStyle w:val="${note.funding?'FundingNote':kind==='footnote'?'FootnoteText':'EndnoteText'}"/>${paragraphFormattingWordXml(attrs)}</w:pPr>${index===0?marker:''}${renderJsonContent(p,links)}</w:p>`;
     }).join('');
     return `<w:${item} w:id="${note.id}">${content}</w:${item}>`;
   }).join('');
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:${separator} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:${separator}><w:${separator} w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${separator}>${notesXml}</w:${root}>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:${separator} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:${separator}><w:${separator} w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${separator}>${notesXml}</w:${root}>`;
 }
 
 function noteParagraphStyle(id: string, name: string): string {
   return `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>`;
 }
 
-function wordRun(run: WordTextRun, sourceStyles?: SourceWordStyleRegistry, sourceParagraph?: unknown): string {
+function wordRun(run: WordTextRun, sourceStyles?: SourceWordStyleRegistry, sourceParagraph?: unknown,links?:WordHyperlinkRegistry): string {
   if(run.wordField){
     const field=normalizeWordCrossReferenceField({kind:run.wordField.kind,cachedLabel:run.wordField.cachedLabel,...(run.wordField.hyperlink!==undefined?{hyperlink:run.wordField.hyperlink}:{})});
     const name=run.wordField.name;
+    if(field?.kind==='HYPERLINK'&&/^[A-Za-z_][A-Za-z0-9_]{0,39}$/.test(name))return '<w:hyperlink w:anchor="'+name+'"><w:r><w:t xml:space="preserve">'+xml(field.cachedLabel)+'</w:t></w:r></w:hyperlink>';
     if(field&&/^[A-Za-z_][A-Za-z0-9_]{0,39}$/.test(name))return '<w:fldSimple w:instr=" '+field.kind+' '+name+(field.hyperlink?' \\h':'')+' "><w:r><w:t xml:space="preserve">'+xml(field.cachedLabel)+'</w:t></w:r></w:fldSimple>';
   }
   const imported = sourceStyles?.register(run.sourceWordStyle);
@@ -668,7 +702,7 @@ function wordRun(run: WordTextRun, sourceStyles?: SourceWordStyleRegistry, sourc
     ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${font}${direct}${lang}</w:rPr>`
     : '';
 
-  return run.text
+  const content=run.text
     .split(/([\n\t])/)
     .filter((part) => part.length > 0)
     .map((part) => {
@@ -677,6 +711,7 @@ function wordRun(run: WordTextRun, sourceStyles?: SourceWordStyleRegistry, sourc
       return `<w:r>${rPr}<w:t xml:space="preserve">${xml(part)}</w:t></w:r>`;
     })
     .join('');
+  return links?.wrap(run.link,run.linkTitle,content)??content;
 }
 
 function collectIndexEntriesByBlock(entries: readonly OmiIndexEntry[]): Map<string, OmiIndexEntry[]> {
