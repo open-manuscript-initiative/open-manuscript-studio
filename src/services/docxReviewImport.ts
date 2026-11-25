@@ -23,7 +23,7 @@ export function readWordComments(comments:Document,extended?:Document):Map<strin
     const paragraphs=elements(item,W,'p');
     const body=paragraphs.map(p=>elements(p,W,'t').map(t=>t.textContent??'').join('')).join('\n');
     if(!body.trim()||body.length>65536)continue;
-    const paraId=paragraphs.map(p=>attr(p,W14,'paraId')).findLast(id=>Boolean(id));
+    const paraId=paragraphs.map(p=>attr(p,W14,'paraId')).reverse().find(id=>Boolean(id));
     const info=paraId?metadata.get(paraId):undefined;
     result.set(id,{id,body,paraId,parentParaId:info?.parent,done:info?.done??false,date:validDate(attr(item,W,'date'))});
   }
