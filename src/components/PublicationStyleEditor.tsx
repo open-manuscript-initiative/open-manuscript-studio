@@ -440,7 +440,7 @@ function PublicationStyleEditorWorkspace() {
   function changeDocumentViewMode(mode: PublicationDocumentViewMode): void {
     setDocumentViewMode(mode);
     setOpenPanel(null);
-    if (mode === 'html') setProofingSelection(null);
+    setProofingSelection(null);
   }
 
   function setPage<K extends keyof PublicationStyle['page']>(
@@ -729,6 +729,7 @@ function PublicationStyleEditorWorkspace() {
       return;
     }
     const storedStyleId = styleId === style.paragraphStyles.defaultStyleId
+      && selectedParagraphBlock.type !== 'quote'
       ? undefined
       : styleId;
     setBlockParagraphStyle(selectedParagraphBlock.id, storedStyleId);
@@ -1163,7 +1164,12 @@ function PublicationStyleEditorWorkspace() {
                         aria-selected={definition.id === activeParagraphStyle.id}
                         className={definition.id === activeParagraphStyle.id ? 'is-active' : ''}
                         key={definition.id}
-                        onClick={() => setActiveParagraphStyleId(definition.id)}
+                        onClick={() => {
+                          setActiveParagraphStyleId(definition.id);
+                          if (paragraphStyleAssignable && definition.role !== 'citation' && definition.role !== 'note-citation') {
+                            assignParagraphStyle(definition.id);
+                          }
+                        }}
                       >
                         <Pilcrow size={14} aria-hidden="true" />
                         <span>{publicationParagraphStyleName(definition, locale)}</span>
