@@ -4,6 +4,7 @@ import type {
   OmiTableBlockData,
   OmiVisualBlockData,
 } from '../types/omi';
+import { sameTableCitationAnchors } from './citationClusters';
 import { tableCellDocument, tableCellPlainText, cellNestedTable, tableMergeLayout } from './tableLayout';
 import type { NoteJsonNode } from './noteRichText';
 import { getDocumentStructureProfile } from './documentProfile';
@@ -535,6 +536,7 @@ export function applyTableNoteEdit(
 ):NoteReconciliationResult|undefined {
   const located=findManuscriptBlock(state.sections,blockId);
   if(!located||located.block.visual?.kind!=='table'||JSON.stringify(located.block.visual)!==JSON.stringify(expected)) return undefined;
+  if(!sameTableCitationAnchors(expected,next))return undefined;
   const old=collectNoteAnchorsInBlock('',located.section.id,blockId,expected);
   const incoming=collectNoteAnchorsInBlock('',located.section.id,blockId,next);
   const required=old.map(anchorKey);
