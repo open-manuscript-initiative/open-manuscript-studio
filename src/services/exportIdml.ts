@@ -922,6 +922,8 @@ function idmlTableParagraph(table:OmiTableBlockData,width:number,context:IdmlTab
       const nested=cellNestedTable(node);
       if(nested)return idmlTableParagraph(nested,innerWidth,context);
       if(node.type==='bulletList'||node.type==='orderedList'){
+        const sourceId=normalizeListAttribute('omiListId',node.attrs?.omiListId);
+        if(typeof sourceId==='string')context.report('table-list-sequence-partial','source list identities are scoped to separate structural lists; cross-list continuation is not retained.');
         const listId='NumberingList/OMI Cell List '+(context.numberingLists.length+1);
         context.numberingLists.push(listId);
         return (node.content??[]).map((item,index)=>(item.content??[]).map((child,j)=>child.type==='paragraph'?paragraph(child,j===0?idmlCellListParagraph(node,depth,index,listId,context):idmlCellListContinuation(node,depth)):blocks([child],depth+1)).join('')).join('');
