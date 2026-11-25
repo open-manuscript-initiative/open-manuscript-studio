@@ -1496,8 +1496,8 @@ test('Word hyphenation defaults and paragraph suppression survive portable and n
   inspect(plan.sections);
   const previous=useStudioStore.getState();
   try{
-    useStudioStore.getState().loadManuscript(createVersionedTestManuscript());
-    applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
+    // Publication PDF requires an author; exercise the real import author path.
+    applyDocxImportPlan({...plan,authors:[{givenName:'Ada',familyName:'Scholar',displayName:'Ada Scholar',source:'core-properties'}]},{importDetectedAuthors:true,source:'',selfAuthoredExternal:true});
     const manuscript=useStudioStore.getState().manuscript;
     const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
     const reopened=parseOmiJson(serializeOmiJson(projected));
