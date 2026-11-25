@@ -1601,3 +1601,35 @@ test('native custom starred notes preserve separate label, text and automatic nu
   assert.equal(reopened.annotations[0]?.body,'Funding disclosure');
   assert.equal(reopened.annotations[1]?.body,'Ordinary note');
 });
+
+test('native Word physical sections preserve page geometry, columns and restart through editor projection',async()=>{
+  const first='<w:sectPr><w:type w:val="continuous"/><w:pgSz w:w="11906" w:h="16838"/><w:cols w:num="2" w:space="720"/></w:sectPr>';
+  const last='<w:sectPr><w:type w:val="nextPage"/><w:pgSz w:w="11906" w:h="8391" w:orient="landscape"/><w:pgMar w:top="900" w:left="1000"/><w:pgNumType w:start="11"/></w:sectPr>';
+  const source=makeDocx('<w:p><w:r><w:t>First physical section</w:t></w:r></w:p><w:p><w:pPr>'+first+'</w:pPr></w:p><w:p><w:r><w:t>Second physical section</w:t></w:r></w:p>'+last);
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    assert.equal(sections.length,2);
+    assert.notEqual(sections[0]?.layout?.wordSection?.groupId,sections[1]?.layout?.wordSection?.groupId);
+    assert.equal(sections[0]?.layout?.columns,2);
+    assert.equal(sections[0]?.layout?.columnGapMm,12.7);
+    assert.equal(sections[0]?.layout?.wordSection?.pageHeightTwips,16838);
+    assert.equal(sections[0]?.layout?.wordSection?.breakType,'continuous');
+    assert.equal(sections[1]?.layout?.wordSection?.pageHeightTwips,8391);
+    assert.equal(sections[1]?.layout?.wordSection?.orientation,'landscape');
+    assert.equal(sections[1]?.layout?.wordSection?.pageNumberStart,11);
+    assert.equal(sections[1]?.layout?.wordSection?.margins?.left,1000);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Section geometry'}),sections:plan.sections};
+  const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+  inspect(projected.sections);
+  const reopened=parseOmiJson(serializeOmiJson(projected));
+  inspect(reopened.sections);
+  const word=buildDocxExport(reopened);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:cols w:num="2" w:space="720"\/>/);
+  assert.match(xml,/<w:pgSz w:w="11906" w:h="8391" w:orient="landscape"\/>/);
+  assert.match(xml,/<w:pgNumType w:start="11"\/>/);
+  assert.equal((xml.match(/<w:sectPr>/g)??[]).length,2);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'section-geometry.docx'))).sections);
+});
