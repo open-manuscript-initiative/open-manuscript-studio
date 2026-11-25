@@ -513,6 +513,8 @@ test('range typography keeps rich notes, lists, nested tables and unrelated form
   assert.equal(tableCellDocument(noLine,0,0)?.content?.[0]?.attrs?.omiLineSpacing,undefined);
   const manuscript=createVersionedTestManuscript();
   manuscript.sections[0]!.blocks.push({...block,visual:noLine});
+  const {createNoteAnnotation}=await import('../src/model/notes.ts');
+  manuscript.annotations.push(createNoteAnnotation({id:'note-a',anchorId:'anchor-a',targetBlockId:block.id,body:'Preserved note'}));
   const reopened=parseOmiJson(serializeOmiJson(manuscript));
   assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,JSON.parse(JSON.stringify(noLine)));
 });
