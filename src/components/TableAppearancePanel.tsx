@@ -6,8 +6,8 @@ import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import { loadPublicationStyle } from '../services/publicationStyleExport';
 import type { OmiTableBlockData } from '../types/omi';
 import type { VisualElementsCopy } from '../i18n/visualElements';
-import type { TableCellPosition } from '../model/tableLayout';
-import { selectedPublicationOverrideCount, resolvePublicationTablePreset, derivePublicationTablePreset, normalizePresetFormat, type TableStyleRegion, bindPublicationCellStyle, detachPublicationCellStyles, selectedPublicationCellStyles, resetInheritedCellAppearance, bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
+import { TABLE_OVERRIDE_FIELDS, type TableCellPosition } from '../model/tableLayout';
+import { selectedPublicationOverrideDetails, resolvePublicationTablePreset, derivePublicationTablePreset, normalizePresetFormat, type TableStyleRegion, bindPublicationCellStyle, detachPublicationCellStyles, selectedPublicationCellStyles, resetInheritedCellAppearance, bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
 
 function loadPresets():TableAppearancePreset[]{
   try{return readAppearancePresets(localStorage.getItem(TABLE_STYLE_STORAGE_KEY));}catch{return [];}
@@ -31,7 +31,9 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
   const choices=[...builtins,...presets.map(preset=>({key:'custom:'+preset.name,label:preset.name+' ('+(preset.kind==='cell'?copy.cellStyleLabel:copy.tableStyleLabel)+')',preset})),...catalog.items.map(preset=>({key:'publication:'+preset.name,label:copy.publicationTableStyles+': '+preset.name+(preset.name===catalog.defaultTableStyle?' ★':''),preset}))];
   const choice=choices.find(item=>item.key===selected);
   const cellLinks=selectedPublicationCellStyles(table,start,end);
-  const overrideCount=selectedPublicationOverrideCount(table,catalog,start,end);
+  const overrideDetails=selectedPublicationOverrideDetails(table,catalog,start,end);
+  const overrideCount=overrideDetails.count;
+  const overrideLabels:Record<typeof TABLE_OVERRIDE_FIELDS[number],string>={horizontalAlign:copy.cellHorizontalAlign,verticalAlign:copy.cellVerticalAlign,backgroundColor:copy.cellBackground,borders:copy.cellBorderStyle,paddingPt:copy.cellPadding,textRotation:copy.textRotation,textDirection:copy.textDirection};
   const publicationTable=selected.startsWith('publication:')&&choice?.preset.kind==='table'?choice.preset:undefined;
   const conditions=publicationTable?resolvePublicationTablePreset(catalog,publicationTable.name)?.conditions??[]:[];
   function saveConditions(next:typeof conditions){
@@ -92,7 +94,12 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
     </div>
     {table.publicationTableStyle?<small>{copy.linkedPublicationTableStyle}: {table.publicationTableStyle}{overrideCount&&!cellLinks.length?' +':''}</small>:null}
     {cellLinks.length?<small>{copy.linkedPublicationCellStyle}: {cellLinks.join(', ')}{overrideCount?' +':''}</small>:null}
-    {overrideCount?<small role="status">+ {copy.tableLocalOverrides}: {overrideCount}</small>:null}
+    {overrideCount?<details><summary>+ {copy.tableLocalOverrides}: {overrideCount}</summary>
+      {TABLE_OVERRIDE_FIELDS.filter(field=>overrideDetails.fields[field]).map(field=><div key={field} className="omi-table-cell-formatting-fields">
+        <span>{overrideLabels[field]} ({overrideDetails.fields[field]})</span>
+        <button type="button" aria-label={copy.resetTableProperty+': '+overrideLabels[field]} onClick={()=>onChange(resetInheritedCellAppearance(table,catalog,start,end,[field]))}>{copy.resetTableProperty}</button>
+      </div>)}
+    </details>:null}
     <div className="omi-table-cell-formatting-fields">
       <button type="button" disabled={!cellLinks.length} onClick={()=>onChange(detachPublicationCellStyles(table,start,end))}>{copy.detachPublicationCellStyle}</button>
       <button type="button" disabled={!cellLinks.length&&!table.publicationTableStyle} onClick={()=>onChange(resetInheritedCellAppearance(table,catalog,start,end))}>{copy.resetInheritedCellAppearance}</button>
