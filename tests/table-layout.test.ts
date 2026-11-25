@@ -359,3 +359,59 @@ test('rectangular range resolves merged anchors once and preserves unrelated pro
   assert.equal(cleared['1:1']?.backgroundColor,undefined);
   assert.equal(cleared['2:2']?.backgroundColor,'#123456');
 });
+
+test('row reorder moves connected vertical merges, rich content and row metadata without crossing headers', async()=>{
+  const {planTableAxisMove,reorderTableAxis}=await import('../src/model/tableLayout.ts');
+  const rich=JSON.stringify({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'A',marks:[{type:'bold'}]}]}]});
+  const block=createTableBlock([['H1','H2'],['A','X'],['','B'],['C',''],['D','E']],{
+    headerRows:1,cellMerges:[{row:1,column:0,rowSpan:2,colSpan:1},{row:2,column:1,rowSpan:2,colSpan:1}],
+    cellContent:{'1:0':rich},cellFormats:{'2:1':{backgroundColor:'#AABBCC'}},
+    rowHeights:{'2':{mode:'exact',heightPt:24}},rowSplitOverrides:{'3':'keep'},columnWidths:[35,65]
+  },'reorder-rows');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  assert.equal(planTableAxisMove(table,'row',1,-1),undefined);
+  assert.equal(planTableAxisMove(table,'row',0,1),undefined);
+  assert.equal(planTableAxisMove(table,'row',1.5,1),undefined);
+  assert.deepEqual(planTableAxisMove(table,'row',2,1)?.order,[0,4,1,2,3]);
+  const result=reorderTableAxis(table,'row',2,1);
+  assert.ok(result);
+  assert.equal(result.index,3);
+  assert.deepEqual(result.table.cells,[['H1','H2'],['D','E'],['A','X'],['','B'],['C','']]);
+  assert.deepEqual(result.table.cellMerges,[{row:2,column:0,rowSpan:2,colSpan:1},{row:3,column:1,rowSpan:2,colSpan:1}]);
+  assert.deepEqual(result.table.cellContent,{'2:0':rich});
+  assert.deepEqual(result.table.cellFormats,{'3:1':{backgroundColor:'#AABBCC'}});
+  assert.deepEqual(result.table.rowHeights,{'3':{mode:'exact',heightPt:24}});
+  assert.deepEqual(result.table.rowSplitOverrides,{'4':'keep'});
+  assert.deepEqual(result.table.columnWidths,[35,65]);
+  assert.deepEqual(reorderTableAxis(result.table,'row',3,-1)?.table,table);
+  assert.equal(table.cells[1]?.[0],'A');
+});
+test('column reorder preserves horizontal merge blocks, dimensions and nested documents in OMI',async()=>{
+  const {reorderTableAxis,tableCellDocument,tableCellPlainText}=await import('../src/model/tableLayout.ts');
+  const doc={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Before'}]},{type:'omiCellTable',attrs:{table:{kind:'table',cells:[['Nested']],headerRows:0}}}]};
+  const raw=JSON.stringify(doc);
+  const block=createTableBlock([['A','','C'],[tableCellPlainText(doc),'B','D']],{
+    headerRows:1,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],columnWidths:[20,30,50],
+    cellContent:{'1:0':raw},cellFormats:{'1:1':{paddingPt:{left:4},horizontalAlign:'right'}},
+    rowHeights:{'1':{mode:'minimum',heightPt:18}}
+  },'reorder-columns');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  const moved=reorderTableAxis(table,'column',1,1);
+  assert.ok(moved);
+  assert.equal(moved.index,2);
+  assert.deepEqual(moved.table.cells,[['C','A',''],['D','Before\nNested','B']]);
+  assert.deepEqual(moved.table.cellMerges,[{row:0,column:1,rowSpan:1,colSpan:2}]);
+  assert.deepEqual(moved.table.columnWidths,[50,20,30]);
+  assert.deepEqual(moved.table.cellContent,{'1:1':raw});
+  assert.deepEqual(moved.table.cellFormats,{'1:2':{paddingPt:{left:4},horizontalAlign:'right'}});
+  assert.deepEqual(moved.table.rowHeights,table.rowHeights);
+  assert.ok(tableCellDocument(moved.table,1,1));
+  assert.deepEqual(reorderTableAxis(moved.table,'column',2,-1)?.table,table);
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push({...block,visual:moved.table});
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,moved.table);
+  assert.equal(reorderTableAxis({...table,cellMerges:[{row:0,column:0,rowSpan:2,colSpan:1}]},'column',0,1),undefined);
+});
