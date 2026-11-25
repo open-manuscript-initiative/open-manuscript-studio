@@ -451,5 +451,74 @@ test('IDML native cell lists keep independent numbering, list levels, restarts a
   assert.deepEqual(elements(cells[0]!,'Content').map(el=>el.textContent),['First','Continuation','Nested first','Nested second','Second','Bullet','Restart','Unnumbered']);
   const {importIdmlTables}=await import('../src/services/idmlTableImport.ts');
   const imported=await importIdmlTables(new File([new Uint8Array(exported.bytes)],'native-lists.idml'));
-  assert.ok(imported.warnings.includes('native-list-structure-not-imported'));
+  const importedTable=imported.blocks[0]?.visual;
+  assert.ok(importedTable?.kind==='table');
+  assert.deepEqual(importedTable.cells,block.visual.cells);
+  const {tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const restored=tableCellDocument(importedTable,0,0);
+  assert.ok(restored);
+  assert.deepEqual(restored.content?.map(n=>n.type),['orderedList','bulletList','orderedList','paragraph']);
+  const root=restored.content![0]!;
+  assert.equal(root.attrs?.start,4);
+  assert.equal(root.attrs?.omiListFormat,'upperRoman');
+  assert.equal(root.attrs?.omiListLabel,'(%1)');
+  assert.equal(root.attrs?.omiListLeft,720);
+  assert.equal(root.attrs?.omiListHanging,360);
+  assert.equal(root.content?.length,2);
+  const firstItem=root.content![0]!;
+  assert.deepEqual(firstItem.content?.map(n=>n.type),['paragraph','paragraph','orderedList']);
+  const sublist=firstItem.content![2]!;
+  assert.equal(sublist.attrs?.start,2);
+  assert.equal(sublist.attrs?.omiListLevel,1);
+  assert.equal(sublist.attrs?.omiListFormat,'lowerLetter');
+  assert.equal(sublist.attrs?.omiListLabel,'%2)');
+  assert.equal(sublist.content?.length,2);
+  assert.equal(restored.content![1]!.attrs?.omiListLabel,'▪');
+  assert.equal(restored.content![2]!.attrs?.start,9);
+  assert.equal(restored.content![2]!.attrs?.omiListOverrideStart,9);
+  assert.equal(restored.content![2]!.attrs?.omiListFormat,'decimalZero');
+  assert.equal(restored.content![3]!.content?.[0]?.text,'Unnumbered');
+  assert.ok(!imported.warnings.includes('native-list-structure-not-imported'));
+});
+
+test('IDML import reconstructs inherited native list properties, explicit restart and safe partial mappings',async()=>{
+  const {importIdmlTables}=await import('../src/services/idmlTableImport.ts');
+  const {createStoreZip,textZipEntry}=await import('../src/services/simpleZip.ts');
+  const {tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const para=(text:string,attrs='',properties='')=>'<ParagraphStyleRange '+attrs+'>'+properties+'<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Content>'+text+'</Content><Br/></CharacterStyleRange></ParagraphStyleRange>';
+  const props=(id:string)=>'<Properties><AppliedNumberingList type="object">'+id+'</AppliedNumberingList></Properties>';
+  const source='<Story><Table HeaderRowCount="0" BodyRowCount="1" ColumnCount="2"><Row Name="0" AutoGrow="true"/><Column Name="0" SingleColumnWidth="100"/><Column Name="1" SingleColumnWidth="100"/><Cell Name="0:0">'+
+    para('One','AppliedParagraphStyle="derived" NumberingContinue="false" NumberingStartAt="3"')+
+    para('Plain paragraph','BulletsAndNumberingListType="NoList" LeftIndent="36"')+
+    para('Continued sequence','AppliedParagraphStyle="derived" NumberingContinue="true"')+
+    para('Restart','AppliedParagraphStyle="derived" NumberingContinue="false" NumberingStartAt="8"')+
+    para('Continuation body','BulletsAndNumberingListType="NoList"',props('NumberingList/Shared'))+
+    para('Sub bullet','BulletsAndNumberingListType="BulletList" NumberingLevel="2"','<Properties><BulletChar BulletCharacterType="UnicodeOnly" BulletCharacterValue="8226"/></Properties>')+
+    para('Another bullet','BulletsAndNumberingListType="BulletList" NumberingLevel="2"','<Properties><BulletChar BulletCharacterType="UnicodeOnly" BulletCharacterValue="8226"/></Properties>')+
+    para('Parent resumes','AppliedParagraphStyle="derived" NumberingContinue="true"')+
+    '</Cell><Cell Name="1:0">'+para('Cross cell','AppliedParagraphStyle="derived" NumberingContinue="true"')+
+    para('Unknown pattern','BulletsAndNumberingListType="NumberedList" NumberingContinue="false" NumberingExpression="^1.^#.^t" NumberingLevel="1"','<Properties><NumberingFormat type="string">Unknown</NumberingFormat></Properties>')+
+    '</Cell></Table></Story>';
+  const styles='<Styles><ParagraphStyle Self="base" BulletsAndNumberingListType="NumberedList" NumberingLevel="1" LeftIndent="36" FirstLineIndent="-18" NumberingExpression="^#)^t"><Properties><NumberingFormat type="string">I, II, III, IV...</NumberingFormat><AppliedNumberingList type="object">NumberingList/Shared</AppliedNumberingList></Properties></ParagraphStyle><ParagraphStyle Self="derived" BasedOn="base"/></Styles>';
+  const bytes=createStoreZip([textZipEntry('designmap.xml','<Document><NumberingList Self="NumberingList/Shared"/><Story src="Stories/Story_test.xml"/></Document>'),textZipEntry('Stories/Story_test.xml',source),textZipEntry('Resources/Styles.xml',styles)]);
+  const imported=await importIdmlTables(new File([new Uint8Array(bytes)],'external-list.idml'));
+  const table=imported.blocks[0]?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(table.cells,[['One\nPlain paragraph\nContinued sequence\nRestart\nContinuation body\nSub bullet\nAnother bullet\nParent resumes','Cross cell\nUnknown pattern']]);
+  const doc=tableCellDocument(table,0,0)!;
+  assert.deepEqual(doc.content?.map(n=>n.type),['orderedList','paragraph','orderedList','orderedList']);
+  const [initial,plain,continued,restarted]=doc.content!;
+  assert.equal(initial!.attrs?.start,3);
+  assert.equal(initial!.attrs?.omiListFormat,'upperRoman');
+  assert.equal(initial!.attrs?.omiListLabel,'%1)');
+  assert.equal(plain!.content?.[0]?.text,'Plain paragraph');
+  assert.equal(continued!.attrs?.start,4);
+  assert.equal(restarted!.attrs?.start,8);
+  assert.equal(restarted!.content?.length,2);
+  assert.equal(initial!.attrs?.omiListId,restarted!.attrs?.omiListId);
+  assert.deepEqual(restarted!.content![0]!.content?.map(n=>n.type),['paragraph','paragraph','bulletList']);
+  assert.equal(restarted!.content![0]!.content![2]!.content?.length,2);
+  assert.ok(imported.warnings.includes('native-list-cross-cell-continuation'));
+  assert.ok(imported.warnings.includes('native-list-pattern-partial'));
+  assert.ok(imported.warnings.includes('native-list-format-partial'));
 });
