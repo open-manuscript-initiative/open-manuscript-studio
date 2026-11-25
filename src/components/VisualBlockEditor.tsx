@@ -396,7 +396,8 @@ function EditableGrid({
   const cellFormats = data.kind === 'table' ? data.cellFormats : undefined;
   const selectedFormat = tableCellFormat(cellFormats, selectedRow, selectedColumn);
   const start={row:rawRow,column:rawColumn};
-  const rangeTargets=data.kind==='table'&&rangeEnd?tableRangeAnchors(cells,start,rangeEnd,data.cellMerges,headerCount):[{row:selectedRow,column:selectedColumn}];
+  const boundedEnd=rangeEnd?{row:Math.max(0,Math.min(rangeEnd.row,cells.length-1)),column:Math.max(0,Math.min(rangeEnd.column,(cells[0]?.length??1)-1))}:null;
+  const rangeTargets=data.kind==='table'&&boundedEnd?tableRangeAnchors(cells,start,boundedEnd,data.cellMerges,headerCount):[{row:selectedRow,column:selectedColumn}];
   const rangeKeys=new Set(rangeTargets.map(p=>p.row+':'+p.column));
   const multi=rangeTargets.length>1;
   const mixed=(field:keyof OmiTableCellFormat)=>multi&&rangeTargets.some(p=>JSON.stringify(tableCellFormat(cellFormats,p.row,p.column)[field])!==JSON.stringify(selectedFormat[field]));
@@ -429,7 +430,7 @@ function EditableGrid({
 
   function updateSelectedFormat(patch: OmiTableCellFormat|((format:ReturnType<typeof tableCellFormat>)=>OmiTableCellFormat)): void {
     if (data.kind !== 'table' || previewOnly) return;
-    onChange({...data,cellFormats:formatTableRange(data,start,rangeEnd??start,patch)});
+    onChange({...data,cellFormats:formatTableRange(data,start,boundedEnd??start,patch)});
   }
 
   // Reset before measuring so shortening a cell can also shrink its row. Observe
@@ -648,6 +649,8 @@ function EditableGrid({
             {TABLE_CELL_SIDES.map(side=>{
               const edge=selectedFormat.borders?.[side];
               const padding=selectedFormat.paddingPt?.[side];
+              const mixedBorder=multi&&rangeTargets.some(p=>JSON.stringify(tableCellFormat(cellFormats,p.row,p.column).borders?.[side])!==JSON.stringify(edge));
+              const mixedPadding=multi&&rangeTargets.some(p=>tableCellFormat(cellFormats,p.row,p.column).paddingPt?.[side]!==padding);
               const sideLabel={top:copy.cellAlignTop,right:copy.cellAlignRight,bottom:copy.cellAlignBottom,left:copy.cellAlignLeft}[side];
               const setEdge=(next:NonNullable<OmiTableCellFormat['borders']>[typeof side])=>{
                 updateSelectedFormat(format=>{
@@ -659,13 +662,13 @@ function EditableGrid({
               return <fieldset key={side}>
                 <legend>{sideLabel}</legend>
                 <div className="omi-table-cell-formatting-fields">
-                  <label><span>{copy.cellBorderStyle}</span><select value={edge?.style??''} onChange={event=>{
+                  <label><span>{copy.cellBorderStyle}</span><select value={mixedBorder?'mixed':edge?.style??''} onChange={event=>{
                     const style=event.target.value;
                     setEdge(style===''?undefined:style==='none'?{style:'none'}:{style:style as 'solid'|'dashed'|'dotted'|'double',widthPt:edge?.widthPt??0.5,color:edge?.color??'#000000'});
-                  }}><option value="">{copy.cellAppearanceDefault}</option><option value="none">{copy.cellBorderNone}</option><option value="solid">{copy.cellBorderSolid}</option><option value="dashed">{copy.cellBorderDashed}</option><option value="dotted">{copy.cellBorderDotted}</option><option value="double">{copy.cellBorderDouble}</option></select></label>
-                  <label><span>{copy.cellBorderWidth} ({edgeUnit})</span><input type="number" min={0.125/edgeFactor} max={12/edgeFactor} step="any" disabled={!edge||edge.style==='none'} value={edge?.widthPt===undefined?'':Number((edge.widthPt/edgeFactor).toFixed(3))} onChange={event=>{if(edge&&Number.isFinite(event.target.valueAsNumber)) setEdge({...edge,widthPt:event.target.valueAsNumber*edgeFactor});}}/></label>
-                  <label><span>{copy.cellBorderColor}</span><input type="color" disabled={!edge||edge.style==='none'} value={edge?.color??'#000000'} onChange={event=>{if(edge) setEdge({...edge,color:event.target.value});}}/></label>
-                  <label><span>{copy.cellPadding} ({edgeUnit})</span><input type="number" min={0} max={144/edgeFactor} step="any" placeholder={copy.cellAppearanceDefault} value={padding===undefined?'':Number((padding/edgeFactor).toFixed(3))} onChange={event=>{
+                  }}><option value="mixed" disabled>{copy.mixedCellFormat}</option><option value="">{copy.cellAppearanceDefault}</option><option value="none">{copy.cellBorderNone}</option><option value="solid">{copy.cellBorderSolid}</option><option value="dashed">{copy.cellBorderDashed}</option><option value="dotted">{copy.cellBorderDotted}</option><option value="double">{copy.cellBorderDouble}</option></select></label>
+                  <label><span>{copy.cellBorderWidth} ({edgeUnit})</span><input type="number" min={0.125/edgeFactor} max={12/edgeFactor} step="any" disabled={mixedBorder||!edge||edge.style==='none'} value={mixedBorder||edge?.widthPt===undefined?'':Number((edge.widthPt/edgeFactor).toFixed(3))} onChange={event=>{if(edge&&Number.isFinite(event.target.valueAsNumber)) setEdge({...edge,widthPt:event.target.valueAsNumber*edgeFactor});}}/></label>
+                  <label><span>{copy.cellBorderColor}</span><input type="color" disabled={mixedBorder||!edge||edge.style==='none'} value={edge?.color??'#000000'} onChange={event=>{if(edge) setEdge({...edge,color:event.target.value});}}/></label>
+                  <label><span>{copy.cellPadding} ({edgeUnit})</span><input type="number" min={0} max={144/edgeFactor} step="any" placeholder={mixedPadding?copy.mixedCellFormat:copy.cellAppearanceDefault} value={mixedPadding||padding===undefined?'':Number((padding/edgeFactor).toFixed(3))} onChange={event=>{
                     const value=event.target.value,number=event.target.valueAsNumber;
                     updateSelectedFormat(format=>{
                       const paddingPt={...format.paddingPt};
