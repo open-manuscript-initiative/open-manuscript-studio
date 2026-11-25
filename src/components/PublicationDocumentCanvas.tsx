@@ -1,3 +1,4 @@
+import { HeaderNoteInsertButton } from './HeaderNoteInsertButton';
 import { PublicationPageNavigator } from './PublicationPageNavigator';
 import { createPortal } from 'react-dom';
 import { placePublicationEmptyPage, type PublicationBodyPageThumbnail } from '../model/publicationPageNavigation';
@@ -1056,6 +1057,7 @@ export function PublicationDocumentCanvas({
           {!previewOnly ? <span>{viewMode === 'print' ? copy.printDescription : copy.htmlDescription}</span> : null}
         </div>
         <div className="publication-document-canvas-status">
+          {!previewOnly && !presentation ? <HeaderNoteInsertButton publication /> : null}
           <div className="publication-document-view-switch" role="group" aria-label={copy.view}>
             <button
               type="button"
