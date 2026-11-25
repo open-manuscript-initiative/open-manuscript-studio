@@ -1,4 +1,4 @@
-import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat, TABLE_CELL_SIDES, tableRowHeight } from '../model/tableLayout';
+import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat, TABLE_CELL_SIDES, tableRowHeight, tableCellDocument } from '../model/tableLayout';
 import { paragraphTabs } from '../model/directParagraphFormatting';
 import { odtCharacterProperties, odtParagraphProperties, odtRunHasDirectFormatting } from './odtFormatting';
 import { directFormattingFromMarks } from '../model/directFormatting';
@@ -96,7 +96,8 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
       const format=tableCellFormat(table.cellFormats,r,c);
       const cellStyle=stylesRegistry.tableCell(format);
       const paraStyle=stylesRegistry.cellParagraph(format.horizontalAlign);
-      return '<table:table-cell office:value-type="string"'+(cellStyle?' table:style-name="'+cellStyle+'"':'')+(m&&m.rowSpan>1?' table:number-rows-spanned="'+m.rowSpan+'"':'')+(m&&m.colSpan>1?' table:number-columns-spanned="'+m.colSpan+'"':'')+'>'+cell.split(/\r\n?|\n/).map(line=>'<text:p'+(paraStyle?' text:style-name="'+paraStyle+'"':'')+'>'+escape(line)+'</text:p>').join('')+'</table:table-cell>';
+      const rich=tableCellDocument(table,r,c)?.content?.map(p=>'<text:p'+(paraStyle?' text:style-name="'+paraStyle+'"':'')+'>'+(p.content??[]).map(n=>renderOdtNode(n,notes,usedNotes,stylesRegistry)).join('')+'</text:p>').join('');
+      return '<table:table-cell office:value-type="string"'+(cellStyle?' table:style-name="'+cellStyle+'"':'')+(m&&m.rowSpan>1?' table:number-rows-spanned="'+m.rowSpan+'"':'')+(m&&m.colSpan>1?' table:number-columns-spanned="'+m.colSpan+'"':'')+'>'+(rich??cell.split(/\r\n?|\n/).map(line=>'<text:p'+(paraStyle?' text:style-name="'+paraStyle+'"':'')+'>'+escape(line)+'</text:p>').join(''))+'</table:table-cell>';
     }).join('')+'</table:table-row>');
     const head=headerRows?'<table:table-header-rows>'+rows.slice(0,headerRows).join('')+'</table:table-header-rows>':'';
     return `<table:table table:name="OMITable${safeId(block.id)}">${head}${rows.slice(headerRows).join('')}</table:table>`;
