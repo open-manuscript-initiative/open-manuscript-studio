@@ -403,11 +403,17 @@ export interface OmiTableCellMerge {
   colSpan: number;
 }
 
+export type OmiTableRowSplitPolicy = 'keep' | 'allow';
+
 export interface OmiTableBlockData {
   kind: 'table';
   /** Rectangular cell matrix. Cell text is scholarly data, not presentation HTML. */
   cells: string[][];
   headerRows?: number;
+  /** Legacy OMI tables default to keeping rows together. */
+  rowSplitDefault?: OmiTableRowSplitPolicy;
+  /** Explicit overrides keyed by zero-based row index. */
+  rowSplitOverrides?: Record<string, OmiTableRowSplitPolicy>;
   /** Relative column widths; normalized to percentages at rendering time. */
   columnWidths?: number[];
   /** Point reduction from body text. Defaults to one point. */
