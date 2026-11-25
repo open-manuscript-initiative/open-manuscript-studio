@@ -243,7 +243,7 @@ export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
   try {
     const root=JSON.parse(value) as NoteJsonNode;
     if(root?.type!=='doc'||!Array.isArray(root.content)||!root.content.length) return undefined;
-    if(!root.content.every(p=>p?.type==='paragraph'&&(p.content===undefined||Array.isArray(p.content)&&p.content.every(n=>n?.type==='text'&&typeof n.text==='string'||n?.type==='hardBreak'||n?.type==='omiTab')))) return undefined;
+    if(!root.content.every(p=>p?.type==='paragraph'&&(p.content===undefined||Array.isArray(p.content)&&p.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab')))) return undefined;
     return root;
   } catch {return undefined;}
 }
