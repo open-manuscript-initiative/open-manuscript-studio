@@ -35,7 +35,8 @@ export function stageContinuousDocumentChange(
       resolveCurrentActorAgentId(state.manuscript),
       timestamp,
     );
-    const proofingChanged = JSON.stringify(proofing) !== JSON.stringify(state.manuscript.proofing);
+    const proofingChanged = proofing !== state.manuscript.proofing
+      && JSON.stringify(proofing) !== JSON.stringify(state.manuscript.proofing);
     const pendingChangeSet = stagePendingChanges(
       state.pendingChangeSet,
       {

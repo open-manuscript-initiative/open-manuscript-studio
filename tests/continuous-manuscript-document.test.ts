@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { Schema, Fragment } from '@tiptap/pm/model';
+import { DerivedMemoryPool, cacheBudgetMiB, createDerivedCache, MIB } from '../src/model/derivedMemoryCache.ts';
+import { ContinuousSnapshotCache } from '../src/editor/continuousSnapshotCache.ts';
+import type { JSONContent } from '@tiptap/core';
 
 import {
   buildContinuousManuscriptDocument,
@@ -263,4 +267,72 @@ test('deleting the first heading does not recreate it when the document reopens'
   assert.equal(reopened.content?.length, 1);
   assert.equal(reopened.content?.[0]?.type, 'paragraph');
   assert.equal(reopened.content?.[0]?.content?.[0]?.text, 'Keep this body');
+});
+
+test('large continuous snapshots serialize exactly and only replace edited top-level projections', () => {
+  const schema = new Schema({ nodes: {
+    doc: { content: 'block+' },
+    paragraph: { group: 'block', content: 'text*', attrs: {
+      omiBlockId: { default: null }, omiSectionId: { default: null },
+      omiBlockType: { default: 'paragraph' },
+    } },
+    text: {},
+  } });
+  const paragraphs = Array.from({ length: 2000 }, (_, index) => schema.node('paragraph', {
+    omiBlockId: 'p-' + index, omiSectionId: 'large', omiBlockType: 'paragraph',
+  }, schema.text('Long manuscript paragraph ' + index + ' — ' + 'text '.repeat(100))));
+  const doc = schema.node('doc', null, paragraphs);
+  const cache = new ContinuousSnapshotCache();
+  const projectionCache = new WeakMap<JSONContent, string>();
+  const first = cache.snapshot(doc);
+  assert.equal(first.serialized, JSON.stringify(doc.toJSON()));
+  const initial = projectContinuousManuscriptDocument(first.document, [], { textContentCache: projectionCache });
+  const index = 1234;
+  const changed = paragraphs[index]!.copy(Fragment.from(schema.text('Edited paragraph')));
+  const nextDoc = doc.copy(Fragment.fromArray(paragraphs.map((node, i) => i === index ? changed : node)));
+  const second = cache.snapshot(nextDoc);
+  assert.equal(second.serialized, JSON.stringify(nextDoc.toJSON()));
+  assert.equal(second.document.content!.filter((node, i) => node === first.document.content![i]).length, 1999);
+  const optimized = projectContinuousManuscriptDocument(second.document, initial, { textContentCache: projectionCache });
+  const full = projectContinuousManuscriptDocument(JSON.parse(second.serialized), initial);
+  assert.deepEqual(optimized, full);
+  assert.equal(optimized[0]!.blocks.filter((block, i) => block === initial[0]!.blocks[i]).length, 1999);
+  assert.equal(optimized[0]!.blocks[index]!.id, 'p-1234');
+  const undo = cache.snapshot(doc);
+  assert.equal(undo.serialized, first.serialized);
+  assert.deepEqual(projectContinuousManuscriptDocument(undo.document, optimized, { textContentCache: projectionCache }), initial);
+  // Moving nodes changes order, not their serialization or their semantic IDs.
+  const reordered = cache.snapshot(doc.copy(Fragment.fromArray([paragraphs[1]!, paragraphs[0]!, ...paragraphs.slice(2)])));
+  const moved = projectContinuousManuscriptDocument(reordered.document, initial, { textContentCache: projectionCache });
+  assert.deepEqual(moved[0]!.blocks.slice(0, 2).map(block => block.id), ['p-1', 'p-0']);
+});
+
+test('shared derived cache obeys budget, LRU, oversize and pressure without altering source', () => {
+  const pool = new DerivedMemoryPool();
+  pool.setBudget(512);
+  const a = createDerivedCache<object, string>(() => 256, pool);
+  const b = createDerivedCache<object, string>(() => 256, pool);
+  const first = {}, second = {}, third = {};
+  a.set(first, 'one'); b.set(second, 'two');
+  assert.equal(a.get(first), 'one');
+  a.set(third, 'three');
+  assert.equal(b.get(second), undefined);
+  assert.equal(a.get(first), 'one');
+  assert.equal(pool.estimatedBytes, 512);
+  pool.setBudget(0);
+  assert.equal(a.get(first), undefined);
+  assert.equal(pool.estimatedBytes, 0);
+  a.set(first, 'one');
+  assert.equal(a.get(first), undefined);
+  pool.setBudget(MIB);
+  a.set(first, 'one');
+  pool.clear();
+  assert.equal(a.get(first), undefined);
+  assert.equal(cacheBudgetMiB(2, true, 'performance'), 16);
+  assert.equal(cacheBudgetMiB(6, true, 'balanced'), 64);
+  assert.equal(cacheBudgetMiB(8, true, 'performance'), 256);
+  assert.equal(cacheBudgetMiB(12, false, 'economy'), 128);
+  assert.equal(cacheBudgetMiB(undefined, true, 'balanced'), 16);
+  assert.equal(cacheBudgetMiB(8, true, 'performance', 240), 0);
+  assert.equal(cacheBudgetMiB(8, true, 'performance', 512), 32);
 });

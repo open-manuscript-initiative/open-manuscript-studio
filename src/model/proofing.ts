@@ -57,8 +57,8 @@ export function recordSectionTextChanges(
   actorAgentId?: string,
   timestamp = new Date().toISOString(),
 ): OmiProofingState | undefined {
+  if (!proofing?.trackChanges) return proofing;
   const current = normalizeProofingState(proofing);
-  if (!current.trackChanges) return proofing;
 
   const previousBlocks = new Map(
     flattenBlocks(previousSections).map((block) => [block.id, block]),
@@ -78,7 +78,8 @@ export function recordSectionTextChanges(
     );
   }
 
-  return { ...current, changes };
+  // A transaction with no text changes must not invalidate proofing decorations.
+  return changes === current.changes && proofing ? proofing : { ...current, changes };
 }
 
 export function recordBlockTextChange(

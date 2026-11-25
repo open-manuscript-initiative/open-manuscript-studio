@@ -1,5 +1,6 @@
 import type {
   OmiAnnotation,
+  OmiBlock,
   OmiManuscriptState,
   OmiTableBlockData,
   OmiVisualBlockData,
@@ -10,6 +11,8 @@ import type { NoteJsonNode } from './noteRichText';
 import { getDocumentStructureProfile } from './documentProfile';
 import { getStudyRootSectionId } from './sectionStructure';
 import { findManuscriptBlock, mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
+
+import { createDerivedCache } from './derivedMemoryCache';
 
 export type OmiNoteKind =
   | 'footnote'
@@ -98,6 +101,12 @@ export function getNoteKind(
   return 'footnote';
 }
 
+// Weak keys avoid retaining closed documents or replaced blocks. Cache only
+// plain structured-text blocks; table visuals keep their full traversal.
+const textNoteAnchorCache = createDerivedCache<OmiBlock, { sectionId: string; blockId: string; content: string; anchors: NoteAnchorOccurrence[] }>(
+  (value) => 256 + value.content.length * 2 + value.anchors.reduce((sum, anchor) => sum + 256 + 2 * (anchor.noteId.length + anchor.anchorId.length + anchor.blockId.length + anchor.sectionId.length), 0),
+);
+
 export function collectNoteAnchors(
   state: Pick<OmiManuscriptState, 'sections'>,
 ): NoteAnchorOccurrence[] {
@@ -105,12 +114,19 @@ export function collectNoteAnchors(
 
   for (const occurrence of walkManuscriptStructure(state.sections)) {
     if (occurrence.kind === 'block') {
-      result.push(...collectNoteAnchorsInBlock(
-        occurrence.block.content,
-        occurrence.section.id,
-        occurrence.block.id,
-        occurrence.block.visual,
-      ));
+      const { block, section } = occurrence;
+      if (block.visual) {
+        result.push(...collectNoteAnchorsInBlock(block.content, section.id, block.id, block.visual));
+        continue;
+      }
+      let cached = textNoteAnchorCache.get(block);
+      if (!cached || cached.sectionId !== section.id || cached.blockId !== block.id || cached.content !== block.content) {
+        cached = { sectionId: section.id, blockId: block.id, content: block.content,
+          anchors: collectNoteAnchorsInBlock(block.content, section.id, block.id) };
+        textNoteAnchorCache.set(block, cached);
+      }
+      // The caller owns its returned occurrences, not the internal cache.
+      for (const anchor of cached.anchors) result.push({ ...anchor });
     }
   }
 

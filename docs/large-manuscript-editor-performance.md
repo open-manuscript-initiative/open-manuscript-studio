@@ -160,3 +160,35 @@ Every performance change must keep these gates green:
 For the reference large manuscript, accept an optimization only when it improves
 a measured hotspot without a material regression in memory, correctness or
 interaction behavior elsewhere.
+
+## Phase 3a — memory-backed editor snapshots (2026-11-25)
+
+- Reuse immutable ProseMirror top-level node JSON and serialization through weak-key caches. A text edit does not reserialize every unchanged paragraph; both authoring and publication use the cached structured snapshot directly rather than reparsing the complete JSON string.
+- Reuse projected block and section objects when their semantic content, metadata and ordering remain unchanged; cache structured-text note-anchor lookups without retaining closed documents or returning mutable cached data.
+- Avoid reconstructing proofing decorations on unchanged selection transactions, skip full text scans when no review/correction/flow marks apply, and reuse the last snapshot fingerprint.
+- Keep the synchronous canonical model update, reference reconciliation, and checkpoint semantics. The editor still builds a full ordered snapshot and scans structural boundaries; this is not full pagination virtualization.
+- Regression coverage: 2,000 top-level paragraphs, exact native serialization, 1,999 unchanged cached nodes after a one-paragraph edit, equivalent full projection, undo, reorder and note anchor invalidation. This deterministic count is not a browser latency measurement. Measure key-to-paint, p95 and heap in the reference environment before claiming a speedup.
+
+## Phase 3b — adaptive derived-cache budget (2026-11-25)
+
+The node JSON, serialized text projections and note-anchor caches share one estimated
+LRU budget per WebView. Weak keys prevent retention of closed documents; LRU accounting
+is conservative (uncollected tickets can overstate live data). The budget is a
+heuristic, not a measured JS heap or OS allocation. Full-document serialization,
+canonical state, undo, DOM, images and renderer processes are outside this budget.
+
+Maximum budgets by RAM tier (performance mode): 16, 32, 64, 128, 256, 512 MiB at
+approximately 2, 3, 4, 6, 8, 12+ GiB. Balanced uses half; economy uses a quarter.
+Unknown device capacity: max 32 MiB mobile / 64 MiB desktop. Background visibility
+clears the derived cache and disables admission until foreground. Android polls
+system MemAvailable in foreground every 30 seconds, limiting the budget to 1/16 of
+available RAM and disabling it below 256 MiB. If native access is unavailable, the
+browser hint or conservative fallback is used. No largeHeap permission is requested.
+
+Before declaring Android minimum/ recommended RAM (provisional 3/6 GiB), measure
+50, 100, 250, 500 and 1000-page reference documents in release builds, on devices
+of multiple RAM tiers. Record adb dumpsys meminfo and Perfetto memory traces for
+the app and associated WebView renderer processes, foreground/background/return,
+p95 key-to-paint, peak PSS and OOM/renderer restarts, and compare cached/uncached
+editing fidelity. The JS accounting is not PSS, and these measurements are not
+yet available. No final store memory requirement is claimed.

@@ -12,6 +12,7 @@ import {
   resolveInitialUiLocale,
 } from './i18n';
 import { restorePendingExternalLaunchToLocation } from './services/pendingExternalLaunch';
+import { initializeEditorMemoryPreferences } from './services/editorMemoryPreferences';
 import { initializeMenuAppearancePreferences } from './services/menuAppearancePreferences';
 
 import './styles/global.css';
@@ -58,6 +59,7 @@ import './styles/menu-appearance.css';
 
 restorePendingExternalLaunchToLocation();
 initializeMenuAppearancePreferences();
+initializeEditorMemoryPreferences();
 initializeRevisionIntegrity();
 
 const SESSION_RESTORE_BOOT_BUDGET_MS = 1200;

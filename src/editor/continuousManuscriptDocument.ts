@@ -2,9 +2,11 @@ import { LIST_ATTRIBUTE_NAMES } from '../model/directListFormatting';
 import { PARAGRAPH_FORMAT_NAMES } from '../model/directParagraphFormatting';
 import type { JSONContent } from '@tiptap/core';
 
-import { getSectionDepth, withParentSectionId } from '../model/sectionStructure';
+import { getParentSectionId, getSectionDepth, withParentSectionId } from '../model/sectionStructure';
 import { isVisualBlock } from '../model/visualBlocks';
 import type { OmiBlock, OmiSection, OmiVisualBlockData } from '../types/omi';
+
+import type { DerivedCache } from '../model/derivedMemoryCache';
 
 export const OMI_VISUAL_NODE = 'omiVisualBlock';
 
@@ -22,6 +24,8 @@ export interface ContinuousNodeAttributes {
 
 export interface ProjectContinuousDocumentOptions {
   createId?: () => string;
+  /** Only pass for immutable JSON snapshots from ContinuousSnapshotCache. */
+  textContentCache?: DerivedCache<JSONContent, string>;
 }
 
 interface ResolvedTopLevelPosition {
@@ -200,6 +204,7 @@ export function projectContinuousManuscriptDocument(
         blockId,
         previousBlocks.get(blockId),
         'heading',
+        options.textContentCache,
       );
       currentSection = withParentSectionId(
         {
@@ -240,11 +245,20 @@ export function projectContinuousManuscriptDocument(
           blockId,
           previousBlocks.get(blockId),
           blockTypeForNode(editorNode),
+          options.textContentCache,
         );
     currentSection.blocks.push(block);
   }
 
-  return sections;
+  // Preserve untouched section identities for React, note indexes and other derived caches.
+  return sections.map((section) => {
+    const previous = previousSectionsById.get(section.id);
+    return previous && previous.title === section.title
+      && getParentSectionId(previous) === getParentSectionId(section)
+      && previous.blocks.length === section.blocks.length
+      && previous.blocks.every((block, index) => block === section.blocks[index])
+      ? previous : section;
+  });
 }
 
 /**
@@ -362,22 +376,21 @@ function textBlockFromNode(
   blockId: string,
   previousBlock: OmiBlock | undefined,
   type: string,
+  textContentCache?: DerivedCache<JSONContent, string>,
 ): OmiBlock {
   const attrs = (editorNode.attrs ?? {}) as ContinuousNodeAttributes;
   const paragraphStyleId = type === 'heading'
     ? undefined
     : stringAttribute(attrs.omiParagraphStyleId) || undefined;
-  return {
-    ...(previousBlock ?? {}),
-    id: blockId,
-    type,
-    content: JSON.stringify({
-      type: 'doc',
-      content: [stripContinuousAttributes(editorNode)],
-    }),
-    paragraphStyleId,
-    visual: undefined,
-  };
+  let content = textContentCache?.get(editorNode);
+  if (content === undefined) {
+    content = JSON.stringify({ type: 'doc', content: [stripContinuousAttributes(editorNode)] });
+    textContentCache?.set(editorNode, content);
+  }
+  if (previousBlock?.id === blockId && previousBlock.type === type
+    && previousBlock.content === content && previousBlock.paragraphStyleId === paragraphStyleId
+    && previousBlock.visual === undefined) return previousBlock;
+  return { ...(previousBlock ?? {}), id: blockId, type, content, paragraphStyleId, visual: undefined };
 }
 
 function visualBlockFromNode(
@@ -387,10 +400,13 @@ function visualBlockFromNode(
 ): OmiBlock {
   const attrs = (editorNode.attrs ?? {}) as ContinuousNodeAttributes;
   const visual = attrs.omiVisual ?? previousBlock?.visual;
+  const type = stringAttribute(attrs.omiBlockType) || visual?.kind || previousBlock?.type || 'figure';
+  if (previousBlock?.id === blockId && previousBlock.type === type
+    && previousBlock.content === '' && previousBlock.visual === visual) return previousBlock;
   return {
     ...(previousBlock ?? {}),
     id: blockId,
-    type: stringAttribute(attrs.omiBlockType) || visual?.kind || previousBlock?.type || 'figure',
+    type,
     content: '',
     ...(visual ? { visual } : {}),
   };
