@@ -9,6 +9,7 @@ import type {
   OmiImportProvenance,
   OmiTableCellFormat,
   OmiTableCellMerge,
+  OmiTableRowSplitPolicy,
   OmiVisualBlockData,
 } from '../types/omi';
 
@@ -37,6 +38,8 @@ export function createTableBlock(
     headerRows?: number;
     cellFormats?: Record<string, OmiTableCellFormat>;
     cellMerges?: OmiTableCellMerge[];
+    rowSplitDefault?: OmiTableRowSplitPolicy;
+    rowSplitOverrides?: Record<string,OmiTableRowSplitPolicy>;
     provenance?: OmiImportProvenance;
   } = {},
   id = crypto.randomUUID(),
@@ -51,6 +54,8 @@ export function createTableBlock(
       headerRows: options.headerRows ?? 1,
       ...(options.cellFormats && Object.keys(options.cellFormats).length ? {cellFormats: options.cellFormats} : {}),
       ...(options.cellMerges?.length ? {cellMerges: options.cellMerges} : {}),
+      ...(options.rowSplitDefault ? {rowSplitDefault: options.rowSplitDefault} : {}),
+      ...(options.rowSplitOverrides && Object.keys(options.rowSplitOverrides).length ? {rowSplitOverrides: options.rowSplitOverrides} : {}),
       caption: options.caption,
       provenance: options.provenance,
     },
