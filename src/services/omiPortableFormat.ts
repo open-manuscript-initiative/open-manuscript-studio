@@ -1,3 +1,4 @@
+import { normalizeWordCrossReferenceField } from '../model/wordCrossReference';
 import { normalizeWordSectionLayout } from '../model/wordSectionLayout';
 import { WORD_HYPHENATION_EXTENSION, validateWordHyphenation } from '../model/wordHyphenation';
 import { TEXT_BOX_CONTENT_PROFILE, decodeTextBoxContent } from '../model/textBoxContent';
@@ -305,6 +306,7 @@ export function assertPortableOmiManuscript(
     ['citations', indexes.citations],
     ['citationClusters', null],
     ['crossReferences', null],
+    ['namedAnchors', null],
     ['assets', null],
     ['publicationCorrections', null],
   ] as const) {
@@ -518,8 +520,16 @@ function validateReferences(
     );
   });
 
+  optionalArray(document.namedAnchors,'namedAnchors').forEach((item,index)=>{
+    if(!isRecord(item))invalid(`/namedAnchors/${index} must be an object.`);
+    requireNonEmptyString(item.name,`/namedAnchors/${index}/name`);
+    requireNonEmptyString(item.exportName,`/namedAnchors/${index}/exportName`);
+    if(item.targetKind!=='section'&&item.targetKind!=='block')invalid(`/namedAnchors/${index}/targetKind is invalid.`);
+    requireReference(item.targetId,item.targetKind==='block'?indexes.blocks:indexes.all,`/namedAnchors/${index}/targetId`);
+  });
   optionalArray(document.crossReferences, 'crossReferences').forEach((item, index) => {
     if (!isRecord(item)) invalid(`/crossReferences/${index} must be an object.`);
+    if(item.wordField!==undefined&&!normalizeWordCrossReferenceField(item.wordField))invalid(`/crossReferences/${index}/wordField is invalid.`);
     requireReference(item.sourceBlockId, indexes.blocks, `/crossReferences/${index}/sourceBlockId`);
     requireReference(item.targetId, indexes.all, `/crossReferences/${index}/targetId`);
   });
