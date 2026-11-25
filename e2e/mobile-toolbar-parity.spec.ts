@@ -67,3 +67,28 @@ test('Android mobile exposes the same outline, proofing, notes, search and save 
   await expect(page.locator('.mobile-editor-tools .focus-header-formatting')).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+
+for (const runtime of ['desktop', 'mobile-web', 'android'] as const) {
+  test(runtime + ' permanent note icon inserts without a selection', async ({ page }) => {
+    if (runtime === 'android') await installMockAndroidRuntime(page);
+    if (runtime === 'desktop') {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await installMockStudioApi(page);
+      await signInToStudio(page);
+      await page.getByRole('button', { name: /^New OMI study/ }).click();
+    } else await openMobileManuscript(page);
+    const toolbar = page.locator(runtime === 'android' ? '.mobile-action-bar' : '.focus-header-secondary-row');
+    const insert = toolbar.locator('.focus-insert-note-button');
+    await expect(insert).toBeVisible();
+    const editor = page.locator('.omi-continuous-tiptap-editor[contenteditable="true"]').first();
+    await editor.fill('A note here.');
+    await editor.press('End');
+    await expect(page.locator('.omi-selection-action-toolbar')).toHaveCount(0);
+    await expect(insert).toBeEnabled();
+    await insert.click();
+    await expect(editor.locator('[data-omi-note]')).toHaveCount(1);
+    await expect(editor).toContainText('A note here.');
+    await expect(page.locator('.omi-note-editor-card')).toBeVisible();
+  });
+}
