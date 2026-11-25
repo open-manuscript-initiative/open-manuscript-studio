@@ -302,3 +302,28 @@ test('cell note toolbar creates a shared note annotation and note card deletes i
   await expect.poll(async()=>(await snapshot()).annotations.filter(n=>n.targetBlockId==='layout-table').length).toBe(0);
   await expect(canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true})).toHaveValue('Row 0');
 });
+
+test('apply character and paragraph formatting to selected cells only',async({page})=>{
+  const canvas=await openTables(page,2);
+  await canvas.getByRole('textbox',{name:'Cell 1, 1',exact:true}).click();
+  await canvas.getByText('Cell formatting',{exact:true}).click();
+  await canvas.getByRole('button',{name:'Select row',exact:true}).click();
+  await canvas.getByText('Selected cell text formatting',{exact:true}).click();
+  const panel=canvas.locator('details').filter({has:canvas.getByText('Selected cell text formatting',{exact:true})}).filter({has:canvas.getByRole('group',{name:'Character formatting',exact:true})});
+  const bold=canvas.getByRole('button',{name:'Bold / strong',exact:true});
+  await expect(bold).toHaveAttribute('aria-pressed','false');
+  await bold.click();
+  await expect(bold).toHaveAttribute('aria-pressed','true');
+  const table=canvas.locator('.omi-table-editor').first();
+  await expect(table.locator('tr').first().locator('strong')).toHaveCount(2);
+  await expect(table.locator('tr').nth(1).locator('strong')).toHaveCount(0);
+  await canvas.getByRole('spinbutton',{name:'Font size (pt)',exact:true}).fill('13');
+  await canvas.getByRole('button',{name:'Apply: Font size (pt)',exact:true}).click();
+  await expect(table.locator('tr').first().locator('[style*="font-size: 13pt"]')).toHaveCount(2);
+  await panel.getByText('Paragraph formatting',{exact:true}).last().click();
+  await canvas.getByRole('button',{name:'Reset: Font size (pt)',exact:true}).click();
+  await expect(table.locator('tr').first().locator('[style*="font-size: 13pt"]')).toHaveCount(0);
+  await expect(table.locator('tr').first().locator('strong')).toHaveCount(2);
+  await bold.click();
+  await expect(table.locator('tr').first().locator('strong')).toHaveCount(0);
+});
