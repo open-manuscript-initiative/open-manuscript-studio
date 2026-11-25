@@ -362,6 +362,13 @@ export async function parseDocxManuscript(
       continue;
     }
 
+    // A standalone simple TOC field contains only a generated display cache.
+    // Never remove an unrelated paragraph just because its text equals a TOC row.
+    const directContent=Array.from(child.children).filter(el=>!['pPr','bookmarkStart','bookmarkEnd','proofErr'].includes(el.localName));
+    if(directContent.length===1&&directContent[0]?.localName==='fldSimple'){
+      const instruction=attributeByLocalName(directContent[0],'instr')?.trim()??'';
+      if(/^TOC\b/i.test(instruction)&&!/(?:^|\s)\\(?:a|c)(?:\s|$)/i.test(instruction)){index+=1;continue;}
+    }
     const style = resolveParagraphStyle(child, styles);
     const plainText = paragraphPlainText(child).trim();
     const headingLevel = resolveParagraphHeadingLevel(child, style);
