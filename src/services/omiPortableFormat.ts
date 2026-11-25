@@ -1,3 +1,4 @@
+import { WORD_HYPHENATION_EXTENSION, validateWordHyphenation } from '../model/wordHyphenation';
 import { TEXT_BOX_CONTENT_PROFILE, decodeTextBoxContent } from '../model/textBoxContent';
 import { FRAME_LAYOUT_EXTENSION, validateFrameLayout } from '../model/publicationFrames';
 import { PUBLICATION_MATTER_EXTENSION, validatePublicationMatter } from '../model/publicationMatter';
@@ -357,6 +358,8 @@ function validateSection(
 }
 
 function validateStudioExtensions(value: Record<string, unknown>): void {
+  const wordHyphenation=isRecord(value.extensions)?value.extensions[WORD_HYPHENATION_EXTENSION]:undefined;
+  if(wordHyphenation!==undefined){try{validateWordHyphenation(wordHyphenation);}catch(error){invalid(error instanceof Error?error.message:'Invalid Word hyphenation settings.');}}
   const template = isRecord(value.extensions) ? value.extensions[PUBLICATION_TEMPLATE_EXTENSION] : undefined;
   if (template !== undefined) {
     try { validateAppliedPublicationTemplate(template); }
