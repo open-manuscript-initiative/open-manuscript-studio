@@ -417,3 +417,48 @@ test('column reorder preserves horizontal merge blocks, dimensions and nested do
   assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,JSON.parse(JSON.stringify(moved.table)));
   assert.equal(reorderTableAxis({...table,cellMerges:[{row:0,column:0,rowSpan:2,colSpan:1}]},'column',0,1),undefined);
 });
+
+test('table appearance presets materialize header and banding while retaining geometry and rich content',async()=>{
+  const {BUILTIN_TABLE_STYLES,applyAppearancePreset,captureTablePreset,captureCellPreset,readAppearancePresets}=await import('../src/model/tableAppearancePresets.ts');
+  const rich=JSON.stringify({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'A',marks:[{type:'bold'}]}]}]});
+  const block=createTableBlock([['H',''],['A','B'],['C','D']],{
+    headerRows:1,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],
+    cellContent:{'1:0':rich},cellFormats:{'1:0':{textRotation:90,textDirection:'rtl'}},
+    rowHeights:{'2':{mode:'minimum',heightPt:24}},rowSplitOverrides:{'1':'keep'}
+  },'style-table');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  table.columnWidths=[30,70];
+  const applied=applyAppearancePreset(table,BUILTIN_TABLE_STYLES.banded,{row:1,column:0},{row:1,column:0});
+  assert.equal(applied.cellFormats?.['0:0']?.backgroundColor,'#DCE6F1');
+  assert.equal(applied.cellFormats?.['0:1'],undefined);
+  assert.equal(applied.cellFormats?.['1:0']?.textRotation,90);
+  assert.equal(applied.cellFormats?.['1:0']?.textDirection,'rtl');
+  assert.equal(applied.cellFormats?.['2:1']?.backgroundColor,'#F1F4F7');
+  assert.deepEqual({...applied,cellFormats:table.cellFormats},table);
+  const captured=captureTablePreset(applied,'Journal',true);
+  assert.equal(captured.alternate?.backgroundColor,'#F1F4F7');
+  assert.equal(captured.body.textRotation,undefined);
+  const cell=captureCellPreset(applied,{row:1,column:0},'Rotated');
+  const restored=readAppearancePresets(JSON.stringify([captured,cell,captured]));
+  assert.deepEqual(restored,[captured,cell]);
+  const after=applyAppearancePreset(applied,cell,{row:2,column:0},{row:2,column:1});
+  assert.equal(after.cellFormats?.['2:0']?.textRotation,90);
+  assert.equal(after.cellFormats?.['2:1']?.textDirection,'rtl');
+  assert.equal(after.cellFormats?.['2:0']?.backgroundColor,undefined);
+  assert.deepEqual(after.cellFormats?.['0:0'],applied.cellFormats?.['0:0']);
+  assert.equal(after.cellContent?.['1:0'],rich);
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push({...block,visual:after});
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,JSON.parse(JSON.stringify(after)));
+});
+test('preset library rejects malformed entries and stores only whitelisted appearance fields',async()=>{
+  const {readAppearancePresets,normalizeAppearancePreset}=await import('../src/model/tableAppearancePresets.ts');
+  assert.deepEqual(readAppearancePresets('{broken'),[]);
+  assert.equal(normalizeAppearancePreset({kind:'table',name:'x'}),undefined);
+  assert.equal(normalizeAppearancePreset({kind:'cell',name:' ',format:{}}),undefined);
+  const preset=normalizeAppearancePreset({kind:'cell',name:'  Sample  ',format:{backgroundColor:'bad;display:none',paddingPt:{top:-1,bottom:3},textRotation:999,cellContent:'secret',textDirection:'rtl'},cells:[['secret']]});
+  assert.deepEqual(preset,{kind:'cell',name:'Sample',format:{textRotation:0,textDirection:'rtl',paddingPt:{bottom:3}}});
+  assert.equal(readAppearancePresets(JSON.stringify(Array.from({length:60},(_,i)=>({kind:'cell',name:String(i),format:{}})))).length,50);
+});
