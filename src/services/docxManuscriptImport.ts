@@ -1,3 +1,7 @@
+import { createNamedAnchor, type OmiNamedAnchor } from '../model/namedAnchors';
+import { createCrossReference } from '../model/crossReferences';
+import { parseWordCrossReference, type WordCrossReferenceField } from '../model/wordCrossReference';
+import type { OmiCrossReference } from '../types/omi';
 import { readWordRunningPart } from './docxRunningMatterImport';
 import { RUNNING_VARIANTS, type RunningVariants } from '../model/wordRunningMatter';
 import { readWordSectionLayout } from '../model/wordSectionLayout';
@@ -105,7 +109,10 @@ interface TiptapNode {
   content?: TiptapNode[];
 }
 
+interface PendingWordReference {id:string;anchorId:string;blockId:string;name:string;field:WordCrossReferenceField;}
+
 interface InlineContext {
+  wordReferences?:PendingWordReference[];
   blockId: string;
   footnotes: Map<string, ImportedNoteBody>;
   endnotes: Map<string, ImportedNoteBody>;
@@ -124,6 +131,8 @@ interface FieldState {
 }
 
 export interface DocxManuscriptImportPlan {
+  namedAnchors?:OmiNamedAnchor[];
+  crossReferences?:OmiCrossReference[];
   wordHyphenation?:WordHyphenationSettings;
   noteNumberingScope?:'section';
   fileName: string;
@@ -207,6 +216,24 @@ export async function parseDocxManuscript(
   }
 
   const sections: OmiSection[] = [];
+  const namedAnchors:OmiNamedAnchor[]=[];
+  const bookmarkNames=new Map<string,{anchor:OmiNamedAnchor;whole:boolean}>();
+  const wordReferences:PendingWordReference[]=[];
+  const captureBookmarks=(p:Element,targetId:string,targetKind:'section'|'block')=>{
+    const children=Array.from(p.children);
+    for(const start of children.filter(el=>el.localName==='bookmarkStart')){
+      const name=attributeByLocalName(start,'name'),id=attributeByLocalName(start,'id');
+      if(!name||!id||!/^[_A-Za-z][_A-Za-z0-9]{0,39}$/.test(name)||name==='_GoBack')continue;
+      const key=name.toLowerCase();
+      if(bookmarkNames.has(key)){warnings.push(warning('duplicate-word-bookmark'));continue;}
+      const end=children.findIndex(el=>el.localName==='bookmarkEnd'&&attributeByLocalName(el,'id')===id),begin=children.indexOf(start);
+      const meaningful=(el:Element)=>!['pPr','bookmarkStart','bookmarkEnd','proofErr'].includes(el.localName);
+      const whole=end>begin&&!children.slice(0,begin).some(meaningful)&&!children.slice(end+1).some(meaningful);
+      if(!whole)warnings.push(warning('word-bookmark-range-approximated'));
+      const anchor=createNamedAnchor({name,targetId,targetKind,source:{format:'docx',originalName:name}});
+      namedAnchors.push(anchor);bookmarkNames.set(key,{anchor,whole});
+    }
+  };
   const annotations: OmiAnnotation[] = [];
   const citations: OmiCitation[] = [];
   const citationClusters: OmiCitationCluster[] = [];
@@ -370,6 +397,7 @@ export async function parseDocxManuscript(
         parentId,
       );
       sections.push(section);
+      captureBookmarks(child,id,'section');
       headingStack.push({ id, level: headingLevel });
       stats.sections += 1;
       index += 1;
@@ -489,6 +517,7 @@ export async function parseDocxManuscript(
     const blockId = crypto.randomUUID();
     const context: InlineContext = {
       blockId,
+      wordReferences,
       footnotes,
       endnotes,
       bibliographyByTag,
@@ -547,6 +576,7 @@ export async function parseDocxManuscript(
         type,
         content: JSON.stringify(tiptapContent),
       });
+      captureBookmarks(child,blockId,'block');
       stats.paragraphs += 1;
     }
     section.blocks.push(...visuals);
@@ -575,6 +605,27 @@ export async function parseDocxManuscript(
     warnings.push(warning('title-from-filename'));
   }
 
+  // Forward references resolve only after every physical paragraph has been read.
+  const crossReferences:OmiCrossReference[]=[];
+  const pending=new Map(wordReferences.map(item=>[item.id,item]));
+  for(const section of sections)for(const block of section.blocks){
+    if(block.visual||!block.content.includes('omiCrossReference'))continue;
+    const visit=(node:TiptapNode):TiptapNode=>{
+      const id=node.type==='omiCrossReference'&&typeof node.attrs?.crossReferenceId==='string'?node.attrs.crossReferenceId:undefined;
+      const ref=id?pending.get(id):undefined;
+      if(ref){
+        const target=bookmarkNames.get(ref.name.toLowerCase());
+        if(!target||(ref.field.kind==='REF'&&!target.whole)){
+          warnings.push(warning('word-cross-reference-flattened'));
+          return {type:'text',text:ref.field.cachedLabel||ref.name};
+        }
+        crossReferences.push({...createCrossReference({id:ref.id,anchorId:ref.anchorId,sourceBlockId:block.id,targetId:target.anchor.id,targetKind:'bookmark',displayStyle:'title'}),wordField:ref.field});
+        return node;
+      }
+      return node.content?{...node,content:node.content.map(visit)}:node;
+    };
+    block.content=JSON.stringify(visit(JSON.parse(block.content) as TiptapNode));
+  }
   const authors = mergeDetectedAuthors(...authorGroups);
   if (authors.length > 0) warnings.push(warning('authors-from-docx-metadata'));
   if (archive.names().some((name) => /^word\/(header|footer)\d+\.xml$/i.test(name))) {
@@ -603,6 +654,8 @@ export async function parseDocxManuscript(
     bibliographicRecords,
     citations,
     citationClusters,
+    ...(namedAnchors.length?{namedAnchors}:{}),
+    ...(crossReferences.length?{crossReferences}:{}),
     stats,
     warnings: deduplicateWarnings(warnings),
   };
@@ -968,6 +1021,12 @@ function renderField(field: FieldState, context: InlineContext): TiptapNode[] {
     }
   }
 
+  const reference=parseWordCrossReference(field.instruction,inlinePlainText(field.result));
+  if(reference&&context.wordReferences){
+    const id='xref-'+crypto.randomUUID(),anchorId='anchor-'+crypto.randomUUID();
+    context.wordReferences.push({id,anchorId,blockId:context.blockId,...reference});
+    return [{type:'omiCrossReference',attrs:{crossReferenceId:id,anchorId,label:reference.field.cachedLabel||reference.name,unresolved:false}}];
+  }
   if (/\b(?:REF|PAGEREF|NOTEREF)\b/i.test(field.instruction)) {
     context.warnings.push(warning('word-cross-reference-flattened'));
   }
