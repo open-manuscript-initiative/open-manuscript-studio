@@ -901,7 +901,7 @@ test('live facing-page pagination retains stable block projections and coalesces
   assert.ok(documentCanvas.includes('element.dataset.blockId'));
   assert.ok(documentCanvas.includes('if (measuring) { pending = true; return; }'));
   assert.ok(documentCanvas.includes('if (queued) return;'));
-  assert.ok(documentCanvas.includes('if (structureChanged) updateProvisionalProjection();'));
+  assert.ok(documentCanvas.includes('if (structureChanged) { structureVersion += 1; updateProvisionalProjection(); }'));
   assert.ok(documentCanvas.includes('!facingPages && (document.content?.length ?? 0)'));
   assert.ok(documentCanvas.includes('measuredNotes.delete(measuredNote)'));
 });
