@@ -8,7 +8,7 @@ import { publicationSpineWidth } from '../model/publicationSpine';
 import { matterFrameBoxStyle, matterImageStyle, type PublicationMatterFrame } from '../model/publicationMatterFrames';
 import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 import { renderTextBoxGraphic, visualTextBoxDiagnostics } from '../model/textBoxes';
-import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout, tableRowSplitPolicy, tableCellAppearanceStyle } from '../model/tableLayout';
+import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout, tableRowSplitPolicy, tableCellAppearanceStyle, tableRowHeight } from '../model/tableLayout';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -602,7 +602,11 @@ function renderTable(block: OmiBlock, state: RenderState): string {
     const css=Object.entries(tableCellAppearanceStyle(tableCellFormat(visual.cellFormats,r,c))).map(([key,value])=>key.replace(/[A-Z]/g,l=>'-'+l.toLowerCase())+':'+value).join(';');
     return '<'+tag+(tag==='th'?' scope="'+(m && m.colSpan>1?'colgroup':'col')+'"':'')+(m && m.rowSpan>1?' rowspan="'+m.rowSpan+'"':'')+(m && m.colSpan>1?' colspan="'+m.colSpan+'"':'')+(css?' style="'+css+'"':'')+'>'+renderCellText(cell,r,c)+'</'+tag+'>';
   };
-  const rowStart=(r:number)=>tableRowSplitPolicy(visual,r)==='allow'?'<tr data-omi-row-split="allow">':'<tr>';
+  const rowStart=(r:number)=>{
+    const height=tableRowHeight(visual,r);
+    return '<tr'+(tableRowSplitPolicy(visual,r)==='allow'?' data-omi-row-split="allow"':'')+
+      (height.mode==='auto'?'':' data-omi-row-height="'+height.mode+'" style="height:'+height.heightPt+'pt"')+'>';
+  };
   const header = headerRows
     ? `<thead>${visual.cells
         .slice(0, headerRows)
