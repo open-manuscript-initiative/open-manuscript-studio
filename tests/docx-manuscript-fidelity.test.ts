@@ -1240,3 +1240,35 @@ test('native nested tables preserve before/after text and nested cells in DOCX a
   assert.equal((readZipParts(odt.bytes).get('content.xml')!.toString('utf8').match(/<table:table table:name=/g)??[]).length,2);
   inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'nested.odt'))).sections);
 });
+
+test('Word cell footnotes and endnotes retain anchors, bodies and native roundtrips',async()=>{
+  const {collectNoteAnchors}=await import('../src/model/notes.ts');
+  const p=(text:string,reference='')=>'<w:p><w:r><w:t>'+text+'</w:t></w:r>'+reference+'</w:p>';
+  const ref=(kind:string,id:number)=>'<w:r><w:'+kind+'Reference w:id="'+id+'"/></w:r>';
+  const ns='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+  const source=makeDocx(p('Before',ref('footnote',1))+'<w:tbl><w:tr><w:tc>'+p('Cell',ref('footnote',2)+ref('endnote',3))+'</w:tc></w:tr></w:tbl>'+p('After',ref('footnote',4)),{
+    footnotes:'<w:footnotes '+ns+'><w:footnote w:id="1">'+p('Before note')+'</w:footnote><w:footnote w:id="2">'+p('Cell footnote')+'</w:footnote><w:footnote w:id="4">'+p('After note')+'</w:footnote></w:footnotes>',
+    entries:[textZipEntry('word/endnotes.xml','<w:endnotes '+ns+'><w:endnote w:id="3">'+p('Cell endnote')+'</w:endnote></w:endnotes>')]
+  });
+  const inspect=(plan:DocxManuscriptImportPlan)=>{
+    const anchors=collectNoteAnchors({sections:plan.sections});
+    assert.equal(anchors.length,4);
+    const table=plan.sections.flatMap(s=>s.blocks).find(b=>b.visual?.kind==='table');
+    assert.ok(table?.visual?.kind==='table');
+    assert.deepEqual(table.visual.cells,[['Cell']]);
+    assert.deepEqual(anchors.map(a=>plan.annotations.find(n=>n.id===a.noteId)?.body),['Before note','Cell footnote','Cell endnote','After note']);
+    assert.equal(anchors[1]?.blockId,table.id);
+    assert.equal(anchors[2]?.blockId,table.id);
+    assert.equal(anchors[2]?.kind,'endnote');
+  };
+  const plan=await parseDocxManuscript(source);
+  inspect(plan);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Cell notes'}),sections:plan.sections,annotations:plan.annotations};
+  const word=buildDocxExport(manuscript);
+  const parts=readZipParts(word.bytes);
+  assert.match(parts.get('word/document.xml')!.toString('utf8'),/<w:tbl>[\s\S]*?<w:footnoteReference w:id="2"\/>[\s\S]*?<w:endnoteReference w:id="1"\/>[\s\S]*?<\/w:tbl>/);
+  inspect(await parseDocxManuscript(new File([new Uint8Array(word.bytes)],'cell-notes.docx')));
+  const odt=buildOdtExport(manuscript);
+  assert.match(readZipParts(odt.bytes).get('content.xml')!.toString('utf8'),/<table:table[\s\S]*?text:note-class="footnote"[\s\S]*?text:note-class="endnote"[\s\S]*?<\/table:table>/);
+  inspect(await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-notes.odt')));
+});
