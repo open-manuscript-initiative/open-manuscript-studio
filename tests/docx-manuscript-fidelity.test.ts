@@ -1836,3 +1836,34 @@ test('simple XE and INDEX fields preserve independent index types, hierarchical 
     inspect(await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'separate-indexes.docx')));
   }finally{useStudioStore.setState(previous,true);}
 });
+
+test('legacy linked Word text boxes keep editable content, dimensions and native chain on roundtrip',async()=>{
+  const {WORD_TEXT_BOX_LINK_EXTENSION,normalizeWordTextBoxLink}=await import('../src/model/wordTextBoxLink.ts');
+  const {textBoxPlainText}=await import('../src/model/textBoxes.ts');
+  const shape=(id:string,next:string|undefined,content:string)=>'<v:shape id="'+id+'" style="position:absolute;width:100pt;height:40pt'+(next?';mso-next-textbox:#'+next:'')+'"><v:textbox><w:txbxContent><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>'+content+'</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape>';
+  const body='<w:p><w:r><w:t>Frame anchor specimen</w:t></w:r></w:p><w:p><w:r><w:pict>'+shape('Box1','Box2','Linked story start')+shape('Box2',undefined,'Linked story continuation')+'</w:pict></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body));
+  const inspect=(sections:typeof plan.sections)=>{
+    const boxes=sections.flatMap(s=>s.blocks).flatMap(b=>b.visual?.kind==='text-box'?[b.visual.textBox]:[]);
+    assert.equal(boxes.length,2);
+    assert.deepEqual(boxes.map(b=>textBoxPlainText(b)),['Linked story start','Linked story continuation']);
+    assert.deepEqual(boxes.map(b=>b.extensions?.[WORD_TEXT_BOX_LINK_EXTENSION]),[{name:'Box1',next:'Box2'},{name:'Box2'}]);
+    for(const box of boxes){assert.ok(Math.abs(box.width-100*4/3)<0.02);assert.ok(Math.abs(box.height-40*4/3)<0.02);}
+    return boxes;
+  };
+  inspect(plan.sections);
+  const manuscript=parseOmiJson(serializeOmiJson({...createBlankManuscript({kind:'study',locale:'en',title:'Linked boxes'}),sections:plan.sections}));
+  inspect(manuscript.sections);
+  const result=buildDocxExport(manuscript);
+  const xml=readZipParts(result.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<v:shape id="Box1" style="position:absolute;width:100pt;height:40pt;mso-next-textbox:#Box2"/);
+  assert.match(xml,/<v:shape id="Box2"/);
+  assert.match(xml,/<w:txbxContent>[\s\S]*?<w:b\/>[\s\S]*?Linked story continuation/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'linked-boxes.docx'))).sections);
+  assert.equal(normalizeWordTextBoxLink({name:'Box1',next:'x;malicious'}),undefined);
+  const boxes=inspect(manuscript.sections);
+  boxes[1]!.extensions={[WORD_TEXT_BOX_LINK_EXTENSION]:{name:'Box2',next:'Box1'}};
+  const cyclic=buildDocxExport(manuscript);
+  assert.doesNotMatch(readZipParts(cyclic.bytes).get('word/document.xml')!.toString('utf8'),/mso-next-textbox/);
+  assert.match(cyclic.warnings.join('\n'),/Cyclic Word text-box link/);
+});
