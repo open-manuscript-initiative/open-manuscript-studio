@@ -1,3 +1,4 @@
+import type { NoteJsonNode } from './noteRichText';
 import type { OmiTableCellFormat, OmiTableCellMerge, OmiTableBlockData, OmiTableRowSplitPolicy, OmiTableCellSide, OmiTableCellBorder, OmiTableRowHeight } from '../types/omi';
 
 /** Relative widths keep the same table editable on screen and within print margins. */
@@ -234,4 +235,37 @@ export function setTableRowHeight(table:OmiTableBlockData,row:number,height:OmiT
  * even for native exact rows; no clipping or content mutation. */
 export function tableRowHeightStyle(height:OmiTableRowHeight): {height?:string} {
   return height.mode==='auto'?{}:{height:height.heightPt+'pt'};
+}
+
+/** Cell documents are deliberately limited to paragraphs and inline text. */
+export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
+  if(typeof value!=='string') return undefined;
+  try {
+    const root=JSON.parse(value) as NoteJsonNode;
+    if(root?.type!=='doc'||!Array.isArray(root.content)||!root.content.length) return undefined;
+    if(!root.content.every(p=>p?.type==='paragraph'&&(p.content===undefined||Array.isArray(p.content)&&p.content.every(n=>n?.type==='text'&&typeof n.text==='string'||n?.type==='hardBreak'||n?.type==='omiTab')))) return undefined;
+    return root;
+  } catch {return undefined;}
+}
+export function tableCellPlainText(doc:NoteJsonNode):string {
+  return (doc.content??[]).map(p=>(p.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.text??'').join('')).join('\n');
+}
+export function plainTableCellDocument(text:string):NoteJsonNode {
+  return {type:'doc',content:text.split('\n').map(line=>({type:'paragraph',content:line?[{type:'text',text:line}]:[]}))};
+}
+export function tableCellDocument(table:Pick<OmiTableBlockData,'cells'|'cellContent'>,row:number,column:number):NoteJsonNode|undefined {
+  const doc=parseTableCellContent(table.cellContent?.[row+':'+column]);
+  return doc&&tableCellPlainText(doc)===(table.cells[row]?.[column]??'')?doc:undefined;
+}
+export function pruneTableCellContent(cells:readonly (readonly string[])[],content?:Record<string,string>):Record<string,string>{
+  const result:Record<string,string>={};
+  for(const [key,value] of Object.entries(content??{})){
+    if(!/^(0|[1-9][0-9]*):(0|[1-9][0-9]*)$/.test(key)) continue;
+    const [r,c]=key.split(':').map(Number);
+    const text=cells[r!]?.[c!];
+    if(text===undefined) continue;
+    const doc=parseTableCellContent(value);
+    if(doc&&tableCellPlainText(doc)===text) result[key]=value;
+  }
+  return result;
 }
