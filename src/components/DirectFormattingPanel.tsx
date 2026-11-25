@@ -21,6 +21,11 @@ const LABELS: Record<string, Labels> = {
 };
 const labels = (locale: SupportedLocale) => LABELS[locale] ?? LABELS.en!;
 export function directFormattingLabel(locale: SupportedLocale): string { return labels(locale)[0]!; }
+/** Reuse the existing localized vocabulary in table range controls. */
+export function tableRangeCharacterLabels(locale:SupportedLocale){
+  const l=labels(locale);
+  return {title:l[0]!,omiSourceFont:l[1]!,omiFontSize:l[2]!,omiTextColor:l[3]!,omiCharacterBackground:l[4]!,omiTracking:l[6]!,omiBaseline:l[7]!,omiCharacterScale:l[17]!,omiKerning:l[18]!,reset:l[19]!,mixed:l[20]!};
+}
 function selectedValue(editor: Editor, name: string, attribute: string): { value: string; mixed: boolean } {
   const { from, to, empty } = editor.state.selection;
   if (empty) return { value: String(editor.getAttributes(name)[attribute] ?? ''), mixed: false };
