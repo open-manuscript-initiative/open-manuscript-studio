@@ -283,6 +283,7 @@ test('apply built-in table appearance and save a reusable local cell style',asyn
 
 test('cell note toolbar creates a shared note annotation and note card deletes it atomically',async({page})=>{
   const canvas=await openTables(page,2);
+  const cell=canvas.locator('.omi-table-editor').first().locator('tr:not(.omi-table-page-break)').nth(1).locator('td').first();
   await canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true}).click();
   await canvas.getByText('Cell formatting',{exact:true}).click();
   const editor=canvas.getByRole('textbox',{name:'Selected cell text',exact:true});
@@ -295,7 +296,9 @@ test('cell note toolbar creates a shared note annotation and note card deletes i
   const snapshot=()=>page.evaluate(async()=>{
     const {useStudioStore}=await import('/src/app/useStudioStore.ts');
     const state=useStudioStore.getState();
-    return {annotations:state.manuscript.annotations,events:state.pendingChangeSet?.events??[]};
+    const visual=state.manuscript.sections[0]?.blocks.find(block=>block.id==='layout-table')?.visual;
+    const table=visual?.kind==='table'?visual:undefined;
+    return {annotations:state.manuscript.annotations,events:state.pendingChangeSet?.events??[],cellText:table?.cells[1]?.[0],cellDocument:table?.cellContent?.['1:0']};
   });
   const added=await snapshot();
   expect(added.annotations.some(n=>n.targetBlockId==='layout-table'&&n.noteKind==='footnote')).toBeTruthy();
@@ -308,7 +311,15 @@ test('cell note toolbar creates a shared note annotation and note card deletes i
   await expect(card).toHaveCount(0);
   await expect(editor.locator('[data-omi-note]')).toHaveCount(0);
   await expect.poll(async()=>(await snapshot()).annotations.filter(n=>n.targetBlockId==='layout-table').length).toBe(0);
-  await expect(canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true})).toHaveValue('Row 0');
+  // A rich cell remains a rich cell after deleting its last note; it does not
+  // revert to the plain-text textarea. Verify both rendered and stored content.
+  await expect(cell.locator('.omi-table-rich-preview')).toHaveText('Row 0');
+  await expect(editor).toHaveText('Row 0');
+  const removed=await snapshot();
+  expect(removed.cellText).toBe('Row 0');
+  expect(removed.cellDocument).toBeDefined();
+  expect(JSON.parse(removed.cellDocument!)).toMatchObject({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Row 0'}]}]});
+  expect(removed.cellDocument).not.toContain('omiNote');
 });
 
 test('apply character and paragraph formatting to selected cells only',async({page})=>{
