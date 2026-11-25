@@ -7,6 +7,7 @@ import type {
   OmiImageBlockData,
   OmiMusicScoreBlockData,
   OmiImportProvenance,
+  OmiTableCellFormat,
   OmiVisualBlockData,
 } from '../types/omi';
 
@@ -33,6 +34,7 @@ export function createTableBlock(
   options: {
     caption?: string;
     headerRows?: number;
+    cellFormats?: Record<string, OmiTableCellFormat>;
     provenance?: OmiImportProvenance;
   } = {},
   id = crypto.randomUUID(),
@@ -45,6 +47,7 @@ export function createTableBlock(
       kind: 'table',
       cells: normalizeCellMatrix(cells),
       headerRows: options.headerRows ?? 1,
+      ...(options.cellFormats && Object.keys(options.cellFormats).length ? {cellFormats: options.cellFormats} : {}),
       caption: options.caption,
       provenance: options.provenance,
     },

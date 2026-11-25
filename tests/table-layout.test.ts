@@ -75,3 +75,13 @@ test('cell formats sanitize unknown values and drop deleted row/column coordinat
   assert.equal(tableCellTextStyle(180).transform, 'rotate(180deg)');
   assert.equal(tableCellTextStyle(90).writingMode, 'vertical-rl');
 });
+
+
+test('native table header counts are bounded and do not mutate cells', async () => {
+  const {tableHeaderRows}=await import('../src/model/tableLayout.ts');
+  const cells=[['H'],['A']];
+  for(const value of [undefined,NaN,Infinity,-1,'2']) assert.equal(tableHeaderRows(cells,value),0);
+  assert.equal(tableHeaderRows(cells,1.9),1);
+  assert.equal(tableHeaderRows(cells,8),2);
+  assert.deepEqual(cells,[['H'],['A']]);
+});

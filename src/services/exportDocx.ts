@@ -1,3 +1,4 @@
+import { tableCellFormat, tableColumnWidths, tableHeaderRows } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
@@ -23,7 +24,7 @@ import { createNoteBodyDocument, type NoteJsonNode } from '../model/noteRichText
 import { contributorNameParts } from '../model/contributorName';
 import { buildPublicationRenderingContext, type OmiRenderedContributor } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
-import type { OmiBlock, OmiManuscript } from '../types/omi';
+import type { OmiBlock, OmiManuscript, OmiTableBlockData } from '../types/omi';
 import { createStoreZip, textZipEntry } from './simpleZip';
 
 export interface DocxExportResult {
@@ -95,6 +96,12 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
       if (section.title.trim()) body.push(paragraph(heading, `Heading${level}`));
       for (const block of section.blocks) {
         const indexFields = renderWordIndexEntryFields(indexEntriesByBlock.get(block.id) ?? []);
+        if (block.visual?.kind === 'table' && block.visual.cells.length && block.visual.cells.some(row=>row.length)) {
+          if (indexFields) body.push(paragraph('', undefined, indexFields));
+          if (block.visual.caption?.trim()) body.push(paragraph(block.visual.caption));
+          body.push(wordTable(block.visual, warnings));
+          continue;
+        }
         if (block.visual) {
           const text = blockPlainText(block);
           if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
@@ -290,6 +297,31 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
     } else renderParagraph(node);
   }
   return output.join('');
+}
+
+/** Native editable tables; the model intentionally stores plain rectangular cells. */
+function wordTable(table: OmiTableBlockData, warnings: string[]): string {
+  const widths = tableColumnWidths(table.cells, table.columnWidths).map(percent=>Math.max(1,Math.round(percent*9026/100)));
+  const headerRows = tableHeaderRows(table.cells, table.headerRows);
+  let partial = false;
+  const rows = table.cells.map((row,r)=>{
+    const cells = widths.map((width,c)=>{
+      const format = tableCellFormat(table.cellFormats,r,c);
+      const rotation = format.textRotation === -90 ? 'btLr' : format.textRotation === 90 ? 'tbRl' : undefined;
+      if (format.textRotation === 180 || format.textDirection !== 'auto') partial = true;
+      const properties = '<w:tcW w:w="'+width+'" w:type="dxa"/>' + (rotation ? '<w:textDirection w:val="'+rotation+'"/>' : '');
+      const content = (row[c] ?? '').split(/\r\n?|\n/).map(line=>{
+        const runs = line.split('\t').map(part=>wordStyledText(part)).join('<w:r><w:tab/></w:r>');
+        return '<w:p>'+runs+'</w:p>';
+      }).join('');
+      return '<w:tc><w:tcPr>'+properties+'</w:tcPr>'+content+'</w:tc>';
+    }).join('');
+    return '<w:tr>'+(r<headerRows?'<w:trPr><w:tblHeader/></w:trPr>':'')+cells+'</w:tr>';
+  }).join('');
+  if (partial) warnings.push('Some cell rotation or writing direction has no exact DOCX table mapping.');
+  if (table.fontSizeReduction !== 0) warnings.push('DOCX table font reduction is not preserved.');
+  const total = widths.reduce((sum,width)=>sum+width,0);
+  return '<w:tbl><w:tblPr><w:tblW w:w="'+total+'" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>'+widths.map(width=>'<w:gridCol w:w="'+width+'"/>').join('')+'</w:tblGrid>'+rows+'</w:tbl>';
 }
 
 function paragraph(value: string, styleId?: string, suffix = ''): string {

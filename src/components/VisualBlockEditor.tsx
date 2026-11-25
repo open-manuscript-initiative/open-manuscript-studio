@@ -39,7 +39,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -366,7 +366,7 @@ function EditableGrid({
                 ))}
                 <tr key={rowIndex} style={continuationStyle(rowIndex)}>
                   {row.map((cell, columnIndex) => {
-                    const Cell = data.kind === 'table' && rowIndex < (data.headerRows ?? 0) ? 'th' : 'td';
+                    const Cell = data.kind === 'table' && rowIndex < tableHeaderRows(cells, data.headerRows) ? 'th' : 'td';
                     const format = tableCellFormat(cellFormats, rowIndex, columnIndex);
                     const showText = previewOnly || format.textRotation !== 0;
                     return (
@@ -444,7 +444,7 @@ function EditableGrid({
         </button>
         <button type="button" onClick={() => {
           const nextCells = removeTableRow(cells, cells.length - 1);
-          onChange(data.kind === 'table' ? { ...data, cells: nextCells, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
+          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
         }}>
           {copy.removeRow}
         </button>
@@ -467,6 +467,12 @@ function EditableGrid({
           </div>
           {selectedFormat.textRotation !== 0 ? <label className="omi-table-cell-text-editor"><span>{copy.editCellText}</span><textarea rows={2} dir={selectedFormat.textDirection} value={cells[selectedRow]?.[selectedColumn] ?? ''} onChange={(event) => onChange({ ...data, cells: updateTableCell(cells, selectedRow, selectedColumn, event.target.value) })} /></label> : null}
         </details>
+      ) : null}
+      {data.kind === 'table' ? (
+        <label className="omi-table-font-size" style={continuationStyle(cells.length)}>
+          <span>{copy.tableHeaderRows}</span>
+          <input type="number" min={0} max={cells.length} step={1} value={tableHeaderRows(cells,data.headerRows)} onChange={event=>onChange({...data,headerRows:tableHeaderRows(cells,event.target.valueAsNumber)})} />
+        </label>
       ) : null}
       {data.kind === 'table' ? (
         <label className="omi-table-font-size" style={continuationStyle(cells.length)}>
