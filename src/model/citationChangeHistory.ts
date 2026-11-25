@@ -1,4 +1,5 @@
 import type { OmiBlock, OmiSection } from '../types/omi';
+import type { CreateChangeEventInput } from './versioning';
 import { walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 /**
@@ -10,7 +11,7 @@ export function collectCitationBlockContentChanges(
   previousSections: readonly OmiSection[],
   nextSections: readonly OmiSection[],
 ): Array<{
-  operation: 'block.content.set'|'block.update';
+  operation: Extract<CreateChangeEventInput['operation'],'block.content.set'|'block.update'>;
   targetId: string;
   path: string;
   previousValue: string|OmiBlock;
