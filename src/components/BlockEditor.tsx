@@ -683,12 +683,19 @@ function BlockEditorComponent({
       from,
       to,
       '\n',
-      (leaf) => leaf.type.name === 'omiTab' ? '\t' : '',
+      (leaf) => leaf.type.name === 'omiTab' ? '\t' : leaf.type.name === 'hardBreak' ? '\n' : '',
     );
     if (!selectedText.trim()) return;
+    let hasUnsupportedContent = false;
+    editor.state.doc.nodesBetween(from, to, (node) => {
+      if (node.isAtom && !node.isText && !['omiTab', 'hardBreak'].includes(node.type.name)) hasUnsupportedContent = true;
+    });
+    if (hasUnsupportedContent) return;
 
+    let cells: string[][];
+    try { cells = parseDelimitedTable(selectedText, delimiter); } catch { return; }
     const table = createTableBlock(
-      parseDelimitedTable(selectedText, delimiter),
+      cells,
       {
         headerRows: 0,
         provenance: {
