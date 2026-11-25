@@ -59,7 +59,7 @@ export async function readDocxNotes(archive: WordNoteArchive): Promise<{
         const id = attr(relationship, 'Id');
         const target=attr(relationship,'Target');
         const type=attr(relationship,'Type');
-        const href=target&&/^(https?:|mailto:)/i.test(target.trim())&&attr(relationship,'TargetMode')?.toLowerCase()==='external'&&(!type||type.endsWith('/hyperlink'))?normalizeExternalHref(target):undefined;
+        const href=target&&/^(https?:|mailto:)/i.test(target.trim())&&(attr(relationship,'TargetMode')?.toLowerCase()==='external'||(!type&&!attr(relationship,'TargetMode')))&&(!type||type.endsWith('/hyperlink'))?normalizeExternalHref(target):undefined;
         if (id && href) relationships.set(id, href);
       }
     }
