@@ -6,7 +6,7 @@ import { loadPublicationStyle } from '../services/publicationStyleExport';
 import type { OmiTableBlockData } from '../types/omi';
 import type { VisualElementsCopy } from '../i18n/visualElements';
 import type { TableCellPosition } from '../model/tableLayout';
-import { applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
+import { bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
 
 function loadPresets():TableAppearancePreset[]{
   try{return readAppearancePresets(localStorage.getItem(TABLE_STYLE_STORAGE_KEY));}catch{return [];}
@@ -15,7 +15,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
   const manuscript=useStudioStore(state=>state.manuscript);
   const catalog:PublicationTableStyles=normalizePublicationTableStyles(getAppliedPublicationTemplate(manuscript)?.style.tableStyles)??{items:[]};
   const [presets,setPresets]=useState(loadPresets);
-  const [selected,setSelected]=useState('builtin:grid');
+  const [selected,setSelected]=useState(table.publicationTableStyle?'publication:'+table.publicationTableStyle:'builtin:grid');
   const [name,setName]=useState('');
   const [kind,setKind]=useState<'cell'|'table'>('cell');
   const [banded,setBanded]=useState(false);
@@ -62,7 +62,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
         {!choice?<option value="" disabled>{copy.tableStyleLabel}</option>:null}
         {choices.map(item=><option key={item.key} value={item.key}>{item.label}</option>)}
       </select></label>
-      <button type="button" disabled={!choice} onClick={()=>{if(choice)onChange(applyAppearancePreset(table,choice.preset,start,end));}}>{copy.applyTableStyle}</button>
+      <button type="button" disabled={!choice} onClick={()=>{if(choice)onChange(selected.startsWith('publication:')&&choice.preset.kind==='table'?bindPublicationTableStyle(table,catalog,choice.preset.name):applyAppearancePreset(table,choice.preset,start,end));}}>{copy.applyTableStyle}</button>
       <button type="button" disabled={!choice||!selected.startsWith('custom:')} onClick={remove}>{copy.deleteTableStyle}</button>
     </div>
     <small>{copy.tableStyleApplyHint}</small>
@@ -70,6 +70,11 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
       <button type="button" disabled={!choice||selected.startsWith('publication:')} onClick={copyToPublication}>{copy.saveStyleToPublication}</button>
       <button type="button" disabled={!choice||!selected.startsWith('publication:')} onClick={()=>{if(choice){if(persistPublication(removePublicationTablePreset(catalog,choice.preset.name)))setSelected('builtin:grid');}}}>{copy.removeStyleFromPublication}</button>
       <label><span>{copy.defaultPublicationTableStyle}</span><select value={catalog.defaultTableStyle??''} onChange={event=>persistPublication({items:catalog.items,...(event.target.value?{defaultTableStyle:event.target.value}:{})})}><option value="">{copy.noDefaultPublicationTableStyle}</option>{catalog.items.filter(p=>p.kind==='table').map(p=><option key={p.name} value={p.name}>{p.name}</option>)}</select></label>
+    </div>
+    {table.publicationTableStyle?<small>{copy.linkedPublicationTableStyle}: {table.publicationTableStyle}</small>:null}
+    <div className="omi-table-cell-formatting-fields">
+      <button type="button" disabled={!table.publicationTableStyle} onClick={()=>onChange(detachPublicationTableStyle(table))}>{copy.detachPublicationTableStyle}</button>
+      <button type="button" disabled={!choice||!selected.startsWith('publication:')||choice.preset.kind!=='table'} onClick={()=>{if(choice&&choice.preset.kind==='table'){const next=replacePublicationTablePreset(catalog,captureTablePreset(table,choice.preset.name,banded||!!choice.preset.alternate));if(next)persistPublication(next);}}}>{copy.updatePublicationTableStyle}</button>
     </div>
     <small>{copy.publicationTableStyleHint}</small>
     <div className="omi-table-cell-formatting-fields">
