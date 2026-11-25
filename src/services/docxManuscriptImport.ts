@@ -70,6 +70,8 @@ interface WordStyle {
   name?: string;
   basedOn?: string;
   outlineLevel?: number;
+  numId?: string;
+  numLevel?: number;
 }
 
 interface WordListInfo {
@@ -228,7 +230,7 @@ export async function parseDocxManuscript(
       // Bibliographic fields in cells retain their cached text until citation
       // cluster traversal supports visual content; note anchors use the real registry.
       const context:InlineContext={blockId,footnotes,endnotes,bibliographyByTag:new Map(),annotations,citations,citationClusters,warnings,stats};
-      const table = parseWordTable(child,numbering,relationships,context);
+      const table = parseWordTable(child,numbering,relationships,context,styles);
       if (table.cells.length) {
         section.blocks.push(
           createTableBlock(table.cells, {
@@ -328,7 +330,7 @@ export async function parseDocxManuscript(
       }
     }
 
-    const listInfo = paragraphListInfo(child, numbering);
+    const listInfo = paragraphListInfo(child, numbering, styles);
     if (listInfo) {
       const section = ensureSection(sections);
       const listBlockId = crypto.randomUUID();
@@ -343,7 +345,7 @@ export async function parseDocxManuscript(
           resolveParagraphHeadingLevel(paragraph, paragraphStyle) !== undefined
           && !paragraphHasNoteReference(paragraph)
         ) break;
-        const info = paragraphListInfo(paragraph, numbering);
+        const info = paragraphListInfo(paragraph, numbering, styles);
         if (!info) break;
 
         const context: InlineContext = {
@@ -1036,6 +1038,7 @@ async function readStyles(archive: DocxZipArchive): Promise<Map<string, WordStyl
       name: nameElement ? attributeByLocalName(nameElement, 'val') : undefined,
       basedOn: basedOnElement ? attributeByLocalName(basedOnElement, 'val') : undefined,
       outlineLevel: Number.isFinite(outlineValue) ? outlineValue : undefined,
+      ...readParagraphNumbering(pPr),
     });
   }
 
@@ -1057,6 +1060,8 @@ function readNumberingLevel(level: Element): Record<string, unknown> {
   set('omiListFormat',read('numFmt'));
   set('omiListLabel',read('lvlText'));
   set('omiListStart',read('start'));
+  const paragraphStyle=read('pStyle');
+  if(paragraphStyle)attrs.wordParagraphStyle=paragraphStyle;
   const pPr = directChildrenByLocalName(level,'pPr')[0];
   const ind = pPr && directChildrenByLocalName(pPr,'ind')[0];
   if (ind) {
@@ -1106,19 +1111,41 @@ async function readNumbering(archive: DocxZipArchive): Promise<WordNumbering> {
   return result;
 }
 
-function paragraphListInfo(paragraph: Element, numbering: WordNumbering): WordListInfo | undefined {
+function readParagraphNumbering(pPr: Element | undefined): {numId?:string;numLevel?:number} {
+  const numPr=pPr&&directChildrenByLocalName(pPr,'numPr')[0];
+  const id=numPr&&directChildrenByLocalName(numPr,'numId')[0];
+  const level=numPr&&directChildrenByLocalName(numPr,'ilvl')[0];
+  const value=level&&normalizeListAttribute('omiListLevel',attributeByLocalName(level,'val'));
+  return {numId:id?attributeByLocalName(id,'val'):undefined,numLevel:typeof value==='number'?value:undefined};
+}
+
+function paragraphListInfo(paragraph: Element, numbering: WordNumbering, styles: Map<string,WordStyle>): WordListInfo | undefined {
   const pPr = directChildrenByLocalName(paragraph,'pPr')[0];
-  const numPr = pPr && directChildrenByLocalName(pPr,'numPr')[0];
-  if (!numPr) return undefined;
-  const idElement = directChildrenByLocalName(numPr,'numId')[0];
-  const levelElement = directChildrenByLocalName(numPr,'ilvl')[0];
-  const id = idElement && attributeByLocalName(idElement,'val');
-  if (!id || id === '0') return undefined;
-  const rawLevel = normalizeListAttribute('omiListLevel',levelElement ? attributeByLocalName(levelElement,'val') : 0);
-  const level = typeof rawLevel === 'number' ? rawLevel : 0;
+  const direct=readParagraphNumbering(pPr);
+  let id=direct.numId, level=direct.numLevel;
+  let style=resolveParagraphStyle(paragraph,styles);
+  const visited=new Set<string>();
+  // Each property may be inherited independently. An explicit zero numId
+  // suppresses numbering; cycles must not cause unbounded traversal.
+  while(style&&!visited.has(style.id)){
+    visited.add(style.id);
+    id??=style.numId;
+    level??=style.numLevel;
+    style=style.basedOn?styles.get(style.basedOn):undefined;
+  }
+  if(!id||id==='0')return undefined;
+  // Word can link a numbering level to a paragraph style instead of
+  // specifying ilvl in the style's numPr.
+  const styleId=resolveParagraphStyle(paragraph,styles)?.id;
+  if(level===undefined&&styleId){
+    const match=[...(numbering.get(id)??[])].find(([,attrs])=>attrs.wordParagraphStyle===styleId);
+    if(match)level=match[0];
+  }
+  level??=0;
   const definition = numbering.get(id)?.get(level);
   const ordered = definition?.omiListFormat !== 'bullet' && definition?.omiListFormat !== 'none';
   const attrs: Record<string,unknown> = {...definition,omiListLevel:level};
+  delete attrs.wordParagraphStyle;
   if (ordered && typeof definition?.omiListStart === 'number' && definition.omiListStart !== 1) attrs.start = definition.omiListStart;
   return {level,ordered,attrs};
 }
@@ -1148,7 +1175,7 @@ function resolveParagraphHeadingLevel(
   );
 }
 
-function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map<string,Relationship>,context:InlineContext,depth=0,budget={cells:10000}): {
+function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map<string,Relationship>,context:InlineContext,styles:Map<string,WordStyle>,depth=0,budget={cells:10000}): {
   cells: string[][];
   headerRows: number;
   mergedCells: boolean;
@@ -1260,7 +1287,7 @@ function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map
       for(const source of Array.from(cell.children)){
         if(source.localName==='tbl'){
           flush();
-          const child=parseWordTable(source,numbering,relationships,context,depth+1,budget);
+          const child=parseWordTable(source,numbering,relationships,context,styles,depth+1,budget);
           const nestedTable:OmiTableBlockData={kind:'table',cells:child.cells,headerRows:child.headerRows,cellFormats:child.cellFormats,cellContent:child.cellContent,cellMerges:child.cellMerges,rowSplitDefault:'allow',rowSplitOverrides:child.rowSplitOverrides,rowHeights:child.rowHeights};
           if(child.mergedCells) mergedCells=true;
           if(child.cells.length) nodes.push({type:'omiCellTable',attrs:{table:nestedTable}});
@@ -1268,11 +1295,9 @@ function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map
         }
         if(source.localName!=='p') continue;
         const paragraph=parsedParagraphs[paragraphIndex++]!;
-        const info=paragraphListInfo(source,numbering);
+        const info=paragraphListInfo(source,numbering,styles);
         if(info){
-          const numPr=directChildrenByLocalName(directChildrenByLocalName(source,'pPr')[0]!,'numPr')[0]!;
-          const id=attributeByLocalName(directChildrenByLocalName(numPr,'numId')[0]!,'val');
-          listItems.push({...info,attrs:{...info.attrs,omiListId:info.attrs.omiListId??'word-'+id},content:paragraph.content,paragraphAttrs:paragraph.attrs});
+          listItems.push({...info,content:paragraph.content,paragraphAttrs:paragraph.attrs});
         }else{flush();nodes.push(paragraph);}
       }
       flush();
