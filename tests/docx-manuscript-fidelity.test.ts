@@ -1680,3 +1680,49 @@ test('Word running header/footer variants and page fields survive portable round
   assert.equal(normalizeRunningVariants({default:[{tokens:[{kind:'field',field:'INCLUDETEXT'}]}]}),undefined);
   assert.equal(normalizeRunningVariants({default:[{tokens:[{kind:'text',text:'a'.repeat(32001)}]}]}),undefined);
 });
+
+test('native Word bookmarks resolve forward REF and PAGEREF fields and survive OMI/DOCX reopen',async()=>{
+  const {validateCrossReferences,formatCrossReferenceLabel,resolveCrossReferenceTarget}=await import('../src/model/crossReferences.ts');
+  const {parseWordCrossReference,normalizeWordCrossReferenceField}=await import('../src/model/wordCrossReference.ts');
+  const field=(instruction:string,cached:string)=>'<w:fldSimple w:instr="'+instruction+'"><w:r><w:t>'+cached+'</w:t></w:r></w:fldSimple>';
+  const complex='<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF Target </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>7</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>';
+  const source=makeDocx('<w:p><w:r><w:t xml:space="preserve">Reference: </w:t></w:r>'+field(' REF Target \\h ','Target specimen')+'<w:r><w:t xml:space="preserve">, page </w:t></w:r>'+complex+'</w:p>'
+    +'<w:p><w:bookmarkStart w:id="20" w:name="Target"/><w:r><w:t>Target specimen</w:t></w:r><w:bookmarkEnd w:id="20"/></w:p>'
+    +'<w:p><w:r><w:t>Unresolved specimen </w:t></w:r>'+field('REF Missing','Missing cached')+'</w:p>'
+    +'<w:p><w:r><w:t>Prefix </w:t></w:r><w:bookmarkStart w:id="21" w:name="Partial"/><w:r><w:t>Selected text</w:t></w:r><w:bookmarkEnd w:id="21"/></w:p>'
+    +'<w:p>'+field('REF Partial','Selected text')+'</w:p>');
+  const plan=await parseDocxForStudio(source);
+  assert.equal(plan.namedAnchors?.length,2);
+  assert.equal(plan.crossReferences?.length,2);
+  const target=plan.namedAnchors!.find(a=>a.name==='Target')!;
+  assert.equal(target.targetKind,'block');
+  assert.ok(plan.sections.flatMap(s=>s.blocks).some(b=>b.id===target.targetId&&blockText(b)==='Target specimen'));
+  assert.deepEqual(plan.crossReferences!.map(r=>r.targetId),[target.id,target.id]);
+  assert.deepEqual(plan.crossReferences!.map(r=>r.wordField),[{kind:'REF',cachedLabel:'Target specimen',hyperlink:true},{kind:'PAGEREF',cachedLabel:'7'}]);
+  assert.ok(plan.warnings.some(w=>w.code==='word-bookmark-range-approximated'));
+  assert.ok(plan.warnings.some(w=>w.code==='word-cross-reference-flattened'));
+  const previous=useStudioStore.getState();
+  try{
+    applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
+    const manuscript=useStudioStore.getState().manuscript;
+    const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+    const reopened=parseOmiJson(serializeOmiJson(projected));
+    assert.equal(reopened.namedAnchors?.length,2);
+    assert.deepEqual(validateCrossReferences(reopened),[]);
+    const ref=reopened.crossReferences![1]!;
+    assert.equal(formatCrossReferenceLabel(ref,resolveCrossReferenceTarget(reopened,ref.targetId),'en'),'7');
+    const word=buildDocxExport(reopened);
+    const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+    assert.match(xml,/<w:bookmarkStart w:id="1" w:name="Target"\/>[\s\S]*?Target specimen[\s\S]*?<w:bookmarkEnd w:id="1"\/>/);
+    assert.ok(xml.includes('w:instr=" REF Target \\h "'));
+    assert.match(xml,/w:instr=" PAGEREF Target "/);
+    assert.doesNotMatch(xml,/w:instr="[^"]*REF (?:Missing|Partial)/);
+    assert.match(xml,/Missing cached/);
+    const roundtrip=await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'bookmark-fields.docx'));
+    assert.equal(roundtrip.crossReferences?.length,2);
+    assert.deepEqual(roundtrip.crossReferences!.map(r=>r.wordField),plan.crossReferences!.map(r=>r.wordField));
+    assert.equal(parseWordCrossReference('REF Target \\n','1'),undefined);
+    assert.equal(parseWordCrossReference('INCLUDETEXT Target','unsafe'),undefined);
+    assert.equal(normalizeWordCrossReferenceField({kind:'REF',cachedLabel:'x'.repeat(4097)}),undefined);
+  }finally{useStudioStore.setState(previous,true);}
+});
