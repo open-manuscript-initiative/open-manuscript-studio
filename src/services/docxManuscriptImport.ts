@@ -905,8 +905,8 @@ function parseParagraphInline(
     if (element.localName === 'hyperlink') {
       const relationshipId = attributeByLocalName(element, 'id');
       const relationship=relationshipId?relationships.get(relationshipId):undefined;
-      const target=relationship?.targetMode?.toLowerCase()==='external'&&relationship.type?.endsWith('/hyperlink')?relationship.target:undefined;
-      const href=normalizeExternalHref(target);
+      const target=relationship?.targetMode?.toLowerCase()==='external'&&(!relationship.type||relationship.type.endsWith('/hyperlink'))?relationship.target:undefined;
+      const href=target&&/^(https?:|mailto:)/i.test(target.trim())?normalizeExternalHref(target):undefined;
       const anchor=attributeByLocalName(element,'anchor');
       if(!relationshipId&&anchor&&/^[_A-Za-z][_A-Za-z0-9]{0,39}$/.test(anchor)&&context.wordReferences&&!field){
         const label=descendantsByLocalName(element,'t').map(t=>t.textContent??'').join('');
@@ -1022,7 +1022,7 @@ function renderField(field: FieldState, context: InlineContext): TiptapNode[] {
 
   const hyperlink = parseWordHyperlinkInstruction(field.instruction);
   if (hyperlink) {
-    const href = normalizeExternalHref(hyperlink);
+    const href = /^(https?:|mailto:)/i.test(hyperlink.trim())?normalizeExternalHref(hyperlink):undefined;
     if (href) {
       context.stats.links += 1;
       return applyMarkToInline(field.result, {
