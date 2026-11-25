@@ -1,4 +1,6 @@
 import type { NoteJsonNode } from './noteRichText';
+import { DIRECT_FORMAT_NAMES, normalizeDirectValue, type DirectFormat, normalizeUnderlineStyle } from './directFormatting';
+import { normalizeExternalHref, normalizeInlineLanguageTag } from './richText';
 import type { OmiTableCellFormat, OmiTableCellMerge, OmiTableBlockData, OmiTableRowSplitPolicy, OmiTableCellSide, OmiTableCellBorder, OmiTableRowHeight } from '../types/omi';
 
 /** Relative widths keep the same table editable on screen and within print margins. */
@@ -244,6 +246,37 @@ export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
     const root=JSON.parse(value) as NoteJsonNode;
     if(root?.type!=='doc'||!Array.isArray(root.content)||!root.content.length) return undefined;
     if(!root.content.every(p=>p?.type==='paragraph'&&(p.content===undefined||Array.isArray(p.content)&&p.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab')))) return undefined;
+    const marksAllowed=new Set(['bold','italic','strike','code','omiSmallCaps','omiSuperscript','omiSubscript']);
+    for(const p of root.content){
+      // Cell-level formatting remains separate from the inline document.
+      delete p.attrs;
+      for(const n of p.content??[]){
+        if(n.type!=='text'){delete n.attrs;delete n.marks;continue;}
+        n.marks=n.marks?.flatMap<NonNullable<NoteJsonNode['marks']>[number]>(mark=>{
+          const name=mark.type!;
+          if(marksAllowed.has(name)) return [{type:name}];
+          if(DIRECT_FORMAT_NAMES.includes(name as DirectFormat)){
+            const value=normalizeDirectValue(name as DirectFormat,mark.attrs?.value);
+            return value===undefined?[]:[{type:name,attrs:{value}}];
+          }
+          if(name==='omiUnderline') return [{type:name,attrs:{variant:normalizeUnderlineStyle(mark.attrs?.variant)}}];
+          if(name==='omiLink'){
+            const href=normalizeExternalHref(typeof mark.attrs?.href==='string'?mark.attrs.href:undefined);
+            return href?[{type:name,attrs:{href}}]:[];
+          }
+          if(name==='omiLanguage'){
+            const lang=normalizeInlineLanguageTag(typeof mark.attrs?.lang==='string'?mark.attrs.lang:undefined);
+            return lang?[{type:name,attrs:{lang}}]:[];
+          }
+          if(name==='omiSourceFont'){
+            const family=mark.attrs?.family;
+            return typeof family==='string'&&family.length<=128&&/^[^\x00-\x1f\x7f;{}<>]+$/.test(family)?[{type:name,attrs:{family}}]:[];
+          }
+          return [];
+        });
+        if(!n.marks?.length) delete n.marks;
+      }
+    }
     return root;
   } catch {return undefined;}
 }
