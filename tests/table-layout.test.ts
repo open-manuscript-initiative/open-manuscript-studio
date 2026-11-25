@@ -316,3 +316,17 @@ test('nested table documents retain source order and redact nested hidden runs i
   }
   assert.equal(parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'omiCellTable',attrs:{table:{kind:'table',cells:[['a'],['b','c']]}}}]})),undefined);
 });
+
+test('row resize is zoom-aware, preserves explicit native modes and clamps to valid dimensions',async()=>{
+  const {resizeTableRowHeight,setTableRowHeight}=await import('../src/model/tableLayout.ts');
+  assert.deepEqual(resizeTableRowHeight({mode:'auto'},40,20),{mode:'minimum',heightPt:45});
+  assert.deepEqual(resizeTableRowHeight({mode:'auto'},80,40,2),{mode:'minimum',heightPt:45});
+  assert.deepEqual(resizeTableRowHeight({mode:'exact',heightPt:24},80,16,2),{mode:'exact',heightPt:30});
+  assert.deepEqual(resizeTableRowHeight({mode:'minimum',heightPt:30},40,-100),{mode:'minimum',heightPt:0.05});
+  assert.deepEqual(resizeTableRowHeight({mode:'auto'},40,0),{mode:'auto'});
+  assert.deepEqual(resizeTableRowHeight({mode:'auto'},0,20),{mode:'auto'});
+  assert.deepEqual(resizeTableRowHeight({mode:'exact',heightPt:24},40,20,NaN),{mode:'exact',heightPt:24});
+  const table=createTableBlock([['A'],['B']],{rowHeights:{'1':{mode:'exact',heightPt:24}}}).visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(setTableRowHeight(table,0,resizeTableRowHeight({mode:'auto'},40,20)),{'0':{mode:'minimum',heightPt:45},'1':{mode:'exact',heightPt:24}});
+});
