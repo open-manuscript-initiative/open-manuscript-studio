@@ -400,7 +400,7 @@ export function pruneTableCellContent(cells:readonly (readonly string[])[],conte
 
 /** Cell paragraphs inherit cell alignment unless explicitly overridden.
  * Page-level break commands are intentionally excluded inside table cells. */
-export const CELL_PARAGRAPH_FORMATS = ['omiAlign','omiLeftIndent','omiRightIndent','omiFirstLineIndent','omiSpaceBefore','omiSpaceAfter','omiLineSpacing','omiLineRule','omiParagraphBackground','omiParagraphBorders','omiParagraphTabs'] as const satisfies readonly ParagraphFormat[];
+export const CELL_PARAGRAPH_FORMATS = ['omiParagraphDirection','omiAlign','omiLeftIndent','omiRightIndent','omiFirstLineIndent','omiSpaceBefore','omiSpaceAfter','omiLineSpacing','omiLineRule','omiParagraphBackground','omiParagraphBorders','omiParagraphTabs'] as const satisfies readonly ParagraphFormat[];
 export function normalizeCellParagraphAttrs(attrs:Record<string,unknown>|undefined):Record<string,unknown>{
   const result:Record<string,unknown>={};
   for(const name of CELL_PARAGRAPH_FORMATS){
