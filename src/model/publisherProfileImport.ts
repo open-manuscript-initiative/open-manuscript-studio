@@ -2,6 +2,7 @@ import { BUILTIN_PUBLICATION_PROFILES, OMI_PUBLICATION_PROFILE_MODEL } from './p
 import type { ProtectablePublicationProfile } from './publisherProfileProtection';
 import { CITATION_STYLE_IDS, parseCustomCitationStyleId } from './cslRendering';
 import styleTemplate from '../document/publicationStyles/egyhaztorteneti-szemle.json' with { type: 'json' };
+import { validatePublicationTableStyles } from './tableAppearancePresets';
 import { validatePublicationPageStyles } from './publicationPageStyles';
 
 export async function readPublisherProfileBytes(bytes: Uint8Array, expectedSha256?: string) {
@@ -86,6 +87,7 @@ export function validatePublisherProfile(value: unknown): ProtectablePublication
     const page = object(style.page, '/publicationStyle/page');
     if (page.facingPages !== undefined && typeof page.facingPages !== 'boolean') fail('/publicationStyle/page/facingPages');
     if (style.pageStyles !== undefined) validatePublicationPageStyles(style.pageStyles);
+    if (style.tableStyles !== undefined) validatePublicationTableStyles(style.tableStyles);
     const paragraphs = object(style.paragraphStyles, '/publicationStyle/paragraphStyles');
     if (typeof paragraphs.defaultStyleId !== 'string' || !Array.isArray(paragraphs.items)) fail('/publicationStyle/paragraphStyles');
     for (const item of paragraphs.items as unknown[]) {
