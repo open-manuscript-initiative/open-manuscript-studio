@@ -330,3 +330,32 @@ test('row resize is zoom-aware, preserves explicit native modes and clamps to va
   assert.ok(table?.kind==='table');
   assert.deepEqual(setTableRowHeight(table,0,resizeTableRowHeight({mode:'auto'},40,20)),{'0':{mode:'minimum',heightPt:45},'1':{mode:'exact',heightPt:24}});
 });
+
+test('rectangular range resolves merged anchors once and preserves unrelated properties', async () => {
+  const {tableRangeAnchors,formatTableRange}=await import('../src/model/tableLayout.ts');
+  const block=createTableBlock([['A','','C'],['D','E','F'],['G','H','I']],{headerRows:0,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],cellFormats:{
+    '0:0':{horizontalAlign:'left',paddingPt:{top:3,left:5}},
+    '1:1':{horizontalAlign:'right',backgroundColor:'#FFFFFF',paddingPt:{top:6,bottom:4}},
+    '2:2':{backgroundColor:'#123456'}
+  }},'range-format');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  const start={row:1,column:1},end={row:0,column:0};
+  assert.deepEqual(tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows),[{row:0,column:0},{row:1,column:0},{row:1,column:1}]);
+  assert.deepEqual(tableRangeAnchors(table.cells,{row:0,column:1},{row:0,column:1},table.cellMerges,table.headerRows),[{row:0,column:0}]);
+  assert.deepEqual(tableRangeAnchors(table.cells,{row:NaN,column:0},end),[]);
+  let calls=0;
+  const next=formatTableRange(table,start,end,format=>{calls++;return {horizontalAlign:'center',paddingPt:{...format.paddingPt,top:8}};});
+  assert.equal(calls,3);
+  assert.deepEqual(next['0:0']?.paddingPt,{top:8,left:5});
+  assert.deepEqual(next['1:1']?.paddingPt,{top:8,bottom:4});
+  assert.equal(next['1:1']?.backgroundColor,'#FFFFFF');
+  assert.equal(next['0:0']?.horizontalAlign,'center');
+  assert.deepEqual(next['2:2'],{backgroundColor:'#123456'});
+  assert.equal(next['0:1'],undefined);
+  assert.equal(table.cellFormats?.['0:0']?.horizontalAlign,'left');
+  assert.deepEqual(table.cells,[['A','','C'],['D','E','F'],['G','H','I']]);
+  const cleared=formatTableRange({...table,cellFormats:next},start,end,{backgroundColor:undefined});
+  assert.equal(cleared['1:1']?.backgroundColor,undefined);
+  assert.equal(cleared['2:2']?.backgroundColor,'#123456');
+});
