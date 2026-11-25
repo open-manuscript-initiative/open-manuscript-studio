@@ -810,7 +810,8 @@ function renderJsonNode(node: JsonNode, state: RenderState): string {
       return children();
     case 'paragraph': {
       const css = paragraphFormattingCss(node.attrs, state.pagedNotes ? 'print' : 'html');
-      return `<p${css ? ` style="${css}"` : ''}>${children()}</p>`;
+      const noHyphenation=state.pagedNotes&&node.attrs?.omiAutoHyphenation===false?' data-omi-no-hyphenation="true"':'';
+      return `<p${noHyphenation}${css ? ` style="${css}"` : ''}>${children()}</p>`;
     }
     case 'blockquote':
       return `<blockquote>${children()}</blockquote>`;
