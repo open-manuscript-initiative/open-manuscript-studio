@@ -1,3 +1,4 @@
+import { RUNNING_VARIANTS, normalizeRunningVariants, type RunningKind, type RunningParagraph } from '../model/wordRunningMatter';
 import { wordSectionGeometryXml } from '../model/wordSectionLayout';
 import { DEFAULT_SECTION_COLUMN_GAP_MM } from '../model/sectionLayout';
 import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy, tableRowHeight, tableCellDocument, effectiveCellParagraphAttrs, cellDocumentWithDefaults, cellNestedTable } from '../model/tableLayout';
@@ -136,7 +137,9 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const noteScope=getDocumentStructureProfile(manuscript).noteNumberingScope;
   const restartNotes=noteScope!=='continuous';
   let lastLayout:import('../types/omi').OmiSectionLayout|undefined;
-  const sectionXml=()=>'<w:sectPr>'+(restartNotes?'<w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:endnotePr><w:numRestart w:val="eachSect"/></w:endnotePr>':'')+wordSectionGeometryXml(lastLayout?.wordSection,lastLayout?.columns,lastLayout?.columnGapMm??DEFAULT_SECTION_COLUMN_GAP_MM,restartNotes?'continuous':undefined)+'</w:sectPr>';
+  const runningParts=new WordRunningMatterRegistry();
+  let evenAndOddHeaders=false;
+  const sectionXml=()=>'<w:sectPr>'+runningParts.references(lastLayout?.wordSection)+(restartNotes?'<w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:endnotePr><w:numRestart w:val="eachSect"/></w:endnotePr>':'')+wordSectionGeometryXml(lastLayout?.wordSection,lastLayout?.columns,lastLayout?.columnGapMm??DEFAULT_SECTION_COLUMN_GAP_MM,restartNotes?'continuous':undefined)+(lastLayout?.wordSection?.differentFirstPage===true?'<w:titlePg/>':lastLayout?.wordSection?.differentFirstPage===false?'<w:titlePg w:val="0"/>':'')+'</w:sectPr>';
   const layoutKey=(layout:typeof lastLayout)=>JSON.stringify([layout?.wordSection??null,layout?.columns??1,layout?.columnGapMm??DEFAULT_SECTION_COLUMN_GAP_MM]);
   let lastScope:string|undefined;
   const renderSections = (sections: typeof context.sections,studyRoot?:string) => {
@@ -146,6 +149,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
       if(lastScope!==undefined&&((restartNotes&&lastScope!==scope)||layoutKey(lastLayout)!==layoutKey(section.layout)))body.push('<w:p><w:pPr>'+sectionXml()+'</w:pPr></w:p>');
       lastScope=scope;
       lastLayout=section.layout;
+      if(lastLayout?.wordSection?.evenAndOddHeaders===true)evenAndOddHeaders=true;
       const level = Math.min(6, section.depth + 1);
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
       if (section.title.trim()) body.push(paragraph(heading, `Heading${level}`));
@@ -202,7 +206,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     body[0]=paragraph(context.title,'Title',wordNoteReference('footnote',id,'*'));
   }
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:body>${body.join('')}${sectionXml()}</w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:body>${body.join('')}${sectionXml()}</w:body></w:document>`;
 
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -216,18 +220,19 @@ ${characterStylesXml()}${sourceStyles.xml()}
 </w:styles>`;
 
   const settingsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${wordHyphenationSettingsXml(manuscript.extensions?.[WORD_HYPHENATION_EXTENSION])}<w:updateFields w:val="true"/></w:settings>`;
+<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${wordHyphenationSettingsXml(manuscript.extensions?.[WORD_HYPHENATION_EXTENSION])}${evenAndOddHeaders?'<w:evenAndOddHeaders/>':''}<w:updateFields w:val="true"/></w:settings>`;
 
   const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(context.title)}</dc:title><dc:language>${xml(context.locale)}</dc:language><cp:lastModifiedBy>Open Manuscript Studio</cp:lastModifiedBy><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`;
 
   const entries = [
-    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>${numbering.size ? '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' : ''}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${footnotes.length ? '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' : ''}${endnotes.length ? '<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' : ''}</Types>`),
+    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>${numbering.size ? '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' : ''}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${footnotes.length ? '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' : ''}${endnotes.length ? '<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' : ''}${runningParts.contentTypes()}</Types>`),
     textZipEntry('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`),
-    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${numbering.size ? '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : ''}${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}</Relationships>`),
+    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${numbering.size ? '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : ''}${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}${runningParts.relationships()}</Relationships>`),
     textZipEntry('word/document.xml', documentXml),
     textZipEntry('word/styles.xml', stylesXml),
     textZipEntry('word/settings.xml', settingsXml),
+    ...runningParts.entries(),
     ...(numbering.size ? [textZipEntry('word/numbering.xml', numbering.xml())] : []),
     textZipEntry('docProps/core.xml', core),
     ...(footnotes.length ? [textZipEntry('word/footnotes.xml', renderWordNotes('footnote', footnotes, continueFootnotes))] : []),
@@ -243,6 +248,44 @@ ${characterStylesXml()}${sourceStyles.xml()}
     warnings,
     metadataConversion,
   };
+}
+
+/** Create new internal OPC relationships; source IDs and paths are never reused. */
+class WordRunningMatterRegistry{
+  private readonly parts:Array<{kind:RunningKind;name:string;id:string;body:string}>=[];
+  private readonly keys=new Map<string,string>();
+  references(layout:import('../model/wordSectionLayout').WordSectionLayout|undefined):string{
+    let result='';
+    for(const kind of ['header','footer'] as const){
+      const variants=normalizeRunningVariants(layout?.[kind==='header'?'headers':'footers']);
+      for(const variant of RUNNING_VARIANTS){
+        const paragraphs=variants?.[variant];
+        if(!paragraphs)continue;
+        const body=this.render(kind,paragraphs),key=kind+':'+body;
+        let id=this.keys.get(key);
+        if(!id){
+          const number=this.parts.filter(part=>part.kind===kind).length+1;
+          const name=kind+number+'.xml';
+          id='rId'+(kind==='header'?'Header':'Footer')+number;
+          this.keys.set(key,id);this.parts.push({kind,name,id,body});
+        }
+        result+='<w:'+kind+'Reference w:type="'+variant+'" r:id="'+id+'"/>';
+      }
+    }
+    return result;
+  }
+  private render(kind:RunningKind,paragraphs:RunningParagraph[]):string{
+    const tag=kind==='header'?'hdr':'ftr';
+    const contents=paragraphs.map(p=>'<w:p>'+(p.align?'<w:pPr><w:jc w:val="'+p.align+'"/></w:pPr>':'')+p.tokens.map(token=>{
+      if(token.kind==='text')return '<w:r><w:t xml:space="preserve">'+xml(token.text)+'</w:t></w:r>';
+      if(token.kind==='field')return '<w:fldSimple w:instr=" '+token.field+' "><w:r><w:t>1</w:t></w:r></w:fldSimple>';
+      return token.kind==='tab'?'<w:r><w:tab/></w:r>':'<w:r><w:br/></w:r>';
+    }).join('')+'</w:p>').join('')||'<w:p/>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:'+tag+' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+contents+'</w:'+tag+'>';
+  }
+  contentTypes():string{return this.parts.map(p=>'<Override PartName="/word/'+p.name+'" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.'+p.kind+'+xml"/>').join('');}
+  relationships():string{return this.parts.map(p=>'<Relationship Id="'+p.id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/'+p.kind+'" Target="'+p.name+'"/>').join('');}
+  entries(){return this.parts.map(p=>textZipEntry('word/'+p.name,p.body));}
 }
 
 type NumberingGroup = { id: number; levels: Map<number,string>; overrides: Map<number,number> };
