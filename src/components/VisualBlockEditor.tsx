@@ -53,6 +53,7 @@ import type {
 import { AssetBackedImage } from './AssetBackedImage';
 import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, formatTableRange, planTableAxisMove, reorderTableAxis, type TableReorderAxis } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
+import { TableAppearancePanel } from './TableAppearancePanel';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
 
@@ -612,6 +613,7 @@ function EditableGrid({
           {copy.removeColumn}
         </button>
       </div>
+      {data.kind==='table'?<div style={continuationStyle(cells.length)}><TableAppearancePanel table={data} start={start} end={boundedEnd??start} copy={copy} onChange={onChange}/></div>:null}
       {data.kind === 'table' ? (
         <details className="omi-table-cell-formatting" style={continuationStyle(cells.length)}>
           <summary>{copy.reorderTable}</summary>
