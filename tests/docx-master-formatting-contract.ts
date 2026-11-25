@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { sourceStyleBundle } from '../src/model/sourceWordStyles.ts';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { inflateRawSync } from 'node:zlib';
@@ -426,7 +427,11 @@ function assertModel(manuscript: OmiManuscript, item: Case): void {
   }
   if (item.id === 'S01') {
     const block = blocks(manuscript).find(b => modelText(json(b)).startsWith(item.id + ' |'));
-    assert.ok(block?.paragraphStyleId, 'Named paragraph style is missing');
+    assert.ok(block, 'Named paragraph style block is missing');
+    const bundle=nodes(json(block)).map(node=>sourceStyleBundle(node.attrs?.omiWordParagraphStyle)).find(Boolean);
+    assert.ok(bundle,'Named source paragraph style is missing');
+    assert.equal(bundle.styles.find(style=>style.id===bundle.selected)?.name,'OMI S01');
+    assert.equal(bundle.styles.find(style=>style.id===bundle.selected)?.kind,'paragraph');
   }
   if (item.id === 'S02') assertModelMark(p, item.sample!, 'italic');
   if (item.id === 'X02') {
@@ -485,7 +490,7 @@ function wordGap(id: string): string | undefined {
 function modelGap(id: string): string | undefined {
   if (id === 'R01' || id === 'R02') return 'Word review metadata is not imported as editable OMI review objects yet';
   if (id.startsWith('L')) return 'Style-based numbering is currently flattened on import';
-  if (id === 'S01') return 'Named Word paragraph style is not attached to the OMI block';
+  // S01 checks the portable source style bundle, not the unrelated publisher style ID.
   if (id === 'X02') return 'REF fields are currently flattened on import';
   if (id === 'X03') return 'Inline semantic enrichment may lose Word hyperlink anchors';
   return undefined;
