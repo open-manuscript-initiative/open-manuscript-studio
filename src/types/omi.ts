@@ -541,6 +541,8 @@ export interface OmiBlock {
 export type OmiSectionColumnCount = 1 | 2 | 3;
 
 export interface OmiSectionLayout {
+  /** Native Word physical section, separate from logical headings. */
+  wordSection?: import('../model/wordSectionLayout').WordSectionLayout;
   /** Number of text columns used when this section is rendered for publication. */
   columns?: OmiSectionColumnCount;
   /** Gap between publication columns in millimetres. */
