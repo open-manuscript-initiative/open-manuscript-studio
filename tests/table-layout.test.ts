@@ -227,3 +227,26 @@ test('rich cell documents remain compatible with the plain matrix and public hid
     assert.ok(!html.includes('Bold private'));
   }
 });
+
+test('cell paragraphs retain independent validated formatting and inherit cell alignment', async () => {
+  const {normalizeCellParagraphAttrs,effectiveCellParagraphAttrs,tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const {paragraphFormattingCss}=await import('../src/model/directParagraphFormatting.ts');
+  const attrs={omiAlign:'right',omiLeftIndent:12,omiFirstLineIndent:-6,omiSpaceBefore:3,omiSpaceAfter:5,omiLineRule:'exact',omiLineSpacing:14};
+  assert.deepEqual(normalizeCellParagraphAttrs({...attrs,omiPageBreakBefore:true,omiWordParagraphStyle:'invalid'}),attrs);
+  assert.deepEqual(normalizeCellParagraphAttrs({omiAlign:'bad',omiLeftIndent:-1,omiLineSpacing:Infinity,omiLineRule:'exact'}),{});
+  assert.deepEqual(effectiveCellParagraphAttrs(undefined,'center'),{omiAlign:'center'});
+  assert.equal(effectiveCellParagraphAttrs(attrs,'center').omiAlign,'right');
+  assert.equal(paragraphFormattingCss({omiAlign:'justify'},'html'),'text-align:left');
+  assert.equal(paragraphFormattingCss({omiAlign:'justify'},'print'),'text-align:justify');
+  const doc={type:'doc',content:[{type:'paragraph',attrs,content:[{type:'text',text:'First'}]},{type:'paragraph',attrs:{omiAlign:'left',omiSpaceAfter:0},content:[{type:'text',text:'Second'}]}]};
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([['First\nSecond']],{headerRows:0,cellContent:{'0:0':JSON.stringify(doc)},cellFormats:{'0:0':{horizontalAlign:'center'}}},'cell-paragraphs'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const table=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(tableCellDocument(table,0,0),doc);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<p style="text-align:right;margin-left:12pt;text-indent:-6pt;margin-top:3pt;margin-bottom:5pt;line-height:14pt">First<\/p>/);
+    assert.match(html,/<p style="text-align:left;margin-bottom:0pt">Second<\/p>/);
+  }
+});
