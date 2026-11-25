@@ -1,3 +1,5 @@
+import { wordSectionGeometryXml } from '../model/wordSectionLayout';
+import { DEFAULT_SECTION_COLUMN_GAP_MM } from '../model/sectionLayout';
 import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy, tableRowHeight, tableCellDocument, effectiveCellParagraphAttrs, cellDocumentWithDefaults, cellNestedTable } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
@@ -133,14 +135,17 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
 
   const noteScope=getDocumentStructureProfile(manuscript).noteNumberingScope;
   const restartNotes=noteScope!=='continuous';
-  const sectionXml=()=>'<w:sectPr>'+(restartNotes?'<w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:endnotePr><w:numRestart w:val="eachSect"/></w:endnotePr><w:type w:val="continuous"/>':'')+'<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>';
+  let lastLayout:import('../types/omi').OmiSectionLayout|undefined;
+  const sectionXml=()=>'<w:sectPr>'+(restartNotes?'<w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:endnotePr><w:numRestart w:val="eachSect"/></w:endnotePr>':'')+wordSectionGeometryXml(lastLayout?.wordSection,lastLayout?.columns,lastLayout?.columnGapMm??DEFAULT_SECTION_COLUMN_GAP_MM,restartNotes?'continuous':undefined)+'</w:sectPr>';
+  const layoutKey=(layout:typeof lastLayout)=>JSON.stringify([layout?.wordSection??null,layout?.columns??1,layout?.columnGapMm??DEFAULT_SECTION_COLUMN_GAP_MM]);
   let lastScope:string|undefined;
   const renderSections = (sections: typeof context.sections,studyRoot?:string) => {
     for (const section of sections) {
       const root=studyRoot??section.id;
       const scope=noteScope==='study'?root:section.id;
-      if(restartNotes&&lastScope!==undefined&&lastScope!==scope)body.push('<w:p><w:pPr>'+sectionXml()+'</w:pPr></w:p>');
+      if(lastScope!==undefined&&((restartNotes&&lastScope!==scope)||layoutKey(lastLayout)!==layoutKey(section.layout)))body.push('<w:p><w:pPr>'+sectionXml()+'</w:pPr></w:p>');
       lastScope=scope;
+      lastLayout=section.layout;
       const level = Math.min(6, section.depth + 1);
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
       if (section.title.trim()) body.push(paragraph(heading, `Heading${level}`));
