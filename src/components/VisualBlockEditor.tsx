@@ -588,12 +588,10 @@ function EditableGrid({
                           style={{textAlign:format.horizontalAlign}}
                           aria-label={`${copy.cell} ${rowIndex + 1}, ${columnIndex + 1}`}
                           value={cell}
-                          onChange={(event) =>
-                            onChange({
-                              ...data,
-                              cells: updateTableCell(cells, rowIndex, columnIndex, event.target.value),
-                            })
-                          }
+                          onChange={(event) => {
+                            const nextCells=updateTableCell(cells,rowIndex,columnIndex,event.target.value);
+                            onChange(data.kind==='table'?inherit({...data,cells:nextCells}):{...data,cells:nextCells});
+                          }}
                         />}
                         {!previewOnly && data.kind==='table' && rowHandles[rowIndex]===columnIndex ? (
                           <span className="omi-table-row-resize" role="separator" tabIndex={0} aria-orientation="horizontal"
@@ -798,7 +796,7 @@ function EditableGrid({
               const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(doc));
               const content=pruneTableCellContent(nextCells,data.cellContent);
               content[selectedRow+':'+selectedColumn]=JSON.stringify(doc);
-              return onChange({...data,cells:nextCells,cellContent:content},insertion,citation);
+              return onChange(inherit({...data,cells:nextCells,cellContent:content}),insertion,citation);
             }}/>
             {selectedDoc?.content?.map((node,index)=>{
               const nested=cellNestedTable(node);
@@ -811,7 +809,7 @@ function EditableGrid({
                 const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(valid));
                 const content=pruneTableCellContent(nextCells,data.cellContent);
                 content[selectedRow+':'+selectedColumn]=JSON.stringify(valid);
-                return onChange({...data,cells:nextCells,cellContent:content},insertion,citation);
+                return onChange(inherit({...data,cells:nextCells,cellContent:content}),insertion,citation);
               }}/></details>;
             })}
           </details>:null}
