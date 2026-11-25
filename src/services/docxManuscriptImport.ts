@@ -1,4 +1,5 @@
 import { tableCellPlainText, normalizeCellParagraphAttrs, tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight, MAX_NESTED_TABLE_DEPTH, parseTableCellContent } from '../model/tableLayout';
+import { importedSourceStyle, type SourceStyle } from '../model/sourceWordStyles';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
@@ -72,6 +73,7 @@ interface WordStyle {
   outlineLevel?: number;
   numId?: string;
   numLevel?: number;
+  source?: SourceStyle;
 }
 
 interface WordListInfo {
@@ -362,6 +364,7 @@ export async function parseDocxManuscript(
         listParagraphs.push({
           ...info,
           content: parseParagraphInline(paragraph, relationships, context),
+          paragraphAttrs: sourceParagraphAttrs(paragraphStyle,styles),
         });
         trailingVisuals.push(
           ...(await extractParagraphVisuals(
@@ -439,6 +442,7 @@ export async function parseDocxManuscript(
       const container = directChildrenByLocalName(pPr, parent)[0];
       return container ? directChildrenByLocalName(container, name).map(element => Object.fromEntries(Array.from(element.attributes).map(attribute => [attribute.localName, attribute.value]))) : [];
     }));
+      Object.assign(paragraphAttrs,sourceParagraphAttrs(style,styles));
       const attrs = Object.keys(paragraphAttrs).length ? { attrs: paragraphAttrs } : {};
       const tiptapContent = isCodeStyle(style?.id, style?.name) && plainText
         ? {
@@ -1033,8 +1037,16 @@ async function readStyles(archive: DocxZipArchive): Promise<Map<string, WordStyl
     const pPr = directChildrenByLocalName(element, 'pPr')[0];
     const outline = pPr ? directChildrenByLocalName(pPr, 'outlineLvl')[0] : undefined;
     const outlineValue = outline ? Number(attributeByLocalName(outline, 'val')) : undefined;
+    const kind=attributeByLocalName(element,'type');
+    const rPr=directChildrenByLocalName(element,'rPr')[0];
+    const next=directChildrenByLocalName(element,'next')[0];
+    const color=rPr&&directChildrenByLocalName(rPr,'color')[0];
+    const rawColor=color&&attributeByLocalName(color,'val');
+    const flag=(key:string)=>rPr&&directChildrenByLocalName(rPr,key)[0]?enabledWordProperty(rPr,key):undefined;
+    const source:SourceStyle|undefined=kind==='paragraph'||kind==='character'?{id,name:nameElement?attributeByLocalName(nameElement,'val')??id:id,kind,basedOn:basedOnElement&&attributeByLocalName(basedOnElement,'val'),next:next&&attributeByLocalName(next,'val'),bold:flag('b'),italic:flag('i'),color:rawColor&&/^[0-9a-f]{6}$/i.test(rawColor)?'#'+rawColor:undefined}:undefined;
     styles.set(id, {
       id,
+      source,
       name: nameElement ? attributeByLocalName(nameElement, 'val') : undefined,
       basedOn: basedOnElement ? attributeByLocalName(basedOnElement, 'val') : undefined,
       outlineLevel: Number.isFinite(outlineValue) ? outlineValue : undefined,
@@ -1159,6 +1171,11 @@ function resolveParagraphStyle(
   const styleId = pStyle ? attributeByLocalName(pStyle, 'val') : undefined;
   if (!styleId) return undefined;
   return styles.get(styleId) ?? { id: styleId };
+}
+
+function sourceParagraphAttrs(style:WordStyle|undefined,styles:ReadonlyMap<string,WordStyle>):Record<string,unknown>{
+  const bundle=importedSourceStyle(style?.id,key=>styles.get(key)?.source,'paragraph');
+  return bundle?{omiWordParagraphStyle:bundle}:{};
 }
 
 function resolveParagraphHeadingLevel(
