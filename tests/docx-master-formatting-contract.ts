@@ -346,6 +346,7 @@ function nodes(node: Node): Node[] { return [node, ...(node.content ?? []).flatM
 function modelText(node: Node): string {
   if (node.type === 'hardBreak') return '\n';
   if (node.type === 'omiTab') return '\t';
+  if (node.type === 'omiCrossReference') return typeof node.attrs?.label === 'string' ? node.attrs.label : '';
   return (node.text ?? '') + (node.content ?? []).map(modelText).join('');
 }
 function modelCase(manuscript: OmiManuscript, id: string): Node {
@@ -436,8 +437,11 @@ function assertModel(manuscript: OmiManuscript, item: Case): void {
   if (item.id === 'S02') assertModelMark(p, item.sample!, 'italic');
   if (item.id === 'X02') {
     assert.ok(modelText(p).includes('Hivatkozási cél'));
-    assert.ok(nodes(p).some(n => n.type === 'omiCrossReference'), 'REF field was flattened to text');
-    assert.ok(manuscript.crossReferences?.some(ref => ref.targetKind === 'bookmark'), 'No semantic bookmark cross-reference');
+    const marker = nodes(p).find(n => n.type === 'omiCrossReference' && n.attrs?.label === 'Hivatkozási cél');
+    assert.ok(marker, 'REF field or its cached label was lost');
+    const reference = manuscript.crossReferences?.find(ref => ref.id === marker.attrs?.crossReferenceId);
+    assert.ok(reference?.targetKind === 'bookmark', 'No matching semantic bookmark cross-reference');
+    assert.ok(manuscript.namedAnchors?.some(anchor => anchor.id === reference.targetId && anchor.name === 'OMITest'), 'REF target bookmark is missing');
   }
   if (item.id === 'X03') assertModelMark(p, 'Open Manuscript Initiative', 'omiLink', { href: 'https://openmanuscript.org/' });
 }
@@ -486,7 +490,7 @@ function wordGap(id: string): string | undefined {
   // X02 partial bookmark REF is now a required native regression contract.
   return undefined;
 }
-function modelGap(id: string): string | undefined {
+function modelGap(_id: string): string | undefined {
   // R01/R02 private comments and block revisions are mandatory.
   // L01–L05 model retention is now mandatory.
   // S01 checks the portable source style bundle, not the unrelated publisher style ID.
