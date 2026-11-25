@@ -146,7 +146,6 @@ export const OmiNoteExtension = Node.create<OmiNoteOptions>({
         contenteditable: 'false',
         role: 'button',
         tabindex: '0',
-        title: accessibleLabel,
         'aria-label': accessibleLabel,
       }),
       visibleLabel,

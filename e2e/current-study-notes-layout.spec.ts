@@ -205,3 +205,57 @@ for (const mobile of [false, true]) {
     await expect(footer.locator('.omi-citation-picker')).toBeVisible();
   });
 }
+
+test('note anchors preview the current formatted body on hover and dismiss without opening the editor', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openNotes(page);
+  await page.locator('.focus-current-notes-button').click();
+  await page.evaluate(async () => {
+    const { stageUpdateNoteRichText } = await import('/src/app/noteRichTextActions.ts');
+    stageUpdateNoteRichText('layout-note', JSON.stringify({
+      type: 'doc', content: [
+        { type: 'paragraph', content: [
+          { type: 'text', text: 'Formatted note', marks: [{ type: 'italic' }] },
+          { type: 'text', text: ' with a source', marks: [{ type: 'omiLink', attrs: { href: 'https://example.org/source' } }] },
+        ] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'Second paragraph <script>literal</script>' }] },
+      ],
+    }), 'Formatted note with a source\nSecond paragraph <script>literal</script>', []);
+  });
+  const anchor = page.locator('[data-omi-note][data-note-id="layout-note"]').first();
+  const preview = page.locator('.omi-note-hover-preview');
+  await anchor.hover();
+  await expect(preview).toBeVisible();
+  await expect(preview).toHaveAttribute('role', 'tooltip');
+  await expect(preview.locator('em')).toHaveText('Formatted note');
+  await expect(preview).toContainText('Second paragraph <script>literal</script>');
+  await expect(preview.locator('script, a')).toHaveCount(0);
+  await expect(preview.locator('.omi-note-preview-link')).toHaveText('with a source');
+  await expect(anchor).not.toHaveAttribute('title', 'Note 1');
+  await expect(anchor).toHaveAttribute('aria-describedby', /.+/);
+  await expect(page.locator('#omi-current-study-notes')).toHaveCount(0);
+  await preview.hover();
+  await expect(preview).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(preview).toHaveCount(0);
+  await expect(anchor).not.toHaveAttribute('aria-describedby', /.+/);
+
+  // Reopening must look up the current annotation, not a stale title or number.
+  await page.evaluate(async () => {
+    const { stageUpdateNoteRichText } = await import('/src/app/noteRichTextActions.ts');
+    stageUpdateNoteRichText('layout-note', JSON.stringify({
+      type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Updated preview body' }] }],
+    }), 'Updated preview body', []);
+  });
+  await page.mouse.move(1, 1);
+  await anchor.hover();
+  await expect(preview).toHaveText('Updated preview body');
+  await page.mouse.move(1, 1);
+  await expect(preview).toHaveCount(0);
+  // Keyboard focus provides the same description without a hover-only dependency.
+  await page.keyboard.press('Tab');
+  await anchor.focus();
+  await expect(preview).toHaveText('Updated preview body');
+  await page.keyboard.press('Escape');
+  await expect(preview).toHaveCount(0);
+});
