@@ -37,7 +37,7 @@ export function normalizeRunningVariants(input:unknown):RunningVariants|undefine
         if(!t||typeof t!=='object'||Array.isArray(t)||++count>MAX_RUNNING_TOKENS)return undefined;
         if(t.kind==='text'&&typeof t.text==='string'&&Object.keys(t).length===2){
           total+=t.text.length;
-          if(total>MAX_RUNNING_TEXT||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(t.text))return undefined;
+          if(total>MAX_RUNNING_TEXT||Array.from(t.text).some(character => { const code = character.charCodeAt(0); return code < 32 && code !== 9 && code !== 10 && code !== 13; }))return undefined;
           tokens.push({kind:'text',text:t.text});
         }else if(t.kind==='field'&&RUNNING_FIELDS.includes(t.field)&&Object.keys(t).length===2)tokens.push({kind:'field',field:t.field});
         else if((t.kind==='tab'||t.kind==='break')&&Object.keys(t).length===1)tokens.push({kind:t.kind});
