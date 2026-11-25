@@ -405,3 +405,12 @@ export function normalizeNestedCellTable(value:unknown,depth=1,budget={cells:100
 export function cellNestedTable(node:NoteJsonNode):OmiTableBlockData|undefined {
   return node.type==='omiCellTable'?normalizeNestedCellTable(node.attrs?.table):undefined;
 }
+
+/** Pointer movement is measured in viewport pixels; the scale accounts for
+ * publication zoom and transformed paper. Keep native exact mode if selected. */
+export function resizeTableRowHeight(height: OmiTableRowHeight, measuredPx: number, deltaPx: number, scale=1): OmiTableRowHeight {
+  if(!Number.isFinite(measuredPx)||measuredPx<=0||!Number.isFinite(deltaPx)||!Number.isFinite(scale)||scale<=0) return normalizeTableRowHeight(height);
+  const base=height.mode==='auto'?measuredPx*0.75/scale:height.heightPt;
+  if(deltaPx===0) return normalizeTableRowHeight(height);
+  return normalizeTableRowHeight({mode:height.mode==='exact'?'exact':'minimum',heightPt:Math.max(0.05,base+deltaPx*0.75/scale)});
+}
