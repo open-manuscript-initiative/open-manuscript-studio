@@ -337,7 +337,7 @@ function wordTable(table: OmiTableBlockData, warnings: string[]): string {
         + (format.verticalAlign?'<w:vAlign w:val="'+(format.verticalAlign==='middle'?'center':format.verticalAlign)+'"/>':'');
       const doc=continuing?undefined:tableCellDocument(table,r,c);
       const rich=doc?.content?.map(p=>{
-        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':extractOmiInlineRuns(JSON.stringify(n)).map(run=>wordRun(run)).join('')).join('');
+        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':extractOmiInlineRuns(JSON.stringify(n)).map(run=>wordRun(run,undefined,{})).join('')).join('');
         const pPr=format.horizontalAlign?'<w:pPr><w:jc w:val="'+(format.horizontalAlign==='justify'?'both':format.horizontalAlign)+'"/></w:pPr>':'';
         return '<w:p>'+pPr+runs+'</w:p>';
       }).join('');
