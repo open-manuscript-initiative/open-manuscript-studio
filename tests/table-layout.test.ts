@@ -366,10 +366,11 @@ test('row reorder moves connected vertical merges, rich content and row metadata
   const block=createTableBlock([['H1','H2'],['A','X'],['','B'],['C',''],['D','E']],{
     headerRows:1,cellMerges:[{row:1,column:0,rowSpan:2,colSpan:1},{row:2,column:1,rowSpan:2,colSpan:1}],
     cellContent:{'1:0':rich},cellFormats:{'2:1':{backgroundColor:'#AABBCC'}},
-    rowHeights:{'2':{mode:'exact',heightPt:24}},rowSplitOverrides:{'3':'keep'},columnWidths:[35,65]
+    rowHeights:{'2':{mode:'exact',heightPt:24}},rowSplitOverrides:{'3':'keep'}
   },'reorder-rows');
   const table=block.visual;
   assert.ok(table?.kind==='table');
+  table.columnWidths=[35,65];
   assert.equal(planTableAxisMove(table,'row',1,-1),undefined);
   assert.equal(planTableAxisMove(table,'row',0,1),undefined);
   assert.equal(planTableAxisMove(table,'row',1.5,1),undefined);
@@ -392,12 +393,13 @@ test('column reorder preserves horizontal merge blocks, dimensions and nested do
   const doc={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Before'}]},{type:'omiCellTable',attrs:{table:{kind:'table',cells:[['Nested']],headerRows:0}}}]};
   const raw=JSON.stringify(doc);
   const block=createTableBlock([['A','','C'],[tableCellPlainText(doc),'B','D']],{
-    headerRows:1,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],columnWidths:[20,30,50],
+    headerRows:1,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],
     cellContent:{'1:0':raw},cellFormats:{'1:1':{paddingPt:{left:4},horizontalAlign:'right'}},
     rowHeights:{'1':{mode:'minimum',heightPt:18}}
   },'reorder-columns');
   const table=block.visual;
   assert.ok(table?.kind==='table');
+  table.columnWidths=[20,30,50];
   const moved=reorderTableAxis(table,'column',1,1);
   assert.ok(moved);
   assert.equal(moved.index,2);
@@ -412,6 +414,6 @@ test('column reorder preserves horizontal merge blocks, dimensions and nested do
   const manuscript=createVersionedTestManuscript();
   manuscript.sections[0]!.blocks.push({...block,visual:moved.table});
   const reopened=parseOmiJson(serializeOmiJson(manuscript));
-  assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,moved.table);
+  assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,JSON.parse(JSON.stringify(moved.table)));
   assert.equal(reorderTableAxis({...table,cellMerges:[{row:0,column:0,rowSpan:2,colSpan:1}]},'column',0,1),undefined);
 });
