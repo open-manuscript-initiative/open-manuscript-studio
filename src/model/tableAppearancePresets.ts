@@ -285,10 +285,9 @@ export function inheritPublicationTableGeometry(previous:OmiTableBlockData,next:
   const preset=resolvePublicationTablePreset(catalog,next.publicationTableStyle);
   return preset?.kind==='table'?materializeInheritedGeometry(previous,next,preset,preset,sourceAt):next;
 }
-/** Rich cells store nested tables in their canonical JSON documents. Update
- * only changed documents; the plain text projection and anchors are unchanged. */
-export function refreshPublicationTableTree(table:OmiTableBlockData,previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined,depth=0):OmiTableBlockData{
-  const refreshed=refreshPublicationCellStyles(refreshPublicationTableStyle(table,previous,next),previous,next);
+/** Traverse canonical rich-cell JSON without changing its plain text projection. */
+function mapPublicationTableTree(table:OmiTableBlockData,transform:(table:OmiTableBlockData)=>OmiTableBlockData,depth=0):OmiTableBlockData{
+  const refreshed=transform(table);
   if(depth>=MAX_NESTED_TABLE_DEPTH||!refreshed.cellContent)return refreshed;
   let content:Record<string,string>|undefined;
   for(const [key,value] of Object.entries(refreshed.cellContent)){
@@ -298,7 +297,7 @@ export function refreshPublicationTableTree(table:OmiTableBlockData,previous:Pub
     const nodes=doc.content?.map(node=>{
       const nested=cellNestedTable(node);
       if(!nested)return node;
-      const updated=refreshPublicationTableTree(nested,previous,next,depth+1);
+      const updated=mapPublicationTableTree(nested,transform,depth+1);
       if(updated===nested)return node;
       changed=true;
       return {...node,attrs:{...node.attrs,table:updated}};
@@ -310,12 +309,14 @@ export function refreshPublicationTableTree(table:OmiTableBlockData,previous:Pub
   }
   return content?{...refreshed,cellContent:content}:refreshed;
 }
+export function refreshPublicationTableTree(table:OmiTableBlockData,previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined,depth=0):OmiTableBlockData{
+  return mapPublicationTableTree(table,item=>refreshPublicationCellStyles(refreshPublicationTableStyle(item,previous,next),previous,next),depth);
+}
 /** Traverse section and block trees without rewriting unrelated objects. */
-export function refreshPublicationTables(sections:OmiSection[],previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined):OmiSection[]{
-  if(sameFormat(previous,next))return sections;
+function mapPublicationTables(sections:OmiSection[],transform:(table:OmiTableBlockData)=>OmiTableBlockData):OmiSection[]{
   function blocks(items:OmiBlock[]):OmiBlock[]{
     const result=items.map(block=>{
-      const visual=block.visual?.kind==='table'?refreshPublicationTableTree(block.visual,previous,next):block.visual;
+      const visual=block.visual?.kind==='table'?mapPublicationTableTree(block.visual,transform):block.visual;
       const children=block.children?blocks(block.children):undefined;
       return visual===block.visual&&children===block.children?block:{...block,visual,children};
     });
@@ -330,6 +331,10 @@ export function refreshPublicationTables(sections:OmiSection[],previous:Publicat
     return result.every((section,i)=>section===items[i])?items:result;
   }
   return visit(sections);
+}
+export function refreshPublicationTables(sections:OmiSection[],previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined):OmiSection[]{
+  if(sameFormat(previous,next))return sections;
+  return mapPublicationTables(sections,item=>refreshPublicationCellStyles(refreshPublicationTableStyle(item,previous,next),previous,next));
 }
 
 /** Named cell styles take precedence over the table region. Applying a local
@@ -417,4 +422,24 @@ export function publicationTableStylePreview(catalog:PublicationTableStyles,name
   const preset=catalog.items.find(item=>item.name===name);
   if(preset?.kind==='cell')return bindPublicationCellStyle(table,catalog,name,{row:1,column:1},{row:2,column:1});
   return bindPublicationTableStyle(table,catalog,name);
+}
+
+/** Rename definitions and every catalog reference in one validated operation. */
+export function renamePublicationTablePreset(catalog:PublicationTableStyles,from:string,newName:string):PublicationTableStyles|undefined{
+  const name=newName.trim();
+  if(!name||name.length>80||from===name||!catalog.items.some(p=>p.name===from)||catalog.items.some(p=>p.name===name))return undefined;
+  const items=catalog.items.map(p=>{
+    const updated=p.name===from?{...p,name}:p;
+    return updated.kind==='table'&&updated.basedOn===from?{...updated,basedOn:name}:updated;
+  });
+  return {...catalog,items,...(catalog.defaultTableStyle===from?{defaultTableStyle:name}:{})};
+}
+/** Only change binding names; materialized formats, scholarly content and
+ * geometry remain untouched. Historical revision snapshots are not mutated. */
+export function renamePublicationTableBindings(sections:OmiSection[],from:string,to:string,kind:TableAppearancePreset['kind']):OmiSection[]{
+  return mapPublicationTables(sections,table=>{
+    if(kind==='table')return table.publicationTableStyle===from?{...table,publicationTableStyle:to}:table;
+    if(!table.publicationCellStyles||!Object.values(table.publicationCellStyles).includes(from))return table;
+    return {...table,publicationCellStyles:Object.fromEntries(Object.entries(table.publicationCellStyles).map(([key,name])=>[key,name===from?to:name]))};
+  });
 }
