@@ -6,6 +6,7 @@ interface FormattingTarget {
   editor: Editor;
   noteId: string | null;
   insertCitation: (() => void) | null;
+  insertNote?: (() => void) | null;
   renderActions: () => ReactNode;
 }
 
@@ -30,11 +31,12 @@ useFormattingStore.subscribe((state, previous) => {
 /** Keep the last editable surface selected while the user operates the header. */
 export function useFormattingEditor(
   editor: Editor | null,
-  options: { noteId?: string; onCitation?: () => void; actions?: ReactNode } = {},
+  options: { noteId?: string; onCitation?: () => void; onNote?: () => void; actions?: ReactNode } = {},
 ): void {
   const optionsRef = useRef(options);
   optionsRef.current = options;
   const noteId = options.noteId ?? null;
+  const canInsertNote = Boolean(options.onNote);
 
   useEffect(() => {
     if (!editor) return;
@@ -48,6 +50,7 @@ export function useFormattingEditor(
         insertCitation: optionsRef.current.onCitation
           ? () => optionsRef.current.onCitation?.()
           : null,
+        insertNote: canInsertNote ? () => optionsRef.current.onNote?.() : null,
         renderActions: () => {
           const actions = optionsRef.current.actions;
           // Selection tools also read live editor state. Refresh their element
@@ -75,5 +78,5 @@ export function useFormattingEditor(
       editor.off('transaction', checkEditable);
       clear();
     };
-  }, [editor, noteId]);
+  }, [editor, noteId, canInsertNote]);
 }
