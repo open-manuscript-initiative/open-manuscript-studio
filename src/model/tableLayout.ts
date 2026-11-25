@@ -242,6 +242,12 @@ export function tableRowHeightStyle(height:OmiTableRowHeight): {height?:string} 
 }
 
 /** Cell documents support paragraphs and nested lists, with bounded list depth. */
+function validCellCitation(a:Record<string,unknown>|undefined):boolean{
+  const id=(v:unknown):v is string=>typeof v==='string'&&!!v.trim()&&v.length<=256;
+  if(!a||!id(a.citationId)||!id(a.anchorId)||a.clusterId!=null&&!id(a.clusterId))return false;
+  const ids=a.citationIds??[a.citationId];
+  return Array.isArray(ids)&&ids.length>0&&ids.length<=100&&ids.every(id)&&ids[0]===a.citationId&&new Set(ids).size===ids.length;
+}
 export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:10000}): NoteJsonNode | undefined {
   if(typeof value!=='string') return undefined;
   try {
@@ -251,7 +257,7 @@ export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:1
     const validBlock=(node:NoteJsonNode,depth:number):boolean=>{
       if(depth>8||!node||typeof node!=='object') return false;
       if(node.type==='paragraph'){
-        if(node.content!==undefined&&(!Array.isArray(node.content)||!node.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab'||n?.type==='omiNote'&&typeof n.attrs?.noteId==='string'&&!!n.attrs.noteId.trim()&&typeof n.attrs.anchorId==='string'&&!!n.attrs.anchorId.trim()))) return false;
+        if(node.content!==undefined&&(!Array.isArray(node.content)||!node.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab'||n?.type==='omiCitation'&&validCellCitation(n.attrs)||n?.type==='omiNote'&&typeof n.attrs?.noteId==='string'&&!!n.attrs.noteId.trim()&&typeof n.attrs.anchorId==='string'&&!!n.attrs.anchorId.trim()))) return false;
         paragraphs.push(node);
         return true;
       }
@@ -285,6 +291,11 @@ export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:1
       const attrs=normalizeCellParagraphAttrs(p.attrs);
       if(Object.keys(attrs).length) p.attrs=attrs; else delete p.attrs;
       for(const n of p.content??[]){
+        if(n.type==='omiCitation'){
+          const a=n.attrs!;
+          n.attrs={citationId:a.citationId,citationIds:Array.isArray(a.citationIds)?a.citationIds:[a.citationId],...(a.clusterId?{clusterId:a.clusterId}:{}),anchorId:a.anchorId,label:typeof a.label==='string'?a.label.slice(0,8192):'[citation]'};
+          delete n.text;delete n.content;delete n.marks;continue;
+        }
         if(n.type==='omiNote'){
           const a=n.attrs!;
           n.attrs={noteId:a.noteId,anchorId:a.anchorId,label:typeof a.label==='string'?a.label.slice(0,32):'?',noteType:a.noteType==='endnote'||a.noteType==='author-note'?a.noteType:'footnote'};
@@ -322,7 +333,7 @@ export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:1
 export function tableCellPlainText(doc:NoteJsonNode):string {
   const paragraphs:string[]=[];
   const visit=(node:NoteJsonNode)=>{
-    if(node.type==='paragraph') paragraphs.push((node.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.type==='omiNote'?'':n.text??'').join(''));
+    if(node.type==='paragraph') paragraphs.push((node.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.type==='omiNote'||n.type==='omiCitation'?'':n.text??'').join(''));
     else if(node.type==='omiCellTable') {const table=node.attrs?.table as OmiTableBlockData|undefined;if(table) paragraphs.push(table.cells.map(row=>row.join('\t')).join('\n'));}
     else for(const child of node.content??[]) visit(child);
   };
