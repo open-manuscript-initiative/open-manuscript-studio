@@ -1,4 +1,4 @@
-import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat, TABLE_CELL_SIDES } from '../model/tableLayout';
+import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat, TABLE_CELL_SIDES, tableRowHeight } from '../model/tableLayout';
 import { paragraphTabs } from '../model/directParagraphFormatting';
 import { odtCharacterProperties, odtParagraphProperties, odtRunHasDirectFormatting } from './odtFormatting';
 import { directFormattingFromMarks } from '../model/directFormatting';
@@ -89,7 +89,8 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
     const headerRows=tableHeaderRows(block.visual.cells,block.visual.headerRows);
     const layout=tableMergeLayout(block.visual.cells,block.visual.cellMerges,headerRows);
     const table=block.visual;
-    const rows=table.cells.map((row,r)=>'<table:table-row table:style-name="'+stylesRegistry.tableRow(tableRowSplitPolicy(table,r))+'">'+row.map((cell,c)=>{
+    if(table.cells.some((_,r)=>tableRowHeight(table,r).mode==='exact')) warnings.push('Exact ODT row heights can clip overflowing text; review the target document.');
+    const rows=table.cells.map((row,r)=>'<table:table-row table:style-name="'+stylesRegistry.tableRow(tableRowSplitPolicy(table,r),tableRowHeight(table,r))+'">'+row.map((cell,c)=>{
       if(layout.covered(r,c)) return '<table:covered-table-cell/>';
       const m=layout.at(r,c);
       const format=tableCellFormat(table.cellFormats,r,c);
@@ -212,8 +213,11 @@ class AutomaticStyles {
   cellParagraph(horizontal: string | undefined): string | undefined {
     return this.register('paragraph',horizontal?{'fo:text-align':horizontal}:{},'OMICellPara');
   }
-  tableRow(policy: 'keep' | 'allow'): string {
-    return this.register('table-row', {'fo:keep-together':policy==='keep'?'always':'auto'}, 'OMIRow')!;
+  tableRow(policy: 'keep' | 'allow',height:ReturnType<typeof tableRowHeight>): string {
+    const properties:Record<string,string>={'fo:keep-together':policy==='keep'?'always':'auto'};
+    if(height.mode==='exact') {properties['style:row-height']=height.heightPt+'pt';properties['style:use-optimal-row-height']='false';}
+    if(height.mode==='minimum') {properties['style:min-row-height']=height.heightPt+'pt';properties['style:use-optimal-row-height']='true';}
+    return this.register('table-row',properties,'OMIRow')!;
   }
   xml(): string {
     return [...this.definitions.values()].map(({ name, family, properties, children }) => {
