@@ -1,3 +1,4 @@
+import { WordImageRegistry } from './wordImageExport';
 import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model/wordTextBoxLink';
 import { textBoxDocument, boxNumber, boxColor, boxFont, visualTextBoxText } from '../model/textBoxes';
 import { wordTocInstruction } from '../model/tableOfContents';
@@ -69,6 +70,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   if (JSON.stringify(manuscript).includes('omiHiddenText')) warnings.push('Editable DOCX preserves hidden text. Hidden formatting is not redaction; do not distribute this file as a redacted document.');
   const body: string[] = [];
   const textBoxes=new WordTextBoxRegistry(context.sections,warnings);
+  const images=new WordImageRegistry(warnings);
   const bookmarkRegistry=new WordBookmarkRegistry(manuscript,context.sections,warnings);
   const resolveCrossReference=(id:string)=>bookmarkRegistry.reference(id);
   const sourceStyles = new SourceWordStyleRegistry();
@@ -187,6 +189,10 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           body.push(wordTable(block.visual, warnings, numbering, sourceStyles,resolveNote,9026,documentLinks));
           continue;
         }
+        if(block.visual?.kind==='image'){
+          const picture=images.render(block.visual,indexFields);
+          if(picture){body.push(picture);if(block.visual.caption?.trim())body.push(paragraph(block.visual.caption));continue;}
+        }
         if(block.visual?.kind==='text-box'){
           if(block.visual.caption?.trim())body.push(paragraph(block.visual.caption));
           body.push(textBoxes.render(block.visual.textBox,indexFields));
@@ -265,13 +271,14 @@ ${characterStylesXml()}${sourceStyles.xml()}
   const footnoteXml=footnotes.length?renderWordNotes('footnote',footnotes,continueFootnotes,footnoteLinks):undefined;
   const endnoteXml=endnotes.length?renderWordNotes('endnote',endnotes,true,endnoteLinks):undefined;
   const entries = [
-    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>${numbering.size ? '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' : ''}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${footnotes.length ? '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' : ''}${endnotes.length ? '<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' : ''}${runningParts.contentTypes()}</Types>`),
+    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>${numbering.size ? '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' : ''}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${footnotes.length ? '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' : ''}${endnotes.length ? '<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' : ''}${runningParts.contentTypes()}${images.contentTypes()}</Types>`),
     textZipEntry('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`),
-    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${numbering.size ? '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : ''}${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}${runningParts.relationships()}${documentLinks.relationships()}</Relationships>`),
+    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${numbering.size ? '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : ''}${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}${runningParts.relationships()}${documentLinks.relationships()}${images.relationships()}</Relationships>`),
     textZipEntry('word/document.xml', documentXml),
     textZipEntry('word/styles.xml', stylesXml),
     textZipEntry('word/settings.xml', settingsXml),
     ...runningParts.entries(),
+    ...images.entries(),
     ...(numbering.size ? [textZipEntry('word/numbering.xml', numbering.xml())] : []),
     textZipEntry('docProps/core.xml', core),
     ...(footnoteXml?[textZipEntry('word/footnotes.xml',footnoteXml)]:[]),
