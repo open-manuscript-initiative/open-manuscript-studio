@@ -254,3 +254,24 @@ test('reorder selected table rows and columns without moving header into body',a
   await page.setViewportSize({width:480,height:900});
   await expect(canvas.getByRole('button',{name:'Move row up',exact:true})).toHaveCount(0);
 });
+
+test('apply built-in table appearance and save a reusable local cell style',async({page})=>{
+  const canvas=await openTables(page,2);
+  const table=canvas.locator('.omi-table-editor').first();
+  await canvas.getByText('Table and cell styles',{exact:true}).click();
+  const panel=canvas.locator('details').filter({has:canvas.getByText('Table and cell styles',{exact:true})});
+  await panel.getByRole('combobox',{name:'Table style',exact:true}).selectOption('builtin:banded');
+  await panel.getByRole('button',{name:'Apply style',exact:true}).click();
+  await expect(table.locator('tr').first().locator('th').first()).toHaveCSS('background-color','rgb(220, 230, 241)');
+  await expect(table.locator('tr').nth(2).locator('td').first()).toHaveCSS('background-color','rgb(241, 244, 247)');
+  await panel.getByRole('textbox',{name:'Style name',exact:true}).fill('Journal header');
+  await panel.getByRole('button',{name:'Save style',exact:true}).click();
+  await expect(panel.getByRole('combobox',{name:'Table style',exact:true})).toHaveValue('custom:Journal header');
+  await expect.poll(()=>page.evaluate(()=>localStorage.getItem('omi.table-appearance-presets.v1'))).toContain('Journal header');
+  await canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true}).click();
+  await panel.getByRole('button',{name:'Apply style',exact:true}).click();
+  await expect(table.locator('tr').nth(1).locator('td').first()).toHaveCSS('background-color','rgb(220, 230, 241)');
+  await expect(canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true})).toHaveValue('Row 0');
+  await panel.getByRole('button',{name:'Delete saved style',exact:true}).click();
+  await expect(panel.getByRole('combobox',{name:'Table style',exact:true})).toHaveValue('builtin:grid');
+});
