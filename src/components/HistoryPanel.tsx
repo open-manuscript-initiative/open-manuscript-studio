@@ -30,6 +30,7 @@ const OPERATION_LABELS: Partial<
   'manuscript.abstract.set': 'history.operations.abstractChanged',
   'section.create': 'history.operations.sectionCreated',
   'block.content.set': 'history.operations.blockChanged',
+  'block.update': 'history.operations.blockChanged',
   'agent.create': 'history.operations.contributorAdded',
   'agent.update': 'history.operations.contributorChanged',
   'agent.remove': 'history.operations.contributorRemoved',
