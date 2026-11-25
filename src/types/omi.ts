@@ -61,6 +61,8 @@ export interface OmiAnnotation {
    * importable while the OMI-SPEC-130 model evolves.
    */
   noteKind?: 'footnote' | 'endnote' | 'author-note';
+  /** Explicit source custom reference; does not consume a numbered note. */
+  noteCustomMark?: '*';
 
   /**
    * Stable semantic anchor carried by the inline Tiptap note marker.
@@ -321,6 +323,8 @@ export interface OmiCrossReference {
   targetId: string;
   targetKind: OmiCrossReferenceTargetKind;
   displayStyle: OmiCrossReferenceDisplayStyle;
+  /** Native Word REF/PAGEREF semantics and cached display fallback. */
+  wordField?: import('../model/wordCrossReference').WordCrossReferenceField;
   createdAt?: string;
   modifiedAt?: string;
 }
@@ -539,6 +543,8 @@ export interface OmiBlock {
 export type OmiSectionColumnCount = 1 | 2 | 3;
 
 export interface OmiSectionLayout {
+  /** Native Word physical section, separate from logical headings. */
+  wordSection?: import('../model/wordSectionLayout').WordSectionLayout;
   /** Number of text columns used when this section is rendered for publication. */
   columns?: OmiSectionColumnCount;
   /** Gap between publication columns in millimetres. */

@@ -328,7 +328,9 @@ test('reference manuscript exports through all lifecycle output gates', () => {
   const documentXml = new TextDecoder().decode(docxEntries.get('word/document.xml'));
   assert.equal(documentXml.includes('OMI Reference Manuscript'), true);
   assert.equal(documentXml.includes('XE &quot;Scholar, Ada&quot;'), true);
-  assert.equal(documentXml.includes(' INDEX '), true);
+  const indexTypes = [...documentXml.matchAll(/ INDEX \\f &quot;([A-Z])&quot; /g)].map(match => match[1]);
+  assert.equal(new Set(indexTypes).size, 2, 'Name and subject indexes must have distinct Word field types');
+  for (const type of indexTypes) assert.ok(documentXml.includes('\\f &quot;' + type + '&quot;'), 'Missing index type');
 
   const epub = buildEpubExport(manuscript);
   const epubEntries = readStoreZipEntries(epub.bytes);

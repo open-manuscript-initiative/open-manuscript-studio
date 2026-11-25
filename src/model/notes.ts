@@ -159,6 +159,14 @@ function mapTableNoteDocuments(table:OmiTableBlockData,transform:(node:JsonNode)
   return changed?{...table,cellContent:content}:table;
 }
 
+export function getNoteCustomMark(note:OmiAnnotation|undefined):'*'|undefined{
+  return note?.noteCustomMark==='*'&&getNoteKind(note)!=='author-note'?'*':undefined;
+}
+
+export function getNoteLabel(state:OmiManuscriptState,noteId:string):string|undefined{
+  return getNoteCustomMark(state.annotations.find(note=>note.id===noteId))??(getNoteNumber(state,noteId)?.toString());
+}
+
 export function getNoteNumber(
   state: OmiManuscriptState,
   noteId: string,
@@ -391,7 +399,7 @@ function normalizeNoteNodes(
           annotation?.anchorId ??
           stringAttribute(node.attrs, 'anchorId') ??
           stableAnchorIdForLegacyNote(noteId),
-        label: kind === 'author-note' ? '' : String(numberByNoteId.get(noteId) ?? '?'),
+        label: kind === 'author-note' ? '' : getNoteCustomMark(annotation)??String(numberByNoteId.get(noteId) ?? '?'),
         noteType: kind,
       };
     }
@@ -472,9 +480,10 @@ export function buildNoteNumberMap(
   const kindById = new Map(
     (state.annotations ?? []).filter(isNoteAnnotation).map((note) => [note.id, getNoteKind(note)]),
   );
+  const customIds=new Set((state.annotations??[]).filter(note=>getNoteCustomMark(note)).map(note=>note.id));
 
   for (const occurrence of occurrences) {
-    if (result.has(occurrence.noteId)) continue;
+    if (result.has(occurrence.noteId)||customIds.has(occurrence.noteId)) continue;
     if (!options.includeLocalNotes && (kindById.get(occurrence.noteId) ?? occurrence.kind) === 'author-note') continue;
     const scopeKey = scope === 'continuous'
       ? 'document'
@@ -487,6 +496,14 @@ export function buildNoteNumberMap(
   }
 
   return result;
+}
+
+export function buildNoteLabelMap(state:Parameters<typeof buildNoteNumberMap>[0],occurrences:NoteAnchorOccurrence[]=collectNoteAnchors(state),options:Parameters<typeof buildNoteNumberMap>[2]={}):Map<string,string>{
+  const numbers=buildNoteNumberMap(state,occurrences,options);
+  const custom=new Map((state.annotations??[]).filter(note=>getNoteCustomMark(note)).map(note=>[note.id,'*'] as const));
+  const labels=new Map<string,string>();
+  for(const occurrence of occurrences){const label=custom.get(occurrence.noteId)??numbers.get(occurrence.noteId)?.toString();if(label!==undefined)labels.set(occurrence.noteId,label);}
+  return labels;
 }
 
 function normalizeNoteKind(value: string | undefined): OmiNoteKind {

@@ -1360,3 +1360,511 @@ test('live publication table appearance survives OMI reopening and native public
     }
   }finally{useStudioStore.setState(previous,true);}
 });
+
+test('Word style-based numbering resolves ancestry, explicit suppression and cell list identity',async()=>{
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const styles='<w:styles xmlns:w="'+ns+'"><w:style w:type="paragraph" w:styleId="BaseList"><w:pPr><w:numPr><w:numId w:val="7"/></w:numPr></w:pPr></w:style><w:style w:type="paragraph" w:styleId="DerivedList"><w:basedOn w:val="BaseList"/></w:style><w:style w:type="paragraph" w:styleId="NestedList"><w:basedOn w:val="BaseList"/></w:style><w:style w:type="paragraph" w:styleId="NoList"><w:basedOn w:val="BaseList"/><w:pPr><w:numPr><w:numId w:val="0"/></w:numPr></w:pPr></w:style></w:styles>';
+  const numbering='<w:numbering xmlns:w="'+ns+'"><w:abstractNum w:abstractNumId="3"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:pPr><w:ind w:left="360" w:hanging="180"/></w:pPr></w:lvl><w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:pStyle w:val="NestedList"/><w:lvlText w:val="%2."/><w:pPr><w:ind w:left="720" w:hanging="180"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId="7"><w:abstractNumId w:val="3"/></w:num></w:numbering>';
+  const p=(value:string,style:string,direct='')=>'<w:p><w:pPr><w:pStyle w:val="'+style+'"/>'+direct+'</w:pPr><w:r><w:t>'+value+'</w:t></w:r></w:p>';
+  const input=makeDocx(p('First item','DerivedList')+p('Nested item','NestedList')+p('Suppressed item','DerivedList','<w:numPr><w:numId w:val="0"/></w:numPr>')+p('Plain style','NoList')+p('Continued item','BaseList')+'<w:tbl><w:tr><w:tc>'+p('Cell item','DerivedList')+'</w:tc></w:tr></w:tbl>',{entries:[textZipEntry('word/styles.xml',styles),textZipEntry('word/numbering.xml',numbering)]});
+  const plan=await parseDocxForStudio(input);
+  const blocks=plan.sections.flatMap(s=>s.blocks);
+  const lists=blocks.filter(b=>!b.visual).flatMap(b=>findNodes(JSON.parse(b.content) as TiptapNode,'orderedList'));
+  const first=lists.find(n=>collectText(n).startsWith('First item'));
+  const nested=lists.find(n=>collectText(n)==='Nested item');
+  const continued=lists.find(n=>collectText(n)==='Continued item');
+  assert.ok(first&&nested&&continued);
+  assert.equal(first.attrs?.omiListLeft,360);
+  assert.equal(nested.attrs?.omiListLevel,1);
+  assert.equal(nested.attrs?.omiListLeft,720);
+  assert.ok(first.attrs?.omiListId);
+  assert.equal(continued.attrs?.omiListId,first.attrs?.omiListId);
+  for(const label of ['Suppressed item','Plain style']){
+    const block=blocks.find(b=>!b.visual&&blockText(b)===label);
+    assert.ok(block);
+    assert.equal(findNodes(JSON.parse(block.content) as TiptapNode,'orderedList').length,0);
+  }
+  const table=blocks.find(b=>b.visual?.kind==='table')?.visual;
+  assert.ok(table?.kind==='table');
+  const cell=findNodes(JSON.parse(table.cellContent?.['0:0']??'{}') as TiptapNode,'orderedList')[0];
+  assert.equal(cell?.attrs?.omiListId,first.attrs?.omiListId);
+  assert.equal(table.cells[0]?.[0],'Cell item');
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Style numbering'}),sections:plan.sections};
+  const exported=buildDocxExport(manuscript);
+  const xml=readZipParts(exported.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:numPr>/);
+  const reopened=await parseDocxForStudio(new File([new Uint8Array(exported.bytes)],'style-numbering.docx'));
+  const reopenedLists=reopened.sections.flatMap(s=>s.blocks).filter(b=>!b.visual).flatMap(b=>findNodes(JSON.parse(b.content) as TiptapNode,'orderedList'));
+  assert.equal(reopenedLists.find(n=>collectText(n).startsWith('First item'))?.attrs?.omiListId,reopenedLists.find(n=>collectText(n)==='Continued item')?.attrs?.omiListId);
+});
+
+test('named source paragraph style survives structured text, editor projection and Word reopen',async()=>{
+  const {sourceStyleBundle}=await import('../src/model/sourceWordStyles.ts');
+  const {buildContinuousManuscriptDocument,projectContinuousManuscriptDocument}=await import('../src/editor/continuousManuscriptDocument.ts');
+  const styles='<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:styleId="SourceBase"><w:name w:val="Source base"/></w:style><w:style w:type="paragraph" w:styleId="SourceCustom"><w:name w:val="Source custom"/><w:basedOn w:val="SourceBase"/><w:next w:val="SourceBase"/></w:style></w:styles>';
+  const body='<w:p><w:pPr><w:pStyle w:val="SourceCustom"/></w:pPr><w:r><w:t>Styled specimen</w:t><w:tab/><w:t>after tab</w:t></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body,{entries:[textZipEntry('word/styles.xml',styles)]}));
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Source style regression'}),sections:plan.sections};
+  const inspect=(sections:typeof plan.sections)=>{
+    const block=sections.flatMap(s=>s.blocks).find(b=>b.content.includes('Styled specimen'));
+    assert.ok(block);
+    const p=findNodes(JSON.parse(block.content) as TiptapNode,'paragraph')[0];
+    const bundle=sourceStyleBundle(p?.attrs?.omiWordParagraphStyle);
+    assert.equal(bundle?.selected,'SourceCustom');
+    const selected=bundle?.styles.find(s=>s.id===bundle.selected);
+    assert.equal(selected?.name,'Source custom');
+    assert.equal(selected?.basedOn,'SourceBase');
+    assert.equal(selected?.next,'SourceBase');
+    assert.ok(findNodes(JSON.parse(block.content) as TiptapNode,'omiTab').length || collectText(JSON.parse(block.content) as TiptapNode).includes('\t'), 'Imported tab must remain in the paragraph');
+    assert.equal(block.paragraphStyleId,undefined);
+  };
+  inspect(plan.sections);
+  const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+  const reopened=parseOmiJson(serializeOmiJson(projected));
+  inspect(reopened.sections);
+  const word=buildDocxExport(reopened);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:pStyle w:val="SourceCustom"\/>/);
+  assert.match(xml,/<w:tab\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'source-paragraph-style.docx'))).sections);
+});
+
+test('explicit mixed writing directions survive Word import, editor projection and OMI/DOCX reopen',async()=>{
+  const {paragraphFormattingCss,normalizeParagraphValue}=await import('../src/model/directParagraphFormatting.ts');
+  const {normalizeDirectValue}=await import('../src/model/directFormatting.ts');
+  const body='<w:p><w:pPr><w:bidi/></w:pPr><w:r><w:rPr><w:rtl/><w:lang w:val="he-IL"/></w:rPr><w:t>שלום עולם</w:t></w:r><w:r><w:rPr><w:rtl w:val="0"/></w:rPr><w:t> Latin 123</w:t></w:r></w:p><w:p><w:pPr><w:bidi w:val="0"/></w:pPr><w:r><w:rPr><w:lang w:val="ar-SA"/></w:rPr><w:t>مرحبا</w:t></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body));
+  const inspect=(sections:typeof plan.sections)=>{
+    const blocks=sections.flatMap(s=>s.blocks);
+    const first=blocks.find(b=>b.content.includes('Latin 123'))!;
+    const second=blocks.find(b=>b.content.includes('مرحبا'))!;
+    assert.ok(first&&second);
+    const a=JSON.parse(first.content) as TiptapNode,b=JSON.parse(second.content) as TiptapNode;
+    assert.equal(findNodes(a,'paragraph')[0]?.attrs?.omiParagraphDirection,'rtl');
+    assert.equal(findNodes(b,'paragraph')[0]?.attrs?.omiParagraphDirection,'ltr');
+    const direction=(n:TiptapNode)=>n.marks?.find(m=>m.type==='omiTextDirection')?.attrs?.value;
+    assert.equal(direction(findNodes(a,'text').find(n=>n.text?.includes('שלום'))!),'rtl');
+    assert.equal(direction(findNodes(a,'text').find(n=>n.text?.includes('Latin'))!),'ltr');
+    assert.equal(direction(findNodes(b,'text')[0]!),undefined,'Language must not imply a direct direction override');
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Bidirectional text'}),sections:plan.sections};
+  const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+  const reopened=parseOmiJson(serializeOmiJson(projected));
+  inspect(reopened.sections);
+  const docx=buildDocxExport(reopened);
+  const word=readZipParts(docx.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(word,/<w:bidi w:val="1"\/>/);
+  assert.match(word,/<w:bidi w:val="0"\/>/);
+  assert.match(word,/<w:rtl w:val="1"\/>/);
+  assert.match(word,/<w:rtl w:val="0"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(docx.bytes)],'mixed-direction.docx'))).sections);
+  const {renderHtmlArticle}=await import('../src/services/exportHtml.ts');
+  const html=renderHtmlArticle(reopened).html;
+  assert.match(html,/direction:rtl;unicode-bidi:embed/);
+  assert.match(html,/direction:ltr;unicode-bidi:embed/);
+  const odt=buildOdtExport(reopened);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/style:writing-mode="rl-tb"/);
+  assert.match(odtXml,/style:writing-mode="lr-tb"/);
+  const imported=await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'mixed-direction.odt'));
+  const importedBlocks=imported.sections.flatMap(s=>s.blocks);
+  for(const [sample,dir] of [['Latin 123','rtl'],['مرحبا','ltr']]){
+    const block=importedBlocks.find(b=>b.content.includes(sample!))!;
+    assert.equal(findNodes(JSON.parse(block.content),'paragraph')[0]?.attrs?.omiParagraphDirection,dir);
+  }
+  assert.equal(paragraphFormattingCss({omiParagraphDirection:'rtl'},'print'),'direction:rtl');
+  assert.equal(normalizeParagraphValue('omiParagraphDirection','rtl;display:none'),undefined);
+  assert.equal(normalizeDirectValue('omiTextDirection','auto'),undefined);
+});
+
+test('Word hyphenation defaults and paragraph suppression survive portable and native roundtrip',async()=>{
+  const {WORD_HYPHENATION_EXTENSION,normalizeWordHyphenation,wordHyphenationSettingsXml,validateWordHyphenation}=await import('../src/model/wordHyphenation.ts');
+  const {buildPdfPrintDocument}=await import('../src/services/exportPdf.ts');
+  const settings='<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:autoHyphenation w:val="1"/><w:consecutiveHyphenLimit w:val="2"/><w:hyphenationZone w:val="360"/><w:doNotHyphenateCaps w:val="0"/></w:settings>';
+  const body='<w:p><w:pPr><w:suppressAutoHyphens w:val="0"/></w:pPr><w:r><w:t>Hyphenation enabled specimen</w:t></w:r></w:p><w:p><w:pPr><w:suppressAutoHyphens/></w:pPr><w:r><w:t>Hyphenation disabled specimen</w:t></w:r></w:p><w:p><w:r><w:t>Inherited hyphenation specimen</w:t></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body,{entries:[textZipEntry('word/settings.xml',settings)]}));
+  assert.deepEqual(plan.wordHyphenation,{automatic:true,suppressCapitalized:false,zoneTwips:360,consecutiveLimit:2});
+  const inspect=(sections:typeof plan.sections)=>{
+    for(const [sample,expected] of [['Hyphenation enabled specimen',true],['Hyphenation disabled specimen',false],['Inherited hyphenation specimen',undefined]] as const){
+      const block=sections.flatMap(s=>s.blocks).find(b=>b.content.includes(sample))!;
+      assert.ok(block,sample);
+      const paragraph=findNodes(JSON.parse(block.content),'paragraph')[0];
+      assert.equal(paragraph?.attrs?.omiAutoHyphenation,expected,sample);
+    }
+  };
+  inspect(plan.sections);
+  const previous=useStudioStore.getState();
+  try{
+    // Publication PDF requires an author; exercise the real import author path.
+    applyDocxImportPlan({...plan,authors:[{givenName:'Ada',familyName:'Scholar',displayName:'Ada Scholar',source:'core-properties'}]},{importDetectedAuthors:true,source:'',selfAuthoredExternal:true});
+    const manuscript=useStudioStore.getState().manuscript;
+    const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+    const reopened=parseOmiJson(serializeOmiJson(projected));
+    assert.deepEqual(reopened.extensions?.[WORD_HYPHENATION_EXTENSION],plan.wordHyphenation);
+    inspect(reopened.sections);
+    const result=buildDocxExport(reopened);
+    const parts=readZipParts(result.bytes);
+    const xml=parts.get('word/settings.xml')!.toString('utf8');
+    for(const element of ['<w:autoHyphenation w:val="1"/>','<w:consecutiveHyphenLimit w:val="2"/>','<w:hyphenationZone w:val="360"/>','<w:doNotHyphenateCaps w:val="0"/>'])assert.ok(xml.includes(element),element);
+    const reimport=await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'hyphenation.docx'));
+    assert.deepEqual(reimport.wordHyphenation,plan.wordHyphenation);
+    inspect(reimport.sections);
+    const print=buildPdfPrintDocument(reopened);
+    assert.match(print,/<p[^>]*data-omi-no-hyphenation="true"[^>]*hyphens:none[^>]*>Hyphenation disabled specimen<\/p>/);
+    assert.equal(wordHyphenationSettingsXml({automatic:false,zoneTwips:-1,unknown:'"><bad/>'}),'<w:autoHyphenation w:val="0"/>');
+    assert.equal(normalizeWordHyphenation({zoneTwips:'360'}),undefined);
+    assert.throws(()=>validateWordHyphenation({automatic:true,zoneTwips:-1}));
+  }finally{useStudioStore.setState(previous,true);}
+});
+
+test('Word note paragraphs retain pagination flags and complete multi-paragraph bodies',async()=>{
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const long='FOOTNOTE-START '+('Long footnote material for pagination. '.repeat(220))+'FOOTNOTE-END';
+  const source=makeDocx('<w:p><w:r><w:t>Anchor</w:t></w:r><w:r><w:footnoteReference w:id="1"/><w:endnoteReference w:id="2"/></w:r></w:p>',{
+    footnotes:'<w:footnotes xmlns:w="'+ns+'"><w:footnote w:id="1"><w:p><w:pPr><w:keepLines w:val="0"/></w:pPr><w:r><w:t>'+long+'</w:t></w:r></w:p><w:p><w:pPr><w:keepNext w:val="0"/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>Second paragraph</w:t></w:r></w:p></w:footnote></w:footnotes>',
+    entries:[textZipEntry('word/endnotes.xml','<w:endnotes xmlns:w="'+ns+'"><w:endnote w:id="2"><w:p><w:r><w:t>First endnote paragraph</w:t></w:r></w:p><w:p><w:r><w:t>Second endnote paragraph</w:t></w:r></w:p></w:endnote></w:endnotes>')]
+  });
+  const inspect=(plan:DocxManuscriptImportPlan)=>{
+    const foot=plan.annotations.find(n=>n.noteKind==='footnote')!;
+    const end=plan.annotations.find(n=>n.noteKind==='endnote')!;
+    assert.equal(foot.body,long+'\nSecond paragraph');
+    const paragraphs=findNodes(JSON.parse(foot.bodyContent!),'paragraph');
+    assert.equal(paragraphs.length,2);
+    assert.equal(paragraphs[0]?.attrs?.omiKeepLines,false);
+    assert.equal(paragraphs[1]?.attrs?.omiKeepNext,false);
+    assert.ok(findNodes(paragraphs[1]!,'text').some(n=>n.text==='Second paragraph'&&n.marks?.some(m=>m.type==='italic')));
+    assert.equal(end.body,'First endnote paragraph\nSecond endnote paragraph');
+    assert.equal(findNodes(JSON.parse(end.bodyContent!),'paragraph').length,2);
+  };
+  const plan=await parseDocxForStudio(source);
+  inspect(plan);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Footnote pagination'}),sections:plan.sections,annotations:plan.annotations};
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const result=buildDocxExport(reopened);
+  const parts=readZipParts(result.bytes);
+  const foot=parts.get('word/footnotes.xml')!.toString('utf8');
+  assert.match(foot,/<w:keepLines w:val="0"\/>/);
+  assert.match(foot,/FOOTNOTE-END<\/w:t>/);
+  assert.match(foot,/<\/w:p><w:p><w:pPr><w:pStyle w:val="FootnoteText"\/>/);
+  assert.equal((foot.match(/<w:footnoteRef\/>/g)??[]).length,1);
+  inspect(await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'note-pagination.docx')));
+});
+
+test('Word each-section note restart survives physical section import and native re-export',async()=>{
+  const {buildNoteNumberMap}=await import('../src/model/notes.ts');
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const props='<w:sectPr><w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:type w:val="continuous"/></w:sectPr>';
+  const body='<w:p><w:r><w:t>First section specimen</w:t><w:footnoteReference w:id="1"/></w:r></w:p><w:p><w:pPr>'+props+'</w:pPr></w:p><w:p><w:r><w:t>Second section specimen</w:t><w:footnoteReference w:id="2"/></w:r></w:p>'+props;
+  const file=makeDocx(body,{footnotes:'<w:footnotes xmlns:w="'+ns+'"><w:footnote w:id="1"><w:p><w:r><w:t>First note</w:t></w:r></w:p></w:footnote><w:footnote w:id="2"><w:p><w:r><w:t>Second note</w:t></w:r></w:p></w:footnote></w:footnotes>'});
+  const plan=await parseDocxForStudio(file);
+  assert.equal(plan.noteNumberingScope,'section');
+  assert.equal(plan.sections.length,2);
+  const previous=useStudioStore.getState();
+  try{
+    applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
+    const manuscript=parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    assert.equal(manuscript.documentStructure?.noteNumberingScope,'section');
+    assert.deepEqual([...buildNoteNumberMap(manuscript).values()],[1,1]);
+    const word=buildDocxExport(manuscript);
+    const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+    assert.match(xml,/<w:pPr><w:sectPr><w:footnotePr><w:numRestart w:val="eachSect"\/>/);
+    assert.match(xml,/<w:endnotePr><w:numRestart w:val="eachSect"\/>/);
+    assert.match(xml,/<w:footnoteReference w:id="1"\/>/);
+    assert.match(xml,/<w:footnoteReference w:id="2"\/>/);
+    const reopened=await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'section-notes.docx'));
+    assert.equal(reopened.noteNumberingScope,'section');
+    assert.equal(reopened.sections.length,2);
+    assert.deepEqual(reopened.annotations.map(n=>n.body),['First note','Second note']);
+    const continuous=buildDocxExport({...manuscript,documentStructure:{...manuscript.documentStructure!,noteNumberingScope:'continuous'}});
+    assert.doesNotMatch(readZipParts(continuous.bytes).get('word/document.xml')!.toString('utf8'),/w:numRestart/);
+  }finally{useStudioStore.setState(previous,true);}
+});
+
+test('native custom starred notes preserve separate label, text and automatic numbering',async()=>{
+  const {buildNoteNumberMap,buildNoteLabelMap}=await import('../src/model/notes.ts');
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const body='<w:p><w:r><w:t>Disclosure anchor</w:t><w:footnoteReference w:id="1" w:customMarkFollows="1"/><w:t>*</w:t><w:t> after marker</w:t><w:footnoteReference w:id="2"/></w:r></w:p>';
+  const footnotes='<w:footnotes xmlns:w="'+ns+'"><w:footnote w:id="1"><w:p><w:r><w:t>*</w:t></w:r><w:r><w:t>Funding disclosure</w:t></w:r></w:p></w:footnote><w:footnote w:id="2"><w:p><w:r><w:footnoteRef/><w:t>Ordinary note</w:t></w:r></w:p></w:footnote></w:footnotes>';
+  const plan=await parseDocxForStudio(makeDocx(body,{footnotes}));
+  assert.equal(plan.annotations[0]?.noteCustomMark,'*');
+  assert.equal(plan.annotations[0]?.body,'Funding disclosure');
+  assert.equal(plan.annotations[1]?.body,'Ordinary note');
+  const manuscript=parseOmiJson(serializeOmiJson({...createBlankManuscript({kind:'study',locale:'en',title:'Star note'}),sections:plan.sections,annotations:plan.annotations}));
+  assert.deepEqual([...buildNoteNumberMap(manuscript).values()],[1]);
+  assert.deepEqual([...buildNoteLabelMap(manuscript).values()],['*','1']);
+  const result=buildDocxExport(manuscript);
+  const parts=readZipParts(result.bytes);
+  assert.match(parts.get('word/document.xml')!.toString('utf8'),/<w:footnoteReference w:id="1" w:customMarkFollows="1"\/><w:t>\*<\/w:t>/);
+  assert.match(parts.get('word/document.xml')!.toString('utf8'),/<w:footnoteReference w:id="2"\/>/);
+  const reopened=await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'star-note.docx'));
+  assert.equal(reopened.annotations[0]?.noteCustomMark,'*');
+  assert.equal(reopened.annotations[0]?.body,'Funding disclosure');
+  assert.equal(reopened.annotations[1]?.body,'Ordinary note');
+});
+
+test('native Word physical sections preserve page geometry, columns and restart through editor projection',async()=>{
+  const first='<w:sectPr><w:type w:val="continuous"/><w:pgSz w:w="11906" w:h="16838"/><w:cols w:num="2" w:space="720"/></w:sectPr>';
+  const last='<w:sectPr><w:type w:val="nextPage"/><w:pgSz w:w="11906" w:h="8391" w:orient="landscape"/><w:pgMar w:top="900" w:left="1000"/><w:pgNumType w:start="11"/></w:sectPr>';
+  const source=makeDocx('<w:p><w:r><w:t>First physical section</w:t></w:r></w:p><w:p><w:pPr>'+first+'</w:pPr></w:p><w:p><w:r><w:t>Second physical section</w:t></w:r></w:p>'+last);
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    assert.equal(sections.length,2);
+    assert.notEqual(sections[0]?.layout?.wordSection?.groupId,sections[1]?.layout?.wordSection?.groupId);
+    assert.equal(sections[0]?.layout?.columns,2);
+    assert.equal(sections[0]?.layout?.columnGapMm,12.7);
+    assert.equal(sections[0]?.layout?.wordSection?.pageHeightTwips,16838);
+    assert.equal(sections[0]?.layout?.wordSection?.breakType,'continuous');
+    assert.equal(sections[1]?.layout?.wordSection?.pageHeightTwips,8391);
+    assert.equal(sections[1]?.layout?.wordSection?.orientation,'landscape');
+    assert.equal(sections[1]?.layout?.wordSection?.pageNumberStart,11);
+    assert.equal(sections[1]?.layout?.wordSection?.margins?.left,1000);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Section geometry'}),sections:plan.sections};
+  const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+  inspect(projected.sections);
+  const reopened=parseOmiJson(serializeOmiJson(projected));
+  inspect(reopened.sections);
+  const word=buildDocxExport(reopened);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:cols w:num="2" w:space="720"\/>/);
+  assert.match(xml,/<w:pgSz w:w="11906" w:h="8391" w:orient="landscape"\/>/);
+  assert.match(xml,/<w:pgNumType w:start="11"\/>/);
+  assert.equal((xml.match(/<w:sectPr>/g)??[]).length,2);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'section-geometry.docx'))).sections);
+});
+
+test('Word running header/footer variants and page fields survive portable roundtrip',async()=>{
+  const {normalizeRunningVariants}=await import('../src/model/wordRunningMatter.ts');
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships/';
+  const header=(content:string)=>'<w:hdr xmlns:w="'+ns+'"><w:p>'+content+'</w:p></w:hdr>';
+  const footer=(content:string)=>'<w:ftr xmlns:w="'+ns+'"><w:p>'+content+'</w:p></w:ftr>';
+  const text=(s:string)=>'<w:r><w:t>'+s+'</w:t></w:r>';
+  const field=(name:string)=>'<w:fldSimple w:instr=" '+name+' ">'+text('99')+'</w:fldSimple>';
+  const complex='<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> NUMPAGES </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>'+text('99')+'<w:r><w:fldChar w:fldCharType="end"/></w:r>';
+  const refs='<w:headerReference w:type="default" r:id="odd"/><w:headerReference w:type="even" r:id="even"/><w:headerReference w:type="first" r:id="first"/><w:footerReference w:type="default" r:id="footer"/>';
+  const plan=await parseDocxForStudio(makeDocx('<w:p>'+text('Running matter specimen')+'</w:p><w:sectPr>'+refs+'<w:pgNumType w:start="11"/><w:titlePg/></w:sectPr>',{
+    relationships:['odd','even','first','footer'].map(id=>'<Relationship Id="'+id+'" Type="'+rel+(id==='footer'?'footer':'header')+'" Target="'+id+'.xml"/>').join(''),
+    entries:[textZipEntry('word/odd.xml',header(text('ODD &amp; HEADER'))),textZipEntry('word/even.xml',header(text('EVEN HEADER'))),textZipEntry('word/first.xml',header(text('FIRST HEADER'))),textZipEntry('word/footer.xml',footer('<w:pPr><w:jc w:val="center"/></w:pPr>'+field('PAGE')+text(' of ')+complex+text(' / ')+field('SECTIONPAGES'))),textZipEntry('word/settings.xml','<w:settings xmlns:w="'+ns+'"><w:evenAndOddHeaders/></w:settings>')]
+  }));
+  const inspect=(sections:typeof plan.sections)=>{
+    const native=sections[0]?.layout?.wordSection;
+    assert.equal(native?.evenAndOddHeaders,true);
+    assert.equal(native?.differentFirstPage,true);
+    assert.equal(native?.pageNumberStart,11);
+    assert.deepEqual(native?.headers?.default,[{tokens:[{kind:'text',text:'ODD & HEADER'}]}]);
+    assert.deepEqual(native?.headers?.even,[{tokens:[{kind:'text',text:'EVEN HEADER'}]}]);
+    assert.deepEqual(native?.headers?.first,[{tokens:[{kind:'text',text:'FIRST HEADER'}]}]);
+    assert.deepEqual(native?.footers?.default,[{align:'center',tokens:[{kind:'field',field:'PAGE'},{kind:'text',text:' of '},{kind:'field',field:'NUMPAGES'},{kind:'text',text:' / '},{kind:'field',field:'SECTIONPAGES'}]}]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Running matter'}),sections:plan.sections};
+  const reopened=parseOmiJson(serializeOmiJson({...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)}));
+  inspect(reopened.sections);
+  const word=buildDocxExport(reopened);
+  const parts=readZipParts(word.bytes);
+  const document=parts.get('word/document.xml')!.toString('utf8');
+  assert.match(document,/<w:headerReference w:type="default" r:id="rIdHeader1"\/>/);
+  assert.match(document,/<w:headerReference w:type="even" r:id="rIdHeader2"\/>/);
+  assert.match(document,/<w:headerReference w:type="first" r:id="rIdHeader3"\/>/);
+  assert.match(document,/<w:footerReference w:type="default" r:id="rIdFooter1"\/>/);
+  assert.match(document,/<w:titlePg\/>/);
+  assert.match(parts.get('word/settings.xml')!.toString('utf8'),/<w:evenAndOddHeaders\/>/);
+  assert.match(parts.get('word/header1.xml')!.toString('utf8'),/ODD &amp; HEADER/);
+  assert.match(parts.get('word/header2.xml')!.toString('utf8'),/EVEN HEADER/);
+  assert.match(parts.get('word/footer1.xml')!.toString('utf8'),/w:instr=" PAGE "[\s\S]*w:instr=" NUMPAGES "[\s\S]*w:instr=" SECTIONPAGES "/);
+  assert.match(parts.get('word/_rels/document.xml.rels')!.toString('utf8'),/Id="rIdFooter1"[^>]*Target="footer1.xml"/);
+  assert.match(parts.get('[Content_Types].xml')!.toString('utf8'),/PartName="\/word\/footer1.xml"/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'running-matter.docx'))).sections);
+  assert.equal(normalizeRunningVariants({default:[{tokens:[{kind:'field',field:'INCLUDETEXT'}]}]}),undefined);
+  assert.equal(normalizeRunningVariants({default:[{tokens:[{kind:'text',text:'a'.repeat(32001)}]}]}),undefined);
+});
+
+test('native Word bookmarks resolve forward REF and PAGEREF fields and survive OMI/DOCX reopen',async()=>{
+  const {validateCrossReferences,formatCrossReferenceLabel,resolveCrossReferenceTarget}=await import('../src/model/crossReferences.ts');
+  const {parseWordCrossReference,normalizeWordCrossReferenceField}=await import('../src/model/wordCrossReference.ts');
+  const field=(instruction:string,cached:string)=>'<w:fldSimple w:instr="'+instruction+'"><w:r><w:t>'+cached+'</w:t></w:r></w:fldSimple>';
+  const complex='<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF Target </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>7</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>';
+  const source=makeDocx('<w:p><w:r><w:t xml:space="preserve">Reference: </w:t></w:r>'+field(' REF Target \\h ','Target specimen')+'<w:r><w:t xml:space="preserve">, page </w:t></w:r>'+complex+'</w:p>'
+    +'<w:p><w:bookmarkStart w:id="20" w:name="Target"/><w:r><w:t>Target specimen</w:t></w:r><w:bookmarkEnd w:id="20"/></w:p>'
+    +'<w:p><w:r><w:t>Unresolved specimen </w:t></w:r>'+field('REF Missing','Missing cached')+'</w:p>'
+    +'<w:p><w:r><w:t>Prefix </w:t></w:r><w:bookmarkStart w:id="21" w:name="Partial"/><w:r><w:t>Selected text</w:t></w:r><w:bookmarkEnd w:id="21"/></w:p>'
+    +'<w:p>'+field('REF Partial','Selected text')+'</w:p>');
+  const plan=await parseDocxForStudio(source);
+  assert.equal(plan.namedAnchors?.length,2);
+  assert.equal(plan.crossReferences?.length,2);
+  const target=plan.namedAnchors!.find(a=>a.name==='Target')!;
+  assert.equal(target.targetKind,'block');
+  assert.ok(plan.sections.flatMap(s=>s.blocks).some(b=>b.id===target.targetId&&blockText(b)==='Target specimen'));
+  assert.deepEqual(plan.crossReferences!.map(r=>r.targetId),[target.id,target.id]);
+  assert.deepEqual(plan.crossReferences!.map(r=>r.wordField),[{kind:'REF',cachedLabel:'Target specimen',hyperlink:true},{kind:'PAGEREF',cachedLabel:'7'}]);
+  assert.ok(plan.warnings.some(w=>w.code==='word-bookmark-range-approximated'));
+  assert.ok(plan.warnings.some(w=>w.code==='word-cross-reference-flattened'));
+  const previous=useStudioStore.getState();
+  try{
+    applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
+    const manuscript=useStudioStore.getState().manuscript;
+    const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+    const reopened=parseOmiJson(serializeOmiJson(projected));
+    assert.equal(reopened.namedAnchors?.length,2);
+    assert.deepEqual(validateCrossReferences(reopened),[]);
+    const ref=reopened.crossReferences![1]!;
+    assert.equal(formatCrossReferenceLabel(ref,resolveCrossReferenceTarget(reopened,ref.targetId),'en'),'7');
+    const word=buildDocxExport(reopened);
+    const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+    assert.match(xml,/<w:bookmarkStart w:id="1" w:name="Target"\/>[\s\S]*?Target specimen[\s\S]*?<w:bookmarkEnd w:id="1"\/>/);
+    assert.ok(xml.includes('w:instr=" REF Target \\h "'));
+    assert.match(xml,/w:instr=" PAGEREF Target "/);
+    assert.doesNotMatch(xml,/w:instr="[^"]*REF (?:Missing|Partial)/);
+    assert.match(xml,/Missing cached/);
+    const roundtrip=await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'bookmark-fields.docx'));
+    assert.equal(roundtrip.crossReferences?.length,2);
+    assert.deepEqual(roundtrip.crossReferences!.map(r=>r.wordField),plan.crossReferences!.map(r=>r.wordField));
+    assert.equal(parseWordCrossReference('REF Target \\n','1'),undefined);
+    assert.equal(parseWordCrossReference('INCLUDETEXT Target','unsafe'),undefined);
+    assert.equal(normalizeWordCrossReferenceField({kind:'REF',cachedLabel:'x'.repeat(4097)}),undefined);
+  }finally{useStudioStore.setState(previous,true);}
+});
+
+test('Word hyperlinks retain safe external relationships, tooltips and internal bookmark targets',async()=>{
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+  const relationship=(id:string,target:string)=>'<Relationship Id="'+id+'" Type="'+rel+'" Target="'+target+'" TargetMode="External"/>';
+  const link=(id:string,label:string)=>'<w:hyperlink r:id="'+id+'" w:tooltip="Source &amp; details"><w:r><w:t>'+label+'</w:t></w:r></w:hyperlink>';
+  const input=makeDocx('<w:p><w:r><w:t>Links: </w:t></w:r>'+link('site','Web specimen')+link('site','Repeated link')+link('mail','Mail specimen')+link('unsafe','Unsafe specimen')+'<w:hyperlink w:anchor="Jump"><w:r><w:t>Internal specimen</w:t></w:r></w:hyperlink><w:r><w:footnoteReference w:id="1"/></w:r></w:p><w:p><w:bookmarkStart w:id="8" w:name="Jump"/><w:r><w:t>Destination specimen</w:t></w:r><w:bookmarkEnd w:id="8"/></w:p>',{
+    relationships:relationship('site','https://example.org/?a=1&amp;b=2')+relationship('mail','mailto:editor@example.org')+relationship('unsafe','javascript:alert(1)'),
+    footnotes:'<w:footnotes xmlns:w="'+ns+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:footnote w:id="1"><w:p>'+link('note','Note link')+'</w:p></w:footnote></w:footnotes>',
+    entries:[textZipEntry('word/_rels/footnotes.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+relationship('note','https://example.org/note')+'</Relationships>')]
+  });
+  const plan=await parseDocxForStudio(input);
+  const inspect=(p:typeof plan)=>{
+    const block=p.sections.flatMap(s=>s.blocks).find(b=>b.content.includes('Web specimen'))!;
+    const nodes=findNodes(JSON.parse(block.content),'text');
+    const mark=(label:string)=>nodes.find(n=>n.text?.includes(label))?.marks?.find(m=>m.type==='omiLink')?.attrs;
+    assert.equal(mark('Web specimen')?.href,'https://example.org/?a=1&b=2');
+    assert.equal(mark('Web specimen')?.title,'Source & details');
+    assert.equal(mark('Mail specimen')?.href,'mailto:editor@example.org');
+    assert.equal(mark('Unsafe specimen'),undefined);
+    assert.equal(p.crossReferences?.[0]?.wordField?.kind,'HYPERLINK');
+    assert.equal(p.crossReferences?.[0]?.wordField?.cachedLabel,'Internal specimen');
+    assert.equal(p.crossReferences?.[0]?.targetId,p.namedAnchors?.[0]?.id);
+  };
+  inspect(plan);
+  const manuscript=parseOmiJson(serializeOmiJson({...createBlankManuscript({kind:'study',locale:'en',title:'Native links'}),sections:plan.sections,annotations:plan.annotations,namedAnchors:plan.namedAnchors,crossReferences:plan.crossReferences}));
+  const word=buildDocxExport(manuscript);
+  const parts=readZipParts(word.bytes);
+  const document=parts.get('word/document.xml')!.toString('utf8');
+  const relationships=parts.get('word/_rels/document.xml.rels')!.toString('utf8');
+  assert.match(document,/<w:hyperlink r:id="rIdHyperlink1" w:tooltip="Source &amp; details">/);
+  assert.equal((relationships.match(/Target="https:\/\/example.org\/\?a=1&amp;b=2"/g)??[]).length,1);
+  assert.match(relationships,/Target="mailto:editor@example.org" TargetMode="External"/);
+  assert.doesNotMatch(relationships,/javascript:|example.org\/note/);
+  assert.match(document,/<w:hyperlink w:anchor="Jump">/);
+  assert.match(parts.get('word/_rels/footnotes.xml.rels')!.toString('utf8'),/Target="https:\/\/example.org\/note"/);
+  assert.match(parts.get('word/footnotes.xml')!.toString('utf8'),/<w:hyperlink r:id="rIdHyperlink1"/);
+  inspect(await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'native-links.docx')));
+});
+
+test('simple and complex Word TOC fields remain semantic and regenerate native instructions',async()=>{
+  const {wordTocInstruction}=await import('../src/model/tableOfContents.ts');
+  const simple='<w:p><w:fldSimple w:instr=" TOC \\o &quot;2-4&quot; \\h \\u \\n "><w:r><w:t>Cached row not manuscript text</w:t></w:r></w:fldSimple></w:p>';
+  const body='<w:p><w:r><w:t>Body before contents</w:t></w:r></w:p>'+simple+'<w:p><w:r><w:t>Cached row not manuscript text</w:t></w:r></w:p><w:p><w:r><w:t>Body after contents</w:t></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body));
+  assert.equal(plan.tableOfContents?.minLevel,2);
+  assert.equal(plan.tableOfContents?.maxLevel,4);
+  assert.equal(plan.tableOfContents?.useOutlineLevels,true);
+  assert.equal(plan.tableOfContents?.omitPageNumbers,true);
+  assert.equal(plan.tableOfContents?.source?.wordHyperlinks,true);
+  assert.equal(plan.sections.flatMap(s=>s.blocks).filter(b=>b.content.includes('Cached row not manuscript text')).length,1);
+  const manuscript=parseOmiJson(serializeOmiJson({...createBlankManuscript({kind:'study',locale:'en',title:'Native contents'}),sections:plan.sections,tableOfContents:plan.tableOfContents}));
+  const word=buildDocxExport(manuscript);
+  const parts=readZipParts(word.bytes);
+  const document=parts.get('word/document.xml')!.toString('utf8');
+  assert.ok(document.includes('w:instr=" TOC \\o &quot;2-4&quot; \\h \\u \\n " w:dirty="true"'));
+  assert.match(parts.get('word/settings.xml')!.toString('utf8'),/w:updateFields w:val="true"/);
+  assert.equal((document.match(/Cached row not manuscript text/g)??[]).length,1);
+  const reopened=await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'toc.docx'));
+  assert.equal(reopened.tableOfContents?.minLevel,2);
+  assert.equal(reopened.tableOfContents?.maxLevel,4);
+  assert.equal(reopened.tableOfContents?.omitPageNumbers,true);
+  const complex='<w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> TOC \\o "1-3" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>Cached contents</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>';
+  const complexPlan=await parseDocxForStudio(makeDocx(complex+'<w:p><w:r><w:t>Body text</w:t></w:r></w:p>'));
+  assert.equal(complexPlan.tableOfContents?.source?.wordHyperlinks,false);
+  assert.equal(wordTocInstruction(complexPlan.tableOfContents!),' TOC \\o "1-3" ');
+  assert.equal(wordTocInstruction({...plan.tableOfContents!,minLevel:0}),undefined);
+  assert.equal(wordTocInstruction({...plan.tableOfContents!,source:{format:'docx-toc',instruction:'INCLUDETEXT unsafe',wordHyperlinks:false}}),' TOC \\o "2-4" \\u \\n ');
+});
+
+test('simple XE and INDEX fields preserve independent index types, hierarchical terms and locations',async()=>{
+  const xe=(instruction:string)=>'<w:fldSimple w:instr="'+instruction.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"/>';
+  const index=(instruction:string)=>'<w:p><w:fldSimple w:instr="'+instruction.replace(/"/g,'&quot;')+'"><w:r><w:t>Generated cache 999</w:t></w:r></w:fldSimple></w:p>';
+  const body='<w:p><w:r><w:t>Person specimen</w:t></w:r>'+xe(' XE "Example Person" ')+'</w:p>'
+    +'<w:p><w:r><w:t>Subject specimen</w:t></w:r>'+xe(' XE "History:Sources" \\f "S" ')+'</w:p>'
+    +'<w:p><w:r><w:t>Literal colon specimen</w:t></w:r>'+xe(' XE "Time\\: period:Records" \\f "S" ')+'</w:p>'
+    +index(' INDEX ')+index(' INDEX \\f "S" \\c "2" ');
+  const inspect=(plan:DocxManuscriptImportPlan)=>{
+    assert.equal(plan.indexEntries?.length,3);
+    assert.equal(plan.generatedIndexes?.length,2);
+    assert.equal(plan.indexDefinitions?.length,1);
+    const def=plan.indexDefinitions![0]!;
+    assert.equal(def.wordType,'S');
+    assert.deepEqual(plan.indexEntries!.map(e=>e.terms),[['Example Person'],['History','Sources'],['Time: period','Records']]);
+    assert.deepEqual(plan.indexEntries!.map(e=>e.indexId),[undefined,def.id,def.id]);
+    assert.deepEqual(plan.generatedIndexes!.map(e=>e.indexId),[undefined,def.id]);
+    assert.equal(plan.generatedIndexes![1]!.wordColumns,2);
+    const blocks=plan.sections.flatMap(s=>s.blocks);
+    for(const [i,label] of ['Person specimen','Subject specimen','Literal colon specimen'].entries()){
+      assert.ok(blocks.find(b=>b.id===plan.indexEntries![i]!.targetBlockId)?.content.includes(label),label);
+    }
+    assert.ok(blocks.every(b=>!b.content.includes('Generated cache 999')));
+  };
+  const plan=await parseDocxForStudio(makeDocx(body));
+  inspect(plan);
+  const previous=useStudioStore.getState();
+  try{
+    applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
+    const manuscript=parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    assert.equal(manuscript.indexDefinitions?.[0]?.wordType,'S');
+    assert.equal(manuscript.indexEntries?.length,3);
+    const word=buildDocxExport(manuscript);
+    const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+    assert.ok(xml.includes('w:instr=" XE &quot;Example Person&quot; "'));
+    assert.ok(xml.includes('w:instr=" XE &quot;History:Sources&quot; \\f &quot;S&quot; "'));
+    assert.ok(xml.includes('w:instr=" INDEX \\f &quot;S&quot; \\c &quot;2&quot; " w:dirty="true"'));
+    assert.doesNotMatch(xml,/Generated cache 999/);
+    inspect(await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'separate-indexes.docx')));
+  }finally{useStudioStore.setState(previous,true);}
+});
+
+test('legacy linked Word text boxes keep editable content, dimensions and native chain on roundtrip',async()=>{
+  const {WORD_TEXT_BOX_LINK_EXTENSION,normalizeWordTextBoxLink}=await import('../src/model/wordTextBoxLink.ts');
+  const {textBoxPlainText}=await import('../src/model/textBoxes.ts');
+  const shape=(id:string,next:string|undefined,content:string)=>'<v:shape id="'+id+'" style="position:absolute;width:100pt;height:40pt'+(next?';mso-next-textbox:#'+next:'')+'"><v:textbox><w:txbxContent><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>'+content+'</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape>';
+  const body='<w:p><w:r><w:t>Frame anchor specimen</w:t></w:r></w:p><w:p><w:r><w:pict>'+shape('Box1','Box2','Linked story start')+shape('Box2',undefined,'Linked story continuation')+'</w:pict></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body));
+  const inspect=(sections:typeof plan.sections)=>{
+    const boxes=sections.flatMap(s=>s.blocks).flatMap(b=>b.visual?.kind==='text-box'?[b.visual.textBox]:[]);
+    assert.equal(boxes.length,2);
+    assert.deepEqual(boxes.map(b=>textBoxPlainText(b)),['Linked story start','Linked story continuation']);
+    assert.deepEqual(boxes.map(b=>b.extensions?.[WORD_TEXT_BOX_LINK_EXTENSION]),[{name:'Box1',next:'Box2'},{name:'Box2'}]);
+    for(const box of boxes){assert.ok(Math.abs(box.width-100*4/3)<0.02);assert.ok(Math.abs(box.height-40*4/3)<0.02);}
+    return boxes;
+  };
+  inspect(plan.sections);
+  const manuscript=parseOmiJson(serializeOmiJson({...createBlankManuscript({kind:'study',locale:'en',title:'Linked boxes'}),sections:plan.sections}));
+  inspect(manuscript.sections);
+  const result=buildDocxExport(manuscript);
+  const xml=readZipParts(result.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<v:shape id="Box1" style="position:absolute;width:100pt;height:40pt;mso-next-textbox:#Box2"/);
+  assert.match(xml,/<v:shape id="Box2"/);
+  assert.match(xml,/<w:txbxContent>[\s\S]*?<w:b\/>[\s\S]*?Linked story continuation/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'linked-boxes.docx'))).sections);
+  assert.equal(normalizeWordTextBoxLink({name:'Box1',next:'x;malicious'}),undefined);
+  const boxes=inspect(manuscript.sections);
+  boxes[1]!.extensions={[WORD_TEXT_BOX_LINK_EXTENSION]:{name:'Box2',next:'Box1'}};
+  const cyclic=buildDocxExport(manuscript);
+  assert.doesNotMatch(readZipParts(cyclic.bytes).get('word/document.xml')!.toString('utf8'),/mso-next-textbox/);
+  assert.match(cyclic.warnings.join('\n'),/Cyclic Word text-box link/);
+});

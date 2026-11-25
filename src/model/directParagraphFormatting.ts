@@ -4,6 +4,8 @@ export const PARAGRAPH_FORMATS = {
   omiParagraphBackground: { color: true },
   omiParagraphBorders: { structured: 'borders' },
   omiParagraphTabs: { structured: 'tabs' },
+  omiAutoHyphenation: { toggle: true },
+  omiParagraphDirection: { choices: ['ltr','rtl'] },
   omiAlign: { choices: ['left', 'center', 'right', 'justify'] },
   omiLeftIndent: { min: 0, max: 1000 },
   omiRightIndent: { min: 0, max: 1000 },
@@ -81,6 +83,8 @@ export function paragraphFormattingCss(attrs: Record<string, unknown> | undefine
     css.push('border-' + side + ':' + (border.style === 'nil' ? 'none' : border.width + 'pt ' + (border.style === 'single' ? 'solid' : border.style) + ' ' + border.color));
     if (border.style !== 'nil') css.push('padding-' + side + ':' + border.space + 'pt');
   }
+  const direction = v('omiParagraphDirection');
+  if (direction) css.push('direction:' + direction);
   if (alignment) css.push('text-align:' + (alignment === 'justify' && target === 'html' ? 'left' : alignment));
   const point = (name: ParagraphFormat, property: string) => {
     const value = v(name);
@@ -91,6 +95,8 @@ export function paragraphFormattingCss(attrs: Record<string, unknown> | undefine
   const line = v('omiLineSpacing');
   if (line !== undefined) css.push('line-height:' + line + (v('omiLineRule') === 'auto' || !v('omiLineRule') ? '' : 'pt'));
   if (target === 'print') {
+    // Disabled paragraphs also receive a marker in the print renderer.
+    if(v('omiAutoHyphenation')===false)css.push('hyphens:none');
     const widow = v('omiWidowControl');
     if (widow !== undefined) css.push('widows:' + (widow ? 2 : 1), 'orphans:' + (widow ? 2 : 1));
     const next = v('omiKeepNext');
@@ -122,6 +128,8 @@ export function paragraphFormattingWordXml(attrs: Record<string, unknown> | unde
   };
   return flag('omiKeepNext','keepNext') + flag('omiKeepLines','keepLines') + flag('omiPageBreakBefore','pageBreakBefore') + flag('omiWidowControl','widowControl')
     + paragraphDecorationWordXml(attrs)
+    + (v('omiAutoHyphenation')===undefined?'':'<w:suppressAutoHyphens w:val="'+(v('omiAutoHyphenation')?'0':'1')+'"/>')
+    + (v('omiParagraphDirection') ? '<w:bidi w:val="' + (v('omiParagraphDirection') === 'rtl' ? '1' : '0') + '"/>' : '')
     + (spacing ? '<w:spacing' + spacing + '/>' : '')
     + (indent ? '<w:ind' + indent + '/>' : '')
     + (align ? '<w:jc w:val="' + (align === 'justify' ? 'both' : align) + '"/>' : '');
@@ -138,6 +146,10 @@ export function readWordParagraphFormatting(read: (property: string, attribute: 
   };
   const fill = read('shd','fill');
   if (fill) add('omiParagraphBackground','#' + fill);
+  const suppress=read('suppressAutoHyphens','val');
+  if(suppress!==undefined||exists('suppressAutoHyphens'))add('omiAutoHyphenation',/^(?:0|false|off)$/i.test(suppress??'1'));
+  const bidi = read('bidi','val');
+  if (bidi !== undefined || exists('bidi')) add('omiParagraphDirection', /^(?:0|false|off)$/i.test(bidi ?? '1') ? 'ltr' : 'rtl');
   const align = read('jc', 'val');
   add('omiAlign', align === 'both' ? 'justify' : align);
   number('ind', 'left', 'omiLeftIndent', 20);

@@ -1,3 +1,4 @@
+import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import { DOMParser, type Element } from '@xmldom/xmldom';
 import { parseWordHyperlinkInstruction, wordCharacterStyleSemantics } from '../model/docxImport';
@@ -56,7 +57,9 @@ export async function readDocxNotes(archive: WordNoteArchive): Promise<{
     if (archive.has(relsPart)) {
       for (const relationship of descendants(parseXml(await archive.text(relsPart)), 'Relationship')) {
         const id = attr(relationship, 'Id');
-        const href = normalizeExternalHref(attr(relationship, 'Target'));
+        const target=attr(relationship,'Target');
+        const type=attr(relationship,'Type');
+        const href=target&&/^(https?:|mailto:)/i.test(target.trim())&&(attr(relationship,'TargetMode')?.toLowerCase()==='external'||(!type&&!attr(relationship,'TargetMode')))&&(!type||type.endsWith('/hyperlink'))?normalizeExternalHref(target):undefined;
         if (id && href) relationships.set(id, href);
       }
     }
@@ -91,12 +94,13 @@ export async function readDocxNotes(archive: WordNoteArchive): Promise<{
           }
           if (element.localName === 'hyperlink') {
             const href = relationships.get(attr(element, 'id') ?? '');
-            if (href) marks = mergeMarks(marks, [{ type: 'omiLink', attrs: { href } }]);
+            if (href) marks = mergeMarks(marks, [{ type: 'omiLink', attrs: { href,...(attr(element,'tooltip')?{title:attr(element,'tooltip')}:{}) } }]);
           }
           const instruction = element.localName === 'fldSimple'
             ? attr(element, 'instr')
             : [...fields].reverse().find((field) => field.result)?.instruction;
-          const fieldHref = instruction ? normalizeExternalHref(parseWordHyperlinkInstruction(instruction)) : undefined;
+          const fieldTarget=instruction?parseWordHyperlinkInstruction(instruction):undefined;
+          const fieldHref=fieldTarget&&/^(https?:|mailto:)/i.test(fieldTarget.trim())?normalizeExternalHref(fieldTarget):undefined;
           if (fieldHref) marks = mergeMarks(marks, [{ type: 'omiLink', attrs: { href: fieldHref } }]);
           if (element.localName === 't') {
             if (fields.some((field) => !field.result)) return;
@@ -109,7 +113,13 @@ export async function readDocxNotes(archive: WordNoteArchive): Promise<{
           for (const item of elements(element)) visit(item, marks);
         };
         for (const item of elements(paragraph)) visit(item, base);
-        return { type: 'paragraph', content: inline };
+        const pPr=child(paragraph,'pPr');
+        const attrs=readWordParagraphFormatting((property,attribute)=>attr(child(pPr,property),attribute),property=>Boolean(child(pPr,property)));
+        Object.assign(attrs,readWordParagraphDecoration((parent,name)=>{
+          const container=child(pPr,parent);
+          return container?elements(container).filter(item=>item.localName===name).map(item=>Object.fromEntries(Array.from(item.attributes).map(a=>[a.localName,a.value]))):[];
+        }));
+        return { type: 'paragraph', ...(Object.keys(attrs).length?{attrs}:{}), content: inline };
       });
       const document: NoteJsonNode = { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] };
       result.set(id, { body: noteBodyPlainText(document), bodyContent: JSON.stringify(document) });

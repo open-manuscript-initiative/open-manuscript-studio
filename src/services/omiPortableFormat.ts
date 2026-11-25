@@ -1,3 +1,7 @@
+import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model/wordTextBoxLink';
+import { normalizeWordCrossReferenceField } from '../model/wordCrossReference';
+import { normalizeWordSectionLayout } from '../model/wordSectionLayout';
+import { WORD_HYPHENATION_EXTENSION, validateWordHyphenation } from '../model/wordHyphenation';
 import { TEXT_BOX_CONTENT_PROFILE, decodeTextBoxContent } from '../model/textBoxContent';
 import { FRAME_LAYOUT_EXTENSION, validateFrameLayout } from '../model/publicationFrames';
 import { PUBLICATION_MATTER_EXTENSION, validatePublicationMatter } from '../model/publicationMatter';
@@ -303,6 +307,7 @@ export function assertPortableOmiManuscript(
     ['citations', indexes.citations],
     ['citationClusters', null],
     ['crossReferences', null],
+    ['namedAnchors', null],
     ['assets', null],
     ['publicationCorrections', null],
   ] as const) {
@@ -357,6 +362,12 @@ function validateSection(
 }
 
 function validateStudioExtensions(value: Record<string, unknown>): void {
+  if(value.tableOfContents!==undefined){
+    const toc=value.tableOfContents;
+    if(!isRecord(toc)||typeof toc.id!=='string'||!toc.id.trim()||typeof toc.minLevel!=='number'||typeof toc.maxLevel!=='number'||!Number.isInteger(toc.minLevel)||!Number.isInteger(toc.maxLevel)||toc.minLevel<1||toc.maxLevel>9||toc.minLevel>toc.maxLevel||typeof toc.hyperlinks!=='boolean'||typeof toc.useOutlineLevels!=='boolean'||(toc.omitPageNumbers!==undefined&&typeof toc.omitPageNumbers!=='boolean')||(toc.title!==undefined&&typeof toc.title!=='string'))invalid('Invalid table of contents definition.');
+  }
+  const wordHyphenation=isRecord(value.extensions)?value.extensions[WORD_HYPHENATION_EXTENSION]:undefined;
+  if(wordHyphenation!==undefined){try{validateWordHyphenation(wordHyphenation);}catch(error){invalid(error instanceof Error?error.message:'Invalid Word hyphenation settings.');}}
   const template = isRecord(value.extensions) ? value.extensions[PUBLICATION_TEMPLATE_EXTENSION] : undefined;
   if (template !== undefined) {
     try { validateAppliedPublicationTemplate(template); }
@@ -384,6 +395,10 @@ function validateSectionLayout(
   path: string,
 ): void {
   if (!isRecord(value)) invalid(`${path} must be an object.`);
+  if(value.wordSection!==undefined){
+    const normalized=normalizeWordSectionLayout(value.wordSection);
+    if(!normalized||!isRecord(value.wordSection)||Object.keys(value.wordSection).length!==Object.keys(normalized).length|| (isRecord(value.wordSection.margins)&&Object.keys(value.wordSection.margins).length!==Object.keys(normalized.margins??{}).length))invalid(`${path}/wordSection contains unsupported values.`);
+  }
 
   if (value.columns !== undefined) {
     const columns = Number(value.columns);
@@ -434,6 +449,7 @@ function validateBlock(
   const visual = isRecord(value.visual) ? value.visual : undefined;
   const boxes = visual?.kind === 'text-box' ? [visual.textBox] : Array.isArray(visual?.textBoxes) ? visual.textBoxes : [];
   for (const box of boxes) {
+    if(isRecord(box)&&isRecord(box.extensions)&&box.extensions[WORD_TEXT_BOX_LINK_EXTENSION]!==undefined&&!normalizeWordTextBoxLink(box.extensions[WORD_TEXT_BOX_LINK_EXTENSION]))invalid(`${path}/visual has invalid Word text-box link metadata.`);
     if (isRecord(box) && box.contentProfile === TEXT_BOX_CONTENT_PROFILE
       && decodeTextBoxContent(String(box.content), TEXT_BOX_CONTENT_PROFILE).diagnostics.includes('text-box-invalid-content')) {
       invalid(`${path}/visual has invalid profiled text-box content.`);
@@ -473,6 +489,7 @@ function validateReferences(
 
   optionalArray(document.annotations, 'annotations').forEach((item, index) => {
     if (!isRecord(item)) invalid(`/annotations/${index} must be an object.`);
+    if(item.noteCustomMark!==undefined&&item.noteCustomMark!=='*')invalid(`/annotations/${index}/noteCustomMark must be a supported custom mark.`);
     requireReference(item.targetBlockId, indexes.blocks, `/annotations/${index}/targetBlockId`);
     if (item.creatorAgentId !== undefined) {
       requireReference(item.creatorAgentId, indexes.agents, `/annotations/${index}/creatorAgentId`);
@@ -509,8 +526,16 @@ function validateReferences(
     );
   });
 
+  optionalArray(document.namedAnchors,'namedAnchors').forEach((item,index)=>{
+    if(!isRecord(item))invalid(`/namedAnchors/${index} must be an object.`);
+    requireNonEmptyString(item.name,`/namedAnchors/${index}/name`);
+    requireNonEmptyString(item.exportName,`/namedAnchors/${index}/exportName`);
+    if(item.targetKind!=='section'&&item.targetKind!=='block')invalid(`/namedAnchors/${index}/targetKind is invalid.`);
+    requireReference(item.targetId,item.targetKind==='block'?indexes.blocks:indexes.all,`/namedAnchors/${index}/targetId`);
+  });
   optionalArray(document.crossReferences, 'crossReferences').forEach((item, index) => {
     if (!isRecord(item)) invalid(`/crossReferences/${index} must be an object.`);
+    if(item.wordField!==undefined&&!normalizeWordCrossReferenceField(item.wordField))invalid(`/crossReferences/${index}/wordField is invalid.`);
     requireReference(item.sourceBlockId, indexes.blocks, `/crossReferences/${index}/sourceBlockId`);
     requireReference(item.targetId, indexes.all, `/crossReferences/${index}/targetId`);
   });

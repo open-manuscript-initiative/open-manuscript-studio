@@ -8,7 +8,7 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import {
   getNoteKind,
-  getNoteNumber,
+  getNoteLabel,
   isNoteAnnotation,
   type OmiNoteKind,
 } from '../model/notes';
@@ -38,7 +38,7 @@ export function NoteEditorCard({
   if (!note) return null;
 
   const stableNoteId = note.id;
-  const noteNumber = getNoteNumber(manuscript, stableNoteId);
+  const noteNumber = getNoteLabel(manuscript, stableNoteId);
   const section = manuscript.sections.find((candidate) =>
     candidate.blocks.some((block) => block.id === note.targetBlockId),
   );

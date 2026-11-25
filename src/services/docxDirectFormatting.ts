@@ -21,6 +21,7 @@ export function wordDirectFormatting(read: (property: string, attribute?: string
   add('omiTextColor', read('color'));
   add('omiHighlight', read('highlight'));
   add('omiLigatures', read('ligatures'));
+  if (exists('rtl') || read('rtl') !== undefined) add('omiTextDirection', /^(?:0|false|off)$/i.test(read('rtl') ?? '1') ? 'ltr' : 'rtl');
   add('omiCharacterBackground', read('shd', 'fill'));
   for (const [property, type] of [
     ['caps', 'omiUppercase'], ['dstrike', 'omiDoubleStrike'],

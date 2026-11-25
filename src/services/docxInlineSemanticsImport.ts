@@ -1,4 +1,4 @@
-import { normalizeSourceStyle, resolveSourceStyle, type SourceStyle } from '../model/sourceWordStyles';
+import { importedSourceStyle, resolveSourceStyle, type SourceStyle } from '../model/sourceWordStyles';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import {
@@ -268,24 +268,7 @@ function parseCharacterStyles(xml: string): Map<string, CharacterStyle> {
 
 
 function importedStyle(id: string | undefined, styles: ReadonlyMap<string,CharacterStyle>, kind: SourceStyle['kind']): string | undefined {
-  if (!id || styles.get(id)?.source.kind !== kind) return undefined;
-  // Studio's own exported semantic styles are already represented by native
-  // marks. Do not add redundant source metadata on repeated DOCX imports.
-  if (/^(?:Normal|DefaultParagraphFont|Title|Subtitle|Author|Heading[1-9]|FootnoteText|EndnoteText|FootnoteReference|EndnoteReference|FundingNote|OMIStrong|OMIEmphasis|OMIStrongEmphasis|OMIStrike|OMIUnderline|OMISmallCaps|OMISuperscript|OMISubscript|OMICode|OMIAuthorGivenName|OMIAuthorFamilyName)$/.test(id)) return undefined;
-  const definitions: SourceStyle[]=[];
-  const seen=new Set<string>();
-  const pending=[id];
-  while(pending.length && definitions.length < 64) {
-    const key=pending.shift()!;
-    if(seen.has(key)) continue;
-    seen.add(key);
-    const definition=styles.get(key)?.source;
-    if(!definition) continue;
-    definitions.push(definition);
-    if(definition.basedOn) pending.push(definition.basedOn);
-    if(definition.next) pending.push(definition.next);
-  }
-  return normalizeSourceStyle({selected:id,styles:definitions});
+  return importedSourceStyle(id,key=>styles.get(key)?.source,kind);
 }
 
 function resolveCharacterStyleSemantics(

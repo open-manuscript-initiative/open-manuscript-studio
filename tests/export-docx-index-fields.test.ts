@@ -34,6 +34,20 @@ test('exports semantic OMI index occurrences as Word XE fields', () => {
   assert.equal((xml.match(/w:fldCharType="begin"/g) ?? []).length, 2);
 });
 
+test('escapes Word XE quotes, backslashes and literal colons without changing hierarchy', () => {
+  for (const fieldForm of ['simple', 'complex'] as const) {
+    const xml = renderWordIndexEntryFields([{
+      id: 'escaped-entry',
+      kind: 'subject',
+      terms: ['A\\B:C"D', 'Nested:term'],
+      sortKey: 'Sort\\key:"quoted"',
+      source: { format: 'docx-xe', fieldForm },
+    }]);
+    const expected = ' XE &quot;A\\\\B\\:C\\&quot;D:Nested\\:term&quot; \\y &quot;Sort\\\\key:\\&quot;quoted\\&quot;&quot; ';
+    assert.ok(xml.includes(expected), xml);
+  }
+});
+
 test('exports a dirty Word INDEX field whose page numbers are recalculated after pagination', () => {
   const xml = renderWordGeneratedIndexField('hu');
   assert.match(xml, /w:dirty="true"/);
@@ -171,12 +185,14 @@ test('exports opt-in starred funding without shifting first numbered footnote', 
   const enabled = readStoreZipEntries(buildDocxExport(manuscript).bytes);
   const documentXml = new TextDecoder().decode(enabled.get('word/document.xml'));
   const footnotesXml = new TextDecoder().decode(enabled.get('word/footnotes.xml'));
-  assert.match(documentXml, /w:vertAlign w:val="superscript"\/><\/w:rPr><w:t>\*<\/w:t>/);
-  assert.match(documentXml, /w:pStyle w:val="FundingNote"/);
-  assert.match(documentXml, /Fund &lt;42&gt; &amp; Institute/);
+  assert.match(documentXml, /<w:footnoteReference w:id="2" w:customMarkFollows="1"\/><w:t>\*<\/w:t>/);
+  assert.doesNotMatch(documentXml, /w:pStyle w:val="FundingNote"|Fund &lt;42&gt;/);
+  assert.match(footnotesXml, /w:pStyle w:val="FundingNote"/);
+  assert.match(footnotesXml, /Fund &lt;42&gt; &amp; Institute/);
   assert.match(documentXml, /w:footnoteReference w:id="1"/);
   assert.match(footnotesXml, /w:footnote w:id="1"/);
-  assert.doesNotMatch(footnotesXml, /Fund &lt;42&gt;/);
+  assert.match(footnotesXml, /<w:footnote w:id="2">[\s\S]*?<w:t>\*<\/w:t>/);
+  assert.equal((footnotesXml.match(/<w:footnoteRef\/>/g)??[]).length,1);
 });
 
 test('DOCX local notes are unnumbered inline or numbered with ordinary notes by export style', () => {

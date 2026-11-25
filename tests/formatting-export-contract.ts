@@ -23,8 +23,6 @@ const cases = [
   { id: 'C12', mark: 'omiSubscript', html: 'sub', jats: 'sub', idml: 'Subscript', odt: null, odtProperty: ['text-position', 'sub'], idmlProperty: ['Position', 'Subscript'] },
 ];
 const sample = 'Árvíztűrő tükörfúrógép – Manuscript 123';
-const strict = process.env.OMI_FORMATTING_STRICT === '1';
-function todo(reason: string): string | false { return strict ? false : reason; }
 
 // These two exporters use stored ZIP entries (no compression/data descriptors).
 // Read their actual emitted XML rather than searching for XML in binary bytes.
@@ -124,7 +122,7 @@ export function registerFormattingExportContracts(): void {
       await t.test(item.id + ' JATS exact sample markup', () => assert.ok(jatsSamples.some(value => jats.includes(value))));
       await t.test(item.id + ' PDF print HTML exact sample markup', () => assert.ok(htmlSamples.some(value => print.includes(value))));
       await t.test(item.id + ' IDML applied style and definition', () => assertIdmlStyle(idml, sample, item.idml, item.idmlProperty));
-      await t.test(item.id + ' ODT applied style and reimport', { todo: item.odt ? false : todo('Exact ODT small caps or vertical position remains an acceptance gap') }, async () => {
+      await t.test(item.id + ' ODT applied style and reimport', async () => {
         assertOdtStyle(odt, sample, item.odtProperty, item.odt ?? undefined);
         const reimport = await parseOdtForStudio(new File([new Uint8Array(odtResult.bytes)], 'case.odt'));
         const candidates = reimport.sections.flatMap(section => section.blocks).flatMap(block => {
@@ -145,17 +143,20 @@ export function registerFormattingExportContracts(): void {
     for (const [id, lang, text] of languages) {
       const manuscript = specimen(id!);
       await t.test(id + ' HTML, JATS and PDF source language annotation', () => {
-        const htmlSample = '<span lang="' + lang + '">' + text + '</span>';
-        assert.ok(renderHtmlArticle(manuscript).html.includes(htmlSample));
+        const assertLanguage = (source: string) => {
+          const document = new DOMParser().parseFromString(source, 'text/html') as unknown as Document;
+          assert.ok(elements(document, 'span').some(span => attr(span, 'lang') === lang && span.textContent === text), 'Missing language annotation on exact sample: ' + lang);
+        };
+        assertLanguage(renderHtmlArticle(manuscript).html);
         assert.ok(renderJatsArticle(manuscript).xml.includes('<named-content xml:lang="' + lang + '">' + text + '</named-content>'));
-        assert.ok(buildPdfPrintDocument(manuscript).includes(htmlSample));
+        assertLanguage(buildPdfPrintDocument(manuscript));
       });
       await t.test(id + ' IDML applied language on the sample', () => {
         const parts = storedParts(buildIdmlExport(manuscript).bytes);
         const ranges = [...parts].filter(([name]) => /^Stories\/.*\.xml$/.test(name)).flatMap(([, source]) => elements(xml(source), 'CharacterStyleRange'));
         assert.equal(ranges.filter(el => attr(el, 'AppliedLanguage') === lang).map(el => el.textContent).join('').includes(text!), true);
       });
-      await t.test(id + ' ODT language reimport', { todo: todo('ODT export does not yet preserve the inline language mark') }, async () => {
+      await t.test(id + ' ODT language reimport', async () => {
         const result = buildOdtExport(manuscript);
         const plan = await parseOdtForStudio(new File([new Uint8Array(result.bytes)], 'language.odt'));
         const candidates = plan.sections.flatMap(s => s.blocks).flatMap(b => {

@@ -1,4 +1,4 @@
-import type { OmiGeneratedIndex, OmiIndexEntry } from '../model/indexing';
+import { type OmiIndexDefinition, type OmiGeneratedIndex, type OmiIndexEntry } from '../model/indexing';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 
 interface ZipEntry {
@@ -13,7 +13,8 @@ export async function attachWordIndexData(
   file: File,
   plan: DocxManuscriptImportPlan,
 ): Promise<DocxManuscriptImportPlan> {
-  const { entries, generatedIndexes } = await extractWordIndexData(file);
+  const { entries, generatedIndexes, indexDefinitions } = await extractWordIndexData(file);
+  if(indexDefinitions.length)plan.indexDefinitions=indexDefinitions;
   plan.indexEntries = entries;
   plan.generatedIndexes = generatedIndexes;
   return plan;
@@ -22,10 +23,11 @@ export async function attachWordIndexData(
 export async function extractWordIndexData(file: File): Promise<{
   entries: OmiIndexEntry[];
   generatedIndexes: OmiGeneratedIndex[];
+  indexDefinitions: OmiIndexDefinition[];
 }> {
   const archive = new DocxZipArchive(await file.arrayBuffer());
   if (!archive.has('word/document.xml')) {
-    return { entries: [], generatedIndexes: [] };
+    return { entries: [], generatedIndexes: [], indexDefinitions:[] };
   }
 
   const xml = await archive.text('word/document.xml');
@@ -33,19 +35,32 @@ export async function extractWordIndexData(file: File): Promise<{
   const entries: OmiIndexEntry[] = [];
   const generatedIndexes: OmiGeneratedIndex[] = [];
 
-  for (const instruction of instructions) {
-    const normalized = instruction.replace(/\s+/g, ' ').trim();
+  const definitions=new Map<string,OmiIndexDefinition>();
+  const identify=(instruction:string)=>{
+    const type=/(?:^|\s)\\f\s+(?:"([A-Za-z])"|([A-Za-z]))(?=\s|$)/i.exec(instruction);
+    const letter=(type?.[1]??type?.[2])?.toUpperCase();
+    if(!letter||letter==='I')return undefined;
+    const id='word-index-'+letter.toLowerCase();
+    if(!definitions.has(id))definitions.set(id,{id,title:'Index '+letter,kind:'index',wordType:letter});
+    return id;
+  };
+  for (const {instruction,fieldForm} of instructions) {
+    const normalized = instruction.trim();
+    if(!/^(?:XE|INDEX)\b/i.test(normalized))continue;
+    const indexId=identify(normalized);
     if (/^XE\b/i.test(normalized)) {
       const parsed = parseXeInstruction(normalized);
       if (!parsed) continue;
       entries.push({
         id: crypto.randomUUID(),
-        kind: 'name',
+        kind: indexId?'index':'name',
+        ...(indexId?{indexId}:{}),
         terms: parsed.terms,
         sortKey: parsed.sortKey,
         source: {
           format: 'docx-xe',
           instruction: normalized,
+          fieldForm,
         },
       });
       continue;
@@ -54,31 +69,39 @@ export async function extractWordIndexData(file: File): Promise<{
     if (/^INDEX\b/i.test(normalized)) {
       generatedIndexes.push({
         id: crypto.randomUUID(),
-        kind: 'name',
+        kind: indexId?'index':'name',
+        ...(indexId?{indexId,title:definitions.get(indexId)?.title}:{}),
+        ...(()=>{const cols=Number(/(?:^|\s)\\c\s+"?([1-4])"?(?=\s|$)/i.exec(normalized)?.[1]);return cols>=1&&cols<=4?{wordColumns:cols}:{};})(),
         source: {
           format: 'docx-index',
           instruction: normalized,
+          fieldForm,
         },
       });
     }
   }
 
-  return { entries, generatedIndexes };
+  return { entries, generatedIndexes, indexDefinitions:[...definitions.values()] };
 }
 
-function collectFieldInstructions(xml: string): string[] {
-  const tokens = xml.match(/<w:fldChar\b[^>]*\/?\s*>|<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/gi) ?? [];
-  const result: string[] = [];
+function collectFieldInstructions(xml: string): Array<{instruction:string;fieldForm:'simple'|'complex'}> {
+  const tokens = xml.match(/<w:fldSimple\b[^>]*>|<w:fldChar\b[^>]*\/?\s*>|<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/gi) ?? [];
+  const result:Array<{instruction:string;fieldForm:'simple'|'complex'}>=[];
   const stack: Array<{ instruction: string }> = [];
 
   for (const token of tokens) {
+    if(/^<w:fldSimple\b/i.test(token)){
+      const raw=/\bw:instr\s*=\s*(["'])(.*?)\1/i.exec(token)?.[2];
+      if(raw)result.push({instruction:decodeXml(raw),fieldForm:'simple'});
+      continue;
+    }
     if (/^<w:fldChar\b/i.test(token)) {
       const type = /\bw:fldCharType="([^"]+)"/i.exec(token)?.[1]?.toLowerCase();
       if (type === 'begin') {
         stack.push({ instruction: '' });
       } else if (type === 'end') {
         const field = stack.pop();
-        if (field?.instruction.trim()) result.push(field.instruction.trim());
+        if (field?.instruction.trim()) result.push({instruction:field.instruction.trim(),fieldForm:'complex'});
       }
       continue;
     }
@@ -96,7 +119,7 @@ function parseXeInstruction(instruction: string): { terms: string[]; sortKey?: s
 
   const quoted = /^"((?:[^"\\]|\\.)*)"/.exec(payload);
   const rawTerm = quoted ? quoted[1] ?? '' : payload.split(/\s+\\/)[0] ?? '';
-  const decodedTerm = rawTerm.replace(/\\"/g, '"').trim();
+  const decodedTerm = rawTerm.trim();
   if (!decodedTerm) return null;
 
   const terms = splitIndexTerms(decodedTerm);
@@ -227,5 +250,6 @@ declare module './docxManuscriptImport' {
   interface DocxManuscriptImportPlan {
     indexEntries?: OmiIndexEntry[];
     generatedIndexes?: OmiGeneratedIndex[];
+    indexDefinitions?: OmiIndexDefinition[];
   }
 }

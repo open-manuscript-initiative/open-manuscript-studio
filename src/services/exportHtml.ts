@@ -20,7 +20,7 @@ import {
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering.ts';
 import { getBibliographyRecords } from '../model/citations.ts';
 import { getManuscriptFundingStatement } from '../model/semanticFields.ts';
-import { buildNoteNumberMap, getNoteKind, sortNotesByDocumentOrder } from '../model/notes.ts';
+import { buildNoteLabelMap, getNoteKind, sortNotesByDocumentOrder } from '../model/notes.ts';
 import { renderPublicationNoteBody } from './publicationNoteBody';
 import { contributorNameParts } from '../model/contributorName.ts';
 import { renderLatexMath } from '../model/equationRendering.ts';
@@ -810,7 +810,8 @@ function renderJsonNode(node: JsonNode, state: RenderState): string {
       return children();
     case 'paragraph': {
       const css = paragraphFormattingCss(node.attrs, state.pagedNotes ? 'print' : 'html');
-      return `<p${css ? ` style="${css}"` : ''}>${children()}</p>`;
+      const noHyphenation=state.pagedNotes&&node.attrs?.omiAutoHyphenation===false?' data-omi-no-hyphenation="true"':'';
+      return `<p${noHyphenation}${css ? ` style="${css}"` : ''}>${children()}</p>`;
     }
     case 'blockquote':
       return `<blockquote>${children()}</blockquote>`;
@@ -1170,12 +1171,7 @@ function parseStructuredContent(value: string): JsonNode | null {
 }
 
 function collectNoteLabels(manuscript: OmiManuscript, includeLocalNotes: boolean): Map<string, string> {
-  return new Map(
-    [...buildNoteNumberMap(manuscript, undefined, { includeLocalNotes })].map(([noteId, number]) => [
-      noteId,
-      String(number),
-    ]),
-  );
+  return buildNoteLabelMap(manuscript,undefined,{includeLocalNotes});
 }
 
 function targetHtmlId(target: OmiCrossReferenceTarget, state: RenderState): string {

@@ -1,3 +1,4 @@
+import { normalizeWordSectionLayout } from './wordSectionLayout';
 import type {
   OmiSectionColumnCount,
   OmiSectionLayout,
@@ -23,6 +24,8 @@ export function normalizeSectionLayout(
   const tabStopsMm = normalizeTabStops(layout.tabStopsMm);
 
   const normalized: OmiSectionLayout = {};
+  const wordSection=normalizeWordSectionLayout(layout.wordSection);
+  if(wordSection)normalized.wordSection=wordSection;
   if (columns !== DEFAULT_SECTION_COLUMNS) normalized.columns = columns;
   if (
     columns !== DEFAULT_SECTION_COLUMNS

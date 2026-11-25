@@ -13,6 +13,7 @@ import { attachWordIndexLocations } from './docxIndexLocationImport';
 import { parseDocxManuscriptWithInlineSemantics } from './docxInlineSemanticsImport';
 import {
   parseDocxManuscript,
+  readDocxHyphenation,
   type DocxManuscriptImportPlan,
 } from './docxManuscriptImport';
 import { parseDocxMonograph } from './docxMonographImport';
@@ -82,6 +83,7 @@ export async function parseDocxForStudio(
       : await parseDocxManuscriptWithInlineSemantics(bufferedFile);
   const plan: DocxManuscriptImportPlan = {
     ...parsedPlan,
+    ...(monographMode?{wordHyphenation:await readDocxHyphenation(bufferedFile)}:{}),
     sections: materializeSectionHeadingBlocks(parsedPlan.sections),
   };
 

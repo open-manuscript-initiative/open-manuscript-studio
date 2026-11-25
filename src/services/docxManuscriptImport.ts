@@ -1,7 +1,16 @@
+import { createNamedAnchor, type OmiNamedAnchor } from '../model/namedAnchors';
+import { createCrossReference } from '../model/crossReferences';
+import { parseWordCrossReference, type WordCrossReferenceField } from '../model/wordCrossReference';
+import { readWordRunningPart } from './docxRunningMatterImport';
+import { RUNNING_VARIANTS, type RunningVariants } from '../model/wordRunningMatter';
+import { readWordSectionLayout } from '../model/wordSectionLayout';
 import { tableCellPlainText, normalizeCellParagraphAttrs, tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight, MAX_NESTED_TABLE_DEPTH, parseTableCellContent } from '../model/tableLayout';
+import { importedSourceStyle, type SourceStyle } from '../model/sourceWordStyles';
 import { normalizeListAttribute } from '../model/directListFormatting';
+import { readWordHyphenationSettings, type WordHyphenationSettings } from '../model/wordHyphenation';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
+import { noteBodyPlainText, parseNoteBodyContent } from '../model/noteRichText';
 import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
 import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
 import {
@@ -37,6 +46,7 @@ import {
 import { withParentSectionId } from '../model/sectionStructure';
 import type {
   OmiAnnotation,
+  OmiCrossReference,
   OmiBibliographicContributor,
   OmiBibliographicRecord,
   OmiBlock,
@@ -70,6 +80,9 @@ interface WordStyle {
   name?: string;
   basedOn?: string;
   outlineLevel?: number;
+  numId?: string;
+  numLevel?: number;
+  source?: SourceStyle;
 }
 
 interface WordListInfo {
@@ -96,7 +109,10 @@ interface TiptapNode {
   content?: TiptapNode[];
 }
 
+interface PendingWordReference {id:string;anchorId:string;blockId:string;name:string;field:WordCrossReferenceField;}
+
 interface InlineContext {
+  wordReferences?:PendingWordReference[];
   blockId: string;
   footnotes: Map<string, ImportedNoteBody>;
   endnotes: Map<string, ImportedNoteBody>;
@@ -115,6 +131,10 @@ interface FieldState {
 }
 
 export interface DocxManuscriptImportPlan {
+  namedAnchors?:OmiNamedAnchor[];
+  crossReferences?:OmiCrossReference[];
+  wordHyphenation?:WordHyphenationSettings;
+  noteNumberingScope?:'section';
   fileName: string;
   title: string;
   titleSource: 'core-properties' | 'title-style' | 'filename';
@@ -144,6 +164,7 @@ export async function parseDocxManuscript(
   }
 
   const archive = new DocxZipArchive(await file.arrayBuffer());
+  const wordHyphenation=await readHyphenationArchive(archive);
   if (!archive.has('word/document.xml')) {
     throw new Error('The DOCX file does not contain word/document.xml.');
   }
@@ -195,6 +216,24 @@ export async function parseDocxManuscript(
   }
 
   const sections: OmiSection[] = [];
+  const namedAnchors:OmiNamedAnchor[]=[];
+  const bookmarkNames=new Map<string,{anchor:OmiNamedAnchor;whole:boolean}>();
+  const wordReferences:PendingWordReference[]=[];
+  const captureBookmarks=(p:Element,targetId:string,targetKind:'section'|'block')=>{
+    const children=Array.from(p.children);
+    for(const start of children.filter(el=>el.localName==='bookmarkStart')){
+      const name=attributeByLocalName(start,'name'),id=attributeByLocalName(start,'id');
+      if(!name||!id||!/^[_A-Za-z][_A-Za-z0-9]{0,39}$/.test(name)||name==='_GoBack')continue;
+      const key=name.toLowerCase();
+      if(bookmarkNames.has(key)){warnings.push(warning('duplicate-word-bookmark'));continue;}
+      const end=children.findIndex(el=>el.localName==='bookmarkEnd'&&attributeByLocalName(el,'id')===id),begin=children.indexOf(start);
+      const meaningful=(el:Element)=>!['pPr','bookmarkStart','bookmarkEnd','proofErr'].includes(el.localName);
+      const whole=end>begin&&!children.slice(0,begin).some(meaningful)&&!children.slice(end+1).some(meaningful);
+      if(!whole)warnings.push(warning('word-bookmark-range-approximated'));
+      const anchor=createNamedAnchor({name,targetId,targetKind,source:{format:'docx',originalName:name}});
+      namedAnchors.push(anchor);bookmarkNames.set(key,{anchor,whole});
+    }
+  };
   const annotations: OmiAnnotation[] = [];
   const citations: OmiCitation[] = [];
   const citationClusters: OmiCitationCluster[] = [];
@@ -216,11 +255,79 @@ export async function parseDocxManuscript(
   // content. Flatten only their block-level sdtContent children here, keeping
   // document order and leaving inline controls to the inline parser.
   const children = structuredBlockChildren(body);
+  const sectionProperties=(p:Element)=>directChildrenByLocalName(directChildrenByLocalName(p,'pPr')[0]??p,'sectPr')[0];
+  const nativeSections=[...children.map(sectionProperties).filter((p):p is Element=>Boolean(p)),...directChildrenByLocalName(body,'sectPr')];
+  const settings=archive.has('word/settings.xml')?parseXml(await archive.text('word/settings.xml')).documentElement:undefined;
+  const restart=(root:Element|undefined,kind:'footnote'|'endnote')=>{
+    const props=root&&directChildrenByLocalName(root,kind+'Pr')[0];
+    const node=props&&directChildrenByLocalName(props,'numRestart')[0];
+    return node?attributeByLocalName(node,'val'):undefined;
+  };
+  const kinds=(['footnote','endnote'] as const).filter(kind=>descendantsByLocalName(body,kind+'Reference').length>0);
+  const modes=kinds.flatMap(kind=>(nativeSections.length?nativeSections:[undefined]).map(p=>restart(p,kind)??restart(settings,kind)??'continuous'));
+  const sectionRestart=modes.length>0&&modes.every(mode=>mode==='eachSect');
+  if(!sectionRestart&&modes.some(mode=>mode!=='continuous'))warnings.push(warning('note-numbering-restart-not-fully-supported'));
   let index = 0;
+  let pendingSection=false;
+  let physicalIndex=0,physicalStart=0;
+  const runningPartCache=new Map<string,RunningVariants['default']>();
+  const onOff=(root:Element|undefined,tag:string):boolean|undefined=>{
+    const el=root&&directChildrenByLocalName(root,tag)[0];
+    if(!el)return undefined;
+    return !/^(?:0|false|off)$/i.test(attributeByLocalName(el,'val')??'1');
+  };
+  const applyPhysicalLayout=async()=>{
+    const props=nativeSections[physicalIndex++];
+    if(!props&&nativeSections.length===0)return;
+    const read=(tag:string,attr:string)=>{const node=props&&directChildrenByLocalName(props,tag)[0];return node?attributeByLocalName(node,attr):undefined;};
+    const wordSection=readWordSectionLayout(crypto.randomUUID(),read);
+    const count=Number(read('cols','num')??1);
+    const rawGap=read('cols','space'),gap=rawGap===undefined?undefined:Number(rawGap)*25.4/1440;
+    if(count>3||count<1||read('cols','equalWidth')==='0')warnings.push(warning('word-section-columns-partial'));
+    const evenAndOdd=onOff(settings,'evenAndOddHeaders'),differentFirstPage=onOff(props,'titlePg');
+    if(evenAndOdd!==undefined)wordSection.evenAndOddHeaders=evenAndOdd;
+    if(differentFirstPage!==undefined)wordSection.differentFirstPage=differentFirstPage;
+    if(props)for(const kind of ['header','footer'] as const){
+      const variants:RunningVariants={};
+      for(const reference of directChildrenByLocalName(props,kind+'Reference')){
+        const variant=attributeByLocalName(reference,'type');
+        const id=attributeByLocalName(reference,'id');
+        const rel=id?relationships.get(id):undefined;
+        // Only internal package parts of the expected relationship kind.
+        // No network or external target resolution, traversal or raw XML reuse.
+        const target=rel?.target.replace(/^\.\//,'').replace(/^\/word\//,'').replace(/^word\//,'');
+        if(!RUNNING_VARIANTS.includes(variant as typeof RUNNING_VARIANTS[number])||!rel||rel.targetMode?.toLowerCase()==='external'||!rel.type?.endsWith('/'+kind)||!target||!/^[-a-z0-9_]+\.xml$/i.test(target)||!archive.has('word/'+target)){
+          warnings.push(warning('word-running-matter-reference-not-supported'));continue;
+        }
+        const key=kind+':'+target;
+        try{
+          if(!runningPartCache.has(key)){
+            const xml=await archive.text('word/'+target);
+            if(xml.length>1000000||/<!DOCTYPE\b|<!ENTITY\b/i.test(xml)){warnings.push(warning('word-running-matter-part-not-supported'));runningPartCache.set(key,undefined);}
+            else runningPartCache.set(key,readWordRunningPart(parseXml(xml).documentElement,kind,()=>warnings.push(warning('word-running-matter-formatting-partial'))));
+          }
+          const paragraphs=runningPartCache.get(key);
+          if(paragraphs)variants[variant as typeof RUNNING_VARIANTS[number]]=structuredClone(paragraphs);
+          else warnings.push(warning('word-running-matter-part-not-supported'));
+        }catch{warnings.push(warning('word-running-matter-part-not-supported'));}
+      }
+      if(Object.keys(variants).length)wordSection[kind==='header'?'headers':'footers']=variants;
+    }
+    for(const section of sections.slice(physicalStart))section.layout={...section.layout,wordSection,...(count===2||count===3?{columns:count,...(gap!==undefined&&Number.isFinite(gap)&&gap>=0&&gap<=50?{columnGapMm:gap}:{})}:{})};
+    physicalStart=sections.length;
+  };
 
   while (index < children.length) {
     const child = children[index];
     if (!child) break;
+    if(pendingSection){
+      await applyPhysicalLayout();
+      const nextHeading=child.localName==='p'&&resolveParagraphHeadingLevel(child,resolveParagraphStyle(child,styles))!==undefined&&!paragraphHasNoteReference(child)&&paragraphPlainText(child).trim();
+      headingStack.length=0;
+      if(!nextHeading&&sections.at(-1)?.blocks.length){sections.push({id:crypto.randomUUID(),title:'',blocks:[]});stats.sections+=1;}
+      pendingSection=false;
+    }
+    if(child.localName==='p'&&sectionProperties(child))pendingSection=true;
 
     if (child.localName === 'tbl') {
       const section = ensureSection(sections);
@@ -228,7 +335,7 @@ export async function parseDocxManuscript(
       // Bibliographic fields in cells retain their cached text until citation
       // cluster traversal supports visual content; note anchors use the real registry.
       const context:InlineContext={blockId,footnotes,endnotes,bibliographyByTag:new Map(),annotations,citations,citationClusters,warnings,stats};
-      const table = parseWordTable(child,numbering,relationships,context);
+      const table = parseWordTable(child,numbering,relationships,context,styles);
       if (table.cells.length) {
         section.blocks.push(
           createTableBlock(table.cells, {
@@ -255,7 +362,20 @@ export async function parseDocxManuscript(
       continue;
     }
 
+    // A standalone simple TOC field contains only a generated display cache.
+    // Never remove an unrelated paragraph just because its text equals a TOC row.
+    const directContent=Array.from(child.children).filter(el=>!['pPr','bookmarkStart','bookmarkEnd','proofErr'].includes(el.localName));
+    if(directContent.length===1&&directContent[0]?.localName==='fldSimple'){
+      const instruction=attributeByLocalName(directContent[0],'instr')?.trim()??'';
+      if(/^INDEX\b/i.test(instruction)||(/^TOC\b/i.test(instruction)&&!/(?:^|\s)\\(?:a|c)(?:\s|$)/i.test(instruction))){index+=1;continue;}
+    }
     const style = resolveParagraphStyle(child, styles);
+    // Our generated index title is presentation, not a manuscript heading.
+    if(style?.id==='OMIIndexTitle'){
+      const next=children[index+1];
+      const field=next&&directChildrenByLocalName(next,'fldSimple')[0];
+      if(field&&/^\s*INDEX\b/i.test(attributeByLocalName(field,'instr')??'')){index+=1;continue;}
+    }
     const plainText = paragraphPlainText(child).trim();
     const headingLevel = resolveParagraphHeadingLevel(child, style);
     const hasNoteReference = paragraphHasNoteReference(child);
@@ -290,6 +410,7 @@ export async function parseDocxManuscript(
         parentId,
       );
       sections.push(section);
+      captureBookmarks(child,id,'section');
       headingStack.push({ id, level: headingLevel });
       stats.sections += 1;
       index += 1;
@@ -328,7 +449,7 @@ export async function parseDocxManuscript(
       }
     }
 
-    const listInfo = paragraphListInfo(child, numbering);
+    const listInfo = paragraphListInfo(child, numbering, styles);
     if (listInfo) {
       const section = ensureSection(sections);
       const listBlockId = crypto.randomUUID();
@@ -336,6 +457,7 @@ export async function parseDocxManuscript(
       const trailingVisuals: OmiBlock[] = [];
 
       while (index < children.length) {
+        if(listParagraphs.length&&pendingSection)break;
         const paragraph = children[index];
         if (!paragraph || paragraph.localName !== 'p') break;
         const paragraphStyle = resolveParagraphStyle(paragraph, styles);
@@ -343,7 +465,7 @@ export async function parseDocxManuscript(
           resolveParagraphHeadingLevel(paragraph, paragraphStyle) !== undefined
           && !paragraphHasNoteReference(paragraph)
         ) break;
-        const info = paragraphListInfo(paragraph, numbering);
+        const info = paragraphListInfo(paragraph, numbering, styles);
         if (!info) break;
 
         const context: InlineContext = {
@@ -360,6 +482,7 @@ export async function parseDocxManuscript(
         listParagraphs.push({
           ...info,
           content: parseParagraphInline(paragraph, relationships, context),
+          paragraphAttrs: sourceParagraphAttrs(paragraphStyle,styles),
         });
         trailingVisuals.push(
           ...(await extractParagraphVisuals(
@@ -373,6 +496,7 @@ export async function parseDocxManuscript(
           )),
         );
         stats.paragraphs += 1;
+        if(sectionProperties(paragraph))pendingSection=true;
         index += 1;
       }
 
@@ -406,6 +530,7 @@ export async function parseDocxManuscript(
     const blockId = crypto.randomUUID();
     const context: InlineContext = {
       blockId,
+      wordReferences,
       footnotes,
       endnotes,
       bibliographyByTag,
@@ -437,6 +562,7 @@ export async function parseDocxManuscript(
       const container = directChildrenByLocalName(pPr, parent)[0];
       return container ? directChildrenByLocalName(container, name).map(element => Object.fromEntries(Array.from(element.attributes).map(attribute => [attribute.localName, attribute.value]))) : [];
     }));
+      Object.assign(paragraphAttrs,sourceParagraphAttrs(style,styles));
       const attrs = Object.keys(paragraphAttrs).length ? { attrs: paragraphAttrs } : {};
       const tiptapContent = isCodeStyle(style?.id, style?.name) && plainText
         ? {
@@ -463,6 +589,7 @@ export async function parseDocxManuscript(
         type,
         content: JSON.stringify(tiptapContent),
       });
+      captureBookmarks(child,blockId,'block');
       stats.paragraphs += 1;
     }
     section.blocks.push(...visuals);
@@ -470,6 +597,7 @@ export async function parseDocxManuscript(
     index += 1;
   }
 
+  if(physicalStart<sections.length)await applyPhysicalLayout();
   for (const section of sections) {
     if (section.blocks.length === 0) {
       section.blocks.push(createEmptyParagraphBlock());
@@ -490,6 +618,27 @@ export async function parseDocxManuscript(
     warnings.push(warning('title-from-filename'));
   }
 
+  // Forward references resolve only after every physical paragraph has been read.
+  const crossReferences:OmiCrossReference[]=[];
+  const pending=new Map(wordReferences.map(item=>[item.id,item]));
+  for(const section of sections)for(const block of section.blocks){
+    if(block.visual||!block.content.includes('omiCrossReference'))continue;
+    const visit=(node:TiptapNode):TiptapNode=>{
+      const id=node.type==='omiCrossReference'&&typeof node.attrs?.crossReferenceId==='string'?node.attrs.crossReferenceId:undefined;
+      const ref=id?pending.get(id):undefined;
+      if(ref){
+        const target=bookmarkNames.get(ref.name.toLowerCase());
+        if(!target||(ref.field.kind==='REF'&&!target.whole)){
+          warnings.push(warning('word-cross-reference-flattened'));
+          return {type:'text',text:ref.field.cachedLabel||ref.name};
+        }
+        crossReferences.push({...createCrossReference({id:ref.id,anchorId:ref.anchorId,sourceBlockId:block.id,targetId:target.anchor.id,targetKind:'bookmark',displayStyle:'title'}),wordField:ref.field});
+        return node;
+      }
+      return node.content?{...node,content:node.content.map(visit)}:node;
+    };
+    block.content=JSON.stringify(visit(JSON.parse(block.content) as TiptapNode));
+  }
   const authors = mergeDetectedAuthors(...authorGroups);
   if (authors.length > 0) warnings.push(warning('authors-from-docx-metadata'));
   if (archive.names().some((name) => /^word\/(header|footer)\d+\.xml$/i.test(name))) {
@@ -500,10 +649,13 @@ export async function parseDocxManuscript(
   stats.notes = annotations.length;
   stats.citations = citations.length;
   stats.references = bibliographicRecords.length;
+  if(sectionRestart&&sections.length>Math.max(1,nativeSections.length))warnings.push(warning('note-numbering-logical-section-approximation'));
   stats.warnings = warnings.length;
 
   return {
     fileName: file.name,
+    ...(wordHyphenation?{wordHyphenation}:{}),
+    ...(sectionRestart?{noteNumberingScope:'section' as const}:{}),
     title,
     titleSource,
     locale: normalizeInlineLanguageTag(core.language),
@@ -515,9 +667,23 @@ export async function parseDocxManuscript(
     bibliographicRecords,
     citations,
     citationClusters,
+    ...(namedAnchors.length?{namedAnchors}:{}),
+    ...(crossReferences.length?{crossReferences}:{}),
     stats,
     warnings: deduplicateWarnings(warnings),
   };
+}
+
+async function readHyphenationArchive(archive:DocxZipArchive):Promise<WordHyphenationSettings|undefined>{
+  if(!archive.has('word/settings.xml'))return undefined;
+  const doc=parseXml(await archive.text('word/settings.xml'));
+  const root=doc.documentElement;
+  if(root.localName!=='settings')return undefined;
+  const find=(name:string)=>directChildrenByLocalName(root,name)[0];
+  return readWordHyphenationSettings(name=>{const node=find(name);return node?attributeByLocalName(node,'val'):undefined;},name=>Boolean(find(name)));
+}
+export async function readDocxHyphenation(file:File):Promise<WordHyphenationSettings|undefined>{
+  return readHyphenationArchive(new DocxZipArchive(await file.arrayBuffer()));
 }
 
 function ensureSection(sections: OmiSection[]): OmiSection {
@@ -566,6 +732,16 @@ function createEmptyParagraphBlock(): OmiBlock {
       content: [{ type: 'paragraph' }],
     }),
   };
+}
+
+function removeSourceStar(note:ImportedNoteBody):ImportedNoteBody{
+  const document=parseNoteBodyContent(note.bodyContent);
+  if(!document)return note;
+  const first=document.content?.[0]?.content?.[0];
+  if(first?.type!=='text'||!first.text?.startsWith('*'))return note;
+  first.text=first.text.slice(1).replace(/^ /,'');
+  if(!first.text)document.content![0]!.content!.shift();
+  return {body:noteBodyPlainText(document),bodyContent:JSON.stringify(document)};
 }
 
 function parseParagraphInline(
@@ -642,7 +818,7 @@ function parseParagraphInline(
 
   const handleRun = (run: Element, inheritedMarks: TiptapMark[] = []) => {
     const marks = mergeMarks(inheritedMarks, runMarks(run));
-
+    const skipStar=new Set<Element>();
     for (const node of Array.from(run.children)) {
       if (node.localName === 'fldChar') {
         const kind = attributeByLocalName(node, 'fldCharType');
@@ -676,14 +852,20 @@ function parseParagraphInline(
         if (!noteBodies.has(noteId)) {
           context.warnings.push(warning('missing-note-body'));
         }
-        const noteBody = noteBodies.get(noteId);
+        let noteBody = noteBodies.get(noteId);
+        const siblings=Array.from(run.children);
+        const marker=siblings[siblings.indexOf(node)+1];
+        const customMark= /^(?:1|true|on)$/i.test(attributeByLocalName(node,'customMarkFollows')??'')&&marker?.localName==='t'&&marker.textContent?.startsWith('*')?'*' as const:undefined;
+        if(customMark&&marker){skipStar.add(marker);if(noteBody)noteBody=removeSourceStar(noteBody);}
+        else if(attributeByLocalName(node,'customMarkFollows')&&attributeByLocalName(node,'customMarkFollows')!=='0')context.warnings.push(warning('unsupported-custom-note-mark'));
         const annotationId = `note-${crypto.randomUUID()}`;
         const anchorId = `anchor-${crypto.randomUUID()}`;
-        const label = String(context.annotations.length + 1);
+        const label = customMark??String(context.annotations.filter(note=>note.noteCustomMark!=='*').length + 1);
         context.annotations.push({
           id: annotationId,
           type: 'note',
           noteKind: noteType,
+          ...(customMark?{noteCustomMark:customMark}:{}),
           anchorId,
           targetBlockId: context.blockId,
           body: noteBody?.body ?? '',
@@ -708,7 +890,7 @@ function parseParagraphInline(
 
       if (node.localName === 't' || node.localName === 'delText') {
         if (node.localName === 'delText') continue;
-        const text = node.textContent ?? '';
+        const text = (node.textContent ?? '').slice(skipStar.has(node)?1:0);
         if (text) append([{ type: 'text', text, marks: marks.length ? marks : undefined }]);
         continue;
       }
@@ -735,10 +917,21 @@ function parseParagraphInline(
 
     if (element.localName === 'hyperlink') {
       const relationshipId = attributeByLocalName(element, 'id');
-      const target = relationshipId ? relationships.get(relationshipId)?.target : undefined;
-      const href = normalizeExternalHref(target);
+      const relationship=relationshipId?relationships.get(relationshipId):undefined;
+      const target=relationship?.targetMode?.toLowerCase()==='external'&&(!relationship.type||relationship.type.endsWith('/hyperlink'))?relationship.target:undefined;
+      const href=target&&/^(https?:|mailto:)/i.test(target.trim())?normalizeExternalHref(target):undefined;
+      const anchor=attributeByLocalName(element,'anchor');
+      if(!relationshipId&&anchor&&/^[_A-Za-z][_A-Za-z0-9]{0,39}$/.test(anchor)&&context.wordReferences&&!field){
+        const label=descendantsByLocalName(element,'t').map(t=>t.textContent??'').join('');
+        if(label.length<=4096&&label){
+          const id='xref-'+crypto.randomUUID(),anchorId='anchor-'+crypto.randomUUID();
+          context.wordReferences.push({id,anchorId,blockId:context.blockId,name:anchor,field:{kind:'HYPERLINK',cachedLabel:label}});
+          output.push({type:'omiCrossReference',attrs:{crossReferenceId:id,anchorId,label,unresolved:false}});
+          return;
+        }
+      }
       const marks = href
-        ? mergeMarks(inheritedMarks, [{ type: 'omiLink', attrs: { href } }])
+        ? mergeMarks(inheritedMarks, [{ type: 'omiLink', attrs: { href,...(attributeByLocalName(element,'tooltip')?{title:attributeByLocalName(element,'tooltip')}: {}) } }])
         : inheritedMarks;
       if (href) context.stats.links += 1;
       for (const child of Array.from(element.children)) visitElement(child, marks);
@@ -842,7 +1035,7 @@ function renderField(field: FieldState, context: InlineContext): TiptapNode[] {
 
   const hyperlink = parseWordHyperlinkInstruction(field.instruction);
   if (hyperlink) {
-    const href = normalizeExternalHref(hyperlink);
+    const href = /^(https?:|mailto:)/i.test(hyperlink.trim())?normalizeExternalHref(hyperlink):undefined;
     if (href) {
       context.stats.links += 1;
       return applyMarkToInline(field.result, {
@@ -852,6 +1045,12 @@ function renderField(field: FieldState, context: InlineContext): TiptapNode[] {
     }
   }
 
+  const reference=parseWordCrossReference(field.instruction,inlinePlainText(field.result));
+  if(reference&&context.wordReferences){
+    const id='xref-'+crypto.randomUUID(),anchorId='anchor-'+crypto.randomUUID();
+    context.wordReferences.push({id,anchorId,blockId:context.blockId,...reference});
+    return [{type:'omiCrossReference',attrs:{crossReferenceId:id,anchorId,label:reference.field.cachedLabel||reference.name,unresolved:false}}];
+  }
   if (/\b(?:REF|PAGEREF|NOTEREF)\b/i.test(field.instruction)) {
     context.warnings.push(warning('word-cross-reference-flattened'));
   }
@@ -1031,11 +1230,20 @@ async function readStyles(archive: DocxZipArchive): Promise<Map<string, WordStyl
     const pPr = directChildrenByLocalName(element, 'pPr')[0];
     const outline = pPr ? directChildrenByLocalName(pPr, 'outlineLvl')[0] : undefined;
     const outlineValue = outline ? Number(attributeByLocalName(outline, 'val')) : undefined;
+    const kind=attributeByLocalName(element,'type');
+    const rPr=directChildrenByLocalName(element,'rPr')[0];
+    const next=directChildrenByLocalName(element,'next')[0];
+    const color=rPr&&directChildrenByLocalName(rPr,'color')[0];
+    const rawColor=color&&attributeByLocalName(color,'val');
+    const flag=(key:string)=>rPr&&directChildrenByLocalName(rPr,key)[0]?enabledWordProperty(rPr,key):undefined;
+    const source:SourceStyle|undefined=kind==='paragraph'||kind==='character'?{id,name:nameElement?attributeByLocalName(nameElement,'val')??id:id,kind,basedOn:basedOnElement&&attributeByLocalName(basedOnElement,'val'),next:next&&attributeByLocalName(next,'val'),bold:flag('b'),italic:flag('i'),color:rawColor&&/^[0-9a-f]{6}$/i.test(rawColor)?'#'+rawColor:undefined}:undefined;
     styles.set(id, {
       id,
+      source,
       name: nameElement ? attributeByLocalName(nameElement, 'val') : undefined,
       basedOn: basedOnElement ? attributeByLocalName(basedOnElement, 'val') : undefined,
       outlineLevel: Number.isFinite(outlineValue) ? outlineValue : undefined,
+      ...readParagraphNumbering(pPr),
     });
   }
 
@@ -1057,6 +1265,8 @@ function readNumberingLevel(level: Element): Record<string, unknown> {
   set('omiListFormat',read('numFmt'));
   set('omiListLabel',read('lvlText'));
   set('omiListStart',read('start'));
+  const paragraphStyle=read('pStyle');
+  if(paragraphStyle)attrs.wordParagraphStyle=paragraphStyle;
   const pPr = directChildrenByLocalName(level,'pPr')[0];
   const ind = pPr && directChildrenByLocalName(pPr,'ind')[0];
   if (ind) {
@@ -1106,19 +1316,41 @@ async function readNumbering(archive: DocxZipArchive): Promise<WordNumbering> {
   return result;
 }
 
-function paragraphListInfo(paragraph: Element, numbering: WordNumbering): WordListInfo | undefined {
+function readParagraphNumbering(pPr: Element | undefined): {numId?:string;numLevel?:number} {
+  const numPr=pPr&&directChildrenByLocalName(pPr,'numPr')[0];
+  const id=numPr&&directChildrenByLocalName(numPr,'numId')[0];
+  const level=numPr&&directChildrenByLocalName(numPr,'ilvl')[0];
+  const value=level&&normalizeListAttribute('omiListLevel',attributeByLocalName(level,'val'));
+  return {numId:id?attributeByLocalName(id,'val'):undefined,numLevel:typeof value==='number'?value:undefined};
+}
+
+function paragraphListInfo(paragraph: Element, numbering: WordNumbering, styles: Map<string,WordStyle>): WordListInfo | undefined {
   const pPr = directChildrenByLocalName(paragraph,'pPr')[0];
-  const numPr = pPr && directChildrenByLocalName(pPr,'numPr')[0];
-  if (!numPr) return undefined;
-  const idElement = directChildrenByLocalName(numPr,'numId')[0];
-  const levelElement = directChildrenByLocalName(numPr,'ilvl')[0];
-  const id = idElement && attributeByLocalName(idElement,'val');
-  if (!id || id === '0') return undefined;
-  const rawLevel = normalizeListAttribute('omiListLevel',levelElement ? attributeByLocalName(levelElement,'val') : 0);
-  const level = typeof rawLevel === 'number' ? rawLevel : 0;
+  const direct=readParagraphNumbering(pPr);
+  let id=direct.numId, level=direct.numLevel;
+  let style=resolveParagraphStyle(paragraph,styles);
+  const visited=new Set<string>();
+  // Each property may be inherited independently. An explicit zero numId
+  // suppresses numbering; cycles must not cause unbounded traversal.
+  while(style&&!visited.has(style.id)){
+    visited.add(style.id);
+    id??=style.numId;
+    level??=style.numLevel;
+    style=style.basedOn?styles.get(style.basedOn):undefined;
+  }
+  if(!id||id==='0')return undefined;
+  // Word can link a numbering level to a paragraph style instead of
+  // specifying ilvl in the style's numPr.
+  const styleId=resolveParagraphStyle(paragraph,styles)?.id;
+  if(level===undefined&&styleId){
+    const match=[...(numbering.get(id)??[])].find(([,attrs])=>attrs.wordParagraphStyle===styleId);
+    if(match)level=match[0];
+  }
+  level??=0;
   const definition = numbering.get(id)?.get(level);
   const ordered = definition?.omiListFormat !== 'bullet' && definition?.omiListFormat !== 'none';
   const attrs: Record<string,unknown> = {...definition,omiListLevel:level};
+  delete attrs.wordParagraphStyle;
   if (ordered && typeof definition?.omiListStart === 'number' && definition.omiListStart !== 1) attrs.start = definition.omiListStart;
   return {level,ordered,attrs};
 }
@@ -1132,6 +1364,11 @@ function resolveParagraphStyle(
   const styleId = pStyle ? attributeByLocalName(pStyle, 'val') : undefined;
   if (!styleId) return undefined;
   return styles.get(styleId) ?? { id: styleId };
+}
+
+function sourceParagraphAttrs(style:WordStyle|undefined,styles:ReadonlyMap<string,WordStyle>):Record<string,unknown>{
+  const bundle=importedSourceStyle(style?.id,key=>styles.get(key)?.source,'paragraph');
+  return bundle?{omiWordParagraphStyle:bundle}:{};
 }
 
 function resolveParagraphHeadingLevel(
@@ -1148,7 +1385,7 @@ function resolveParagraphHeadingLevel(
   );
 }
 
-function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map<string,Relationship>,context:InlineContext,depth=0,budget={cells:10000}): {
+function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map<string,Relationship>,context:InlineContext,styles:Map<string,WordStyle>,depth=0,budget={cells:10000}): {
   cells: string[][];
   headerRows: number;
   mergedCells: boolean;
@@ -1260,7 +1497,7 @@ function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map
       for(const source of Array.from(cell.children)){
         if(source.localName==='tbl'){
           flush();
-          const child=parseWordTable(source,numbering,relationships,context,depth+1,budget);
+          const child=parseWordTable(source,numbering,relationships,context,styles,depth+1,budget);
           const nestedTable:OmiTableBlockData={kind:'table',cells:child.cells,headerRows:child.headerRows,cellFormats:child.cellFormats,cellContent:child.cellContent,cellMerges:child.cellMerges,rowSplitDefault:'allow',rowSplitOverrides:child.rowSplitOverrides,rowHeights:child.rowHeights};
           if(child.mergedCells) mergedCells=true;
           if(child.cells.length) nodes.push({type:'omiCellTable',attrs:{table:nestedTable}});
@@ -1268,11 +1505,9 @@ function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map
         }
         if(source.localName!=='p') continue;
         const paragraph=parsedParagraphs[paragraphIndex++]!;
-        const info=paragraphListInfo(source,numbering);
+        const info=paragraphListInfo(source,numbering,styles);
         if(info){
-          const numPr=directChildrenByLocalName(directChildrenByLocalName(source,'pPr')[0]!,'numPr')[0]!;
-          const id=attributeByLocalName(directChildrenByLocalName(numPr,'numId')[0]!,'val');
-          listItems.push({...info,attrs:{...info.attrs,omiListId:info.attrs.omiListId??'word-'+id},content:paragraph.content,paragraphAttrs:paragraph.attrs});
+          listItems.push({...info,content:paragraph.content,paragraphAttrs:paragraph.attrs});
         }else{flush();nodes.push(paragraph);}
       }
       flush();

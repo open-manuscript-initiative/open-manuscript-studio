@@ -56,3 +56,25 @@ export function sourceStyleName(input:unknown):string|undefined {
   const bundle=sourceStyleBundle(input);
   return bundle?.styles.find(s=>s.id===bundle.selected)?.name;
 }
+
+/** Keep source definitions separate from publisher paragraph style IDs.
+ * Both the structural importer and the optional inline enrichment must
+ * attach the same bounded, portable bundle. */
+export function importedSourceStyle(id:string|undefined,lookup:(id:string)=>SourceStyle|undefined,kind:SourceStyle['kind']):string|undefined{
+  if(!id||lookup(id)?.kind!==kind)return undefined;
+  // Studio's native semantic styles are already represented by the model.
+  if (/^(?:Normal|DefaultParagraphFont|Title|Subtitle|Author|Heading[1-9]|FootnoteText|EndnoteText|FootnoteReference|EndnoteReference|FundingNote|OMIStrong|OMIEmphasis|OMIStrongEmphasis|OMIStrike|OMIUnderline|OMISmallCaps|OMISuperscript|OMISubscript|OMICode|OMIAuthorGivenName|OMIAuthorFamilyName)$/.test(id))return undefined;
+  const definitions:SourceStyle[]=[];
+  const seen=new Set<string>(),pending=[id];
+  while(pending.length&&definitions.length<64){
+    const key=pending.shift()!;
+    if(seen.has(key))continue;
+    seen.add(key);
+    const definition=lookup(key);
+    if(!definition)continue;
+    definitions.push(definition);
+    if(definition.basedOn)pending.push(definition.basedOn);
+    if(definition.next)pending.push(definition.next);
+  }
+  return normalizeSourceStyle({selected:id,styles:definitions});
+}
