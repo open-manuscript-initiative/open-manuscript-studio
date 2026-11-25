@@ -833,7 +833,7 @@ function wordIndexTypes(manuscript:OmiManuscript,warnings:string[]):Map<string,s
 
 export function renderWordIndexEntryFields(entries: readonly OmiIndexEntry[],types?:ReadonlyMap<string,string>): string {
   return entries.map((entry) => {
-    const term=entry.terms.map(item=>item.trim()).filter(Boolean).map(item=>escapeWordFieldTerm(item).replace(/:/g,'\\:')).join(':');
+    const term=entry.terms.map(item=>item.trim()).filter(Boolean).map(item=>escapeWordFieldTerm(item, true)).join(':');
     if(!term)return '';
     const type=types?.get(entry.indexId??DEFAULT_INDEX_ID);
     if(types&&entry.indexId&&entry.indexId!==DEFAULT_INDEX_ID&&!type)return '';
@@ -855,8 +855,10 @@ export function renderWordGeneratedIndexField(locale = 'en',index?:OmiGeneratedI
   return `<w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve">${xml(instruction)}</w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t xml:space="preserve">${xml(placeholder)}</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>`;
 }
 
-function escapeWordFieldTerm(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+function escapeWordFieldTerm(value: string, escapeHierarchySeparator = false): string {
+  // Escape original characters in one pass so inserted backslashes are never
+  // escaped again. Only literal colons within XE terms need escaping.
+  return value.replace(escapeHierarchySeparator ? /[\\":]/g : /[\\"]/g, character => '\\' + character);
 }
 
 function wordCharacterStyleId(semantics: readonly OmiInlineSemanticKind[]): string | undefined {
