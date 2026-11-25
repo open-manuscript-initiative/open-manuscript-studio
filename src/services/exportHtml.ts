@@ -8,7 +8,7 @@ import { publicationSpineWidth } from '../model/publicationSpine';
 import { matterFrameBoxStyle, matterImageStyle, type PublicationMatterFrame } from '../model/publicationMatterFrames';
 import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 import { renderTextBoxGraphic, visualTextBoxDiagnostics } from '../model/textBoxes';
-import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout, tableRowSplitPolicy, tableCellAppearanceStyle, tableRowHeight, tableCellDocument } from '../model/tableLayout';
+import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout, tableRowSplitPolicy, tableCellAppearanceStyle, tableRowHeight, tableCellDocument, effectiveCellParagraphAttrs } from '../model/tableLayout';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -588,7 +588,7 @@ function renderTable(block: OmiBlock, state: RenderState): string {
   const renderCellText = (cell: string, row: number, column: number) => {
     const format = tableCellFormat(visual.cellFormats, row, column);
     const doc=tableCellDocument(visual,row,column);
-    const text=doc?renderJsonNode(doc,state):escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;');
+    const text=doc?renderJsonNode({...doc,content:doc.content?.map(p=>({...p,attrs:effectiveCellParagraphAttrs(p.attrs,format.horizontalAlign)}))},state):escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;');
     if (format.textRotation === 0 && format.textDirection === 'auto' && !visual.cellFormats?.[`${row}:${column}`]) return text;
     const css = Object.entries({...tableCellTextStyle(format.textRotation), ...(format.horizontalAlign?{textAlign:format.horizontalAlign,...(format.textRotation===0?{width:'100%'}:{})}:{})}).map(([key, value]) =>
       `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}`,
