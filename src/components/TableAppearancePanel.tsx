@@ -13,7 +13,7 @@ function loadPresets():TableAppearancePreset[]{
 }
 export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiTableBlockData;start:TableCellPosition;end:TableCellPosition;copy:VisualElementsCopy;onChange:(next:OmiTableBlockData)=>void}){
   const manuscript=useStudioStore(state=>state.manuscript);
-  const catalog=normalizePublicationTableStyles(getAppliedPublicationTemplate(manuscript)?.style.tableStyles)??{items:[]};
+  const catalog:PublicationTableStyles=normalizePublicationTableStyles(getAppliedPublicationTemplate(manuscript)?.style.tableStyles)??{items:[]};
   const [presets,setPresets]=useState(loadPresets);
   const [selected,setSelected]=useState('builtin:grid');
   const [name,setName]=useState('');
@@ -37,11 +37,11 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
     if(!preset||current.length>=MAX_TABLE_PRESETS||current.some(p=>p.name===preset.name)){setError(true);return;}
     if(persist([...current,preset])){setSelected('custom:'+preset.name);setName('');}
   }
-  function persistPublication(next:PublicationTableStyles){
+  function persistPublication(next:PublicationTableStyles):boolean{
     const current=useStudioStore.getState().manuscript;
-    if(current.id!==manuscript.id){setError(true);return;}
+    if(current.id!==manuscript.id){setError(true);return false;}
     const style=loadPublicationStyle(current);
-    try{stageAppliedPublicationStyle({...style,tableStyles:next});setError(false);}catch{setError(true);}
+    try{stageAppliedPublicationStyle({...style,tableStyles:next});setError(false);return true;}catch{setError(true);return false;}
   }
   function copyToPublication(){
     if(!choice)return;
@@ -49,7 +49,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
     const existing=normalizePublicationTableStyles(getAppliedPublicationTemplate(current)?.style.tableStyles);
     const next=putPublicationTablePreset(existing,choice.preset);
     if(!next){setError(true);return;}
-    persistPublication(next);setSelected('publication:'+choice.preset.name);
+    if(persistPublication(next))setSelected('publication:'+choice.preset.name);
   }
   function remove(){
     if(!choice||!selected.startsWith('custom:'))return;
@@ -68,7 +68,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
     <small>{copy.tableStyleApplyHint}</small>
     <div className="omi-table-cell-formatting-fields">
       <button type="button" disabled={!choice||selected.startsWith('publication:')} onClick={copyToPublication}>{copy.saveStyleToPublication}</button>
-      <button type="button" disabled={!choice||!selected.startsWith('publication:')} onClick={()=>{if(choice){persistPublication(removePublicationTablePreset(catalog,choice.preset.name));setSelected('builtin:grid');}}}>{copy.removeStyleFromPublication}</button>
+      <button type="button" disabled={!choice||!selected.startsWith('publication:')} onClick={()=>{if(choice){if(persistPublication(removePublicationTablePreset(catalog,choice.preset.name)))setSelected('builtin:grid');}}}>{copy.removeStyleFromPublication}</button>
       <label><span>{copy.defaultPublicationTableStyle}</span><select value={catalog.defaultTableStyle??''} onChange={event=>persistPublication({items:catalog.items,...(event.target.value?{defaultTableStyle:event.target.value}:{})})}><option value="">{copy.noDefaultPublicationTableStyle}</option>{catalog.items.filter(p=>p.kind==='table').map(p=><option key={p.name} value={p.name}>{p.name}</option>)}</select></label>
     </div>
     <small>{copy.publicationTableStyleHint}</small>
