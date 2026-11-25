@@ -1,5 +1,6 @@
 import { DOMParser as XmlParser, type Element as XmlElement } from '@xmldom/xmldom';
 import { OdtZip } from './odtZip';
+import { reconstructIdmlCellLists, type IdmlCellParagraph, type IdmlListImportContext } from './idmlCellLists';
 import { MAX_VISUAL_IMPORT_BYTES, createTableBlock } from '../model/visualBlocks';
 import { MAX_NESTED_TABLE_DEPTH, TABLE_CELL_SIDES, normalizeTableCellAppearance, normalizeTableCellEdges, normalizeTableRowHeight, normalizeCellParagraphAttrs, tableColumnWidths, tableMergeLayout, parseTableCellContent, tableCellPlainText } from '../model/tableLayout';
 import { normalizeDirectValue, type DirectFormat } from '../model/directFormatting';
@@ -7,7 +8,7 @@ import type { NoteJsonNode } from '../model/noteRichText';
 import type { OmiBlock, OmiTableBlockData, OmiTableCellFormat, OmiTableCellMerge, OmiTableRowHeight } from '../types/omi';
 
 type Props=Record<string,string>;
-interface Context {styles:Map<string,XmlElement>;colors:Map<string,string>;budget:{cells:number};warnings:Set<string>}
+interface Context {styles:Map<string,XmlElement>;colors:Map<string,string>;budget:{cells:number};warnings:Set<string>;lists:IdmlListImportContext}
 export interface IdmlTableImportResult {blocks:OmiBlock[];warnings:string[]}
 const direct=(node:XmlElement,name:string)=>Array.from(node.children).filter(child=>child.localName===name);
 const descendants=(node:XmlElement,name:string)=>Array.from(node.getElementsByTagNameNS('*',name));
@@ -21,7 +22,10 @@ function properties(node:XmlElement):Props {
   const result:Props=Object.create(null) as Props;
   for(const attr of Array.from(node.attributes))result[attr.localName??attr.name]=attr.value;
   for(const container of direct(node,'Properties'))for(const child of Array.from(container.children)){
-    if(!child.children.length)result[child.localName??child.tagName]=child.textContent??'';
+    if(child.localName==='BulletChar'){
+      result.BulletCharacterType=child.getAttribute('BulletCharacterType')??'';
+      result.BulletCharacterValue=child.getAttribute('BulletCharacterValue')??'';
+    }else if(!child.children.length)result[child.localName??child.tagName]=child.textContent??'';
   }
   return result;
 }
@@ -89,17 +93,17 @@ function characterMarks(p:Props,context:Context):NonNullable<NoteJsonNode['marks
   return marks;
 }
 function parseCellBlocks(cell:XmlElement,context:Context,depth:number):NoteJsonNode[]{
-  const result:NoteJsonNode[]=[];
+  const result:IdmlCellParagraph[]=[];
   function readParagraph(element:XmlElement):void{
     const raw=properties(element),p={...resolvedStyle(raw.AppliedParagraphStyle,context),...raw};
     const attrs=paragraphAttrs(p);
     let inline:NoteJsonNode[]=[];
-    const flush=(force=false)=>{if(inline.length||force)result.push({type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:inline});inline=[];};
+    const flush=(force=false)=>{if(inline.length||force)result.push({node:{type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:inline},properties:p,continuationReference:raw.BulletsAndNumberingListType==='NoList'?raw.AppliedNumberingList:undefined});inline=[];};
     let ended=false;
     function read(el:XmlElement,inherited:Props):void{
       const name=el.localName;
       if(name==='Properties')return;
-      if(name==='Table'){flush();result.push({type:'omiCellTable',attrs:{table:parseTable(el,context,depth+1)}});ended=true;return;}
+      if(name==='Table'){flush();result.push({node:{type:'omiCellTable',attrs:{table:parseTable(el,context,depth+1)}}});ended=true;return;}
       if(name==='Content'){
         const marks=characterMarks(inherited,context);
         for(const part of (el.textContent??'').split(/(\r\n|\r|\n|\t)/)){
@@ -131,10 +135,10 @@ function parseCellBlocks(cell:XmlElement,context:Context,depth:number):NoteJsonN
   }
   for(const child of Array.from(cell.children)){
     if(child.localName==='ParagraphStyleRange')readParagraph(child);
-    else if(child.localName==='Table')result.push({type:'omiCellTable',attrs:{table:parseTable(child,context,depth+1)}});
+    else if(child.localName==='Table')result.push({node:{type:'omiCellTable',attrs:{table:parseTable(child,context,depth+1)}}});
     else if(child.localName!=='Properties')context.warnings.add('unsupported-cell-content');
   }
-  return result.length?result:[{type:'paragraph',content:[]}];
+  return result.length?reconstructIdmlCellLists(result,context.lists,code=>context.warnings.add(code)):[{type:'paragraph',content:[]}];
 }
 function cellFormat(p:Props,context:Context):OmiTableCellFormat {
   const result:OmiTableCellFormat={};
@@ -207,7 +211,7 @@ export async function importIdmlTables(file:File):Promise<IdmlTableImportResult>
   if(!zip.has('designmap.xml'))throw new Error('IDML designmap.xml missing.');
   const map=xml(await zip.text('designmap.xml'));
   if(map.localName!=='Document')throw new Error('Invalid IDML design map.');
-  const context:Context={styles:new Map(),colors:new Map(),budget:{cells:10000},warnings:new Set()};
+  const context:Context={styles:new Map(),colors:new Map(),budget:{cells:10000},warnings:new Set(),lists:{ids:new Map(),seenCells:new Set(),nextId:0}};
   if(zip.has('Resources/Styles.xml')){
     const styles=xml(await zip.text('Resources/Styles.xml'));
     for(const name of ['TableStyle','CellStyle','ParagraphStyle','CharacterStyle'])for(const node of descendants(styles,name)){
