@@ -1,3 +1,4 @@
+import { normalizeWordCrossReferenceField } from './wordCrossReference';
 import type {
   OmiCrossReference,
   OmiCrossReferenceDisplayStyle,
@@ -180,7 +181,7 @@ export function resolveCrossReferenceTarget(
 export function formatCrossReferenceLabel(
   crossReference: Pick<
     OmiCrossReference,
-    'displayStyle' | 'targetId'
+    'displayStyle' | 'targetId' | 'wordField'
   >,
   target: OmiCrossReferenceTarget | undefined,
   locale = 'en',
@@ -189,6 +190,8 @@ export function formatCrossReferenceLabel(
     return unresolvedLabel(locale);
   }
 
+  const wordField=normalizeWordCrossReferenceField(crossReference.wordField);
+  if(wordField&&target.kind==='bookmark'&&wordField.cachedLabel)return wordField.cachedLabel;
   if (target.kind === 'bookmark') {
     const bookmarkLabel = targetKindLabels(locale).bookmark;
     const title = target.title.trim();
