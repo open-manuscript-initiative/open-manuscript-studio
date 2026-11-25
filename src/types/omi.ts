@@ -394,6 +394,10 @@ export interface OmiImageBlockData {
 export interface OmiTableCellFormat {
   textRotation?: -90 | 0 | 90 | 180;
   textDirection?: 'auto' | 'ltr' | 'rtl';
+  horizontalAlign?: 'left' | 'center' | 'right' | 'justify';
+  verticalAlign?: 'top' | 'middle' | 'bottom';
+  /** Explicit solid RGB cell background, independent of character highlighting. */
+  backgroundColor?: string;
 }
 
 export interface OmiTableCellMerge {
