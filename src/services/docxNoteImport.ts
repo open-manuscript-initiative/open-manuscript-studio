@@ -1,3 +1,4 @@
+import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import { DOMParser, type Element } from '@xmldom/xmldom';
 import { parseWordHyperlinkInstruction, wordCharacterStyleSemantics } from '../model/docxImport';
@@ -109,7 +110,13 @@ export async function readDocxNotes(archive: WordNoteArchive): Promise<{
           for (const item of elements(element)) visit(item, marks);
         };
         for (const item of elements(paragraph)) visit(item, base);
-        return { type: 'paragraph', content: inline };
+        const pPr=child(paragraph,'pPr');
+        const attrs=readWordParagraphFormatting((property,attribute)=>attr(child(pPr,property),attribute),property=>Boolean(child(pPr,property)));
+        Object.assign(attrs,readWordParagraphDecoration((parent,name)=>{
+          const container=child(pPr,parent);
+          return container?elements(container).filter(item=>item.localName===name).map(item=>Object.fromEntries(Array.from(item.attributes).map(a=>[a.localName,a.value]))):[];
+        }));
+        return { type: 'paragraph', ...(Object.keys(attrs).length?{attrs}:{}), content: inline };
       });
       const document: NoteJsonNode = { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] };
       result.set(id, { body: noteBodyPlainText(document), bodyContent: JSON.stringify(document) });
