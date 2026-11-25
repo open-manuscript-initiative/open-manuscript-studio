@@ -8,7 +8,7 @@ export interface WordCrossReferenceField {
 export function normalizeWordCrossReferenceField(input:unknown):WordCrossReferenceField|undefined{
   if(!input||typeof input!=='object'||Array.isArray(input))return undefined;
   const v=input as Record<string,unknown>;
-  if((v.kind!=='REF'&&v.kind!=='PAGEREF'&&v.kind!=='HYPERLINK')||typeof v.cachedLabel!=='string'||v.cachedLabel.length>4096||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(v.cachedLabel))return undefined;
+  if((v.kind!=='REF'&&v.kind!=='PAGEREF'&&v.kind!=='HYPERLINK')||typeof v.cachedLabel!=='string'||v.cachedLabel.length>4096||Array.from(v.cachedLabel).some(character => { const code = character.charCodeAt(0); return code < 32 && code !== 9 && code !== 10 && code !== 13; }))return undefined;
   if(v.hyperlink!==undefined&&typeof v.hyperlink!=='boolean')return undefined;
   if(Object.keys(v).some(key=>!['kind','cachedLabel','hyperlink'].includes(key)))return undefined;
   return {kind:v.kind,cachedLabel:v.cachedLabel,...(v.hyperlink!==undefined?{hyperlink:v.hyperlink}:{})};
