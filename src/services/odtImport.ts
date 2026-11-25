@@ -1,5 +1,5 @@
 import { normalizeListAttribute } from '../model/directListFormatting';
-import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder, normalizeTableRowHeight, tableCellPlainText, normalizeCellParagraphAttrs } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder, normalizeTableRowHeight, tableCellPlainText, normalizeCellParagraphAttrs, MAX_NESTED_TABLE_DEPTH, parseTableCellContent } from '../model/tableLayout';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
 import { OdtZip } from './odtZip';
@@ -10,7 +10,7 @@ import { createImageBlock, createTableBlock } from '../model/visualBlocks';
 import { noteBodyPlainText, type NoteJsonNode } from '../model/noteRichText';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import { withParentSectionId } from '../model/sectionStructure';
-import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge, OmiTableRowSplitPolicy, OmiTableCellFormat, OmiTableRowHeight } from '../types/omi';
+import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge, OmiTableRowSplitPolicy, OmiTableCellFormat, OmiTableRowHeight, OmiTableBlockData } from '../types/omi';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 import { createEmptyDocxImportStats, mergeDetectedAuthors, parseDetectedAuthors, type DocxImportWarning } from '../model/docxImport';
 
@@ -72,105 +72,8 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
       continue;
     }
     if (child.localName === 'table') {
-      const rows: string[][] = [];
-      const merges: OmiTableCellMerge[] = [];
-      const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
-      const rowHeights: Record<string,OmiTableRowHeight> = {};
-      const cellFormats: Record<string,OmiTableCellFormat> = {};
-      const cellContent:Record<string,string>={};
-      let headerRows=0, bodyStarted=false;
-      const rowElements=Array.from(child.getElementsByTagNameNS('*','table-row')).filter(row=>{
-        let owner=row.parentNode;
-        while(owner && owner.nodeType===1 && (owner as XmlElement).localName!=='table') owner=owner.parentNode;
-        return owner===child;
-      });
-      for(const row of rowElements){
-        const values:string[]=[];
-        for(const cell of Array.from(row.children).filter(c=>c.localName==='table-cell'||c.localName==='covered-table-cell')){
-          const col=values.length;
-          const rowSpan=Number(cell.getAttribute('table:number-rows-spanned')||1);
-          const colSpan=Number(cell.getAttribute('table:number-columns-spanned')||1);
-          if(cell.localName==='table-cell' && (rowSpan>1||colSpan>1)) merges.push({row:rows.length,column:col,rowSpan,colSpan});
-          const property=(name:string,family:string,tag:string,attr:string):string|undefined=>{
-            const visited=new Set<string>();
-            while(name&&!visited.has(name)){
-              visited.add(name);
-              const style=textStyles.get(name);
-              if(!style||style.getAttribute('style:family')!==family) break;
-              const node=Array.from(style.children).find(n=>n.localName===tag);
-              const value=node?.getAttribute(attr);
-              if(value) return value;
-              name=style.getAttribute('style:parent-style-name')??'';
-            }
-            return undefined;
-          };
-          const style=cell.getAttribute('table:style-name')??'';
-          const paragraphs=Array.from(cell.children).filter(n=>n.localName==='p'||n.localName==='h');
-          const aligns=paragraphs.map(n=>property(n.getAttribute('text:style-name')??'','paragraph','paragraph-properties','fo:text-align'));
-          const format=normalizeTableCellAppearance({
-            horizontalAlign:aligns.every(a=>a===aligns[0])?aligns[0] as OmiTableCellFormat['horizontalAlign']:undefined,
-            verticalAlign:property(style,'table-cell','table-cell-properties','style:vertical-align') as OmiTableCellFormat['verticalAlign'],
-            backgroundColor:property(style,'table-cell','table-cell-properties','fo:background-color'),
-          });
-          const cellProp=(attr:string)=>property(style,'table-cell','table-cell-properties',attr);
-          const borders: NonNullable<OmiTableCellFormat['borders']>={};
-          const paddingPt: NonNullable<OmiTableCellFormat['paddingPt']>={};
-          for(const side of TABLE_CELL_SIDES){
-            const edge=odtTableCellBorder(cellProp('fo:border-'+side)??cellProp('fo:border'));
-            if(edge) borders[side]=edge;
-            const padding=tableLengthPt(cellProp('fo:padding-'+side)??cellProp('fo:padding'));
-            if(padding!==undefined) paddingPt[side]=padding;
-          }
-          Object.assign(format,normalizeTableCellEdges({borders,paddingPt}));
-          if(Object.keys(format).length) cellFormats[`${rows.length}:${col}`]=format;
-          // Notes and nested tables retain the existing plain fallback rather
-          // than introducing orphan annotation anchors into cell content.
-          const supported=!cell.getElementsByTagNameNS('*','note').length&&!cell.getElementsByTagNameNS('*','table').length;
-          const doc:NoteJsonNode={type:'doc',content:supported?Array.from(cell.children).flatMap((p):NoteJsonNode[]=>{
-            if(p.localName==='list') return parseOdtList(p,listStyleTypes.get(p.getAttribute('text:style-name')??'')??false,'',[],createEmptyDocxImportStats(),provenance,[],listStyleTypes,textStyles) as NoteJsonNode[];
-            if(p.localName!=='p'&&p.localName!=='h') return [];
-            const attrs=normalizeCellParagraphAttrs(odtParagraphAttrs(p.getAttribute('text:style-name')??'',textStyles).attrs);
-            if(attrs.omiAlign===format.horizontalAlign) delete attrs.omiAlign;
-            return [{type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseInlineChildren(p,'',[],createEmptyDocxImportStats(),provenance,[],textStyles,listStyleTypes) as NoteJsonNode[]}];
-          }):[]};
-          const rich=supported&&!!doc.content?.length&&doc.content.some(p=>p.type!=='paragraph'||p.attrs||doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
-          if(rich) cellContent[`${rows.length}:${col}`]=JSON.stringify(doc);
-          values.push(rich?tableCellPlainText(doc):paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
-        }
-        if(!values.length) continue;
-        // Resolve named row styles, including inherited styles, without looping on malformed cycles.
-        const visited=new Set<string>();
-        const rowProps:Record<string,string>={};
-        let name=row.getAttribute('table:style-name')??'';
-        while(name&&!visited.has(name)){
-          visited.add(name);
-          const style=textStyles.get(name);
-          if(!style||style.getAttribute('style:family')!=='table-row') break;
-          const properties=Array.from(style.children).find(node=>node.localName==='table-row-properties');
-          for(const attr of ['fo:keep-together','style:row-height','style:min-row-height','style:use-optimal-row-height']){
-            const value=properties?.getAttribute(attr);
-            if(value && rowProps[attr]===undefined) rowProps[attr]=value;
-          }
-          name=style.getAttribute('style:parent-style-name')??'';
-        }
-        const split=rowProps['fo:keep-together'];
-        if(split==='always'||split==='auto') rowSplitOverrides[String(rows.length)]=split==='always'?'keep':'allow';
-        const minimum=tableLengthPt(rowProps['style:min-row-height']);
-        const fixed=tableLengthPt(rowProps['style:row-height']);
-        const height=normalizeTableRowHeight(rowProps['style:use-optimal-row-height']==='true'?
-          {mode:'minimum',heightPt:minimum??fixed}:fixed!==undefined?{mode:'exact',heightPt:fixed}:{mode:'minimum',heightPt:minimum});
-        if(height.mode!=='auto') rowHeights[String(rows.length)]=height;
-        if(!bodyStarted && (row.parentNode as XmlElement | null)?.localName==='table-header-rows') headerRows++; else bodyStarted=true;
-        rows.push(values);
-      }
-      if(rows.length){
-        const width=rows.reduce((max,row)=>Math.max(max,row.length),0);
-        if(width*rows.length>10000) throw new Error('Table exceeds the 10000-cell import limit.');
-        const cells=rows.map(row=>Array.from({length:width},(_,c)=>row[c]??''));
-        const cellMerges=tableMergeLayout(cells,merges,headerRows).merges;
-        if(cellMerges.length!==merges.length) warnings.push({code:'merged-table-cells',severity:'warning',message:'Some ODT cell merges could not be preserved without hiding data.'});
-        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges,cellFormats,rowSplitDefault:'allow',rowSplitOverrides,rowHeights,cellContent})); stats.tables+=1;
-      }
+      const table=parseOdtTable(child,textStyles,listStyleTypes,provenance,warnings);
+      if(table){ensureSection(sections).blocks.push(createTableBlock(table.cells,{...table,provenance}));stats.tables+=1;}
       frontMatter = false;
       continue;
     }
@@ -445,4 +348,113 @@ function toBase64(bytes: Uint8Array): string {
   let binary = '';
   for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, Math.min(offset + 0x8000, bytes.length)));
   return btoa(binary);
+}
+
+function parseOdtTable(child:XmlElement,textStyles:Map<string,XmlElement>,listStyleTypes:Map<string,boolean>,provenance:OmiImportProvenance,warnings:DocxImportWarning[],depth=0,budget={cells:10000}):OmiTableBlockData|undefined{
+  if(depth>MAX_NESTED_TABLE_DEPTH) throw new Error('Nested table exceeds the supported depth.');
+      const rows: string[][] = [];
+      const merges: OmiTableCellMerge[] = [];
+      const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
+      const rowHeights: Record<string,OmiTableRowHeight> = {};
+      const cellFormats: Record<string,OmiTableCellFormat> = {};
+      const cellContent:Record<string,string>={};
+      let headerRows=0, bodyStarted=false;
+      const rowElements=Array.from(child.getElementsByTagNameNS('*','table-row')).filter(row=>{
+        let owner=row.parentNode;
+        while(owner && owner.nodeType===1 && (owner as XmlElement).localName!=='table') owner=owner.parentNode;
+        return owner===child;
+      });
+      for(const row of rowElements){
+        const values:string[]=[];
+        for(const cell of Array.from(row.children).filter(c=>c.localName==='table-cell'||c.localName==='covered-table-cell')){
+          const col=values.length;
+          const rowSpan=Number(cell.getAttribute('table:number-rows-spanned')||1);
+          const colSpan=Number(cell.getAttribute('table:number-columns-spanned')||1);
+          if(cell.localName==='table-cell' && (rowSpan>1||colSpan>1)) merges.push({row:rows.length,column:col,rowSpan,colSpan});
+          const property=(name:string,family:string,tag:string,attr:string):string|undefined=>{
+            const visited=new Set<string>();
+            while(name&&!visited.has(name)){
+              visited.add(name);
+              const style=textStyles.get(name);
+              if(!style||style.getAttribute('style:family')!==family) break;
+              const node=Array.from(style.children).find(n=>n.localName===tag);
+              const value=node?.getAttribute(attr);
+              if(value) return value;
+              name=style.getAttribute('style:parent-style-name')??'';
+            }
+            return undefined;
+          };
+          const style=cell.getAttribute('table:style-name')??'';
+          const paragraphs=Array.from(cell.children).filter(n=>n.localName==='p'||n.localName==='h');
+          const aligns=paragraphs.map(n=>property(n.getAttribute('text:style-name')??'','paragraph','paragraph-properties','fo:text-align'));
+          const format=normalizeTableCellAppearance({
+            horizontalAlign:aligns.every(a=>a===aligns[0])?aligns[0] as OmiTableCellFormat['horizontalAlign']:undefined,
+            verticalAlign:property(style,'table-cell','table-cell-properties','style:vertical-align') as OmiTableCellFormat['verticalAlign'],
+            backgroundColor:property(style,'table-cell','table-cell-properties','fo:background-color'),
+          });
+          const cellProp=(attr:string)=>property(style,'table-cell','table-cell-properties',attr);
+          const borders: NonNullable<OmiTableCellFormat['borders']>={};
+          const paddingPt: NonNullable<OmiTableCellFormat['paddingPt']>={};
+          for(const side of TABLE_CELL_SIDES){
+            const edge=odtTableCellBorder(cellProp('fo:border-'+side)??cellProp('fo:border'));
+            if(edge) borders[side]=edge;
+            const padding=tableLengthPt(cellProp('fo:padding-'+side)??cellProp('fo:padding'));
+            if(padding!==undefined) paddingPt[side]=padding;
+          }
+          Object.assign(format,normalizeTableCellEdges({borders,paddingPt}));
+          if(Object.keys(format).length) cellFormats[`${rows.length}:${col}`]=format;
+          // Notes and nested tables retain the existing plain fallback rather
+          // than introducing orphan annotation anchors into cell content.
+          const supported=!cell.getElementsByTagNameNS('*','note').length;
+          const doc:NoteJsonNode={type:'doc',content:supported?Array.from(cell.children).flatMap((p):NoteJsonNode[]=>{
+            if(p.localName==='table'){const table=parseOdtTable(p,textStyles,listStyleTypes,provenance,warnings,depth+1,budget);return table?[{type:'omiCellTable',attrs:{table}}]:[];}
+            if(p.localName==='list') return parseOdtList(p,listStyleTypes.get(p.getAttribute('text:style-name')??'')??false,'',[],createEmptyDocxImportStats(),provenance,[],listStyleTypes,textStyles) as NoteJsonNode[];
+            if(p.localName!=='p'&&p.localName!=='h') return [];
+            const attrs=normalizeCellParagraphAttrs(odtParagraphAttrs(p.getAttribute('text:style-name')??'',textStyles).attrs);
+            if(attrs.omiAlign===format.horizontalAlign) delete attrs.omiAlign;
+            return [{type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseInlineChildren(p,'',[],createEmptyDocxImportStats(),provenance,[],textStyles,listStyleTypes) as NoteJsonNode[]}];
+          }):[]};
+          const rich=supported&&!!doc.content?.length&&doc.content.some(p=>p.type!=='paragraph'||p.attrs||doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
+          const parsed=rich?parseTableCellContent(JSON.stringify(doc)):undefined;
+          if(cell.getElementsByTagNameNS('*','table').length&&!parsed) throw new Error('Nested ODT cell content could not be represented safely.');
+          if(parsed) cellContent[`${rows.length}:${col}`]=JSON.stringify(parsed);
+          values.push(parsed?tableCellPlainText(parsed):paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
+        }
+        if(!values.length) continue;
+        // Resolve named row styles, including inherited styles, without looping on malformed cycles.
+        const visited=new Set<string>();
+        const rowProps:Record<string,string>={};
+        let name=row.getAttribute('table:style-name')??'';
+        while(name&&!visited.has(name)){
+          visited.add(name);
+          const style=textStyles.get(name);
+          if(!style||style.getAttribute('style:family')!=='table-row') break;
+          const properties=Array.from(style.children).find(node=>node.localName==='table-row-properties');
+          for(const attr of ['fo:keep-together','style:row-height','style:min-row-height','style:use-optimal-row-height']){
+            const value=properties?.getAttribute(attr);
+            if(value && rowProps[attr]===undefined) rowProps[attr]=value;
+          }
+          name=style.getAttribute('style:parent-style-name')??'';
+        }
+        const split=rowProps['fo:keep-together'];
+        if(split==='always'||split==='auto') rowSplitOverrides[String(rows.length)]=split==='always'?'keep':'allow';
+        const minimum=tableLengthPt(rowProps['style:min-row-height']);
+        const fixed=tableLengthPt(rowProps['style:row-height']);
+        const height=normalizeTableRowHeight(rowProps['style:use-optimal-row-height']==='true'?
+          {mode:'minimum',heightPt:minimum??fixed}:fixed!==undefined?{mode:'exact',heightPt:fixed}:{mode:'minimum',heightPt:minimum});
+        if(height.mode!=='auto') rowHeights[String(rows.length)]=height;
+        if(!bodyStarted && (row.parentNode as XmlElement | null)?.localName==='table-header-rows') headerRows++; else bodyStarted=true;
+        rows.push(values);
+      }
+      if(rows.length){
+        const width=rows.reduce((max,row)=>Math.max(max,row.length),0);
+        if(width*rows.length>budget.cells) throw new Error('Table exceeds the 10000-cell import limit.');
+        budget.cells-=width*rows.length;
+        const cells=rows.map(row=>Array.from({length:width},(_,c)=>row[c]??''));
+        const cellMerges=tableMergeLayout(cells,merges,headerRows).merges;
+        if(cellMerges.length!==merges.length) warnings.push({code:'merged-table-cells',severity:'warning',message:'Some ODT cell merges could not be preserved without hiding data.'});
+        return {kind:'table',cells,headerRows,cellMerges,cellFormats,rowSplitDefault:'allow',rowSplitOverrides,rowHeights,cellContent};
+      }
+
+  return undefined;
 }
