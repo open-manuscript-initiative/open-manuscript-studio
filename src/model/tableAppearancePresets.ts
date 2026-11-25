@@ -1,4 +1,4 @@
-import type { OmiTableBlockData, OmiTableCellFormat } from '../types/omi';
+import type { OmiTableBlockData, OmiTableCellFormat, OmiBlock, OmiSection } from '../types/omi';
 import { normalizeTableCellAppearance, normalizeTableCellEdges, tableCellFormat, tableHeaderRows, tableRangeAnchors, pruneTableCellFormats, type TableCellPosition } from './tableLayout';
 
 export type CellStylePreset={kind:'cell';name:string;format:OmiTableCellFormat};
@@ -76,7 +76,10 @@ export function applyAppearancePreset(table:OmiTableBlockData,preset:TableAppear
       formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...normalizePresetFormat(source,false)};
     }
   }
-  return {...table,cellFormats:formats};
+  // Applying a non-publication table preset explicitly replaces the live link.
+  const next={...table,cellFormats:formats};
+  if(valid.kind==='table')delete next.publicationTableStyle;
+  return next;
 }
 
 /** Portable, presentation-only catalog embedded in a publication style snapshot. */
@@ -118,5 +121,78 @@ export function applyDefaultPublicationTableStyle(table:OmiTableBlockData,catalo
   const valid=normalizePublicationTableStyles(catalog);
   const preset=valid?.items.find(p=>p.kind==='table'&&p.name===valid.defaultTableStyle);
   if(!preset||table.provenance||table.cellContent||Object.keys(table.cellFormats??{}).length||table.cells.some(row=>row.some(cell=>cell!=='')))return table;
-  return applyAppearancePreset(table,preset,{row:0,column:0},{row:0,column:0});
+  return bindPublicationTableStyle(table,valid,preset.name);
+}
+
+/** Bind by catalog name; retain materialized formatting for portable exports. */
+export function bindPublicationTableStyle(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,name:string):OmiTableBlockData{
+  const preset=normalizePublicationTableStyles(catalog)?.items.find(p=>p.kind==='table'&&p.name===name);
+  if(!preset)return table;
+  return {...applyAppearancePreset(table,preset,{row:0,column:0},{row:0,column:0}),publicationTableStyle:name};
+}
+export function detachPublicationTableStyle(table:OmiTableBlockData):OmiTableBlockData{
+  if(!table.publicationTableStyle)return table;
+  const next={...table};delete next.publicationTableStyle;return next;
+}
+/** Replace a definition without changing its name or default assignment. */
+export function replacePublicationTablePreset(catalog:PublicationTableStyles,preset:TableStylePreset):PublicationTableStyles|undefined{
+  const valid=normalizeAppearancePreset(preset);
+  if(!valid||valid.kind!=='table'||!catalog.items.some(p=>p.kind==='table'&&p.name===valid.name))return undefined;
+  return {...catalog,items:catalog.items.map(p=>p.name===valid.name?valid:p)};
+}
+function sameFormat(a:unknown,b:unknown):boolean{
+  return JSON.stringify(a)===JSON.stringify(b);
+}
+/** A definition edit updates only cells that are linked to that named style.
+ * Explicit cell-level overrides survive (borders and padding are atomic groups).
+ * Removing a definition freezes the current appearance and detaches its tables. */
+export function refreshPublicationTableStyle(table:OmiTableBlockData,previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined):OmiTableBlockData{
+  const name=table.publicationTableStyle;
+  if(!name)return table;
+  const old=normalizePublicationTableStyles(previous)?.items.find(p=>p.kind==='table'&&p.name===name);
+  const current=normalizePublicationTableStyles(next)?.items.find(p=>p.kind==='table'&&p.name===name);
+  if(!current||current.kind!=='table')return detachPublicationTableStyle(table);
+  if(sameFormat(old,current))return table;
+  const refreshed=bindPublicationTableStyle(table,next,name);
+  if(!old||old.kind!=='table')return refreshed;
+  const formats={...refreshed.cellFormats};
+  const headers=tableHeaderRows(table.cells,table.headerRows);
+  const fields=['horizontalAlign','verticalAlign','backgroundColor','borders','paddingPt'] as const;
+  for(const {row,column} of tableRangeAnchors(table.cells,{row:0,column:0},{row:table.cells.length-1,column:(table.cells[0]?.length??0)-1},table.cellMerges,table.headerRows)){
+    const key=row+':'+column;
+    if(!table.cellFormats?.[key])continue;
+    const baseline=normalizePresetFormat(row<headers?old.header:old.alternate&&(row-headers)%2===1?old.alternate:old.body,false);
+    const existing=normalizePresetFormat(table.cellFormats[key],false);
+    const format=formats[key];
+    if(!format)continue;
+    for(const field of fields){
+      if(!sameFormat(existing[field],baseline[field])){
+        // The indexed write is type-safe because both records use the same key.
+        Object.assign(format,{[field]:existing[field]});
+        if(existing[field]===undefined)delete format[field];
+      }
+    }
+  }
+  return {...refreshed,cellFormats:formats};
+}
+/** Traverse section and block trees without rewriting unrelated objects. */
+export function refreshPublicationTables(sections:OmiSection[],previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined):OmiSection[]{
+  if(sameFormat(previous,next))return sections;
+  function blocks(items:OmiBlock[]):OmiBlock[]{
+    const result=items.map(block=>{
+      const visual=block.visual?.kind==='table'?refreshPublicationTableStyle(block.visual,previous,next):block.visual;
+      const children=block.children?blocks(block.children):undefined;
+      return visual===block.visual&&children===block.children?block:{...block,visual,children};
+    });
+    return result.every((block,i)=>block===items[i])?items:result;
+  }
+  function visit(items:OmiSection[]):OmiSection[]{
+    const result=items.map(section=>{
+      const nextBlocks=blocks(section.blocks);
+      const children=section.children?visit(section.children):undefined;
+      return nextBlocks===section.blocks&&children===section.children?section:{...section,blocks:nextBlocks,children};
+    });
+    return result.every((section,i)=>section===items[i])?items:result;
+  }
+  return visit(sections);
 }
