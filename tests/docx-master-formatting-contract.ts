@@ -482,7 +482,7 @@ function wordGap(id: string): string | undefined {
   // L01–L05 and N05–N06 native assertions passed the integrated #1033 full build.
   // F01/F02 native note color is now a mandatory regression contract.
   if (id === 'T01') return undefined;
-  if (id === 'E01') return 'DOCX publication exporter currently emits a descriptive text fallback';
+  // E01 native OMML export is required.
   // X02 partial bookmark REF is now a required native regression contract.
   return undefined;
 }
