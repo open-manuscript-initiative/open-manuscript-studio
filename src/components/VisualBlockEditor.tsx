@@ -99,7 +99,7 @@ export function VisualBlockEditor({
     if(previewOnly) return;
     if(visual.kind==='table'&&next.kind==='table'){
       const keys=(table:OmiTableBlockData)=>collectNoteAnchorsInBlock('',sectionId,block.id,table).map(a=>a.noteId+'\\u0000'+a.anchorId).sort();
-      if(JSON.stringify(keys(visual))!==JSON.stringify(keys(next))) return;
+      if(JSON.stringify(keys(visual))!==JSON.stringify(keys(next))){window.alert(copy.cellNoteProtected);return;}
     }
     stageUpdateVisualBlock(block.id,next);
   }
@@ -328,7 +328,15 @@ function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(d
   const change=useRef(onChange);change.current=onChange;
   const editor=useEditor({extensions:cellExtensions(),content:doc as JSONContent,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
     const parsed=parseTableCellContent(JSON.stringify(current.getJSON()),depth);
-    if(parsed) change.current(parsed);
+    if(parsed) {
+      const keys=(value:NoteJsonNode)=>collectNoteAnchorsInBlock(JSON.stringify(value),'','').map(a=>a.noteId+'\u0000'+a.anchorId).sort();
+      if(JSON.stringify(keys(parsed))!==JSON.stringify(keys(doc))){
+        current.commands.setContent(doc as JSONContent,{emitUpdate:false});
+        window.alert(getVisualElementsCopy(locale).cellNoteProtected);
+        return;
+      }
+      change.current(parsed);
+    }
   }});
   useFormattingEditor(editor);
   const marks=['bold','italic','omiUnderline','strike','omiSmallCaps','omiSuperscript','omiSubscript'];
