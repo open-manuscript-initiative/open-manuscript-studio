@@ -438,6 +438,8 @@ export interface OmiTableBlockData {
   fontSizeReduction?: 0 | 1;
   /** Name of the live table style in this document's publication catalog. */
   publicationTableStyle?: string;
+  /** Named publication cell styles, keyed by zero-based row:column coordinates. */
+  publicationCellStyles?: Record<string,string>;
   /** Sparse cell formatting, keyed by zero-based row:column coordinates. */
   cellFormats?: Record<string, OmiTableCellFormat>;
   /** Sparse rich cell documents (Tiptap JSON); cells remains the plain-text projection. */
