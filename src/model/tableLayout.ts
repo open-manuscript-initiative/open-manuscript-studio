@@ -448,8 +448,8 @@ export function normalizeNestedCellTable(value:unknown,depth=1,budget={cells:100
   }
   const bindings=prunePublicationCellStyles(cells,raw.publicationCellStyles);
   if(Object.keys(bindings).length) table.publicationCellStyles=bindings;
-  const overrides=prunePublicationCellOverrides(cells,raw.publicationCellOverrides);
-  if(Object.keys(overrides).length)table.publicationCellOverrides=overrides;
+  const appearanceOverrides=prunePublicationCellOverrides(cells,raw.publicationCellOverrides);
+  if(Object.keys(appearanceOverrides).length)table.publicationCellOverrides=appearanceOverrides;
   if(Object.keys(formats).length) table.cellFormats=formats;
   if(Object.keys(content).length) table.cellContent=content;
   const merges=tableMergeLayout(cells,raw.cellMerges,table.headerRows).merges;
