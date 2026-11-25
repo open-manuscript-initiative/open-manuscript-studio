@@ -3,7 +3,9 @@ import { generateHTML, Node as TiptapNode } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
 import { OmiNoteExtension } from '../editor/extensions/OmiNoteExtension';
-import { collectNoteAnchorsInBlock } from '../model/notes';
+import { collectNoteAnchorsInBlock, type TableNoteInsertion, type OmiNoteKind } from '../model/notes';
+import { stageTableNoteEdit } from '../app/noteActions';
+import { NoteEditorCard } from './NoteEditorCard';
 import { getRichTextCopy } from '../i18n/richText';
 import { useFormattingEditor } from '../editor/useFormattingEditor';
 import type { NoteJsonNode } from '../model/noteRichText';
@@ -95,13 +97,15 @@ export function VisualBlockEditor({
     );
   }
 
-  function update(next: OmiVisualBlockData): void {
-    if(previewOnly) return;
-    if(visual.kind==='table'&&next.kind==='table'){
-      const keys=(table:OmiTableBlockData)=>collectNoteAnchorsInBlock('',sectionId,block.id,table).map(a=>a.noteId+'\\u0000'+a.anchorId).sort();
-      if(JSON.stringify(keys(visual))!==JSON.stringify(keys(next))){window.alert(copy.cellNoteProtected);return;}
+  const tableHasNotes=visual.kind==='table'&&collectNoteAnchorsInBlock('',sectionId,block.id,visual).length>0;
+  function update(next: OmiVisualBlockData,insertion?:TableNoteInsertion): boolean {
+    if(previewOnly) return false;
+    if(visual.kind==='table'&&next.kind==='table'&&(insertion||tableHasNotes||collectNoteAnchorsInBlock('',sectionId,block.id,next).length)){
+      const ok=stageTableNoteEdit(block.id,visual,next,insertion);
+      if(!ok&&JSON.stringify(visual)!==JSON.stringify(next)) window.alert(copy.cellNoteProtected);
+      return ok;
     }
-    stageUpdateVisualBlock(block.id,next);
+    return stageUpdateVisualBlock(block.id,next);
   }
 
   function remove(): void {
@@ -147,7 +151,7 @@ export function VisualBlockEditor({
           <EditableGrid
             blockId={block.id}
             data={visual}
-            onChange={(next) => update(next)}
+            onChange={(next,insertion) => update(next,insertion)}
             copy={copy}
           />
           {!previewOnly ? <div className="omi-visual-secondary-actions">
@@ -171,6 +175,8 @@ export function VisualBlockEditor({
             </button>
             <button
               type="button"
+              disabled={tableHasNotes}
+              title={tableHasNotes?copy.cellNoteProtected:undefined}
               onClick={() => {
                 if (window.confirm(copy.confirmTableToText)) {
                   stageConvertTableToText(block.id);
@@ -322,27 +328,46 @@ const NestedCellTableNode=TiptapNode.create({
 });
 const cellExtensions=()=>[OmiNoteExtension.extend({addKeyboardShortcuts(){return {};}}),NestedCellTableNode,StarterKit.configure({heading:false,blockquote:false,codeBlock:false,horizontalRule:false,link:false,underline:false}),...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter(e=>!['omiBlockTypeMenu','omiSourceWordParagraphStyle','omiWordCharacterStyle'].includes(e.name))];
 
-function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(doc:NoteJsonNode)=>void;label:string;depth:number}){
-  const {locale}=useTranslation();
+function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(doc:NoteJsonNode,insertion?:TableNoteInsertion)=>boolean|void;label:string;depth:number}){
+  const {locale,t}=useTranslation();
   const copy=getRichTextCopy(locale);
   const change=useRef(onChange);change.current=onChange;
+  const currentDoc=useRef(doc);currentDoc.current=doc;
+  const pendingNote=useRef<TableNoteInsertion|null>(null);
+  const [activeNote,setActiveNote]=useState<string|null>(null);
+  const cellNotes=collectNoteAnchorsInBlock(JSON.stringify(doc),'','');
   const editor=useEditor({extensions:cellExtensions(),content:doc as JSONContent,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
     const parsed=parseTableCellContent(JSON.stringify(current.getJSON()),depth);
-    if(parsed) {
-      const keys=(value:NoteJsonNode)=>collectNoteAnchorsInBlock(JSON.stringify(value),'','').map(a=>a.noteId+'\u0000'+a.anchorId).sort();
-      if(JSON.stringify(keys(parsed))!==JSON.stringify(keys(doc))){
-        current.commands.setContent(doc as JSONContent,{emitUpdate:false});
-        window.alert(getVisualElementsCopy(locale).cellNoteProtected);
-        return;
-      }
-      change.current(parsed);
+    const insertion=pendingNote.current??undefined;
+    pendingNote.current=null;
+    const key=(a:{noteId:string;anchorId:string})=>JSON.stringify([a.noteId,a.anchorId]);
+    const keys=(value:NoteJsonNode)=>collectNoteAnchorsInBlock(JSON.stringify(value),'','').map(key);
+    const required=keys(currentDoc.current);
+    if(insertion) required.push(key({noteId:insertion.id,anchorId:insertion.anchorId}));
+    if(!parsed||JSON.stringify(keys(parsed).sort())!==JSON.stringify(required.sort())){
+      current.commands.setContent(currentDoc.current as JSONContent,{emitUpdate:false});
+      window.alert(getVisualElementsCopy(locale).cellNoteProtected);
+      return;
     }
+    const accepted=change.current(parsed,insertion);
+    if(accepted===false){
+      current.commands.setContent(currentDoc.current as JSONContent,{emitUpdate:false});
+      return;
+    }
+    if(insertion) setActiveNote(insertion.id);
   }});
   useFormattingEditor(editor);
   const marks=['bold','italic','omiUnderline','strike','omiSmallCaps','omiSuperscript','omiSubscript'];
   const active=useEditorState({editor,selector:({editor:e})=>marks.map(m=>e?.isActive(m)??false)});
   const paragraph=useEditorState({editor,selector:({editor:e})=>normalizeCellParagraphAttrs(e?.getAttributes('paragraph'))})??{};
   const visualCopy=getVisualElementsCopy(locale);
+  const insertNote=(kind:OmiNoteKind)=>{
+    if(!editor) return;
+    const insertion={id:'note-'+crypto.randomUUID(),anchorId:'anchor-'+crypto.randomUUID(),kind};
+    pendingNote.current=insertion;
+    const inserted=editor.chain().focus().insertOmiNote({noteId:insertion.id,anchorId:insertion.anchorId,noteType:kind}).run();
+    if(!inserted) pendingNote.current=null;
+  };
   const setParagraph=(name:string,value:string|number|null)=>editor?.commands.updateAttributes('paragraph',{[name]:value});
   useEffect(()=>{
     if(!editor) return;
@@ -357,8 +382,11 @@ function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(d
       <button type="button" title={copy.orderedList} aria-label={copy.orderedList} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleOrderedList().run()}>1.</button>
       <button type="button" title={visualCopy.cellListIndent} aria-label={visualCopy.cellListIndent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().sinkListItem('listItem').run()}>→</button>
       {depth<MAX_NESTED_TABLE_DEPTH?<button type="button" title={visualCopy.insertNestedTable} aria-label={visualCopy.insertNestedTable} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().insertContent({type:'omiCellTable',attrs:{table:{kind:'table',cells:[['',''],['','']],headerRows:0}}}).run()}>{visualCopy.insertNestedTable}</button>:null}
+      {(['footnote','endnote','author-note'] as const).map(kind=><button type="button" key={kind} onMouseDown={e=>e.preventDefault()} onClick={()=>insertNote(kind)}>{kind==='footnote'?t('notes.footnote'):kind==='endnote'?t('notes.endnote'):t('notes.authorNote')}</button>)}
       <button type="button" title={visualCopy.cellListOutdent} aria-label={visualCopy.cellListOutdent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().liftListItem('listItem').run()}>←</button>
     </div>
+    {cellNotes.length?<div className="omi-table-actions">{cellNotes.map((note,index)=><button type="button" key={note.noteId} aria-pressed={activeNote===note.noteId} onClick={()=>setActiveNote(activeNote===note.noteId?null:note.noteId)}>{t('notes.note')} {index+1}</button>)}</div>:null}
+    {activeNote&&cellNotes.some(note=>note.noteId===activeNote)?<NoteEditorCard noteId={activeNote} compact onClose={()=>setActiveNote(null)}/>:null}
     <details>
       <summary>{visualCopy.cellParagraphFormatting}</summary>
       <div className="omi-table-cell-formatting-fields">
@@ -389,7 +417,7 @@ function EditableGrid({
   blockId?: string;
   depth?:number;
   data: OmiTableBlockData | OmiChartBlockData;
-  onChange: (next: typeof data) => void;
+  onChange: (next: typeof data,insertion?:TableNoteInsertion) => boolean|void;
   copy: ReturnType<typeof getVisualElementsCopy>;
 }) {
   const cells = data.cells;
@@ -721,24 +749,24 @@ function EditableGrid({
           <small>{copy.mergeHint}</small>
           {!multi?<details open>
             <summary>{copy.editCellText}</summary>
-            <RichCellEditor depth={depth} key={selectedRow+':'+selectedColumn} doc={selectedDoc??plainTableCellDocument(cells[selectedRow]?.[selectedColumn]??'')} label={copy.editCellText} onChange={doc=>{
+            <RichCellEditor depth={depth} key={selectedRow+':'+selectedColumn} doc={selectedDoc??plainTableCellDocument(cells[selectedRow]?.[selectedColumn]??'')} label={copy.editCellText} onChange={(doc,insertion)=>{
               const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(doc));
               const content=pruneTableCellContent(nextCells,data.cellContent);
               content[selectedRow+':'+selectedColumn]=JSON.stringify(doc);
-              onChange({...data,cells:nextCells,cellContent:content});
+              return onChange({...data,cells:nextCells,cellContent:content},insertion);
             }}/>
             {selectedDoc?.content?.map((node,index)=>{
               const nested=cellNestedTable(node);
               if(!nested||depth>=MAX_NESTED_TABLE_DEPTH) return null;
-              return <details key={index} onClick={event=>event.stopPropagation()}><summary>{copy.editNestedTable} {index+1}</summary><EditableGrid depth={depth+1} data={nested} copy={copy} onChange={next=>{
-                if(next.kind!=='table') return;
+              return <details key={index} onClick={event=>event.stopPropagation()}><summary>{copy.editNestedTable} {index+1}</summary><EditableGrid depth={depth+1} data={nested} copy={copy} onChange={(next,insertion)=>{
+                if(next.kind!=='table') return false;
                 const doc={...selectedDoc,content:selectedDoc?.content?.map((item,i)=>i===index?{type:'omiCellTable',attrs:{table:next}}:item)};
                 const valid=parseTableCellContent(JSON.stringify(doc),depth);
-                if(!valid) return;
+                if(!valid) return false;
                 const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(valid));
                 const content=pruneTableCellContent(nextCells,data.cellContent);
                 content[selectedRow+':'+selectedColumn]=JSON.stringify(valid);
-                onChange({...data,cells:nextCells,cellContent:content});
+                return onChange({...data,cells:nextCells,cellContent:content},insertion);
               }}/></details>;
             })}
           </details>:null}
