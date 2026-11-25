@@ -61,6 +61,8 @@ export interface OmiAnnotation {
    * importable while the OMI-SPEC-130 model evolves.
    */
   noteKind?: 'footnote' | 'endnote' | 'author-note';
+  /** Explicit source custom reference; does not consume a numbered note. */
+  noteCustomMark?: '*';
 
   /**
    * Stable semantic anchor carried by the inline Tiptap note marker.
