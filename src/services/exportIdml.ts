@@ -886,7 +886,7 @@ function idmlTableParagraph(table:OmiTableBlockData,width:number,context:IdmlTab
     const doc=tableCellDocument(table,r,c)??plainTableCellDocument(text);
     const innerWidth=Math.max(0.01,widths.slice(c,c+(merge?.colSpan??1)).reduce((sum,w)=>sum+w,0)-(format.paddingPt?.left??0)-(format.paddingPt?.right??0));
     const paragraph=(node:NoteJsonNode,prefix='')=>{
-      const runs=(node.content??[]).flatMap(child=>{
+      const runs=(node.content??[]).flatMap<OmiInlineRun>(child=>{
         if(child.type==='omiNote'){
           const noteId=child.attrs?.noteId;
           if(typeof noteId!=='string'||!context.annotations.has(noteId))return [];
