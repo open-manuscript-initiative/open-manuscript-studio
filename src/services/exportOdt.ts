@@ -1,4 +1,4 @@
-import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat } from '../model/tableLayout';
+import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat, TABLE_CELL_SIDES } from '../model/tableLayout';
 import { paragraphTabs } from '../model/directParagraphFormatting';
 import { odtCharacterProperties, odtParagraphProperties, odtRunHasDirectFormatting } from './odtFormatting';
 import { directFormattingFromMarks } from '../model/directFormatting';
@@ -93,7 +93,7 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
       if(layout.covered(r,c)) return '<table:covered-table-cell/>';
       const m=layout.at(r,c);
       const format=tableCellFormat(table.cellFormats,r,c);
-      const cellStyle=stylesRegistry.tableCell(format.verticalAlign,format.backgroundColor);
+      const cellStyle=stylesRegistry.tableCell(format);
       const paraStyle=stylesRegistry.cellParagraph(format.horizontalAlign);
       return '<table:table-cell office:value-type="string"'+(cellStyle?' table:style-name="'+cellStyle+'"':'')+(m&&m.rowSpan>1?' table:number-rows-spanned="'+m.rowSpan+'"':'')+(m&&m.colSpan>1?' table:number-columns-spanned="'+m.colSpan+'"':'')+'>'+cell.split(/\r\n?|\n/).map(line=>'<text:p'+(paraStyle?' text:style-name="'+paraStyle+'"':'')+'>'+escape(line)+'</text:p>').join('')+'</table:table-cell>';
     }).join('')+'</table:table-row>');
@@ -199,8 +199,15 @@ class AutomaticStyles {
     const content = tabs.map(t=>'<style:tab-stop style:position="'+t.position+'pt" style:type="'+(t.alignment==='decimal'?'char':t.alignment)+'"'+(t.alignment==='decimal'?' style:char="."':'')+(t.leader==='none'?'':' style:leader-style="solid" style:leader-text="'+leader[t.leader]+'"')+'/>').join('');
     return this.register('paragraph', odtParagraphProperties(attrs), 'OMIPara', content?'<style:tab-stops>'+content+'</style:tab-stops>':'');
   }
-  tableCell(vertical: string | undefined, color: string | undefined): string | undefined {
-    return this.register('table-cell',{...(vertical?{'style:vertical-align':vertical}:{}),...(color?{'fo:background-color':color}:{})},'OMICell');
+  tableCell(format: ReturnType<typeof tableCellFormat>): string | undefined {
+    const props: Record<string,string>={...(format.verticalAlign?{'style:vertical-align':format.verticalAlign}:{}),...(format.backgroundColor?{'fo:background-color':format.backgroundColor}:{})};
+    for(const side of TABLE_CELL_SIDES){
+      const edge=format.borders?.[side];
+      if(edge) props['fo:border-'+side]=edge.style==='none'?'none':edge.widthPt+'pt '+edge.style+' '+edge.color;
+      const padding=format.paddingPt?.[side];
+      if(padding!==undefined) props['fo:padding-'+side]=padding+'pt';
+    }
+    return this.register('table-cell',props,'OMICell');
   }
   cellParagraph(horizontal: string | undefined): string | undefined {
     return this.register('paragraph',horizontal?{'fo:text-align':horizontal}:{},'OMICellPara');
