@@ -513,3 +513,20 @@ test('conditional table formatting follows cell values and respects named cell a
   assert.equal(refreshed.cellFormats?.['1:0']?.backgroundColor,'#ABCDEF');
   assert.throws(()=>validatePublicationTableStyles({items:[{kind:'table',name:'Bad',header:{},body:{},conditions:[{operator:'gt',value:'not a number',format:{backgroundColor:'#123456'}}]}]}));
 });
+
+test('standalone table style preview is isolated and duplication preserves ancestry',async()=>{
+  const {BUILTIN_TABLE_STYLES,normalizePublicationTableStyles,derivePublicationTablePreset,duplicatePublicationTablePreset,publicationTableStylePreview,replacePublicationTablePreset,validatePublicationTableStyles}=await import('../src/model/tableAppearancePresets.ts');
+  const base=normalizePublicationTableStyles({items:[BUILTIN_TABLE_STYLES.grid],defaultTableStyle:'grid'})!;
+  const derived=derivePublicationTablePreset(base,'Derived','grid')!;
+  const duplicate=duplicatePublicationTablePreset(derived,'Derived','Copy')!;
+  validatePublicationTableStyles(duplicate);
+  assert.equal(duplicate.items.find(p=>p.kind==='table'&&p.name==='Copy'&&p.basedOn==='grid')?.name,'Copy');
+  assert.equal(duplicate.defaultTableStyle,'grid');
+  assert.equal(duplicatePublicationTablePreset(duplicate,'Derived','Copy'),undefined);
+  const preview=publicationTableStylePreview(duplicate,'Copy');
+  assert.equal(preview.cellFormats?.['0:0']?.backgroundColor,'#E6E6E6');
+  const changed=replacePublicationTablePreset(duplicate,{...BUILTIN_TABLE_STYLES.grid,header:{backgroundColor:'#123456'}})!;
+  assert.equal(publicationTableStylePreview(changed,'Copy').cellFormats?.['0:0']?.backgroundColor,'#123456');
+  assert.equal(preview.cellFormats?.['0:0']?.backgroundColor,'#E6E6E6');
+  assert.equal(derived.items.length,2);
+});
