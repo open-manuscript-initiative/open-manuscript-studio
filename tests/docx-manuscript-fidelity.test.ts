@@ -1397,3 +1397,34 @@ test('Word style-based numbering resolves ancestry, explicit suppression and cel
   const reopenedLists=reopened.sections.flatMap(s=>s.blocks).filter(b=>!b.visual).flatMap(b=>findNodes(JSON.parse(b.content) as TiptapNode,'orderedList'));
   assert.equal(reopenedLists.find(n=>collectText(n).startsWith('First item'))?.attrs?.omiListId,reopenedLists.find(n=>collectText(n)==='Continued item')?.attrs?.omiListId);
 });
+
+test('named source paragraph style survives structured text, editor projection and Word reopen',async()=>{
+  const {sourceStyleBundle}=await import('../src/model/sourceWordStyles.ts');
+  const {buildContinuousManuscriptDocument,projectContinuousManuscriptDocument}=await import('../src/editor/continuousManuscriptDocument.ts');
+  const styles='<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:styleId="SourceBase"><w:name w:val="Source base"/></w:style><w:style w:type="paragraph" w:styleId="SourceCustom"><w:name w:val="Source custom"/><w:basedOn w:val="SourceBase"/><w:next w:val="SourceBase"/></w:style></w:styles>';
+  const body='<w:p><w:pPr><w:pStyle w:val="SourceCustom"/></w:pPr><w:r><w:t>Styled specimen</w:t><w:tab/><w:t>after tab</w:t></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body,{entries:[textZipEntry('word/styles.xml',styles)]}));
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Source style regression'}),sections:plan.sections};
+  const inspect=(sections:typeof plan.sections)=>{
+    const block=sections.flatMap(s=>s.blocks).find(b=>b.content.includes('Styled specimen'));
+    assert.ok(block);
+    const p=findNodes(JSON.parse(block.content) as TiptapNode,'paragraph')[0];
+    const bundle=sourceStyleBundle(p?.attrs?.omiWordParagraphStyle);
+    assert.equal(bundle?.selected,'SourceCustom');
+    const selected=bundle?.styles.find(s=>s.id===bundle.selected);
+    assert.equal(selected?.name,'Source custom');
+    assert.equal(selected?.basedOn,'SourceBase');
+    assert.equal(selected?.next,'SourceBase');
+    assert.ok(findNodes(JSON.parse(block.content) as TiptapNode,'omiTab').length);
+    assert.equal(block.paragraphStyleId,undefined);
+  };
+  inspect(plan.sections);
+  const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+  const reopened=parseOmiJson(serializeOmiJson(projected));
+  inspect(reopened.sections);
+  const word=buildDocxExport(reopened);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:pStyle w:val="SourceCustom"\/>/);
+  assert.match(xml,/<w:tab\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'source-paragraph-style.docx'))).sections);
+});
