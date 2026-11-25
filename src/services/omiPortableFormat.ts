@@ -476,6 +476,7 @@ function validateReferences(
 
   optionalArray(document.annotations, 'annotations').forEach((item, index) => {
     if (!isRecord(item)) invalid(`/annotations/${index} must be an object.`);
+    if(item.noteCustomMark!==undefined&&item.noteCustomMark!=='*')invalid(`/annotations/${index}/noteCustomMark must be a supported custom mark.`);
     requireReference(item.targetBlockId, indexes.blocks, `/annotations/${index}/targetBlockId`);
     if (item.creatorAgentId !== undefined) {
       requireReference(item.creatorAgentId, indexes.agents, `/annotations/${index}/creatorAgentId`);
