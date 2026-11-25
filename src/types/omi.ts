@@ -79,6 +79,8 @@ export interface OmiAnnotation {
 
   /** Optional threaded-proofing metadata for comments and editorial notes. */
   status?: 'open' | 'resolved';
+  /** Private parent comment for a reply imported from a Word thread. */
+  replyToCommentId?: string;
   visibility?: 'author_and_editor' | 'editor_only';
   targetRange?: {
     from: number;
