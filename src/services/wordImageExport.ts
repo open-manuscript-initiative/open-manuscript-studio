@@ -25,7 +25,8 @@ function size(value: number | undefined, fallback: number): number {
 }
 export class WordImageRegistry {
   private readonly parts: {id:string;path:string;type:string;bytes:Uint8Array}[]=[];
-  constructor(private readonly warnings:string[]) {}
+  private readonly warnings: string[];
+  constructor(warnings: string[]) { this.warnings = warnings; }
   render(image: OmiImageBlockData, suffix=''): string | undefined {
     const layout=normalizeWordPictureLayout(image.wordPicture);
     // Composed SVG previews may contain separate editable labels. Never export
