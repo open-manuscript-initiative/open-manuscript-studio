@@ -51,7 +51,6 @@ interface JsonNode {
   type?: string;
   attrs?: Record<string, unknown>;
   content?: JsonNode[];
-  [key: string]: unknown;
 }
 
 export function createNoteAnnotation(
