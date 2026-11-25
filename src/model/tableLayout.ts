@@ -393,6 +393,7 @@ export function normalizeNestedCellTable(value:unknown,depth=1,budget={cells:100
   budget.cells-=count;
   const cells=raw.cells.map(row=>[...row]);
   const table:OmiTableBlockData={kind:'table',cells,headerRows:tableHeaderRows(cells,raw.headerRows),rowSplitDefault:tableRowSplitDefault(raw.rowSplitDefault)};
+  if(typeof raw.publicationTableStyle==='string'&&raw.publicationTableStyle.trim()===raw.publicationTableStyle&&raw.publicationTableStyle.length>0&&raw.publicationTableStyle.length<=80) table.publicationTableStyle=raw.publicationTableStyle;
   if(Array.isArray(raw.columnWidths)) table.columnWidths=tableColumnWidths(cells,raw.columnWidths);
   if(raw.fontSizeReduction===0||raw.fontSizeReduction===1) table.fontSizeReduction=raw.fontSizeReduction;
   const formats:NonNullable<OmiTableBlockData['cellFormats']>={};
