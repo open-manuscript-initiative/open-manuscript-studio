@@ -1153,3 +1153,33 @@ test('rich table cells retain individual runs and paragraph boundaries in Word a
   const odt=buildOdtExport(manuscript);
   inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'rich-cell.odt'))).sections);
 });
+
+test('independent table paragraph properties survive DOCX and ODT roundtrip', async () => {
+  const source=makeDocx('<w:p><w:r><w:t>Paragraph specimen</w:t></w:r></w:p><w:tbl><w:tr><w:tc>'+
+    '<w:p><w:pPr><w:spacing w:before="60" w:after="100" w:line="280" w:lineRule="exact"/><w:ind w:left="240" w:hanging="120"/><w:jc w:val="right"/></w:pPr><w:r><w:t>First</w:t></w:r></w:p>'+
+    '<w:p><w:pPr><w:spacing w:after="0" w:line="360" w:lineRule="auto"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Second</w:t></w:r></w:p>'+
+    '</w:tc></w:tr></w:tbl>');
+  const {tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cells,[['First\nSecond']]);
+    const doc=tableCellDocument(v,0,0);
+    assert.ok(doc);
+    assert.deepEqual(doc.content?.[0]?.attrs,{omiAlign:'right',omiLeftIndent:12,omiFirstLineIndent:-6,omiSpaceBefore:3,omiSpaceAfter:5,omiLineSpacing:14,omiLineRule:'exact'});
+    assert.deepEqual(doc.content?.[1]?.attrs,{omiAlign:'left',omiSpaceAfter:0,omiLineSpacing:1.5,omiLineRule:'auto'});
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Cell paragraphs'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:spacing w:before="60" w:after="100" w:line="280" w:lineRule="exact"\/>/);
+  assert.match(xml,/<w:ind w:left="240" w:hanging="120"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'cell-paragraph.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/fo:line-height="14pt"/);
+  assert.match(odtXml,/fo:line-height="150%"/);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-paragraph.odt'))).sections);
+});
