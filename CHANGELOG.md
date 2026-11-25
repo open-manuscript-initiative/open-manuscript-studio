@@ -1,3 +1,11 @@
+## 1.0.0-rc.4 — 2026-11-25 (candidate builds; public release not yet approved)
+
+- Package the merged November formatting, publication and interoperability work, formatted note hover/focus previews (#1041), and memory-backed long manuscript projections with adaptive shared cache budgets (#1043, including #1042).
+- Add economy, balanced and performance modes, estimated cache diagnostics, background cache clearing and Android system-memory sampling. Real-device memory, WebView PSS and latency validation remain pending.
+- Align npm, Cargo and Tauri at **1.0.0-rc.4**; Windows package identity **1.0.3.0**, Android direct versionCode **1600**, Android Release offset **1600**, iOS marketing/build **1.0.0 / 29**. Verify actual store counters before upload.
+- Preserve Draft specifications and OMI-SPEC-320@0.3.0. Exact-SHA checks, 14 manual release receipts and explicit owner Go/No-Go remain required; no automatic public release.
+- See [RC4 packaging and release gates](docs/release/1.0.0-rc.4.md).
+
 ## 1.0.0-rc.3 — 2026-11-23 (candidate builds; public release not yet approved)
 
 - Prepare a new source version for web, Windows, Linux, macOS and Android packaging. The version is **1.0.0-rc.3** across npm, Cargo, Tauri and lockfiles.
