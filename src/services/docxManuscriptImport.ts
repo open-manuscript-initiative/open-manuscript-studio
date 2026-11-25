@@ -1,3 +1,4 @@
+import { tableCellPlainText } from '../model/tableLayout';
 import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
@@ -228,6 +229,7 @@ export async function parseDocxManuscript(
           createTableBlock(table.cells, {
             headerRows: table.headerRows,
             cellFormats: table.cellFormats,
+            cellContent:table.cellContent,
             cellMerges: table.cellMerges,
             rowSplitDefault: 'allow',
             rowSplitOverrides: table.rowSplitOverrides,
@@ -1149,6 +1151,7 @@ function parseWordTable(table: Element): {
   cellMerges: OmiTableCellMerge[];
   rowSplitOverrides: Record<string,OmiTableRowSplitPolicy>;
   rowHeights: Record<string,OmiTableRowHeight>;
+  cellContent:Record<string,string>;
 } {
   const rows = directChildrenByLocalName(table, 'tr');
   const cellFormats: Record<string, OmiTableCellFormat> = {};
@@ -1156,6 +1159,7 @@ function parseWordTable(table: Element): {
   const merges: OmiTableCellMerge[] = [];
   const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
   const rowHeights: Record<string,OmiTableRowHeight> = {};
+  const cellContent:Record<string,string>={};
   let active = new Map<number,OmiTableCellMerge>();
   const cells = rows.map((row,rowIndex)=>{
     const next = new Map<number,OmiTableCellMerge>();
@@ -1226,7 +1230,22 @@ function parseWordTable(table: Element): {
       const colSpan=Number.isSafeInteger(rawSpan)&&rawSpan>=1&&rawSpan<=1000?rawSpan:1;
       if(rawSpan!==colSpan) mergedCells=true;
       if(values.length+colSpan>10000 || (rowIndex+1)*(values.length+colSpan)>10000) throw new Error('Table exceeds the 10000-cell import limit.');
-      const text=descendantsByLocalName(cell,'p').map(paragraph=>paragraphPlainText(paragraph).trim()).filter(Boolean).join('\n');
+      // Keep nested tables on their existing fallback path. Direct paragraph
+      // runs use the same mark decoder as the manuscript body.
+      const cellParagraphs=directChildrenByLocalName(cell,'p');
+      const nested=descendantsByLocalName(cell,'tbl').length>0;
+      const doc={type:'doc',content:cellParagraphs.map(p=>({type:'paragraph',content:descendantsByLocalName(p,'r').flatMap(run=>{
+        const marks=runMarks(run);
+        return Array.from(run.children).flatMap((node):TiptapNode[]=>{
+          if(node.localName==='t'&&node.textContent) return [{type:'text',text:node.textContent,marks}];
+          if(node.localName==='tab') return [{type:'omiTab'}];
+          if(node.localName==='br'||node.localName==='cr') return [{type:'hardBreak'}];
+          return [];
+        });
+      })}))};
+      const rich=!nested&&doc.content.length>0&&doc.content.some(p=>p.content.some(n=>n.marks?.length||n.type!=='text')||doc.content.length>1);
+      const text=rich?tableCellPlainText(doc):descendantsByLocalName(cell,'p').map(paragraph=>paragraphPlainText(paragraph).trim()).filter(Boolean).join('\n');
+      if(rich) cellContent[`${rowIndex}:${columnIndex}`]=JSON.stringify(doc);
       const vertical=prop('vMerge');
       const mode=vertical?(attributeByLocalName(vertical,'val')??'continue'):undefined;
       const prior=active.get(columnIndex);
@@ -1275,7 +1294,7 @@ function parseWordTable(table: Element): {
   const matrix=rectangularize(cells);
   const candidates=merges.filter(m=>m.rowSpan>1||m.colSpan>1);
   const cellMerges=tableMergeLayout(matrix,candidates,headerRows).merges;
-  return {cells:matrix,headerRows,mergedCells:mergedCells||cellMerges.length!==candidates.length,cellFormats,cellMerges,rowSplitOverrides,rowHeights};
+  return {cells:matrix,headerRows,mergedCells:mergedCells||cellMerges.length!==candidates.length,cellFormats,cellMerges,rowSplitOverrides,rowHeights,cellContent};
 }
 
 function parseRelationships(xmlText: string): Map<string, Relationship> {
