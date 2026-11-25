@@ -926,7 +926,7 @@ function idmlTableParagraph(table:OmiTableBlockData,width:number,context:IdmlTab
         if(typeof sourceId==='string')context.report('table-list-sequence-partial','source list identities are scoped to separate structural lists; cross-list continuation is not retained.');
         const listId='NumberingList/OMI Cell List '+(context.numberingLists.length+1);
         context.numberingLists.push(listId);
-        return (node.content??[]).map((item,index)=>(item.content??[]).map((child,j)=>child.type==='paragraph'?paragraph(child,j===0?idmlCellListParagraph(node,depth,index,listId,context):idmlCellListContinuation(node,depth)):blocks([child],depth+1)).join('')).join('');
+        return (node.content??[]).map((item,index)=>(item.content??[]).map((child,j)=>child.type==='paragraph'?paragraph(child,j===0?idmlCellListParagraph(node,depth,index,listId,context):idmlCellListContinuation(node,depth,listId)):blocks([child],depth+1)).join('')).join('');
       }
       return '';
     }).join('');
@@ -941,9 +941,9 @@ interface IdmlCellListParagraph {
   literalPrefix?:string;
 }
 const IDML_LIST_FORMATS:Record<string,string>={decimal:'1, 2, 3, 4...',upperRoman:'I, II, III, IV...',lowerRoman:'i, ii, iii, iv...',upperLetter:'A, B, C, D...',lowerLetter:'a, b, c, d...',decimalZero:'01, 02, 03, 04...'};
-function idmlCellListContinuation(node:NoteJsonNode,depth:number):IdmlCellListParagraph {
+function idmlCellListContinuation(node:NoteJsonNode,depth:number,id:string):IdmlCellListParagraph {
   const left=Number(normalizeListAttribute('omiListLeft',node.attrs?.omiListLeft)??(depth+1)*360)/20;
-  return {attrs:{BulletsAndNumberingListType:'NoList',LeftIndent:left,FirstLineIndent:0}};
+  return {attrs:{BulletsAndNumberingListType:'NoList',LeftIndent:left,FirstLineIndent:0},properties:'<Properties><AppliedNumberingList type="object">'+xml(id)+'</AppliedNumberingList></Properties>'};
 }
 /** Each structural list owns an independent native sequence. A nested list
  * is independent too, with its own level and indentation. The OMI model
@@ -965,7 +965,7 @@ function idmlCellListParagraph(node:NoteJsonNode,depth:number,index:number,id:st
       context.report('table-list-pattern-partial','multi-character bullet labels are projected as literal text.');
       return {attrs:{...attrs,BulletsAndNumberingListType:'NoList'},literalPrefix:bullet+' '};
     }
-    return {attrs:{...attrs,BulletsAndNumberingListType:'BulletList',BulletsTextAfter:'^t'},properties:'<Properties><BulletChar BulletCharacterType="UnicodeOnly" BulletCharacterValue="'+chars[0]!.codePointAt(0)+'"/></Properties>'};
+    return {attrs:{...attrs,BulletsAndNumberingListType:'BulletList',BulletsTextAfter:'^t',NumberingLevel:level+1},properties:'<Properties><BulletChar BulletCharacterType="UnicodeOnly" BulletCharacterValue="'+chars[0]!.codePointAt(0)+'"/><AppliedNumberingList type="object">'+xml(id)+'</AppliedNumberingList></Properties>'};
   }
   let expression='^#.^t';
   if(typeof label==='string'){
