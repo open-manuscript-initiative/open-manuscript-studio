@@ -179,3 +179,31 @@ test('cell rotation and writing direction persist through mobile preview and HTM
   await expect(rotation).toHaveValue('90');
   await expect(direction).toHaveValue('rtl');
 });
+
+test('row handles resize by pointer and keyboard and reset without altering cell text', async ({page})=>{
+  const canvas=await openTables(page,2);
+  const handle=canvas.getByRole('separator',{name:'Resize row 1',exact:true});
+  const row=canvas.locator('.omi-table-editor > tbody > tr').first();
+  await expect(handle).toBeVisible();
+  await expect(row).toHaveAttribute('data-omi-row-height','auto');
+  await handle.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(row).toHaveAttribute('data-omi-row-height','minimum');
+  const before=Number(await handle.getAttribute('aria-valuenow'));
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect(handle).toHaveAttribute('aria-valuenow',String(Math.round((before+10)*20)/20));
+  const box=await handle.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box!.x+box!.width/2,box!.y+box!.height/2);
+  await page.mouse.down();
+  await page.mouse.move(box!.x+box!.width/2,box!.y+box!.height/2+24,{steps:4});
+  await page.mouse.up();
+  await expect.poll(async()=>Number(await handle.getAttribute('aria-valuenow'))).toBeGreaterThan(before+10);
+  await expect(canvas.getByRole('textbox',{name:'Cell 1, 1',exact:true})).toHaveValue('Name');
+  await handle.focus();
+  await page.keyboard.press('Home');
+  await expect(row).toHaveAttribute('data-omi-row-height','auto');
+  await expect(handle).toHaveAttribute('aria-valuenow','0');
+  await page.setViewportSize({width:480,height:900});
+  await expect(canvas.getByRole('separator',{name:'Resize row 1',exact:true})).toHaveCount(0);
+});
