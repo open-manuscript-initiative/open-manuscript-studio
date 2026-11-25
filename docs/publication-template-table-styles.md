@@ -1,0 +1,11 @@
+# Table styles in publication templates
+
+In the table appearance panel, select a built-in or locally saved preset, then copy it to the publication. The portable publication style stores a validated presentation-only catalog of up to 50 named presets. Select a publication table preset to apply it to a whole table; select a cell preset to apply it to a cell selection. Publication presets can be removed independently of the local catalog. Set or clear an optional default table style; deleting that preset clears its default reference.
+
+Saving the current publication as a publication template captures the catalog together with the publication style. Exporting/importing that template or reopening its OMI document preserves the snapshot without a dependency on the original browser's local style catalog. Later changes to a different template or the local catalog do not alter existing documents.
+
+The default is materialized only when creating an empty table using the Insert element panel. Imported tables, text-to-table conversions, existing tables and nested table insertions are not implicitly restyled. Applying a preset explicitly replaces its supported appearance properties but leaves text, notes, dimensions, merged geometry and row-break rules unchanged. No live style inheritance, global bulk restyling, automatic banding of future rows or server-side style-library synchronization is introduced.
+
+The optional tableStyles field is backward compatible. Publisher-profile and applied-template validation reject invalid default references, duplicate names, excessive catalogs, unsupported fields and noncanonical values. Existing format exporters use the materialized cell properties.
+
+Regression tests cover catalog capture, JSON/template validation, OMI reopening, the blank-table default and non-destructive behavior. Actual UI execution and export rendering require CI and device checks.
