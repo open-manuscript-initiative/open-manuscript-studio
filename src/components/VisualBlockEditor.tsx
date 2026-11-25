@@ -3,8 +3,9 @@ import { generateHTML, Node as TiptapNode } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
 import { OmiNoteExtension } from '../editor/extensions/OmiNoteExtension';
-import { collectNoteAnchorsInBlock, type TableNoteInsertion, type OmiNoteKind } from '../model/notes';
+import { collectNoteAnchorsInBlock, buildNoteNumberMap, type TableNoteInsertion, type OmiNoteKind } from '../model/notes';
 import { stageTableNoteEdit } from '../app/noteActions';
+import { useStudioStore } from '../app/useStudioStore';
 import { NoteEditorCard } from './NoteEditorCard';
 import { getRichTextCopy } from '../i18n/richText';
 import { useFormattingEditor } from '../editor/useFormattingEditor';
@@ -336,6 +337,8 @@ function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(d
   const pendingNote=useRef<TableNoteInsertion|null>(null);
   const [activeNote,setActiveNote]=useState<string|null>(null);
   const cellNotes=collectNoteAnchorsInBlock(JSON.stringify(doc),'','');
+  const manuscript=useStudioStore(state=>state.manuscript);
+  const numbers=cellNotes.length?buildNoteNumberMap(manuscript):undefined;
   const editor=useEditor({extensions:cellExtensions(),content:doc as JSONContent,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
     const parsed=parseTableCellContent(JSON.stringify(current.getJSON()),depth);
     const insertion=pendingNote.current??undefined;
@@ -385,7 +388,7 @@ function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(d
       {(['footnote','endnote','author-note'] as const).map(kind=><button type="button" key={kind} onMouseDown={e=>e.preventDefault()} onClick={()=>insertNote(kind)}>{kind==='footnote'?t('notes.footnote'):kind==='endnote'?t('notes.endnote'):t('notes.authorNote')}</button>)}
       <button type="button" title={visualCopy.cellListOutdent} aria-label={visualCopy.cellListOutdent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().liftListItem('listItem').run()}>←</button>
     </div>
-    {cellNotes.length?<div className="omi-table-actions">{cellNotes.map((note,index)=><button type="button" key={note.noteId} aria-pressed={activeNote===note.noteId} onClick={()=>setActiveNote(activeNote===note.noteId?null:note.noteId)}>{t('notes.note')} {index+1}</button>)}</div>:null}
+    {cellNotes.length?<div className="omi-table-actions">{cellNotes.map(note=><button type="button" key={note.noteId} aria-pressed={activeNote===note.noteId} onClick={()=>setActiveNote(activeNote===note.noteId?null:note.noteId)}>{t('notes.note')} {note.kind==='author-note'?'✧':numbers?.get(note.noteId)??'?'}</button>)}</div>:null}
     {activeNote&&cellNotes.some(note=>note.noteId===activeNote)?<NoteEditorCard noteId={activeNote} compact onClose={()=>setActiveNote(null)}/>:null}
     <details>
       <summary>{visualCopy.cellParagraphFormatting}</summary>
