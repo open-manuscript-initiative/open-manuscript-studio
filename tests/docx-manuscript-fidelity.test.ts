@@ -1094,3 +1094,32 @@ test('direct physical cell borders and margins survive DOCX and ODT reopening', 
   assert.match(odtXml,/fo:padding-right="0pt"/);
   inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'edges.odt'))).sections);
 });
+
+test('native row height modes survive Word and ODT import and export', async () => {
+  const row=(text:string,props:string)=>'<w:tr><w:trPr>'+props+'</w:trPr><w:tc><w:p><w:r><w:t>'+text+'</w:t></w:r></w:p></w:tc></w:tr>';
+  const source=makeDocx('<w:p><w:r><w:t>Row height specimen</w:t></w:r></w:p><w:tbl>'+
+    row('Minimum','<w:trHeight w:val="480" w:hRule="atLeast"/><w:cantSplit/>')+
+    row('Exact','<w:trHeight w:val="360" w:hRule="exact"/>')+
+    row('Auto','<w:trHeight w:val="720" w:hRule="auto"/>')+'</w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.rowHeights,{'0':{mode:'minimum',heightPt:24},'1':{mode:'exact',heightPt:18}});
+    assert.equal(v.rowSplitOverrides?.['0'],'keep');
+    assert.deepEqual(v.cells,[['Minimum'],['Exact'],['Auto']]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Row heights'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:trHeight w:val="480" w:hRule="atLeast"\/>/);
+  assert.match(xml,/<w:trHeight w:val="360" w:hRule="exact"\/>/);
+  assert.equal((xml.match(/<w:trHeight /g)??[]).length,2);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'row-heights.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/style:min-row-height="24pt" style:use-optimal-row-height="true"/);
+  assert.match(odtXml,/style:row-height="18pt" style:use-optimal-row-height="false"/);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'row-heights.odt'))).sections);
+});
