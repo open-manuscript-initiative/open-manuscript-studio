@@ -69,7 +69,7 @@ function listDepth(node: RichNode, depth = 0): number {
 }
 // Passing native XML contracts from the #1033 full Build. F04 checks Word note
 // continuation properties only; actual multi-page PDF layout remains a separate manual acceptance check.
-const integratedNativeContracts = new Set(['P19','F04','F05','F06','X05','X06','X07','X08','X09','X10','X11','X12']);
+const integratedNativeContracts = new Set(['P19','F04','F05','F06','X05','X06','X07','X08','X09','X10','X11','X12','I02','I03']);
 const nativeParagraphContracts: Record<string, Record<string, unknown>> = {
   P15: { omiWidowControl: true }, P16: { omiKeepNext: true },
   P17: { omiKeepLines: true }, P18: { omiPageBreakBefore: true },
