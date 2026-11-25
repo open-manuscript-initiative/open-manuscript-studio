@@ -1,4 +1,4 @@
-import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy, tableRowHeight, tableCellDocument, effectiveCellParagraphAttrs, cellDocumentWithDefaults } from '../model/tableLayout';
+import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy, tableRowHeight, tableCellDocument, effectiveCellParagraphAttrs, cellDocumentWithDefaults, cellNestedTable } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
@@ -300,8 +300,8 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
 }
 
 /** Native editable tables; the model intentionally stores plain rectangular cells. */
-function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordListNumbering,sourceStyles:SourceWordStyleRegistry): string {
-  const widths = tableColumnWidths(table.cells, table.columnWidths).map(percent=>Math.max(1,Math.round(percent*9026/100)));
+function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordListNumbering,sourceStyles:SourceWordStyleRegistry,availableWidth=9026): string {
+  const widths = tableColumnWidths(table.cells, table.columnWidths).map(percent=>Math.max(1,Math.round(percent*availableWidth/100)));
   const headerRows = tableHeaderRows(table.cells, table.headerRows);
   const layout = tableMergeLayout(table.cells,table.cellMerges,headerRows);
   let partial = false;
@@ -336,8 +336,10 @@ function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordLi
         + (rotation ? '<w:textDirection w:val="'+rotation+'"/>' : '')
         + (format.verticalAlign?'<w:vAlign w:val="'+(format.verticalAlign==='middle'?'center':format.verticalAlign)+'"/>':'');
       const doc=continuing?undefined:tableCellDocument(table,r,c);
-      const listXml=doc?renderWordLists(JSON.stringify(cellDocumentWithDefaults(doc,format.horizontalAlign)),numbering,()=>undefined,'',sourceStyles):undefined;
-      const rich=listXml??doc?.content?.map(p=>{
+      const rich=doc?.content?.map(p=>{
+        const nested=cellNestedTable(p);
+        if(nested) return wordTable(nested,warnings,numbering,sourceStyles,Math.max(1,cellWidth));
+        if(p.type==='orderedList'||p.type==='bulletList') return renderWordLists(JSON.stringify({type:'doc',content:[cellDocumentWithDefaults(p,format.horizontalAlign)]}),numbering,()=>undefined,'',sourceStyles)??'';
         const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':extractOmiInlineRuns(JSON.stringify(n)).map(run=>wordRun(run,undefined,{})).join('')).join('');
         const properties=paragraphFormattingWordXml(effectiveCellParagraphAttrs(p.attrs,format.horizontalAlign));
         return '<w:p>'+(properties?'<w:pPr>'+properties+'</w:pPr>':'')+runs+'</w:p>';
@@ -347,7 +349,7 @@ function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordLi
         const pPr=format.horizontalAlign?'<w:pPr><w:jc w:val="'+(format.horizontalAlign==='justify'?'both':format.horizontalAlign)+'"/></w:pPr>':'';
         return '<w:p>'+pPr+runs+'</w:p>';
       }).join('');
-      return '<w:tc><w:tcPr>'+properties+'</w:tcPr>'+content+'</w:tc>';
+      return '<w:tc><w:tcPr>'+properties+'</w:tcPr>'+content+(content.endsWith('</w:tbl>')?'<w:p/>':'')+'</w:tc>';
     }).join('');
     const split=tableRowSplitPolicy(table,r);
     const height=tableRowHeight(table,r);
