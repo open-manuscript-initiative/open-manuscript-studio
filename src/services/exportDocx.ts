@@ -1,3 +1,4 @@
+import { wordTocInstruction } from '../model/tableOfContents';
 import { normalizeExternalHref } from '../model/richText';
 import { toPortableBookmarkName } from '../model/namedAnchors';
 import { normalizeWordCrossReferenceField, type WordCrossReferenceField } from '../model/wordCrossReference';
@@ -99,6 +100,17 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   }
   if (context.keywords.length) {
     body.push(paragraph(`${localizedLabel(context.locale, 'keywords')}: ${context.keywords.join('; ')}`));
+  }
+  const toc=manuscript.tableOfContents;
+  if(toc){
+    const instruction=wordTocInstruction(toc);
+    if(instruction){
+      // No fabricated page numbers. Word calculates the result on update.
+      if(toc.title?.trim())body.push(paragraph(toc.title));
+      body.push('<w:p><w:fldSimple w:instr="'+xml(instruction)+'" w:dirty="true"><w:r><w:t/></w:r></w:fldSimple></w:p>');
+      if(toc.maxLevel>6)warnings.push('Word TOC levels 7–9 exceed Studio’s six editable heading levels.');
+      if(toc.source?.instruction&&/(?:^|\s)\\(?:t|b|f|l|s|d|p|w|x|z)(?:\s|$)/i.test(toc.source.instruction))warnings.push('Some source Word TOC switches are not supported and were omitted.');
+    }else warnings.push('Invalid table of contents heading range; native TOC omitted.');
   }
 
     const resolveNote = (noteId: string): WordNoteReference | undefined => {
