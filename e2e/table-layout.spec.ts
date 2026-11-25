@@ -258,12 +258,17 @@ test('reorder selected table rows and columns without moving header into body',a
 test('apply built-in table appearance and save a reusable local cell style',async({page})=>{
   const canvas=await openTables(page,2);
   const table=canvas.locator('.omi-table-editor').first();
-  await canvas.getByText('Table and cell styles',{exact:true}).click();
-  const panel=canvas.locator('details').filter({has:canvas.getByText('Table and cell styles',{exact:true})});
-  await panel.getByRole('combobox',{name:'Table style',exact:true}).selectOption('builtin:banded');
+  const summary=canvas.getByText('Table and cell styles',{exact:true});
+  const panel=summary.locator('..');
+  await summary.click();
+  const stylePicker=panel.getByRole('combobox',{name:'Table style',exact:true});
+  await expect(stylePicker).toBeVisible();
+  await stylePicker.selectOption('builtin:banded');
   await panel.getByRole('button',{name:'Apply style',exact:true}).click();
   await expect(table.locator('tr').first().locator('th').first()).toHaveCSS('background-color','rgb(220, 230, 241)');
   await expect(table.locator('tr').nth(2).locator('td').first()).toHaveCSS('background-color','rgb(241, 244, 247)');
+  await canvas.getByRole('textbox',{name:'Cell 1, 1',exact:true}).click();
+  await panel.getByRole('combobox',{name:'Save as',exact:true}).selectOption('cell');
   await panel.getByRole('textbox',{name:'Style name',exact:true}).fill('Journal header');
   await panel.getByRole('button',{name:'Save style',exact:true}).click();
   await expect(panel.getByRole('combobox',{name:'Table style',exact:true})).toHaveValue('custom:Journal header');
@@ -296,8 +301,11 @@ test('cell note toolbar creates a shared note annotation and note card deletes i
   expect(added.annotations.some(n=>n.targetBlockId==='layout-table'&&n.noteKind==='footnote')).toBeTruthy();
   expect(added.events.some(e=>e.operation==='annotation.create')).toBeTruthy();
   expect(added.events.some(e=>e.operation==='block.update'&&e.targetId==='layout-table')).toBeTruthy();
+  const deleteNote=card.getByRole('button',{name:'Delete note',exact:true});
+  await expect(deleteNote).toBeVisible();
   page.once('dialog',dialog=>dialog.accept());
-  await card.getByRole('button',{name:'Delete',exact:true}).click();
+  await deleteNote.click();
+  await expect(card).toHaveCount(0);
   await expect(editor.locator('[data-omi-note]')).toHaveCount(0);
   await expect.poll(async()=>(await snapshot()).annotations.filter(n=>n.targetBlockId==='layout-table').length).toBe(0);
   await expect(canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true})).toHaveValue('Row 0');
