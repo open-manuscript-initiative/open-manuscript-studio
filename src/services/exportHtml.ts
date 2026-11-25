@@ -8,7 +8,7 @@ import { publicationSpineWidth } from '../model/publicationSpine';
 import { matterFrameBoxStyle, matterImageStyle, type PublicationMatterFrame } from '../model/publicationMatterFrames';
 import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 import { renderTextBoxGraphic, visualTextBoxDiagnostics } from '../model/textBoxes';
-import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout, tableRowSplitPolicy, tableCellAppearanceStyle, tableRowHeight } from '../model/tableLayout';
+import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout, tableRowSplitPolicy, tableCellAppearanceStyle, tableRowHeight, tableCellDocument } from '../model/tableLayout';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -587,12 +587,14 @@ function renderTable(block: OmiBlock, state: RenderState): string {
   const visual = block.visual;
   const renderCellText = (cell: string, row: number, column: number) => {
     const format = tableCellFormat(visual.cellFormats, row, column);
-    const text = escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;');
+    const doc=tableCellDocument(visual,row,column);
+    const text=doc?renderJsonNode(doc,state):escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;');
     if (format.textRotation === 0 && format.textDirection === 'auto' && !visual.cellFormats?.[`${row}:${column}`]) return text;
     const css = Object.entries({...tableCellTextStyle(format.textRotation), ...(format.horizontalAlign?{textAlign:format.horizontalAlign,...(format.textRotation===0?{width:'100%'}:{})}:{})}).map(([key, value]) =>
       `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}`,
     ).join(';');
-    return `<span class="omi-table-cell-text" dir="${format.textDirection}" data-text-rotation="${format.textRotation}" style="${css}">${text}</span>`;
+    const tag=doc?'div':'span';
+    return `<${tag} class="omi-table-cell-text" dir="${format.textDirection}" data-text-rotation="${format.textRotation}" style="${css}">${text}</${tag}>`;
   };
   const headerRows = Math.max(0, Math.min(visual.headerRows ?? 0, visual.cells.length));
   const layout=tableMergeLayout(visual.cells,visual.cellMerges,headerRows);
