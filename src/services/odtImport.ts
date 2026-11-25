@@ -72,8 +72,9 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
       continue;
     }
     if (child.localName === 'table') {
-      const table=parseOdtTable(child,textStyles,listStyleTypes,provenance,warnings);
-      if(table){ensureSection(sections).blocks.push(createTableBlock(table.cells,{...table,provenance}));stats.tables+=1;}
+      const blockId=crypto.randomUUID();
+      const table=parseOdtTable(child,textStyles,listStyleTypes,provenance,warnings,blockId,annotations,stats);
+      if(table){ensureSection(sections).blocks.push(createTableBlock(table.cells,{...table,provenance},blockId));stats.tables+=1;}
       frontMatter = false;
       continue;
     }
@@ -350,7 +351,7 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-function parseOdtTable(child:XmlElement,textStyles:Map<string,XmlElement>,listStyleTypes:Map<string,boolean>,provenance:OmiImportProvenance,warnings:DocxImportWarning[],depth=0,budget={cells:10000}):OmiTableBlockData|undefined{
+function parseOdtTable(child:XmlElement,textStyles:Map<string,XmlElement>,listStyleTypes:Map<string,boolean>,provenance:OmiImportProvenance,warnings:DocxImportWarning[],blockId:string,annotations:OmiAnnotation[],stats:ReturnType<typeof createEmptyDocxImportStats>,depth=0,budget={cells:10000}):OmiTableBlockData|undefined{
   if(depth>MAX_NESTED_TABLE_DEPTH) throw new Error('Nested table exceeds the supported depth.');
       const rows: string[][] = [];
       const merges: OmiTableCellMerge[] = [];
@@ -403,20 +404,17 @@ function parseOdtTable(child:XmlElement,textStyles:Map<string,XmlElement>,listSt
           }
           Object.assign(format,normalizeTableCellEdges({borders,paddingPt}));
           if(Object.keys(format).length) cellFormats[`${rows.length}:${col}`]=format;
-          // Notes and nested tables retain the existing plain fallback rather
-          // than introducing orphan annotation anchors into cell content.
-          const supported=!cell.getElementsByTagNameNS('*','note').length;
-          const doc:NoteJsonNode={type:'doc',content:supported?Array.from(cell.children).flatMap((p):NoteJsonNode[]=>{
-            if(p.localName==='table'){const table=parseOdtTable(p,textStyles,listStyleTypes,provenance,warnings,depth+1,budget);return table?[{type:'omiCellTable',attrs:{table}}]:[];}
-            if(p.localName==='list') return parseOdtList(p,listStyleTypes.get(p.getAttribute('text:style-name')??'')??false,'',[],createEmptyDocxImportStats(),provenance,[],listStyleTypes,textStyles) as NoteJsonNode[];
+          const doc:NoteJsonNode={type:'doc',content:Array.from(cell.children).flatMap((p):NoteJsonNode[]=>{
+            if(p.localName==='table'){const table=parseOdtTable(p,textStyles,listStyleTypes,provenance,warnings,blockId,annotations,stats,depth+1,budget);return table?[{type:'omiCellTable',attrs:{table}}]:[];}
+            if(p.localName==='list') return parseOdtList(p,listStyleTypes.get(p.getAttribute('text:style-name')??'')??false,blockId,annotations,stats,provenance,warnings,listStyleTypes,textStyles) as NoteJsonNode[];
             if(p.localName!=='p'&&p.localName!=='h') return [];
             const attrs=normalizeCellParagraphAttrs(odtParagraphAttrs(p.getAttribute('text:style-name')??'',textStyles).attrs);
             if(attrs.omiAlign===format.horizontalAlign) delete attrs.omiAlign;
-            return [{type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseInlineChildren(p,'',[],createEmptyDocxImportStats(),provenance,[],textStyles,listStyleTypes) as NoteJsonNode[]}];
-          }):[]};
-          const rich=supported&&!!doc.content?.length&&doc.content.some(p=>p.type!=='paragraph'||p.attrs||doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
+            return [{type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseInlineChildren(p,blockId,annotations,stats,provenance,warnings,textStyles,listStyleTypes) as NoteJsonNode[]}];
+          })};
+          const rich=!!doc.content?.length&&doc.content.some(p=>p.type!=='paragraph'||p.attrs||doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
           const parsed=rich?parseTableCellContent(JSON.stringify(doc)):undefined;
-          if(cell.getElementsByTagNameNS('*','table').length&&!parsed) throw new Error('Nested ODT cell content could not be represented safely.');
+          if((cell.getElementsByTagNameNS('*','table').length||cell.getElementsByTagNameNS('*','note').length)&&!parsed) throw new Error('Nested ODT cell content could not be represented safely.');
           if(parsed) cellContent[`${rows.length}:${col}`]=JSON.stringify(parsed);
           values.push(parsed?tableCellPlainText(parsed):paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
         }
