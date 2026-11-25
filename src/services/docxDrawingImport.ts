@@ -1,3 +1,4 @@
+import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink, type WordTextBoxLink } from '../model/wordTextBoxLink';
 import { TEXT_BOX_CONTENT_PROFILE, encodeTextBoxContent } from "../model/textBoxContent";
 import { DOMParser as XmlParser, XMLSerializer as XmlSerializer, type Node as XmlNode } from "@xmldom/xmldom";
 import type { DocxImportWarning } from "../model/docxImport";
@@ -86,7 +87,8 @@ export async function prepareWordDrawings(
   const doc = parseWordXml(xml);
   if (!doc) return { xml, images, warnings };
   selectAlternateDrawings(doc);
-  normalizeVmlTextBoxes(doc);
+  const vmlLinks=normalizeVmlTextBoxes(doc);
+  const linkedNames=new Set([...vmlLinks.values()].flatMap(link=>link.next?[link.name,link.next]:[]));
   const anchors = [
     ...elements(doc, WP, "anchor"),
     ...elements(doc, WP, "inline"),
@@ -220,6 +222,9 @@ export async function prepareWordDrawings(
       elements(label.content, W, "endnoteReference").length
     )
       continue;
+    if(vmlLinks.has(anchor)&&linkedNames.has(vmlLinks.get(anchor)!.name)){
+      standalone.push(label);continue;
+    }
     if (
       !Number.isFinite(label.x) ||
       !Number.isFinite(label.y) ||
@@ -353,6 +358,8 @@ export async function prepareWordDrawings(
     }
   for (const label of standalone) {
     const textBox = readTextBox(label, defaultFont, theme, styles);
+    const link=vmlLinks.get(label.anchor);
+    if(link)textBox.extensions={...textBox.extensions,[WORD_TEXT_BOX_LINK_EXTENSION]:link};
     const paragraph = ancestor(label.anchor, W, ["p"]);
     const column = paragraph ? columnGeometry(paragraph) : { left: 0 };
     textBox.x = Number.isFinite(label.x)
@@ -393,7 +400,8 @@ function renderBitmap(picture: Picture, source: string): string {
   return `<svg width="${fmt(width)}" height="${fmt(height)}" viewBox="0 0 ${fmt(width)} ${fmt(height)}" overflow="hidden"><image x="${fmt(-crop.left * imageWidth)}" y="${fmt(-crop.top * imageHeight)}" width="${fmt(imageWidth)}" height="${fmt(imageHeight)}" preserveAspectRatio="none" xlink:href="${source}"/></svg>`;
 }
 
-function normalizeVmlTextBoxes(doc: Document): void {
+function normalizeVmlTextBoxes(doc: Document): Map<Element,WordTextBoxLink> {
+  const links=new Map<Element,WordTextBoxLink>();
   const V = "urn:schemas-microsoft-com:vml";
   function length(value: string | undefined): number {
     const m = value?.trim().match(/^(-?[\d.]+)(pt|px|in|cm|mm)?$/i);
@@ -433,8 +441,12 @@ function normalizeVmlTextBoxes(doc: Document): void {
     if (!anchorRoot) continue;
     const anchor = doc.importNode(anchorRoot, true) as Element;
     descendants(anchor, "txbx")[0]!.appendChild(content);
+    const next=css.get('mso-next-textbox')?.replace(/^#/,'');
+    const link=normalizeWordTextBoxLink({name:shape.getAttribute('id'),...(next?{next}:{})});
+    if(link)links.set(anchor,link);
     shape.parentNode.replaceChild(anchor, shape);
   }
+  return links;
 }
 
 function selectAlternateDrawings(doc: Document): void {
