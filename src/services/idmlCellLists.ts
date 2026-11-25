@@ -4,7 +4,7 @@ import type { NoteJsonNode } from '../model/noteRichText';
 type Props=Record<string,string>;
 type ListAttrs=Record<string,unknown>;
 type Report=(code:string)=>void;
-export interface IdmlCellParagraph {node:NoteJsonNode;properties?:Props}
+export interface IdmlCellParagraph {node:NoteJsonNode;properties?:Props;continuationReference?:string}
 interface ListInfo {
   kind:'orderedList'|'bulletList';
   level:number;
@@ -98,7 +98,7 @@ export function reconstructIdmlCellLists(records:readonly IdmlCellParagraph[],co
     const p=record.properties??{};
     const info=record.node.type==='paragraph'?readList(p,report):undefined;
     if(!info){
-      const reference=sequenceName(p);
+      const reference=record.continuationReference??'';
       // Studio emits a named list reference on a NoList continuation; plain
       // indented paragraphs are never guessed to belong to a list.
       let continuation=-1;
