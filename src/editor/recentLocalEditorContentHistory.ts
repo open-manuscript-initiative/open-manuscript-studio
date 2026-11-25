@@ -6,9 +6,19 @@ const MAX_RECENT_LOCAL_CONTENT = 16;
  */
 export class RecentLocalEditorContentHistory {
   private fingerprints: string[] = [];
+  private lastContent: string | undefined;
+  private lastFingerprint: string | undefined;
+
+  private fingerprint(content: string): string {
+    if (content === this.lastContent && this.lastFingerprint !== undefined) return this.lastFingerprint;
+    const fingerprint = fingerprintContent(content);
+    this.lastContent = content;
+    this.lastFingerprint = fingerprint;
+    return fingerprint;
+  }
 
   record(content: string): void {
-    const fingerprint = fingerprintContent(content);
+    const fingerprint = this.fingerprint(content);
     this.fingerprints = [
       ...this.fingerprints.filter((value) => value !== fingerprint),
       fingerprint,
@@ -16,11 +26,11 @@ export class RecentLocalEditorContentHistory {
   }
 
   has(content: string): boolean {
-    return this.fingerprints.includes(fingerprintContent(content));
+    return this.fingerprints.includes(this.fingerprint(content));
   }
 
   acknowledge(content: string): void {
-    const fingerprint = fingerprintContent(content);
+    const fingerprint = this.fingerprint(content);
     if (this.fingerprints.at(-1) === fingerprint) {
       this.fingerprints = [fingerprint];
     }
@@ -28,6 +38,8 @@ export class RecentLocalEditorContentHistory {
 
   clear(): void {
     this.fingerprints = [];
+    this.lastContent = undefined;
+    this.lastFingerprint = undefined;
   }
 }
 

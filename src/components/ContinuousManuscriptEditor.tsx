@@ -121,10 +121,11 @@ function StudyEditor({
     );
   }, [sectionNumbers, study.sections]);
 
-  const updateDocument = useCallback((_documentId: string, content: string) => {
+  const projectionCache = useRef(new WeakMap<JSONContent, string>());
+  const updateDocument = useCallback((_documentId: string, content: string, snapshot?: JSONContent) => {
     let parsed: JSONContent;
     try {
-      parsed = JSON.parse(content) as JSONContent;
+      parsed = snapshot ?? JSON.parse(content) as JSONContent;
     } catch {
       return;
     }
@@ -140,6 +141,7 @@ function StudyEditor({
     const projectedStudy = projectContinuousManuscriptDocument(
       parsed,
       currentStudy.sections,
+      { textContentCache: snapshot ? projectionCache.current : undefined },
     );
     // The store update below is synchronous. Remember the exact projected
     // section objects so the resulting React render can reuse Tiptap's own

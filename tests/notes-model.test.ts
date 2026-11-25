@@ -291,3 +291,16 @@ test('cell note insertion is atomic, rejects unauthorized anchors, and shares do
   assert.ok(final?.kind==='table');
   assert.deepEqual(final.cells,[['Cell']]);
 });
+
+test('cached note anchors follow changed content and section ownership without leaking mutable results', () => {
+  const state = createState();
+  const first = collectNoteAnchors(state);
+  first[0]!.noteId = 'not-the-source';
+  assert.equal(collectNoteAnchors(state)[0]!.noteId, 'note-a');
+  const block = state.sections[0]!.blocks[0]!;
+  block.content = noteDocument('note-b');
+  assert.deepEqual(collectNoteAnchors(state).map(anchor => anchor.noteId), ['note-b']);
+  const moved = { ...state, sections: [{ ...state.sections[0]!, id: 'moved-section' }] };
+  assert.equal(collectNoteAnchors(moved)[0]!.sectionId, 'moved-section');
+  assert.equal(collectNoteAnchors(state)[0]!.sectionId, 'section-1');
+});
