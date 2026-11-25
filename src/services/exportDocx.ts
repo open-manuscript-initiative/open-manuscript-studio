@@ -312,7 +312,7 @@ class WordHyperlinkRegistry{
   constructor(private readonly warnings:string[]){}
   wrap(href:string|undefined,title:string|undefined,content:string):string{
     if(!href||!content)return content;
-    const target=normalizeExternalHref(href);
+    const target=/^(https?:|mailto:)/i.test(href.trim())?normalizeExternalHref(href):undefined;
     if(!target||! /^(https?:|mailto:)/i.test(target)){
       if(!this.warnings.includes('Unsupported hyperlink target preserved as text in DOCX.'))this.warnings.push('Unsupported hyperlink target preserved as text in DOCX.');
       return content;
