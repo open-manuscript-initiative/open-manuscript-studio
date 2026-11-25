@@ -414,3 +414,30 @@ export function resizeTableRowHeight(height: OmiTableRowHeight, measuredPx: numb
   if(deltaPx===0) return normalizeTableRowHeight(height);
   return normalizeTableRowHeight({mode:height.mode==='exact'?'exact':'minimum',heightPt:Math.max(0.05,base+deltaPx*0.75/scale)});
 }
+
+export interface TableCellPosition {row:number;column:number}
+/** Resolve an inclusive rectangular selection to unique visible cell anchors.
+ * A partially intersected merged cell is formatted as a single whole cell. */
+export function tableRangeAnchors(cells:readonly (readonly string[])[],start:TableCellPosition,end:TableCellPosition,merges?:readonly OmiTableCellMerge[],headerRows?:number):TableCellPosition[]{
+  if(![start.row,start.column,end.row,end.column].every(Number.isSafeInteger)) return [];
+  const layout=tableMergeLayout(cells,merges,headerRows);
+  const result=new Map<string,TableCellPosition>();
+  const top=Math.max(0,Math.min(start.row,end.row)),bottom=Math.min(cells.length-1,Math.max(start.row,end.row));
+  const left=Math.max(0,Math.min(start.column,end.column)),right=Math.max(start.column,end.column);
+  for(let r=top;r<=bottom;r++) for(let c=left;c<=Math.min(right,(cells[r]?.length??0)-1);c++){
+    const m=layout.at(r,c);
+    const point={row:m?.row??r,column:m?.column??c};
+    result.set(point.row+':'+point.column,point);
+  }
+  return [...result.values()];
+}
+/** Apply only changed attributes; never replace unrelated formatting or content. */
+export function formatTableRange(table:OmiTableBlockData,start:TableCellPosition,end:TableCellPosition,patch:OmiTableCellFormat|((format:ReturnType<typeof tableCellFormat>)=>OmiTableCellFormat)):Record<string,OmiTableCellFormat>{
+  const next=pruneTableCellFormats(table.cells,table.cellFormats);
+  for(const {row,column} of tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows)){
+    const current=tableCellFormat(next,row,column);
+    const updated={...current,...(typeof patch==='function'?patch(current):patch)};
+    next[row+':'+column]=tableCellFormat({[row+':'+column]:updated},row,column);
+  }
+  return next;
+}
