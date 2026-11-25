@@ -1105,7 +1105,7 @@ export function PublicationDocumentCanvas({
       aria-labelledby="publication-document-canvas-title"
     >
       {viewMode === 'print' && facingPages ? <style>{`#${canvasId} .omi-continuous-tiptap-editor > *, #${canvasId} .publication-document-front-matter { translate: ${cssPixel(styledPages[0]?.x ?? 0)} 0px; }`}</style> : null}
-      <style ref={provisionalProjectionRef} />
+      {viewMode === 'print' && facingPages ? <style ref={provisionalProjectionRef} /> : null}
       {pagination.css || paragraphStyleCss || sectionLayoutCss || fitWarningCss || navigationCss
         ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}\n${fitWarningCss}\n${navigationCss}`}</style>
         : null}
