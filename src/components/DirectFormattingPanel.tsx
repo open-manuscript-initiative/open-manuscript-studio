@@ -19,6 +19,9 @@ const LABELS: Record<string, Labels> = {
   nl: ['Tekenopmaak','Lettertype','Tekengrootte (pt)','Tekstkleur','Achtergrond','Markering','Letterafstand (pt)','Basislijnverschuiving (pt)','Onderstrepingstype','Enkel','Dubbel','Gestippeld','Golvend','Hoofdletters','Dubbel doorhalen','Omtrek','Schaduw','Tekenbreedte (%)','Kerningdrempel (pt)','Herstellen','Gemengde opmaak'],
   pl: ['Formatowanie znaków','Krój pisma','Rozmiar (pt)','Kolor tekstu','Tło znaków','Wyróżnienie','Odstępy (pt)','Przesunięcie pionowe (pt)','Rodzaj podkreślenia','Pojedyncze','Podwójne','Kropkowane','Faliste','Wielkie litery','Podwójne przekreślenie','Kontur','Cień','Szerokość (%)','Próg kerningu (pt)','Resetuj','Formatowanie mieszane'],
 };
+const DIRECTION_LABELS:Record<string,readonly string[]>={en:['Text direction','Left to right','Right to left'],hu:['Írásirány','Balról jobbra','Jobbról balra'],de:['Schreibrichtung','Links nach rechts','Rechts nach links'],fr:['Sens du texte','De gauche à droite','De droite à gauche'],it:['Direzione del testo','Da sinistra a destra','Da destra a sinistra'],es:['Dirección del texto','De izquierda a derecha','De derecha a izquierda'],nl:['Schrijfrichting','Van links naar rechts','Van rechts naar links'],pl:['Kierunek tekstu','Od lewej do prawej','Od prawej do lewej']};
+const directionLabels=(locale:SupportedLocale)=>DIRECTION_LABELS[locale]??DIRECTION_LABELS.en!;
+const directionChoices=(locale:SupportedLocale)=>['ltr','rtl'].map((value,i)=>({value,label:directionLabels(locale)[i+1]!}));
 const labels = (locale: SupportedLocale) => LABELS[locale] ?? LABELS.en!;
 export function directFormattingLabel(locale: SupportedLocale): string { return labels(locale)[0]!; }
 /** Reuse the existing localized vocabulary in table range controls. */
@@ -200,6 +203,7 @@ export function DirectFormattingPanel({ editor, locale }: { editor: Editor; loca
         normalize={v => v === 'single' ? 'single' : normalizeUnderlineStyle(v)} />
       {field('omiCharacterScale', 17, <LetterText size={16} aria-hidden="true" />, 'number', '100')}
       {field('omiKerning', 18, <Strikethrough size={16} aria-hidden="true" />, 'number', '0')}
+      <FormatField {...common} name="omiTextDirection" label={directionLabels(locale)[0]!} icon={<Pilcrow size={15}/>} choices={directionChoices(locale)} normalize={value=>normalizeDirectValue('omiTextDirection',value)}/>
       <FormatField {...common} name="omiLigatures" label={advanced[1]!} icon={<span aria-hidden="true">ﬁ</span>} defaultValue="standardContextual"
         choices={DIRECT_FORMATS.omiLigatures.choices.map(value=>({value,label:ligatureLabel(value,advanced)}))}
         normalize={value=>normalizeDirectValue('omiLigatures',value)}/>
@@ -322,10 +326,11 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
       {command(l[15]!, <IndentIncrease size={17} />, () => editor.chain().focus().sinkListItem('listItem').run(), false, !editor.can().sinkListItem('listItem'))}
       {command(l[16]!, <IndentDecrease size={17} />, () => editor.chain().focus().liftListItem('listItem').run(), false, !editor.can().liftListItem('listItem'))}
       {command(l[17]!, <RemoveFormatting size={17} />, () => editor.chain().focus().updateAttributes('paragraph', {
-        omiParagraphBackground:null, omiParagraphBorders:null, omiParagraphTabs:null, omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null, omiWidowControl: null, omiKeepNext: null, omiKeepLines: null, omiPageBreakBefore: null,
+        omiParagraphDirection:null, omiParagraphBackground:null, omiParagraphBorders:null, omiParagraphTabs:null, omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null, omiWidowControl: null, omiKeepNext: null, omiKeepLines: null, omiPageBreakBefore: null,
       }).run())}
     </div>
     <div className="omi-direct-format-fields">
+      <FormatField {...common} name="omiParagraphDirection" label={directionLabels(locale)[0]!} icon={<Pilcrow size={15}/>} choices={directionChoices(locale)} normalize={value=>normalizeParagraphValue('omiParagraphDirection',value)}/>
       {field('omiLeftIndent', 5)}
       {field('omiRightIndent', 6)}
       {field('omiFirstLineIndent', 7)}
