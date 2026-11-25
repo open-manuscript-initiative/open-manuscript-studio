@@ -3,6 +3,8 @@ import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
 import { WORD_HYPHENATION_EXTENSION, wordHyphenationSettingsXml } from '../model/wordHyphenation';
+import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
+import { resolvePublicationParagraphStyle } from './publicationStyleExport';
 import { paragraphFormattingWordXml } from '../model/directParagraphFormatting';
 import { directFormattingFromMarks, directFormattingWordXml } from '../model/directFormatting';
 import { visualTextBoxText } from '../model/textBoxes';
@@ -65,8 +67,10 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const annotationsById = new Map(
     manuscript.annotations.filter(isNoteAnnotation).map((annotation) => [annotation.id, annotation]),
   );
-  const footnotes: Array<{ id: number; body: string }> = [];
-  const endnotes: Array<{ id: number; body: string }> = [];
+  const footnotes: Array<{ id: number; body: NoteJsonNode }> = [];
+  const endnotes: Array<{ id: number; body: NoteJsonNode }> = [];
+  const publicationStyle=getAppliedPublicationTemplate(manuscript)?.style;
+  const continueFootnotes=publicationStyle?resolvePublicationParagraphStyle(publicationStyle,publicationStyle.paragraphStyles.items.find(item=>item.role==='note')?.id).footnoteContinueOnNextPage!==false: true;
   const noteReferenceIds = { footnote: new Map<string, number>(), endnote: new Map<string, number>() };
   const referencedNoteIds = new Set<string>();
 
@@ -127,9 +131,8 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
             previouslyCitedTargets,
           },
         );
-        const noteBody = renderJsonContent(noteDocument);
         const target = kind === 'footnote' ? footnotes : endnotes;
-        target.push({ id, body: noteBody });
+        target.push({ id, body: noteDocument });
       }
       return { kind, id };
     };
@@ -213,7 +216,7 @@ ${characterStylesXml()}${sourceStyles.xml()}
     textZipEntry('word/settings.xml', settingsXml),
     ...(numbering.size ? [textZipEntry('word/numbering.xml', numbering.xml())] : []),
     textZipEntry('docProps/core.xml', core),
-    ...(footnotes.length ? [textZipEntry('word/footnotes.xml', renderWordNotes('footnote', footnotes))] : []),
+    ...(footnotes.length ? [textZipEntry('word/footnotes.xml', renderWordNotes('footnote', footnotes, continueFootnotes))] : []),
     ...(endnotes.length ? [textZipEntry('word/endnotes.xml', renderWordNotes('endnote', endnotes))] : []),
   ];
   const bytes = createStoreZip(entries);
@@ -479,12 +482,32 @@ function renderJsonNode(
   return children;
 }
 
-function renderWordNotes(kind: WordNoteKind, notes: readonly { id: number; body: string }[]): string {
+function renderWordNotes(kind: WordNoteKind, notes: readonly { id: number; body: NoteJsonNode }[], allowContinuation = true): string {
   const root = kind === 'footnote' ? 'footnotes' : 'endnotes';
   const item = kind === 'footnote' ? 'footnote' : 'endnote';
   const reference = kind === 'footnote' ? 'footnoteRef' : 'endnoteRef';
   const separator = kind === 'footnote' ? 'footnote' : 'endnote';
-  const notesXml = notes.map((note) => `<w:${item} w:id="${note.id}"><w:p><w:pPr><w:pStyle w:val="${kind === 'footnote' ? 'FootnoteText' : 'EndnoteText'}"/></w:pPr><w:r><w:rPr><w:rStyle w:val="${kind === 'footnote' ? 'FootnoteReference' : 'EndnoteReference'}"/></w:rPr><w:${reference}/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>${note.body}</w:p></w:${item}>`).join('');
+  const notesXml = notes.map(note=>{
+    const paragraphs:NoteJsonNode[]=[];
+    // Keep actual paragraph boundaries, including blank paragraphs. Other
+    // structures retain the existing text projection rather than losing text.
+    const collect=(node:NoteJsonNode)=>{
+      if(node.type==='doc'||node.type==='blockquote'){for(const child of node.content??[])collect(child);}
+      else paragraphs.push(node);
+    };
+    collect(note.body);
+    if(!paragraphs.length)paragraphs.push({type:'paragraph'});
+    const marker=`<w:r><w:rPr><w:rStyle w:val="${kind==='footnote'?'FootnoteReference':'EndnoteReference'}"/></w:rPr><w:${reference}/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>`;
+    const content=paragraphs.map((p,index)=>{
+      const attrs={...p.attrs};
+      if(kind==='footnote'){
+        if(attrs.omiKeepLines===undefined)attrs.omiKeepLines=!allowContinuation;
+        if(!allowContinuation&&index<paragraphs.length-1&&attrs.omiKeepNext===undefined)attrs.omiKeepNext=true;
+      }
+      return `<w:p><w:pPr><w:pStyle w:val="${kind==='footnote'?'FootnoteText':'EndnoteText'}"/>${paragraphFormattingWordXml(attrs)}</w:pPr>${index===0?marker:''}${renderJsonContent(p)}</w:p>`;
+    }).join('');
+    return `<w:${item} w:id="${note.id}">${content}</w:${item}>`;
+  }).join('');
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:${separator} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:${separator}><w:${separator} w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${separator}>${notesXml}</w:${root}>`;
 }
 
