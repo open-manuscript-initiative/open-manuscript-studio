@@ -297,7 +297,7 @@ function pitchY(note: OmiMusicScoreBlockData['notes'][number]): number {
   return 93 - ((note.octave - 4) * 7 + (order[note.step] ?? 0)) * 3;
 }
 
-const cellExtensions=()=>[StarterKit.configure({heading:false,blockquote:false,bulletList:false,orderedList:false,listItem:false,codeBlock:false,horizontalRule:false,link:false,underline:false}),...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter(e=>!['omiBlockTypeMenu','omiListFormatting','omiSourceWordParagraphStyle','omiWordCharacterStyle'].includes(e.name))];
+const cellExtensions=()=>[StarterKit.configure({heading:false,blockquote:false,codeBlock:false,horizontalRule:false,link:false,underline:false}),...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter(e=>!['omiBlockTypeMenu','omiSourceWordParagraphStyle','omiWordCharacterStyle'].includes(e.name))];
 
 function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:NoteJsonNode)=>void;label:string}){
   const {locale}=useTranslation();
@@ -322,6 +322,10 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
     <div className="omi-table-actions" role="group" aria-label={copy.toolbar}>
       {[copy.bold,copy.italic,copy.underline,copy.strike,copy.smallCaps,copy.superscript,copy.subscript].map((title,i)=><button type="button" key={marks[i]} title={title} aria-label={title} aria-pressed={active?.[i]??false} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleMark(marks[i]!).run()}>{['B','I','U','S','Aa','x²','x₂'][i]}</button>)}
       <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().unsetAllMarks().run()}>{copy.clearMarks}</button>
+      <button type="button" title={copy.bulletList} aria-label={copy.bulletList} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleBulletList().run()}>•</button>
+      <button type="button" title={copy.orderedList} aria-label={copy.orderedList} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleOrderedList().run()}>1.</button>
+      <button type="button" title={visualCopy.cellListIndent} aria-label={visualCopy.cellListIndent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().sinkListItem('listItem').run()}>→</button>
+      <button type="button" title={visualCopy.cellListOutdent} aria-label={visualCopy.cellListOutdent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().liftListItem('listItem').run()}>←</button>
     </div>
     <details>
       <summary>{visualCopy.cellParagraphFormatting}</summary>
