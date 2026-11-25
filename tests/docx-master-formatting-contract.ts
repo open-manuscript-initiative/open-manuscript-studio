@@ -473,10 +473,10 @@ function wordGap(id: string): string | undefined {
   if (id.startsWith('C')) return 'Exact direct character typography is not represented/exported yet';
   if (paragraphFormatCases[id]) return undefined;
   if (id.startsWith('P')) return 'Native paragraph layout properties are not round-tripped yet';
-  if (id.startsWith('S')) return 'Custom Word style identity and color are not round-tripped yet';
+  // S01/S02 native style assertions pass; S01 model retention is tracked separately.
   if (id.startsWith('L')) return 'Style-based native list numbering is not round-tripped yet';
   if (id === 'N05' || id === 'N06') return 'Right-to-left Word run property is not round-tripped yet';
-  if (id === 'F01' || id === 'F02') return 'Note color is not round-tripped yet';
+  // F01/F02 native note color is now a mandatory regression contract.
   if (id === 'T01') return undefined;
   if (['I01', 'E01'].includes(id)) return 'DOCX publication exporter currently emits a descriptive text fallback';
   if (['X01', 'X02', 'X03', 'X04'].includes(id)) return 'Native bookmark, field, hyperlink or section metadata is not round-tripped yet';
@@ -487,7 +487,7 @@ function modelGap(id: string): string | undefined {
   if (id.startsWith('L')) return 'Style-based numbering is currently flattened on import';
   if (id === 'S01') return 'Named Word paragraph style is not attached to the OMI block';
   if (id === 'X02') return 'REF fields are currently flattened on import';
-  if (id === 'X03') return 'Inline semantic enrichment may lose Word hyperlink anchors';
+  // X03 model retention passes; the native DOCX export assertion remains open.
   return undefined;
 }
 function todo(reason: string | undefined): string | boolean { return strict ? false : reason ?? false; }
