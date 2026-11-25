@@ -242,7 +242,7 @@ export function tableRowHeightStyle(height:OmiTableRowHeight): {height?:string} 
 }
 
 /** Cell documents support paragraphs and nested lists, with bounded list depth. */
-export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
+export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:10000}): NoteJsonNode | undefined {
   if(typeof value!=='string') return undefined;
   try {
     const root=JSON.parse(value) as NoteJsonNode;
@@ -253,6 +253,13 @@ export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
       if(node.type==='paragraph'){
         if(node.content!==undefined&&(!Array.isArray(node.content)||!node.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab'))) return false;
         paragraphs.push(node);
+        return true;
+      }
+      if(node.type==='omiCellTable'){
+        if(depth!==0||tableDepth>=MAX_NESTED_TABLE_DEPTH) return false;
+        const table=normalizeNestedCellTable(node.attrs?.table,tableDepth+1,budget);
+        if(!table) return false;
+        node.attrs={table}; delete node.content; delete node.text; delete node.marks;
         return true;
       }
       if(node.type!=='bulletList'&&node.type!=='orderedList') return false;
@@ -311,6 +318,7 @@ export function tableCellPlainText(doc:NoteJsonNode):string {
   const paragraphs:string[]=[];
   const visit=(node:NoteJsonNode)=>{
     if(node.type==='paragraph') paragraphs.push((node.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.text??'').join(''));
+    else if(node.type==='omiCellTable') {const table=node.attrs?.table as OmiTableBlockData|undefined;if(table) paragraphs.push(table.cells.map(row=>row.join('\t')).join('\n'));}
     else for(const child of node.content??[]) visit(child);
   };
   visit(doc);
@@ -356,4 +364,44 @@ export function effectiveCellParagraphAttrs(attrs:Record<string,unknown>|undefin
 export function cellDocumentWithDefaults(doc:NoteJsonNode,alignment:OmiTableCellFormat['horizontalAlign']):NoteJsonNode{
   const visit=(node:NoteJsonNode):NoteJsonNode=>node.type==='paragraph'?{...node,attrs:effectiveCellParagraphAttrs(node.attrs,alignment)}:{...node,...(node.content?{content:node.content.map(visit)}:{})};
   return visit(doc);
+}
+
+export const MAX_NESTED_TABLE_DEPTH=4;
+/** Bound recursive documents and keep only supported table fields. */
+export function normalizeNestedCellTable(value:unknown,depth=1,budget={cells:10000}):OmiTableBlockData|undefined {
+  if(depth>MAX_NESTED_TABLE_DEPTH||!value||typeof value!=='object') return undefined;
+  const raw=value as OmiTableBlockData;
+  if(raw.kind!=='table'||!Array.isArray(raw.cells)||!raw.cells.length||!Array.isArray(raw.cells[0])||!raw.cells[0].length) return undefined;
+  const width=raw.cells[0].length, count=width*raw.cells.length;
+  if(count>budget.cells||!raw.cells.every(row=>Array.isArray(row)&&row.length===width&&row.every(cell=>typeof cell==='string'))) return undefined;
+  budget.cells-=count;
+  const cells=raw.cells.map(row=>[...row]);
+  const table:OmiTableBlockData={kind:'table',cells,headerRows:tableHeaderRows(cells,raw.headerRows),rowSplitDefault:tableRowSplitDefault(raw.rowSplitDefault)};
+  if(Array.isArray(raw.columnWidths)) table.columnWidths=tableColumnWidths(cells,raw.columnWidths);
+  if(raw.fontSizeReduction===0||raw.fontSizeReduction===1) table.fontSizeReduction=raw.fontSizeReduction;
+  const formats:NonNullable<OmiTableBlockData['cellFormats']>={};
+  const content:Record<string,string>={};
+  for(let r=0;r<cells.length;r++) for(let c=0;c<width;c++){
+    const key=r+':'+c;
+    if(raw.cellFormats?.[key]) formats[key]=tableCellFormat(raw.cellFormats,r,c);
+    const source=raw.cellContent?.[key];
+    if(source!==undefined){
+      const doc=parseTableCellContent(source,depth,budget);
+      if(!doc||tableCellPlainText(doc)!==cells[r]![c]) return undefined;
+      content[key]=JSON.stringify(doc);
+    }
+  }
+  if(Object.keys(formats).length) table.cellFormats=formats;
+  if(Object.keys(content).length) table.cellContent=content;
+  const merges=tableMergeLayout(cells,raw.cellMerges,table.headerRows).merges;
+  if(merges.length) table.cellMerges=merges;
+  const overrides=pruneTableRowSplitOverrides(cells,raw.rowSplitOverrides);
+  if(Object.keys(overrides).length) table.rowSplitOverrides=overrides;
+  const heights=pruneTableRowHeights(cells,raw.rowHeights);
+  if(Object.keys(heights).length) table.rowHeights=heights;
+  if(typeof raw.caption==='string') table.caption=raw.caption;
+  return table;
+}
+export function cellNestedTable(node:NoteJsonNode):OmiTableBlockData|undefined {
+  return node.type==='omiCellTable'?normalizeNestedCellTable(node.attrs?.table):undefined;
 }
