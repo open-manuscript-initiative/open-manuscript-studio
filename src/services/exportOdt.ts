@@ -1,5 +1,5 @@
 import { normalizeListAttribute } from '../model/directListFormatting';
-import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat, TABLE_CELL_SIDES, tableRowHeight, tableCellDocument, cellDocumentWithDefaults } from '../model/tableLayout';
+import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat, TABLE_CELL_SIDES, tableRowHeight, tableCellDocument, cellDocumentWithDefaults, cellNestedTable } from '../model/tableLayout';
 import { paragraphTabs } from '../model/directParagraphFormatting';
 import { odtCharacterProperties, odtParagraphProperties, odtRunHasDirectFormatting } from './odtFormatting';
 import { directFormattingFromMarks } from '../model/directFormatting';
@@ -98,7 +98,7 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
       const cellStyle=stylesRegistry.tableCell(format);
       const paraStyle=stylesRegistry.cellParagraph(format.horizontalAlign);
       const doc=tableCellDocument(table,r,c);
-      const rich=doc?renderOdtNode(cellDocumentWithDefaults(doc,format.horizontalAlign),notes,usedNotes,stylesRegistry):undefined;
+      const rich=doc?cellDocumentWithDefaults(doc,format.horizontalAlign).content?.map((node,index)=>{const nested=cellNestedTable(node);return nested?renderBlock({...block,id:block.id+'-cell-'+r+'-'+c+'-'+index,visual:nested},notes,usedNotes,warnings,images,stylesRegistry):renderOdtNode(node,notes,usedNotes,stylesRegistry);}).join(''):undefined;
       return '<table:table-cell office:value-type="string"'+(cellStyle?' table:style-name="'+cellStyle+'"':'')+(m&&m.rowSpan>1?' table:number-rows-spanned="'+m.rowSpan+'"':'')+(m&&m.colSpan>1?' table:number-columns-spanned="'+m.colSpan+'"':'')+'>'+(rich??cell.split(/\r\n?|\n/).map(line=>'<text:p'+(paraStyle?' text:style-name="'+paraStyle+'"':'')+'>'+escape(line)+'</text:p>').join(''))+'</table:table-cell>';
     }).join('')+'</table:table-row>');
     const head=headerRows?'<table:table-header-rows>'+rows.slice(0,headerRows).join('')+'</table:table-header-rows>':'';
