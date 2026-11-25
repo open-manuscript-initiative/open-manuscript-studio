@@ -30,7 +30,7 @@ import {
   type OmiInlineRun,
   type OmiInlineSemanticKind,
 } from '../model/inlineSemantics';
-import type { OmiIndexEntry } from '../model/indexing';
+import { DEFAULT_INDEX_ID, type OmiIndexEntry, type OmiGeneratedIndex } from '../model/indexing';
 import { getNoteKind, getNoteCustomMark, isNoteAnnotation } from '../model/notes';
 import { getManuscriptFundingStatement } from '../model/semanticFields';
 import { createNoteBodyDocument, type NoteJsonNode } from '../model/noteRichText';
@@ -79,6 +79,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     : '';
   const localNoteLayout = profile.rules.notes.localNotePlacement ?? 'inline';
   const indexEntriesByBlock = collectIndexEntriesByBlock(manuscript.indexEntries ?? []);
+  const indexTypes=wordIndexTypes(manuscript,warnings);
   const annotationsById = new Map(
     manuscript.annotations.filter(isNoteAnnotation).map((annotation) => [annotation.id, annotation]),
   );
@@ -177,7 +178,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
       if (section.title.trim()) body.push(bookmarkRegistry.wrap(section.id,paragraph(heading, `Heading${level}`)));
       else if(bookmarkRegistry.has(section.id))body.push(bookmarkRegistry.wrap(section.id,paragraph('')));
       for (const block of section.blocks) {
-        const indexFields = renderWordIndexEntryFields(indexEntriesByBlock.get(block.id) ?? []);
+        const indexFields = renderWordIndexEntryFields(indexEntriesByBlock.get(block.id) ?? [],indexTypes);
         if (block.visual?.kind === 'table' && block.visual.cells.length && block.visual.cells.some(row=>row.length)) {
           if (indexFields) body.push(paragraph('', undefined, indexFields));
           if (block.visual.caption?.trim()) body.push(paragraph(block.visual.caption));
@@ -215,10 +216,13 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     });
   }
 
-  if ((manuscript.generatedIndexes?.length ?? 0) > 0 && indexEntriesByBlock.size > 0) {
-    const title = manuscript.generatedIndexes?.[0]?.title?.trim() || localizedIndexLabel(context.locale);
-    body.push(paragraph(title, 'Heading1'));
-    body.push(renderWordGeneratedIndexField(context.locale));
+  for(const index of manuscript.generatedIndexes??[]){
+    const key=index.indexId??DEFAULT_INDEX_ID;
+    if(![...indexEntriesByBlock.values()].some(entries=>entries.some(entry=>(entry.indexId??DEFAULT_INDEX_ID)===key)))continue;
+    if(key!==DEFAULT_INDEX_ID&&!indexTypes.has(key))continue;
+    const title=index.title?.trim()||manuscript.indexDefinitions?.find(d=>d.id===key)?.title||localizedIndexLabel(context.locale);
+    body.push(paragraph(title));
+    body.push(renderWordGeneratedIndexField(context.locale,index,indexTypes.get(key)));
   }
 
   if(fundingStatement){
@@ -738,17 +742,39 @@ function collectIndexEntriesByBlock(entries: readonly OmiIndexEntry[]): Map<stri
   return result;
 }
 
-export function renderWordIndexEntryFields(entries: readonly OmiIndexEntry[]): string {
+/** Word has one-character index type selectors; reserve I for the default. */
+function wordIndexTypes(manuscript:OmiManuscript,warnings:string[]):Map<string,string>{
+  const result=new Map<string,string>(),used=new Set(['I']);
+  const keys=new Set([...(manuscript.indexDefinitions??[]).map(d=>d.id),...(manuscript.indexEntries??[]).map(e=>e.indexId),...(manuscript.generatedIndexes??[]).map(e=>e.indexId)].filter((id):id is string=>Boolean(id&&id!==DEFAULT_INDEX_ID)));
+  for(const key of keys){
+    const original=manuscript.indexDefinitions?.find(d=>d.id===key)?.wordType?.toUpperCase();
+    if(original&&/^[A-Z]$/.test(original)&&!used.has(original)){result.set(key,original);used.add(original);}
+  }
+  for(const key of keys){
+    if(result.has(key))continue;
+    const type=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].find(letter=>!used.has(letter));
+    if(!type){warnings.push('Word index type capacity exceeded; extra index fields omitted.');continue;}
+    result.set(key,type);used.add(type);
+  }
+  return result;
+}
+
+export function renderWordIndexEntryFields(entries: readonly OmiIndexEntry[],types?:ReadonlyMap<string,string>): string {
   return entries.map((entry) => {
-    const term = entry.terms.map((item) => item.trim()).filter(Boolean).join(':');
-    if (!term) return '';
-    const instruction = ` XE "${escapeWordFieldTerm(term)}" `;
+    const term=entry.terms.map(item=>item.trim()).filter(Boolean).map(item=>escapeWordFieldTerm(item).replace(/:/g,'\\:')).join(':');
+    if(!term)return '';
+    const type=types?.get(entry.indexId??DEFAULT_INDEX_ID);
+    if(types&&entry.indexId&&entry.indexId!==DEFAULT_INDEX_ID&&!type)return '';
+    const instruction=' XE "'+term+'"'+(type?' \\f "'+type+'"':'')+(entry.sortKey?' \\y "'+escapeWordFieldTerm(entry.sortKey)+'"':'')+' ';
+    if(entry.source?.fieldForm==='simple')return '<w:fldSimple w:instr="'+xml(instruction)+'"/>';
     return `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve">${xml(instruction)}</w:instrText></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>`;
   }).join('');
 }
 
-export function renderWordGeneratedIndexField(locale = 'en'): string {
-  const instruction = ' INDEX ';
+export function renderWordGeneratedIndexField(locale = 'en',index?:OmiGeneratedIndex,type?:string): string {
+  const columns=index?.wordColumns;
+  const instruction=' INDEX'+(type&&/^[A-Z]$/.test(type)?' \\f "'+type+'"':'')+(typeof columns==='number'&&Number.isInteger(columns)&&columns>=1&&columns<=4?' \\c "'+columns+'"':'')+' ';
+  if(index?.source?.fieldForm==='simple')return '<w:p><w:fldSimple w:instr="'+xml(instruction)+'" w:dirty="true"><w:r><w:t/></w:r></w:fldSimple></w:p>';
   const placeholder = locale.toLowerCase().startsWith('hu')
     ? 'A névmutató oldalszámai a dokumentum megnyitásakor frissülnek.'
     : locale.toLowerCase().startsWith('de')
