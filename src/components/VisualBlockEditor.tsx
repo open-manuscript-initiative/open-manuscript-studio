@@ -449,7 +449,7 @@ function EditableGrid({
                         onFocus={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
                         onClick={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
                       >
-                        {richHtml!==undefined ? <div className="omi-table-cell-text omi-table-rich-preview" dir={format.textDirection} style={{...tableCellTextStyle(format.textRotation),textAlign:format.horizontalAlign??'start'}} dangerouslySetInnerHTML={{__html:richHtml}}/> : showText ? (
+                        {richHtml!==undefined ? <div className="omi-table-cell-text omi-table-rich-preview" dir={format.textDirection} data-text-rotation={format.textRotation} style={{...tableCellTextStyle(format.textRotation),textAlign:format.horizontalAlign??'start'}} dangerouslySetInnerHTML={{__html:richHtml}}/> : showText ? (
                           <span className="omi-table-cell-text" dir={format.textDirection} data-text-rotation={format.textRotation} style={{...tableCellTextStyle(format.textRotation),...(format.horizontalAlign?{textAlign:format.horizontalAlign,...(format.textRotation===0?{width:'100%'}:{})}:{})}}>{cell || '\u00a0'}</span>
                         ) : <textarea
                           rows={1}
@@ -584,7 +584,7 @@ function EditableGrid({
             })}
           </details>
           <small>{copy.mergeHint}</small>
-          <details>
+          <details open>
             <summary>{copy.editCellText}</summary>
             <RichCellEditor key={selectedRow+':'+selectedColumn} doc={selectedDoc??plainTableCellDocument(cells[selectedRow]?.[selectedColumn]??'')} label={copy.editCellText} onChange={doc=>{
               const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(doc));
