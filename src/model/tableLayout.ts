@@ -271,7 +271,7 @@ export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
           }
           if(name==='omiSourceFont'){
             const family=mark.attrs?.family;
-            return typeof family==='string'&&family.length<=128&&/^[^\x00-\x1f\x7f;{}<>]+$/.test(family)?[{type:name,attrs:{family}}]:[];
+            return typeof family==='string'&&family.length>0&&family.length<=128&&Array.from(family).every(character=>{const code=character.charCodeAt(0);return code>=32&&code!==127&&!';{}<>'.includes(character);})?[{type:name,attrs:{family}}]:[];
           }
           return [];
         });
