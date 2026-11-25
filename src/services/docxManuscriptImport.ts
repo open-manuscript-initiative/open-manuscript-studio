@@ -1,6 +1,7 @@
 import { tableCellPlainText, normalizeCellParagraphAttrs, tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight, MAX_NESTED_TABLE_DEPTH, parseTableCellContent } from '../model/tableLayout';
 import { importedSourceStyle, type SourceStyle } from '../model/sourceWordStyles';
 import { normalizeListAttribute } from '../model/directListFormatting';
+import { readWordHyphenationSettings, type WordHyphenationSettings } from '../model/wordHyphenation';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
 import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
@@ -119,6 +120,7 @@ interface FieldState {
 }
 
 export interface DocxManuscriptImportPlan {
+  wordHyphenation?:WordHyphenationSettings;
   fileName: string;
   title: string;
   titleSource: 'core-properties' | 'title-style' | 'filename';
@@ -148,6 +150,7 @@ export async function parseDocxManuscript(
   }
 
   const archive = new DocxZipArchive(await file.arrayBuffer());
+  const wordHyphenation=await readHyphenationArchive(archive);
   if (!archive.has('word/document.xml')) {
     throw new Error('The DOCX file does not contain word/document.xml.');
   }
@@ -510,6 +513,7 @@ export async function parseDocxManuscript(
 
   return {
     fileName: file.name,
+    ...(wordHyphenation?{wordHyphenation}:{}),
     title,
     titleSource,
     locale: normalizeInlineLanguageTag(core.language),
@@ -524,6 +528,18 @@ export async function parseDocxManuscript(
     stats,
     warnings: deduplicateWarnings(warnings),
   };
+}
+
+async function readHyphenationArchive(archive:DocxZipArchive):Promise<WordHyphenationSettings|undefined>{
+  if(!archive.has('word/settings.xml'))return undefined;
+  const doc=parseXml(await archive.text('word/settings.xml'));
+  const root=doc.documentElement;
+  if(root.localName!=='settings')return undefined;
+  const find=(name:string)=>directChildrenByLocalName(root,name)[0];
+  return readWordHyphenationSettings(name=>{const node=find(name);return node?attributeByLocalName(node,'val'):undefined;},name=>Boolean(find(name)));
+}
+export async function readDocxHyphenation(file:File):Promise<WordHyphenationSettings|undefined>{
+  return readHyphenationArchive(new DocxZipArchive(await file.arrayBuffer()));
 }
 
 function ensureSection(sections: OmiSection[]): OmiSection {
