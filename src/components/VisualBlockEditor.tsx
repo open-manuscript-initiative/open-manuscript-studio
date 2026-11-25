@@ -1,4 +1,4 @@
-import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
+import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tiptap/react';
 import { generateHTML } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
@@ -303,7 +303,7 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
   const {locale}=useTranslation();
   const copy=getRichTextCopy(locale);
   const change=useRef(onChange);change.current=onChange;
-  const editor=useEditor({extensions:cellExtensions(),content:doc,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
+  const editor=useEditor({extensions:cellExtensions(),content:doc as JSONContent,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
     const parsed=parseTableCellContent(JSON.stringify(current.getJSON()));
     if(parsed) change.current(parsed);
   }});
@@ -323,7 +323,7 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
   </div>;
 }
 function richCellPreview(doc:NoteJsonNode):string|undefined{
-  try{return generateHTML(doc,cellExtensions());}catch{return undefined;}
+  try{return generateHTML(doc as JSONContent,cellExtensions());}catch{return undefined;}
 }
 
 function EditableGrid({
