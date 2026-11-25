@@ -336,3 +336,31 @@ test('publication table bindings refresh named styles without touching unrelated
   assert.equal(detached.cellFormats,refreshed.cellFormats);
   assert.equal(refreshPublicationTableStyle(refreshed,next,removePublicationTablePreset(next,'banded')).publicationTableStyle,undefined);
 });
+
+test('editing the working publication catalog updates bound tables in the portable revision',async()=>{
+  const {BUILTIN_TABLE_STYLES,bindPublicationTableStyle,normalizePublicationTableStyles}=await import('../src/model/tableAppearancePresets.ts');
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {stageInsertBlocks}=await import('../src/app/visualBlockActions.ts');
+  const previous=useStudioStore.getState();
+  try{
+    const manuscript=createBlankManuscript({kind:'volume',publicationKind:'volume',title:'Live table styles'});
+    useStudioStore.getState().loadManuscript(manuscript);
+    const initial={...clonePublicationStyleTemplate(),tableStyles:normalizePublicationTableStyles({items:[BUILTIN_TABLE_STYLES.banded],defaultTableStyle:'banded'})};
+    stageAppliedPublicationStyle(initial);
+    const block=createTableBlock([['Header'],['Body']],{headerRows:1});
+    assert.ok(block.visual?.kind==='table');
+    block.visual=bindPublicationTableStyle(block.visual,initial.tableStyles,'banded');
+    const sectionId=useStudioStore.getState().manuscript.sections[0]!.id;
+    assert.equal(stageInsertBlocks(sectionId,0,[block]),true);
+    const changed={...initial,tableStyles:normalizePublicationTableStyles({items:[{...BUILTIN_TABLE_STYLES.banded,header:{backgroundColor:'#123456'}}],defaultTableStyle:'banded'})};
+    stageAppliedPublicationStyle(changed);
+    useStudioStore.getState().checkpoint('manual');
+    const reopened=parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    const visual=reopened.sections.flatMap(section=>section.blocks).find(candidate=>candidate.id===block.id)?.visual;
+    assert.ok(visual?.kind==='table');
+    assert.equal(visual.publicationTableStyle,'banded');
+    assert.equal(visual.cellFormats?.['0:0']?.backgroundColor,'#123456');
+    assert.deepEqual(visual.cells,[['Header'],['Body']]);
+    assert.ok(reopened.revisionHistory.revisions.every(revision=>inspectRevisionStateIntegrity(revision).status!=='mismatch'));
+  }finally{useStudioStore.setState(previous,true);}
+});
