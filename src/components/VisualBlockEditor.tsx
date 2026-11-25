@@ -7,6 +7,10 @@ import {
   BarChart3,
   FileText,
   Plus,
+  Merge,
+  Split,
+  ArrowDown,
+  ArrowRight,
   Trash2,
 } from 'lucide-react';
 
@@ -39,7 +43,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -300,8 +304,15 @@ function EditableGrid({
   const cells = data.cells;
   const previewOnly = useContext(PublicationPreviewContext);
   const [selection, setSelection] = useState({ row: 0, column: 0 });
-  const selectedRow = Math.max(0, Math.min(Math.trunc(selection.row), cells.length - 1));
-  const selectedColumn = Math.max(0, Math.min(Math.trunc(selection.column), (cells[selectedRow]?.length ?? 1) - 1));
+  const rawRow = Math.max(0, Math.min(Math.trunc(selection.row), cells.length - 1));
+  const rawColumn = Math.max(0, Math.min(Math.trunc(selection.column), (cells[rawRow]?.length ?? 1) - 1));
+  const headerCount = data.kind==='table' ? tableHeaderRows(cells,data.headerRows) : 0;
+  const mergeLayout = tableMergeLayout(cells,data.kind==='table'?data.cellMerges:undefined,headerCount);
+  const selectedMerge=mergeLayout.at(rawRow,rawColumn);
+  const selectedRow=selectedMerge?.row??rawRow;
+  const selectedColumn=selectedMerge?.column??rawColumn;
+  const mergeRight=extendTableMerge(cells,mergeLayout.merges,selectedRow,selectedColumn,'right',headerCount);
+  const mergeDown=extendTableMerge(cells,mergeLayout.merges,selectedRow,selectedColumn,'down',headerCount);
   const cellFormats = data.kind === 'table' ? data.cellFormats : undefined;
   const selectedFormat = tableCellFormat(cellFormats, selectedRow, selectedColumn);
   const columnWidths = data.kind === 'table' ? data.columnWidths : undefined;
@@ -321,7 +332,7 @@ function EditableGrid({
 
   function updateColumns(nextCells: string[][], nextWidths: number[]): void {
     onChange(data.kind === 'table'
-      ? { ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellFormats: pruneTableCellFormats(nextCells, cellFormats) }
+      ? { ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellMerges: tableMergeLayout(nextCells,data.cellMerges,headerCount).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) }
       : { ...data, cells: nextCells });
   }
 
@@ -366,12 +377,14 @@ function EditableGrid({
                 ))}
                 <tr key={rowIndex} style={continuationStyle(rowIndex)}>
                   {row.map((cell, columnIndex) => {
+                    if(mergeLayout.covered(rowIndex,columnIndex)) return null;
+                    const merge=mergeLayout.at(rowIndex,columnIndex);
                     const Cell = data.kind === 'table' && rowIndex < tableHeaderRows(cells, data.headerRows) ? 'th' : 'td';
                     const format = tableCellFormat(cellFormats, rowIndex, columnIndex);
                     const showText = previewOnly || format.textRotation !== 0;
                     return (
-                      <Cell key={columnIndex}
-                        data-cell-selected={!previewOnly && selection.row === rowIndex && selection.column === columnIndex ? 'true' : undefined}
+                      <Cell key={columnIndex} rowSpan={merge?.rowSpan} colSpan={merge?.colSpan}
+                        data-cell-selected={!previewOnly && selectedRow === rowIndex && selectedColumn === columnIndex ? 'true' : undefined}
                         tabIndex={!previewOnly && showText ? 0 : undefined}
                         onFocus={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
                         onClick={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
@@ -390,7 +403,7 @@ function EditableGrid({
                             })
                           }
                         />}
-                        {!previewOnly && data.kind === 'table' && rowIndex === 0 && columnIndex < widths.length - 1 ? (
+                        {!previewOnly && data.kind === 'table' && rowIndex === 0 && !merge && columnIndex < widths.length - 1 ? (
                           <span
                             className="omi-table-column-resize"
                             role="separator"
@@ -444,7 +457,7 @@ function EditableGrid({
         </button>
         <button type="button" onClick={() => {
           const nextCells = removeTableRow(cells, cells.length - 1);
-          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
+          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
         }}>
           {copy.removeRow}
         </button>
@@ -465,13 +478,19 @@ function EditableGrid({
               <option value="auto">{copy.directionAuto}</option><option value="ltr">{copy.directionLtr}</option><option value="rtl">{copy.directionRtl}</option>
             </select></label>
           </div>
+          <div className="omi-table-actions">
+            <button type="button" disabled={!mergeRight} onClick={()=>{if(mergeRight) onChange({...data,cellMerges:mergeRight});}} title={copy.mergeRight}><Merge size={14} aria-hidden="true"/><ArrowRight size={12} aria-hidden="true"/>{copy.mergeRight}</button>
+            <button type="button" disabled={!mergeDown} onClick={()=>{if(mergeDown) onChange({...data,cellMerges:mergeDown});}} title={copy.mergeDown}><Merge size={14} aria-hidden="true"/><ArrowDown size={12} aria-hidden="true"/>{copy.mergeDown}</button>
+            <button type="button" disabled={!selectedMerge} onClick={()=>onChange({...data,cellMerges:splitTableMerge(cells,data.cellMerges,selectedRow,selectedColumn,headerCount)})}><Split size={14} aria-hidden="true"/>{copy.splitCell}</button>
+          </div>
+          <small>{copy.mergeHint}</small>
           {selectedFormat.textRotation !== 0 ? <label className="omi-table-cell-text-editor"><span>{copy.editCellText}</span><textarea rows={2} dir={selectedFormat.textDirection} value={cells[selectedRow]?.[selectedColumn] ?? ''} onChange={(event) => onChange({ ...data, cells: updateTableCell(cells, selectedRow, selectedColumn, event.target.value) })} /></label> : null}
         </details>
       ) : null}
       {data.kind === 'table' ? (
         <label className="omi-table-font-size" style={continuationStyle(cells.length)}>
           <span>{copy.tableHeaderRows}</span>
-          <input type="number" min={0} max={cells.length} step={1} value={tableHeaderRows(cells,data.headerRows)} onChange={event=>onChange({...data,headerRows:tableHeaderRows(cells,event.target.valueAsNumber)})} />
+          <input type="number" min={0} max={cells.length} step={1} value={tableHeaderRows(cells,data.headerRows)} onChange={event=>{const headerRows=tableHeaderRows(cells,event.target.valueAsNumber); if(tableMergeLayout(cells,data.cellMerges,headerRows).merges.length===mergeLayout.merges.length) onChange({...data,headerRows});}} />
         </label>
       ) : null}
       {data.kind === 'table' ? (

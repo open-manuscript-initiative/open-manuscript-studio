@@ -55,6 +55,10 @@ export interface VisualElementsCopy {
   mobilePreviewNote: string;
   tableFontSize: string;
   tableHeaderRows: string;
+  mergeRight: string;
+  mergeDown: string;
+  splitCell: string;
+  mergeHint: string;
   bodyFontSize: string;
   smallerFontSize: string;
   resizeColumn: string;
@@ -77,6 +81,7 @@ export interface VisualElementsCopy {
 const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   en: {
     cellFormatting: 'Cell formatting', cellRow: 'Cell row', cellColumn: 'Cell column', textRotation: 'Text rotation', rotationNone: 'No rotation', rotationClockwise: '90° clockwise', rotationCounterclockwise: '90° counterclockwise', rotationUpsideDown: '180° upside down', textDirection: 'Writing direction', directionAuto: 'Automatic', directionLtr: 'Left to right', directionRtl: 'Right to left', editCellText: 'Selected cell text', mobilePreviewNote: 'Mobile shows the current publication layout. Full editing is available on a desktop.',
+    mergeRight: "Merge right", mergeDown: "Merge down", splitCell: "Split cell", mergeHint: "Only empty adjacent cells can be merged; split first to change a conflicting header boundary.",
     tableHeaderRows: 'Repeating header rows', tableFontSize: 'Table font size', bodyFontSize: 'Same as body text', smallerFontSize: 'Body text − 1 pt', resizeColumn: 'Resize column', cell: 'Cell',
     insertMenu: 'Insert', insertElement: 'Insert element', image: 'Image', textBox: 'Text box', table: 'Table', chart: 'Chart', equation: 'Equation', musicScore: 'Music score', import: 'Import',
     paste: 'Paste from Word / Excel', pasteHint: 'Paste a table, image or equation here from Word, Excel or another application.',
@@ -89,6 +94,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   },
   hu: {
     cellFormatting: 'Cellaformázás', cellRow: 'Cella sora', cellColumn: 'Cella oszlopa', textRotation: 'Szöveg elforgatása', rotationNone: 'Nincs elforgatás', rotationClockwise: '90° jobbra', rotationCounterclockwise: '90° balra', rotationUpsideDown: '180° fejjel lefelé', textDirection: 'Írásirány', directionAuto: 'Automatikus', directionLtr: 'Balról jobbra', directionRtl: 'Jobbról balra', editCellText: 'Kijelölt cella szövege', mobilePreviewNote: 'Mobilon a kiadvány aktuális elrendezése tekinthető meg. A teljes szerkesztés asztali gépen érhető el.',
+    mergeRight: "Egyesítés jobbra", mergeDown: "Egyesítés lefelé", splitCell: "Cella szétválasztása", mergeHint: "Csak üres szomszédos cellák egyesíthetők; a fejléc határának módosítása előtt válassza szét az érintett cellát.",
     tableHeaderRows: 'Ismétlődő fejlécsorok', tableFontSize: 'Táblázat betűmérete', bodyFontSize: 'Törzsszöveggel azonos', smallerFontSize: 'Törzsszöveg − 1 pt', resizeColumn: 'Oszlop átméretezése', cell: 'Cella',
     insertMenu: 'Beszúrás', insertElement: 'Elem beszúrása', image: 'Kép', textBox: 'Szövegdoboz', table: 'Táblázat', chart: 'Grafikon', equation: 'Egyenlet', musicScore: 'Kotta', import: 'Importálás',
     paste: 'Beillesztés Wordből / Excelből', pasteHint: 'Illesszen be ide táblázatot, képet vagy egyenletet Wordből, Excelből vagy más alkalmazásból.',
@@ -101,6 +107,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   },
   de: {
     cellFormatting: 'Zellformatierung', cellRow: 'Zellzeile', cellColumn: 'Zellspalte', textRotation: 'Textdrehung', rotationNone: 'Keine Drehung', rotationClockwise: '90° im Uhrzeigersinn', rotationCounterclockwise: '90° gegen den Uhrzeigersinn', rotationUpsideDown: '180° auf dem Kopf', textDirection: 'Schreibrichtung', directionAuto: 'Automatisch', directionLtr: 'Links nach rechts', directionRtl: 'Rechts nach links', editCellText: 'Text der ausgewählten Zelle', mobilePreviewNote: 'Mobil wird das aktuelle Publikationslayout angezeigt. Die vollständige Bearbeitung ist am Desktop verfügbar.',
+    mergeRight: "Nach rechts verbinden", mergeDown: "Nach unten verbinden", splitCell: "Zelle teilen", mergeHint: "Nur leere Nachbarzellen können verbunden werden; vor einer Änderung der Kopfzeilengrenze die betroffene Zelle teilen.",
     tableHeaderRows: 'Wiederholte Kopfzeilen', tableFontSize: 'Tabellenschriftgröße', bodyFontSize: 'Wie Fließtext', smallerFontSize: 'Fließtext − 1 pt', resizeColumn: 'Spaltenbreite ändern', cell: 'Zelle',
     insertMenu: 'Einfügen', insertElement: 'Element einfügen', image: 'Bild', textBox: 'Textfeld', table: 'Tabelle', chart: 'Diagramm', equation: 'Gleichung', musicScore: 'Notensatz', import: 'Importieren',
     paste: 'Aus Word / Excel einfügen', pasteHint: 'Fügen Sie hier eine Tabelle, ein Bild oder eine Gleichung aus Word, Excel oder einer anderen Anwendung ein.',
@@ -119,5 +126,13 @@ export function getVisualElementsCopy(locale: string): VisualElementsCopy {
     COPY[language === 'hu' || language === 'de' ? language : 'en'];
   const translated = applyReturnedSupplementalOverlay(locale, 'visualElements', current, COPY.en);
   const additionalHeaders: Record<string,string> = {fr:'Lignes d’en-tête répétées',it:'Righe di intestazione ripetute',es:'Filas de encabezado repetidas',nl:'Herhaalde koprijen',pl:'Powtarzane wiersze nagłówka'};
-  return {...translated,tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows};
+  const mergeCopies: Record<string,[string,string,string,string]> = {
+    fr:['Fusionner à droite','Fusionner vers le bas','Scinder la cellule','Seules les cellules adjacentes vides peuvent être fusionnées ; scinder avant de modifier une limite d’en-tête.'],
+    it:['Unisci a destra','Unisci in basso','Dividi cella','Si possono unire solo celle adiacenti vuote; dividere prima di modificare il limite dell’intestazione.'],
+    es:['Combinar a la derecha','Combinar hacia abajo','Dividir celda','Solo se pueden combinar celdas adyacentes vacías; dividir antes de cambiar el límite del encabezado.'],
+    nl:['Rechts samenvoegen','Omlaag samenvoegen','Cel splitsen','Alleen lege aangrenzende cellen kunnen worden samengevoegd; splits vóór het wijzigen van een koprijgrens.'],
+    pl:['Scal w prawo','Scal w dół','Podziel komórkę','Można scalać tylko puste sąsiednie komórki; przed zmianą granicy nagłówka należy podzielić komórkę.'],
+  };
+  const merge=mergeCopies[language];
+  return {...translated,tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
 }

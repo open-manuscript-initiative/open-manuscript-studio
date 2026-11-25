@@ -1,3 +1,4 @@
+import { tableMergeLayout, tableHeaderRows } from '../model/tableLayout';
 import { visualTextBoxText, visualTextBoxDiagnostics } from '../model/textBoxes';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -814,14 +815,19 @@ function renderTable(block: OmiBlock, state: RenderState): string {
   const target = state.targetMap.get(block.id);
   const label = target ? objectLabel(target, state) : '';
   const caption = block.visual.caption?.trim();
-  const headerRows = Math.max(0, block.visual.headerRows ?? 0);
+  const headerRows = tableHeaderRows(block.visual.cells,block.visual.headerRows);
+  const layout = tableMergeLayout(block.visual.cells,block.visual.cellMerges,headerRows);
   const head = block.visual.cells.slice(0, headerRows);
   const body = block.visual.cells.slice(headerRows);
-  const renderRow = (row: string[], cellTag: 'th' | 'td') =>
-    `<tr>${row.map((cell) => `<${cellTag}>${escapeXml(cell)}</${cellTag}>`).join('')}</tr>`;
+  const renderRow = (row: string[], cellTag: 'th' | 'td',r:number) =>
+    '<tr>'+row.map((cell,c)=>{
+      if(layout.covered(r,c)) return '';
+      const m=layout.at(r,c);
+      return '<'+cellTag+(m && m.rowSpan>1?' rowspan="'+m.rowSpan+'"':'')+(m && m.colSpan>1?' colspan="'+m.colSpan+'"':'')+'>'+escapeXml(cell)+'</'+cellTag+'>';
+    }).join('')+'</tr>';
   const table = `<table>${
-    head.length ? `<thead>${head.map((row) => renderRow(row, 'th')).join('')}</thead>` : ''
-  }${body.length ? `<tbody>${body.map((row) => renderRow(row, 'td')).join('')}</tbody>` : ''}</table>`;
+    head.length ? `<thead>${head.map((row,r) => renderRow(row, 'th',r)).join('')}</thead>` : ''
+  }${body.length ? `<tbody>${body.map((row,r) => renderRow(row, 'td',r+headerRows)).join('')}</tbody>` : ''}</table>`;
 
   return `<table-wrap id="${xmlId('tbl', block.id)}">${
     label ? `<label>${escapeXml(label)}</label>` : ''

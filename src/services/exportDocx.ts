@@ -1,4 +1,4 @@
-import { tableCellFormat, tableColumnWidths, tableHeaderRows } from '../model/tableLayout';
+import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
@@ -303,13 +303,21 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
 function wordTable(table: OmiTableBlockData, warnings: string[]): string {
   const widths = tableColumnWidths(table.cells, table.columnWidths).map(percent=>Math.max(1,Math.round(percent*9026/100)));
   const headerRows = tableHeaderRows(table.cells, table.headerRows);
+  const layout = tableMergeLayout(table.cells,table.cellMerges,headerRows);
   let partial = false;
   const rows = table.cells.map((row,r)=>{
     const cells = widths.map((width,c)=>{
-      const format = tableCellFormat(table.cellFormats,r,c);
+      const merge=layout.at(r,c);
+      if(merge && c!==merge.column) return '';
+      const continuing=!!merge && r!==merge.row;
+      const cellWidth=merge?widths.slice(c,c+merge.colSpan).reduce((sum,w)=>sum+w,0):width;
+      const format = tableCellFormat(table.cellFormats,merge?.row??r,c);
       const rotation = format.textRotation === -90 ? 'btLr' : format.textRotation === 90 ? 'tbRl' : undefined;
       if (format.textRotation === 180 || format.textDirection !== 'auto') partial = true;
-      const properties = '<w:tcW w:w="'+width+'" w:type="dxa"/>' + (rotation ? '<w:textDirection w:val="'+rotation+'"/>' : '');
+      const properties = '<w:tcW w:w="'+cellWidth+'" w:type="dxa"/>'
+        + (merge && merge.colSpan>1?'<w:gridSpan w:val="'+merge.colSpan+'"/>':'')
+        + (merge && merge.rowSpan>1?'<w:vMerge w:val="'+(continuing?'continue':'restart')+'"/>':'')
+        + (rotation ? '<w:textDirection w:val="'+rotation+'"/>' : '');
       const content = (row[c] ?? '').split(/\r\n?|\n/).map(line=>{
         const runs = line.split('\t').map(part=>wordStyledText(part)).join('<w:r><w:tab/></w:r>');
         return '<w:p>'+runs+'</w:p>';

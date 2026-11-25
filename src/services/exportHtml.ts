@@ -8,7 +8,7 @@ import { publicationSpineWidth } from '../model/publicationSpine';
 import { matterFrameBoxStyle, matterImageStyle, type PublicationMatterFrame } from '../model/publicationMatterFrames';
 import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 import { renderTextBoxGraphic, visualTextBoxDiagnostics } from '../model/textBoxes';
-import { tableCellFormat, tableCellTextStyle, tableColumnWidths } from '../model/tableLayout';
+import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout } from '../model/tableLayout';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -595,18 +595,24 @@ function renderTable(block: OmiBlock, state: RenderState): string {
     return `<span class="omi-table-cell-text" dir="${format.textDirection}" data-text-rotation="${format.textRotation}" style="${css}">${text}</span>`;
   };
   const headerRows = Math.max(0, Math.min(visual.headerRows ?? 0, visual.cells.length));
+  const layout=tableMergeLayout(visual.cells,visual.cellMerges,headerRows);
+  const renderCell=(cell:string,r:number,c:number,tag:'td'|'th')=>{
+    if(layout.covered(r,c)) return '';
+    const m=layout.at(r,c);
+    return '<'+tag+(tag==='th'?' scope="'+(m && m.colSpan>1?'colgroup':'col')+'"':'')+(m && m.rowSpan>1?' rowspan="'+m.rowSpan+'"':'')+(m && m.colSpan>1?' colspan="'+m.colSpan+'"':'')+'>'+renderCellText(cell,r,c)+'</'+tag+'>';
+  };
   const header = headerRows
     ? `<thead>${visual.cells
         .slice(0, headerRows)
         .map(
           (row, rowIndex) =>
-            `<tr>${row.map((cell, columnIndex) => `<th scope="col">${renderCellText(cell, rowIndex, columnIndex)}</th>`).join('')}</tr>`,
+            `<tr>${row.map((cell, columnIndex) => renderCell(cell,rowIndex,columnIndex,'th')).join('')}</tr>`,
         )
         .join('')}</thead>`
     : '';
   const bodyRows = visual.cells.slice(headerRows);
   const body = `<tbody>${bodyRows
-    .map((row, rowIndex) => `<tr>${row.map((cell, columnIndex) => `<td>${renderCellText(cell, rowIndex + headerRows, columnIndex)}</td>`).join('')}</tr>`)
+    .map((row, rowIndex) => `<tr>${row.map((cell, columnIndex) => renderCell(cell,rowIndex+headerRows,columnIndex,'td')).join('')}</tr>`)
     .join('')}</tbody>`;
   const widths = tableColumnWidths(visual.cells, visual.columnWidths);
   const columns = `<colgroup>${widths.map((width) => `<col style="width:${width}%">`).join('')}</colgroup>`;

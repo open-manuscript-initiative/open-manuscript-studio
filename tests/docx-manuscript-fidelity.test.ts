@@ -978,3 +978,35 @@ test('DOCX roundtrip retains consecutive header rows, explicit off and both quar
   const reopened=await parseDocxForStudio(new File([new Uint8Array(exported.bytes)],'native-table.docx'));
   inspect(reopened.sections);
 });
+
+test('native rectangular merged cells survive DOCX reopening without duplicating text', async () => {
+  const tc=(text:string,props='')=>'<w:tc><w:tcPr>'+props+'</w:tcPr><w:p><w:r><w:t>'+text+'</w:t></w:r></w:p></w:tc>';
+  const row=(cells:string)=>'<w:tr>'+cells+'</w:tr>';
+  const span='<w:gridSpan w:val="2"/>';
+  const source=makeDocx('<w:p><w:r><w:t>Merge specimen</w:t></w:r></w:p><w:tbl>'
+    +row(tc('Anchor',span+'<w:vMerge w:val="restart"/>')+tc('A'))
+    +row(tc('',span+'<w:vMerge/>')+tc('B'))+'</w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cellMerges,[{row:0,column:0,rowSpan:2,colSpan:2}]);
+    assert.deepEqual(v.cells,[['Anchor','','A'],['','','B']]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Merged cells'}),sections:plan.sections};
+  const output=buildDocxExport(manuscript);
+  const parts=readZipParts(output.bytes);
+  const doc=new XmlDomParser().parseFromString(parts.get('word/document.xml')!.toString('utf8'),'application/xml');
+  const table=doc.getElementsByTagName('w:tbl').item(0);
+  assert.ok(table);
+  assert.equal(table.getElementsByTagName('w:tc').length,4);
+  assert.equal(table.getElementsByTagName('w:gridSpan').length,2);
+  assert.equal(table.getElementsByTagName('w:vMerge').length,2);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(output.bytes)],'merged.docx'))).sections);
+  const odtResult=buildOdtExport(manuscript);
+  const odt=readZipParts(odtResult.bytes).get('content.xml')!.toString('utf8');
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odtResult.bytes)],'merged.odt'))).sections);
+  assert.match(odt,/table:number-rows-spanned="2" table:number-columns-spanned="2"/);
+  assert.equal((odt.match(/<table:covered-table-cell\/>/g)??[]).length,3);
+});

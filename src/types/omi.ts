@@ -396,6 +396,13 @@ export interface OmiTableCellFormat {
   textDirection?: 'auto' | 'ltr' | 'rtl';
 }
 
+export interface OmiTableCellMerge {
+  row: number;
+  column: number;
+  rowSpan: number;
+  colSpan: number;
+}
+
 export interface OmiTableBlockData {
   kind: 'table';
   /** Rectangular cell matrix. Cell text is scholarly data, not presentation HTML. */
@@ -407,6 +414,8 @@ export interface OmiTableBlockData {
   fontSizeReduction?: 0 | 1;
   /** Sparse cell formatting, keyed by zero-based row:column coordinates. */
   cellFormats?: Record<string, OmiTableCellFormat>;
+  /** Merged rectangles; covered matrix positions must remain empty. */
+  cellMerges?: OmiTableCellMerge[];
   caption?: string;
   provenance?: OmiImportProvenance;
 }
