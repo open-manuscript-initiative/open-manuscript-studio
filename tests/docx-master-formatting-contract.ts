@@ -483,14 +483,14 @@ function wordGap(id: string): string | undefined {
   // F01/F02 native note color is now a mandatory regression contract.
   if (id === 'T01') return undefined;
   if (['I01', 'E01'].includes(id)) return 'DOCX publication exporter currently emits a descriptive text fallback';
-  if (id === 'X02') return 'Native REF field is not round-tripped in the master specimen yet';
+  // X02 partial bookmark REF is now a required native regression contract.
   return undefined;
 }
 function modelGap(id: string): string | undefined {
   if (id === 'R01' || id === 'R02') return 'Word review metadata is not imported as editable OMI review objects yet';
   // L01–L05 model retention is now mandatory.
   // S01 checks the portable source style bundle, not the unrelated publisher style ID.
-  if (id === 'X02') return 'REF fields are currently flattened on import';
+  // X02 semantic REF retention is now mandatory.
   // X01, X03 and X04 native assertions are mandatory after #1033.
   return undefined;
 }
