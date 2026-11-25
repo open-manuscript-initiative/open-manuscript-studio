@@ -10,6 +10,7 @@ figure.scholarly-table, .scholarly-table table {
 .scholarly-table th, .scholarly-table td {
   min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; vertical-align: top;
 }
+.scholarly-table td p, .scholarly-table th p { margin: 0; }
 .scholarly-table thead { display: table-header-group; break-inside: avoid; }
 .scholarly-table tbody { break-inside: auto; page-break-inside: auto; }
 .scholarly-table tr { break-inside: avoid; page-break-inside: avoid; }
