@@ -2,7 +2,7 @@ import { normalizeListAttribute } from '../model/directListFormatting';
 import { normalizeSourceStyle, sourceStyleBundle } from '../model/sourceWordStyles';
 import type { Editor } from '@tiptap/core';
 import { EyeOff, Unlink, RotateCcw, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { normalizeParagraphValue, paragraphBorders, paragraphTabs, BORDER_SIDES, type ParagraphFormat, type ParagraphBorder, type ParagraphTab } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
 import { getRichTextCopy } from '../i18n/richText';
@@ -56,7 +56,8 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
   const current = paragraph ? selectedParagraphValue(editor, name) : selectedValue(editor, name, attribute);
   const [draft, setDraft] = useState(current.value || defaultValue || '');
   const [editing, setEditing] = useState(false);
-  const value = editing ? draft : current.value || defaultValue || '';
+  const editSelection = useRef<{ from: number; to: number } | null>(null);
+  const value = editing ? draft : current.value || (choices ? '' : defaultValue || '');
   const normalized = normalize(value);
   const applyValue = (next: string, restoreFocus: boolean) => {
     const nextValue = normalize(next);
@@ -69,17 +70,27 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
     setEditing(false);
   };
   const apply = () => applyValue(value, true);
-  const update = (next: string) => { setDraft(next); setEditing(true); };
+  const update = (next: string) => {
+    if (!editing) editSelection.current = { from: editor.state.selection.from, to: editor.state.selection.to };
+    setDraft(next); setEditing(true);
+  };
   const choose = (next: string) => { applyValue(next, false); };
   return <div className="omi-direct-format-field">
     <label title={current.mixed ? mixed : label}>
       {icon}<span>{label}</span>
       {choices ? <select aria-label={label} value={value} onChange={event => choose(event.target.value)}>
+        <option value="" disabled>{current.mixed ? mixed : reset}</option>
         {choices.map(choice => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
       </select> : <input aria-label={label} type={kind} step={kind === 'number' ? '0.5' : undefined}
         placeholder={current.mixed ? mixed : undefined} value={value}
         onChange={event => kind === 'color' ? choose(event.target.value) : update(event.target.value)}
-        onBlur={() => { if (editing) applyValue(draft, false); }}
+        onBlur={() => {
+          const selection = editSelection.current;
+          if (editing && selection && selection.from === editor.state.selection.from && selection.to === editor.state.selection.to) {
+            applyValue(draft, false);
+          }
+          setEditing(false);
+        }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); apply(); } }} />}
     </label>
     <button type="button" aria-label={copy.apply + ': ' + label} title={copy.apply} disabled={normalized === undefined || normalized === null} onMouseDown={e => e.preventDefault()} onClick={apply}>✓</button>
