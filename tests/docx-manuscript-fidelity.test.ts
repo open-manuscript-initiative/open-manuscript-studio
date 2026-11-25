@@ -1042,3 +1042,31 @@ test('Word and ODT preserve row pagination policies including explicit off and m
     assert.deepEqual(v.cells.map((_,i)=>tableRowSplitPolicy(v,i)),['allow','keep','allow','allow']);
   }
 });
+
+test('solid cell shading and alignment survive native Word and ODT roundtrips', async () => {
+  const cell=(text:string,properties='',alignment='')=>'<w:tc><w:tcPr>'+properties+'</w:tcPr><w:p>'+(alignment?'<w:pPr><w:jc w:val="'+alignment+'"/></w:pPr>':'')+'<w:r><w:t>'+text+'</w:t></w:r></w:p></w:tc>';
+  const source=makeDocx('<w:p><w:r><w:t>Appearance specimen</w:t></w:r></w:p><w:tbl><w:tr>'
+    +cell('Value','<w:shd w:val="clear" w:fill="DCE6F1"/><w:vAlign w:val="center"/>','both')
+    +cell('Other','<w:shd w:val="clear" w:fill="auto"/>','right')+'</w:tr></w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cellFormats?.['0:0'],{horizontalAlign:'justify',verticalAlign:'middle',backgroundColor:'#DCE6F1'});
+    assert.deepEqual(v.cellFormats?.['0:1'],{horizontalAlign:'right'});
+    assert.deepEqual(v.cells,[['Value','Other']]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Appearance'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:shd w:val="clear" w:color="auto" w:fill="DCE6F1"\/>/);
+  assert.match(xml,/<w:vAlign w:val="center"\/>/);
+  assert.match(xml,/<w:jc w:val="both"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'cell-appearance.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/style:vertical-align="middle" fo:background-color="#DCE6F1"/);
+  assert.match(odtXml,/fo:text-align="justify"/);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-appearance.odt'))).sections);
+});
