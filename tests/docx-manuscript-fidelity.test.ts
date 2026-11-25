@@ -1726,3 +1726,42 @@ test('native Word bookmarks resolve forward REF and PAGEREF fields and survive O
     assert.equal(normalizeWordCrossReferenceField({kind:'REF',cachedLabel:'x'.repeat(4097)}),undefined);
   }finally{useStudioStore.setState(previous,true);}
 });
+
+test('Word hyperlinks retain safe external relationships, tooltips and internal bookmark targets',async()=>{
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+  const relationship=(id:string,target:string)=>'<Relationship Id="'+id+'" Type="'+rel+'" Target="'+target+'" TargetMode="External"/>';
+  const link=(id:string,label:string)=>'<w:hyperlink r:id="'+id+'" w:tooltip="Source &amp; details"><w:r><w:t>'+label+'</w:t></w:r></w:hyperlink>';
+  const input=makeDocx('<w:p><w:r><w:t>Links: </w:t></w:r>'+link('site','Web specimen')+link('site','Repeated link')+link('mail','Mail specimen')+link('unsafe','Unsafe specimen')+'<w:hyperlink w:anchor="Jump"><w:r><w:t>Internal specimen</w:t></w:r></w:hyperlink><w:r><w:footnoteReference w:id="1"/></w:r></w:p><w:p><w:bookmarkStart w:id="8" w:name="Jump"/><w:r><w:t>Destination specimen</w:t></w:r><w:bookmarkEnd w:id="8"/></w:p>',{
+    relationships:relationship('site','https://example.org/?a=1&amp;b=2')+relationship('mail','mailto:editor@example.org')+relationship('unsafe','javascript:alert(1)'),
+    footnotes:'<w:footnotes xmlns:w="'+ns+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:footnote w:id="1"><w:p>'+link('note','Note link')+'</w:p></w:footnote></w:footnotes>',
+    entries:[textZipEntry('word/_rels/footnotes.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+relationship('note','https://example.org/note')+'</Relationships>')]
+  });
+  const plan=await parseDocxForStudio(input);
+  const inspect=(p:typeof plan)=>{
+    const block=p.sections.flatMap(s=>s.blocks).find(b=>b.content.includes('Web specimen'))!;
+    const nodes=findNodes(JSON.parse(block.content),'text');
+    const mark=(label:string)=>nodes.find(n=>n.text?.includes(label))?.marks?.find(m=>m.type==='omiLink')?.attrs;
+    assert.equal(mark('Web specimen')?.href,'https://example.org/?a=1&b=2');
+    assert.equal(mark('Web specimen')?.title,'Source & details');
+    assert.equal(mark('Mail specimen')?.href,'mailto:editor@example.org');
+    assert.equal(mark('Unsafe specimen'),undefined);
+    assert.equal(p.crossReferences?.[0]?.wordField?.kind,'HYPERLINK');
+    assert.equal(p.crossReferences?.[0]?.wordField?.cachedLabel,'Internal specimen');
+    assert.equal(p.crossReferences?.[0]?.targetId,p.namedAnchors?.[0]?.id);
+  };
+  inspect(plan);
+  const manuscript=parseOmiJson(serializeOmiJson({...createBlankManuscript({kind:'study',locale:'en',title:'Native links'}),sections:plan.sections,annotations:plan.annotations,namedAnchors:plan.namedAnchors,crossReferences:plan.crossReferences}));
+  const word=buildDocxExport(manuscript);
+  const parts=readZipParts(word.bytes);
+  const document=parts.get('word/document.xml')!.toString('utf8');
+  const relationships=parts.get('word/_rels/document.xml.rels')!.toString('utf8');
+  assert.match(document,/<w:hyperlink r:id="rIdHyperlink1" w:tooltip="Source &amp; details">/);
+  assert.equal((relationships.match(/Target="https:\/\/example.org\/\?a=1&amp;b=2"/g)??[]).length,1);
+  assert.match(relationships,/Target="mailto:editor@example.org" TargetMode="External"/);
+  assert.doesNotMatch(relationships,/javascript:|example.org\/note/);
+  assert.match(document,/<w:hyperlink w:anchor="Jump">/);
+  assert.match(parts.get('word/_rels/footnotes.xml.rels')!.toString('utf8'),/Target="https:\/\/example.org\/note"/);
+  assert.match(parts.get('word/footnotes.xml')!.toString('utf8'),/<w:hyperlink r:id="rIdHyperlink1"/);
+  inspect(await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'native-links.docx')));
+});
