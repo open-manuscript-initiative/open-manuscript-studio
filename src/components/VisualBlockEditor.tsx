@@ -59,6 +59,7 @@ import { AssetBackedImage } from './AssetBackedImage';
 import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, formatTableRange, planTableAxisMove, reorderTableAxis, type TableReorderAxis } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { TableAppearancePanel } from './TableAppearancePanel';
+import { TableRangeTypographyPanel } from './TableRangeTypographyPanel';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
 
@@ -750,6 +751,7 @@ function EditableGrid({
             })}
           </details>
           <small>{copy.mergeHint}</small>
+          {multi?<TableRangeTypographyPanel key={start.row+':'+start.column+':'+boundedEnd?.row+':'+boundedEnd?.column} table={data} start={start} end={boundedEnd??start} onChange={onChange}/>:null}
           {!multi?<details open>
             <summary>{copy.editCellText}</summary>
             <RichCellEditor depth={depth} key={selectedRow+':'+selectedColumn} doc={selectedDoc??plainTableCellDocument(cells[selectedRow]?.[selectedColumn]??'')} label={copy.editCellText} onChange={(doc,insertion)=>{
