@@ -294,7 +294,10 @@ test('IDML native table geometry, rich cell text, resources and nested table ord
   assert.equal(attr(paragraphs[0]!,'Justification'),'LeftJustified');
   assert.equal(attr(paragraphs[0]!,'SpaceAfter'),'5');
   assert.ok(paragraphs[2]!.textContent?.includes('After nested'));
-  assert.ok(paragraphs[3]!.textContent?.includes('4. List item'));
+  assert.equal(attr(paragraphs[3]!,'BulletsAndNumberingListType'),'NumberedList');
+  assert.equal(attr(paragraphs[3]!,'NumberingStartAt'),'4');
+  assert.deepEqual(elements(paragraphs[3]!,'Content').map(el=>el.textContent),['List item']);
+  assert.equal(elements(paragraphs[3]!,'NumberingFormat')[0]?.textContent,'1, 2, 3, 4...');
   const marked=elements(paragraphs[0]!,'CharacterStyleRange').find(el=>el.textContent?.includes('Before nested'));
   assert.ok(marked);
   assert.equal(attr(marked,'PointSize'),'13');
@@ -312,7 +315,7 @@ test('IDML native table geometry, rich cell text, resources and nested table ord
   assert.ok(elements(xml(part(parts,'Resources/Fonts.xml')),'FontFamily').some(el=>attr(el,'Name')==='Noto Serif'));
   assert.ok(![...parts.values()].some(value=>value.includes('PRIVATE SPECIMEN')));
   assert.ok(result.semanticLosses.some(loss=>loss.targetId===block.id&&loss.code==='table-note-projected-as-text'));
-  assert.ok(result.semanticLosses.some(loss=>loss.targetId===block.id&&loss.code==='table-list-projected-as-text'));
+  assert.ok(!result.semanticLosses.some(loss=>loss.targetId===block.id&&loss.code==='table-list-projected-as-text'));
   assert.ok(result.semanticLosses.some(loss=>loss.targetId===block.id&&loss.code==='table-row-split-not-preserved'));
   assert.ok(!result.warnings.some(w=>w.includes('Structured table object')));
   const ids=elements(story,'Table').flatMap(t=>[attr(t,'Self'),...['Row','Column','Cell'].flatMap(name=>direct(t,name).map(el=>attr(el,'Self')))]);
@@ -389,4 +392,61 @@ test('IDML importer resolves inherited styles and rejects malformed geometry, DT
   await assert.rejects(importIdmlTables(make(tbl(cell).replace('ColumnCount="1"','ColumnCount="10001"'))),/quota/);
   await assert.rejects(importIdmlTables(make(tbl(cell),'<!DOCTYPE Document [<!ENTITY e "bad">]><Document>&e;</Document>')),/declarations/);
   await assert.rejects(importIdmlTables(make(tbl(cell),'<Document><Story src="../external.xml"/></Document>')),/story reference/);
+});
+
+test('IDML native cell lists keep independent numbering, list levels, restarts and continuation paragraphs',async()=>{
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {tableCellPlainText}=await import('../src/model/tableLayout.ts');
+  const p=(text:string)=>({type:'paragraph',content:[{type:'text',text}]});
+  const item=(...content:unknown[])=>({type:'listItem',content});
+  const list={type:'orderedList',attrs:{start:4,omiListFormat:'upperRoman',omiListLabel:'(%1)',omiListLeft:720,omiListHanging:360},content:[
+    item(p('First'),p('Continuation'),{type:'orderedList',attrs:{start:2,omiListFormat:'lowerLetter',omiListLevel:1,omiListLabel:'%2)'},content:[item(p('Nested first')),item(p('Nested second'))]}),
+    item(p('Second'))
+  ]};
+  const doc={type:'doc',content:[list,{type:'bulletList',attrs:{omiListLabel:'▪'},content:[item(p('Bullet'))]},{type:'orderedList',attrs:{start:7,omiListOverrideStart:9,omiListFormat:'decimalZero'},content:[item(p('Restart'))]},{type:'orderedList',attrs:{omiListFormat:'none'},content:[item(p('Unnumbered'))]}]};
+  const other={type:'doc',content:[{type:'orderedList',attrs:{start:1,omiListLabel:'%1.%2.'},content:[item(p('Other cell'))]}]};
+  const block=createTableBlock([['','']],{headerRows:0,cellContent:{'0:0':JSON.stringify(doc),'0:1':JSON.stringify(other)}},'native-cell-lists');
+  assert.ok(block.visual?.kind==='table');
+  // The block model stores literal cell text without generated list labels.
+  const {parseTableCellContent}=await import('../src/model/tableLayout.ts');
+  block.visual.cells=[[tableCellPlainText(parseTableCellContent(JSON.stringify(doc))!),tableCellPlainText(parseTableCellContent(JSON.stringify(other))!)]];
+  block.visual.cellContent={'0:0':JSON.stringify(doc),'0:1':JSON.stringify(other)};
+  const manuscript=createTestManuscript();
+  manuscript.sections[0]!.blocks.push(block);
+  const exported=buildIdmlExport(manuscript);
+  const parts=storedParts(exported.bytes);
+  const story=xml([...parts].find(([name])=>/^Stories\/.*\.xml$/.test(name))![1]);
+  const cells=elements(story,'Cell');
+  const paragraphs=elements(cells[0]!,'ParagraphStyleRange');
+  const byText=(text:string)=>paragraphs.find(el=>elements(el,'Content').map(n=>n.textContent).join('')===text)!;
+  const first=byText('First'),second=byText('Second'),nested=byText('Nested first'),nestedSecond=byText('Nested second');
+  const listId=(el:Element)=>elements(el,'AppliedNumberingList')[0]?.textContent;
+  assert.equal(attr(first,'NumberingExpression'),'(^#)^t');
+  assert.equal(attr(first,'NumberingStartAt'),'4');
+  assert.equal(attr(first,'NumberingContinue'),'false');
+  assert.equal(attr(second,'NumberingContinue'),'true');
+  assert.equal(attr(first,'NumberingLevel'),'1');
+  assert.equal(attr(first,'LeftIndent'),'36');
+  assert.equal(attr(first,'FirstLineIndent'),'-18');
+  assert.equal(elements(first,'NumberingFormat')[0]?.textContent,'I, II, III, IV...');
+  assert.equal(listId(first),listId(second));
+  assert.equal(attr(nested,'NumberingLevel'),'2');
+  assert.equal(attr(nested,'NumberingStartAt'),'2');
+  assert.equal(attr(nested,'NumberingExpression'),'^#)^t');
+  assert.equal(attr(nestedSecond,'NumberingContinue'),'true');
+  assert.notEqual(listId(first),listId(nested));
+  assert.equal(attr(byText('Continuation'),'BulletsAndNumberingListType'),'NoList');
+  assert.equal(attr(byText('Bullet'),'BulletsAndNumberingListType'),'BulletList');
+  assert.equal(attr(elements(byText('Bullet'),'BulletChar')[0]!,'BulletCharacterValue'),'9642');
+  assert.equal(attr(byText('Restart'),'NumberingStartAt'),'9');
+  assert.equal(elements(byText('Restart'),'NumberingFormat')[0]?.textContent,'01, 02, 03, 04...');
+  assert.equal(attr(byText('Unnumbered'),'BulletsAndNumberingListType'),'NoList');
+  const otherParagraph=elements(cells[1]!,'ParagraphStyleRange')[0]!;
+  assert.notEqual(listId(first),listId(otherParagraph));
+  assert.equal(attr(otherParagraph,'NumberingExpression'),'^#.^t');
+  assert.ok(exported.semanticLosses.some(loss=>loss.targetId===block.id&&loss.code==='table-list-pattern-partial'));
+  const definitions=elements(xml(part(parts,'designmap.xml')),'NumberingList').map(el=>attr(el,'Self'));
+  assert.equal(new Set(definitions).size,definitions.length);
+  for(const el of elements(story,'AppliedNumberingList'))assert.ok(definitions.includes(el.textContent??''));
+  assert.deepEqual(elements(cells[0]!,'Content').map(el=>el.textContent),['First','Continuation','Nested first','Nested second','Second','Bullet','Restart','Unnumbered']);
 });
