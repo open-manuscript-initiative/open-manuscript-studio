@@ -1,4 +1,4 @@
-import { tableMergeLayout } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance } from '../model/tableLayout';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
 import { OdtZip } from './odtZip';
@@ -9,7 +9,7 @@ import { createImageBlock, createTableBlock } from '../model/visualBlocks';
 import { noteBodyPlainText, type NoteJsonNode } from '../model/noteRichText';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import { withParentSectionId } from '../model/sectionStructure';
-import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge, OmiTableRowSplitPolicy } from '../types/omi';
+import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge, OmiTableRowSplitPolicy, OmiTableCellFormat } from '../types/omi';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 import { createEmptyDocxImportStats, mergeDetectedAuthors, parseDetectedAuthors, type DocxImportWarning } from '../model/docxImport';
 
@@ -74,6 +74,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
       const rows: string[][] = [];
       const merges: OmiTableCellMerge[] = [];
       const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
+      const cellFormats: Record<string,OmiTableCellFormat> = {};
       let headerRows=0, bodyStarted=false;
       const rowElements=Array.from(child.getElementsByTagNameNS('*','table-row')).filter(row=>{
         let owner=row.parentNode;
@@ -87,7 +88,29 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
           const rowSpan=Number(cell.getAttribute('table:number-rows-spanned')||1);
           const colSpan=Number(cell.getAttribute('table:number-columns-spanned')||1);
           if(cell.localName==='table-cell' && (rowSpan>1||colSpan>1)) merges.push({row:rows.length,column:col,rowSpan,colSpan});
-          values.push(plainText(cell).trim());
+          const property=(name:string,family:string,tag:string,attr:string):string|undefined=>{
+            const visited=new Set<string>();
+            while(name&&!visited.has(name)){
+              visited.add(name);
+              const style=textStyles.get(name);
+              if(!style||style.getAttribute('style:family')!==family) break;
+              const node=Array.from(style.children).find(n=>n.localName===tag);
+              const value=node?.getAttribute(attr);
+              if(value) return value;
+              name=style.getAttribute('style:parent-style-name')??'';
+            }
+            return undefined;
+          };
+          const style=cell.getAttribute('table:style-name')??'';
+          const paragraphs=Array.from(cell.children).filter(n=>n.localName==='p'||n.localName==='h');
+          const aligns=paragraphs.map(n=>property(n.getAttribute('text:style-name')??'','paragraph','paragraph-properties','fo:text-align'));
+          const format=normalizeTableCellAppearance({
+            horizontalAlign:aligns.every(a=>a===aligns[0])?aligns[0] as OmiTableCellFormat['horizontalAlign']:undefined,
+            verticalAlign:property(style,'table-cell','table-cell-properties','style:vertical-align') as OmiTableCellFormat['verticalAlign'],
+            backgroundColor:property(style,'table-cell','table-cell-properties','fo:background-color'),
+          });
+          if(Object.keys(format).length) cellFormats[`${rows.length}:${col}`]=format;
+          values.push(paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
         }
         if(!values.length) continue;
         // Resolve named row styles, including inherited styles, without looping on malformed cycles.
@@ -111,7 +134,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
         const cells=rows.map(row=>Array.from({length:width},(_,c)=>row[c]??''));
         const cellMerges=tableMergeLayout(cells,merges,headerRows).merges;
         if(cellMerges.length!==merges.length) warnings.push({code:'merged-table-cells',severity:'warning',message:'Some ODT cell merges could not be preserved without hiding data.'});
-        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges,rowSplitDefault:'allow',rowSplitOverrides})); stats.tables+=1;
+        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges,cellFormats,rowSplitDefault:'allow',rowSplitOverrides})); stats.tables+=1;
       }
       frontMatter = false;
       continue;
