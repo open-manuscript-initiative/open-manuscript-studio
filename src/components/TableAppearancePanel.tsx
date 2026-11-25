@@ -6,7 +6,7 @@ import { loadPublicationStyle } from '../services/publicationStyleExport';
 import type { OmiTableBlockData } from '../types/omi';
 import type { VisualElementsCopy } from '../i18n/visualElements';
 import type { TableCellPosition } from '../model/tableLayout';
-import { bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
+import { bindPublicationCellStyle, detachPublicationCellStyles, selectedPublicationCellStyles, resetInheritedCellAppearance, bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
 
 function loadPresets():TableAppearancePreset[]{
   try{return readAppearancePresets(localStorage.getItem(TABLE_STYLE_STORAGE_KEY));}catch{return [];}
@@ -28,6 +28,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
   const builtins:{key:string;label:string;preset:TableAppearancePreset}[]=[{key:'builtin:grid',label:copy.tableStyleGrid,preset:BUILTIN_TABLE_STYLES.grid},{key:'builtin:minimal',label:copy.tableStyleMinimal,preset:BUILTIN_TABLE_STYLES.minimal},{key:'builtin:banded',label:copy.tableStyleBanded,preset:BUILTIN_TABLE_STYLES.banded}];
   const choices=[...builtins,...presets.map(preset=>({key:'custom:'+preset.name,label:preset.name+' ('+(preset.kind==='cell'?copy.cellStyleLabel:copy.tableStyleLabel)+')',preset})),...catalog.items.map(preset=>({key:'publication:'+preset.name,label:copy.publicationTableStyles+': '+preset.name+(preset.name===catalog.defaultTableStyle?' ★':''),preset}))];
   const choice=choices.find(item=>item.key===selected);
+  const cellLinks=selectedPublicationCellStyles(table,start,end);
   function persist(next:TableAppearancePreset[]):boolean{
     try{localStorage.setItem(TABLE_STYLE_STORAGE_KEY,JSON.stringify(next));setPresets(next);setError(false);return true;}catch{setError(true);return false;}
   }
@@ -62,7 +63,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
         {!choice?<option value="" disabled>{copy.tableStyleLabel}</option>:null}
         {choices.map(item=><option key={item.key} value={item.key}>{item.label}</option>)}
       </select></label>
-      <button type="button" disabled={!choice} onClick={()=>{if(choice)onChange(selected.startsWith('publication:')&&choice.preset.kind==='table'?bindPublicationTableStyle(table,catalog,choice.preset.name):applyAppearancePreset(table,choice.preset,start,end));}}>{copy.applyTableStyle}</button>
+      <button type="button" disabled={!choice} onClick={()=>{if(choice)onChange(selected.startsWith('publication:')?(choice.preset.kind==='table'?bindPublicationTableStyle(table,catalog,choice.preset.name):bindPublicationCellStyle(table,catalog,choice.preset.name,start,end)):applyAppearancePreset(table,choice.preset,start,end));}}>{copy.applyTableStyle}</button>
       <button type="button" disabled={!choice||!selected.startsWith('custom:')} onClick={remove}>{copy.deleteTableStyle}</button>
     </div>
     <small>{copy.tableStyleApplyHint}</small>
@@ -72,9 +73,12 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
       <label><span>{copy.defaultPublicationTableStyle}</span><select value={catalog.defaultTableStyle??''} onChange={event=>persistPublication({items:catalog.items,...(event.target.value?{defaultTableStyle:event.target.value}:{})})}><option value="">{copy.noDefaultPublicationTableStyle}</option>{catalog.items.filter(p=>p.kind==='table').map(p=><option key={p.name} value={p.name}>{p.name}</option>)}</select></label>
     </div>
     {table.publicationTableStyle?<small>{copy.linkedPublicationTableStyle}: {table.publicationTableStyle}</small>:null}
+    {cellLinks.length?<small>{copy.linkedPublicationCellStyle}: {cellLinks.join(', ')}</small>:null}
     <div className="omi-table-cell-formatting-fields">
+      <button type="button" disabled={!cellLinks.length} onClick={()=>onChange(detachPublicationCellStyles(table,start,end))}>{copy.detachPublicationCellStyle}</button>
+      <button type="button" disabled={!cellLinks.length&&!table.publicationTableStyle} onClick={()=>onChange(resetInheritedCellAppearance(table,catalog,start,end))}>{copy.resetInheritedCellAppearance}</button>
       <button type="button" disabled={!table.publicationTableStyle} onClick={()=>onChange(detachPublicationTableStyle(table))}>{copy.detachPublicationTableStyle}</button>
-      <button type="button" disabled={!choice||!selected.startsWith('publication:')||choice.preset.kind!=='table'} onClick={()=>{if(choice&&choice.preset.kind==='table'){const next=replacePublicationTablePreset(catalog,captureTablePreset(table,choice.preset.name,banded||!!choice.preset.alternate));if(next)persistPublication(next);}}}>{copy.updatePublicationTableStyle}</button>
+      <button type="button" disabled={!choice||!selected.startsWith('publication:')} onClick={()=>{if(choice){const next=replacePublicationTablePreset(catalog,choice.preset.kind==='cell'?captureCellPreset(table,start,choice.preset.name):captureTablePreset(table,choice.preset.name,banded||!!choice.preset.alternate));if(next)persistPublication(next);}}}>{copy.updatePublicationTableStyle}</button>
     </div>
     <small>{copy.publicationTableStyleHint}</small>
     <div className="omi-table-cell-formatting-fields">
