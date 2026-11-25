@@ -392,6 +392,7 @@ export interface OmiImageBlockData {
   width?: number;
   height?: number;
   textBoxes?: OmiTextBox[];
+  wordPicture?: import('../model/wordPictureLayout').WordPictureLayout;
   provenance?: OmiImportProvenance;
 }
 
