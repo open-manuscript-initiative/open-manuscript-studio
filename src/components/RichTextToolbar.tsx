@@ -273,7 +273,8 @@ export function RichTextToolbar({
     };
 
     const handleTransaction = () => {
-      setRevision((value) => value + 1);
+      // Hidden floating toolbars do not need a React render for every edit.
+      if (toolbarRef.current) setRevision((value) => value + 1);
     };
 
     editor.on('transaction', handleTransaction);
@@ -437,6 +438,14 @@ export function RichTextToolbar({
       aria-label={copy.toolbar}
       data-selection-length={editor.state.selection.to - editor.state.selection.from}
       data-pinned={floating.desktop && floating.pinned}
+      onPointerDownCapture={(event) => {
+        // Preserve native selection on touch buttons, but not inputs or drag handles.
+        if (event.pointerType !== 'touch' || !(event.target instanceof Element)) return;
+        const button = event.target.closest('button');
+        if (button && !button.matches('.omi-rich-text-toolbar-move, .omi-rich-text-toolbar-resize')) {
+          event.preventDefault();
+        }
+      }}
     >
       {floating.desktop && !inHeader ? (
         <div className="omi-rich-text-toolbar-placement">

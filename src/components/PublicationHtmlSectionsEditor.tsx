@@ -17,6 +17,7 @@ import {
   normalizeColumnCount,
 } from '../model/sectionLayout';
 import type { OmiSection } from '../types/omi';
+import type { ProofingSelection } from '../model/proofing';
 import { BlockEditor } from './BlockEditor';
 
 interface PublicationHtmlSectionsEditorProps {
@@ -26,6 +27,7 @@ interface PublicationHtmlSectionsEditorProps {
   defaultParagraphStyleId: string;
   manuscriptLanguage: string;
   editable?: boolean;
+  onProofingSelection?: (selection: ProofingSelection | null) => void;
 }
 
 export function PublicationHtmlSectionsEditor({
@@ -35,6 +37,7 @@ export function PublicationHtmlSectionsEditor({
   defaultParagraphStyleId,
   manuscriptLanguage,
   editable = true,
+  onProofingSelection,
 }: PublicationHtmlSectionsEditorProps) {
   const document = useMemo(
     () => buildContinuousManuscriptDocument(
@@ -84,6 +87,8 @@ export function PublicationHtmlSectionsEditor({
               className="publication-layout-section-editor"
               continuous
               proofingMode="editor"
+              onProofingSelection={onProofingSelection}
+              reportProofingSelectionOnlyWhenFocused
             />
           </section>
         );

@@ -86,6 +86,10 @@ export function VisualBlockEditor({
   const visual = block.visual;
   const previewOnly = useContext(PublicationPreviewContext);
   const graphicsMode = useContext(PublicationGraphicsContext);
+  const [tableTextDelimiter, setTableTextDelimiter] = useState('\t');
+  const [customTableTextDelimiter, setCustomTableTextDelimiter] = useState('');
+  const conversionLabels = ({hu:['Oszlopelválasztó','Tabulátor','Pontosvessző','Vessző','Szóköz','Egyéni'],de:['Spaltentrenner','Tabulator','Semikolon','Komma','Leerzeichen','Benutzerdefiniert'],fr:['Séparateur','Tabulation','Point-virgule','Virgule','Espace','Personnalisé'],it:['Separatore','Tabulazione','Punto e virgola','Virgola','Spazio','Personalizzato'],es:['Separador','Tabulación','Punto y coma','Coma','Espacio','Personalizado'],nl:['Scheidingsteken','Tab','Puntkomma','Komma','Spatie','Aangepast'],pl:['Separator','Tabulator','Średnik','Przecinek','Spacja','Własny']} as Record<string,string[]>)[locale] ?? ['Column separator','Tab','Semicolon','Comma','Space','Custom'];
+  const effectiveDelimiter = tableTextDelimiter === 'custom' ? customTableTextDelimiter : tableTextDelimiter;
 
   // A lightweight, non-editable proxy avoids chart, equation and text-box renderers
   // while typesetting. Tables remain real text because they affect line measurement.
@@ -108,6 +112,7 @@ export function VisualBlockEditor({
 
   const tableHasNotes=visual.kind==='table'&&collectNoteAnchorsInBlock('',sectionId,block.id,visual).length>0;
   const tableHasCitations=visual.kind==='table'&&tableCitationAnchors(visual).length>0;
+  const tableHasNestedTables=visual.kind==='table'&&Object.values(visual.cellContent??{}).some(content=>content.includes('"omiCellTable"'));
   function update(next: OmiVisualBlockData,insertion?:TableNoteInsertion,citation?:CitationClusterCreation): boolean {
     if(previewOnly) return false;
     if(citation){
@@ -190,13 +195,17 @@ export function VisualBlockEditor({
               <BarChart3 size={15} aria-hidden="true" />
               {copy.createChart}
             </button>
+            <label><span>{conversionLabels[0]}</span><select aria-label={conversionLabels[0]} value={tableTextDelimiter} onChange={event => setTableTextDelimiter(event.target.value)}>
+              {['\t',';',',',' ','custom'].map((value,index) => <option key={value} value={value}>{conversionLabels[index+1]}</option>)}
+            </select></label>
+            {tableTextDelimiter === 'custom' ? <input aria-label={conversionLabels[5]} maxLength={1} value={customTableTextDelimiter} onChange={event => setCustomTableTextDelimiter(event.target.value)} /> : null}
             <button
               type="button"
-              disabled={tableHasNotes||tableHasCitations}
+              disabled={tableHasNotes||tableHasCitations||tableHasNestedTables||effectiveDelimiter.length!==1||/[\r\n"]/.test(effectiveDelimiter)}
               title={tableHasCitations?copy.cellCitationProtected:tableHasNotes?copy.cellNoteProtected:undefined}
               onClick={() => {
                 if (window.confirm(copy.confirmTableToText)) {
-                  stageConvertTableToText(block.id);
+                  stageConvertTableToText(block.id, effectiveDelimiter);
                 }
               }}
             >

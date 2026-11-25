@@ -215,7 +215,7 @@ export function parseDelimitedTable(
   row.push(value);
   rows.push(row);
 
-  return normalizeCellMatrix(rows);
+  return normalizeCellMatrix(rows, true);
 }
 
 function inferDelimiter(input: string): string {
@@ -397,8 +397,8 @@ export function tableToDelimitedText(
   cells: readonly (readonly string[])[],
   delimiter = '\t',
 ): string {
-  return normalizeCellMatrix(cells.map((row) => [...row]))
-    .map((row) => row.map((cell) => normalizeTableTextCell(cell, delimiter)).join(delimiter))
+  return normalizeCellMatrix(cells.map((row) => [...row]), true)
+    .map((row) => row.map((cell) => encodeTableTextCell(cell, delimiter)).join(delimiter))
     .join('\n');
 }
 
@@ -406,14 +406,14 @@ export function tableRowsToParagraphBlocks(
   cells: readonly (readonly string[])[],
   firstBlockId?: string,
   createId: () => string = () => crypto.randomUUID(),
+  delimiter = '\t',
 ): OmiBlock[] {
-  const normalized = normalizeCellMatrix(cells.map((row) => [...row]));
+  const normalized = normalizeCellMatrix(cells.map((row) => [...row]), true);
   return normalized.map((row, index) => {
-    const normalizedRow = row.map((cell) => normalizeTableTextCell(cell, '\t'));
-    const inlineContent = normalizedRow.flatMap((cell, columnIndex) => [
-      ...(columnIndex > 0 ? [{ type: 'omiTab' }] : []),
-      ...(cell ? [{ type: 'text', text: cell }] : []),
-    ]);
+    const encodedRow = row.map((cell) => encodeTableTextCell(cell, delimiter)).join(delimiter);
+    const inlineContent = encodedRow.split(/(\t|\n)/).filter(Boolean).map((part) =>
+      part === '\t' ? { type: 'omiTab' } : part === '\n' ? { type: 'hardBreak' } : { type: 'text', text: part },
+    );
     return {
       id: index === 0 && firstBlockId ? firstBlockId : createId(),
       type: 'paragraph',
@@ -428,15 +428,10 @@ export function tableRowsToParagraphBlocks(
   });
 }
 
-function normalizeTableTextCell(value: string, delimiter: string): string {
-  return String(value)
-    .replace(/[\r\n]+/g, ' ')
-    .replace(delimiter === '\t' ? /\t/g : new RegExp(escapeRegExp(delimiter), 'g'), ' ')
-    .trim();
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function encodeTableTextCell(value: string, delimiter: string): string {
+  const text = String(value).replace(/\r\n?/g, '\n');
+  return text.includes(delimiter) || /["\n]/.test(text)
+    ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 export function cloneVisualData<T extends OmiVisualBlockData>(data: T): T {

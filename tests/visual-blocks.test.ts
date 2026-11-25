@@ -128,6 +128,15 @@ test('converts table data to tab-separated text blocks without losing cell order
   );
 });
 
+test('table text conversion preserves quoted delimiters, whitespace and line breaks', () => {
+  const cells = [['A;B', 'a"b', ''], [' leading ', 'two\nlines', 'end']];
+  for (const delimiter of [';', ',', '\t', '|', ' ']) {
+    assert.deepEqual(parseDelimitedTable(tableToDelimitedText(cells, delimiter), delimiter), cells);
+  }
+  const blocks = tableRowsToParagraphBlocks([['A', 'B']], 'table', () => 'row', ';');
+  assert.equal(JSON.parse(blocks[0]!.content).content[0].content[0].text, 'A;B');
+});
+
 test('keeps table data rectangular while editing rows and columns', () => {
   let cells = [['A', 'B'], ['1', '2']];
   cells = addTableRow(cells);

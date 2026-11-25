@@ -350,3 +350,27 @@ test('apply character and paragraph formatting to selected cells only',async({pa
   await bold.click();
   await expect(table.locator('tr').first().locator('strong')).toHaveCount(0);
 });
+
+test('draw a table using the insert grid and convert with a chosen separator', async ({ page }) => {
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.locator('.focus-insert-menu-trigger').click();
+  await page.getByRole('button', { name: 'Draw table', exact: true }).click();
+  await page.getByRole('group', { name: 'Draw table', exact: true }).getByRole('button', { name: '4 × 3', exact: true }).click();
+  const dimensions = await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const visual = useStudioStore.getState().manuscript.sections.flatMap(s => s.blocks).find(b => b.visual?.kind === 'table')?.visual;
+    return visual?.kind === 'table' ? [visual.cells.length, visual.cells[0]?.length] : null;
+  });
+  expect(dimensions).toEqual([3, 4]);
+  const table = page.locator('.omi-visual-block--table').first();
+  await table.getByRole('combobox', { name: 'Column separator', exact: true }).selectOption(';');
+  page.once('dialog', dialog => dialog.accept());
+  await table.getByRole('button', { name: 'Convert table to text', exact: true }).click();
+  await expect(table).toHaveCount(0);
+  await expect.poll(async () => page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    return useStudioStore.getState().manuscript.sections.flatMap(s => s.blocks).filter(b => b.type === 'paragraph' && b.content.includes(';;;')).length;
+  })).toBe(3);
+});

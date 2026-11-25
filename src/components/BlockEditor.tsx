@@ -104,7 +104,7 @@ import { CrossReferencePicker } from './CrossReferencePicker';
 import { NoteEditorCard } from './NoteEditorCard';
 import { ProofreadingSuggestionCard } from './ProofreadingSuggestionCard';
 import { RichTextToolbar } from './RichTextToolbar';
-import { useFormattingEditor } from '../editor/useFormattingEditor';
+import { useFormattingEditor, useFormattingStore } from '../editor/useFormattingEditor';
 import { SelectionActionToolbar } from './SelectionActionToolbar';
 import { SelectionIntegrationDialog } from './SelectionIntegrationDialog';
 
@@ -122,6 +122,7 @@ interface BlockEditorProps {
   publicationCorrections?: readonly OmiPublicationCorrection[];
   publicationFlowBreaks?: readonly OmiPublicationFlowBreak[];
   onProofingSelection?: (selection: ProofingSelection | null) => void;
+  reportProofingSelectionOnlyWhenFocused?: boolean;
   collaboration?: {
     fragment: Y.XmlFragment;
     provider: HocuspocusProvider;
@@ -146,6 +147,7 @@ function BlockEditorComponent({
   publicationCorrections = EMPTY_PUBLICATION_CORRECTIONS,
   publicationFlowBreaks = EMPTY_PUBLICATION_FLOW_BREAKS,
   onProofingSelection,
+  reportProofingSelectionOnlyWhenFocused = false,
   collaboration,
 }: BlockEditorProps) {
   const { t, locale } = useTranslation();
@@ -547,18 +549,22 @@ function BlockEditorComponent({
       ) {
         useStudioStore.getState().selectSection(active.sectionId);
       }
-      onProofingSelectionRef.current?.(
-        resolveProofingSelection(editor, active.blockId),
-      );
+      if (!reportProofingSelectionOnlyWhenFocused || editor.isFocused) {
+        onProofingSelectionRef.current?.(
+          resolveProofingSelection(editor, active.blockId),
+        );
+      }
     };
     syncActiveBlock();
     // Tiptap emits a transaction for selection changes as well. Listening to
     // both transaction and selectionUpdate duplicated active-block work.
     editor.on('transaction', syncActiveBlock);
+    if (reportProofingSelectionOnlyWhenFocused) editor.on('focus', syncActiveBlock);
     return () => {
       editor.off('transaction', syncActiveBlock);
+      if (reportProofingSelectionOnlyWhenFocused) editor.off('focus', syncActiveBlock);
     };
-  }, [continuous, editor]);
+  }, [continuous, editor, reportProofingSelectionOnlyWhenFocused]);
 
   useEffect(() => {
     if (!editor || continuous || !onProofingSelectionRef.current) return;
@@ -623,7 +629,9 @@ function BlockEditorComponent({
     const incomingDocument = parseStoredContent(content);
     if (documentsAreEqual(editor.getJSON(), incomingDocument)) return;
 
-    if (editor.isFocused) {
+    const formattingActive = useFormattingStore.getState().target?.editor === editor
+      && Boolean(document.activeElement?.closest('[data-editor-formatting-controls], .omi-rich-text-toolbar'));
+    if (editor.isFocused || formattingActive) {
       const { from, to } = editor.state.selection;
       editor
         .chain()
@@ -683,12 +691,19 @@ function BlockEditorComponent({
       from,
       to,
       '\n',
-      (leaf) => leaf.type.name === 'omiTab' ? '\t' : '',
+      (leaf) => leaf.type.name === 'omiTab' ? '\t' : leaf.type.name === 'hardBreak' ? '\n' : '',
     );
     if (!selectedText.trim()) return;
+    let hasUnsupportedContent = false;
+    editor.state.doc.nodesBetween(from, to, (node) => {
+      if (node.isAtom && !node.isText && !['omiTab', 'hardBreak'].includes(node.type.name)) hasUnsupportedContent = true;
+    });
+    if (hasUnsupportedContent) return;
 
+    let cells: string[][];
+    try { cells = parseDelimitedTable(selectedText, delimiter); } catch { return; }
     const table = createTableBlock(
-      parseDelimitedTable(selectedText, delimiter),
+      cells,
       {
         headerRows: 0,
         provenance: {

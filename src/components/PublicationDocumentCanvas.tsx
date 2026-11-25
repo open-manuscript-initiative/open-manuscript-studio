@@ -188,6 +188,8 @@ export function PublicationDocumentCanvas({
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const noteMeasureRef = useRef<HTMLDivElement>(null);
+  const provisionalProjectionRef = useRef<HTMLStyleElement>(null);
+  const projectionRulesRef = useRef(new Map<string, string>());
   // Read the latest section hierarchy without discarding measured-line caches
   // on every content edit. MutationObserver already schedules changed blocks.
   const layoutSectionsRef = useRef(manuscript.sections);
@@ -319,7 +321,7 @@ export function PublicationDocumentCanvas({
       style.paragraphStyles.defaultStyleId,
     ],
   );
-  const paginationDebounceMs = (document.content?.length ?? 0) > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
+  const paginationDebounceMs = !facingPages && (document.content?.length ?? 0) > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
     ? LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS
     : 0;
   const contributors = useMemo(
@@ -490,11 +492,41 @@ export function PublicationDocumentCanvas({
     let frame = 0;
     let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    let measuring = false;
+    let queued = false;
+    let pending = false;
+    let structureVersion = 0;
+    // Keep the last completed projection for unchanged block IDs. A newly
+    // inserted paragraph temporarily follows its nearest preceding sheet.
+    const updateProvisionalProjection = () => {
+      if (!facingPages || !provisionalProjectionRef.current) return;
+      const editor = content.querySelector<HTMLElement>('.omi-continuous-tiptap-editor');
+      if (!editor) return;
+      let previous: string | undefined;
+      const provisional: string[] = [];
+      Array.from(editor.children).forEach((child, index) => {
+        if (!(child instanceof HTMLElement)) return;
+        const selector = publicationEditorBlockSelector(child, index);
+        const known = projectionRulesRef.current.get(selector);
+        if (known) previous = known;
+        else if (previous) provisional.push(`#${canvasId} ${selector} { ${previous} }`);
+      });
+      const css = provisional.join('\n');
+      if (provisionalProjectionRef.current.textContent !== css) provisionalProjectionRef.current.textContent = css;
+    };
     let measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
     const measuredWidths = new WeakMap<HTMLElement, number>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
+    let measuredNotes = new WeakMap<HTMLElement, number>();
+    const finish = () => {
+      measuring = false;
+      if (pending && !cancelled) { pending = false; schedule(); }
+    };
     const update = () => {
-      if (!content.getClientRects().length) return;
+      queued = false;
+      if (cancelled || !content.getClientRects().length) return;
+      measuring = true;
+      const version = structureVersion;
       const flow = collectPublicationFlowElements(content);
       const noteElements = Array.from(
         noteMeasureRef.current?.querySelectorAll<HTMLElement>('[data-publication-note-id]') ?? [],
@@ -503,18 +535,17 @@ export function PublicationDocumentCanvas({
       let noteIndex = 0;
 
       const measureNotesChunk = () => {
-        if (cancelled || !content.getClientRects().length) return;
+        if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
         const startedAt = performance.now();
         while (noteIndex < noteElements.length
           && (noteIndex === 0 || performance.now() - startedAt < 8)) {
           const element = noteElements[noteIndex]!;
-          noteHeights.set(
-            element.dataset.publicationNoteId!,
-            Math.max(
-              noteLineHeight,
-              Math.ceil((element.getBoundingClientRect().height - 0.01) / noteLineHeight) * noteLineHeight,
-            ),
-          );
+          let height = measuredNotes.get(element);
+          if (height === undefined) {
+            height = Math.max(noteLineHeight, Math.ceil((element.getBoundingClientRect().height - 0.01) / noteLineHeight) * noteLineHeight);
+            measuredNotes.set(element, height);
+          }
+          noteHeights.set(element.dataset.publicationNoteId!, height);
           noteIndex += 1;
         }
         if (noteIndex < noteElements.length) {
@@ -530,7 +561,7 @@ export function PublicationDocumentCanvas({
       let existingFlowBreakHeight = 0;
 
       const measureBlocksChunk = () => {
-        if (cancelled || !content.getClientRects().length) return;
+        if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
         const startedAt = performance.now();
         // This React-owned ancestor is outside ProseMirror's observed DOM.
         // Touching a paragraph/node-view style would make ProseMirror reparse
@@ -680,7 +711,9 @@ export function PublicationDocumentCanvas({
         const pageGeometries = Array.from({ length: layout.pageCount }, (_, index) =>
           canvasPageGeometry(resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index], insertionStyles.get(index)), scale));
         const sheetPositions = arrangePublicationSheets(pageGeometries, facingPages, pageGap).pages;
+        const projectionRules = new Map<string, string>();
         const css = buildPaginationCss({
+          projectionRules,
           canvasId,
           flow,
           placements: layout.placements,
@@ -727,13 +760,18 @@ export function PublicationDocumentCanvas({
             width: geometry.width, height: geometry.height, marks: [], studyId: getStudyRootSectionId(layoutSectionsRef.current, layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
           };
         });
+        const breaksByBlock = new Map<number, typeof layout.flowBreaks[number][]>();
+        for (const point of layout.flowBreaks) {
+          const group = breaksByBlock.get(point.blockIndex) ?? [];
+          group.push(point); breaksByBlock.set(point.blockIndex, group);
+        }
         let priorInlineHeight = 0;
         measuredBlocks.forEach((block, index) => {
           const placement = layout.placements[index]; if (!placement) return;
           const id = blockIds[index];
           const anchor = id && validBlockIds.has(id) ? id : blockIds.slice(index + 1).find((candidate) => candidate && validBlockIds.has(candidate));
           const lines = block.lines?.length ? block.lines : [{ top: 0, height: block.height, textOffset: 0 }];
-          const breaks = layout.flowBreaks.filter((item) => item.blockIndex === index);
+          const breaks = breaksByBlock.get(index) ?? [];
           let page = placement.pageIndex, inline = 0;
           const text = flow[index]!.element.textContent ?? '';
           lines.forEach((line, lineIndex) => {
@@ -759,7 +797,9 @@ export function PublicationDocumentCanvas({
           item.firstBlockId ??= thumbnails.slice(index + 1).find((next) => next.firstBlockId)?.firstBlockId ?? thumbnails.slice(0, index).reverse().find((previous) => previous.lastBlockId)?.lastBlockId;
           item.lastBlockId ??= item.firstBlockId;
         });
-        if (!content.getClientRects().length) return;
+        if (!content.getClientRects().length) { finish(); return; }
+        projectionRulesRef.current = projectionRules;
+        updateProvisionalProjection();
         pageCountChange.current?.(manuscriptId, layout.pageCount);
         setPagination((current) => (
           current.pageCount === layout.pageCount
@@ -773,21 +813,25 @@ export function PublicationDocumentCanvas({
             ? current
             : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds, insertedPages: layout.insertedPages, sectionWarnings, thumbnails }
         ));
+        finish();
       };
 
       measureNotesChunk();
     };
     const schedule = () => {
+      if (cancelled) return;
+      // Do not repeatedly cancel an in-flight chunk or postpone the next frame
+      // during typing. Finish this pass, then process accumulated edits.
+      if (measuring) { pending = true; return; }
+      if (queued) return;
+      queued = true;
       if (paginationDebounceMs > 0) {
-        if (scheduleTimer !== null) clearTimeout(scheduleTimer);
         scheduleTimer = setTimeout(() => {
           scheduleTimer = null;
-          cancelAnimationFrame(frame);
           frame = requestAnimationFrame(update);
         }, paginationDebounceMs);
         return;
       }
-      cancelAnimationFrame(frame);
       frame = requestAnimationFrame(update);
     };
 
@@ -801,12 +845,15 @@ export function PublicationDocumentCanvas({
     const fontsLoaded = () => {
       // Font metrics can change line breaks without changing a block's width.
       measuredLines = new WeakMap();
+      measuredNotes = new WeakMap();
       schedule();
     };
     fonts?.addEventListener('loadingdone', fontsLoaded);
     const mutationObserver = typeof MutationObserver === 'undefined'
       ? null
       : new MutationObserver((records) => {
+          let changed = false;
+          let structureChanged = false;
           for (const record of records) {
             const target = record.target instanceof Element
               ? record.target
@@ -816,14 +863,21 @@ export function PublicationDocumentCanvas({
             if (changedNodes.length > 0 && changedNodes.every((node) => (
               node instanceof HTMLElement && node.matches('.omi-publication-flow-break')
             ))) continue;
+            changed = true;
+            const measuredNote = target?.closest<HTMLElement>('[data-publication-note-id]');
+            if (measuredNote && noteMeasureRef.current?.contains(measuredNote)) measuredNotes.delete(measuredNote);
+            if (target?.matches('.omi-continuous-tiptap-editor') || record.attributeName === 'data-block-id') structureChanged = true;
             const block = target?.closest<HTMLElement>('[data-block-id]');
             if (block && content.contains(block)) dirtyBlocks.add(block);
           }
-          schedule();
+          if (structureChanged) { structureVersion += 1; updateProvisionalProjection(); }
+          if (changed) schedule();
         });
     mutationObserver?.observe(content, {
       childList: true,
       characterData: true,
+      attributes: true,
+      attributeFilter: ['data-block-id', 'data-paragraph-style-id', 'style'],
       subtree: true,
     });
     if (noteMeasureRef.current) {
@@ -1052,6 +1106,8 @@ export function PublicationDocumentCanvas({
       data-layout-checker-section={navigationTarget?.sectionId}
       aria-labelledby="publication-document-canvas-title"
     >
+      {viewMode === 'print' && facingPages ? <style>{`#${canvasId} .omi-continuous-tiptap-editor > *, #${canvasId} .publication-document-front-matter { translate: ${cssPixel(styledPages[0]?.x ?? 0)} 0px; }`}</style> : null}
+      {viewMode === 'print' && facingPages ? <style ref={provisionalProjectionRef} /> : null}
       {pagination.css || paragraphStyleCss || sectionLayoutCss || fitWarningCss || navigationCss
         ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}\n${fitWarningCss}\n${navigationCss}`}</style>
         : null}
@@ -1273,6 +1329,7 @@ export function PublicationDocumentCanvas({
                     defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
                     manuscriptLanguage={manuscript.locale}
                     editable={!previewOnly && !presentation}
+                    onProofingSelection={onProofingSelection}
                   />
                 ) : (
                   <TablePaginationContext.Provider value={pagination.flowBreaks}>
@@ -1460,6 +1517,12 @@ function publicationFlowBlockId(element: HTMLElement): string | undefined {
   return element.dataset.blockId ?? element.querySelector<HTMLElement>('[data-block-id]')?.dataset.blockId;
 }
 
+function publicationEditorBlockSelector(element: HTMLElement, index: number): string {
+  const id = element.dataset.blockId;
+  return id ? `.omi-continuous-tiptap-editor > [data-block-id=${cssStringLiteral(id)}]`
+    : `.omi-continuous-tiptap-editor > :nth-child(${index + 1})`;
+}
+
 function collectPublicationFlowElements(root: HTMLElement): PublicationFlowElement[] {
   const flow: PublicationFlowElement[] = [];
   const frontMatter = directChild(root, 'publication-document-front-matter');
@@ -1473,7 +1536,7 @@ function collectPublicationFlowElements(root: HTMLElement): PublicationFlowEleme
       if (!(child instanceof HTMLElement)) return;
       flow.push({
         element: child,
-        selector: `.omi-continuous-tiptap-editor > :nth-child(${index + 1})`,
+        selector: publicationEditorBlockSelector(child, index),
       });
     });
   }
@@ -1705,6 +1768,7 @@ function buildLiveParagraphStyleCss(
 }
 
 function buildPaginationCss({
+  projectionRules,
   canvasId,
   flow,
   placements,
@@ -1717,6 +1781,7 @@ function buildPaginationCss({
   sheetPositions,
   scale,
 }: {
+  projectionRules: Map<string, string>;
   canvasId: string;
   flow: readonly PublicationFlowElement[];
   placements: readonly { pageIndex: number; translateY: number }[];
@@ -1746,7 +1811,9 @@ function buildPaginationCss({
     // Keep the assigned master width in scaled points, so a zoom render cannot
     // measure new font sizes against the previous pagination's pixel width.
     const widthPoints = blockWidth / (PIXELS_PER_POINT * scale);
-    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(translateY)}; ${geometry ? `width:calc(var(--omi-publication-point) * ${widthPoints});max-width:none;box-sizing:border-box;` : ''} }`;
+    const rule = `translate: ${cssPixel(translateX)} ${cssPixel(translateY)}; ${geometry ? `width:calc(var(--omi-publication-point) * ${widthPoints});max-width:none;box-sizing:border-box;` : ''}`;
+    projectionRules.set(block.selector, rule);
+    return `#${canvasId} ${block.selector} { ${rule} }`;
   }).filter(Boolean).join('\n');
 }
 

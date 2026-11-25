@@ -1,4 +1,5 @@
 import { sameTableCitationAnchors, tableCitationAnchors } from '../model/citationClusters';
+import { collectNoteAnchorsInBlock } from '../model/notes';
 import {
   formatCrossReferenceLabel, removeCrossReferenceAnchorFromSections,
   synchronizeCrossReferenceLabels,
@@ -224,17 +225,21 @@ export function stageUpdateVisualBlock(
   return changed;
 }
 
-export function stageConvertTableToText(blockId: string): boolean {
+export function stageConvertTableToText(blockId: string, delimiter = '\t'): boolean {
+  if (delimiter.length !== 1 || /[\r\n"]/.test(delimiter)) return false;
   let changed = false;
 
   useStudioStore.setState((state) => {
     const located = findBlock(state.manuscript, blockId);
     if (!located || located.block.visual?.kind !== 'table') return state;
-    if(tableCitationAnchors(located.block.visual).length)return state;
+    if (tableCitationAnchors(located.block.visual).length || collectNoteAnchorsInBlock('', located.sectionId, blockId, located.block.visual).length) return state;
+    if (Object.values(located.block.visual.cellContent ?? {}).some(content => content.includes('"omiCellTable"'))) return state;
 
     const replacement = tableRowsToParagraphBlocks(
       located.block.visual.cells,
       located.block.id,
+      undefined,
+      delimiter,
     );
     const section = state.manuscript.sections.find(
       (candidate) => candidate.id === located.sectionId,

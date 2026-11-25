@@ -76,5 +76,12 @@ export function selectionToolbarScenario(): void {
     await expect(toolbar).toHaveCount(0);
     await editor.press('Shift+F10');
     await expect(toolbar).toBeVisible();
+    await select(0, 18);
+    await expect(toolbar).toHaveAttribute('data-selection-length', '18');
+    await toolbar.getByRole('button', { name: 'Bold / strong', exact: true }).click();
+    await expect(editor.locator('strong')).toHaveText('Select these words');
+    await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+    await toolbar.getByRole('combobox', { name: 'Underline style', exact: true }).selectOption('double');
+    await expect(editor.locator('u[data-omi-underline-variant="double"]')).toHaveText('Select these words');
   });
 }
