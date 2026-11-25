@@ -207,3 +207,30 @@ test('row handles resize by pointer and keyboard and reset without altering cell
   await page.setViewportSize({width:480,height:900});
   await expect(canvas.getByRole('separator',{name:'Resize row 1',exact:true})).toHaveCount(0);
 });
+
+test('format a rectangular range, whole column and return to single cell editing', async ({page})=>{
+  const canvas=await openTables(page,2);
+  const table=canvas.locator('.omi-table-editor').first();
+  await canvas.getByRole('textbox',{name:'Cell 1, 1',exact:true}).click();
+  await canvas.getByText('Cell formatting',{exact:true}).click();
+  await canvas.getByRole('button',{name:'Cell range',exact:true}).click();
+  await canvas.getByRole('spinbutton',{name:'Last row',exact:true}).fill('2');
+  await canvas.getByRole('spinbutton',{name:'Last column',exact:true}).fill('2');
+  await expect(table.locator('[data-cell-range="true"]')).toHaveCount(4);
+  await canvas.getByRole('combobox',{name:'Horizontal alignment',exact:true}).selectOption('center');
+  await expect(table.locator('[data-cell-range="true"][style*="text-align: center"]')).toHaveCount(4);
+  await expect(table.locator('tr').last().locator('td[style*="text-align: center"]')).toHaveCount(0);
+  await canvas.getByRole('button',{name:'Cell range',exact:true}).click();
+  await expect(table.locator('[data-cell-range="true"]')).toHaveCount(0);
+  await expect(canvas.getByRole('textbox',{name:'Selected cell text',exact:true})).toBeVisible();
+  await canvas.getByRole('button',{name:'Select column',exact:true}).click();
+  await expect(table.locator('[data-cell-range="true"]')).toHaveCount(3);
+  await expect(canvas.getByRole('combobox',{name:'Horizontal alignment',exact:true})).toHaveValue('mixed');
+  await canvas.getByRole('combobox',{name:'Horizontal alignment',exact:true}).selectOption('right');
+  await expect(table.locator('[data-cell-range="true"][style*="text-align: right"]')).toHaveCount(3);
+  await canvas.getByRole('button',{name:'Cell range',exact:true}).click();
+  await expect(canvas.getByRole('textbox',{name:'Cell 1, 1',exact:true})).toHaveValue('Name');
+  await page.setViewportSize({width:480,height:900});
+  await expect(table.locator('[data-cell-range="true"]')).toHaveCount(0);
+  await expect(canvas.getByRole('button',{name:'Cell range',exact:true})).toHaveCount(0);
+});
