@@ -613,3 +613,31 @@ test('conditional rule ordering changes overlapping properties without losing ot
   assert.deepEqual(moveTableCondition(ordered,1,1),ordered);
   assert.equal(updated.cellFormats?.['1:0']?.backgroundColor,undefined);
 });
+
+test('standalone table style transfer preserves ancestry and collision-safe imported references',async()=>{
+  const {normalizePublicationTableStyles,serializePublicationTableStyles,parsePublicationTableStylesTransfer,mergePublicationTableStyles,resolvePublicationTablePreset,validatePublicationTableStyles}=await import('../src/model/tableAppearancePresets.ts');
+  const source=normalizePublicationTableStyles({items:[{kind:'table',name:'Base',header:{backgroundColor:'#123456'},body:{},conditions:[{operator:'empty',format:{backgroundColor:'#EEEEEE'}}]},{kind:'table',name:'Child',basedOn:'Base',header:{},body:{}},{kind:'table',name:'Grandchild',basedOn:'Child',header:{},body:{}},{kind:'cell',name:'Base (2)',format:{horizontalAlign:'right'}}],defaultTableStyle:'Grandchild'})!;
+  const roundtrip=parsePublicationTableStylesTransfer(serializePublicationTableStyles(source));
+  assert.deepEqual(roundtrip,source);
+  const selected=parsePublicationTableStylesTransfer(serializePublicationTableStyles(source,'Grandchild'));
+  assert.deepEqual(selected.items.map(p=>p.name),['Base','Child','Grandchild']);
+  assert.equal(selected.defaultTableStyle,'Grandchild');
+  const cell=parsePublicationTableStylesTransfer(serializePublicationTableStyles(source,'Base (2)'));
+  assert.equal(cell.items.length,1);
+  assert.equal(cell.defaultTableStyle,undefined);
+  const target=normalizePublicationTableStyles({items:[{kind:'table',name:'Base',header:{backgroundColor:'#999999'},body:{}},{kind:'table',name:'Child',header:{},body:{}}],defaultTableStyle:'Base'})!;
+  const result=mergePublicationTableStyles(target,roundtrip);
+  validatePublicationTableStyles(result.catalog);
+  assert.deepEqual(result.renamed,[{from:'Base',to:'Base (3)'},{from:'Child',to:'Child (2)'}]);
+  assert.deepEqual(result.catalog.items.slice(0,2),target.items);
+  assert.equal(result.catalog.defaultTableStyle,'Base');
+  assert.equal(resolvePublicationTablePreset(result.catalog,'Grandchild')?.header.backgroundColor,'#123456');
+  assert.equal(resolvePublicationTablePreset(result.catalog,'Base')?.header.backgroundColor,'#999999');
+  assert.equal(resolvePublicationTablePreset(result.catalog,'Grandchild')?.conditions?.[0]?.operator,'empty');
+  assert.equal(mergePublicationTableStyles(target,roundtrip,true).catalog.defaultTableStyle,'Grandchild');
+  assert.throws(()=>parsePublicationTableStylesTransfer(JSON.stringify({format:'omi-table-styles',version:2,catalog:source})));
+  assert.throws(()=>parsePublicationTableStylesTransfer(JSON.stringify({format:'omi-table-styles',version:1,catalog:{items:[{kind:'table',name:'Bad',basedOn:'Missing',header:{},body:{}}]}})));
+  assert.throws(()=>parsePublicationTableStylesTransfer('x'.repeat(1_000_001)));
+  const full=normalizePublicationTableStyles({items:Array.from({length:50},(_,i)=>({kind:'cell',name:String(i),format:{}}))})!;
+  assert.throws(()=>mergePublicationTableStyles(full,source));
+});
