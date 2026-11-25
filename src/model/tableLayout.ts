@@ -441,3 +441,78 @@ export function formatTableRange(table:OmiTableBlockData,start:TableCellPosition
   }
   return next;
 }
+
+export type TableReorderAxis='row'|'column';
+export interface TableReorderPlan {
+  /** New position -> original position. */
+  order:number[];
+  /** Original position -> new position. */
+  positions:number[];
+}
+/** Move a whole connected group of merged rows or columns past its neighbor.
+ * Keep repeating header rows a separate contiguous prefix. */
+export function planTableAxisMove(table:OmiTableBlockData,axis:TableReorderAxis,index:number,direction:-1|1):TableReorderPlan|undefined {
+  const width=table.cells[0]?.length??0;
+  if(!width||!table.cells.length||!table.cells.every(row=>row.length===width)) return undefined;
+  const count=axis==='row'?table.cells.length:width;
+  if(!Number.isSafeInteger(index)||index<0||index>=count||(direction!==-1&&direction!==1)) return undefined;
+  const layout=tableMergeLayout(table.cells,table.cellMerges,table.headerRows);
+  if(layout.merges.length!==(table.cellMerges?.length??0)) return undefined;
+  const headers=axis==='row'?tableHeaderRows(table.cells,table.headerRows):0;
+  const minimum=index<headers?0:headers;
+  const maximum=index<headers?headers:count;
+  const joined=new Set<number>();
+  for(const merge of layout.merges){
+    const start=axis==='row'?merge.row:merge.column;
+    const span=axis==='row'?merge.rowSpan:merge.colSpan;
+    for(let boundary=start+1;boundary<start+span;boundary++) joined.add(boundary);
+  }
+  const group=(at:number)=>{
+    let first=at,last=at+1;
+    while(first>minimum&&joined.has(first)) first--;
+    while(last<maximum&&joined.has(last)) last++;
+    return {first,last};
+  };
+  const current=group(index);
+  if(direction===-1&&current.first===minimum||direction===1&&current.last===maximum) return undefined;
+  const neighbor=group(direction===-1?current.first-1:current.last);
+  const first=direction===-1?neighbor:current;
+  const second=direction===-1?current:neighbor;
+  const order=Array.from({length:count},(_,i)=>i);
+  order.splice(first.first,second.last-first.first,...order.slice(second.first,second.last),...order.slice(first.first,first.last));
+  const positions=Array<number>(count);
+  order.forEach((old,next)=>{positions[old]=next;});
+  return {order,positions};
+}
+/** Reorder the matrix and every coordinate-indexed property atomically.
+ * The raw rich documents travel unchanged, including their nested tables. */
+export function reorderTableAxis(table:OmiTableBlockData,axis:TableReorderAxis,index:number,direction:-1|1):{table:OmiTableBlockData;index:number}|undefined {
+  const plan=planTableAxisMove(table,axis,index,direction);
+  if(!plan) return undefined;
+  const {order,positions}=plan;
+  const cells=axis==='row'?order.map(r=>[...table.cells[r]!]):table.cells.map(row=>order.map(c=>row[c]!));
+  const rowAt=(r:number)=>axis==='row'?positions[r]!:r;
+  const colAt=(c:number)=>axis==='column'?positions[c]!:c;
+  const remapCells=<T>(source:Record<string,T>):Record<string,T>=>Object.fromEntries(Object.entries(source).map(([key,value])=>{
+    const match=/^(0|[1-9][0-9]*):(0|[1-9][0-9]*)$/.exec(key);
+    if(!match) return [key,value];
+    const r=Number(match[1]),c=Number(match[2]);
+    if(r>=table.cells.length||c>=(table.cells[r]?.length??0)) return [key,value];
+    return [rowAt(r)+':'+colAt(c),value];
+  }));
+  const remapRows=<T>(source:Record<string,T>):Record<string,T>=>Object.fromEntries(Object.entries(source).map(([key,value])=>{
+    const r=Number(key);
+    return [/^(0|[1-9][0-9]*)$/.test(key)&&r<table.cells.length?String(rowAt(r)):key,value];
+  }));
+  const merges=table.cellMerges?.map(m=>({...m,row:rowAt(m.row),column:colAt(m.column)}));
+  if(merges&&tableMergeLayout(cells,merges,table.headerRows).merges.length!==merges.length) return undefined;
+  const next:OmiTableBlockData={...table,cells,
+    ...(table.cellFormats?{cellFormats:remapCells(table.cellFormats)}:{}),
+    ...(table.cellContent?{cellContent:remapCells(table.cellContent)}:{}),
+    ...(table.cellMerges?{cellMerges:merges}:{}),
+    ...(axis==='row'&&table.rowHeights?{rowHeights:remapRows(table.rowHeights)}:{}),
+    ...(axis==='row'&&table.rowSplitOverrides?{rowSplitOverrides:remapRows(table.rowSplitOverrides)}:{}),
+    ...(axis==='column'&&table.columnWidths?.length===order.length?{columnWidths:order.map(c=>table.columnWidths![c]!)}:{}),
+  };
+  return {table:next,index:positions[index]!};
+}
