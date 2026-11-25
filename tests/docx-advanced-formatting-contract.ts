@@ -171,8 +171,12 @@ function assertSupportedModel(item: AdvancedCase, manuscript: OmiManuscript): vo
 }
 function assertPrivateReviewModel(item: AdvancedCase, manuscript: OmiManuscript): void {
   if (item.id === 'R03') {
-    assert.ok(manuscript.annotations.some(a => a.type === 'comment' && a.body === 'Review root'));
-    assert.ok(manuscript.annotations.some(a => a.type === 'comment' && a.body === 'Review reply'));
+    const root=manuscript.annotations.find(a=>a.type==='comment'&&a.body==='Review root');
+    const reply=manuscript.annotations.find(a=>a.type==='comment'&&a.body==='Review reply');
+    assert.ok(root&&reply);
+    assert.equal(reply.replyToCommentId,root.id);
+    assert.equal(root.targetBlockId,reply.targetBlockId);
+    assert.equal(reply.visibility,'editor_only');
   } else {
     assert.ok(manuscript.proofing?.changes.some(c => c.before.includes('italic') && c.after.includes('bold')), 'Formatting revision not retained');
   }
@@ -261,7 +265,7 @@ export function registerAdvancedFormattingContracts(): void {
           for (const output of [html, jats, print]) assert.ok(output.includes(item.marker));
         });
         if (item.privateReview) {
-          await sub.test('review history retained internally', { todo: todo('Word review metadata import remains incomplete') }, () => assertPrivateReviewModel(item, reopened));
+          await sub.test('review history retained internally', () => assertPrivateReviewModel(item, reopened));
           await sub.test('public export does not expose native private review metadata', () => assertPublicReview(item, word.parts, [html, jats, print, ...[odt, idml].flatMap(parts => [...parts.values()].map(b => b.toString('utf8')))]));
         } else {
           await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported || integratedNativeContracts.has(item.id) || nativeParagraphContracts[item.id] || ['C24','C25','C26','C27','C28','L06','L07','L08','L09','S03','S04','S05','T02','T03','T04','T05','T06','F03','F07'].includes(item.id) ? false : todo(docxGap(item)) }, () => {
