@@ -486,3 +486,66 @@ export function moveTableCondition(rules:readonly TableCondition[],index:number,
   [next[index],next[target]]=[next[target]!,next[index]!];
   return next;
 }
+
+/** Versioned, appearance-only transfer format, independent of OMI documents. */
+export const TABLE_STYLE_TRANSFER_FORMAT='omi-table-styles';
+export const MAX_TABLE_STYLE_TRANSFER_BYTES=1_000_000;
+export function serializePublicationTableStyles(catalog:PublicationTableStyles,selected?:string):string{
+  const normalized=normalizePublicationTableStyles(catalog);
+  if(!normalized)throw new Error('Invalid table style catalog.');
+  validatePublicationTableStyles(catalog);
+  let exported=normalized;
+  if(selected!==undefined){
+    const required=new Set<string>();
+    let name:string|undefined=selected;
+    while(name!==undefined&&!required.has(name)){
+      const preset:TableAppearancePreset|undefined=normalized.items.find(p=>p.name===name);
+      if(!preset)throw new Error('Missing table style.');
+      required.add(name);
+      name=preset.kind==='table'?preset.basedOn:undefined;
+    }
+    exported={items:normalized.items.filter(p=>required.has(p.name)),...(normalized.defaultTableStyle&&required.has(normalized.defaultTableStyle)?{defaultTableStyle:normalized.defaultTableStyle}:{})};
+  }
+  const json=JSON.stringify({format:TABLE_STYLE_TRANSFER_FORMAT,version:1,catalog:exported},null,2);
+  if(new TextEncoder().encode(json).length>MAX_TABLE_STYLE_TRANSFER_BYTES)throw new Error('Table style file too large.');
+  return json;
+}
+export function parsePublicationTableStylesTransfer(json:string):PublicationTableStyles{
+  if(json.length>MAX_TABLE_STYLE_TRANSFER_BYTES||new TextEncoder().encode(json).length>MAX_TABLE_STYLE_TRANSFER_BYTES)throw new Error('Table style file too large.');
+  const raw:unknown=JSON.parse(json);
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('Invalid table style file.');
+  const value=raw as Record<string,unknown>;
+  if(value.format!==TABLE_STYLE_TRANSFER_FORMAT||value.version!==1||Object.keys(value).some(k=>!['format','version','catalog'].includes(k)))throw new Error('Unsupported table style file.');
+  validatePublicationTableStyles(value.catalog);
+  return normalizePublicationTableStyles(value.catalog)!;
+}
+/** Append an imported catalog without changing any existing definitions or
+ * assignments. Reserve source names before allocating collision suffixes. */
+export function mergePublicationTableStyles(target:PublicationTableStyles,incoming:PublicationTableStyles,useIncomingDefault=false):{catalog:PublicationTableStyles;renamed:{from:string;to:string}[]}{
+  validatePublicationTableStyles(target);validatePublicationTableStyles(incoming);
+  const existing=normalizePublicationTableStyles(target)!;
+  const source=normalizePublicationTableStyles(incoming)!;
+  if(existing.items.length+source.items.length>MAX_TABLE_PRESETS)throw new Error('Table style limit exceeded.');
+  const used=new Set(existing.items.map(p=>p.name));
+  const reserved=new Set([...used,...source.items.map(p=>p.name)]);
+  const names=new Map<string,string>();
+  for(const preset of source.items){
+    let name=preset.name;
+    if(used.has(name)){
+      for(let i=2;;i++){
+        const suffix=' ('+i+')';
+        const candidate=preset.name.slice(0,80-suffix.length).trimEnd()+suffix;
+        if(!reserved.has(candidate)){name=candidate;break;}
+      }
+    }
+    names.set(preset.name,name);used.add(name);reserved.add(name);
+  }
+  const items=[...existing.items,...source.items.map(p=>{
+    const renamed={...p,name:names.get(p.name)!};
+    return renamed.kind==='table'&&renamed.basedOn?{...renamed,basedOn:names.get(renamed.basedOn)!}:renamed;
+  })];
+  const defaultTableStyle=useIncomingDefault&&source.defaultTableStyle?names.get(source.defaultTableStyle):existing.defaultTableStyle;
+  const catalog={items,...(defaultTableStyle?{defaultTableStyle}:{})};
+  validatePublicationTableStyles(catalog);
+  return {catalog,renamed:[...names].filter(([from,to])=>from!==to).map(([from,to])=>({from,to}))};
+}
