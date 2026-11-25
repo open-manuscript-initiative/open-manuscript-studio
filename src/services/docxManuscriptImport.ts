@@ -367,7 +367,7 @@ export async function parseDocxManuscript(
     const directContent=Array.from(child.children).filter(el=>!['pPr','bookmarkStart','bookmarkEnd','proofErr'].includes(el.localName));
     if(directContent.length===1&&directContent[0]?.localName==='fldSimple'){
       const instruction=attributeByLocalName(directContent[0],'instr')?.trim()??'';
-      if(/^TOC\b/i.test(instruction)&&!/(?:^|\s)\\(?:a|c)(?:\s|$)/i.test(instruction)){index+=1;continue;}
+      if(/^INDEX\b/i.test(instruction)||(/^TOC\b/i.test(instruction)&&!/(?:^|\s)\\(?:a|c)(?:\s|$)/i.test(instruction))){index+=1;continue;}
     }
     const style = resolveParagraphStyle(child, styles);
     const plainText = paragraphPlainText(child).trim();
