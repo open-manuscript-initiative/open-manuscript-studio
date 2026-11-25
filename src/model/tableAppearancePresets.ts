@@ -78,3 +78,45 @@ export function applyAppearancePreset(table:OmiTableBlockData,preset:TableAppear
   }
   return {...table,cellFormats:formats};
 }
+
+/** Portable, presentation-only catalog embedded in a publication style snapshot. */
+export interface PublicationTableStyles {
+  items:TableAppearancePreset[];
+  defaultTableStyle?:string;
+}
+export function normalizePublicationTableStyles(value:unknown):PublicationTableStyles|undefined{
+  if(!value||typeof value!=='object'||Array.isArray(value))return undefined;
+  const raw=value as Record<string,unknown>;
+  if(!Array.isArray(raw.items))return undefined;
+  const items:TableAppearancePreset[]=[];
+  for(const entry of raw.items.slice(0,MAX_TABLE_PRESETS)){
+    const preset=normalizeAppearancePreset(entry);
+    if(preset&&!items.some(p=>p.name===preset.name))items.push(preset);
+  }
+  const defaultTableStyle=typeof raw.defaultTableStyle==='string'&&items.some(p=>p.kind==='table'&&p.name===raw.defaultTableStyle)?raw.defaultTableStyle:undefined;
+  return {items,...(defaultTableStyle?{defaultTableStyle}:{})};
+}
+/** Reject untrusted extra fields and noncanonical property values at the
+ * template/profile boundary. Existing documents without a catalog stay valid. */
+export function validatePublicationTableStyles(value:unknown):void{
+  const normalized=normalizePublicationTableStyles(value);
+  const canonical=(v:unknown):unknown=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).filter(([,x])=>x!==undefined).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([k,x])=>[k,canonical(x)])):v;
+  if(!normalized||JSON.stringify(canonical(value))!==JSON.stringify(canonical(normalized)))throw new Error('Invalid publication table styles.');
+}
+export function putPublicationTablePreset(catalog:PublicationTableStyles|undefined,preset:TableAppearancePreset):PublicationTableStyles|undefined{
+  const current=normalizePublicationTableStyles(catalog)??{items:[]};
+  const valid=normalizeAppearancePreset(preset);
+  if(!valid||current.items.length>=MAX_TABLE_PRESETS||current.items.some(p=>p.name===valid.name))return undefined;
+  return {...current,items:[...current.items,valid]};
+}
+export function removePublicationTablePreset(catalog:PublicationTableStyles,name:string):PublicationTableStyles{
+  return {items:catalog.items.filter(p=>p.name!==name),...(catalog.defaultTableStyle&&catalog.defaultTableStyle!==name?{defaultTableStyle:catalog.defaultTableStyle}:{})};
+}
+/** Apply a snapshot default only to deliberately created, blank tables.
+ * Never implicitly restyle imported data or existing publication tables. */
+export function applyDefaultPublicationTableStyle(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined):OmiTableBlockData{
+  const valid=normalizePublicationTableStyles(catalog);
+  const preset=valid?.items.find(p=>p.kind==='table'&&p.name===valid.defaultTableStyle);
+  if(!preset||table.provenance||table.cellContent||Object.keys(table.cellFormats??{}).length||table.cells.some(row=>row.some(cell=>cell!=='')))return table;
+  return applyAppearancePreset(table,preset,{row:0,column:0},{row:0,column:0});
+}
