@@ -516,6 +516,7 @@ export function PublicationDocumentCanvas({
     let measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
     const measuredWidths = new WeakMap<HTMLElement, number>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
+    let measuredNotes = new WeakMap<HTMLElement, number>();
     const finish = () => {
       measuring = false;
       if (pending && !cancelled) { pending = false; schedule(); }
@@ -537,13 +538,12 @@ export function PublicationDocumentCanvas({
         while (noteIndex < noteElements.length
           && (noteIndex === 0 || performance.now() - startedAt < 8)) {
           const element = noteElements[noteIndex]!;
-          noteHeights.set(
-            element.dataset.publicationNoteId!,
-            Math.max(
-              noteLineHeight,
-              Math.ceil((element.getBoundingClientRect().height - 0.01) / noteLineHeight) * noteLineHeight,
-            ),
-          );
+          let height = measuredNotes.get(element);
+          if (height === undefined) {
+            height = Math.max(noteLineHeight, Math.ceil((element.getBoundingClientRect().height - 0.01) / noteLineHeight) * noteLineHeight);
+            measuredNotes.set(element, height);
+          }
+          noteHeights.set(element.dataset.publicationNoteId!, height);
           noteIndex += 1;
         }
         if (noteIndex < noteElements.length) {
@@ -758,13 +758,18 @@ export function PublicationDocumentCanvas({
             width: geometry.width, height: geometry.height, marks: [], studyId: getStudyRootSectionId(layoutSectionsRef.current, layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
           };
         });
+        const breaksByBlock = new Map<number, typeof layout.flowBreaks[number][]>();
+        for (const point of layout.flowBreaks) {
+          const group = breaksByBlock.get(point.blockIndex) ?? [];
+          group.push(point); breaksByBlock.set(point.blockIndex, group);
+        }
         let priorInlineHeight = 0;
         measuredBlocks.forEach((block, index) => {
           const placement = layout.placements[index]; if (!placement) return;
           const id = blockIds[index];
           const anchor = id && validBlockIds.has(id) ? id : blockIds.slice(index + 1).find((candidate) => candidate && validBlockIds.has(candidate));
           const lines = block.lines?.length ? block.lines : [{ top: 0, height: block.height, textOffset: 0 }];
-          const breaks = layout.flowBreaks.filter((item) => item.blockIndex === index);
+          const breaks = breaksByBlock.get(index) ?? [];
           let page = placement.pageIndex, inline = 0;
           const text = flow[index]!.element.textContent ?? '';
           lines.forEach((line, lineIndex) => {
@@ -838,6 +843,7 @@ export function PublicationDocumentCanvas({
     const fontsLoaded = () => {
       // Font metrics can change line breaks without changing a block's width.
       measuredLines = new WeakMap();
+      measuredNotes = new WeakMap();
       schedule();
     };
     fonts?.addEventListener('loadingdone', fontsLoaded);
@@ -856,6 +862,8 @@ export function PublicationDocumentCanvas({
               node instanceof HTMLElement && node.matches('.omi-publication-flow-break')
             ))) continue;
             changed = true;
+            const measuredNote = target?.closest<HTMLElement>('[data-publication-note-id]');
+            if (measuredNote && noteMeasureRef.current?.contains(measuredNote)) measuredNotes.delete(measuredNote);
             if (target?.matches('.omi-continuous-tiptap-editor') || record.attributeName === 'data-block-id') structureChanged = true;
             const block = target?.closest<HTMLElement>('[data-block-id]');
             if (block && content.contains(block)) dirtyBlocks.add(block);
