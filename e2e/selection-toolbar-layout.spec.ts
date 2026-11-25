@@ -198,7 +198,6 @@ test('shared character and paragraph icon panels edit independent properties and
   await panel.getByRole('button', { name: 'Apply: Font size (pt)', exact: true }).click();
   await expect(editor.locator('[data-omi-format="omiFontSize"][data-omi-format-value="16"]')).toHaveText('Select these words');
   await panel.getByRole('combobox', { name: 'Underline style', exact: true }).selectOption('double');
-  await panel.getByRole('button', { name: 'Apply: Underline style', exact: true }).click();
   await expect(editor.locator('u[data-omi-underline-variant="double"]')).toHaveText('Select these words');
   await panel.getByRole('button', { name: 'Reset: Font size (pt)', exact: true }).click();
   await expect(editor.locator('[data-omi-format="omiFontSize"]')).toHaveCount(0);
@@ -278,7 +277,6 @@ test('ligature controls and hidden text icon preserve independent typography and
   await toolbar.getByRole('button',{name:'Character formatting',exact:true}).click();
   const panel=toolbar.locator('.omi-direct-formatting');
   await panel.getByRole('combobox',{name:'Ligatures',exact:true}).selectOption('standardContextual');
-  await panel.getByRole('button',{name:'Apply: Ligatures',exact:true}).click();
   const ligatures=editor.locator('[data-omi-format="omiLigatures"][data-omi-format-value="standardContextual"]');
   await expect(ligatures).toHaveText('Select these words');
   const hidden=panel.getByRole('button',{name:'Hidden text',exact:true});
