@@ -1,6 +1,6 @@
 [package]
 name = "open-manuscript-studio"
-version = "1.0.0-rc.3"
+version = "1.0.0-rc.4"
 description = "Open Manuscript Studio desktop shell"
 authors = ["Open Manuscript Initiative"]
 edition = "2021"
