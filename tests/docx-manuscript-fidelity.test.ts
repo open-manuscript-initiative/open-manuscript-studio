@@ -1360,3 +1360,40 @@ test('live publication table appearance survives OMI reopening and native public
     }
   }finally{useStudioStore.setState(previous,true);}
 });
+
+test('Word style-based numbering resolves ancestry, explicit suppression and cell list identity',async()=>{
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const styles='<w:styles xmlns:w="'+ns+'"><w:style w:type="paragraph" w:styleId="BaseList"><w:pPr><w:numPr><w:numId w:val="7"/></w:numPr></w:pPr></w:style><w:style w:type="paragraph" w:styleId="DerivedList"><w:basedOn w:val="BaseList"/></w:style><w:style w:type="paragraph" w:styleId="NestedList"><w:basedOn w:val="BaseList"/></w:style><w:style w:type="paragraph" w:styleId="NoList"><w:basedOn w:val="BaseList"/><w:pPr><w:numPr><w:numId w:val="0"/></w:numPr></w:pPr></w:style></w:styles>';
+  const numbering='<w:numbering xmlns:w="'+ns+'"><w:abstractNum w:abstractNumId="3"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:pPr><w:ind w:left="360" w:hanging="180"/></w:pPr></w:lvl><w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:pStyle w:val="NestedList"/><w:lvlText w:val="%2."/><w:pPr><w:ind w:left="720" w:hanging="180"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId="7"><w:abstractNumId w:val="3"/></w:num></w:numbering>';
+  const p=(value:string,style:string,direct='')=>'<w:p><w:pPr><w:pStyle w:val="'+style+'"/>'+direct+'</w:pPr><w:r><w:t>'+value+'</w:t></w:r></w:p>';
+  const input=makeDocx(p('First item','DerivedList')+p('Nested item','NestedList')+p('Suppressed item','DerivedList','<w:numPr><w:numId w:val="0"/></w:numPr>')+p('Plain style','NoList')+p('Continued item','BaseList')+'<w:tbl><w:tr><w:tc>'+p('Cell item','DerivedList')+'</w:tc></w:tr></w:tbl>',{entries:[textZipEntry('word/styles.xml',styles),textZipEntry('word/numbering.xml',numbering)]});
+  const plan=await parseDocxForStudio(input);
+  const blocks=plan.sections.flatMap(s=>s.blocks);
+  const lists=blocks.filter(b=>!b.visual).flatMap(b=>findNodes(JSON.parse(b.content) as TiptapNode,'orderedList'));
+  const first=lists.find(n=>collectText(n).startsWith('First item'));
+  const nested=lists.find(n=>collectText(n)==='Nested item');
+  const continued=lists.find(n=>collectText(n)==='Continued item');
+  assert.ok(first&&nested&&continued);
+  assert.equal(first.attrs?.omiListLeft,360);
+  assert.equal(nested.attrs?.omiListLevel,1);
+  assert.equal(nested.attrs?.omiListLeft,720);
+  assert.ok(first.attrs?.omiListId);
+  assert.equal(continued.attrs?.omiListId,first.attrs?.omiListId);
+  for(const label of ['Suppressed item','Plain style']){
+    const block=blocks.find(b=>!b.visual&&blockText(b)===label);
+    assert.ok(block);
+    assert.equal(findNodes(JSON.parse(block.content) as TiptapNode,'orderedList').length,0);
+  }
+  const table=blocks.find(b=>b.visual?.kind==='table')?.visual;
+  assert.ok(table?.kind==='table');
+  const cell=findNodes(JSON.parse(table.cellContent?.['0:0']??'{}') as TiptapNode,'orderedList')[0];
+  assert.equal(cell?.attrs?.omiListId,first.attrs?.omiListId);
+  assert.equal(table.cells[0]?.[0],'Cell item');
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Style numbering'}),sections:plan.sections};
+  const exported=buildDocxExport(manuscript);
+  const xml=readZipParts(exported.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:numPr>/);
+  const reopened=await parseDocxForStudio(new File([new Uint8Array(exported.bytes)],'style-numbering.docx'));
+  const reopenedLists=reopened.sections.flatMap(s=>s.blocks).filter(b=>!b.visual).flatMap(b=>findNodes(JSON.parse(b.content) as TiptapNode,'orderedList'));
+  assert.equal(reopenedLists.find(n=>collectText(n).startsWith('First item'))?.attrs?.omiListId,reopenedLists.find(n=>collectText(n)==='Continued item')?.attrs?.omiListId);
+});
