@@ -1,3 +1,4 @@
+import { normalizeWordPictureLayout } from '../model/wordPictureLayout';
 import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model/wordTextBoxLink';
 import { normalizeWordBookmarkRange } from '../model/namedAnchors';
 import { normalizeWordCrossReferenceField } from '../model/wordCrossReference';
@@ -448,6 +449,7 @@ function validateBlock(
   addAddressable(value, path, indexes.all);
   addAddressable(value, path, indexes.blocks);
   const visual = isRecord(value.visual) ? value.visual : undefined;
+  if (visual?.kind === 'image' && visual.wordPicture !== undefined && !normalizeWordPictureLayout(visual.wordPicture)) invalid(`${path}/visual has invalid Word picture geometry.`);
   const boxes = visual?.kind === 'text-box' ? [visual.textBox] : Array.isArray(visual?.textBoxes) ? visual.textBoxes : [];
   for (const box of boxes) {
     if(isRecord(box)&&isRecord(box.extensions)&&box.extensions[WORD_TEXT_BOX_LINK_EXTENSION]!==undefined&&!normalizeWordTextBoxLink(box.extensions[WORD_TEXT_BOX_LINK_EXTENSION]))invalid(`${path}/visual has invalid Word text-box link metadata.`);
