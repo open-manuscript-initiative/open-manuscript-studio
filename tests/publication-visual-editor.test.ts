@@ -381,7 +381,7 @@ test('author given and family names have independent publication typography', ()
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {
   assert.match(styleEditor, /<PublicationDocumentCanvas[\s\S]*style=\{style\}/);
   assert.match(documentCanvas, /buildContinuousManuscriptDocument\([\s\S]*manuscript\.sections/);
-  assert.match(documentCanvas, /projectContinuousManuscriptDocument\(parsed, currentSections\)/);
+  assert.match(documentCanvas, /stageContinuousDocumentChange\(\s*projectContinuousManuscriptDocument\(parsed,\s*currentSections,\s*\{\s*textContentCache:\s*snapshot\s*\?\s*projectionCache\.current\s*:\s*undefined,\s*\}\)/);
   assert.match(documentCanvas, /stageContinuousDocumentChange/);
   assert.match(documentCanvas, /<BlockEditor[\s\S]*continuous/);
   assert.match(documentCanvas, /const setAbstract = useStudioStore/);
