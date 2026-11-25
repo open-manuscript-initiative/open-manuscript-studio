@@ -477,3 +477,12 @@ export function selectedPublicationOverrideCount(table:OmiTableBlockData,catalog
     return fields.some(field=>!sameFormat(actual[field],baseline[field]));
   }).length;
 }
+
+/** Ordered matching patches use last-match precedence; moving a rule never
+ * mutates the inherited list or its definitions. */
+export function moveTableCondition(rules:readonly TableCondition[],index:number,direction:-1|1):TableCondition[]{
+  const next=[...rules], target=index+direction;
+  if(!Number.isInteger(index)||index<0||index>=next.length||target<0||target>=next.length)return next;
+  [next[index],next[target]]=[next[target]!,next[index]!];
+  return next;
+}
