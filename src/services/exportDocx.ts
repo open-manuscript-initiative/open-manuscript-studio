@@ -1,6 +1,5 @@
 import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model/wordTextBoxLink';
-import { textBoxDocument, boxNumber, boxColor, boxFont } from '../model/textBoxes';
-import type { OmiTextBox } from '../types/omi';
+import { textBoxDocument, boxNumber, boxColor, boxFont, visualTextBoxText } from '../model/textBoxes';
 import { wordTocInstruction } from '../model/tableOfContents';
 import { normalizeExternalHref } from '../model/richText';
 import { toPortableBookmarkName } from '../model/namedAnchors';
@@ -18,7 +17,6 @@ import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import { resolvePublicationParagraphStyle } from './publicationStyleExport';
 import { paragraphFormattingWordXml } from '../model/directParagraphFormatting';
 import { directFormattingFromMarks, directFormattingWordXml } from '../model/directFormatting';
-import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { officeMetadataConversion, metadataConversionWarnings, type MetadataConversionObservation } from '../model/metadataConversion';
@@ -40,7 +38,7 @@ import { createNoteBodyDocument, type NoteJsonNode } from '../model/noteRichText
 import { contributorNameParts } from '../model/contributorName';
 import { buildPublicationRenderingContext, type OmiRenderedContributor } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
-import type { OmiBlock, OmiManuscript, OmiTableBlockData } from '../types/omi';
+import type { OmiBlock, OmiManuscript, OmiTableBlockData, OmiTextBox } from '../types/omi';
 import { createStoreZip, textZipEntry } from './simpleZip';
 
 export interface DocxExportResult {
@@ -345,7 +343,7 @@ class WordHyperlinkRegistry{
     }
     let id=this.ids.get(target);
     if(!id){id='rIdHyperlink'+(this.ids.size+1);this.ids.set(target,id);}
-    const tooltip=typeof title==='string'&&title.length<=1024&&!/[\u0000-\u001F]/.test(title)?' w:tooltip="'+xml(title)+'"':'';
+    const tooltip=typeof title==='string'&&title.length<=1024&&!Array.from(title).some(character => character.charCodeAt(0) < 32)?' w:tooltip="'+xml(title)+'"':'';
     return '<w:hyperlink r:id="'+id+'"'+tooltip+'>'+content+'</w:hyperlink>';
   }
   relationships():string{return [...this.ids].map(([target,id])=>'<Relationship Id="'+id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="'+xml(target)+'" TargetMode="External"/>').join('');}
@@ -369,7 +367,7 @@ class WordTextBoxRegistry {
         if(bySource.has(source.name))duplicate.add(source.name);
         else bySource.set(source.name,box);
       }
-      let name=source?.name??'OMIBox'+(this.names.size+1),suffix=2,base=name;
+      let name=source?.name??'OMIBox'+(this.names.size+1),suffix=2; const base=name;
       while(used.has(name.toLowerCase()))name=base.slice(0,70)+'_'+suffix++;
       used.add(name.toLowerCase());this.names.set(box,name);
     }
