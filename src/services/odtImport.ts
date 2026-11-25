@@ -1,4 +1,4 @@
-import { tableMergeLayout, normalizeTableCellAppearance } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder } from '../model/tableLayout';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
 import { OdtZip } from './odtZip';
@@ -109,6 +109,16 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
             verticalAlign:property(style,'table-cell','table-cell-properties','style:vertical-align') as OmiTableCellFormat['verticalAlign'],
             backgroundColor:property(style,'table-cell','table-cell-properties','fo:background-color'),
           });
+          const cellProp=(attr:string)=>property(style,'table-cell','table-cell-properties',attr);
+          const borders: NonNullable<OmiTableCellFormat['borders']>={};
+          const paddingPt: NonNullable<OmiTableCellFormat['paddingPt']>={};
+          for(const side of TABLE_CELL_SIDES){
+            const edge=odtTableCellBorder(cellProp('fo:border-'+side)??cellProp('fo:border'));
+            if(edge) borders[side]=edge;
+            const padding=tableLengthPt(cellProp('fo:padding-'+side)??cellProp('fo:padding'));
+            if(padding!==undefined) paddingPt[side]=padding;
+          }
+          Object.assign(format,normalizeTableCellEdges({borders,paddingPt}));
           if(Object.keys(format).length) cellFormats[`${rows.length}:${col}`]=format;
           values.push(paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
         }
