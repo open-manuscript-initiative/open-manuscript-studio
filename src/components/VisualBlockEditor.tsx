@@ -1,4 +1,4 @@
-import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
+import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tiptap/react';
 import { generateHTML } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
@@ -303,7 +303,7 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
   const {locale}=useTranslation();
   const copy=getRichTextCopy(locale);
   const change=useRef(onChange);change.current=onChange;
-  const editor=useEditor({extensions:cellExtensions(),content:doc,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
+  const editor=useEditor({extensions:cellExtensions(),content:doc as JSONContent,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
     const parsed=parseTableCellContent(JSON.stringify(current.getJSON()));
     if(parsed) change.current(parsed);
   }});
@@ -312,7 +312,7 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
   const active=useEditorState({editor,selector:({editor:e})=>marks.map(m=>e?.isActive(m)??false)});
   const paragraph=useEditorState({editor,selector:({editor:e})=>normalizeCellParagraphAttrs(e?.getAttributes('paragraph'))})??{};
   const visualCopy=getVisualElementsCopy(locale);
-  const setParagraph=(name:string,value:string|number|null)=>editor?.chain().focus().updateAttributes('paragraph',{[name]:value}).run();
+  const setParagraph=(name:string,value:string|number|null)=>editor?.commands.updateAttributes('paragraph',{[name]:value});
   useEffect(()=>{
     if(!editor) return;
     const next=editor.schema.nodeFromJSON(doc).toJSON();
@@ -332,7 +332,7 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
         {([['omiLeftIndent',visualCopy.cellParagraphLeftIndent],['omiRightIndent',visualCopy.cellParagraphRightIndent],['omiFirstLineIndent',visualCopy.cellParagraphFirstIndent],['omiSpaceBefore',visualCopy.cellParagraphBefore],['omiSpaceAfter',visualCopy.cellParagraphAfter],['omiLineSpacing',visualCopy.cellParagraphLineSpacing]] as const).map(([name,title])=><label key={name}><span>{title}{name==='omiLineSpacing'&&(!paragraph.omiLineRule||paragraph.omiLineRule==='auto')?' (×)':' (pt)'}</span>
           <input type="number" step="any" min={name==='omiFirstLineIndent'?-1000:name==='omiLineSpacing'?0.05:0} max={1000} value={String(paragraph[name]??'')} placeholder={visualCopy.cellAppearanceDefault} onChange={e=>{if(e.target.value==='')setParagraph(name,null);else if(Number.isFinite(e.target.valueAsNumber))setParagraph(name,e.target.valueAsNumber);}}/>
         </label>)}
-        <label><span>{visualCopy.cellParagraphLineRule}</span><select value={String(paragraph.omiLineRule??'auto')} onChange={e=>{const rule=e.target.value;editor?.chain().focus().updateAttributes('paragraph',{omiLineRule:rule,omiLineSpacing:paragraph.omiLineRule===rule?paragraph.omiLineSpacing??(rule==='auto'?1:12):rule==='auto'?1:12}).run();}}>
+        <label><span>{visualCopy.cellParagraphLineRule}</span><select value={String(paragraph.omiLineRule??'auto')} onChange={e=>{const rule=e.target.value;editor?.chain().updateAttributes('paragraph',{omiLineRule:rule,omiLineSpacing:paragraph.omiLineRule===rule?paragraph.omiLineSpacing??(rule==='auto'?1:12):rule==='auto'?1:12}).run();}}>
           <option value="auto">{visualCopy.rowHeightAuto}</option><option value="exact">{visualCopy.rowHeightExact}</option><option value="atLeast">{visualCopy.rowHeightMinimum}</option>
         </select></label>
       </div>
@@ -340,7 +340,7 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
   </div>;
 }
 function richCellPreview(doc:NoteJsonNode):string|undefined{
-  try{return generateHTML(doc,cellExtensions());}catch{return undefined;}
+  try{return generateHTML(doc as JSONContent,cellExtensions());}catch{return undefined;}
 }
 
 function EditableGrid({
