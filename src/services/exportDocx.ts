@@ -22,7 +22,7 @@ import {
   type OmiInlineSemanticKind,
 } from '../model/inlineSemantics';
 import type { OmiIndexEntry } from '../model/indexing';
-import { getNoteKind, isNoteAnnotation } from '../model/notes';
+import { getNoteKind, getNoteCustomMark, isNoteAnnotation } from '../model/notes';
 import { getManuscriptFundingStatement } from '../model/semanticFields';
 import { createNoteBodyDocument, type NoteJsonNode } from '../model/noteRichText';
 import { contributorNameParts } from '../model/contributorName';
@@ -68,24 +68,17 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const annotationsById = new Map(
     manuscript.annotations.filter(isNoteAnnotation).map((annotation) => [annotation.id, annotation]),
   );
-  const footnotes: Array<{ id: number; body: NoteJsonNode }> = [];
-  const endnotes: Array<{ id: number; body: NoteJsonNode }> = [];
+  const footnotes: WordNoteBody[] = [];
+  const endnotes: WordNoteBody[] = [];
   const publicationStyle=getAppliedPublicationTemplate(manuscript)?.style;
   const continueFootnotes=publicationStyle?resolvePublicationParagraphStyle(publicationStyle,publicationStyle.paragraphStyles.items.find(item=>item.role==='note')?.id).footnoteContinueOnNextPage!==false: true;
   const noteReferenceIds = { footnote: new Map<string, number>(), endnote: new Map<string, number>() };
   const referencedNoteIds = new Set<string>();
 
-  body.push(paragraph(
-    context.title, 'Title',
-    fundingStatement ? '<w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:t>*</w:t></w:r>' : '',
-  ));
+  body.push(paragraph(context.title, 'Title'));
   if (context.subtitle) body.push(paragraph(context.subtitle, 'Subtitle'));
   if (context.contributors.length) {
     body.push(authorParagraph(context.contributors));
-  }
-  // Kept outside native Word footnotes: the following numbered footnote remains 1.
-  if (fundingStatement) {
-    body.push(paragraph(`* ${fundingStatement}`, 'FundingNote'));
   }
   if (context.abstract) {
     body.push(paragraph(localizedLabel(context.locale, 'abstract'), 'Heading1'));
@@ -133,9 +126,9 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           },
         );
         const target = kind === 'footnote' ? footnotes : endnotes;
-        target.push({ id, body: noteDocument });
+        target.push({ id, body: noteDocument, customMark:getNoteCustomMark(note) });
       }
-      return { kind, id };
+      return { kind, id, customMark:getNoteCustomMark(note) };
     };
 
   const noteScope=getDocumentStructureProfile(manuscript).noteNumberingScope;
@@ -196,6 +189,13 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     body.push(renderWordGeneratedIndexField(context.locale));
   }
 
+  if(fundingStatement){
+    // Allocate after ordinary note IDs, but put the anchor at the title.
+    // Word custom marks do not advance automatic numbering.
+    const id=footnotes.length+1;
+    footnotes.unshift({id,customMark:'*',funding:true,body:{type:'doc',content:[{type:'paragraph',content:[{type:'text',text:fundingStatement}]}]}});
+    body[0]=paragraph(context.title,'Title',wordNoteReference('footnote',id,'*'));
+  }
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:body>${body.join('')}${sectionXml()}</w:body></w:document>`;
 
@@ -289,7 +289,7 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
     const sourceParagraph = node.attrs?.omiWordParagraphStyle;
     const styleId = sourceStyles.register(sourceParagraph);
     const properties = (styleId ? '<w:pStyle w:val="'+styleId+'"/>' : '') + numPr + paragraphFormattingWordXml(node.attrs);
-    output.push('<w:p>' + (properties ? '<w:pPr>'+properties+'</w:pPr>' : '') + runs.map(run=>'kind' in run ? wordNoteReference(run.kind,run.id) : wordRun(run, sourceStyles, sourceParagraph)).join('') + (output.length === 0 ? suffix : '') + '</w:p>');
+    output.push('<w:p>' + (properties ? '<w:pPr>'+properties+'</w:pPr>' : '') + runs.map(run=>'kind' in run ? wordNoteReference(run.kind,run.id,run.customMark) : wordRun(run, sourceStyles, sourceParagraph)).join('') + (output.length === 0 ? suffix : '') + '</w:p>');
   };
   const renderList = (node: NoteJsonNode, depth: number, parent?: NumberingGroup) => {
     const {group,level} = numbering.register(node,depth,parent);
@@ -354,7 +354,7 @@ function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordLi
         const nested=cellNestedTable(p);
         if(nested) return wordTable(nested,warnings,numbering,sourceStyles,resolveNote,Math.max(1,cellWidth));
         if(p.type==='orderedList'||p.type==='bulletList') return renderWordLists(JSON.stringify({type:'doc',content:[cellDocumentWithDefaults(p,format.horizontalAlign)]}),numbering,resolveNote,'',sourceStyles)??'';
-        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':renderJsonNode(n,resolveNote).map(run=>'kind' in run?wordNoteReference(run.kind,run.id):wordRun(run,undefined,{})).join('')).join('');
+        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':renderJsonNode(n,resolveNote).map(run=>'kind' in run?wordNoteReference(run.kind,run.id,run.customMark):wordRun(run,undefined,{})).join('')).join('');
         const properties=paragraphFormattingWordXml(effectiveCellParagraphAttrs(p.attrs,format.horizontalAlign));
         return '<w:p>'+(properties?'<w:pPr>'+properties+'</w:pPr>':'')+runs+'</w:p>';
       }).join('');
@@ -422,18 +422,20 @@ function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '
       properties = (id ? `<w:pStyle w:val="${id}"/>` : '') + paragraphFormattingWordXml(paragraph.attrs);
     }
   } catch { /* Plain-text fallback has no local paragraph overrides. */ }
-  const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id) : wordRun(run, sourceStyles, sourceParagraph)).join('');
+  const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id, run.customMark) : wordRun(run, sourceStyles, sourceParagraph)).join('');
   return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${rendered}${suffix}</w:p>`;
 }
 
 type WordNoteKind = 'footnote' | 'endnote';
-type WordInlinePart = OmiInlineRun | { kind: WordNoteKind; id: number };
-type WordNoteReference = { kind: WordNoteKind; id: number } | OmiInlineRun;
+type WordNoteBody={id:number;body:NoteJsonNode;customMark?:'*';funding?:boolean};
+type NativeWordNoteReference={kind:WordNoteKind;id:number;customMark?:'*'};
+type WordInlinePart = OmiInlineRun | NativeWordNoteReference;
+type WordNoteReference = NativeWordNoteReference | OmiInlineRun;
 
-function wordNoteReference(kind: WordNoteKind, id: number): string {
+function wordNoteReference(kind: WordNoteKind, id: number, customMark?:'*'): string {
   const element = kind === 'footnote' ? 'footnoteReference' : 'endnoteReference';
   const styleId = kind === 'footnote' ? 'FootnoteReference' : 'EndnoteReference';
-  return `<w:r><w:rPr><w:rStyle w:val="${styleId}"/></w:rPr><w:${element} w:id="${id}"/></w:r>`;
+  return `<w:r><w:rPr><w:rStyle w:val="${styleId}"/></w:rPr><w:${element} w:id="${id}"${customMark?' w:customMarkFollows="1"':''}/>${customMark?'<w:t>*</w:t>':''}</w:r>`;
 }
 
 function renderWordContent(
@@ -491,7 +493,7 @@ function renderJsonNode(
   return children;
 }
 
-function renderWordNotes(kind: WordNoteKind, notes: readonly { id: number; body: NoteJsonNode }[], allowContinuation = true): string {
+function renderWordNotes(kind: WordNoteKind, notes: readonly WordNoteBody[], allowContinuation = true): string {
   const root = kind === 'footnote' ? 'footnotes' : 'endnotes';
   const item = kind === 'footnote' ? 'footnote' : 'endnote';
   const reference = kind === 'footnote' ? 'footnoteRef' : 'endnoteRef';
@@ -506,14 +508,14 @@ function renderWordNotes(kind: WordNoteKind, notes: readonly { id: number; body:
     };
     collect(note.body);
     if(!paragraphs.length)paragraphs.push({type:'paragraph'});
-    const marker=`<w:r><w:rPr><w:rStyle w:val="${kind==='footnote'?'FootnoteReference':'EndnoteReference'}"/></w:rPr><w:${reference}/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>`;
+    const marker=`<w:r><w:rPr><w:rStyle w:val="${kind==='footnote'?'FootnoteReference':'EndnoteReference'}"/></w:rPr>${note.customMark?'<w:t>*</w:t>':`<w:${reference}/>`}</w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>`;
     const content=paragraphs.map((p,index)=>{
       const attrs={...p.attrs};
       if(kind==='footnote'){
         if(attrs.omiKeepLines===undefined)attrs.omiKeepLines=!allowContinuation;
         if(!allowContinuation&&index<paragraphs.length-1&&attrs.omiKeepNext===undefined)attrs.omiKeepNext=true;
       }
-      return `<w:p><w:pPr><w:pStyle w:val="${kind==='footnote'?'FootnoteText':'EndnoteText'}"/>${paragraphFormattingWordXml(attrs)}</w:pPr>${index===0?marker:''}${renderJsonContent(p)}</w:p>`;
+      return `<w:p><w:pPr><w:pStyle w:val="${note.funding?'FundingNote':kind==='footnote'?'FootnoteText':'EndnoteText'}"/>${paragraphFormattingWordXml(attrs)}</w:pPr>${index===0?marker:''}${renderJsonContent(p)}</w:p>`;
     }).join('');
     return `<w:${item} w:id="${note.id}">${content}</w:${item}>`;
   }).join('');
