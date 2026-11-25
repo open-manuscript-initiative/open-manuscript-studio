@@ -23,6 +23,7 @@ export interface OmiInlineRun {
   directFormatting?: DirectFormatting;
   language?: string;
   link?: string;
+  linkTitle?:string;
   noteId?: string;
   noteType?: string;
 }
@@ -118,6 +119,11 @@ export function inlineLinkFromMarks(
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
+export function inlineLinkTitleFromMarks(marks:readonly OmiInlineMarkLike[]|undefined):string|undefined{
+  const title=marks?.find(mark=>mark.type==='omiLink')?.attrs?.title;
+  return typeof title==='string'&&title.length<=1024?title:undefined;
+}
+
 /** Extracts semantic text runs from one stored OMI/Tiptap block. */
 export function extractOmiInlineRuns(content: string): OmiInlineRun[] {
   const input = content.trim();
@@ -159,6 +165,7 @@ function walk(node: JsonNode, runs: OmiInlineRun[]): void {
       directFormatting: directFormattingFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
       link: inlineLinkFromMarks(node.marks),
+      linkTitle:inlineLinkTitleFromMarks(node.marks),
     });
     return;
   }
@@ -218,6 +225,7 @@ function coalesceRuns(runs: readonly OmiInlineRun[]): OmiInlineRun[] {
       JSON.stringify(previous.directFormatting ?? {}) === JSON.stringify(run.directFormatting ?? {}) &&
       previous.language === run.language &&
       previous.link === run.link &&
+      previous.linkTitle===run.linkTitle &&
       previous.noteId === run.noteId &&
       previous.noteType === run.noteType &&
       previous.semantics.join('|') === run.semantics.join('|')
