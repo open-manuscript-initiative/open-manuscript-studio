@@ -1,4 +1,4 @@
-import { tableCellPlainText, normalizeCellParagraphAttrs, tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight } from '../model/tableLayout';
+import { tableCellPlainText, normalizeCellParagraphAttrs, tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight, MAX_NESTED_TABLE_DEPTH, parseTableCellContent } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
@@ -44,6 +44,7 @@ import type {
   OmiCitationCluster,
   OmiImportProvenance,
   OmiTableCellFormat,
+  OmiTableBlockData,
   OmiTableCellMerge,
   OmiTableRowSplitPolicy,
   OmiTableRowHeight,
@@ -79,6 +80,7 @@ interface WordListInfo {
 
 interface ParsedListParagraph extends WordListInfo {
   content: TiptapNode[];
+  paragraphAttrs?: Record<string,unknown>;
 }
 
 interface TiptapMark {
@@ -222,7 +224,11 @@ export async function parseDocxManuscript(
 
     if (child.localName === 'tbl') {
       const section = ensureSection(sections);
-      const table = parseWordTable(child);
+      const blockId=crypto.randomUUID();
+      // Bibliographic fields in cells retain their cached text until citation
+      // cluster traversal supports visual content; note anchors use the real registry.
+      const context:InlineContext={blockId,footnotes,endnotes,bibliographyByTag:new Map(),annotations,citations,citationClusters,warnings,stats};
+      const table = parseWordTable(child,numbering,relationships,context);
       if (table.cells.length) {
         section.blocks.push(
           createTableBlock(table.cells, {
@@ -234,7 +240,7 @@ export async function parseDocxManuscript(
             rowSplitOverrides: table.rowSplitOverrides,
             rowHeights: table.rowHeights,
             provenance,
-          }),
+          },blockId),
         );
         stats.tables += 1;
         if (table.mergedCells) warnings.push(warning('merged-table-cells'));
@@ -1004,7 +1010,7 @@ function consumeList(
     if (item.ordered !== ordered || item.attrs.omiListId !== first?.attrs.omiListId) break;
     node.content?.push({
       type: 'listItem',
-      content: [{ type: 'paragraph', content: item.content }],
+      content: [{ type: 'paragraph', ...(item.paragraphAttrs?{attrs:item.paragraphAttrs}:{}), content: item.content }],
     });
     index += 1;
   }
@@ -1142,7 +1148,7 @@ function resolveParagraphHeadingLevel(
   );
 }
 
-function parseWordTable(table: Element): {
+function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map<string,Relationship>,context:InlineContext,depth=0,budget={cells:10000}): {
   cells: string[][];
   headerRows: number;
   mergedCells: boolean;
@@ -1152,6 +1158,7 @@ function parseWordTable(table: Element): {
   rowHeights: Record<string,OmiTableRowHeight>;
   cellContent:Record<string,string>;
 } {
+  if(depth>MAX_NESTED_TABLE_DEPTH) throw new Error('Nested table exceeds the supported depth.');
   const rows = directChildrenByLocalName(table, 'tr');
   const cellFormats: Record<string, OmiTableCellFormat> = {};
   let mergedCells = false;
@@ -1229,11 +1236,10 @@ function parseWordTable(table: Element): {
       const colSpan=Number.isSafeInteger(rawSpan)&&rawSpan>=1&&rawSpan<=1000?rawSpan:1;
       if(rawSpan!==colSpan) mergedCells=true;
       if(values.length+colSpan>10000 || (rowIndex+1)*(values.length+colSpan)>10000) throw new Error('Table exceeds the 10000-cell import limit.');
-      // Keep nested tables on their existing fallback path. Direct paragraph
-      // runs use the same mark decoder as the manuscript body.
+      // Keep direct cell blocks in source order, including nested tables.
       const cellParagraphs=directChildrenByLocalName(cell,'p');
-      const nested=descendantsByLocalName(cell,'tbl').length>0;
-      const doc={type:'doc',content:cellParagraphs.map(p=>{
+      const nested=directChildrenByLocalName(cell,'tbl').length>0;
+      const parsedParagraphs=cellParagraphs.map(p=>{
         const pp=directChildrenByLocalName(p,'pPr')[0];
         const attrs=pp?normalizeCellParagraphAttrs({
           ...readWordParagraphFormatting((property,attribute)=>{
@@ -1246,18 +1252,36 @@ function parseWordTable(table: Element): {
           }),
         }):{};
         if(attrs.omiAlign===format.horizontalAlign) delete attrs.omiAlign;
-        return {type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:descendantsByLocalName(p,'r').flatMap(run=>{
-        const marks=runMarks(run);
-        return Array.from(run.children).flatMap((node):TiptapNode[]=>{
-          if(node.localName==='t'&&node.textContent) return [{type:'text',text:node.textContent,marks}];
-          if(node.localName==='tab') return [{type:'omiTab'}];
-          if(node.localName==='br'||node.localName==='cr') return [{type:'hardBreak'}];
-          return [];
-        });
-      })};})};
-      const rich=!nested&&doc.content.length>0&&doc.content.some(p=>p.attrs||p.content.some(n=>n.marks?.length||n.type!=='text')||doc.content.length>1);
-      const text=rich?tableCellPlainText(doc):descendantsByLocalName(cell,'p').map(paragraph=>paragraphPlainText(paragraph).trim()).filter(Boolean).join('\n');
-      if(rich) cellContent[`${rowIndex}:${columnIndex}`]=JSON.stringify(doc);
+        return {type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseParagraphInline(p,relationships,context)};});
+      const nodes:TiptapNode[]=[];
+      let listItems:ParsedListParagraph[]=[];
+      const flush=()=>{if(listItems.length){nodes.push(...buildListNodes(listItems));listItems=[];}};
+      let paragraphIndex=0;
+      for(const source of Array.from(cell.children)){
+        if(source.localName==='tbl'){
+          flush();
+          const child=parseWordTable(source,numbering,relationships,context,depth+1,budget);
+          const nestedTable:OmiTableBlockData={kind:'table',cells:child.cells,headerRows:child.headerRows,cellFormats:child.cellFormats,cellContent:child.cellContent,cellMerges:child.cellMerges,rowSplitDefault:'allow',rowSplitOverrides:child.rowSplitOverrides,rowHeights:child.rowHeights};
+          if(child.mergedCells) mergedCells=true;
+          if(child.cells.length) nodes.push({type:'omiCellTable',attrs:{table:nestedTable}});
+          continue;
+        }
+        if(source.localName!=='p') continue;
+        const paragraph=parsedParagraphs[paragraphIndex++]!;
+        const info=paragraphListInfo(source,numbering);
+        if(info){
+          const numPr=directChildrenByLocalName(directChildrenByLocalName(source,'pPr')[0]!,'numPr')[0]!;
+          const id=attributeByLocalName(directChildrenByLocalName(numPr,'numId')[0]!,'val');
+          listItems.push({...info,attrs:{...info.attrs,omiListId:info.attrs.omiListId??'word-'+id},content:paragraph.content,paragraphAttrs:paragraph.attrs});
+        }else{flush();nodes.push(paragraph);}
+      }
+      flush();
+      const doc={type:'doc',content:nodes};
+      const rich=nodes.length>0&&nodes.some(p=>p.type!=='paragraph'||p.attrs||p.content?.some(n=>n.marks?.length||n.type!=='text')||nodes.length>1);
+      const parsed=rich?parseTableCellContent(JSON.stringify(doc)):undefined;
+      if((nested||cellParagraphs.some(paragraphHasNoteReference))&&!parsed) throw new Error('Structured table content could not be represented safely.');
+      const text=parsed?tableCellPlainText(parsed):descendantsByLocalName(cell,'p').map(paragraph=>paragraphPlainText(paragraph).trim()).filter(Boolean).join('\n');
+      if(parsed) cellContent[`${rowIndex}:${columnIndex}`]=JSON.stringify(parsed);
       const vertical=prop('vMerge');
       const mode=vertical?(attributeByLocalName(vertical,'val')??'continue'):undefined;
       const prior=active.get(columnIndex);
@@ -1302,7 +1326,8 @@ function parseWordTable(table: Element): {
     headerRows++;
   }
   const width=cells.reduce((max,row)=>Math.max(max,row.length),0);
-  if(width*cells.length>10000) throw new Error('Table exceeds the 10000-cell import limit.');
+  if(width*cells.length>budget.cells) throw new Error('Table exceeds the 10000-cell import limit.');
+  budget.cells-=width*cells.length;
   const matrix=rectangularize(cells);
   const candidates=merges.filter(m=>m.rowSpan>1||m.colSpan>1);
   const cellMerges=tableMergeLayout(matrix,candidates,headerRows).merges;

@@ -1,10 +1,15 @@
 import type {
   OmiAnnotation,
   OmiManuscriptState,
+  OmiTableBlockData,
+  OmiVisualBlockData,
 } from '../types/omi';
+import { sameTableCitationAnchors } from './citationClusters';
+import { tableCellDocument, tableCellPlainText, cellNestedTable, tableMergeLayout } from './tableLayout';
+import type { NoteJsonNode } from './noteRichText';
 import { getDocumentStructureProfile } from './documentProfile';
 import { getStudyRootSectionId } from './sectionStructure';
-import { mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
+import { findManuscriptBlock, mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 export type OmiNoteKind =
   | 'footnote'
@@ -47,7 +52,6 @@ interface JsonNode {
   type?: string;
   attrs?: Record<string, unknown>;
   content?: JsonNode[];
-  [key: string]: unknown;
 }
 
 export function createNoteAnnotation(
@@ -105,6 +109,7 @@ export function collectNoteAnchors(
         occurrence.block.content,
         occurrence.section.id,
         occurrence.block.id,
+        occurrence.block.visual,
       ));
     }
   }
@@ -116,13 +121,42 @@ export function collectNoteAnchorsInBlock(
   content: string,
   sectionId: string,
   blockId: string,
+  visual?: OmiVisualBlockData,
 ): NoteAnchorOccurrence[] {
-  const document = parseStructuredContent(content);
-  if (!document) return [];
-
   const result: NoteAnchorOccurrence[] = [];
-  collectNoteNodes(document, sectionId, blockId, result);
+  const document = parseStructuredContent(content);
+  if (document) collectNoteNodes(document, sectionId, blockId, result);
+  if(visual?.kind==='table') visitTableNotes(visual,sectionId,blockId,result);
   return result;
+}
+
+function visitTableNotes(table:OmiTableBlockData,sectionId:string,blockId:string,result:NoteAnchorOccurrence[]):void {
+  const layout=tableMergeLayout(table.cells,table.cellMerges,table.headerRows);
+  for(let r=0;r<table.cells.length;r++) for(let c=0;c<(table.cells[r]?.length??0);c++){
+    if(layout.covered(r,c)) continue;
+    const doc=tableCellDocument(table,r,c);
+    if(doc) collectNoteNodes(doc,sectionId,blockId,result);
+  }
+}
+
+/** Transform valid cell documents without changing the plain-text projection. */
+function mapTableNoteDocuments(table:OmiTableBlockData,transform:(node:JsonNode)=>JsonNode):OmiTableBlockData {
+  if(!table.cellContent) return table;
+  let changed=false;
+  const content={...table.cellContent};
+  const visit=(node:JsonNode):JsonNode=>{
+    const nested=cellNestedTable(node);
+    if(nested) return {...node,attrs:{table:mapTableNoteDocuments(nested,transform)}};
+    return node.content?{...node,content:node.content.map(visit)}:node;
+  };
+  for(let r=0;r<table.cells.length;r++) for(let c=0;c<(table.cells[r]?.length??0);c++){
+    const doc=tableCellDocument(table,r,c);
+    if(!doc) continue;
+    const next=transform(visit(doc)) as NoteJsonNode;
+    if(tableCellPlainText(next)!==table.cells[r]?.[c]) continue;
+    if(JSON.stringify(doc)!==JSON.stringify(next)){content[r+':'+c]=JSON.stringify(next);changed=true;}
+  }
+  return changed?{...table,cellContent:content}:table;
 }
 
 export function getNoteNumber(
@@ -218,16 +252,16 @@ export function reconcileNoteState(
   const blockChanges: NoteReconciliationResult['blockChanges'] = [];
   const nextSections = mapManuscriptBlocks(state.sections, (block) => {
     const parsed = parseStructuredContent(block.content);
-    if (!parsed) return block;
-    const nextContent = JSON.stringify(normalizeNoteNodes(parsed, numberByNoteId, annotationById));
-    if (nextContent === block.content) return block;
+    const nextContent = parsed?JSON.stringify(normalizeNoteNodes(parsed, numberByNoteId, annotationById)):block.content;
+    const visual=block.visual?.kind==='table'?mapTableNoteDocuments(block.visual,node=>normalizeNoteNodes(node,numberByNoteId,annotationById)):block.visual;
+    if (nextContent === block.content) return visual===block.visual?block:{...block,visual};
 
     blockChanges.push({
       blockId: block.id,
       previousContent: block.content,
       nextContent,
     });
-    return { ...block, content: nextContent };
+    return { ...block, content: nextContent, ...(visual?{visual}:{}) };
   });
 
   return {
@@ -251,9 +285,9 @@ export function removeNoteFromState(
   );
   const sectionsWithoutAnchor = mapManuscriptBlocks(state.sections, (block) => {
     const parsed = parseStructuredContent(block.content);
-    if (!parsed) return block;
-    const nextContent = JSON.stringify(removeNoteNodes(parsed, noteId));
-    return nextContent === block.content ? block : { ...block, content: nextContent };
+    const nextContent = parsed?JSON.stringify(removeNoteNodes(parsed,noteId)):block.content;
+    const visual=block.visual?.kind==='table'?mapTableNoteDocuments(block.visual,node=>removeNoteNodes(node,noteId)):block.visual;
+    return nextContent===block.content&&visual===block.visual?block:{...block,content:nextContent,...(visual?{visual}:{})};
   });
 
   const stateWithoutAnnotation: OmiManuscriptState = {
@@ -327,6 +361,8 @@ function collectNoteNodes(
     }
   }
 
+  const nested=cellNestedTable(node);
+  if(nested) visitTableNotes(nested,sectionId,blockId,result);
   for (const child of node.content ?? []) {
     collectNoteNodes(child, sectionId, blockId, result);
   }
@@ -484,4 +520,37 @@ function annotationsAreEqual(
   second: OmiAnnotation,
 ): boolean {
   return JSON.stringify(first) === JSON.stringify(second);
+}
+
+export interface TableNoteInsertion {
+  id:string;
+  anchorId:string;
+  kind:OmiNoteKind;
+}
+const anchorKey=(note:NoteAnchorOccurrence)=>JSON.stringify([note.noteId,note.anchorId]);
+/** Atomic table edit: only a specifically authorized new anchor may change
+ * the anchor inventory. Deletion uses the shared removeNoteFromState action. */
+export function applyTableNoteEdit(
+  state:OmiManuscriptState,blockId:string,expected:OmiTableBlockData,next:OmiTableBlockData,
+  insertion?:TableNoteInsertion,actorAgentId?:string,timestamp?:string,
+):NoteReconciliationResult|undefined {
+  const located=findManuscriptBlock(state.sections,blockId);
+  if(!located||located.block.visual?.kind!=='table'||JSON.stringify(located.block.visual)!==JSON.stringify(expected)) return undefined;
+  if(!sameTableCitationAnchors(expected,next))return undefined;
+  const old=collectNoteAnchorsInBlock('',located.section.id,blockId,expected);
+  const incoming=collectNoteAnchorsInBlock('',located.section.id,blockId,next);
+  const required=old.map(anchorKey);
+  let annotations=state.annotations;
+  if(insertion){
+    if(!insertion.id.trim()||!insertion.anchorId.trim()||!['footnote','endnote','author-note'].includes(insertion.kind)) return undefined;
+    if(state.annotations.some(n=>n.id===insertion.id||n.anchorId===insertion.anchorId)||state.tombstones?.some(t=>t.objectId===insertion.id)) return undefined;
+    if(collectNoteAnchors(state).some(n=>n.noteId===insertion.id||n.anchorId===insertion.anchorId)) return undefined;
+    const anchor=incoming.find(n=>n.noteId===insertion.id&&n.anchorId===insertion.anchorId);
+    if(!anchor||anchor.kind!==insertion.kind) return undefined;
+    required.push(anchorKey(anchor));
+    annotations=[...annotations,createNoteAnnotation({id:insertion.id,anchorId:insertion.anchorId,targetBlockId:blockId,kind:insertion.kind,creatorAgentId:actorAgentId,timestamp})];
+  }
+  if(new Set(incoming.map(n=>n.noteId)).size!==incoming.length||JSON.stringify(required.sort())!==JSON.stringify(incoming.map(anchorKey).sort())) return undefined;
+  const sections=mapManuscriptBlocks(state.sections,block=>block.id===blockId?{...block,visual:next}:block);
+  return reconcileNoteState({...state,sections,annotations},{removeOrphanAnnotations:false});
 }

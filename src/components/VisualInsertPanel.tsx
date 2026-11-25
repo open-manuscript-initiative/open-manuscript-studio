@@ -1,3 +1,6 @@
+import { importIdmlTables } from '../services/idmlTableImport';
+import { applyDefaultPublicationTableStyle } from '../model/tableAppearancePresets';
+import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import { createTextBox } from '../model/textBoxes';
 import {
   BarChart3,
@@ -59,6 +62,8 @@ export function VisualInsertPanel({
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [idmlImported,setIdmlImported]=useState(false);
+  const [idmlPartial,setIdmlPartial]=useState(false);
   const [pendingImports, setPendingImports] = useState<Array<{ block: OmiBlock; source: string; selfAuthoredExternal?: boolean }>>([]);
   const sourceCopy = getExternalSourceCopy(locale);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -170,10 +175,14 @@ export function VisualInsertPanel({
     setBusy(true);
     setError(null);
     try {
-      const groups = await Promise.all(files.map(async (file) => ({
-        file,
-        blocks: await importVisualBlocksFromFile(file),
-      })));
+      setIdmlImported(false);setIdmlPartial(false);
+      const groups = await Promise.all(files.map(async file=>{
+        const idml=/\.idml$/i.test(file.name);
+        const result=idml?await importIdmlTables(file):{blocks:await importVisualBlocksFromFile(file),warnings:[]};
+        return {file,idml,...result};
+      }));
+      setIdmlImported(groups.some(group=>group.idml));
+      setIdmlPartial(groups.some(group=>group.warnings.length>0));
       const imported = groups.flatMap(({ file, blocks }) =>
         blocks.map((block) => ({
           block,
@@ -194,6 +203,7 @@ export function VisualInsertPanel({
 
   async function paste(event: ClipboardEvent<HTMLDivElement>): Promise<void> {
     event.preventDefault();
+    setIdmlImported(false);setIdmlPartial(false);
     setBusy(true);
     setError(null);
     try {
@@ -221,7 +231,11 @@ export function VisualInsertPanel({
           {copy.image}
         </button>
         <button type="button" onClick={() => insert([createTextBoxBlock(createTextBox())])}><span aria-hidden="true">T</span>{copy.textBox}</button>
-        <button type="button" onClick={() => insert([createTableBlock()])}>
+        <button type="button" onClick={() => {
+          const block=createTableBlock();
+          if(block.visual?.kind==='table')block.visual=applyDefaultPublicationTableStyle(block.visual,getAppliedPublicationTemplate(manuscript)?.style.tableStyles);
+          insert([block]);
+        }}>
           <Table2 size={17} aria-hidden="true" />
           {copy.table}
         </button>
@@ -281,6 +295,8 @@ export function VisualInsertPanel({
         <div className="omi-module-excerpt-preview">
           <h4>{sourceCopy.preview}</h4>
           <p className="omi-visual-format-hint">{sourceCopy.explanation}</p>
+          {idmlImported?<p className="omi-visual-format-hint">{copy.idmlTableOnly}</p>:null}
+          {idmlImported&&idmlPartial?<p role="status" className="omi-visual-format-hint">{copy.idmlTablePartial}</p>:null}
           {pendingImports.map((item, index) => (
             <div key={item.block.id}>
               <label>
@@ -323,7 +339,7 @@ export function VisualInsertPanel({
         className="omi-visually-hidden-input"
         type="file"
         multiple
-        accept=".docx,.xlsx,.csv,.tsv,.txt,.html,.htm,.tex,.musicxml,.xml,.mid,.midi,application/vnd.recordare.musicxml+xml,application/xml,text/xml,audio/midi,audio/x-midi,image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+        accept=".docx,.idml,.xlsx,.csv,.tsv,.txt,.html,.htm,.tex,.musicxml,.xml,.mid,.midi,application/vnd.recordare.musicxml+xml,application/xml,text/xml,audio/midi,audio/x-midi,image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
         onChange={importFiles}
       />
     </>

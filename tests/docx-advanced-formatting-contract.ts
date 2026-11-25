@@ -146,6 +146,14 @@ function assertSupportedModel(item: AdvancedCase, manuscript: OmiManuscript): vo
     assert.deepEqual(table.cellMerges,[{row:0,column:0,rowSpan:2,colSpan:1}]);
     assert.deepEqual(table.cells,[['Merged','A'],['','B']]);
   }
+  if (item.id === 'T06') {
+    const table=modelBlocks(manuscript).map(block=>block.visual).find(visual=>visual?.kind==='table');
+    assert.ok(table?.kind==='table');
+    assert.equal(table.cells[0]?.[0],'Outer cell\nNested A\tNested B\nAfter nested table');
+    const doc=JSON.parse(table.cellContent?.['0:0']??'null');
+    assert.deepEqual(doc.content.map((node:{type:string})=>node.type),['paragraph','omiCellTable','paragraph']);
+    assert.deepEqual(doc.content[1].attrs.table.cells,[['Nested A','Nested B']]);
+  }
   if (item.id === 'T05') {
     const table = modelBlocks(manuscript).map(block=>block.visual).find(visual=>visual?.kind==='table');
     assert.ok(table?.kind==='table');
@@ -253,7 +261,7 @@ export function registerAdvancedFormattingContracts(): void {
           await sub.test('review history retained internally', { todo: todo('Word review metadata import remains incomplete') }, () => assertPrivateReviewModel(item, reopened));
           await sub.test('public export does not expose native private review metadata', () => assertPublicReview(item, word.parts, [html, jats, print, ...[odt, idml].flatMap(parts => [...parts.values()].map(b => b.toString('utf8')))]));
         } else {
-          await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported || nativeParagraphContracts[item.id] || ['C24','C25','C26','C27','C28','L06','L07','L08','L09','S03','S04','S05','T02','T03','T04','T05'].includes(item.id) ? false : todo(docxGap(item)) }, () => {
+          await sub.test('exact native DOCX formatting after reopening', { todo: item.nativeSupported || nativeParagraphContracts[item.id] || ['C24','C25','C26','C27','C28','L06','L07','L08','L09','S03','S04','S05','T02','T03','T04','T05','T06'].includes(item.id) ? false : todo(docxGap(item)) }, () => {
             for (const expected of item.checks) assertNative(word.parts, expected);
           });
         }

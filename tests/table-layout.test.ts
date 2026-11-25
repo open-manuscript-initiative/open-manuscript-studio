@@ -257,3 +257,276 @@ test('rich cell font family rejects control characters and unsafe punctuation', 
   assert.deepEqual(parse('Noto Serif'),[{type:'omiSourceFont',attrs:{family:'Noto Serif'}}]);
   for(const family of ['',String.fromCharCode(0)+'Serif','A'+String.fromCharCode(31),'A'+String.fromCharCode(127),'A;B','A{B','A}B','A<B','A>B','A'.repeat(129)]) assert.equal(parse(family),undefined);
 });
+
+test('rich table list trees preserve nested items and plain projection without numbering labels', async () => {
+  const {parseTableCellContent,tableCellPlainText,tableCellDocument,cellDocumentWithDefaults}=await import('../src/model/tableLayout.ts');
+  const {publicPublicationManuscript}=await import('../src/model/publicationAnnotations.ts');
+  const p=(text:string)=>({type:'paragraph',content:[{type:'text',text}]});
+  const doc={type:'doc',content:[p('Intro'),{type:'orderedList',attrs:{start:4},content:[
+    {type:'listItem',content:[p('First'),{type:'bulletList',content:[{type:'listItem',content:[{type:'paragraph',content:[{type:'text',text:'Nested'},{type:'text',text:' SECRET',marks:[{type:'omiHiddenText',attrs:{value:true}}]}]}]}]}]},
+    {type:'listItem',content:[p('Second')]}
+  ]}]};
+  const parsed=parseTableCellContent(JSON.stringify(doc));
+  assert.ok(parsed);
+  assert.equal(tableCellPlainText(parsed),'Intro\nFirst\nNested SECRET\nSecond');
+  assert.equal(parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'orderedList',content:[{type:'paragraph'}]}]})),undefined);
+  assert.equal(parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'orderedList',content:[{type:'listItem',content:[{type:'paragraph'},{type:'table'}]}]}]})),undefined);
+  const withDefaults=cellDocumentWithDefaults(parsed,'right');
+  assert.equal(withDefaults.content?.[1]?.content?.[0]?.content?.[0]?.attrs?.omiAlign,'right');
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([[tableCellPlainText(parsed)]],{headerRows:0,cellContent:{'0:0':JSON.stringify(parsed)}},'cell-lists'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const table=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(tableCellDocument(table,0,0),parsed);
+  const publicTable=publicPublicationManuscript(reopened).sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(publicTable?.kind==='table');
+  assert.equal(publicTable.cells[0]?.[0],'Intro\nFirst\nNested\nSecond');
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<ol start="4">/);
+    assert.match(html,/<ul><li><p>Nested<\/p><\/li><\/ul>/);
+    assert.ok(!html.includes('SECRET'));
+  }
+});
+
+test('nested table documents retain source order and redact nested hidden runs in public output',async()=>{
+  const {parseTableCellContent,tableCellPlainText,tableCellDocument,cellNestedTable}=await import('../src/model/tableLayout.ts');
+  const {publicPublicationManuscript}=await import('../src/model/publicationAnnotations.ts');
+  const para=(text:string)=>({type:'paragraph',content:[{type:'text',text}]});
+  const secret={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Visible'},{type:'text',text:' SECRET',marks:[{type:'omiHiddenText',attrs:{value:true}}]}]}]};
+  const doc={type:'doc',content:[para('Before'),{type:'omiCellTable',attrs:{table:{kind:'table',headerRows:0,cells:[['Visible SECRET','B']],cellContent:{'0:0':JSON.stringify(secret)}}}},para('After')]};
+  const valid=parseTableCellContent(JSON.stringify(doc));
+  assert.ok(valid);
+  assert.equal(tableCellPlainText(valid),'Before\nVisible SECRET\tB\nAfter');
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([[tableCellPlainText(valid)]],{headerRows:0,cellContent:{'0:0':JSON.stringify(valid)}},'nested-table'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const outer=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(outer?.kind==='table');
+  assert.deepEqual(tableCellDocument(outer,0,0),valid);
+  const projected=publicPublicationManuscript(reopened).sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(projected?.kind==='table');
+  assert.equal(projected.cells[0]?.[0],'Before\nVisible\tB\nAfter');
+  const node=tableCellDocument(projected,0,0)?.content?.[1];
+  assert.ok(node);
+  assert.deepEqual(cellNestedTable(node)?.cells,[['Visible','B']]);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<p>Before<\/p><table[\s\S]*?<td><p>Visible<\/p><\/td><td>B<\/td>[\s\S]*?<\/table><p>After<\/p>/);
+    assert.ok(!html.includes('SECRET'));
+  }
+  assert.equal(parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'omiCellTable',attrs:{table:{kind:'table',cells:[['a'],['b','c']]}}}]})),undefined);
+});
+
+test('row resize is zoom-aware, preserves explicit native modes and clamps to valid dimensions',async()=>{
+  const {resizeTableRowHeight,setTableRowHeight}=await import('../src/model/tableLayout.ts');
+  assert.deepEqual(resizeTableRowHeight({mode:'auto'},40,20),{mode:'minimum',heightPt:45});
+  assert.deepEqual(resizeTableRowHeight({mode:'auto'},80,40,2),{mode:'minimum',heightPt:45});
+  assert.deepEqual(resizeTableRowHeight({mode:'exact',heightPt:24},80,16,2),{mode:'exact',heightPt:30});
+  assert.deepEqual(resizeTableRowHeight({mode:'minimum',heightPt:30},40,-100),{mode:'minimum',heightPt:0.05});
+  assert.deepEqual(resizeTableRowHeight({mode:'auto'},40,0),{mode:'auto'});
+  assert.deepEqual(resizeTableRowHeight({mode:'auto'},0,20),{mode:'auto'});
+  assert.deepEqual(resizeTableRowHeight({mode:'exact',heightPt:24},40,20,NaN),{mode:'exact',heightPt:24});
+  const table=createTableBlock([['A'],['B']],{rowHeights:{'1':{mode:'exact',heightPt:24}}}).visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(setTableRowHeight(table,0,resizeTableRowHeight({mode:'auto'},40,20)),{'0':{mode:'minimum',heightPt:45},'1':{mode:'exact',heightPt:24}});
+});
+
+test('rectangular range resolves merged anchors once and preserves unrelated properties', async () => {
+  const {tableRangeAnchors,formatTableRange}=await import('../src/model/tableLayout.ts');
+  const block=createTableBlock([['A','','C'],['D','E','F'],['G','H','I']],{headerRows:0,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],cellFormats:{
+    '0:0':{horizontalAlign:'left',paddingPt:{top:3,left:5}},
+    '1:1':{horizontalAlign:'right',backgroundColor:'#FFFFFF',paddingPt:{top:6,bottom:4}},
+    '2:2':{backgroundColor:'#123456'}
+  }},'range-format');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  const start={row:1,column:1},end={row:0,column:0};
+  assert.deepEqual(tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows),[{row:0,column:0},{row:1,column:0},{row:1,column:1}]);
+  assert.deepEqual(tableRangeAnchors(table.cells,{row:0,column:1},{row:0,column:1},table.cellMerges,table.headerRows),[{row:0,column:0}]);
+  assert.deepEqual(tableRangeAnchors(table.cells,{row:NaN,column:0},end),[]);
+  let calls=0;
+  const next=formatTableRange(table,start,end,format=>{calls++;return {horizontalAlign:'center',paddingPt:{...format.paddingPt,top:8}};});
+  assert.equal(calls,3);
+  assert.deepEqual(next['0:0']?.paddingPt,{top:8,left:5});
+  assert.deepEqual(next['1:1']?.paddingPt,{top:8,bottom:4});
+  assert.equal(next['1:1']?.backgroundColor,'#FFFFFF');
+  assert.equal(next['0:0']?.horizontalAlign,'center');
+  assert.deepEqual(next['2:2'],{backgroundColor:'#123456'});
+  assert.equal(next['0:1'],undefined);
+  assert.equal(table.cellFormats?.['0:0']?.horizontalAlign,'left');
+  assert.deepEqual(table.cells,[['A','','C'],['D','E','F'],['G','H','I']]);
+  const cleared=formatTableRange({...table,cellFormats:next},start,end,{backgroundColor:undefined});
+  assert.equal(cleared['1:1']?.backgroundColor,undefined);
+  assert.equal(cleared['2:2']?.backgroundColor,'#123456');
+});
+
+test('row reorder moves connected vertical merges, rich content and row metadata without crossing headers', async()=>{
+  const {planTableAxisMove,reorderTableAxis}=await import('../src/model/tableLayout.ts');
+  const rich=JSON.stringify({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'A',marks:[{type:'bold'}]}]}]});
+  const block=createTableBlock([['H1','H2'],['A','X'],['','B'],['C',''],['D','E']],{
+    headerRows:1,cellMerges:[{row:1,column:0,rowSpan:2,colSpan:1},{row:2,column:1,rowSpan:2,colSpan:1}],
+    cellContent:{'1:0':rich},cellFormats:{'2:1':{backgroundColor:'#AABBCC'}},
+    rowHeights:{'2':{mode:'exact',heightPt:24}},rowSplitOverrides:{'3':'keep'}
+  },'reorder-rows');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  table.columnWidths=[35,65];
+  assert.equal(planTableAxisMove(table,'row',1,-1),undefined);
+  assert.equal(planTableAxisMove(table,'row',0,1),undefined);
+  assert.equal(planTableAxisMove(table,'row',1.5,1),undefined);
+  assert.deepEqual(planTableAxisMove(table,'row',2,1)?.order,[0,4,1,2,3]);
+  const result=reorderTableAxis(table,'row',2,1);
+  assert.ok(result);
+  assert.equal(result.index,3);
+  assert.deepEqual(result.table.cells,[['H1','H2'],['D','E'],['A','X'],['','B'],['C','']]);
+  assert.deepEqual(result.table.cellMerges,[{row:2,column:0,rowSpan:2,colSpan:1},{row:3,column:1,rowSpan:2,colSpan:1}]);
+  assert.deepEqual(result.table.cellContent,{'2:0':rich});
+  assert.deepEqual(result.table.cellFormats,{'3:1':{backgroundColor:'#AABBCC'}});
+  assert.deepEqual(result.table.rowHeights,{'3':{mode:'exact',heightPt:24}});
+  assert.deepEqual(result.table.rowSplitOverrides,{'4':'keep'});
+  assert.deepEqual(result.table.columnWidths,[35,65]);
+  assert.deepEqual(reorderTableAxis(result.table,'row',3,-1)?.table,table);
+  assert.equal(table.cells[1]?.[0],'A');
+});
+test('column reorder preserves horizontal merge blocks, dimensions and nested documents in OMI',async()=>{
+  const {reorderTableAxis,tableCellDocument,tableCellPlainText}=await import('../src/model/tableLayout.ts');
+  const doc={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Before'}]},{type:'omiCellTable',attrs:{table:{kind:'table',cells:[['Nested']],headerRows:0}}}]};
+  const raw=JSON.stringify(doc);
+  const block=createTableBlock([['A','','C'],[tableCellPlainText(doc),'B','D']],{
+    headerRows:1,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],
+    cellContent:{'1:0':raw},cellFormats:{'1:1':{paddingPt:{left:4},horizontalAlign:'right'}},
+    rowHeights:{'1':{mode:'minimum',heightPt:18}}
+  },'reorder-columns');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  table.columnWidths=[20,30,50];
+  const moved=reorderTableAxis(table,'column',1,1);
+  assert.ok(moved);
+  assert.equal(moved.index,2);
+  assert.deepEqual(moved.table.cells,[['C','A',''],['D','Before\nNested','B']]);
+  assert.deepEqual(moved.table.cellMerges,[{row:0,column:1,rowSpan:1,colSpan:2}]);
+  assert.deepEqual(moved.table.columnWidths,[50,20,30]);
+  assert.deepEqual(moved.table.cellContent,{'1:1':raw});
+  assert.deepEqual(moved.table.cellFormats,{'1:2':{paddingPt:{left:4},horizontalAlign:'right'}});
+  assert.deepEqual(moved.table.rowHeights,table.rowHeights);
+  assert.ok(tableCellDocument(moved.table,1,1));
+  assert.deepEqual(reorderTableAxis(moved.table,'column',2,-1)?.table,table);
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push({...block,visual:moved.table});
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,JSON.parse(JSON.stringify(moved.table)));
+  assert.equal(reorderTableAxis({...table,cellMerges:[{row:0,column:0,rowSpan:2,colSpan:1}]},'column',0,1),undefined);
+});
+
+test('table appearance presets materialize header and banding while retaining geometry and rich content',async()=>{
+  const {BUILTIN_TABLE_STYLES,applyAppearancePreset,captureTablePreset,captureCellPreset,readAppearancePresets}=await import('../src/model/tableAppearancePresets.ts');
+  const rich=JSON.stringify({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'A',marks:[{type:'bold'}]}]}]});
+  const block=createTableBlock([['H',''],['A','B'],['C','D']],{
+    headerRows:1,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],
+    cellContent:{'1:0':rich},cellFormats:{'1:0':{textRotation:90,textDirection:'rtl'}},
+    rowHeights:{'2':{mode:'minimum',heightPt:24}},rowSplitOverrides:{'1':'keep'}
+  },'style-table');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  table.columnWidths=[30,70];
+  const applied=applyAppearancePreset(table,BUILTIN_TABLE_STYLES.banded,{row:1,column:0},{row:1,column:0});
+  assert.equal(applied.cellFormats?.['0:0']?.backgroundColor,'#DCE6F1');
+  assert.equal(applied.cellFormats?.['0:1'],undefined);
+  assert.equal(applied.cellFormats?.['1:0']?.textRotation,90);
+  assert.equal(applied.cellFormats?.['1:0']?.textDirection,'rtl');
+  assert.equal(applied.cellFormats?.['2:1']?.backgroundColor,'#F1F4F7');
+  assert.deepEqual({...applied,cellFormats:table.cellFormats},table);
+  const captured=captureTablePreset(applied,'Journal',true);
+  assert.equal(captured.alternate?.backgroundColor,'#F1F4F7');
+  assert.equal(captured.body.textRotation,undefined);
+  const cell=captureCellPreset(applied,{row:1,column:0},'Rotated');
+  const restored=readAppearancePresets(JSON.stringify([captured,cell,captured]));
+  assert.deepEqual(restored,[captured,cell]);
+  const after=applyAppearancePreset(applied,cell,{row:2,column:0},{row:2,column:1});
+  assert.equal(after.cellFormats?.['2:0']?.textRotation,90);
+  assert.equal(after.cellFormats?.['2:1']?.textDirection,'rtl');
+  assert.equal(after.cellFormats?.['2:0']?.backgroundColor,undefined);
+  assert.deepEqual(after.cellFormats?.['0:0'],applied.cellFormats?.['0:0']);
+  assert.equal(after.cellContent?.['1:0'],rich);
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push({...block,visual:after});
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,JSON.parse(JSON.stringify(after)));
+});
+test('preset library rejects malformed entries and stores only whitelisted appearance fields',async()=>{
+  const {readAppearancePresets,normalizeAppearancePreset}=await import('../src/model/tableAppearancePresets.ts');
+  assert.deepEqual(readAppearancePresets('{broken'),[]);
+  assert.equal(normalizeAppearancePreset({kind:'table',name:'x'}),undefined);
+  assert.equal(normalizeAppearancePreset({kind:'cell',name:' ',format:{}}),undefined);
+  const preset=normalizeAppearancePreset({kind:'cell',name:'  Sample  ',format:{backgroundColor:'bad;display:none',paddingPt:{top:-1,bottom:3},textRotation:999,cellContent:'secret',textDirection:'rtl'},cells:[['secret']]});
+  assert.deepEqual(preset,{kind:'cell',name:'Sample',format:{textRotation:0,textDirection:'rtl',paddingPt:{bottom:3}}});
+  assert.equal(readAppearancePresets(JSON.stringify(Array.from({length:60},(_,i)=>({kind:'cell',name:String(i),format:{}})))).length,50);
+});
+
+test('range typography keeps rich notes, lists, nested tables and unrelated formatting intact',async()=>{
+  const {applyRangeTypography,rangeMarkStates,rangeTypographyValue}=await import('../src/model/tableRangeTypography.ts');
+  const {tableCellDocument,cellNestedTable,tableCellPlainText}=await import('../src/model/tableLayout.ts');
+  const {collectNoteAnchorsInBlock}=await import('../src/model/notes.ts');
+  const nested={kind:'table',headerRows:0,cells:[['Inner']]};
+  const rich={type:'doc',content:[
+    {type:'paragraph',attrs:{omiLeftIndent:6},content:[{type:'text',text:'A',marks:[{type:'bold'},{type:'omiLink',attrs:{href:'https://example.org'}},{type:'omiHiddenText',attrs:{value:true}},{type:'omiUnderline',attrs:{variant:'double'}}]},{type:'omiNote',attrs:{noteId:'note-a',anchorId:'anchor-a',label:'1',noteType:'footnote'}}]},
+    {type:'bulletList',content:[{type:'listItem',content:[{type:'paragraph',content:[{type:'text',text:'Item',marks:[{type:'omiSubscript'}]}]}]}]},
+    {type:'omiCellTable',attrs:{table:nested}}
+  ]};
+  const block=createTableBlock([[tableCellPlainText(rich),'','Outside'],['Plain','','Other']],{headerRows:0,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2}],cellContent:{'0:0':JSON.stringify(rich)},cellFormats:{'1:0':{backgroundColor:'#ABCDEF'}},rowHeights:{'1':{mode:'minimum',heightPt:20}}},'range-rich');
+  const original=block.visual;
+  assert.ok(original?.kind==='table');
+  const start={row:0,column:1},end={row:1,column:0};
+  assert.equal(rangeMarkStates(original,start,end).bold,'mixed');
+  const bold=applyRangeTypography(original,start,end,{kind:'mark',name:'bold',enabled:true});
+  assert.equal(rangeMarkStates(bold,start,end).bold,'on');
+  assert.equal(bold.cellContent?.['0:1'],undefined);
+  assert.equal(bold.cellContent?.['0:2'],undefined);
+  assert.deepEqual(collectNoteAnchorsInBlock('','section','range-rich',bold),collectNoteAnchorsInBlock('','section','range-rich',original));
+  const formatted=applyRangeTypography(applyRangeTypography(bold,start,end,{kind:'direct',name:'omiFontSize',value:12}),start,end,{kind:'font',value:'Noto Serif'});
+  assert.deepEqual(rangeTypographyValue(formatted,start,end,'omiFontSize'),{value:'12',mixed:false});
+  const para=applyRangeTypography(formatted,start,end,{kind:'paragraph',name:'omiSpaceAfter',value:8});
+  const result=applyRangeTypography(para,start,end,{kind:'lineSpacing',rule:'exact',value:14});
+  const doc=tableCellDocument(result,0,0);
+  assert.ok(doc);
+  assert.deepEqual(doc.content?.[0]?.attrs,{omiLeftIndent:6,omiSpaceAfter:8,omiLineSpacing:14,omiLineRule:'exact'});
+  const marks=doc.content?.[0]?.content?.[0]?.marks;
+  assert.ok(marks?.some(m=>m.type==='omiHiddenText'));
+  assert.ok(marks?.some(m=>m.type==='omiLink'));
+  assert.ok(marks?.some(m=>m.type==='omiUnderline'&&m.attrs?.variant==='double'));
+  assert.ok(marks?.some(m=>m.type==='omiSourceFont'&&m.attrs?.family==='Noto Serif'));
+  assert.equal(doc.content?.[1]?.type,'bulletList');
+  assert.equal(doc.content?.[1]?.content?.[0]?.content?.[0]?.attrs?.omiSpaceAfter,8);
+  assert.equal(cellNestedTable(doc.content![2]!)?.cellContent,undefined);
+  assert.equal(tableCellDocument(result,1,1)?.content?.[0]?.attrs?.omiSpaceAfter,8);
+  assert.deepEqual({...result,cellContent:original.cellContent},original);
+  assert.equal(applyRangeTypography(result,start,end,{kind:'direct',name:'omiFontSize',value:500}),result);
+  assert.equal(applyRangeTypography(result,start,end,{kind:'font',value:'bad;display:none'}),result);
+  const cleared=applyRangeTypography(result,start,end,{kind:'direct',name:'omiFontSize',value:null});
+  assert.deepEqual(rangeTypographyValue(cleared,start,end,'omiFontSize'),{value:'',mixed:false});
+  const superscript=applyRangeTypography(cleared,start,end,{kind:'mark',name:'omiSuperscript',enabled:true});
+  const item=tableCellDocument(superscript,0,0)?.content?.[1]?.content?.[0]?.content?.[0]?.content?.[0];
+  assert.ok(item?.marks?.some(m=>m.type==='omiSuperscript'));
+  assert.ok(!item?.marks?.some(m=>m.type==='omiSubscript'));
+  const noLine=applyRangeTypography(superscript,start,end,{kind:'lineSpacing',rule:'auto',value:null});
+  assert.equal(tableCellDocument(noLine,0,0)?.content?.[0]?.attrs?.omiLineRule,undefined);
+  assert.equal(tableCellDocument(noLine,0,0)?.content?.[0]?.attrs?.omiLineSpacing,undefined);
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push({...block,visual:noLine});
+  const {createNoteAnnotation}=await import('../src/model/notes.ts');
+  manuscript.annotations.push(createNoteAnnotation({id:'note-a',anchorId:'anchor-a',targetBlockId:block.id,body:'Preserved note'}));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  assert.deepEqual(reopened.sections[0]!.blocks.at(-1)?.visual,JSON.parse(JSON.stringify(noLine)));
+});
+test('range typography does not materialize character marks in empty cells or overwrite malformed rich content',async()=>{
+  const {applyRangeTypography,rangeMarkStates}=await import('../src/model/tableRangeTypography.ts');
+  const block=createTableBlock([['','Plain']],{headerRows:0});
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  const empty={row:0,column:0},full={row:0,column:1};
+  assert.equal(rangeMarkStates(table,empty,empty).bold,'empty');
+  const bold=applyRangeTypography(table,empty,full,{kind:'mark',name:'bold',enabled:true});
+  assert.equal(bold.cellContent?.['0:0'],undefined);
+  const bad={...table,cellContent:{'0:1':'invalid'}};
+  assert.equal(applyRangeTypography(bad,empty,full,{kind:'mark',name:'bold',enabled:true}),bad);
+});

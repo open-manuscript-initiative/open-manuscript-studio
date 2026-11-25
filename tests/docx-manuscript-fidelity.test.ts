@@ -1183,3 +1183,92 @@ test('independent table paragraph properties survive DOCX and ODT roundtrip', as
   assert.match(odtXml,/fo:line-height="150%"/);
   inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-paragraph.odt'))).sections);
 });
+
+test('native table list numbering and nested bullet items survive Word and ODT reopening', async () => {
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {tableCellDocument,tableCellPlainText}=await import('../src/model/tableLayout.ts');
+  const paragraph=(text:string)=>({type:'paragraph',content:[{type:'text',text}]});
+  const doc={type:'doc',content:[{type:'orderedList',attrs:{start:4},content:[
+    {type:'listItem',content:[paragraph('First'),{type:'bulletList',content:[{type:'listItem',content:[paragraph('Nested')]}]}]},
+    {type:'listItem',content:[paragraph('Second')]}
+  ]}]};
+  const manuscript=createBlankManuscript({kind:'study',locale:'en',title:'Table list specimen'});
+  manuscript.sections[0]!.blocks.push(createTableBlock([[tableCellPlainText(doc)]],{headerRows:0,cellContent:{'0:0':JSON.stringify(doc)}},'list-table'));
+  const word=buildDocxExport(manuscript);
+  const parts=readZipParts(word.bytes);
+  const xml=parts.get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:numPr><w:ilvl w:val="0"\/>/);
+  assert.match(xml,/<w:numPr><w:ilvl w:val="1"\/>/);
+  assert.match(parts.get('word/numbering.xml')!.toString('utf8'),/<w:start w:val="4"\/>/);
+  const odt=buildOdtExport(manuscript);
+  assert.match(readZipParts(odt.bytes).get('content.xml')!.toString('utf8'),/<text:list-item text:start-value="4">/);
+  for(const plan of [await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'table-list.docx')),await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'table-list.odt'))]){
+    const v=plan.sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cells,[['First\nNested\nSecond']]);
+    const tree=tableCellDocument(v,0,0);
+    const list=tree?.content?.[0];
+    assert.equal(list?.type,'orderedList');
+    assert.equal(list.attrs?.start,4);
+    assert.equal(list.content?.length,2);
+    assert.equal(list.content?.[0]?.content?.[1]?.type,'bulletList');
+  }
+});
+
+test('native nested tables preserve before/after text and nested cells in DOCX and ODT',async()=>{
+  const p=(value:string)=>'<w:p><w:r><w:t>'+value+'</w:t></w:r></w:p>';
+  const cell=(value:string)=>'<w:tc>'+value+'</w:tc>';
+  const table=(value:string)=>'<w:tbl><w:tr>'+value+'</w:tr></w:tbl>';
+  const source=makeDocx(p('Nested specimen')+table(cell(p('Before')+table(cell(p('A'))+cell(p('B')))+p('After'))+cell(p('Outer'))));
+  const {tableCellDocument,cellNestedTable}=await import('../src/model/tableLayout.ts');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const outer=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(outer?.kind==='table');
+    assert.deepEqual(outer.cells,[['Before\nA\tB\nAfter','Outer']]);
+    const doc=tableCellDocument(outer,0,0);
+    assert.deepEqual(doc?.content?.map(node=>node.type),['paragraph','omiCellTable','paragraph']);
+    assert.deepEqual(cellNestedTable(doc!.content![1]!)?.cells,[['A','B']]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Nested tables'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.equal((xml.match(/<w:tbl>/g)??[]).length,2);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'nested.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  assert.equal((readZipParts(odt.bytes).get('content.xml')!.toString('utf8').match(/<table:table table:name=/g)??[]).length,2);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'nested.odt'))).sections);
+});
+
+test('Word cell footnotes and endnotes retain anchors, bodies and native roundtrips',async()=>{
+  const {collectNoteAnchors}=await import('../src/model/notes.ts');
+  const p=(text:string,reference='')=>'<w:p><w:r><w:t>'+text+'</w:t></w:r>'+reference+'</w:p>';
+  const ref=(kind:string,id:number)=>'<w:r><w:'+kind+'Reference w:id="'+id+'"/></w:r>';
+  const ns='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+  const source=makeDocx(p('Before',ref('footnote',1))+'<w:tbl><w:tr><w:tc>'+p('Cell',ref('footnote',2)+ref('endnote',3))+'</w:tc></w:tr></w:tbl>'+p('After',ref('footnote',4)),{
+    footnotes:'<w:footnotes '+ns+'><w:footnote w:id="1">'+p('Before note')+'</w:footnote><w:footnote w:id="2">'+p('Cell footnote')+'</w:footnote><w:footnote w:id="4">'+p('After note')+'</w:footnote></w:footnotes>',
+    entries:[textZipEntry('word/endnotes.xml','<w:endnotes '+ns+'><w:endnote w:id="3">'+p('Cell endnote')+'</w:endnote></w:endnotes>')]
+  });
+  const inspect=(plan:DocxManuscriptImportPlan)=>{
+    const anchors=collectNoteAnchors({sections:plan.sections});
+    assert.equal(anchors.length,4);
+    const table=plan.sections.flatMap(s=>s.blocks).find(b=>b.visual?.kind==='table');
+    assert.ok(table?.visual?.kind==='table');
+    assert.deepEqual(table.visual.cells,[['Cell']]);
+    assert.deepEqual(anchors.map(a=>plan.annotations.find(n=>n.id===a.noteId)?.body),['Before note','Cell footnote','Cell endnote','After note']);
+    assert.equal(anchors[1]?.blockId,table.id);
+    assert.equal(anchors[2]?.blockId,table.id);
+    assert.equal(anchors[2]?.kind,'endnote');
+  };
+  const plan=await parseDocxManuscript(source);
+  inspect(plan);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Cell notes'}),sections:plan.sections,annotations:plan.annotations};
+  const word=buildDocxExport(manuscript);
+  const parts=readZipParts(word.bytes);
+  assert.match(parts.get('word/document.xml')!.toString('utf8'),/<w:tbl>[\s\S]*?<w:footnoteReference w:id="2"\/>[\s\S]*?<w:endnoteReference w:id="1"\/>[\s\S]*?<\/w:tbl>/);
+  inspect(await parseDocxManuscript(new File([new Uint8Array(word.bytes)],'cell-notes.docx')));
+  const odt=buildOdtExport(manuscript);
+  assert.match(readZipParts(odt.bytes).get('content.xml')!.toString('utf8'),/<table:table[\s\S]*?text:note-class="footnote"[\s\S]*?text:note-class="endnote"[\s\S]*?<\/table:table>/);
+  inspect(await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-notes.odt')));
+});

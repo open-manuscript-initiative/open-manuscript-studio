@@ -89,6 +89,7 @@ const LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS = 120;
 
 interface NoteAnchorCacheEntry {
   content: string;
+  visual: OmiBlock['visual'];
   sectionId: string;
   occurrences: NoteAnchorOccurrence[];
 }
@@ -337,12 +338,14 @@ export function PublicationDocumentCanvas({
         const cached = cache.get(block.id);
         const entry = cached
           && cached.content === block.content
+          && cached.visual === block.visual
           && cached.sectionId === section.id
           ? cached
           : {
               content: block.content,
+              visual:block.visual,
               sectionId: section.id,
-              occurrences: collectNoteAnchorsInBlock(block.content, section.id, block.id),
+              occurrences: collectNoteAnchorsInBlock(block.content, section.id, block.id,block.visual),
             };
         cache.set(block.id, entry);
         occurrences.push(...entry.occurrences);

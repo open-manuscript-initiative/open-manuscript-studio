@@ -2,12 +2,15 @@ import { useStudioStore } from './useStudioStore';
 import { getExternalIdentifierValue } from '../model/identity';
 import {
   createNoteAnnotation,
+  applyTableNoteEdit,
+  type TableNoteInsertion,
   getNoteKind,
   isNoteAnnotation,
   reconcileNoteState,
   removeNoteFromState,
   type OmiNoteKind,
 } from '../model/notes';
+import { walkManuscriptStructure } from '../model/manuscriptTreeTraversal';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
 import {
@@ -18,6 +21,8 @@ import type {
   OmiAnnotation,
   OmiManuscript,
   OmiManuscriptState,
+  OmiTableBlockData,
+  OmiSection,
 } from '../types/omi';
 
 const NOTE_CHECKPOINT_DELAY_MS = 2500;
@@ -67,6 +72,7 @@ export function stageCreateNote(
         nextValue: annotation,
       },
       ...blockChangeEvents(reconciled.blockChanges),
+      ...tableVisualChangeEvents(state.manuscript.sections,reconciled.state.sections),
     ];
     const pendingChangeSet = stagePendingChanges(
       state.pendingChangeSet,
@@ -157,6 +163,7 @@ export function stageUpdateNote(
             nextValue: nextAnnotation,
           },
           ...blockChangeEvents(reconciled.blockChanges),
+      ...tableVisualChangeEvents(state.manuscript.sections,reconciled.state.sections),
         ],
         actorAgentId,
         timestamp,
@@ -212,6 +219,7 @@ export function stageRemoveNote(noteId: string): boolean {
             previousValue: previous,
           },
           ...blockChangeEvents(reconciled.blockChanges),
+      ...tableVisualChangeEvents(state.manuscript.sections,reconciled.state.sections),
         ],
         actorAgentId,
         timestamp,
@@ -267,6 +275,7 @@ export function reconcileNotesAfterBlockEdit(): void {
         nextValue: next,
       })),
       ...blockChangeEvents(reconciled.blockChanges),
+      ...tableVisualChangeEvents(state.manuscript.sections,reconciled.state.sections),
     ];
 
     if (semanticEvents.length === 0) {
@@ -379,4 +388,39 @@ function annotationsEqual(
   second: OmiAnnotation,
 ): boolean {
   return JSON.stringify(first) === JSON.stringify(second);
+}
+
+/** Record the visual representation, not merely block.content, for all note
+ * mutations. This includes renumbering other table notes. */
+function tableVisualChangeEvents(previous:readonly OmiSection[],next:readonly OmiSection[]){
+  const old=new Map([...walkManuscriptStructure(previous)].flatMap(item=>item.kind==='block'?[[item.block.id,item.block] as const]:[]));
+  return [...walkManuscriptStructure(next)].flatMap(item=>{
+    if(item.kind!=='block'||item.block.visual?.kind!=='table') return [];
+    const before=old.get(item.block.id);
+    if(!before||JSON.stringify(before.visual)===JSON.stringify(item.block.visual)) return [];
+    return [{operation:'block.update' as never,targetId:item.block.id,path:'/blocks/'+item.block.id,previousValue:before,nextValue:item.block}];
+  });
+}
+export function stageTableNoteEdit(blockId:string,expected:OmiTableBlockData,next:OmiTableBlockData,insertion?:TableNoteInsertion):boolean{
+  let changed=false;
+  useStudioStore.setState(state=>{
+    if(insertion&&state.pendingChangeSet?.events.some(event=>event.operation==='annotation.remove'&&event.targetId===insertion.id)) return state;
+    const timestamp=new Date().toISOString();
+    const actorAgentId=resolveCurrentActorAgentId(state.manuscript);
+    const result=applyTableNoteEdit(extractManuscriptState(state.manuscript),blockId,expected,next,insertion,actorAgentId,timestamp);
+    if(!result) return state;
+    const added=insertion?result.state.annotations.find(note=>note.id===insertion.id):undefined;
+    const events=[
+      ...(added?[{operation:'annotation.create' as const,targetId:added.id,path:'/annotations/-',nextValue:added}]:[]),
+      ...result.updatedAnnotations.map(({previous,next})=>({operation:'annotation.update' as never,targetId:next.id,path:'/annotations/'+next.id,previousValue:previous,nextValue:next})),
+      ...blockChangeEvents(result.blockChanges),
+      ...tableVisualChangeEvents(state.manuscript.sections,result.state.sections),
+    ];
+    if(!events.length) return state;
+    const pendingChangeSet=stagePendingChanges(state.pendingChangeSet,{baseRevisionId:state.manuscript.headRevisionId,summary:added?'Added table cell note':'Changed table with note anchors',events,actorAgentId,timestamp});
+    changed=true;
+    return {manuscript:{...state.manuscript,...result.state,updatedAt:timestamp},pendingChangeSet};
+  });
+  if(changed)scheduleNoteCheckpoint();
+  return changed;
 }

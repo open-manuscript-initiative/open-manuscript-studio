@@ -14,6 +14,9 @@ import type {
   OmiCitationStyleId,
   OmiSection,
 } from '../types/omi.ts';
+import { cellNestedTable, tableCellDocument, tableCellPlainText, tableMergeLayout, parseTableCellContent } from './tableLayout';
+import type { OmiTableBlockData } from '../types/omi';
+import type { NoteJsonNode } from './noteRichText';
 import { mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 export interface CitationClusterItemInput {
@@ -85,7 +88,7 @@ export function collectCitationAnchors(
   for (const occurrence of walkManuscriptStructure(sections)) {
     if (occurrence.kind !== 'block') continue;
     const { block } = occurrence;
-    walkStructuredContent(block.content, (node) => {
+    const visit=(node:JsonNode)=>{
       if (node.type !== 'omiCitation' || !isRecord(node.attrs)) return;
       const citationIds = citationIdsFromAttributes(node.attrs);
       const anchorId = stringValue(node.attrs.anchorId);
@@ -94,7 +97,9 @@ export function collectCitationAnchors(
       for (const citationId of citationIds) {
         anchors.push({ citationId, citationIds, clusterId, anchorId, targetBlockId: block.id });
       }
-    });
+    };
+    walkStructuredContent(block.content,visit);
+    if(block.visual?.kind==='table')walkTableNodes(block.visual,visit);
   }
 
   return anchors;
@@ -111,7 +116,7 @@ export function removeCitationFromSections(
   citationId: string,
 ): OmiSection[] {
   return mapManuscriptBlocks(sections, (block) => {
-    const content = transformStructuredContent(block.content, (node) => {
+    return transformCitationBlock(block, (node) => {
       if (node.type !== 'omiCitation' || !isRecord(node.attrs)) return node;
       const citationIds = citationIdsFromAttributes(node.attrs);
       if (!citationIds.includes(citationId)) return node;
@@ -122,7 +127,6 @@ export function removeCitationFromSections(
         attrs: { ...node.attrs, citationId: remaining[0], citationIds: remaining },
       };
     });
-    return content === block.content ? block : { ...block, content };
   });
 }
 
@@ -131,12 +135,11 @@ export function removeCitationClusterFromSections(
   clusterId: string,
 ): OmiSection[] {
   return mapManuscriptBlocks(sections, (block) => {
-    const content = transformStructuredContent(block.content, (node) => {
+    return transformCitationBlock(block, (node) => {
       if (node.type === 'omiCitation' && isRecord(node.attrs) &&
           stringValue(node.attrs.clusterId) === clusterId) return null;
       return node;
     });
-    return content === block.content ? block : { ...block, content };
   });
 }
 
@@ -156,7 +159,7 @@ export function synchronizeCitationLabels(
   const clusterMap = new Map(clusters.map((cluster) => [cluster.id, cluster]));
 
   return mapManuscriptBlocks(sections, (block) => {
-    const content = transformStructuredContent(block.content, (node) => {
+    return transformCitationBlock(block, (node) => {
         if (node.type !== 'omiCitation' || !isRecord(node.attrs)) {
           return node;
         }
@@ -195,7 +198,6 @@ export function synchronizeCitationLabels(
           },
         };
       });
-    return content === block.content ? block : { ...block, content };
   });
 }
 
@@ -269,7 +271,10 @@ function walkStructuredContent(
 
 function walkNode(node: JsonNode, visitor: (node: JsonNode) => void): void {
   visitor(node);
-
+  if(node.type==='omiCellTable'){
+    const nested=cellNestedTable(node as NoteJsonNode);
+    if(nested)walkTableNodes(nested,visitor);
+  }
   if (!Array.isArray(node.content)) return;
 
   for (const child of node.content) {
@@ -296,6 +301,10 @@ function transformNode(
 ): JsonNode | null {
   const transformed = transform(node);
   if (!transformed) return null;
+  if(transformed.type==='omiCellTable'){
+    const nested=cellNestedTable(transformed as NoteJsonNode);
+    if(nested){const next=transformTable(nested,transform);return next===nested?transformed:{...transformed,attrs:{table:next}};}
+  }
   if (!Array.isArray(transformed.content)) return transformed;
 
   return {
@@ -323,4 +332,44 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function walkTableNodes(table:OmiTableBlockData,visitor:(node:JsonNode)=>void):void{
+  const layout=tableMergeLayout(table.cells,table.cellMerges,table.headerRows);
+  for(let r=0;r<table.cells.length;r++)for(let c=0;c<(table.cells[r]?.length??0);c++){
+    if(layout.covered(r,c))continue;
+    const doc=tableCellDocument(table,r,c);
+    if(doc)walkNode(doc as JsonNode,visitor);
+  }
+}
+function transformTable(table:OmiTableBlockData,transform:(node:JsonNode)=>JsonNode|null):OmiTableBlockData{
+  if(!table.cellContent)return table;
+  const cellContent={...table.cellContent};
+  let changed=false;
+  const layout=tableMergeLayout(table.cells,table.cellMerges,table.headerRows);
+  for(let r=0;r<table.cells.length;r++)for(let c=0;c<(table.cells[r]?.length??0);c++){
+    if(layout.covered(r,c))continue;
+    const doc=tableCellDocument(table,r,c);
+    if(!doc)continue;
+    const next=transformNode(doc as JsonNode,transform);
+    if(!next||JSON.stringify(next)===JSON.stringify(doc))continue;
+    const valid=parseTableCellContent(JSON.stringify(next));
+    if(!valid||tableCellPlainText(valid)!==table.cells[r]?.[c])throw new Error('Invalid table citation transformation.');
+    cellContent[r+':'+c]=JSON.stringify(valid);changed=true;
+  }
+  return changed?{...table,cellContent}:table;
+}
+function transformCitationBlock(block:import('../types/omi').OmiBlock,transform:(node:JsonNode)=>JsonNode|null):import('../types/omi').OmiBlock{
+  const content=transformStructuredContent(block.content,transform);
+  const visual=block.visual?.kind==='table'?transformTable(block.visual,transform):block.visual;
+  return content===block.content&&visual===block.visual?block:{...block,content,...(visual?{visual}:{})};
+}
+export function tableCitationAnchors(table:OmiTableBlockData):CitationAnchorReference[]{
+  return collectCitationAnchors([{id:'table',title:'',blocks:[{id:'table',type:'table',content:'',visual:table}]}]);
+}
+export function citationAnchorInventory(anchors:readonly CitationAnchorReference[]):string[]{
+  return anchors.map(a=>JSON.stringify([a.citationId,a.anchorId,a.clusterId??'',a.citationIds])).sort();
+}
+export function sameTableCitationAnchors(previous:OmiTableBlockData,next:OmiTableBlockData):boolean{
+  return JSON.stringify(citationAnchorInventory(tableCitationAnchors(previous)))===JSON.stringify(citationAnchorInventory(tableCitationAnchors(next)));
 }

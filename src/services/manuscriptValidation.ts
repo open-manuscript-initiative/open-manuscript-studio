@@ -124,7 +124,7 @@ function anchors(source: OmiManuscript): ValidationCheckOutput {
   const notes = new Map(source.annotations.filter(isNoteAnnotation).map((note) => [note.id, note]));
   const occurrences = new Map<string, number>();
   for (const { object, path, sectionId } of blocks) {
-    for (const anchor of collectNoteAnchorsInBlock(object.content, sectionId!, object.id)) {
+    for (const anchor of collectNoteAnchorsInBlock(object.content, sectionId!, object.id, object.visual)) {
       occurrences.set(anchor.noteId, (occurrences.get(anchor.noteId) ?? 0) + 1);
       const note = notes.get(anchor.noteId);
       if (!note || note.anchorId !== anchor.anchorId || note.targetBlockId !== object.id) findings.push({ code: 'invalid-note-anchor', severity: 'error', path: `${path}/content`, targetId: object.id, relatedId: anchor.noteId });

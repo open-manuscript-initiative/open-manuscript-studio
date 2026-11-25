@@ -261,3 +261,52 @@ test('applying and then editing a template records complete portable working rev
     assert.equal(getAppliedPublicationTemplate(head.snapshot.state)!.style.page.width, 162);
   } finally { useStudioStore.setState(previous, true); }
 });
+
+test('portable publication template retains table and cell style catalog and applies the default only to new blank tables',async()=>{
+  const {BUILTIN_TABLE_STYLES,putPublicationTablePreset,removePublicationTablePreset,applyDefaultPublicationTableStyle,validatePublicationTableStyles}=await import('../src/model/tableAppearancePresets.ts');
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {manuscript}=source();
+  const originalStyle=clonePublicationStyleTemplate();
+  const grid=putPublicationTablePreset(undefined,{...BUILTIN_TABLE_STYLES.banded,name:'Journal banded'});
+  assert.ok(grid);
+  const both=putPublicationTablePreset(grid,{kind:'cell',name:'Numeric',format:{horizontalAlign:'right',paddingPt:{right:4}}});
+  assert.ok(both);
+  const catalog={...both,defaultTableStyle:'Journal banded'};
+  validatePublicationTableStyles(catalog);
+  assert.equal(putPublicationTablePreset(catalog,BUILTIN_TABLE_STYLES.banded)?.items.length,3);
+  assert.equal(putPublicationTablePreset(catalog,{...BUILTIN_TABLE_STYLES.banded,name:'Journal banded'}),undefined);
+  const template=await capturePublicationTemplate(manuscript,{...originalStyle,tableStyles:catalog},'Journal table styles','Journal');
+  const imported=await validatePublicationTemplate(JSON.parse(JSON.stringify(template)));
+  const next=createBlankManuscript({kind:'volume',publicationKind:'journal-issue',title:'Next issue',publicationTemplate:imported});
+  const reopened=parseOmiJson(serializeOmiJson(next));
+  const applied=getAppliedPublicationTemplate(reopened)?.style.tableStyles;
+  assert.deepEqual(applied,catalog);
+  assert.deepEqual(loadPublicationStyle(reopened).tableStyles,catalog);
+  const blank=createTableBlock([['',''],['',''],['','']],{headerRows:1}).visual;
+  assert.ok(blank?.kind==='table');
+  const styled=applyDefaultPublicationTableStyle(blank,applied);
+  assert.equal(styled.cellFormats?.['0:0']?.backgroundColor,'#DCE6F1');
+  assert.equal(styled.cellFormats?.['2:1']?.backgroundColor,'#F1F4F7');
+  assert.deepEqual(styled.cells,blank.cells);
+  assert.equal(blank.cellFormats,undefined);
+  const data={...blank,cells:[['Existing','data'],['',''],['','']]};
+  assert.equal(applyDefaultPublicationTableStyle(data,applied),data);
+  const importedBlank={...blank,provenance:{sourceFormat:'idml',importedAt:'2026-11-25T00:00:00Z'}};
+  assert.equal(applyDefaultPublicationTableStyle(importedBlank,applied),importedBlank);
+  assert.equal(applyDefaultPublicationTableStyle(styled,applied),styled);
+  const removed=removePublicationTablePreset(catalog,'Journal banded');
+  assert.equal(removed.defaultTableStyle,undefined);
+  assert.equal(removed.items.length,1);
+  assert.equal(applyDefaultPublicationTableStyle(blank,removed),blank);
+  assert.deepEqual(getAppliedPublicationTemplate(reopened)?.style.tableStyles,catalog);
+  for(const invalid of [
+    {...catalog,defaultTableStyle:'Numeric'},
+    {...catalog,items:[...catalog.items,catalog.items[0]]},
+    {...catalog,items:[{...catalog.items[0],cells:[['private']]}]},
+    {...catalog,items:[{kind:'table',name:'bad',header:{backgroundColor:'red;display:none'},body:{}}],defaultTableStyle:'bad'}
+  ]){
+    const bad=structuredClone(template);
+    bad.profile.publicationStyle!.tableStyles=invalid as typeof catalog;
+    await assert.rejects(validatePublicationTemplate(bad),/Invalid publication table styles/);
+  }
+});

@@ -8,7 +8,7 @@ import { publicationSpineWidth } from '../model/publicationSpine';
 import { matterFrameBoxStyle, matterImageStyle, type PublicationMatterFrame } from '../model/publicationMatterFrames';
 import { frameClipPath, frameShapeSvg } from './publicationFrameShapes';
 import { renderTextBoxGraphic, visualTextBoxDiagnostics } from '../model/textBoxes';
-import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout, tableRowSplitPolicy, tableCellAppearanceStyle, tableRowHeight, tableCellDocument, effectiveCellParagraphAttrs } from '../model/tableLayout';
+import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayout, tableRowSplitPolicy, tableCellAppearanceStyle, tableRowHeight, tableCellDocument, cellDocumentWithDefaults, cellNestedTable } from '../model/tableLayout';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -582,13 +582,13 @@ function renderImage(block: OmiBlock, state: RenderState): string {
   )}">\n${indent(content, 1)}\n</figure>`;
 }
 
-function renderTable(block: OmiBlock, state: RenderState): string {
+function renderTable(block: OmiBlock, state: RenderState,nested=false): string {
   if (block.visual?.kind !== 'table') return '';
   const visual = block.visual;
   const renderCellText = (cell: string, row: number, column: number) => {
     const format = tableCellFormat(visual.cellFormats, row, column);
     const doc=tableCellDocument(visual,row,column);
-    const text=doc?renderJsonNode({...doc,content:doc.content?.map(p=>({...p,attrs:effectiveCellParagraphAttrs(p.attrs,format.horizontalAlign)}))},state):escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;');
+    const text=doc?cellDocumentWithDefaults(doc,format.horizontalAlign).content?.map((node,index)=>{const table=cellNestedTable(node);return table?renderTable({...block,id:block.id+'-cell-'+row+'-'+column+'-'+index,visual:table},state,true):renderJsonNode(node,state);}).join('')??'':escapeHtml(cell).replace(/\r\n?|\n/g, '&#10;');
     if (format.textRotation === 0 && format.textDirection === 'auto' && !visual.cellFormats?.[`${row}:${column}`]) return text;
     const css = Object.entries({...tableCellTextStyle(format.textRotation), ...(format.horizontalAlign?{textAlign:format.horizontalAlign,...(format.textRotation===0?{width:'100%'}:{})}:{})}).map(([key, value]) =>
       `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}`,
@@ -626,6 +626,7 @@ function renderTable(block: OmiBlock, state: RenderState): string {
   const columns = `<colgroup>${widths.map((width) => `<col style="width:${width}%">`).join('')}</colgroup>`;
   const reduction = visual.fontSizeReduction === 0 ? 0 : 1;
   const table = `<table style="--omi-table-font-reduction:${reduction}">${columns}${header}${body}</table>`;
+  if(nested) return table;
   const caption = visual.caption?.trim()
     ? `<figcaption>${escapeHtml(visual.caption)}</figcaption>`
     : '';

@@ -1,6 +1,10 @@
+import { findManuscriptBlock, mapManuscriptBlocks } from '../model/manuscriptTreeTraversal';
+import { collectNoteAnchorsInBlock } from '../model/notes';
 import { useStudioStore } from './useStudioStore';
 import {
   collectCitationAnchors,
+  tableCitationAnchors,
+  citationAnchorInventory,
   removeCitationClusterFromSections,
   removeCitationFromSections,
   synchronizeCitationLabels,
@@ -29,6 +33,7 @@ import type {
   OmiManuscript,
   OmiManuscriptState,
   OmiSection,
+  OmiTableBlockData,
 } from '../types/omi';
 
 const CITATION_CHECKPOINT_DELAY_MS = 2500;
@@ -253,6 +258,7 @@ export function stageUpdateBibliographicRecord(
 
 export function stageCreateCitationCluster(
   creation: CitationClusterCreation,
+  tableEdit?:{expected:OmiTableBlockData;next:OmiTableBlockData},
 ): boolean {
   let changed = false;
 
@@ -287,6 +293,21 @@ export function stageCreateCitationCluster(
       return state;
     }
 
+    let source=state.manuscript;
+    if(tableEdit){
+      const id=creation.cluster.targetBlockId;
+      const located=findManuscriptBlock(source.sections,id);
+      if(!located||located.block.visual?.kind!=='table'||JSON.stringify(located.block.visual)!==JSON.stringify(tableEdit.expected))return state;
+      const existing=collectCitationAnchors(source.sections);
+      if(existing.some(anchor=>anchor.anchorId===creation.cluster.anchorId||anchor.clusterId===creation.cluster.id||citationIds.includes(anchor.citationId)))return state;
+      if(new Set(citationIds).size!==citationIds.length||citationIds.length>100)return state;
+      if(source.tombstones?.some(t=>t.objectId===creation.cluster.id||citationIds.includes(t.objectId)))return state;
+      const expected=citationAnchorInventory([...tableCitationAnchors(tableEdit.expected),...citationIds.map(citationId=>({citationId,citationIds,clusterId:creation.cluster.id,anchorId:creation.cluster.anchorId,targetBlockId:id}))]);
+      if(JSON.stringify(expected)!==JSON.stringify(citationAnchorInventory(tableCitationAnchors(tableEdit.next))))return state;
+      const notes=(table:OmiTableBlockData)=>collectNoteAnchorsInBlock('',located.section.id,id,table).map(a=>JSON.stringify([a.noteId,a.anchorId,a.kind])).sort();
+      if(JSON.stringify(notes(tableEdit.expected))!==JSON.stringify(notes(tableEdit.next)))return state;
+      source={...source,sections:mapManuscriptBlocks(source.sections,block=>block.id===id?{...block,visual:tableEdit.next}:block)};
+    }
     const timestamp = new Date().toISOString();
     const nextCluster: OmiCitationCluster = {
       ...creation.cluster,
@@ -307,7 +328,7 @@ export function stageCreateCitationCluster(
     ];
     const nextClusters = [...existingClusters, nextCluster];
     const synchronizedSections = synchronizeForManuscript(
-      state.manuscript,
+      source,
       nextCitations,
       records,
       nextClusters,

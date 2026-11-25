@@ -1,3 +1,4 @@
+import { LIST_ATTRIBUTE_NAMES, normalizeListAttribute } from './directListFormatting';
 import { normalizeParagraphValue, type ParagraphFormat } from './directParagraphFormatting';
 import type { NoteJsonNode } from './noteRichText';
 import { DIRECT_FORMAT_NAMES, normalizeDirectValue, type DirectFormat, normalizeUnderlineStyle } from './directFormatting';
@@ -240,18 +241,66 @@ export function tableRowHeightStyle(height:OmiTableRowHeight): {height?:string} 
   return height.mode==='auto'?{}:{height:height.heightPt+'pt'};
 }
 
-/** Cell documents are deliberately limited to paragraphs and inline text. */
-export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
+/** Cell documents support paragraphs and nested lists, with bounded list depth. */
+function validCellCitation(a:Record<string,unknown>|undefined):boolean{
+  const id=(v:unknown):v is string=>typeof v==='string'&&!!v.trim()&&v.length<=256;
+  if(!a||!id(a.citationId)||!id(a.anchorId)||a.clusterId!=null&&!id(a.clusterId))return false;
+  const ids=a.citationIds??[a.citationId];
+  return Array.isArray(ids)&&ids.length>0&&ids.length<=100&&ids.every(id)&&ids[0]===a.citationId&&new Set(ids).size===ids.length;
+}
+export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:10000}): NoteJsonNode | undefined {
   if(typeof value!=='string') return undefined;
   try {
     const root=JSON.parse(value) as NoteJsonNode;
     if(root?.type!=='doc'||!Array.isArray(root.content)||!root.content.length) return undefined;
-    if(!root.content.every(p=>p?.type==='paragraph'&&(p.content===undefined||Array.isArray(p.content)&&p.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab')))) return undefined;
+    const paragraphs:NoteJsonNode[]=[];
+    const validBlock=(node:NoteJsonNode,depth:number):boolean=>{
+      if(depth>8||!node||typeof node!=='object') return false;
+      if(node.type==='paragraph'){
+        if(node.content!==undefined&&(!Array.isArray(node.content)||!node.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab'||n?.type==='omiCitation'&&validCellCitation(n.attrs)||n?.type==='omiNote'&&typeof n.attrs?.noteId==='string'&&!!n.attrs.noteId.trim()&&typeof n.attrs.anchorId==='string'&&!!n.attrs.anchorId.trim()))) return false;
+        paragraphs.push(node);
+        return true;
+      }
+      if(node.type==='omiCellTable'){
+        if(depth!==0||tableDepth>=MAX_NESTED_TABLE_DEPTH) return false;
+        const table=normalizeNestedCellTable(node.attrs?.table,tableDepth+1,budget);
+        if(!table) return false;
+        node.attrs={table}; delete node.content; delete node.text; delete node.marks;
+        return true;
+      }
+      if(node.type!=='bulletList'&&node.type!=='orderedList') return false;
+      const attrs:Record<string,unknown>={};
+      for(const name of LIST_ATTRIBUTE_NAMES){
+        const value=normalizeListAttribute(name,node.attrs?.[name]);
+        if(value!==undefined) attrs[name]=value;
+      }
+      if(node.type==='orderedList'){
+        const start=normalizeListAttribute('omiListStart',node.attrs?.start??attrs.omiListStart);
+        if(start!==undefined) attrs.start=start;
+      }
+      if(Object.keys(attrs).length) node.attrs=attrs;else delete node.attrs;
+      return Array.isArray(node.content)&&node.content.length>0&&node.content.every(item=>{
+        if(item?.type!=='listItem'||!Array.isArray(item.content)||item.content[0]?.type!=='paragraph') return false;
+        delete item.attrs;
+        return item.content.every(child=>validBlock(child,depth+1));
+      });
+    };
+    if(!root.content.every(node=>validBlock(node,0))) return undefined;
     const marksAllowed=new Set(['bold','italic','strike','code','omiSmallCaps','omiSuperscript','omiSubscript']);
-    for(const p of root.content){
+    for(const p of paragraphs){
       const attrs=normalizeCellParagraphAttrs(p.attrs);
       if(Object.keys(attrs).length) p.attrs=attrs; else delete p.attrs;
       for(const n of p.content??[]){
+        if(n.type==='omiCitation'){
+          const a=n.attrs!;
+          n.attrs={citationId:a.citationId,citationIds:Array.isArray(a.citationIds)?a.citationIds:[a.citationId],...(a.clusterId?{clusterId:a.clusterId}:{}),anchorId:a.anchorId,label:typeof a.label==='string'?a.label.slice(0,8192):'[citation]'};
+          delete n.text;delete n.content;delete n.marks;continue;
+        }
+        if(n.type==='omiNote'){
+          const a=n.attrs!;
+          n.attrs={noteId:a.noteId,anchorId:a.anchorId,label:typeof a.label==='string'?a.label.slice(0,32):'?',noteType:a.noteType==='endnote'||a.noteType==='author-note'?a.noteType:'footnote'};
+          delete n.text;delete n.content;delete n.marks;continue;
+        }
         if(n.type!=='text'){delete n.attrs;delete n.marks;continue;}
         n.marks=n.marks?.flatMap<NonNullable<NoteJsonNode['marks']>[number]>(mark=>{
           const name=mark.type!;
@@ -282,7 +331,14 @@ export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
   } catch {return undefined;}
 }
 export function tableCellPlainText(doc:NoteJsonNode):string {
-  return (doc.content??[]).map(p=>(p.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.text??'').join('')).join('\n');
+  const paragraphs:string[]=[];
+  const visit=(node:NoteJsonNode)=>{
+    if(node.type==='paragraph') paragraphs.push((node.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.type==='omiNote'||n.type==='omiCitation'?'':n.text??'').join(''));
+    else if(node.type==='omiCellTable') {const table=node.attrs?.table as OmiTableBlockData|undefined;if(table) paragraphs.push(table.cells.map(row=>row.join('\t')).join('\n'));}
+    else for(const child of node.content??[]) visit(child);
+  };
+  visit(doc);
+  return paragraphs.join('\n');
 }
 export function plainTableCellDocument(text:string):NoteJsonNode {
   return {type:'doc',content:text.split('\n').map(line=>({type:'paragraph',content:line?[{type:'text',text:line}]:[]}))};
@@ -318,4 +374,161 @@ export function normalizeCellParagraphAttrs(attrs:Record<string,unknown>|undefin
 }
 export function effectiveCellParagraphAttrs(attrs:Record<string,unknown>|undefined,alignment:OmiTableCellFormat['horizontalAlign']):Record<string,unknown>{
   return {...(alignment?{omiAlign:alignment}:{}),...normalizeCellParagraphAttrs(attrs)};
+}
+
+/** Apply cell alignment to every paragraph, including paragraphs in list items. */
+export function cellDocumentWithDefaults(doc:NoteJsonNode,alignment:OmiTableCellFormat['horizontalAlign']):NoteJsonNode{
+  const visit=(node:NoteJsonNode):NoteJsonNode=>node.type==='paragraph'?{...node,attrs:effectiveCellParagraphAttrs(node.attrs,alignment)}:{...node,...(node.content?{content:node.content.map(visit)}:{})};
+  return visit(doc);
+}
+
+export const MAX_NESTED_TABLE_DEPTH=4;
+/** Bound recursive documents and keep only supported table fields. */
+export function normalizeNestedCellTable(value:unknown,depth=1,budget={cells:10000}):OmiTableBlockData|undefined {
+  if(depth>MAX_NESTED_TABLE_DEPTH||!value||typeof value!=='object') return undefined;
+  const raw=value as OmiTableBlockData;
+  if(raw.kind!=='table'||!Array.isArray(raw.cells)||!raw.cells.length||!Array.isArray(raw.cells[0])||!raw.cells[0].length) return undefined;
+  const width=raw.cells[0].length, count=width*raw.cells.length;
+  if(count>budget.cells||!raw.cells.every(row=>Array.isArray(row)&&row.length===width&&row.every(cell=>typeof cell==='string'))) return undefined;
+  budget.cells-=count;
+  const cells=raw.cells.map(row=>[...row]);
+  const table:OmiTableBlockData={kind:'table',cells,headerRows:tableHeaderRows(cells,raw.headerRows),rowSplitDefault:tableRowSplitDefault(raw.rowSplitDefault)};
+  if(Array.isArray(raw.columnWidths)) table.columnWidths=tableColumnWidths(cells,raw.columnWidths);
+  if(raw.fontSizeReduction===0||raw.fontSizeReduction===1) table.fontSizeReduction=raw.fontSizeReduction;
+  const formats:NonNullable<OmiTableBlockData['cellFormats']>={};
+  const content:Record<string,string>={};
+  for(let r=0;r<cells.length;r++) for(let c=0;c<width;c++){
+    const key=r+':'+c;
+    if(raw.cellFormats?.[key]) formats[key]=tableCellFormat(raw.cellFormats,r,c);
+    const source=raw.cellContent?.[key];
+    if(source!==undefined){
+      const doc=parseTableCellContent(source,depth,budget);
+      if(!doc||tableCellPlainText(doc)!==cells[r]![c]) return undefined;
+      content[key]=JSON.stringify(doc);
+    }
+  }
+  if(Object.keys(formats).length) table.cellFormats=formats;
+  if(Object.keys(content).length) table.cellContent=content;
+  const merges=tableMergeLayout(cells,raw.cellMerges,table.headerRows).merges;
+  if(merges.length) table.cellMerges=merges;
+  const overrides=pruneTableRowSplitOverrides(cells,raw.rowSplitOverrides);
+  if(Object.keys(overrides).length) table.rowSplitOverrides=overrides;
+  const heights=pruneTableRowHeights(cells,raw.rowHeights);
+  if(Object.keys(heights).length) table.rowHeights=heights;
+  if(typeof raw.caption==='string') table.caption=raw.caption;
+  return table;
+}
+export function cellNestedTable(node:NoteJsonNode):OmiTableBlockData|undefined {
+  return node.type==='omiCellTable'?normalizeNestedCellTable(node.attrs?.table):undefined;
+}
+
+/** Pointer movement is measured in viewport pixels; the scale accounts for
+ * publication zoom and transformed paper. Keep native exact mode if selected. */
+export function resizeTableRowHeight(height: OmiTableRowHeight, measuredPx: number, deltaPx: number, scale=1): OmiTableRowHeight {
+  if(!Number.isFinite(measuredPx)||measuredPx<=0||!Number.isFinite(deltaPx)||!Number.isFinite(scale)||scale<=0) return normalizeTableRowHeight(height);
+  const base=height.mode==='auto'?measuredPx*0.75/scale:height.heightPt;
+  if(deltaPx===0) return normalizeTableRowHeight(height);
+  return normalizeTableRowHeight({mode:height.mode==='exact'?'exact':'minimum',heightPt:Math.max(0.05,base+deltaPx*0.75/scale)});
+}
+
+export interface TableCellPosition {row:number;column:number}
+/** Resolve an inclusive rectangular selection to unique visible cell anchors.
+ * A partially intersected merged cell is formatted as a single whole cell. */
+export function tableRangeAnchors(cells:readonly (readonly string[])[],start:TableCellPosition,end:TableCellPosition,merges?:readonly OmiTableCellMerge[],headerRows?:number):TableCellPosition[]{
+  if(![start.row,start.column,end.row,end.column].every(Number.isSafeInteger)) return [];
+  const layout=tableMergeLayout(cells,merges,headerRows);
+  const result=new Map<string,TableCellPosition>();
+  const top=Math.max(0,Math.min(start.row,end.row)),bottom=Math.min(cells.length-1,Math.max(start.row,end.row));
+  const left=Math.max(0,Math.min(start.column,end.column)),right=Math.max(start.column,end.column);
+  for(let r=top;r<=bottom;r++) for(let c=left;c<=Math.min(right,(cells[r]?.length??0)-1);c++){
+    const m=layout.at(r,c);
+    const point={row:m?.row??r,column:m?.column??c};
+    result.set(point.row+':'+point.column,point);
+  }
+  return [...result.values()];
+}
+/** Apply only changed attributes; never replace unrelated formatting or content. */
+export function formatTableRange(table:OmiTableBlockData,start:TableCellPosition,end:TableCellPosition,patch:OmiTableCellFormat|((format:ReturnType<typeof tableCellFormat>)=>OmiTableCellFormat)):Record<string,OmiTableCellFormat>{
+  const next=pruneTableCellFormats(table.cells,table.cellFormats);
+  for(const {row,column} of tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows)){
+    const current=tableCellFormat(next,row,column);
+    const updated={...current,...(typeof patch==='function'?patch(current):patch)};
+    next[row+':'+column]=tableCellFormat({[row+':'+column]:updated},row,column);
+  }
+  return next;
+}
+
+export type TableReorderAxis='row'|'column';
+export interface TableReorderPlan {
+  /** New position -> original position. */
+  order:number[];
+  /** Original position -> new position. */
+  positions:number[];
+}
+/** Move a whole connected group of merged rows or columns past its neighbor.
+ * Keep repeating header rows a separate contiguous prefix. */
+export function planTableAxisMove(table:OmiTableBlockData,axis:TableReorderAxis,index:number,direction:-1|1):TableReorderPlan|undefined {
+  const width=table.cells[0]?.length??0;
+  if(!width||!table.cells.length||!table.cells.every(row=>row.length===width)) return undefined;
+  const count=axis==='row'?table.cells.length:width;
+  if(!Number.isSafeInteger(index)||index<0||index>=count||(direction!==-1&&direction!==1)) return undefined;
+  const layout=tableMergeLayout(table.cells,table.cellMerges,table.headerRows);
+  if(layout.merges.length!==(table.cellMerges?.length??0)) return undefined;
+  const headers=axis==='row'?tableHeaderRows(table.cells,table.headerRows):0;
+  const minimum=index<headers?0:headers;
+  const maximum=index<headers?headers:count;
+  const joined=new Set<number>();
+  for(const merge of layout.merges){
+    const start=axis==='row'?merge.row:merge.column;
+    const span=axis==='row'?merge.rowSpan:merge.colSpan;
+    for(let boundary=start+1;boundary<start+span;boundary++) joined.add(boundary);
+  }
+  const group=(at:number)=>{
+    let first=at,last=at+1;
+    while(first>minimum&&joined.has(first)) first--;
+    while(last<maximum&&joined.has(last)) last++;
+    return {first,last};
+  };
+  const current=group(index);
+  if(direction===-1&&current.first===minimum||direction===1&&current.last===maximum) return undefined;
+  const neighbor=group(direction===-1?current.first-1:current.last);
+  const first=direction===-1?neighbor:current;
+  const second=direction===-1?current:neighbor;
+  const order=Array.from({length:count},(_,i)=>i);
+  order.splice(first.first,second.last-first.first,...order.slice(second.first,second.last),...order.slice(first.first,first.last));
+  const positions=Array<number>(count);
+  order.forEach((old,next)=>{positions[old]=next;});
+  return {order,positions};
+}
+/** Reorder the matrix and every coordinate-indexed property atomically.
+ * The raw rich documents travel unchanged, including their nested tables. */
+export function reorderTableAxis(table:OmiTableBlockData,axis:TableReorderAxis,index:number,direction:-1|1):{table:OmiTableBlockData;index:number}|undefined {
+  const plan=planTableAxisMove(table,axis,index,direction);
+  if(!plan) return undefined;
+  const {order,positions}=plan;
+  const cells=axis==='row'?order.map(r=>[...table.cells[r]!]):table.cells.map(row=>order.map(c=>row[c]!));
+  const rowAt=(r:number)=>axis==='row'?positions[r]!:r;
+  const colAt=(c:number)=>axis==='column'?positions[c]!:c;
+  const remapCells=<T>(source:Record<string,T>):Record<string,T>=>Object.fromEntries(Object.entries(source).map(([key,value])=>{
+    const match=/^(0|[1-9][0-9]*):(0|[1-9][0-9]*)$/.exec(key);
+    if(!match) return [key,value];
+    const r=Number(match[1]),c=Number(match[2]);
+    if(r>=table.cells.length||c>=(table.cells[r]?.length??0)) return [key,value];
+    return [rowAt(r)+':'+colAt(c),value];
+  }));
+  const remapRows=<T>(source:Record<string,T>):Record<string,T>=>Object.fromEntries(Object.entries(source).map(([key,value])=>{
+    const r=Number(key);
+    return [/^(0|[1-9][0-9]*)$/.test(key)&&r<table.cells.length?String(rowAt(r)):key,value];
+  }));
+  const merges=table.cellMerges?.map(m=>({...m,row:rowAt(m.row),column:colAt(m.column)}));
+  if(merges&&tableMergeLayout(cells,merges,table.headerRows).merges.length!==merges.length) return undefined;
+  const next:OmiTableBlockData={...table,cells,
+    ...(table.cellFormats?{cellFormats:remapCells(table.cellFormats)}:{}),
+    ...(table.cellContent?{cellContent:remapCells(table.cellContent)}:{}),
+    ...(table.cellMerges?{cellMerges:merges}:{}),
+    ...(axis==='row'&&table.rowHeights?{rowHeights:remapRows(table.rowHeights)}:{}),
+    ...(axis==='row'&&table.rowSplitOverrides?{rowSplitOverrides:remapRows(table.rowSplitOverrides)}:{}),
+    ...(axis==='column'&&table.columnWidths?.length===order.length?{columnWidths:order.map(c=>table.columnWidths![c]!)}:{}),
+  };
+  return {table:next,index:positions[index]!};
 }
