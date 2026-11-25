@@ -4,6 +4,7 @@ import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordHyphenationSettings, type WordHyphenationSettings } from '../model/wordHyphenation';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
+import { noteBodyPlainText, parseNoteBodyContent } from '../model/noteRichText';
 import { readDocxNotes, type ImportedNoteBody } from './docxNoteImport';
 import { prepareWordDrawings, type WordDrawingImage } from './docxDrawingImport';
 import {
@@ -615,6 +616,16 @@ function createEmptyParagraphBlock(): OmiBlock {
   };
 }
 
+function removeSourceStar(note:ImportedNoteBody):ImportedNoteBody{
+  const document=parseNoteBodyContent(note.bodyContent);
+  if(!document)return note;
+  const first=document.content?.[0]?.content?.[0];
+  if(first?.type!=='text'||!first.text?.startsWith('*'))return note;
+  first.text=first.text.slice(1).replace(/^ /,'');
+  if(!first.text)document.content![0]!.content!.shift();
+  return {body:noteBodyPlainText(document),bodyContent:JSON.stringify(document)};
+}
+
 function parseParagraphInline(
   paragraph: Element,
   relationships: Map<string, Relationship>,
@@ -689,7 +700,7 @@ function parseParagraphInline(
 
   const handleRun = (run: Element, inheritedMarks: TiptapMark[] = []) => {
     const marks = mergeMarks(inheritedMarks, runMarks(run));
-
+    const skipStar=new Set<Element>();
     for (const node of Array.from(run.children)) {
       if (node.localName === 'fldChar') {
         const kind = attributeByLocalName(node, 'fldCharType');
@@ -723,14 +734,19 @@ function parseParagraphInline(
         if (!noteBodies.has(noteId)) {
           context.warnings.push(warning('missing-note-body'));
         }
-        const noteBody = noteBodies.get(noteId);
+        let noteBody = noteBodies.get(noteId);
+        const marker=node.nextElementSibling;
+        const customMark= /^(?:1|true|on)$/i.test(attributeByLocalName(node,'customMarkFollows')??'')&&marker?.localName==='t'&&marker.textContent?.startsWith('*')?'*' as const:undefined;
+        if(customMark&&marker){skipStar.add(marker);if(noteBody)noteBody=removeSourceStar(noteBody);}
+        else if(attributeByLocalName(node,'customMarkFollows')&&attributeByLocalName(node,'customMarkFollows')!=='0')context.warnings.push(warning('unsupported-custom-note-mark'));
         const annotationId = `note-${crypto.randomUUID()}`;
         const anchorId = `anchor-${crypto.randomUUID()}`;
-        const label = String(context.annotations.length + 1);
+        const label = customMark??String(context.annotations.filter(note=>note.noteCustomMark!=='*').length + 1);
         context.annotations.push({
           id: annotationId,
           type: 'note',
           noteKind: noteType,
+          ...(customMark?{noteCustomMark:customMark}:{}),
           anchorId,
           targetBlockId: context.blockId,
           body: noteBody?.body ?? '',
@@ -755,7 +771,7 @@ function parseParagraphInline(
 
       if (node.localName === 't' || node.localName === 'delText') {
         if (node.localName === 'delText') continue;
-        const text = node.textContent ?? '';
+        const text = (node.textContent ?? '').slice(skipStar.has(node)?1:0);
         if (text) append([{ type: 'text', text, marks: marks.length ? marks : undefined }]);
         continue;
       }
