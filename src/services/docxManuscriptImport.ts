@@ -370,6 +370,12 @@ export async function parseDocxManuscript(
       if(/^INDEX\b/i.test(instruction)||(/^TOC\b/i.test(instruction)&&!/(?:^|\s)\\(?:a|c)(?:\s|$)/i.test(instruction))){index+=1;continue;}
     }
     const style = resolveParagraphStyle(child, styles);
+    // Our generated index title is presentation, not a manuscript heading.
+    if(style?.id==='OMIIndexTitle'){
+      const next=children[index+1];
+      const field=next&&directChildrenByLocalName(next,'fldSimple')[0];
+      if(field&&/^\s*INDEX\b/i.test(attributeByLocalName(field,'instr')??'')){index+=1;continue;}
+    }
     const plainText = paragraphPlainText(child).trim();
     const headingLevel = resolveParagraphHeadingLevel(child, style);
     const hasNoteReference = paragraphHasNoteReference(child);
