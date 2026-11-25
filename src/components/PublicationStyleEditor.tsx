@@ -1250,7 +1250,14 @@ function PublicationStyleEditorWorkspace() {
         ) : null}
 
         {openPanel === 'tableStyles' ? <div id="publication-style-ribbon-panel-tableStyles" className="publication-style-ribbon-panel" role="dialog" aria-label={getVisualElementsCopy(locale).tableAppearanceStyles}>
-          <PublicationTableStylesPanel key={manuscript.id} catalog={style.tableStyles} copy={getVisualElementsCopy(locale)} onChange={tableStyles=>patchStyle(current=>({...current,tableStyles}))} />
+          <PublicationTableStylesPanel key={manuscript.id} catalog={style.tableStyles} copy={getVisualElementsCopy(locale)} onChange={tableStyles=>patchStyle(current=>({...current,tableStyles}))} onRename={(tableStyles,from,to)=>{
+            const next={...style,tableStyles};
+            // Synchronize an unsaved local style before the atomic rename.
+            stageAppliedPublicationStyle(style);
+            stageAppliedPublicationStyle(next,{from,to});
+            synchronizedStyleRef.current=getAppliedPublicationTemplate(useStudioStore.getState().manuscript)?.style;
+            patchStyle(()=>next);
+          }} />
         </div> : null}
 
         {openPanel === 'pageStyles' ? <div id="publication-style-ribbon-panel-pageStyles" className="publication-style-ribbon-panel" role="dialog" aria-label={publicationPageStylesCopy(locale).title}>
