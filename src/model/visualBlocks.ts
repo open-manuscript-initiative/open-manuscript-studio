@@ -38,6 +38,7 @@ export function createTableBlock(
     caption?: string;
     headerRows?: number;
     cellFormats?: Record<string, OmiTableCellFormat>;
+    cellContent?: Record<string,string>;
     cellMerges?: OmiTableCellMerge[];
     rowSplitDefault?: OmiTableRowSplitPolicy;
     rowSplitOverrides?: Record<string,OmiTableRowSplitPolicy>;
@@ -55,6 +56,7 @@ export function createTableBlock(
       cells: normalizeCellMatrix(cells),
       headerRows: options.headerRows ?? 1,
       ...(options.cellFormats && Object.keys(options.cellFormats).length ? {cellFormats: options.cellFormats} : {}),
+      ...(options.cellContent && Object.keys(options.cellContent).length ? {cellContent:options.cellContent}:{}),
       ...(options.cellMerges?.length ? {cellMerges: options.cellMerges} : {}),
       ...(options.rowSplitDefault ? {rowSplitDefault: options.rowSplitDefault} : {}),
       ...(options.rowSplitOverrides && Object.keys(options.rowSplitOverrides).length ? {rowSplitOverrides: options.rowSplitOverrides} : {}),
