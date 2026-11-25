@@ -229,3 +229,11 @@ test('editor, peer review, and publication proofing share accessible color legen
   assert.match(proofingStylesSource, /data-proofing-kind='page-break-before'/);
   assert.match(proofingMarksSource, /addTrackedChangeDecoration/);
 });
+
+test('unchanged tracking metadata keeps its identity during a no-op document projection', () => {
+  const sections = [{ id: 'section-1', title: '', blocks: [{ id: 'block-1', type: 'paragraph', content: paragraph('Unchanged') }] }];
+  const proofing = { trackChanges: true, changes: [] };
+  assert.equal(recordSectionTextChanges(sections, sections, proofing), proofing);
+  const disabled = { trackChanges: false, changes: [] };
+  assert.equal(recordSectionTextChanges(sections, sections, disabled), disabled);
+});

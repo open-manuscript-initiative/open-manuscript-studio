@@ -46,6 +46,7 @@ export const OmiProofingMarksExtension = Extension.create({
   name: 'omiProofingMarks',
 
   addProseMirrorPlugins() {
+    let cached: { doc: ProseMirrorNode; payload: OmiProofingMarksPayload; decorations: DecorationSet } | undefined;
     return [
       new Plugin<OmiProofingMarksPayload>({
         key,
@@ -61,6 +62,7 @@ export const OmiProofingMarksExtension = Extension.create({
         props: {
           decorations(state) {
             const payload = key.getState(state) ?? emptyPayload();
+            if (cached?.doc === state.doc && cached.payload === payload) return cached.decorations;
             const changesByBlock = groupByBlock(
               payload.changes.filter((change) => change.status === 'pending'),
             );
@@ -71,6 +73,10 @@ export const OmiProofingMarksExtension = Extension.create({
             );
             const correctionsByBlock = groupByBlock(payload.corrections);
             const pageFlowBreaksByBlock = groupByBlock(payload.pageFlowBreaks);
+            if (!changesByBlock.size && !commentsByBlock.size && !correctionsByBlock.size && !pageFlowBreaksByBlock.size) {
+              cached = { doc: state.doc, payload, decorations: DecorationSet.empty };
+              return cached.decorations;
+            }
             const decorations: Decoration[] = [];
 
             state.doc.forEach((node, offset) => {
@@ -78,11 +84,14 @@ export const OmiProofingMarksExtension = Extension.create({
               if (!blockId) return;
               const changes = changesByBlock.get(blockId) ?? [];
               const comments = commentsByBlock.get(blockId) ?? [];
-              const nodeText = node.textBetween(0, node.content.size, '\n', '\n');
-              const corrections = (correctionsByBlock.get(blockId) ?? []).filter(
+              const pendingCorrections = correctionsByBlock.get(blockId) ?? [];
+              const pageFlowBreaks = pageFlowBreaksByBlock.get(blockId) ?? [];
+              if (!changes.length && !comments.length && !pendingCorrections.length && !pageFlowBreaks.length) return;
+              const nodeText = changes.length || pendingCorrections.length
+                ? node.textBetween(0, node.content.size, '\n', '\n') : '';
+              const corrections = pendingCorrections.filter(
                 (correction) => correctionSourceMatches(nodeText, correction),
               );
-              const pageFlowBreaks = pageFlowBreaksByBlock.get(blockId) ?? [];
               const primaryChange = changes[0];
               const changeKind = primaryChange
                 ? classifyProofingTextChange(primaryChange.before, primaryChange.after)
@@ -162,7 +171,8 @@ export const OmiProofingMarksExtension = Extension.create({
               }
             });
 
-            return DecorationSet.create(state.doc, decorations);
+            cached = { doc: state.doc, payload, decorations: DecorationSet.create(state.doc, decorations) };
+            return cached.decorations;
           },
         },
       }),

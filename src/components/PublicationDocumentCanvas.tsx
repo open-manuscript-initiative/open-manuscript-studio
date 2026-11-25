@@ -866,16 +866,19 @@ export function PublicationDocumentCanvas({
     viewMode,
   ]);
 
-  function updateDocument(_documentId: string, content: string): void {
+  const projectionCache = useRef(new WeakMap<JSONContent, string>());
+  function updateDocument(_documentId: string, content: string, snapshot?: JSONContent): void {
     let parsed: JSONContent;
     try {
-      parsed = JSON.parse(content) as JSONContent;
+      parsed = snapshot ?? JSON.parse(content) as JSONContent;
     } catch {
       return;
     }
     const currentSections = useStudioStore.getState().manuscript.sections;
     stageContinuousDocumentChange(
-      projectContinuousManuscriptDocument(parsed, currentSections),
+      projectContinuousManuscriptDocument(parsed, currentSections, {
+        textContentCache: snapshot ? projectionCache.current : undefined,
+      }),
     );
   }
 

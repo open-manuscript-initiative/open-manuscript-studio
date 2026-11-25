@@ -81,6 +81,7 @@ import {
 import { renderCitationCluster } from '../model/cslRendering';
 import { sanitizeRichTextPasteHtml } from '../model/richText';
 import { applyContinuousDeletionInput } from '../editor/continuousDeletion';
+import { ContinuousSnapshotCache } from '../editor/continuousSnapshotCache';
 import { RecentLocalEditorContentHistory } from '../editor/recentLocalEditorContentHistory';
 import {
   createTableBlock,
@@ -111,7 +112,7 @@ interface BlockEditorProps {
   blockId: string;
   blockType: string;
   content: string;
-  onUpdate: (blockId: string, content: string) => void;
+  onUpdate: (blockId: string, content: string, document?: JSONContent) => void;
   editable?: boolean;
   capabilities?: EditorCapabilities;
   manuscriptLanguage?: string;
@@ -179,6 +180,9 @@ function BlockEditorComponent({
   const [integrationAction, setIntegrationAction] = useState<'translate' | 'agent' | null>(null);
   const onUpdateRef = useRef(onUpdate);
   const recentLocalContentRef = useRef(new RecentLocalEditorContentHistory());
+  const snapshotCache = useRef(new ContinuousSnapshotCache());
+  const initialContentRef = useRef<JSONContent | null>(null);
+  if (initialContentRef.current === null) initialContentRef.current = parseStoredContent(content);
   const onProofingSelectionRef = useRef(onProofingSelection);
   const tRef = useRef(t);
   const proofreadingSelectRef = useRef<(id: string | null) => void>(() => undefined);
@@ -283,7 +287,7 @@ function BlockEditorComponent({
         }),
       ] : []),
     ],
-    content: parseStoredContent(content),
+    content: initialContentRef.current,
     editorProps: {
       attributes: {
         class: continuous
@@ -489,14 +493,15 @@ function BlockEditorComponent({
       },
     },
     onUpdate: ({ editor: currentEditor, transaction, appendedTransactions }) => {
-      const serializedContent = JSON.stringify(currentEditor.getJSON());
+      const snapshot = continuous ? snapshotCache.current.snapshot(currentEditor.state.doc) : undefined;
+      const serializedContent = snapshot?.serialized ?? JSON.stringify(currentEditor.getJSON());
       recentLocalContentRef.current.record(serializedContent);
       if (capabilities.reconcileWorkspaceReferences) {
         const changedReferences = collectChangedWorkspaceReferences([
           transaction,
           ...appendedTransactions,
         ]);
-        onUpdateRef.current(blockId, serializedContent);
+        onUpdateRef.current(blockId, serializedContent, snapshot?.document);
         if (changedReferences.has('note')) {
           reconcileNotesAfterBlockEdit();
         }
@@ -508,7 +513,7 @@ function BlockEditorComponent({
         }
         return;
       }
-      onUpdateRef.current(blockId, serializedContent);
+      onUpdateRef.current(blockId, serializedContent, snapshot?.document);
     },
   });
 
