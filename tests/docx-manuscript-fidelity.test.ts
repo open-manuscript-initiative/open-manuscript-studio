@@ -1516,3 +1516,36 @@ test('Word hyphenation defaults and paragraph suppression survive portable and n
     assert.throws(()=>validateWordHyphenation({automatic:true,zoneTwips:-1}));
   }finally{useStudioStore.setState(previous,true);}
 });
+
+test('Word note paragraphs retain pagination flags and complete multi-paragraph bodies',async()=>{
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const long='FOOTNOTE-START '+('Long footnote material for pagination. '.repeat(220))+'FOOTNOTE-END';
+  const source=makeDocx('<w:p><w:r><w:t>Anchor</w:t></w:r><w:r><w:footnoteReference w:id="1"/><w:endnoteReference w:id="2"/></w:r></w:p>',{
+    footnotes:'<w:footnotes xmlns:w="'+ns+'"><w:footnote w:id="1"><w:p><w:pPr><w:keepLines w:val="0"/></w:pPr><w:r><w:t>'+long+'</w:t></w:r></w:p><w:p><w:pPr><w:keepNext w:val="0"/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>Second paragraph</w:t></w:r></w:p></w:footnote></w:footnotes>',
+    entries:[textZipEntry('word/endnotes.xml','<w:endnotes xmlns:w="'+ns+'"><w:endnote w:id="2"><w:p><w:r><w:t>First endnote paragraph</w:t></w:r></w:p><w:p><w:r><w:t>Second endnote paragraph</w:t></w:r></w:p></w:endnote></w:endnotes>')]
+  });
+  const inspect=(plan:DocxManuscriptImportPlan)=>{
+    const foot=plan.annotations.find(n=>n.noteKind==='footnote')!;
+    const end=plan.annotations.find(n=>n.noteKind==='endnote')!;
+    assert.equal(foot.body,long+'\nSecond paragraph');
+    const paragraphs=findNodes(JSON.parse(foot.bodyContent!),'paragraph');
+    assert.equal(paragraphs.length,2);
+    assert.equal(paragraphs[0]?.attrs?.omiKeepLines,false);
+    assert.equal(paragraphs[1]?.attrs?.omiKeepNext,false);
+    assert.ok(findNodes(paragraphs[1]!,'text').some(n=>n.text==='Second paragraph'&&n.marks?.some(m=>m.type==='italic')));
+    assert.equal(end.body,'First endnote paragraph\nSecond endnote paragraph');
+    assert.equal(findNodes(JSON.parse(end.bodyContent!),'paragraph').length,2);
+  };
+  const plan=await parseDocxForStudio(source);
+  inspect(plan);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Footnote pagination'}),sections:plan.sections,annotations:plan.annotations};
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const result=buildDocxExport(reopened);
+  const parts=readZipParts(result.bytes);
+  const foot=parts.get('word/footnotes.xml')!.toString('utf8');
+  assert.match(foot,/<w:keepLines w:val="0"\/>/);
+  assert.match(foot,/FOOTNOTE-END<\/w:t>/);
+  assert.match(foot,/<\/w:p><w:p><w:pPr><w:pStyle w:val="FootnoteText"\/>/);
+  assert.equal((foot.match(/<w:footnoteRef\/>/g)??[]).length,1);
+  inspect(await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'note-pagination.docx')));
+});
