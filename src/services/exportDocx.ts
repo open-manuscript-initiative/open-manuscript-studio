@@ -309,7 +309,8 @@ class WordRunningMatterRegistry{
 /** Relationships are local to the containing document/footnote/endnote part. */
 class WordHyperlinkRegistry{
   private readonly ids=new Map<string,string>();
-  constructor(private readonly warnings:string[]){}
+  private readonly warnings:string[];
+  constructor(warnings:string[]){this.warnings=warnings;}
   wrap(href:string|undefined,title:string|undefined,content:string):string{
     if(!href||!content)return content;
     const target=/^(https?:|mailto:)/i.test(href.trim())?normalizeExternalHref(href):undefined;
