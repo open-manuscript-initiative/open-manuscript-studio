@@ -1214,3 +1214,29 @@ test('native table list numbering and nested bullet items survive Word and ODT r
     assert.equal(list.content?.[0]?.content?.[1]?.type,'bulletList');
   }
 });
+
+test('native nested tables preserve before/after text and nested cells in DOCX and ODT',async()=>{
+  const p=(value:string)=>'<w:p><w:r><w:t>'+value+'</w:t></w:r></w:p>';
+  const cell=(value:string)=>'<w:tc>'+value+'</w:tc>';
+  const table=(value:string)=>'<w:tbl><w:tr>'+value+'</w:tr></w:tbl>';
+  const source=makeDocx(p('Nested specimen')+table(cell(p('Before')+table(cell(p('A'))+cell(p('B')))+p('After'))+cell(p('Outer'))));
+  const {tableCellDocument,cellNestedTable}=await import('../src/model/tableLayout.ts');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const outer=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(outer?.kind==='table');
+    assert.deepEqual(outer.cells,[['Before\nA\tB\nAfter','Outer']]);
+    const doc=tableCellDocument(outer,0,0);
+    assert.deepEqual(doc?.content?.map(node=>node.type),['paragraph','omiCellTable','paragraph']);
+    assert.deepEqual(cellNestedTable(doc!.content![1]!)?.cells,[['A','B']]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Nested tables'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.equal((xml.match(/<w:tbl>/g)??[]).length,2);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'nested.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  assert.equal((readZipParts(odt.bytes).get('content.xml')!.toString('utf8').match(/<table:table table:name=/g)??[]).length,2);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'nested.odt'))).sections);
+});
