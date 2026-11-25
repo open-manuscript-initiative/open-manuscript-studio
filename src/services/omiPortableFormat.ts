@@ -1,4 +1,5 @@
 import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model/wordTextBoxLink';
+import { normalizeWordBookmarkRange } from '../model/namedAnchors';
 import { normalizeWordCrossReferenceField } from '../model/wordCrossReference';
 import { normalizeWordSectionLayout } from '../model/wordSectionLayout';
 import { WORD_HYPHENATION_EXTENSION, validateWordHyphenation } from '../model/wordHyphenation';
@@ -528,6 +529,7 @@ function validateReferences(
 
   optionalArray(document.namedAnchors,'namedAnchors').forEach((item,index)=>{
     if(!isRecord(item))invalid(`/namedAnchors/${index} must be an object.`);
+    if(isRecord(item.source)&&item.source.wordRange!==undefined&&!normalizeWordBookmarkRange(item.source.wordRange))invalid(`/namedAnchors/${index}/source/wordRange is invalid.`);
     requireNonEmptyString(item.name,`/namedAnchors/${index}/name`);
     requireNonEmptyString(item.exportName,`/namedAnchors/${index}/exportName`);
     if(item.targetKind!=='section'&&item.targetKind!=='block')invalid(`/namedAnchors/${index}/targetKind is invalid.`);
