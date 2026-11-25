@@ -326,11 +326,17 @@ export function ParagraphFormattingPanel({ editor, locale }: { editor: Editor; l
       {command(l[15]!, <IndentIncrease size={17} />, () => editor.chain().focus().sinkListItem('listItem').run(), false, !editor.can().sinkListItem('listItem'))}
       {command(l[16]!, <IndentDecrease size={17} />, () => editor.chain().focus().liftListItem('listItem').run(), false, !editor.can().liftListItem('listItem'))}
       {command(l[17]!, <RemoveFormatting size={17} />, () => editor.chain().focus().updateAttributes('paragraph', {
-        omiParagraphDirection:null, omiParagraphBackground:null, omiParagraphBorders:null, omiParagraphTabs:null, omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null, omiWidowControl: null, omiKeepNext: null, omiKeepLines: null, omiPageBreakBefore: null,
+        omiAutoHyphenation:null, omiParagraphDirection:null, omiParagraphBackground:null, omiParagraphBorders:null, omiParagraphTabs:null, omiAlign: null, omiLeftIndent: null, omiRightIndent: null, omiFirstLineIndent: null, omiSpaceBefore: null, omiSpaceAfter: null, omiLineSpacing: null, omiLineRule: null, omiWidowControl: null, omiKeepNext: null, omiKeepLines: null, omiPageBreakBefore: null,
       }).run())}
     </div>
     <div className="omi-direct-format-fields">
       <FormatField {...common} name="omiParagraphDirection" label={directionLabels(locale)[0]!} icon={<Pilcrow size={15}/>} choices={directionChoices(locale)} normalize={value=>normalizeParagraphValue('omiParagraphDirection',value)}/>
+      <label className="omi-direct-format-field"><span>{({en:'Automatic hyphenation',hu:'Automatikus elválasztás',de:'Automatische Silbentrennung',fr:'Césure automatique',it:'Sillabazione automatica',es:'División automática de palabras',nl:'Automatische woordafbreking',pl:'Automatyczne dzielenie wyrazów'} as Record<string,string>)[locale]??'Automatic hyphenation'}</span>
+        <select value={selectedParagraphValue(editor,'omiAutoHyphenation').mixed?'mixed':selectedParagraphValue(editor,'omiAutoHyphenation').value} onChange={e=>editor.chain().focus().updateAttributes('paragraph',{omiAutoHyphenation:e.target.value===''?null:e.target.value==='true'}).run()}>
+          {selectedParagraphValue(editor,'omiAutoHyphenation').mixed&&<option value="mixed" disabled>{labels(locale)[20]}</option>}
+          <option value="">{pagination[4]}</option><option value="true">{pagination[5]}</option><option value="false">{pagination[6]}</option>
+        </select>
+      </label>
       {field('omiLeftIndent', 5)}
       {field('omiRightIndent', 6)}
       {field('omiFirstLineIndent', 7)}
