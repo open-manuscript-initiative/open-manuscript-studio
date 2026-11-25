@@ -1,3 +1,4 @@
+import { normalizeParagraphValue, type ParagraphFormat } from './directParagraphFormatting';
 import type { NoteJsonNode } from './noteRichText';
 import { DIRECT_FORMAT_NAMES, normalizeDirectValue, type DirectFormat, normalizeUnderlineStyle } from './directFormatting';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from './richText';
@@ -248,8 +249,8 @@ export function parseTableCellContent(value:unknown): NoteJsonNode | undefined {
     if(!root.content.every(p=>p?.type==='paragraph'&&(p.content===undefined||Array.isArray(p.content)&&p.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab')))) return undefined;
     const marksAllowed=new Set(['bold','italic','strike','code','omiSmallCaps','omiSuperscript','omiSubscript']);
     for(const p of root.content){
-      // Cell-level formatting remains separate from the inline document.
-      delete p.attrs;
+      const attrs=normalizeCellParagraphAttrs(p.attrs);
+      if(Object.keys(attrs).length) p.attrs=attrs; else delete p.attrs;
       for(const n of p.content??[]){
         if(n.type!=='text'){delete n.attrs;delete n.marks;continue;}
         n.marks=n.marks?.flatMap<NonNullable<NoteJsonNode['marks']>[number]>(mark=>{
@@ -301,4 +302,20 @@ export function pruneTableCellContent(cells:readonly (readonly string[])[],conte
     if(doc&&tableCellPlainText(doc)===text) result[key]=value;
   }
   return result;
+}
+
+/** Cell paragraphs inherit cell alignment unless explicitly overridden.
+ * Page-level break commands are intentionally excluded inside table cells. */
+export const CELL_PARAGRAPH_FORMATS = ['omiAlign','omiLeftIndent','omiRightIndent','omiFirstLineIndent','omiSpaceBefore','omiSpaceAfter','omiLineSpacing','omiLineRule','omiParagraphBackground','omiParagraphBorders','omiParagraphTabs'] as const satisfies readonly ParagraphFormat[];
+export function normalizeCellParagraphAttrs(attrs:Record<string,unknown>|undefined):Record<string,unknown>{
+  const result:Record<string,unknown>={};
+  for(const name of CELL_PARAGRAPH_FORMATS){
+    const value=normalizeParagraphValue(name,attrs?.[name]);
+    if(value!==undefined) result[name]=value;
+  }
+  if(result.omiLineSpacing===undefined) delete result.omiLineRule;
+  return result;
+}
+export function effectiveCellParagraphAttrs(attrs:Record<string,unknown>|undefined,alignment:OmiTableCellFormat['horizontalAlign']):Record<string,unknown>{
+  return {...(alignment?{omiAlign:alignment}:{}),...normalizeCellParagraphAttrs(attrs)};
 }
