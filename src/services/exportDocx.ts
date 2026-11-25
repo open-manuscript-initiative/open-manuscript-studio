@@ -317,10 +317,13 @@ function wordTable(table: OmiTableBlockData, warnings: string[]): string {
       const properties = '<w:tcW w:w="'+cellWidth+'" w:type="dxa"/>'
         + (merge && merge.colSpan>1?'<w:gridSpan w:val="'+merge.colSpan+'"/>':'')
         + (merge && merge.rowSpan>1?'<w:vMerge w:val="'+(continuing?'continue':'restart')+'"/>':'')
-        + (rotation ? '<w:textDirection w:val="'+rotation+'"/>' : '');
+        + (format.backgroundColor?'<w:shd w:val="clear" w:color="auto" w:fill="'+format.backgroundColor.slice(1)+'"/>':'')
+        + (rotation ? '<w:textDirection w:val="'+rotation+'"/>' : '')
+        + (format.verticalAlign?'<w:vAlign w:val="'+(format.verticalAlign==='middle'?'center':format.verticalAlign)+'"/>':'');
       const content = (row[c] ?? '').split(/\r\n?|\n/).map(line=>{
         const runs = line.split('\t').map(part=>wordStyledText(part)).join('<w:r><w:tab/></w:r>');
-        return '<w:p>'+runs+'</w:p>';
+        const pPr=format.horizontalAlign?'<w:pPr><w:jc w:val="'+(format.horizontalAlign==='justify'?'both':format.horizontalAlign)+'"/></w:pPr>':'';
+        return '<w:p>'+pPr+runs+'</w:p>';
       }).join('');
       return '<w:tc><w:tcPr>'+properties+'</w:tcPr>'+content+'</w:tc>';
     }).join('');
