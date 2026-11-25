@@ -1,4 +1,4 @@
-import { tableCellPlainText } from '../model/tableLayout';
+import { tableCellPlainText, normalizeCellParagraphAttrs } from '../model/tableLayout';
 import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
@@ -1234,7 +1234,20 @@ function parseWordTable(table: Element): {
       // runs use the same mark decoder as the manuscript body.
       const cellParagraphs=directChildrenByLocalName(cell,'p');
       const nested=descendantsByLocalName(cell,'tbl').length>0;
-      const doc={type:'doc',content:cellParagraphs.map(p=>({type:'paragraph',content:descendantsByLocalName(p,'r').flatMap(run=>{
+      const doc={type:'doc',content:cellParagraphs.map(p=>{
+        const pp=directChildrenByLocalName(p,'pPr')[0];
+        const attrs=pp?normalizeCellParagraphAttrs({
+          ...readWordParagraphFormatting((property,attribute)=>{
+            const node=directChildrenByLocalName(pp,property)[0];
+            return node?attributeByLocalName(node,attribute):undefined;
+          },property=>directChildrenByLocalName(pp,property).length>0),
+          ...readWordParagraphDecoration((parent,name)=>{
+            const container=directChildrenByLocalName(pp,parent)[0];
+            return container?directChildrenByLocalName(container,name).map(element=>Object.fromEntries(Array.from(element.attributes).map(a=>[a.localName,a.value]))):[];
+          }),
+        }):{};
+        if(attrs.omiAlign===format.horizontalAlign) delete attrs.omiAlign;
+        return {type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:descendantsByLocalName(p,'r').flatMap(run=>{
         const marks=runMarks(run);
         return Array.from(run.children).flatMap((node):TiptapNode[]=>{
           if(node.localName==='t'&&node.textContent) return [{type:'text',text:node.textContent,marks}];
@@ -1242,8 +1255,8 @@ function parseWordTable(table: Element): {
           if(node.localName==='br'||node.localName==='cr') return [{type:'hardBreak'}];
           return [];
         });
-      })}))};
-      const rich=!nested&&doc.content.length>0&&doc.content.some(p=>p.content.some(n=>n.marks?.length||n.type!=='text')||doc.content.length>1);
+      })};})};
+      const rich=!nested&&doc.content.length>0&&doc.content.some(p=>p.attrs||p.content.some(n=>n.marks?.length||n.type!=='text')||doc.content.length>1);
       const text=rich?tableCellPlainText(doc):descendantsByLocalName(cell,'p').map(paragraph=>paragraphPlainText(paragraph).trim()).filter(Boolean).join('\n');
       if(rich) cellContent[`${rowIndex}:${columnIndex}`]=JSON.stringify(doc);
       const vertical=prop('vMerge');
