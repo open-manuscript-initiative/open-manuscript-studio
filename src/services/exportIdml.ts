@@ -1,3 +1,6 @@
+import { tableCellFormat, tableCellDocument, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowHeight, tableRowSplitPolicy, plainTableCellDocument, cellNestedTable, effectiveCellParagraphAttrs, TABLE_CELL_SIDES } from '../model/tableLayout';
+import { normalizeListAttribute } from '../model/directListFormatting';
+import type { NoteJsonNode } from '../model/noteRichText';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { normalizeDirectValue } from '../model/directFormatting';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
@@ -17,7 +20,7 @@ import type {
   PublicationParagraphStyleDefinition,
   PublicationParagraphStyleProperties,
 } from '../model/publicationParagraphStyles';
-import type { OmiBlock, OmiManuscript } from '../types/omi';
+import type { OmiBlock, OmiManuscript, OmiTableBlockData } from '../types/omi';
 import type { PublicationStyle } from './publicationStyleExport';
 import { createStoreZip, textZipEntry } from './simpleZip';
 
@@ -47,7 +50,29 @@ export function buildIdmlExport(
   const context = buildPublicationRenderingContext(manuscript, profile);
   const semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'IDML');
   const warnings: string[] = semanticLossWarnings(semanticLosses);
+  const pageWidthPoints = idmlDimensionPoints(publicationStyle?.page.width, 595.2756);
+  const pageHeightPoints = idmlDimensionPoints(publicationStyle?.page.height, 841.8898);
+  const pageMargins = publicationStyle?.page.margins;
+  const topMarginPoints = idmlMarginPoints(pageMargins?.top, 36, pageHeightPoints);
+  const bottomMarginPoints = idmlMarginPoints(pageMargins?.bottom, 36, pageHeightPoints);
+  const leftMarginPoints = idmlMarginPoints(pageMargins?.inner, 36, pageWidthPoints);
+  const rightMarginPoints = idmlMarginPoints(pageMargins?.outer, 36, pageWidthPoints);
+  const frameLeft = Math.min(leftMarginPoints, pageWidthPoints / 2);
+  const frameRight = Math.max(frameLeft + 1, pageWidthPoints - rightMarginPoints);
+  const frameTop = Math.min(topMarginPoints, pageHeightPoints / 2);
+  const frameBottom = Math.max(frameTop + 1, pageHeightPoints - bottomMarginPoints);
+  const pageWidth = formatIdmlPoints(pageWidthPoints);
+  const pageHeight = formatIdmlPoints(pageHeightPoints);
+  const pageOrientation = pageWidthPoints > pageHeightPoints ? 'Landscape' : 'Portrait';
+  const left = formatIdmlPoints(frameLeft);
+  const right = formatIdmlPoints(frameRight);
+  const top = formatIdmlPoints(frameTop);
+  const bottom = formatIdmlPoints(frameBottom);
+
   const storyParts: string[] = [];
+  const tableNoteLabels=new Map<string,string>();
+  const tableFonts=new Set<string>();
+  let nextTableId=0;
   const directColors = new Set<string>();
   const publishableAnnotations = manuscript.annotations.filter((note) =>
     note.type === 'note' && note.renderingHint !== 'hidden' && !note.visibility);
@@ -73,6 +98,19 @@ export function buildIdmlExport(
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
       storyParts.push(styledParagraph(heading, `OMI Heading ${level}`));
       for (const block of section.blocks) {
+        if(block.visual?.kind==='table'){
+          const report=(code:string,message:string)=>{
+            if(semanticLosses.some(loss=>loss.code===code&&loss.targetId===block.id))return;
+            const loss:PublicationSemanticLoss={code,severity:'warning',targetId:block.id,message:'IDML '+message};
+            semanticLosses.push(loss);warnings.push(...semanticLossWarnings([loss]));
+          };
+          if(block.visual.caption?.trim())storyParts.push(styledParagraph(block.visual.caption,'OMI Figure Caption'));
+          storyParts.push(idmlTableParagraph(block.visual,frameRight-frameLeft,{
+            fresh:()=> 'uOmiTable'+(++nextTableId),colors:directColors,fonts:tableFonts,
+            annotations:annotationsById,noteLabels:tableNoteLabels,report
+          }));
+          continue;
+        }
         if (block.visual) {
           const text = blockPlainText(block);
           if (text) storyParts.push(styledParagraph(text, 'OMI Figure Caption'));
@@ -114,7 +152,7 @@ export function buildIdmlExport(
   if (unanchoredAnnotations.length) {
     storyParts.push(styledParagraph(localizedLabel(context.locale, 'notes'), 'OMI Heading 1'));
     unanchoredAnnotations.forEach((note, index) => {
-      storyParts.push(styledParagraph(`${index + 1}. ${note.body}`, 'OMI Note'));
+      storyParts.push(styledParagraph(`${tableNoteLabels.get(note.id)??index+1}. ${note.body}`, 'OMI Note'));
     });
   }
 
@@ -145,25 +183,6 @@ export function buildIdmlExport(
   </Story>
 </idPkg:Story>`;
 
-  const pageWidthPoints = idmlDimensionPoints(publicationStyle?.page.width, 595.2756);
-  const pageHeightPoints = idmlDimensionPoints(publicationStyle?.page.height, 841.8898);
-  const pageMargins = publicationStyle?.page.margins;
-  const topMarginPoints = idmlMarginPoints(pageMargins?.top, 36, pageHeightPoints);
-  const bottomMarginPoints = idmlMarginPoints(pageMargins?.bottom, 36, pageHeightPoints);
-  const leftMarginPoints = idmlMarginPoints(pageMargins?.inner, 36, pageWidthPoints);
-  const rightMarginPoints = idmlMarginPoints(pageMargins?.outer, 36, pageWidthPoints);
-  const frameLeft = Math.min(leftMarginPoints, pageWidthPoints / 2);
-  const frameRight = Math.max(frameLeft + 1, pageWidthPoints - rightMarginPoints);
-  const frameTop = Math.min(topMarginPoints, pageHeightPoints / 2);
-  const frameBottom = Math.max(frameTop + 1, pageHeightPoints - bottomMarginPoints);
-  const pageWidth = formatIdmlPoints(pageWidthPoints);
-  const pageHeight = formatIdmlPoints(pageHeightPoints);
-  const pageOrientation = pageWidthPoints > pageHeightPoints ? 'Landscape' : 'Portrait';
-  const left = formatIdmlPoints(frameLeft);
-  const right = formatIdmlPoints(frameRight);
-  const top = formatIdmlPoints(frameTop);
-  const bottom = formatIdmlPoints(frameBottom);
-
   const spreadXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Spread xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
   <Spread Self="${spreadId}" FlattenerOverride="Default" ShowMasterItems="true" PageTransitionType="None" PageTransitionDirection="NotApplicable" PageTransitionDuration="Medium" BindingLocation="0 0" AllowPageShuffle="true" ItemTransform="1 0 0 1 0 0">
@@ -187,9 +206,9 @@ export function buildIdmlExport(
 <idPkg:Preferences xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
   <DocumentPreference PageHeight="${pageHeight}" PageWidth="${pageWidth}" PagesPerDocument="1" FacingPages="${publicationStyle?.page.facingPages === true}" PageOrientation="${pageOrientation}" PageBinding="LeftToRight"/>
 </idPkg:Preferences>`;
-  const fontsXml = buildFontsXml(publicationStyle, context.sections);
+  const fontsXml = buildFontsXml(publicationStyle, context.sections, tableFonts);
   const graphicXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<idPkg:Graphic xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><Color Self="Color/Black" Model="Process" Space="CMYK" ColorValue="0 0 0 100" ColorOverride="Specialblack" Name="Black"/>${[...directColors].sort().map(idmlDirectColor).join('')}</idPkg:Graphic>`;
+<idPkg:Graphic xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><Color Self="Color/Black" Model="Process" Space="CMYK" ColorValue="0 0 0 100" ColorOverride="Specialblack" Name="Black"/>${[...directColors].sort().map(idmlDirectColor).join('')}${['Solid','Dashed','Canned Dotted','ThinThin'].map(name=>'<StrokeStyle Self="StrokeStyle/$ID/'+name+'" Name="$ID/'+name+'"/>').join('')}</idPkg:Graphic>`;
   const containerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="designmap.xml" media-type="text/xml"/></rootfiles></container>`;
 
@@ -218,8 +237,9 @@ export function buildIdmlExport(
 function buildFontsXml(
   publicationStyle: PublicationStyle | undefined,
   sections: readonly OmiRenderedSection[],
+  tableFonts:ReadonlySet<string>=new Set(),
 ): string {
-  const families = new Set(['Times New Roman', 'Courier New']);
+  const families = new Set(['Times New Roman', 'Courier New', ...tableFonts]);
   for (const definition of publicationStyle?.paragraphStyles.items ?? []) {
     const family = definition.properties.fontFamily?.trim();
     if (family) families.add(family);
@@ -248,6 +268,8 @@ function buildStylesXml(publicationStyle?: PublicationStyle): string {
     style('OMI Subtitle', 16, false, 'CenterAlign', 4, 10),
     style('OMI Authors', 11, false, 'CenterAlign', 0, 12),
     style('OMI Body', 11, false, 'LeftAlign', 0, 6),
+    style('OMI Table Cell', 11, false, 'LeftAlign', 0, 0),
+    style('OMI Table Cell Small', 10, false, 'LeftAlign', 0, 0),
     style('OMI Metadata', 10, false, 'LeftAlign', 0, 8),
     style('OMI Note', 9, false, 'LeftAlign', 0, 4),
     style('OMI Figure Caption', 9, false, 'CenterAlign', 4, 8),
@@ -287,6 +309,8 @@ function buildStylesXml(publicationStyle?: PublicationStyle): string {
     ${paragraphStyles}
   </RootParagraphStyleGroup>
   <RootObjectStyleGroup Self="uObjRoot"><ObjectStyle Self="ObjectStyle/$ID/[None]" Name="$ID/[None]"/></RootObjectStyleGroup>
+  <RootCellStyleGroup Self="uCellRoot"><CellStyle Self="CellStyle/$ID/[None]" Name="$ID/[None]"/></RootCellStyleGroup>
+  <RootTableStyleGroup Self="uTableRoot"><TableStyle Self="TableStyle/$ID/[No table style]" Name="$ID/[No table style]"/></RootTableStyleGroup>
 </idPkg:Styles>`;
 }
 
@@ -623,6 +647,7 @@ function styledRunsParagraph(
   renderedFootnoteIds?: Set<string>,
   directColors?: Set<string>,
   paragraphAttributes = '',
+  preserveExplicitFont=false,
 ): string {
   const content = runs
     .flatMap((run) => {
@@ -637,7 +662,7 @@ function styledRunsParagraph(
         const index = [...(annotationsById?.values() ?? [])].findIndex((item) => item.id === note.id) + 1;
         return [idmlFootnote(note, index)];
       }
-      return splitGreekSourceFontRanges(run).map((range) => {
+      return (preserveExplicitFont&&run.sourceFontFamily?[{text:run.text,fontFamily:run.sourceFontFamily}]:splitGreekSourceFontRanges(run)).map((range) => {
       const charStyle = omiCharacterStyleName(run.semantics) ?? '$ID/[None]';
       const language = run.language ? ` AppliedLanguage="${xml(run.language)}"` : '';
       const direct = idmlDirectCharacterAttributes(run, directColors);
@@ -802,4 +827,101 @@ function xml(value: string): string {
 
 function fileStem(manuscript: Pick<OmiManuscript, 'title' | 'id'>): string {
   return manuscript.title.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 72) || manuscript.id || 'manuscript';
+}
+
+interface IdmlTableContext {
+  fresh:()=>string;
+  colors:Set<string>;
+  fonts:Set<string>;
+  annotations:ReadonlyMap<string,OmiManuscript['annotations'][number]>;
+  noteLabels:Map<string,string>;
+  report:(code:string,message:string)=>void;
+}
+function idmlTableColor(value:string|undefined,context:IdmlTableContext):string {
+  const color=normalizeDirectValue('omiTextColor',value);
+  if(typeof color!=='string'||color==='#000000')return 'Color/Black';
+  context.colors.add(color);
+  return 'Color/OMI-'+color.slice(1);
+}
+/** A native story table, not a text projection. DOM 8 uses the older
+ * TopInset/LeftInset/etc. spelling for text cells. */
+function idmlTableParagraph(table:OmiTableBlockData,width:number,context:IdmlTableContext):string {
+  const id=context.fresh();
+  const widths=tableColumnWidths(table.cells,table.columnWidths).map(p=>Math.max(0.01,width*p/100));
+  if(!widths.length||!table.cells.length)return styledParagraph('','OMI Body');
+  const headers=tableHeaderRows(table.cells,table.headerRows);
+  const layout=tableMergeLayout(table.cells,table.cellMerges,headers);
+  const styleName=table.fontSizeReduction===1?'OMI Table Cell Small':'OMI Table Cell';
+  const attrs={Self:id,HeaderRowCount:headers,BodyRowCount:table.cells.length-headers,FooterRowCount:0,ColumnCount:widths.length,AppliedTableStyle:'TableStyle/$ID/[No table style]'};
+  const rows=table.cells.map((_,r)=>{
+    const height=tableRowHeight(table,r);
+    const props:Record<string,string|number|boolean>={Self:id+'Row'+r.toString(16),Name:r};
+    if(height.mode==='auto'){props.AutoGrow=true;props.SingleRowHeight=18;}
+    else{props.AutoGrow=height.mode==='minimum';props.SingleRowHeight=height.heightPt;props.MinimumHeight=height.heightPt;if(height.mode==='exact')props.MaximumHeight=height.heightPt;}
+    if(tableRowSplitPolicy(table,r)==='allow')context.report('table-row-split-not-preserved','cannot map an intra-row break to an InDesign row break.');
+    return '<Row'+idmlLocalAttributes(props)+'/>';
+  }).join('');
+  const columns=widths.map((w,c)=>'<Column'+idmlLocalAttributes({Self:id+'Column'+c.toString(16),Name:c,SingleColumnWidth:formatIdmlPoints(w)})+'/>').join('');
+  const cells=table.cells.map((row,r)=>row.map((text,c)=>{
+    if(layout.covered(r,c))return '';
+    const merge=layout.at(r,c),format=tableCellFormat(table.cellFormats,r,c);
+    const props:Record<string,string|number|boolean>={Self:id+'Cell'+r+'_'+c,Name:c+':'+r,RowSpan:merge?.rowSpan??1,ColumnSpan:merge?.colSpan??1,AppliedCellStyle:'CellStyle/$ID/[None]'};
+    if(format.verticalAlign)props.VerticalJustification=({top:'TopAlign',middle:'CenterAlign',bottom:'BottomAlign'} as Record<string,string>)[format.verticalAlign]??'TopAlign';
+    if(format.textRotation)props.RotationAngle=(360-format.textRotation)%360;
+    if(format.textDirection!=='auto')context.report('table-cell-writing-direction-not-preserved','does not map explicit cell writing direction to a CS6 paragraph composer.');
+    if(format.backgroundColor)props.FillColor=idmlTableColor(format.backgroundColor,context);
+    for(const side of TABLE_CELL_SIDES){
+      const prefix=side[0]!.toUpperCase()+side.slice(1);
+      const padding=format.paddingPt?.[side];
+      if(padding!==undefined)props[prefix+'Inset']=padding;
+      const border=format.borders?.[side];
+      if(border){
+        props[prefix+'EdgeStrokeWeight']=border.style==='none'?0:border.widthPt??0.5;
+        if(border.style!=='none'){
+          props[prefix+'EdgeStrokeColor']=idmlTableColor(border.color,context);
+          props[prefix+'EdgeStrokeType']='StrokeStyle/$ID/'+({solid:'Solid',dashed:'Dashed',dotted:'Canned Dotted',double:'ThinThin'} as const)[border.style];
+        }
+      }
+    }
+    const doc=tableCellDocument(table,r,c)??plainTableCellDocument(text);
+    const innerWidth=Math.max(0.01,widths.slice(c,c+(merge?.colSpan??1)).reduce((sum,w)=>sum+w,0)-(format.paddingPt?.left??0)-(format.paddingPt?.right??0));
+    const paragraph=(node:NoteJsonNode,prefix='')=>{
+      const runs=(node.content??[]).flatMap(child=>{
+        if(child.type==='omiNote'){
+          const noteId=child.attrs?.noteId;
+          if(typeof noteId!=='string'||!context.annotations.has(noteId))return [];
+          let label=context.noteLabels.get(noteId);
+          if(!label){label='T'+(context.noteLabels.size+1);context.noteLabels.set(noteId,label);}
+          context.report('table-note-projected-as-text','cell notes retain a distinct T-number marker and note-list text, not native note anchors.');
+          return [{text:'['+label+']',semantics:['superscript'] as OmiInlineRun['semantics']}];
+        }
+        if(child.type==='hardBreak')return [{text:'\n',semantics:[]}];
+        if(child.type==='omiTab')return [{text:'\t',semantics:[]}];
+        return extractOmiInlineRuns(JSON.stringify(child));
+      });
+      if(prefix)runs.unshift({text:prefix,semantics:[]});
+      for(const run of runs){
+        if(run.sourceFontFamily)context.fonts.add(run.sourceFontFamily);
+        if(run.link)context.report('table-link-projected-as-text','preserves visible link text, not the hyperlink destination.');
+        const d=run.directFormatting;
+        if(d&&(idmlLigatureMappingIsPartial(d.omiLigatures)||d.underlineStyle||d.omiDoubleStrike||d.omiOutline||d.omiShadow||d.omiHighlight||d.omiCharacterBackground||(d.omiKerning!==undefined&&d.omiKerning!==0)||(d.omiTracking!==undefined&&d.omiFontSize===undefined)))context.report('table-direct-typography-partial','some cell character overrides have no exact mapping.');
+      }
+      const paragraphAttrs=effectiveCellParagraphAttrs(node.attrs,format.horizontalAlign);
+      if(paragraphAttrs.omiLineRule==='atLeast'||paragraphAttrs.omiParagraphBackground||paragraphAttrs.omiParagraphBorders||paragraphAttrs.omiParagraphTabs)context.report('table-paragraph-typography-partial','some cell paragraph overrides have no exact mapping.');
+      return styledRunsParagraph(runs,styleName,undefined,undefined,context.colors,directParagraphAttributes(JSON.stringify({type:'paragraph',attrs:paragraphAttrs})),true);
+    };
+    const blocks=(nodes:readonly NoteJsonNode[],depth=0):string=>nodes.map(node=>{
+      if(node.type==='paragraph')return paragraph(node);
+      const nested=cellNestedTable(node);
+      if(nested)return idmlTableParagraph(nested,innerWidth,context);
+      if(node.type==='bulletList'||node.type==='orderedList'){
+        context.report('table-list-projected-as-text','cell list markers are editable literal text; native numbering relationships and custom numbering patterns are not retained.');
+        const start=Number(normalizeListAttribute('omiListStart',node.attrs?.start??node.attrs?.omiListStart)??1);
+        return (node.content??[]).map((item,index)=>(item.content??[]).map((child,j)=>child.type==='paragraph'?paragraph(child,j===0?'  '.repeat(depth)+(node.type==='orderedList'?(start+index)+'. ':'• '):''):blocks([child],depth+1)).join('')).join('');
+      }
+      return '';
+    }).join('');
+    return '<Cell'+idmlLocalAttributes(props)+'>'+(blocks(doc.content??[])||styledParagraph('',styleName))+'</Cell>';
+  }).join('')).join('');
+  return '<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/OMI Table Cell"><CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Table'+idmlLocalAttributes(attrs)+'>'+rows+columns+cells+'</Table><Br/></CharacterStyleRange></ParagraphStyleRange>';
 }
