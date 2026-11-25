@@ -9,6 +9,8 @@ import type {
   OmiImportProvenance,
   OmiTableCellFormat,
   OmiTableCellMerge,
+  OmiTableRowSplitPolicy,
+  OmiTableRowHeight,
   OmiVisualBlockData,
 } from '../types/omi';
 
@@ -36,7 +38,11 @@ export function createTableBlock(
     caption?: string;
     headerRows?: number;
     cellFormats?: Record<string, OmiTableCellFormat>;
+    cellContent?: Record<string,string>;
     cellMerges?: OmiTableCellMerge[];
+    rowSplitDefault?: OmiTableRowSplitPolicy;
+    rowSplitOverrides?: Record<string,OmiTableRowSplitPolicy>;
+    rowHeights?: Record<string,OmiTableRowHeight>;
     provenance?: OmiImportProvenance;
   } = {},
   id = crypto.randomUUID(),
@@ -47,10 +53,14 @@ export function createTableBlock(
     content: '',
     visual: {
       kind: 'table',
-      cells: normalizeCellMatrix(cells),
+      cells: normalizeCellMatrix(cells,true),
       headerRows: options.headerRows ?? 1,
       ...(options.cellFormats && Object.keys(options.cellFormats).length ? {cellFormats: options.cellFormats} : {}),
+      ...(options.cellContent && Object.keys(options.cellContent).length ? {cellContent:options.cellContent}:{}),
       ...(options.cellMerges?.length ? {cellMerges: options.cellMerges} : {}),
+      ...(options.rowSplitDefault ? {rowSplitDefault: options.rowSplitDefault} : {}),
+      ...(options.rowSplitOverrides && Object.keys(options.rowSplitOverrides).length ? {rowSplitOverrides: options.rowSplitOverrides} : {}),
+      ...(options.rowHeights && Object.keys(options.rowHeights).length ? {rowHeights:options.rowHeights} : {}),
       caption: options.caption,
       provenance: options.provenance,
     },
@@ -132,7 +142,7 @@ export function isVisualBlock(
   return Boolean(block.visual);
 }
 
-export function normalizeCellMatrix(cells: string[][]): string[][] {
+export function normalizeCellMatrix(cells: string[][], preserveWhitespace=false): string[][] {
   if (cells.length === 0) {
     return [['']];
   }
@@ -140,7 +150,7 @@ export function normalizeCellMatrix(cells: string[][]): string[][] {
   const width = Math.max(1, ...cells.map((row) => row.length));
   const normalized = cells.map((row) =>
     Array.from({ length: width }, (_, columnIndex) =>
-      String(row[columnIndex] ?? '').trim(),
+      preserveWhitespace?String(row[columnIndex]??''):String(row[columnIndex] ?? '').trim(),
     ),
   );
 
@@ -344,7 +354,7 @@ export function updateTableCell(
   columnIndex: number,
   value: string,
 ): string[][] {
-  const next = normalizeCellMatrix(cells).map((row) => [...row]);
+  const next = normalizeCellMatrix(cells,true).map((row) => [...row]);
   if (!next[rowIndex] || columnIndex < 0 || columnIndex >= next[rowIndex].length) {
     return next;
   }
@@ -353,33 +363,33 @@ export function updateTableCell(
 }
 
 export function addTableRow(cells: string[][]): string[][] {
-  const normalized = normalizeCellMatrix(cells);
+  const normalized = normalizeCellMatrix(cells,true);
   return normalizeCellMatrix([
     ...normalized,
     Array.from({ length: normalized[0]?.length ?? 1 }, () => ''),
-  ]);
+  ],true);
 }
 
 export function addTableColumn(cells: string[][]): string[][] {
   return normalizeCellMatrix(
-    normalizeCellMatrix(cells).map((row) => [...row, '']),
+    normalizeCellMatrix(cells,true).map((row) => [...row, '']),true
   );
 }
 
 export function removeTableRow(cells: string[][], rowIndex: number): string[][] {
-  const normalized = normalizeCellMatrix(cells);
+  const normalized = normalizeCellMatrix(cells,true);
   if (normalized.length <= 1) return normalized;
-  return normalizeCellMatrix(normalized.filter((_, index) => index !== rowIndex));
+  return normalizeCellMatrix(normalized.filter((_, index) => index !== rowIndex),true);
 }
 
 export function removeTableColumn(
   cells: string[][],
   columnIndex: number,
 ): string[][] {
-  const normalized = normalizeCellMatrix(cells);
+  const normalized = normalizeCellMatrix(cells,true);
   if ((normalized[0]?.length ?? 0) <= 1) return normalized;
   return normalizeCellMatrix(
-    normalized.map((row) => row.filter((_, index) => index !== columnIndex)),
+    normalized.map((row) => row.filter((_, index) => index !== columnIndex)),true
   );
 }
 

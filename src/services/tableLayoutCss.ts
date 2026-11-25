@@ -10,9 +10,11 @@ figure.scholarly-table, .scholarly-table table {
 .scholarly-table th, .scholarly-table td {
   min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; vertical-align: top;
 }
+.scholarly-table td p, .scholarly-table th p { margin: 0; }
 .scholarly-table thead { display: table-header-group; break-inside: avoid; }
 .scholarly-table tbody { break-inside: auto; page-break-inside: auto; }
 .scholarly-table tr { break-inside: avoid; page-break-inside: avoid; }
+.scholarly-table tbody tr[data-omi-row-split="allow"] { break-inside: auto; page-break-inside: auto; }
 .scholarly-table figcaption { break-inside: avoid; }
 .scholarly-table figcaption:first-child { break-after: avoid; }
 .scholarly-table figcaption:last-child { break-before: avoid; }

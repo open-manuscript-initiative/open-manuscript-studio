@@ -1,3 +1,4 @@
+import { tableCellDocument, tableCellPlainText, parseTableCellContent } from './tableLayout';
 import type { OmiAnnotation, OmiManuscript } from '../types/omi';
 import { publicManuscriptExtensions } from './manuscriptImportOrigin';
 import { normalizeDirectValue } from './directFormatting';
@@ -52,6 +53,19 @@ export function publicPublicationManuscript(manuscript: OmiManuscript, options: 
   });
   const sections=mapManuscriptBlocks(manuscript.sections,block=>{
     const content=contentView(block.content);
+    const table=block.visual;
+    if(table?.kind==='table'&&table.cellContent){
+      const cells=table.cells.map(row=>[...row]);
+      const cellContent:Record<string,string>={};
+      for(let r=0;r<cells.length;r++) for(let c=0;c<cells[r]!.length;c++){
+        const doc=tableCellDocument(table,r,c);
+        if(!doc) continue;
+        const projected=contentView(JSON.stringify(doc));
+        const parsed=parseTableCellContent(projected);
+        if(parsed){cells[r]![c]=tableCellPlainText(parsed);cellContent[r+':'+c]=projected;}
+      }
+      return {...block,content,visual:{...table,cells,cellContent}};
+    }
     return content===block.content ? block : {...block,content};
   });
   if (extensions===manuscript.extensions && annotations.length===manuscript.annotations.length && annotations.every((note,i)=>note===manuscript.annotations[i]) && sections.every((section,i)=>section===manuscript.sections[i])) return manuscript;

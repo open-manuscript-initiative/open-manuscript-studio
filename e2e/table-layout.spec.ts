@@ -152,7 +152,11 @@ test('cell rotation and writing direction persist through mobile preview and HTM
   }
   await rotation.selectOption('90');
   await direction.selectOption('rtl');
-  await canvas.getByRole('textbox', { name: 'Selected cell text' }).fill('שלום rotated heading');
+  const selectedCellEditor = canvas.getByRole('textbox', { name: 'Selected cell text', exact: true });
+  await expect(selectedCellEditor).toBeVisible();
+  await selectedCellEditor.fill('שלום rotated heading');
+  await expect(text).toContainText('שלום rotated heading');
+  await expect(text).toHaveAttribute('data-text-rotation', '90');
   await expect(text).toHaveAttribute('dir', 'rtl');
   await expect.poll(() => text.evaluate((element) => element.getBoundingClientRect().height > element.getBoundingClientRect().width)).toBe(true);
   await page.setViewportSize({ width: 480, height: 900 });

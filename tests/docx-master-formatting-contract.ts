@@ -370,6 +370,7 @@ function assertModel(manuscript: OmiManuscript, item: Case): void {
     const visual = blocks(manuscript).map(b => b.visual).find(v => v?.kind === 'table' && v.cells.flat().includes('Egyesített fejléc'));
     assert.ok(visual?.kind === 'table');
     assert.equal(visual.headerRows, 1);
+    assert.equal(visual.cellFormats?.['0:0']?.backgroundColor,'#DCE6F1');
     for (const value of ['Érték', 'Forrás', '2026', '12,5', 'Összesen', '2', '25']) assert.ok(visual.cells.flat().includes(value), value);
     return;
   }
@@ -476,7 +477,8 @@ function wordGap(id: string): string | undefined {
   if (id.startsWith('L')) return 'Style-based native list numbering is not round-tripped yet';
   if (id === 'N05' || id === 'N06') return 'Right-to-left Word run property is not round-tripped yet';
   if (id === 'F01' || id === 'F02') return 'Note color is not round-tripped yet';
-  if (['T01', 'I01', 'E01'].includes(id)) return 'DOCX publication exporter currently emits a descriptive text fallback';
+  if (id === 'T01') return undefined;
+  if (['I01', 'E01'].includes(id)) return 'DOCX publication exporter currently emits a descriptive text fallback';
   if (['X01', 'X02', 'X03', 'X04'].includes(id)) return 'Native bookmark, field, hyperlink or section metadata is not round-tripped yet';
   return undefined;
 }

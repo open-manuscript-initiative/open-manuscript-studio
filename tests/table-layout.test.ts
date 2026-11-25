@@ -114,3 +114,146 @@ test('cell merges retain the matrix and reject overlap, nonempty cells and heade
   }
   assert.deepEqual(cells,[['Header',''],['Anchor',''],['','']]);
 });
+
+test('row pagination defaults, overrides, resets and deletion are non-destructive', async () => {
+  const {tableRowSplitPolicy,setTableRowSplitOverride,pruneTableRowSplitOverrides}=await import('../src/model/tableLayout.ts');
+  const cells=[['H'],['A'],['B']];
+  const block=createTableBlock(cells,{headerRows:1},'pagination-table');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  assert.equal(tableRowSplitPolicy(table,1),'keep');
+  table.rowSplitDefault='allow';
+  table.rowSplitOverrides=setTableRowSplitOverride(table,1,'keep');
+  assert.equal(tableRowSplitPolicy(table,1),'keep');
+  assert.equal(tableRowSplitPolicy(table,2),'allow');
+  assert.deepEqual(setTableRowSplitOverride(table,1,'inherit'),{});
+  assert.deepEqual(pruneTableRowSplitOverrides(cells.slice(0,2),{'1':'keep','2':'allow','01':'keep'}),{'1':'keep'});
+  assert.deepEqual(setTableRowSplitOverride(table,Infinity,'allow'),{'1':'keep'});
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(block);
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const v=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(v?.kind==='table');
+  assert.equal(v.rowSplitDefault,'allow');
+  assert.deepEqual(v.rowSplitOverrides,{'1':'keep'});
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<tr><td>A<\/td><\/tr>/);
+    assert.match(html,/<tr data-omi-row-split="allow"><td>B<\/td><\/tr>/);
+    assert.match(html,/tbody tr\[data-omi-row-split="allow"\]/);
+  }
+});
+
+test('cell appearance is validated, portable and rendered at the selected coordinates', async () => {
+  const {normalizeTableCellAppearance}=await import('../src/model/tableLayout.ts');
+  assert.deepEqual(normalizeTableCellAppearance({backgroundColor:'#aabbcc',horizontalAlign:'justify',verticalAlign:'middle'}),{backgroundColor:'#AABBCC',horizontalAlign:'justify',verticalAlign:'middle'});
+  assert.deepEqual(normalizeTableCellAppearance({backgroundColor:'red;position:fixed',horizontalAlign:'bogus',verticalAlign:'bad'} as never),{});
+  const manuscript=createVersionedTestManuscript();
+  const block=createTableBlock([['Heading','Other'],['Value','Untouched']],{headerRows:1,cellFormats:{'1:0':{horizontalAlign:'right',verticalAlign:'bottom',backgroundColor:'#DCE6F1'}}},'cell-appearance');
+  manuscript.sections[0]!.blocks.push(block);
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const v=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(v?.kind==='table');
+  assert.deepEqual(v.cellFormats,{'1:0':{horizontalAlign:'right',verticalAlign:'bottom',backgroundColor:'#DCE6F1'}});
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<td style="text-align:right;vertical-align:bottom;background-color:#DCE6F1">/);
+    assert.match(html,/<td>Untouched<\/td>/);
+  }
+});
+
+test('cell edges preserve explicit none, zero padding and safe physical dimensions', async () => {
+  const {normalizeTableCellEdges,tableCellEdgeStyle,tableLengthPt,odtTableCellBorder}=await import('../src/model/tableLayout.ts');
+  const input={borders:{top:{style:'solid',widthPt:0.51,color:'#aabbcc'},right:{style:'none'},bottom:{style:'dotted',widthPt:1,color:'#112233'}},paddingPt:{left:3.17,right:0}} as const;
+  const normalized=normalizeTableCellEdges(input);
+  assert.deepEqual(normalized,{borders:{top:{style:'solid',widthPt:0.5,color:'#AABBCC'},right:{style:'none'},bottom:{style:'dotted',widthPt:1,color:'#112233'}},paddingPt:{right:0,left:3.15}});
+  assert.deepEqual(tableCellEdgeStyle(input),{borderTop:'0.5pt solid #AABBCC',borderRight:'none',paddingRight:'0pt',borderBottom:'1pt dotted #112233',paddingLeft:'3.15pt'});
+  assert.equal(tableLengthPt('25.4mm'),72);
+  assert.equal(tableLengthPt('2pc'),24);
+  assert.equal(tableLengthPt('calc(1pt)'),undefined);
+  assert.deepEqual(odtTableCellBorder('0.5pt dashed #AABBCC'),{style:'dashed',widthPt:0.5,color:'#AABBCC'});
+  assert.deepEqual(normalizeTableCellEdges({paddingPt:{top:-5,left:NaN},borders:{top:{style:'solid',color:'red;position:fixed',widthPt:Infinity}}}),{borders:{top:{style:'solid',color:'#000000',widthPt:0.5}}});
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([['A','B']],{headerRows:0,cellFormats:{'0:0':normalized}},'edge-cell'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/border-top:0.5pt solid #AABBCC/);
+    assert.match(html,/padding-right:0pt/);
+    assert.match(html,/<td>B<\/td>/);
+  }
+});
+
+test('row heights retain native semantics and keep browser content visible', async () => {
+  const {normalizeTableRowHeight,tableRowHeight,setTableRowHeight,pruneTableRowHeights,tableRowHeightStyle}=await import('../src/model/tableLayout.ts');
+  assert.deepEqual(normalizeTableRowHeight({mode:'exact',heightPt:20.126}),{mode:'exact',heightPt:20.15});
+  for(const height of [undefined,{mode:'exact',heightPt:0},{mode:'minimum',heightPt:Infinity},{mode:'invalid',heightPt:12}]) assert.deepEqual(normalizeTableRowHeight(height),{mode:'auto'});
+  const manuscript=createVersionedTestManuscript();
+  const block=createTableBlock([['A'],['Long text that must remain visible'],['C']],{headerRows:0,rowHeights:{'0':{mode:'minimum',heightPt:24},'1':{mode:'exact',heightPt:6}}},'row-height');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(tableRowHeight(table,2),{mode:'auto'});
+  assert.deepEqual(tableRowHeightStyle(tableRowHeight(table,1)),{height:'6pt'});
+  assert.deepEqual(setTableRowHeight(table,0,{mode:'auto'}),{'1':{mode:'exact',heightPt:6}});
+  assert.deepEqual(pruneTableRowHeights(table.cells.slice(0,1),table.rowHeights),{'0':{mode:'minimum',heightPt:24}});
+  manuscript.sections[0]!.blocks.push(block);
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const v=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(v?.kind==='table');
+  assert.deepEqual(v.rowHeights,table.rowHeights);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<tr data-omi-row-height="minimum" style="height:24pt">/);
+    assert.match(html,/<tr data-omi-row-height="exact" style="height:6pt"><td>Long text that must remain visible<\/td>/);
+  }
+});
+
+test('rich cell documents remain compatible with the plain matrix and public hidden text projection', async () => {
+  const {tableCellDocument,tableCellPlainText,pruneTableCellContent}=await import('../src/model/tableLayout.ts');
+  const {publicPublicationManuscript}=await import('../src/model/publicationAnnotations.ts');
+  const doc={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Bold',marks:[{type:'bold'}]},{type:'text',text:' private',marks:[{type:'omiHiddenText',attrs:{value:true}}]}]},{type:'paragraph',content:[{type:'text',text:'Second',marks:[{type:'italic'}]}]}]};
+  const plain=tableCellPlainText(doc);
+  assert.equal(plain,'Bold private\nSecond');
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([[plain,'Other']],{headerRows:0,cellContent:{'0:0':JSON.stringify(doc)}},'rich-cell'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const table=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(tableCellDocument(table,0,0),doc);
+  assert.deepEqual(pruneTableCellContent([['Changed']],table.cellContent),{});
+  const projected=publicPublicationManuscript(reopened).sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(projected?.kind==='table');
+  assert.equal(projected.cells[0]?.[0],'Bold\nSecond');
+  assert.equal(table.cells[0]?.[0],plain);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<strong>Bold<\/strong>/);
+    assert.match(html,/<em>Second<\/em>/);
+    assert.ok(!html.includes('Bold private'));
+  }
+});
+
+test('cell paragraphs retain independent validated formatting and inherit cell alignment', async () => {
+  const {normalizeCellParagraphAttrs,effectiveCellParagraphAttrs,tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const {paragraphFormattingCss}=await import('../src/model/directParagraphFormatting.ts');
+  const attrs={omiAlign:'right',omiLeftIndent:12,omiFirstLineIndent:-6,omiSpaceBefore:3,omiSpaceAfter:5,omiLineRule:'exact',omiLineSpacing:14};
+  assert.deepEqual(normalizeCellParagraphAttrs({...attrs,omiPageBreakBefore:true,omiWordParagraphStyle:'invalid'}),attrs);
+  assert.deepEqual(normalizeCellParagraphAttrs({omiAlign:'bad',omiLeftIndent:-1,omiLineSpacing:Infinity,omiLineRule:'exact'}),{});
+  assert.deepEqual(effectiveCellParagraphAttrs(undefined,'center'),{omiAlign:'center'});
+  assert.equal(effectiveCellParagraphAttrs(attrs,'center').omiAlign,'right');
+  assert.equal(paragraphFormattingCss({omiAlign:'justify'},'html'),'text-align:left');
+  assert.equal(paragraphFormattingCss({omiAlign:'justify'},'print'),'text-align:justify');
+  const doc={type:'doc',content:[{type:'paragraph',attrs,content:[{type:'text',text:'First'}]},{type:'paragraph',attrs:{omiAlign:'left',omiSpaceAfter:0},content:[{type:'text',text:'Second'}]}]};
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([['First\nSecond']],{headerRows:0,cellContent:{'0:0':JSON.stringify(doc)},cellFormats:{'0:0':{horizontalAlign:'center'}}},'cell-paragraphs'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const table=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(tableCellDocument(table,0,0),doc);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<p style="text-align:right;margin-left:12pt;text-indent:-6pt;margin-top:3pt;margin-bottom:5pt;line-height:14pt">First<\/p>/);
+    assert.match(html,/<p style="text-align:left;margin-bottom:0pt">Second<\/p>/);
+  }
+});
+
+test('rich cell font family rejects control characters and unsafe punctuation', async () => {
+  const {parseTableCellContent}=await import('../src/model/tableLayout.ts');
+  const parse=(family:string)=>parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'A',marks:[{type:'omiSourceFont',attrs:{family}}]}]}]}))?.content?.[0]?.content?.[0]?.marks;
+  assert.deepEqual(parse('Noto Serif'),[{type:'omiSourceFont',attrs:{family:'Noto Serif'}}]);
+  for(const family of ['',String.fromCharCode(0)+'Serif','A'+String.fromCharCode(31),'A'+String.fromCharCode(127),'A;B','A{B','A}B','A<B','A>B','A'.repeat(129)]) assert.equal(parse(family),undefined);
+});

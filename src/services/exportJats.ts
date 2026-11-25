@@ -1,4 +1,4 @@
-import { tableMergeLayout, tableHeaderRows } from '../model/tableLayout';
+import { tableMergeLayout, tableHeaderRows, tableCellDocument } from '../model/tableLayout';
 import { visualTextBoxText, visualTextBoxDiagnostics } from '../model/textBoxes';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -816,14 +816,17 @@ function renderTable(block: OmiBlock, state: RenderState): string {
   const label = target ? objectLabel(target, state) : '';
   const caption = block.visual.caption?.trim();
   const headerRows = tableHeaderRows(block.visual.cells,block.visual.headerRows);
-  const layout = tableMergeLayout(block.visual.cells,block.visual.cellMerges,headerRows);
+  const visual=block.visual;
+  const layout = tableMergeLayout(visual.cells,visual.cellMerges,headerRows);
   const head = block.visual.cells.slice(0, headerRows);
   const body = block.visual.cells.slice(headerRows);
   const renderRow = (row: string[], cellTag: 'th' | 'td',r:number) =>
     '<tr>'+row.map((cell,c)=>{
       if(layout.covered(r,c)) return '';
       const m=layout.at(r,c);
-      return '<'+cellTag+(m && m.rowSpan>1?' rowspan="'+m.rowSpan+'"':'')+(m && m.colSpan>1?' colspan="'+m.colSpan+'"':'')+'>'+escapeXml(cell)+'</'+cellTag+'>';
+      const doc=tableCellDocument(visual,r,c);
+      const rich=doc?.content?.map(p=>renderInlineChildren(p.content??[],state)).join('<break/>');
+      return '<'+cellTag+(m && m.rowSpan>1?' rowspan="'+m.rowSpan+'"':'')+(m && m.colSpan>1?' colspan="'+m.colSpan+'"':'')+'>'+(rich??escapeXml(cell))+'</'+cellTag+'>';
     }).join('')+'</tr>';
   const table = `<table>${
     head.length ? `<thead>${head.map((row,r) => renderRow(row, 'th',r)).join('')}</thead>` : ''

@@ -391,9 +391,23 @@ export interface OmiImageBlockData {
   provenance?: OmiImportProvenance;
 }
 
+export type OmiTableCellSide = 'top' | 'right' | 'bottom' | 'left';
+export interface OmiTableCellBorder {
+  style: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+  widthPt?: number;
+  color?: string;
+}
+
 export interface OmiTableCellFormat {
   textRotation?: -90 | 0 | 90 | 180;
   textDirection?: 'auto' | 'ltr' | 'rtl';
+  horizontalAlign?: 'left' | 'center' | 'right' | 'justify';
+  verticalAlign?: 'top' | 'middle' | 'bottom';
+  /** Explicit solid RGB cell background, independent of character highlighting. */
+  backgroundColor?: string;
+  /** Physical sides, in typographic points; missing sides inherit. */
+  borders?: Partial<Record<OmiTableCellSide,OmiTableCellBorder>>;
+  paddingPt?: Partial<Record<OmiTableCellSide,number>>;
 }
 
 export interface OmiTableCellMerge {
@@ -403,17 +417,29 @@ export interface OmiTableCellMerge {
   colSpan: number;
 }
 
+export type OmiTableRowSplitPolicy = 'keep' | 'allow';
+
+export type OmiTableRowHeight = {mode:'auto'} | {mode:'minimum'|'exact';heightPt:number};
+
 export interface OmiTableBlockData {
   kind: 'table';
   /** Rectangular cell matrix. Cell text is scholarly data, not presentation HTML. */
   cells: string[][];
   headerRows?: number;
+  /** Legacy OMI tables default to keeping rows together. */
+  rowSplitDefault?: OmiTableRowSplitPolicy;
+  /** Explicit overrides keyed by zero-based row index. */
+  rowSplitOverrides?: Record<string, OmiTableRowSplitPolicy>;
+  /** Row heights use typographic points, keyed by zero-based row index. */
+  rowHeights?: Record<string,OmiTableRowHeight>;
   /** Relative column widths; normalized to percentages at rendering time. */
   columnWidths?: number[];
   /** Point reduction from body text. Defaults to one point. */
   fontSizeReduction?: 0 | 1;
   /** Sparse cell formatting, keyed by zero-based row:column coordinates. */
   cellFormats?: Record<string, OmiTableCellFormat>;
+  /** Sparse rich cell documents (Tiptap JSON); cells remains the plain-text projection. */
+  cellContent?: Record<string,string>;
   /** Merged rectangles; covered matrix positions must remain empty. */
   cellMerges?: OmiTableCellMerge[];
   caption?: string;

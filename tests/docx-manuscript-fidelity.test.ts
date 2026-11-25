@@ -1010,3 +1010,176 @@ test('native rectangular merged cells survive DOCX reopening without duplicating
   assert.match(odt,/table:number-rows-spanned="2" table:number-columns-spanned="2"/);
   assert.equal((odt.match(/<table:covered-table-cell\/>/g)??[]).length,3);
 });
+
+test('Word and ODT preserve row pagination policies including explicit off and missing Word properties', async () => {
+  const row=(text:string,props='')=>'<w:tr>'+(props?'<w:trPr>'+props+'</w:trPr>':'')+'<w:tc><w:p><w:r><w:t>'+text+'</w:t></w:r></w:p></w:tc></w:tr>';
+  const source=makeDocx('<w:p><w:r><w:t>Pagination specimen</w:t></w:r></w:p><w:tbl>'
+    +row('Header','<w:tblHeader/>')+row('Keep','<w:cantSplit/>')+row('Allow','<w:cantSplit w:val="0"/>')+row('Default')+'</w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const getTable=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table'); return v;
+  };
+  const original=getTable(plan.sections);
+  assert.equal(original.rowSplitDefault,'allow');
+  assert.deepEqual(original.rowSplitOverrides,{'1':'keep','2':'allow'});
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Row pagination'}),sections:plan.sections};
+  const docx=buildDocxExport(manuscript);
+  const word=new XmlDomParser().parseFromString(readZipParts(docx.bytes).get('word/document.xml')!.toString('utf8'),'application/xml');
+  const table=word.getElementsByTagName('w:tbl').item(0);
+  assert.ok(table);
+  const rows=Array.from({length:4},(_,i)=>table.getElementsByTagName('w:tr').item(i)!);
+  assert.deepEqual(rows.map(r=>r.getElementsByTagName('w:cantSplit').item(0)?.getAttribute('w:val')||''),['0','','0','0']);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/<style:table-row-properties fo:keep-together="always"\/>/);
+  assert.match(odtXml,/<style:table-row-properties fo:keep-together="auto"\/>/);
+  const {tableRowSplitPolicy}=await import('../src/model/tableLayout.ts');
+  for(const reopened of [await parseDocxForStudio(new File([new Uint8Array(docx.bytes)],'rows.docx')),await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'rows.odt'))]){
+    const v=getTable(reopened.sections);
+    assert.equal(v.headerRows,1);
+    assert.deepEqual(v.cells,original.cells);
+    assert.deepEqual(v.cells.map((_,i)=>tableRowSplitPolicy(v,i)),['allow','keep','allow','allow']);
+  }
+});
+
+test('solid cell shading and alignment survive native Word and ODT roundtrips', async () => {
+  const cell=(text:string,properties='',alignment='')=>'<w:tc><w:tcPr>'+properties+'</w:tcPr><w:p>'+(alignment?'<w:pPr><w:jc w:val="'+alignment+'"/></w:pPr>':'')+'<w:r><w:t>'+text+'</w:t></w:r></w:p></w:tc>';
+  const source=makeDocx('<w:p><w:r><w:t>Appearance specimen</w:t></w:r></w:p><w:tbl><w:tr>'
+    +cell('Value','<w:shd w:val="clear" w:fill="DCE6F1"/><w:vAlign w:val="center"/>','both')
+    +cell('Other','<w:shd w:val="clear" w:fill="auto"/>','right')+'</w:tr></w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cellFormats?.['0:0'],{horizontalAlign:'justify',verticalAlign:'middle',backgroundColor:'#DCE6F1'});
+    assert.deepEqual(v.cellFormats?.['0:1'],{horizontalAlign:'right'});
+    assert.deepEqual(v.cells,[['Value','Other']]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Appearance'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:shd w:val="clear" w:color="auto" w:fill="DCE6F1"\/>/);
+  assert.match(xml,/<w:vAlign w:val="center"\/>/);
+  assert.match(xml,/<w:jc w:val="both"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'cell-appearance.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/style:vertical-align="middle" fo:background-color="#DCE6F1"/);
+  assert.match(odtXml,/fo:text-align="justify"/);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-appearance.odt'))).sections);
+});
+
+test('direct physical cell borders and margins survive DOCX and ODT reopening', async () => {
+  const source=makeDocx('<w:p><w:r><w:t>Cell edges</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="4" w:color="AABBCC"/><w:right w:val="nil"/><w:bottom w:val="dashed" w:sz="8" w:color="112233"/></w:tcBorders><w:tcMar><w:left w:w="63" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:r><w:t>Value</w:t></w:r></w:p></w:tc></w:tr></w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const table=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(table?.kind==='table');
+    assert.deepEqual(table.cellFormats?.['0:0']?.borders,{top:{style:'solid',widthPt:0.5,color:'#AABBCC'},right:{style:'none'},bottom:{style:'dashed',widthPt:1,color:'#112233'}});
+    assert.deepEqual(table.cellFormats?.['0:0']?.paddingPt,{right:0,left:3.15});
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Edges'}),sections:plan.sections};
+  const docx=buildDocxExport(manuscript);
+  const docxXml=readZipParts(docx.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(docxXml,/<w:top w:val="single" w:sz="4" w:color="AABBCC"\/>/);
+  assert.match(docxXml,/<w:right w:val="nil"\/>/);
+  assert.match(docxXml,/<w:left w:w="63" w:type="dxa"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(docx.bytes)],'edges.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/fo:border-top="0.5pt solid #AABBCC"/);
+  assert.match(odtXml,/fo:padding-right="0pt"/);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'edges.odt'))).sections);
+});
+
+test('native row height modes survive Word and ODT import and export', async () => {
+  const row=(text:string,props:string)=>'<w:tr><w:trPr>'+props+'</w:trPr><w:tc><w:p><w:r><w:t>'+text+'</w:t></w:r></w:p></w:tc></w:tr>';
+  const source=makeDocx('<w:p><w:r><w:t>Row height specimen</w:t></w:r></w:p><w:tbl>'+
+    row('Minimum','<w:trHeight w:val="480" w:hRule="atLeast"/><w:cantSplit/>')+
+    row('Exact','<w:trHeight w:val="360" w:hRule="exact"/>')+
+    row('Auto','<w:trHeight w:val="720" w:hRule="auto"/>')+'</w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.rowHeights,{'0':{mode:'minimum',heightPt:24},'1':{mode:'exact',heightPt:18}});
+    assert.equal(v.rowSplitOverrides?.['0'],'keep');
+    assert.deepEqual(v.cells,[['Minimum'],['Exact'],['Auto']]);
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Row heights'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:trHeight w:val="480" w:hRule="atLeast"\/>/);
+  assert.match(xml,/<w:trHeight w:val="360" w:hRule="exact"\/>/);
+  assert.equal((xml.match(/<w:trHeight /g)??[]).length,2);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'row-heights.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/style:min-row-height="24pt" style:use-optimal-row-height="true"/);
+  assert.match(odtXml,/style:row-height="18pt" style:use-optimal-row-height="false"/);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'row-heights.odt'))).sections);
+});
+
+test('rich table cells retain individual runs and paragraph boundaries in Word and ODT', async () => {
+  const source=makeDocx('<w:p><w:r><w:t>Rich cells</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="112233"/></w:rPr><w:t>Bold</w:t></w:r><w:r><w:t xml:space="preserve"> plain</w:t></w:r></w:p><w:p><w:r><w:rPr><w:i/><w:vertAlign w:val="superscript"/></w:rPr><w:t>Second</w:t></w:r></w:p></w:tc></w:tr></w:tbl>');
+  const {tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const {extractOmiInlineRuns}=await import('../src/model/inlineSemantics.ts');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cells,[['Bold plain\nSecond']]);
+    const doc=tableCellDocument(v,0,0);
+    assert.ok(doc);
+    assert.equal(doc.content?.length,2);
+    const runs=extractOmiInlineRuns(JSON.stringify(doc));
+    const bold=runs.find(r=>r.text==='Bold');
+    assert.ok(bold?.semantics.includes('strong'));
+    assert.equal(bold.directFormatting?.omiFontSize,14);
+    assert.equal(bold.directFormatting?.omiTextColor,'#112233');
+    assert.ok(runs.some(r=>r.text.includes('Second')&&r.semantics.includes('emphasis')&&r.semantics.includes('superscript')));
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Rich cells'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:b\/>/);
+  assert.match(xml,/<w:sz w:val="28"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'rich-cell.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'rich-cell.odt'))).sections);
+});
+
+test('independent table paragraph properties survive DOCX and ODT roundtrip', async () => {
+  const source=makeDocx('<w:p><w:r><w:t>Paragraph specimen</w:t></w:r></w:p><w:tbl><w:tr><w:tc>'+
+    '<w:p><w:pPr><w:spacing w:before="60" w:after="100" w:line="280" w:lineRule="exact"/><w:ind w:left="240" w:hanging="120"/><w:jc w:val="right"/></w:pPr><w:r><w:t>First</w:t></w:r></w:p>'+
+    '<w:p><w:pPr><w:spacing w:after="0" w:line="360" w:lineRule="auto"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Second</w:t></w:r></w:p>'+
+    '</w:tc></w:tr></w:tbl>');
+  const {tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cells,[['First\nSecond']]);
+    const doc=tableCellDocument(v,0,0);
+    assert.ok(doc);
+    assert.deepEqual(doc.content?.[0]?.attrs,{omiAlign:'right',omiLeftIndent:12,omiFirstLineIndent:-6,omiSpaceBefore:3,omiSpaceAfter:5,omiLineSpacing:14,omiLineRule:'exact'});
+    assert.deepEqual(doc.content?.[1]?.attrs,{omiAlign:'left',omiSpaceAfter:0,omiLineSpacing:1.5,omiLineRule:'auto'});
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Cell paragraphs'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:spacing w:before="60" w:after="100" w:line="280" w:lineRule="exact"\/>/);
+  assert.match(xml,/<w:ind w:left="240" w:hanging="120"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'cell-paragraph.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/fo:line-height="14pt"/);
+  assert.match(odtXml,/fo:line-height="150%"/);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-paragraph.odt'))).sections);
+});

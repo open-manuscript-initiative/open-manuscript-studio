@@ -1,4 +1,4 @@
-import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout } from '../model/tableLayout';
+import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy, tableRowHeight, tableCellDocument, effectiveCellParagraphAttrs } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
@@ -314,18 +314,47 @@ function wordTable(table: OmiTableBlockData, warnings: string[]): string {
       const format = tableCellFormat(table.cellFormats,merge?.row??r,c);
       const rotation = format.textRotation === -90 ? 'btLr' : format.textRotation === 90 ? 'tbRl' : undefined;
       if (format.textRotation === 180 || format.textDirection !== 'auto') partial = true;
+      const borderXml=(['top','left','bottom','right'] as const).map(side=>{
+        const edge=format.borders?.[side];
+        if(!edge) return '';
+        // Suppress internal top/bottom borders of vertical merge continuations.
+        if(merge && merge.rowSpan>1 && ((side==='top'&&continuing)||(side==='bottom'&&r<merge.row+merge.rowSpan-1))) return '<w:'+side+' w:val="nil"/>';
+        if(edge.style==='none') return '<w:'+side+' w:val="nil"/>';
+        const val=edge.style==='solid'?'single':edge.style;
+        return '<w:'+side+' w:val="'+val+'" w:sz="'+Math.round((edge.widthPt??0.5)*8)+'" w:color="'+(edge.color??'#000000').slice(1)+'"/>';
+      }).join('');
+      const marginXml=(['top','left','bottom','right'] as const).map(side=>{
+        const n=format.paddingPt?.[side];
+        return n===undefined?'':'<w:'+side+' w:w="'+Math.round(n*20)+'" w:type="dxa"/>';
+      }).join('');
       const properties = '<w:tcW w:w="'+cellWidth+'" w:type="dxa"/>'
         + (merge && merge.colSpan>1?'<w:gridSpan w:val="'+merge.colSpan+'"/>':'')
         + (merge && merge.rowSpan>1?'<w:vMerge w:val="'+(continuing?'continue':'restart')+'"/>':'')
-        + (rotation ? '<w:textDirection w:val="'+rotation+'"/>' : '');
-      const content = (row[c] ?? '').split(/\r\n?|\n/).map(line=>{
+        + (borderXml?'<w:tcBorders>'+borderXml+'</w:tcBorders>':'')
+        + (format.backgroundColor?'<w:shd w:val="clear" w:color="auto" w:fill="'+format.backgroundColor.slice(1)+'"/>':'')
+        + (marginXml?'<w:tcMar>'+marginXml+'</w:tcMar>':'')
+        + (rotation ? '<w:textDirection w:val="'+rotation+'"/>' : '')
+        + (format.verticalAlign?'<w:vAlign w:val="'+(format.verticalAlign==='middle'?'center':format.verticalAlign)+'"/>':'');
+      const doc=continuing?undefined:tableCellDocument(table,r,c);
+      const rich=doc?.content?.map(p=>{
+        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':extractOmiInlineRuns(JSON.stringify(n)).map(run=>wordRun(run,undefined,{})).join('')).join('');
+        const properties=paragraphFormattingWordXml(effectiveCellParagraphAttrs(p.attrs,format.horizontalAlign));
+        return '<w:p>'+(properties?'<w:pPr>'+properties+'</w:pPr>':'')+runs+'</w:p>';
+      }).join('');
+      const content = rich ?? (row[c] ?? '').split(/\r\n?|\n/).map(line=>{
         const runs = line.split('\t').map(part=>wordStyledText(part)).join('<w:r><w:tab/></w:r>');
-        return '<w:p>'+runs+'</w:p>';
+        const pPr=format.horizontalAlign?'<w:pPr><w:jc w:val="'+(format.horizontalAlign==='justify'?'both':format.horizontalAlign)+'"/></w:pPr>':'';
+        return '<w:p>'+pPr+runs+'</w:p>';
       }).join('');
       return '<w:tc><w:tcPr>'+properties+'</w:tcPr>'+content+'</w:tc>';
     }).join('');
-    return '<w:tr>'+(r<headerRows?'<w:trPr><w:tblHeader/></w:trPr>':'')+cells+'</w:tr>';
+    const split=tableRowSplitPolicy(table,r);
+    const height=tableRowHeight(table,r);
+    const heightXml=height.mode==='auto'?'':'<w:trHeight w:val="'+Math.round(height.heightPt*20)+'" w:hRule="'+(height.mode==='exact'?'exact':'atLeast')+'"/>';
+    const properties=(split==='keep'?'<w:cantSplit/>':'<w:cantSplit w:val="0"/>')+heightXml+(r<headerRows?'<w:tblHeader/>':'');
+    return '<w:tr><w:trPr>'+properties+'</w:trPr>'+cells+'</w:tr>';
   }).join('');
+  if (table.cells.some((_,r)=>tableRowHeight(table,r).mode==='exact')) warnings.push('Exact row heights in Word can clip overflowing text; review the target document.');
   if (partial) warnings.push('Some cell rotation or writing direction has no exact DOCX table mapping.');
   if (table.fontSizeReduction !== 0) warnings.push('DOCX table font reduction is not preserved.');
   const total = widths.reduce((sum,width)=>sum+width,0);
