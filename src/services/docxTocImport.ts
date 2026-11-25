@@ -60,7 +60,7 @@ export async function extractWordTableOfContents(
 
 function extractWordTableOfContentsFromXml(xml: string): OmiTableOfContents | null {
   const instruction = collectFieldInstructions(xml).find((candidate) =>
-    /^TOC\b/i.test(candidate.replace(/\s+/g, ' ').trim()),
+    isTocInstruction(candidate),
   );
   if (!instruction) return null;
 
@@ -77,9 +77,11 @@ function extractWordTableOfContentsFromXml(xml: string): OmiTableOfContents | nu
     // of whether the cached Word field was created with the \\h switch.
     hyperlinks: true,
     useOutlineLevels: /(?:^|\s)\\u(?:\s|$)/i.test(normalized),
+    ...(/(?:^|\s)\\n(?=\s*(?:\\[a-z]|$))/i.test(normalized)?{omitPageNumbers:true}:{}),
     source: {
       format: 'docx-toc',
       instruction: normalized,
+      wordHyperlinks:/(?:^|\s)\\h(?:\s|$)/i.test(normalized),
     },
   };
 }
@@ -169,7 +171,9 @@ function extractComplexTocResultLines(xml: string): Set<string> {
 }
 
 function isTocInstruction(value: string): boolean {
-  return /^TOC\b/i.test(value.replace(/\s+/g, ' ').trim());
+  const normalized=value.replace(/\s+/g,' ').trim();
+  // Caption-generated lists belong to the separate figure/table-list importer.
+  return /^TOC\b/i.test(normalized)&&!/(?:^|\s)\\(?:a|c)(?:\s|$)/i.test(normalized);
 }
 
 function extractWordParagraphDisplayText(paragraph: string): string {
@@ -244,12 +248,17 @@ function clampHeadingLevel(level: number): number {
 
 function collectFieldInstructions(xml: string): string[] {
   const tokens = xml.match(
-    /<w:fldChar\b[^>]*\/?\s*>|<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/gi,
+    /<w:fldSimple\b[^>]*>|<w:fldChar\b[^>]*\/?\s*>|<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/gi,
   ) ?? [];
   const result: string[] = [];
   const stack: Array<{ instruction: string }> = [];
 
   for (const token of tokens) {
+    if(/^<w:fldSimple\b/i.test(token)){
+      const instruction=/\bw:instr\s*=\s*(["'])(.*?)\1/i.exec(token)?.[2];
+      if(instruction)result.push(decodeXml(instruction));
+      continue;
+    }
     if (/^<w:fldChar\b/i.test(token)) {
       const type = /\bw:fldCharType="([^"]+)"/i.exec(token)?.[1]?.toLowerCase();
       if (type === 'begin') {
