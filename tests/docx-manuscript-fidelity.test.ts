@@ -1183,3 +1183,34 @@ test('independent table paragraph properties survive DOCX and ODT roundtrip', as
   assert.match(odtXml,/fo:line-height="150%"/);
   inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-paragraph.odt'))).sections);
 });
+
+test('native table list numbering and nested bullet items survive Word and ODT reopening', async () => {
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {tableCellDocument,tableCellPlainText}=await import('../src/model/tableLayout.ts');
+  const paragraph=(text:string)=>({type:'paragraph',content:[{type:'text',text}]});
+  const doc={type:'doc',content:[{type:'orderedList',attrs:{start:4},content:[
+    {type:'listItem',content:[paragraph('First'),{type:'bulletList',content:[{type:'listItem',content:[paragraph('Nested')]}]}]},
+    {type:'listItem',content:[paragraph('Second')]}
+  ]}]};
+  const manuscript=createBlankManuscript({kind:'study',locale:'en',title:'Table list specimen'});
+  manuscript.sections[0]!.blocks.push(createTableBlock([[tableCellPlainText(doc)]],{headerRows:0,cellContent:{'0:0':JSON.stringify(doc)}},'list-table'));
+  const word=buildDocxExport(manuscript);
+  const parts=readZipParts(word.bytes);
+  const xml=parts.get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:numPr><w:ilvl w:val="0"\/>/);
+  assert.match(xml,/<w:numPr><w:ilvl w:val="1"\/>/);
+  assert.match(parts.get('word/numbering.xml')!.toString('utf8'),/<w:start w:val="4"\/>/);
+  const odt=buildOdtExport(manuscript);
+  assert.match(readZipParts(odt.bytes).get('content.xml')!.toString('utf8'),/<text:list-item text:start-value="4">/);
+  for(const plan of [await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'table-list.docx')),await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'table-list.odt'))]){
+    const v=plan.sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cells,[['First\nNested\nSecond']]);
+    const tree=tableCellDocument(v,0,0);
+    const list=tree?.content?.[0];
+    assert.equal(list?.type,'orderedList');
+    assert.equal(list.attrs?.start,4);
+    assert.equal(list.content?.length,2);
+    assert.equal(list.content?.[0]?.content?.[1]?.type,'bulletList');
+  }
+});
