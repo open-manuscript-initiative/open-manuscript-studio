@@ -1273,6 +1273,7 @@ export function PublicationDocumentCanvas({
                     defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
                     manuscriptLanguage={manuscript.locale}
                     editable={!previewOnly && !presentation}
+                    onProofingSelection={onProofingSelection}
                   />
                 ) : (
                   <TablePaginationContext.Provider value={pagination.flowBreaks}>
