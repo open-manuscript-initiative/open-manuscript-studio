@@ -1,4 +1,4 @@
-import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout } from '../model/tableLayout';
+import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
@@ -324,7 +324,9 @@ function wordTable(table: OmiTableBlockData, warnings: string[]): string {
       }).join('');
       return '<w:tc><w:tcPr>'+properties+'</w:tcPr>'+content+'</w:tc>';
     }).join('');
-    return '<w:tr>'+(r<headerRows?'<w:trPr><w:tblHeader/></w:trPr>':'')+cells+'</w:tr>';
+    const split=tableRowSplitPolicy(table,r);
+    const properties=(split==='keep'?'<w:cantSplit/>':'<w:cantSplit w:val="0"/>')+(r<headerRows?'<w:tblHeader/>':'');
+    return '<w:tr><w:trPr>'+properties+'</w:trPr>'+cells+'</w:tr>';
   }).join('');
   if (partial) warnings.push('Some cell rotation or writing direction has no exact DOCX table mapping.');
   if (table.fontSizeReduction !== 0) warnings.push('DOCX table font reduction is not preserved.');
