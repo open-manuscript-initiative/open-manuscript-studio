@@ -15,6 +15,7 @@ export const DIRECT_FORMATS = {
   omiOutline: { toggle: true },
   omiShadow: { toggle: true },
   omiHiddenText: { toggle: true },
+  omiTextDirection: { choices: ['ltr','rtl'] },
   omiLigatures: { choices: ['none','standard','contextual','historical','discretional','standardContextual','standardHistorical','standardDiscretional','contextualHistorical','contextualDiscretional','historicalDiscretional','standardContextualHistorical','standardContextualDiscretional','standardHistoricalDiscretional','contextualHistoricalDiscretional','all'] },
 } as const;
 export type DirectFormat = keyof typeof DIRECT_FORMATS;
@@ -73,6 +74,7 @@ export function directFormattingCss(name: DirectFormat, raw: unknown): string {
     case 'omiOutline': return '-webkit-text-stroke:0.5px currentColor;color:transparent';
     case 'omiShadow': return 'text-shadow:1px 1px 1px #888';
     case 'omiHiddenText': return 'text-decoration:underline dotted;opacity:0.65';
+    case 'omiTextDirection': return 'direction:' + value + ';unicode-bidi:embed';
     case 'omiLigatures': {
       if (value === 'none') return 'font-variant-ligatures:none';
       const flags = String(value).toLowerCase();
@@ -111,6 +113,7 @@ export function directFormattingWordXml(input: DirectFormatting): string {
     v('omiHighlight') ? '<w:highlight w:val="' + v('omiHighlight') + '"/>' : '',
     underline ? '<w:u w:val="' + underline + '"/>' : '',
     color('omiCharacterBackground') ? '<w:shd w:val="clear" w:fill="' + color('omiCharacterBackground') + '"/>' : '',
+    v('omiTextDirection') ? '<w:rtl w:val="' + (v('omiTextDirection') === 'rtl' ? '1' : '0') + '"/>' : '',
     v('omiLigatures') ? '<w14:ligatures w14:val="' + v('omiLigatures') + '"/>' : '',
   ].join('');
 }
