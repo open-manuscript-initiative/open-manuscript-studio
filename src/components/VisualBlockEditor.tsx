@@ -43,7 +43,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -384,17 +384,18 @@ function EditableGrid({
                     const format = tableCellFormat(cellFormats, rowIndex, columnIndex);
                     const showText = previewOnly || format.textRotation !== 0;
                     return (
-                      <Cell key={columnIndex} rowSpan={merge?.rowSpan} colSpan={merge?.colSpan}
+                      <Cell key={columnIndex} rowSpan={merge?.rowSpan} colSpan={merge?.colSpan} style={tableCellAppearanceStyle(format)}
                         data-cell-selected={!previewOnly && selectedRow === rowIndex && selectedColumn === columnIndex ? 'true' : undefined}
                         tabIndex={!previewOnly && showText ? 0 : undefined}
                         onFocus={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
                         onClick={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
                       >
                         {showText ? (
-                          <span className="omi-table-cell-text" dir={format.textDirection} data-text-rotation={format.textRotation} style={tableCellTextStyle(format.textRotation)}>{cell || '\u00a0'}</span>
+                          <span className="omi-table-cell-text" dir={format.textDirection} data-text-rotation={format.textRotation} style={{...tableCellTextStyle(format.textRotation),...(format.horizontalAlign?{textAlign:format.horizontalAlign,...(format.textRotation===0?{width:'100%'}:{})}:{})}}>{cell || '\u00a0'}</span>
                         ) : <textarea
                           rows={1}
                           dir={format.textDirection}
+                          style={{textAlign:format.horizontalAlign}}
                           aria-label={`${copy.cell} ${rowIndex + 1}, ${columnIndex + 1}`}
                           value={cell}
                           onChange={(event) =>
@@ -478,6 +479,14 @@ function EditableGrid({
             <label><span>{copy.textDirection}</span><select value={selectedFormat.textDirection} onChange={(event) => updateSelectedFormat({ textDirection: event.target.value as OmiTableCellFormat['textDirection'] })}>
               <option value="auto">{copy.directionAuto}</option><option value="ltr">{copy.directionLtr}</option><option value="rtl">{copy.directionRtl}</option>
             </select></label>
+            <label><span>{copy.cellHorizontalAlign}</span><select value={selectedFormat.horizontalAlign??''} onChange={event=>updateSelectedFormat({horizontalAlign:(event.target.value||undefined) as OmiTableCellFormat['horizontalAlign']})}>
+              <option value="">{copy.cellAppearanceDefault}</option><option value="left">{copy.cellAlignLeft}</option><option value="center">{copy.cellAlignCenter}</option><option value="right">{copy.cellAlignRight}</option><option value="justify">{copy.cellAlignJustify}</option>
+            </select></label>
+            <label><span>{copy.cellVerticalAlign}</span><select value={selectedFormat.verticalAlign??''} onChange={event=>updateSelectedFormat({verticalAlign:(event.target.value||undefined) as OmiTableCellFormat['verticalAlign']})}>
+              <option value="">{copy.cellAppearanceDefault}</option><option value="top">{copy.cellAlignTop}</option><option value="middle">{copy.cellAlignMiddle}</option><option value="bottom">{copy.cellAlignBottom}</option>
+            </select></label>
+            <label><span>{copy.cellBackground}</span><input type="color" value={selectedFormat.backgroundColor??'#ffffff'} onChange={event=>updateSelectedFormat({backgroundColor:event.target.value})}/></label>
+            <button type="button" disabled={!selectedFormat.backgroundColor} onClick={()=>updateSelectedFormat({backgroundColor:undefined})}>{copy.cellClearBackground}</button>
           </div>
           <div className="omi-table-actions">
             <button type="button" disabled={!mergeRight} onClick={()=>{if(mergeRight) onChange({...data,cellMerges:mergeRight});}} title={copy.mergeRight}><Merge size={14} aria-hidden="true"/><ArrowRight size={12} aria-hidden="true"/>{copy.mergeRight}</button>
