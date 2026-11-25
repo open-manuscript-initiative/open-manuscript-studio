@@ -257,3 +257,34 @@ test('rich cell font family rejects control characters and unsafe punctuation', 
   assert.deepEqual(parse('Noto Serif'),[{type:'omiSourceFont',attrs:{family:'Noto Serif'}}]);
   for(const family of ['',String.fromCharCode(0)+'Serif','A'+String.fromCharCode(31),'A'+String.fromCharCode(127),'A;B','A{B','A}B','A<B','A>B','A'.repeat(129)]) assert.equal(parse(family),undefined);
 });
+
+test('rich table list trees preserve nested items and plain projection without numbering labels', async () => {
+  const {parseTableCellContent,tableCellPlainText,tableCellDocument,cellDocumentWithDefaults}=await import('../src/model/tableLayout.ts');
+  const {publicPublicationManuscript}=await import('../src/model/publicationAnnotations.ts');
+  const p=(text:string)=>({type:'paragraph',content:[{type:'text',text}]});
+  const doc={type:'doc',content:[p('Intro'),{type:'orderedList',attrs:{start:4},content:[
+    {type:'listItem',content:[p('First'),{type:'bulletList',content:[{type:'listItem',content:[{type:'paragraph',content:[{type:'text',text:'Nested'},{type:'text',text:' SECRET',marks:[{type:'omiHiddenText',attrs:{value:true}}]}]}]}]}]},
+    {type:'listItem',content:[p('Second')]}
+  ]}]};
+  const parsed=parseTableCellContent(JSON.stringify(doc));
+  assert.ok(parsed);
+  assert.equal(tableCellPlainText(parsed),'Intro\nFirst\nNested SECRET\nSecond');
+  assert.equal(parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'orderedList',content:[{type:'paragraph'}]}]})),undefined);
+  assert.equal(parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'orderedList',content:[{type:'listItem',content:[{type:'paragraph'},{type:'table'}]}]}]})),undefined);
+  const withDefaults=cellDocumentWithDefaults(parsed,'right');
+  assert.equal(withDefaults.content?.[1]?.content?.[0]?.content?.[0]?.attrs?.omiAlign,'right');
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([[tableCellPlainText(parsed)]],{headerRows:0,cellContent:{'0:0':JSON.stringify(parsed)}},'cell-lists'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const table=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(tableCellDocument(table,0,0),parsed);
+  const publicTable=publicPublicationManuscript(reopened).sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(publicTable?.kind==='table');
+  assert.equal(publicTable.cells[0]?.[0],'Intro\nFirst\nNested\nSecond');
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<ol start="4">/);
+    assert.match(html,/<ul><li><p>Nested<\/p><\/li><\/ul>/);
+    assert.ok(!html.includes('SECRET'));
+  }
+});
