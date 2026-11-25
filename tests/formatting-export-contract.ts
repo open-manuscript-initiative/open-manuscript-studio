@@ -232,3 +232,89 @@ test('native ODT baseline shift and kerning, and IDML ligature flags are applied
   assert.equal(attr(range('Unformatted specimen'),'Ligatures'),undefined);
   assert.ok(idml.warnings.some(w=>w.includes('no exact IDML mapping')));
 });
+
+test('IDML native table geometry, rich cell text, resources and nested table order',async()=>{
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {tableCellPlainText}=await import('../src/model/tableLayout.ts');
+  const {createNoteAnnotation}=await import('../src/model/notes.ts');
+  const manuscript=createTestManuscript();
+  const paragraph=(text:string)=>({type:'paragraph',content:[{type:'text',text}]});
+  const doc={type:'doc',content:[
+    {type:'paragraph',attrs:{omiAlign:'justify',omiSpaceAfter:5},content:[{type:'text',text:'Before nested',marks:[{type:'bold'},{type:'omiSourceFont',attrs:{family:'Noto Serif'}},{type:'omiFontSize',attrs:{value:13}}]},{type:'omiNote',attrs:{noteId:'cell-note',anchorId:'cell-anchor',label:'1',noteType:'footnote'}},{type:'text',text:' PRIVATE SPECIMEN',marks:[{type:'omiHiddenText',attrs:{value:true}}]}]},
+    {type:'omiCellTable',attrs:{table:{kind:'table',headerRows:0,cells:[['Inner A','Inner B']]}}},
+    paragraph('After nested'),
+    {type:'orderedList',attrs:{start:4},content:[{type:'listItem',content:[paragraph('List item')]}]}
+  ]};
+  const block=createTableBlock([['Header',''],[tableCellPlainText(doc),''],['','Last']],{
+    headerRows:1,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2},{row:1,column:0,rowSpan:2,colSpan:1}],
+    cellContent:{'1:0':JSON.stringify(doc)},cellFormats:{'0:0':{backgroundColor:'#AABBCC',verticalAlign:'middle',textRotation:90,paddingPt:{top:3,left:5},borders:{bottom:{style:'dotted',widthPt:1,color:'#112233'},right:{style:'none'}}}},
+    rowHeights:{'0':{mode:'minimum',heightPt:24},'2':{mode:'exact',heightPt:30}},
+    rowSplitOverrides:{'1':'allow'}
+  },'native-idml-table');
+  assert.ok(block.visual?.kind==='table');
+  block.visual.columnWidths=[30,70];
+  manuscript.sections[0]!.blocks.push(block);
+  manuscript.annotations.push(createNoteAnnotation({id:'cell-note',anchorId:'cell-anchor',targetBlockId:block.id,kind:'footnote',body:'Cell note body'}));
+  const result=buildIdmlExport(manuscript);
+  const parts=storedParts(result.bytes);
+  const story=xml([...parts].find(([name])=>/^Stories\/.*\.xml$/.test(name))![1]);
+  const tables=elements(story,'Table');
+  assert.equal(tables.length,2);
+  const outer=tables[0]!,inner=tables[1]!;
+  assert.equal(attr(outer,'HeaderRowCount'),'1');
+  assert.equal(attr(outer,'BodyRowCount'),'2');
+  assert.equal(attr(outer,'ColumnCount'),'2');
+  const direct=(node:Element,name:string)=>Array.from(node.childNodes).filter((child):child is Element=>child.nodeType===1&&(child as Element).localName===name);
+  const rows=direct(outer,'Row');
+  assert.equal(rows.length,3);
+  assert.equal(attr(rows[0]!,'MinimumHeight'),'24');
+  assert.equal(attr(rows[0]!,'AutoGrow'),'true');
+  assert.equal(attr(rows[2]!,'AutoGrow'),'false');
+  assert.equal(attr(rows[2]!,'SingleRowHeight'),'30');
+  const cols=direct(outer,'Column');
+  assert.equal(cols.length,2);
+  assert.ok(Math.abs(Number(attr(cols[0]!,'SingleColumnWidth'))/Number(attr(cols[1]!,'SingleColumnWidth'))-30/70)<0.00001);
+  const cells=direct(outer,'Cell');
+  assert.deepEqual(cells.map(c=>attr(c,'Name')),['0:0','0:1','1:1','1:2']);
+  const header=cells[0]!,cell=cells[1]!;
+  assert.equal(attr(header,'ColumnSpan'),'2');
+  assert.equal(attr(cell,'RowSpan'),'2');
+  assert.equal(attr(header,'FillColor'),'Color/OMI-AABBCC');
+  assert.equal(attr(header,'VerticalJustification'),'CenterAlign');
+  assert.equal(attr(header,'RotationAngle'),'270');
+  assert.equal(attr(header,'TopInset'),'3');
+  assert.equal(attr(header,'LeftInset'),'5');
+  assert.equal(attr(header,'BottomEdgeStrokeType'),'StrokeStyle/$ID/Canned Dotted');
+  assert.equal(attr(header,'RightEdgeStrokeWeight'),'0');
+  assert.equal(attr(cell,'Name'),'0:1');
+  assert.equal(elements(cell,'Table')[0],inner);
+  const paragraphs=direct(cell,'ParagraphStyleRange');
+  assert.equal(paragraphs.length,4);
+  assert.ok(paragraphs[0]!.textContent?.includes('Before nested'));
+  assert.equal(attr(paragraphs[0]!,'Justification'),'LeftJustified');
+  assert.equal(attr(paragraphs[0]!,'SpaceAfter'),'5');
+  assert.ok(paragraphs[2]!.textContent?.includes('After nested'));
+  assert.ok(paragraphs[3]!.textContent?.includes('4. List item'));
+  const marked=elements(paragraphs[0]!,'CharacterStyleRange').find(el=>el.textContent?.includes('Before nested'));
+  assert.ok(marked);
+  assert.equal(attr(marked,'PointSize'),'13');
+  assert.ok(hasProperty(marked,'AppliedFont','Noto Serif'));
+  assert.ok(hasProperty(marked,'AppliedCharacterStyle','CharacterStyle/OMI Strong'));
+  assert.ok(cell.textContent?.includes('[T1]'));
+  assert.ok(story.documentElement.textContent?.includes('T1. Cell note body'));
+  assert.equal(elements(cell,'Footnote').length,0);
+  const styles=xml(part(parts,'Resources/Styles.xml'));
+  assert.ok(elements(styles,'TableStyle').some(el=>attr(el,'Self')===attr(outer,'AppliedTableStyle')));
+  assert.ok(elements(styles,'CellStyle').some(el=>attr(el,'Self')===attr(cell,'AppliedCellStyle')));
+  const graphics=xml(part(parts,'Resources/Graphic.xml'));
+  assert.ok(elements(graphics,'Color').some(el=>attr(el,'Self')==='Color/OMI-AABBCC'));
+  assert.ok(elements(graphics,'StrokeStyle').some(el=>attr(el,'Self')==='StrokeStyle/$ID/Canned Dotted'));
+  assert.ok(elements(xml(part(parts,'Resources/Fonts.xml')),'FontFamily').some(el=>attr(el,'Name')==='Noto Serif'));
+  assert.ok(![...parts.values()].some(value=>value.includes('PRIVATE SPECIMEN')));
+  assert.ok(result.semanticLosses.some(loss=>loss.targetId===block.id&&loss.code==='table-note-projected-as-text'));
+  assert.ok(result.semanticLosses.some(loss=>loss.targetId===block.id&&loss.code==='table-list-projected-as-text'));
+  assert.ok(result.semanticLosses.some(loss=>loss.targetId===block.id&&loss.code==='table-row-split-not-preserved'));
+  assert.ok(!result.warnings.some(w=>w.includes('Structured table object')));
+  const ids=elements(story,'Table').flatMap(t=>[attr(t,'Self'),...['Row','Column','Cell'].flatMap(name=>direct(t,name).map(el=>attr(el,'Self')))]);
+  assert.equal(new Set(ids).size,ids.length);
+});
