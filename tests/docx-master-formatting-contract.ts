@@ -477,7 +477,7 @@ function wordGap(id: string): string | undefined {
   if (id.startsWith('L')) return 'Style-based native list numbering is not round-tripped yet';
   if (id === 'N05' || id === 'N06') return 'Right-to-left Word run property is not round-tripped yet';
   if (id === 'F01' || id === 'F02') return 'Note color is not round-tripped yet';
-  if (id === 'T01') return 'Native table shading and alignment are preserved, but rich inline cell run formatting remains open';
+  if (id === 'T01') return undefined;
   if (['I01', 'E01'].includes(id)) return 'DOCX publication exporter currently emits a descriptive text fallback';
   if (['X01', 'X02', 'X03', 'X04'].includes(id)) return 'Native bookmark, field, hyperlink or section metadata is not round-tripped yet';
   return undefined;
