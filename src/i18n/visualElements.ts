@@ -110,6 +110,8 @@ export interface VisualElementsCopy {
   bodyFontSize: string;
   smallerFontSize: string;
   resizeColumn: string;
+  resizeRow: string;
+  resizeRowHint: string;
   cell: string;
   addRow: string;
   addColumn: string;
@@ -137,7 +139,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     mergeRight: "Merge right", mergeDown: "Merge down", splitCell: "Split cell", mergeHint: "Only empty adjacent cells can be merged; split first to change a conflicting header boundary.",
     rowHeightMode: "Row height mode", rowHeightAuto: "Automatic", rowHeightMinimum: "At least", rowHeightExact: "Exact", rowHeightValue: "Row height", rowHeightExactHint: "The Studio and HTML/PDF retain all text and expand the row if needed. Exact DOCX/ODT rows may clip text; review the exported document.",
     rowPagination: "Row pagination", rowSplitDefault: "Table default", rowSplitSelected: "Selected row", rowSplitKeep: "Keep row together", rowSplitAllow: "Allow row to split", rowSplitInherit: "Use table default", rowSplitHint: "The live editor breaks between rows; splitting within a row is an export setting.",
-    tableHeaderRows: 'Repeating header rows', tableFontSize: 'Table font size', bodyFontSize: 'Same as body text', smallerFontSize: 'Body text − 1 pt', resizeColumn: 'Resize column', cell: 'Cell',
+    tableHeaderRows: 'Repeating header rows', tableFontSize: 'Table font size', bodyFontSize: 'Same as body text', smallerFontSize: 'Body text − 1 pt', resizeColumn: 'Resize column', resizeRow: "Resize row", resizeRowHint: "Drag to resize; double-click or Home resets to automatic. Arrow keys change by 1 pt; Shift by 10 pt.", cell: 'Cell',
     insertMenu: 'Insert', insertElement: 'Insert element', image: 'Image', textBox: 'Text box', table: 'Table', chart: 'Chart', equation: 'Equation', musicScore: 'Music score', import: 'Import',
     paste: 'Paste from Word / Excel', pasteHint: 'Paste a table, image or equation here from Word, Excel or another application.',
     importing: 'Importing…', importFailed: 'The file could not be imported.', noImportableElements: 'No supported visual elements were found.',
@@ -157,7 +159,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     mergeRight: "Egyesítés jobbra", mergeDown: "Egyesítés lefelé", splitCell: "Cella szétválasztása", mergeHint: "Csak üres szomszédos cellák egyesíthetők; a fejléc határának módosítása előtt válassza szét az érintett cellát.",
     rowHeightMode: "Sormagasság módja", rowHeightAuto: "Automatikus", rowHeightMinimum: "Minimális", rowHeightExact: "Rögzített", rowHeightValue: "Sormagasság", rowHeightExactHint: "A Stúdió és a HTML/PDF szükség esetén megnöveli a sort, hogy minden szöveg látható maradjon. A rögzített DOCX/ODT-sor levághatja a szöveget; ellenőrizze az exportot.",
     rowPagination: "Sorok tördelése", rowSplitDefault: "Táblázat alapbeállítása", rowSplitSelected: "Kijelölt sor", rowSplitKeep: "Sor egyben tartása", rowSplitAllow: "Sor törése engedélyezett", rowSplitInherit: "Táblázat alapbeállításának használata", rowSplitHint: "Az élő szerkesztő sorhatárokon tördel; a soron belüli törés az export beállítása.",
-    tableHeaderRows: 'Ismétlődő fejlécsorok', tableFontSize: 'Táblázat betűmérete', bodyFontSize: 'Törzsszöveggel azonos', smallerFontSize: 'Törzsszöveg − 1 pt', resizeColumn: 'Oszlop átméretezése', cell: 'Cella',
+    tableHeaderRows: 'Ismétlődő fejlécsorok', tableFontSize: 'Táblázat betűmérete', bodyFontSize: 'Törzsszöveggel azonos', smallerFontSize: 'Törzsszöveg − 1 pt', resizeColumn: 'Oszlop átméretezése', resizeRow: "Sor átméretezése", resizeRowHint: "Húzással méretezhető; dupla kattintás vagy Home: automatikus. Nyilak: 1 pt, Shift: 10 pt.", cell: 'Cella',
     insertMenu: 'Beszúrás', insertElement: 'Elem beszúrása', image: 'Kép', textBox: 'Szövegdoboz', table: 'Táblázat', chart: 'Grafikon', equation: 'Egyenlet', musicScore: 'Kotta', import: 'Importálás',
     paste: 'Beillesztés Wordből / Excelből', pasteHint: 'Illesszen be ide táblázatot, képet vagy egyenletet Wordből, Excelből vagy más alkalmazásból.',
     importing: 'Importálás…', importFailed: 'A fájlt nem sikerült importálni.', noImportableElements: 'Nem található támogatott vizuális elem.',
@@ -177,7 +179,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     mergeRight: "Nach rechts verbinden", mergeDown: "Nach unten verbinden", splitCell: "Zelle teilen", mergeHint: "Nur leere Nachbarzellen können verbunden werden; vor einer Änderung der Kopfzeilengrenze die betroffene Zelle teilen.",
     rowHeightMode: "Zeilenhöhenmodus", rowHeightAuto: "Automatisch", rowHeightMinimum: "Mindestens", rowHeightExact: "Genau", rowHeightValue: "Zeilenhöhe", rowHeightExactHint: "Studio und HTML/PDF vergrößern die Zeile bei Bedarf. Exakte DOCX/ODT-Zeilen können Text abschneiden; Export prüfen.",
     rowPagination: "Zeilenumbrüche", rowSplitDefault: "Tabellenstandard", rowSplitSelected: "Ausgewählte Zeile", rowSplitKeep: "Zeile zusammenhalten", rowSplitAllow: "Zeilenumbruch zulassen", rowSplitInherit: "Tabellenstandard verwenden", rowSplitHint: "Der Live-Editor trennt zwischen Zeilen; das Teilen innerhalb einer Zeile ist eine Exporteinstellung.",
-    tableHeaderRows: 'Wiederholte Kopfzeilen', tableFontSize: 'Tabellenschriftgröße', bodyFontSize: 'Wie Fließtext', smallerFontSize: 'Fließtext − 1 pt', resizeColumn: 'Spaltenbreite ändern', cell: 'Zelle',
+    tableHeaderRows: 'Wiederholte Kopfzeilen', tableFontSize: 'Tabellenschriftgröße', bodyFontSize: 'Wie Fließtext', smallerFontSize: 'Fließtext − 1 pt', resizeColumn: 'Spaltenbreite ändern', resizeRow: "Zeilenhöhe ändern", resizeRowHint: "Ziehen zum Ändern; Doppelklick oder Pos1 setzt auf automatisch. Pfeile: 1 pt, Umschalt: 10 pt.", cell: 'Zelle',
     insertMenu: 'Einfügen', insertElement: 'Element einfügen', image: 'Bild', textBox: 'Textfeld', table: 'Tabelle', chart: 'Diagramm', equation: 'Gleichung', musicScore: 'Notensatz', import: 'Importieren',
     paste: 'Aus Word / Excel einfügen', pasteHint: 'Fügen Sie hier eine Tabelle, ein Bild oder eine Gleichung aus Word, Excel oder einer anderen Anwendung ein.',
     importing: 'Importieren…', importFailed: 'Die Datei konnte nicht importiert werden.', noImportableElements: 'Keine unterstützten visuellen Elemente gefunden.',
@@ -251,6 +253,13 @@ export function getVisualElementsCopy(locale: string): VisualElementsCopy {
     nl: {"insertNestedTable":"Geneste tabel invoegen","editNestedTable":"Geneste tabel bewerken"},
     pl: {"insertNestedTable":"Wstaw tabelę zagnieżdżoną","editNestedTable":"Edytuj tabelę zagnieżdżoną"},
   };
+  const rowResizeCopies:Record<string,Pick<VisualElementsCopy,'resizeRow'|'resizeRowHint'>>={
+    fr: {"resizeRow":"Redimensionner la ligne","resizeRowHint":"Glisser pour redimensionner ; double-clic ou Origine pour réinitialiser. Flèches : 1 pt, Maj : 10 pt."},
+    it: {"resizeRow":"Ridimensiona riga","resizeRowHint":"Trascina per ridimensionare; doppio clic o Home per ripristinare. Frecce: 1 pt, Maiusc: 10 pt."},
+    es: {"resizeRow":"Cambiar altura de fila","resizeRowHint":"Arrastra para ajustar; doble clic o Inicio para restablecer. Flechas: 1 pt, Mayús: 10 pt."},
+    nl: {"resizeRow":"Rijhoogte aanpassen","resizeRowHint":"Sleep om te wijzigen; dubbelklik of Home voor automatisch. Pijlen: 1 pt, Shift: 10 pt."},
+    pl: {"resizeRow":"Zmień wysokość wiersza","resizeRowHint":"Przeciągnij, aby zmienić; dwuklik lub Home przywraca automatykę. Strzałki: 1 pt, Shift: 10 pt."},
+  };
   const merge=mergeCopies[language];
-  return {...translated,...rowCopies[language],...appearanceCopies[language],...edgeCopies[language],...heightCopies[language],...paragraphCopies[language],...cellListCopies[language],...nestedTableCopies[language],tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
+  return {...translated,...rowCopies[language],...appearanceCopies[language],...edgeCopies[language],...heightCopies[language],...paragraphCopies[language],...cellListCopies[language],...nestedTableCopies[language],...rowResizeCopies[language],tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
 }
