@@ -61,7 +61,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { prunePublicationCellStyles, pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, formatTableRange, planTableAxisMove, reorderTableAxis, type TableReorderAxis } from '../model/tableLayout';
+import { prunePublicationCellOverrides, editTableRangeAppearance, prunePublicationCellStyles, pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, planTableAxisMove, reorderTableAxis, type TableReorderAxis } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { applyDefaultPublicationTableStyle, inheritPublicationTableGeometry } from '../model/tableAppearancePresets';
 import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
@@ -520,13 +520,13 @@ function EditableGrid({
   }
   function updateColumns(nextCells: string[][], nextWidths: number[]): void {
     onChange(data.kind === 'table'
-      ? inherit({ ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellMerges: tableMergeLayout(nextCells,data.cellMerges,headerCount).merges, cellContent:pruneTableCellContent(nextCells,data.cellContent), publicationCellStyles: data.publicationCellStyles?prunePublicationCellStyles(nextCells,data.publicationCellStyles):undefined, cellFormats: pruneTableCellFormats(nextCells, cellFormats) })
+      ? inherit({ ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellMerges: tableMergeLayout(nextCells,data.cellMerges,headerCount).merges, cellContent:pruneTableCellContent(nextCells,data.cellContent), publicationCellStyles: data.publicationCellStyles?prunePublicationCellStyles(nextCells,data.publicationCellStyles):undefined, publicationCellOverrides: data.publicationCellOverrides?prunePublicationCellOverrides(nextCells,data.publicationCellOverrides):undefined, cellFormats: pruneTableCellFormats(nextCells, cellFormats) })
       : { ...data, cells: nextCells });
   }
 
   function updateSelectedFormat(patch: OmiTableCellFormat|((format:ReturnType<typeof tableCellFormat>)=>OmiTableCellFormat)): void {
     if (data.kind !== 'table' || previewOnly) return;
-    onChange({...data,cellFormats:formatTableRange(data,start,boundedEnd??start,patch)});
+    onChange(editTableRangeAppearance(data,start,boundedEnd??start,patch));
   }
 
   // Reset before measuring so shortening a cell can also shrink its row. Observe
@@ -690,7 +690,7 @@ function EditableGrid({
         </button>
         <button type="button" onClick={() => {
           const nextCells = removeTableRow(cells, cells.length - 1);
-          onChange(data.kind === 'table' ? inherit({ ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), rowHeights:pruneTableRowHeights(nextCells,data.rowHeights), cellContent:pruneTableCellContent(nextCells,data.cellContent), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, publicationCellStyles: data.publicationCellStyles?prunePublicationCellStyles(nextCells,data.publicationCellStyles):undefined, cellFormats: pruneTableCellFormats(nextCells, cellFormats) }) : { ...data, cells: nextCells });
+          onChange(data.kind === 'table' ? inherit({ ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), rowHeights:pruneTableRowHeights(nextCells,data.rowHeights), cellContent:pruneTableCellContent(nextCells,data.cellContent), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, publicationCellStyles: data.publicationCellStyles?prunePublicationCellStyles(nextCells,data.publicationCellStyles):undefined, publicationCellOverrides: data.publicationCellOverrides?prunePublicationCellOverrides(nextCells,data.publicationCellOverrides):undefined, cellFormats: pruneTableCellFormats(nextCells, cellFormats) }) : { ...data, cells: nextCells });
         }}>
           {copy.removeRow}
         </button>
