@@ -224,3 +224,32 @@ test('removing a nested note keeps sibling text and unrelated note anchors intac
   assert.equal(result.state.annotations.find((item) => item.id === 'note-d')?.targetBlockId, 'nested-child');
   assert.deepEqual(state, original, 'deleting a note must not mutate the original state');
 });
+
+test('note numbering includes nested table anchors in document order and model removal preserves cell text',async()=>{
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {tableCellDocument,cellNestedTable}=await import('../src/model/tableLayout.ts');
+  const state=createState();
+  const nested={kind:'table',cells:[['']],headerRows:0,cellContent:{'0:0':noteDocument('note-cell')}};
+  const cell=JSON.stringify({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Before'}]},{type:'omiCellTable',attrs:{table:nested}},{type:'paragraph',content:[{type:'text',text:'After'}]}]});
+  state.sections[0]!.blocks.splice(0,1,{id:'block-1',type:'paragraph',content:noteDocument('note-a')},createTableBlock([['Before\n\nAfter']],{headerRows:0,cellContent:{'0:0':cell}},'cell-table'),{id:'block-2',type:'paragraph',content:noteDocument('note-b')});
+  state.annotations.push(createNoteAnnotation({id:'note-cell',anchorId:'anchor-note-cell',targetBlockId:'cell-table',body:'Cell note'}));
+  const anchors=collectNoteAnchors(state);
+  assert.deepEqual(anchors.map(a=>a.noteId),['note-a','note-cell','note-b']);
+  assert.equal(anchors[1]?.blockId,'cell-table');
+  assert.equal(buildNoteNumberMap(state).get('note-cell'),2);
+  const reconciled=reconcileNoteState(state,{removeOrphanAnnotations:true}).state;
+  assert.equal(reconciled.annotations.length,3);
+  const table=reconciled.sections[0]!.blocks[1]!.visual;
+  assert.ok(table?.kind==='table');
+  const node=tableCellDocument(table,0,0)?.content?.[1];
+  assert.ok(node);
+  const inner=cellNestedTable(node);
+  assert.ok(inner);
+  assert.equal(tableCellDocument(inner,0,0)?.content?.[0]?.content?.[0]?.attrs?.label,'2');
+  const removed=removeNoteFromState(reconciled,'note-cell').state;
+  assert.deepEqual(collectNoteAnchors(removed).map(a=>a.noteId),['note-a','note-b']);
+  assert.equal(buildNoteNumberMap(removed).get('note-b'),2);
+  const remaining=removed.sections[0]!.blocks[1]!.visual;
+  assert.ok(remaining?.kind==='table');
+  assert.equal(remaining.cells[0]?.[0],'Before\n\nAfter');
+});
