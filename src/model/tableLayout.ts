@@ -1,4 +1,4 @@
-import type { OmiTableCellFormat, OmiTableCellMerge } from '../types/omi';
+import type { OmiTableCellFormat, OmiTableCellMerge, OmiTableBlockData, OmiTableRowSplitPolicy } from '../types/omi';
 
 /** Relative widths keep the same table editable on screen and within print margins. */
 export function tableColumnWidths(cells: readonly (readonly string[])[], widths?: readonly number[]): number[] {
@@ -110,4 +110,25 @@ export function splitTableMerge(cells: readonly (readonly string[])[], merges: r
   const layout=tableMergeLayout(cells,merges,headerRows);
   const selected=layout.at(row,column);
   return layout.merges.filter(m=>m!==selected);
+}
+
+/** Keep legacy screen/print behavior unless a source or editor explicitly opts in. */
+export function tableRowSplitDefault(value: unknown): OmiTableRowSplitPolicy {
+  return value === 'allow' ? 'allow' : 'keep';
+}
+export function tableRowSplitPolicy(table: Pick<OmiTableBlockData,'rowSplitDefault'|'rowSplitOverrides'>, row: number): OmiTableRowSplitPolicy {
+  const value=table.rowSplitOverrides?.[String(row)];
+  return value === 'allow' || value === 'keep' ? value : tableRowSplitDefault(table.rowSplitDefault);
+}
+export function pruneTableRowSplitOverrides(cells: readonly (readonly string[])[], overrides?: Record<string,OmiTableRowSplitPolicy>): Record<string,OmiTableRowSplitPolicy> {
+  return Object.fromEntries(Object.entries(overrides??{}).filter(([key,value])=>
+    /^(0|[1-9][0-9]*)$/.test(key) && Number(key)<cells.length && (value==='keep'||value==='allow')
+  ));
+}
+export function setTableRowSplitOverride(table: OmiTableBlockData,row:number,policy: OmiTableRowSplitPolicy | 'inherit'): Record<string,OmiTableRowSplitPolicy> {
+  const next=pruneTableRowSplitOverrides(table.cells,table.rowSplitOverrides);
+  if(!Number.isSafeInteger(row)||row<0||row>=table.cells.length) return next;
+  if(policy==='inherit') delete next[String(row)];
+  else if(policy==='allow'||policy==='keep') next[String(row)]=policy;
+  return next;
 }
