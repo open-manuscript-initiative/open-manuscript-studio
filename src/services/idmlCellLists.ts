@@ -47,8 +47,8 @@ function readList(p:Props,report:Report):ListInfo|undefined{
   }
   let start=1;
   if(ordered){
-    const format=FORMATS[p.NumberingFormat??'']??'decimal';
-    if(p.NumberingFormat&&!FORMATS[p.NumberingFormat])report('native-list-format-partial');
+    const format=p.NumberingFormat&&Object.hasOwn(FORMATS,p.NumberingFormat)?FORMATS[p.NumberingFormat]!:'decimal';
+    if(p.NumberingFormat&&!Object.hasOwn(FORMATS,p.NumberingFormat))report('native-list-format-partial');
     put('omiListFormat',format);
     const validStart=normalizeListAttribute('omiListStart',p.NumberingStartAt);
     if(typeof validStart==='number')start=validStart;
@@ -57,7 +57,7 @@ function readList(p:Props,report:Report):ListInfo|undefined{
     const expression=raw.endsWith('^t')?raw.slice(0,-2):raw;
     if(!raw.endsWith('^t'))report('native-list-separator-partial');
     // Parent counters and special InDesign escapes cannot be inferred.
-    if((expression.match(/\^#/g)??[]).length===1&&!expression.replace('^#','').includes('^')){
+    if((expression.match(/\^#/g)??[]).length===1&&!expression.replace('^#','').includes('^')&&!/%[1-9]/.test(expression)){
       put('omiListLabel',expression.replace('^#','%'+(level+1)));
     }else{
       put('omiListLabel','%'+(level+1)+'.');
@@ -101,7 +101,10 @@ export function reconstructIdmlCellLists(records:readonly IdmlCellParagraph[],co
       const reference=sequenceName(p);
       // Studio emits a named list reference on a NoList continuation; plain
       // indented paragraphs are never guessed to belong to a list.
-      const continuation=p.BulletsAndNumberingListType==='NoList'&&reference?stack.findLastIndex(frame=>frame.info.sequence===reference):-1;
+      let continuation=-1;
+      if(p.BulletsAndNumberingListType==='NoList'&&reference){
+        for(let i=stack.length-1;i>=0;i--)if(stack[i]!.info.sequence===reference){continuation=i;break;}
+      }
       if(continuation>=0&&record.node.type==='paragraph'){
         stack.length=continuation+1;
         stack[continuation]!.last.content!.push(record.node);
