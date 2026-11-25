@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { WORD_HYPHENATION_EXTENSION, normalizeWordHyphenation } from '../model/wordHyphenation';
 import { manuscriptImportOrigin } from '../model/manuscriptImportOrigin';
 import { documentImportSourcePolicy, type DocumentImportSourceOptions } from '../model/documentImportMode';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
@@ -57,10 +58,10 @@ export function applyDocxImportPlan(
   // Document provenance has no block/section anchor and cannot constrain edits.
   const annotations = plan.annotations;
 
+  const wordHyphenation=normalizeWordHyphenation(plan.wordHyphenation);
+  const extensions={...(policy.selfAuthored?manuscriptImportOrigin(plan.fileName.toLowerCase().endsWith('.odt')?'odt':'docx',timestamp):{}),...(wordHyphenation?{[WORD_HYPHENATION_EXTENSION]:wordHyphenation}:{})};
   const state: OmiManuscriptState = {
-    ...(policy.selfAuthored ? { extensions: manuscriptImportOrigin(
-      plan.fileName.toLowerCase().endsWith('.odt') ? 'odt' : 'docx', timestamp,
-    ) } : {}),
+    ...(Object.keys(extensions).length?{extensions}:{}),
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
     version: current.version,
