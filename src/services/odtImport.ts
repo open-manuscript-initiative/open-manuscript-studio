@@ -1,4 +1,4 @@
-import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder, normalizeTableRowHeight, tableCellPlainText } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder, normalizeTableRowHeight, tableCellPlainText, normalizeCellParagraphAttrs } from '../model/tableLayout';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
 import { OdtZip } from './odtZip';
@@ -125,8 +125,12 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
           // Notes and nested tables retain the existing plain fallback rather
           // than introducing orphan annotation anchors into cell content.
           const supported=!cell.getElementsByTagNameNS('*','note').length&&!cell.getElementsByTagNameNS('*','table').length;
-          const doc:NoteJsonNode={type:'doc',content: supported?paragraphs.map(p=>({type:'paragraph',content:parseInlineChildren(p,'',[],createEmptyDocxImportStats(),provenance,[],textStyles,listStyleTypes) as NoteJsonNode[]})):[]};
-          const rich=supported&&!!doc.content?.length&&doc.content.some(p=>doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
+          const doc:NoteJsonNode={type:'doc',content:supported?paragraphs.map(p=>{
+            const attrs=normalizeCellParagraphAttrs(odtParagraphAttrs(p.getAttribute('text:style-name')??'',textStyles).attrs);
+            if(attrs.omiAlign===format.horizontalAlign) delete attrs.omiAlign;
+            return {type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseInlineChildren(p,'',[],createEmptyDocxImportStats(),provenance,[],textStyles,listStyleTypes) as NoteJsonNode[]};
+          }):[]};
+          const rich=supported&&!!doc.content?.length&&doc.content.some(p=>p.attrs||doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
           if(rich) cellContent[`${rows.length}:${col}`]=JSON.stringify(doc);
           values.push(rich?tableCellPlainText(doc):paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
         }
