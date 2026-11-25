@@ -250,3 +250,10 @@ test('cell paragraphs retain independent validated formatting and inherit cell a
     assert.match(html,/<p style="text-align:left;margin-bottom:0pt">Second<\/p>/);
   }
 });
+
+test('rich cell font family rejects control characters and unsafe punctuation', async () => {
+  const {parseTableCellContent}=await import('../src/model/tableLayout.ts');
+  const parse=(family:string)=>parseTableCellContent(JSON.stringify({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'A',marks:[{type:'omiSourceFont',attrs:{family}}]}]}]}))?.content?.[0]?.content?.[0]?.marks;
+  assert.deepEqual(parse('Noto Serif'),[{type:'omiSourceFont',attrs:{family:'Noto Serif'}}]);
+  for(const family of ['',String.fromCharCode(0)+'Serif','A'+String.fromCharCode(31),'A'+String.fromCharCode(127),'A;B','A{B','A}B','A<B','A>B','A'.repeat(129)]) assert.equal(parse(family),undefined);
+});
