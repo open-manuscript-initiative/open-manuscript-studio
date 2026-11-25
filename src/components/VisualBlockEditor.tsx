@@ -43,7 +43,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -314,6 +314,7 @@ function EditableGrid({
   const selectedRow=selectedMerge?.row??rawRow;
   const selectedColumn=selectedMerge?.column??rawColumn;
   const selectedRowSplit=data.kind==='table'?data.rowSplitOverrides?.[String(rawRow)]:undefined;
+  const selectedHeight=tableRowHeight(data.kind==='table'?data:{},rawRow);
   const mergeRight=extendTableMerge(cells,mergeLayout.merges,selectedRow,selectedColumn,'right',headerCount);
   const mergeDown=extendTableMerge(cells,mergeLayout.merges,selectedRow,selectedColumn,'down',headerCount);
   const cellFormats = data.kind === 'table' ? data.cellFormats : undefined;
@@ -378,7 +379,7 @@ function EditableGrid({
                     <td colSpan={widths.length}><div style={{ height: item.height }} /></td>
                   </tr>
                 ))}
-                <tr key={rowIndex} data-omi-row-split={data.kind==='table'?tableRowSplitPolicy(data,rowIndex):undefined} style={continuationStyle(rowIndex)}>
+                <tr key={rowIndex} data-omi-row-split={data.kind==='table'?tableRowSplitPolicy(data,rowIndex):undefined} data-omi-row-height={data.kind==='table'?tableRowHeight(data,rowIndex).mode:undefined} style={{...continuationStyle(rowIndex),...(data.kind==='table'?tableRowHeightStyle(tableRowHeight(data,rowIndex)):{})}}>
                   {row.map((cell, columnIndex) => {
                     if(mergeLayout.covered(rowIndex,columnIndex)) return null;
                     const merge=mergeLayout.at(rowIndex,columnIndex);
@@ -461,7 +462,7 @@ function EditableGrid({
         </button>
         <button type="button" onClick={() => {
           const nextCells = removeTableRow(cells, cells.length - 1);
-          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
+          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), rowHeights:pruneTableRowHeights(nextCells,data.rowHeights), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
         }}>
           {copy.removeRow}
         </button>
@@ -543,6 +544,17 @@ function EditableGrid({
             </select></label>
           </div>
           <small>{copy.rowSplitHint}</small>
+          <div className="omi-table-cell-formatting-fields">
+            <label><span>{copy.rowHeightMode}</span><select value={selectedHeight.mode} onChange={event=>{
+              const mode=event.target.value;
+              onChange({...data,rowHeights:setTableRowHeight(data,rawRow,mode==='minimum'||mode==='exact'?{mode,heightPt:selectedHeight.mode==='auto'?18:selectedHeight.heightPt}:{mode:'auto'})});
+            }}><option value="auto">{copy.rowHeightAuto}</option><option value="minimum">{copy.rowHeightMinimum}</option><option value="exact">{copy.rowHeightExact}</option></select></label>
+            <label><span>{copy.cellEdgeUnit}</span><select value={edgeUnit} onChange={event=>setEdgeUnit(event.target.value==='mm'?'mm':event.target.value==='pc'?'pc':'pt')}><option value="pt">pt</option><option value="mm">mm</option><option value="pc">pica</option></select></label>
+            <label><span>{copy.rowHeightValue} ({edgeUnit})</span><input type="number" min={0.05/edgeFactor} max={1584/edgeFactor} step="any" disabled={selectedHeight.mode==='auto'} value={selectedHeight.mode==='auto'?'':Number((selectedHeight.heightPt/edgeFactor).toFixed(3))} onChange={event=>{
+              if(selectedHeight.mode!=='auto'&&Number.isFinite(event.target.valueAsNumber)&&event.target.valueAsNumber>0) onChange({...data,rowHeights:setTableRowHeight(data,rawRow,{mode:selectedHeight.mode,heightPt:event.target.valueAsNumber*edgeFactor})});
+            }}/></label>
+          </div>
+          {selectedHeight.mode==='exact'?<small role="status">{copy.rowHeightExactHint}</small>:null}
         </details>
       ) : null}
       {data.kind === 'table' ? (
