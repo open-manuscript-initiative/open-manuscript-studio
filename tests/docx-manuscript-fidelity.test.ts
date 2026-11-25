@@ -1123,3 +1123,33 @@ test('native row height modes survive Word and ODT import and export', async () 
   assert.match(odtXml,/style:row-height="18pt" style:use-optimal-row-height="false"/);
   inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'row-heights.odt'))).sections);
 });
+
+test('rich table cells retain individual runs and paragraph boundaries in Word and ODT', async () => {
+  const source=makeDocx('<w:p><w:r><w:t>Rich cells</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="112233"/></w:rPr><w:t>Bold</w:t></w:r><w:r><w:t xml:space="preserve"> plain</w:t></w:r></w:p><w:p><w:r><w:rPr><w:i/><w:vertAlign w:val="superscript"/></w:rPr><w:t>Second</w:t></w:r></w:p></w:tc></w:tr></w:tbl>');
+  const {tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const {extractOmiInlineRuns}=await import('../src/model/inlineSemantics.ts');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const v=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cells,[['Bold plain\nSecond']]);
+    const doc=tableCellDocument(v,0,0);
+    assert.ok(doc);
+    assert.equal(doc.content?.length,2);
+    const runs=extractOmiInlineRuns(JSON.stringify(doc));
+    const bold=runs.find(r=>r.text==='Bold');
+    assert.ok(bold?.semantics.includes('strong'));
+    assert.equal(bold.directFormatting?.omiFontSize,14);
+    assert.equal(bold.directFormatting?.omiTextColor,'#112233');
+    assert.ok(runs.some(r=>r.text.includes('Second')&&r.semantics.includes('emphasis')&&r.semantics.includes('superscript')));
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Rich cells'}),sections:plan.sections};
+  const word=buildDocxExport(manuscript);
+  const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(xml,/<w:b\/>/);
+  assert.match(xml,/<w:sz w:val="28"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'rich-cell.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'rich-cell.odt'))).sections);
+});
