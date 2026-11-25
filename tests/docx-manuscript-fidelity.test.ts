@@ -1878,3 +1878,42 @@ test('legacy linked Word text boxes keep editable content, dimensions and native
   assert.doesNotMatch(readZipParts(cyclic.bytes).get('word/document.xml')!.toString('utf8'),/mso-next-textbox/);
   assert.match(cyclic.warnings.join('\n'),/Cyclic Word text-box link/);
 });
+
+
+test('native Word images retain raster bytes, crop, dimensions and square wrapping across OMI reopen',async()=>{
+  const {advancedCases,createAdvancedDocx}=await import('./generate-advanced-formatting-fixtures.ts');
+  const {normalizeWordPictureLayout}=await import('../src/model/wordPictureLayout.ts');
+  for(const id of ['I02','I03']){
+    const specimen=advancedCases.find(item=>item.id===id)!;
+    const source=createAdvancedDocx(specimen);
+    const plan=await parseDocxForStudio(new File([new Uint8Array(source)],id+'.docx'));
+    const picture=plan.sections.flatMap(section=>section.blocks).find(block=>block.visual?.kind==='image')?.visual;
+    assert.ok(picture?.kind==='image');
+    const layout=normalizeWordPictureLayout(picture.wordPicture);
+    assert.ok(layout);
+    assert.equal(layout.cx,914400);
+    assert.equal(layout.cy,457200);
+    assert.deepEqual(layout.crop,{l:1000,t:2000,r:3000,b:4000});
+    if(id==='I02')assert.equal(layout.floating?.wrapText,'bothSides');
+    else assert.equal(layout.floating,undefined);
+    const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Native pictures'}),sections:plan.sections};
+    const reopened=parseOmiJson(serializeOmiJson(manuscript));
+    const result=buildDocxExport(reopened);
+    const parts=readZipParts(result.bytes);
+    const xml=parts.get('word/document.xml')!.toString('utf8');
+    assert.match(xml,/<wp:extent cx="914400" cy="457200"\/>/);
+    assert.match(xml,/<a:srcRect l="1000" t="2000" r="3000" b="4000"\/>/);
+    assert.match(xml,/<a:blip r:embed="rIdImage"\/>/);
+    if(id==='I02')assert.match(xml,/<wp:wrapSquare wrapText="bothSides"\/>/);
+    else assert.match(xml,/<wp:inline\b/);
+    assert.match(parts.get('word/_rels/document.xml.rels')!.toString('utf8'),/Id="rIdImage"[^>]*Target="media\/omi-picture-1.png"/);
+    assert.deepEqual(parts.get('word/media/omi-picture-1.png'),readZipParts(source).get('word/media/image.png'));
+    const roundtrip=await parseDocxForStudio(new File([new Uint8Array(result.bytes)],id+'-reopened.docx'));
+    const next=roundtrip.sections.flatMap(section=>section.blocks).find(block=>block.visual?.kind==='image')?.visual;
+    assert.ok(next?.kind==='image');
+    assert.deepEqual(next.wordPicture,layout);
+    assert.equal(next.alt,picture.alt);
+  }
+  assert.equal(normalizeWordPictureLayout({cx:914400,cy:457200,crop:{l:90000,t:0,r:10000,b:0}}),undefined);
+  assert.equal(normalizeWordPictureLayout({cx:914400,cy:457200,originalRaster:'https://example.org/image.png'}),undefined);
+});
