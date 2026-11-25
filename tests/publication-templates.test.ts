@@ -563,3 +563,30 @@ test('renaming table and cell styles preserves assignments, ancestry and nested 
   assert.equal(parent.publicationTableStyle,'grid');
   assert.equal(renamePublicationTableBindings(sections,'Missing','Other','table'),sections);
 });
+
+test('explicit same-value overrides survive style changes and reset clears their intent',async()=>{
+  const {bindPublicationTableStyle,bindPublicationCellStyle,normalizePublicationTableStyles,refreshPublicationTableTree,resetInheritedCellAppearance,selectedPublicationOverrideCount}=await import('../src/model/tableAppearancePresets.ts');
+  const {editTableRangeAppearance,reorderTableAxis,prunePublicationCellOverrides,cellNestedTable,tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const pos={row:1,column:0};
+  const catalog=normalizePublicationTableStyles({items:[{kind:'table',name:'T',header:{},body:{backgroundColor:'#FFFFFF'}},{kind:'cell',name:'C',format:{horizontalAlign:'left'}}]})!;
+  const original=bindPublicationTableStyle({kind:'table',headerRows:1,cells:[['H'],['A'],['B']]},catalog,'T');
+  const edited=editTableRangeAppearance(original,pos,pos,{backgroundColor:'#FFFFFF'});
+  assert.deepEqual(edited.publicationCellOverrides?.['1:0'],['backgroundColor']);
+  assert.equal(selectedPublicationOverrideCount(edited,catalog,pos,pos),1);
+  const changed=normalizePublicationTableStyles({items:[{kind:'table',name:'T',header:{},body:{backgroundColor:'#123456'}},{kind:'cell',name:'C',format:{horizontalAlign:'right'}}]})!;
+  const refreshed=refreshPublicationTableTree(edited,catalog,changed);
+  assert.equal(refreshed.cellFormats?.['1:0']?.backgroundColor,'#FFFFFF');
+  assert.equal(refreshed.cellFormats?.['2:0']?.backgroundColor,'#123456');
+  const moved=reorderTableAxis(refreshed,'row',1,1)!;
+  assert.deepEqual(moved.table.publicationCellOverrides?.['2:0'],['backgroundColor']);
+  const reset=resetInheritedCellAppearance(refreshed,changed,pos,pos);
+  assert.equal(reset.publicationCellOverrides,undefined);
+  assert.equal(reset.cellFormats?.['1:0']?.backgroundColor,'#123456');
+  assert.equal(selectedPublicationOverrideCount(reset,changed,pos,pos),0);
+  const linked=bindPublicationCellStyle(original,catalog,'C',pos,pos);
+  const cell=editTableRangeAppearance(linked,pos,pos,{horizontalAlign:'left'});
+  assert.equal(refreshPublicationTableTree(cell,catalog,changed).cellFormats?.['1:0']?.horizontalAlign,'left');
+  const nested={kind:'table' as const,cells:[['H\nA\nB']],cellContent:{'0:0':JSON.stringify({type:'doc',content:[{type:'omiCellTable',attrs:{table:cell}}]})}};
+  assert.deepEqual(cellNestedTable(tableCellDocument(nested,0,0)!.content![0]!)?.publicationCellOverrides?.['1:0'],['horizontalAlign']);
+  assert.deepEqual(prunePublicationCellOverrides([['A']],{'0:0':['backgroundColor','backgroundColor'],'1:0':['borders']}),{'0:0':['backgroundColor']});
+});
