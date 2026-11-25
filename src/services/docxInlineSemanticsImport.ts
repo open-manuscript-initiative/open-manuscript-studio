@@ -83,7 +83,7 @@ async function readRichParagraphCandidates(file: File): Promise<RichParagraphCan
     // This text-only enrichment cannot represent line breaks, tabs, or link/field
     // boundaries. The structural importer already retains them; never replace
     // those paragraphs (or queue them against an unrelated plain paragraph).
-    if (['br', 'cr', 'tab', 'hyperlink', 'fldSimple', 'fldChar', 'instrText'].some(
+    if (['br', 'cr', 'tab', 'hyperlink', 'fldSimple', 'fldChar', 'instrText', 'ins', 'del', 'rPrChange'].some(
       (name) => descendantsByLocalName(paragraph, name).length > 0,
     )) continue;
     const pPr = directChildrenByLocalName(paragraph, 'pPr')[0];
@@ -135,9 +135,10 @@ function enrichPlanBlocks(
     queues.set(key, queue);
   }
 
+  const reviewBlocks=new Set(plan.proofing?.changes.map(change=>change.targetBlockId)??[]);
   for (const section of plan.sections) {
     for (const block of section.blocks) {
-      if (!isSafeSimpleTextBlock(block)) continue;
+      if (reviewBlocks.has(block.id)||!isSafeSimpleTextBlock(block)) continue;
       const text = storedPlainText(block.content);
       const queue = queues.get(normalize(text));
       const candidate = queue?.shift();
