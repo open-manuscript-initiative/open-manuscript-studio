@@ -1,8 +1,15 @@
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
+import { generateHTML } from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
+import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
+import { getRichTextCopy } from '../i18n/richText';
+import { useFormattingEditor } from '../editor/useFormattingEditor';
+import type { NoteJsonNode } from '../model/noteRichText';
 import { ChartPreview } from './ChartPreview';
 import { TextBoxCanvas } from './TextBoxCanvas';
 import { createTextBox } from '../model/textBoxes';
 import { getTextBoxCopy } from '../i18n/textBoxes';
-import { Fragment, useContext, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   BarChart3,
   FileText,
@@ -43,7 +50,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -290,6 +297,35 @@ function pitchY(note: OmiMusicScoreBlockData['notes'][number]): number {
   return 93 - ((note.octave - 4) * 7 + (order[note.step] ?? 0)) * 3;
 }
 
+const cellExtensions=()=>[StarterKit.configure({heading:false,blockquote:false,bulletList:false,orderedList:false,listItem:false,codeBlock:false,horizontalRule:false,link:false,underline:false}),...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter(e=>!['omiBlockTypeMenu','omiListFormatting','omiSourceWordParagraphStyle','omiWordCharacterStyle'].includes(e.name))];
+
+function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:NoteJsonNode)=>void;label:string}){
+  const {locale}=useTranslation();
+  const copy=getRichTextCopy(locale);
+  const change=useRef(onChange);change.current=onChange;
+  const editor=useEditor({extensions:cellExtensions(),content:doc,editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'omi-table-rich-editor'},handleKeyDown:(_view,event)=>{event.stopPropagation();return false;}},onUpdate:({editor:current})=>{
+    const parsed=parseTableCellContent(JSON.stringify(current.getJSON()));
+    if(parsed) change.current(parsed);
+  }});
+  useFormattingEditor(editor);
+  const marks=['bold','italic','omiUnderline','strike','omiSmallCaps','omiSuperscript','omiSubscript'];
+  const active=useEditorState({editor,selector:({editor:e})=>marks.map(m=>e?.isActive(m)??false)});
+  useEffect(()=>{
+    if(!editor) return;
+    const next=editor.schema.nodeFromJSON(doc).toJSON();
+    if(JSON.stringify(next)!==JSON.stringify(editor.getJSON())) editor.commands.setContent(next,{emitUpdate:false});
+  },[editor,doc]);
+  return <div onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}>
+    <div className="omi-table-actions" role="group" aria-label={copy.toolbar}>
+      {[copy.bold,copy.italic,copy.underline,copy.strike,copy.smallCaps,copy.superscript,copy.subscript].map((title,i)=><button type="button" key={marks[i]} title={title} aria-label={title} aria-pressed={active?.[i]??false} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleMark(marks[i]!).run()}>{['B','I','U','S','Aa','x²','x₂'][i]}</button>)}
+      <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().unsetAllMarks().run()}>{copy.clearMarks}</button>
+    </div><EditorContent editor={editor}/>
+  </div>;
+}
+function richCellPreview(doc:NoteJsonNode):string|undefined{
+  try{return generateHTML(doc,cellExtensions());}catch{return undefined;}
+}
+
 function EditableGrid({
   data,
   onChange,
@@ -319,6 +355,7 @@ function EditableGrid({
   const mergeDown=extendTableMerge(cells,mergeLayout.merges,selectedRow,selectedColumn,'down',headerCount);
   const cellFormats = data.kind === 'table' ? data.cellFormats : undefined;
   const selectedFormat = tableCellFormat(cellFormats, selectedRow, selectedColumn);
+  const selectedDoc=data.kind==='table'?tableCellDocument(data,selectedRow,selectedColumn):undefined;
   const columnWidths = data.kind === 'table' ? data.columnWidths : undefined;
   const widths = tableColumnWidths(cells, columnWidths);
   const pageBreaks = useContext(TablePaginationContext).filter((item) => item.targetBlockId === blockId);
@@ -336,7 +373,7 @@ function EditableGrid({
 
   function updateColumns(nextCells: string[][], nextWidths: number[]): void {
     onChange(data.kind === 'table'
-      ? { ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellMerges: tableMergeLayout(nextCells,data.cellMerges,headerCount).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) }
+      ? { ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellMerges: tableMergeLayout(nextCells,data.cellMerges,headerCount).merges, cellContent:pruneTableCellContent(nextCells,data.cellContent), cellFormats: pruneTableCellFormats(nextCells, cellFormats) }
       : { ...data, cells: nextCells });
   }
 
@@ -385,7 +422,9 @@ function EditableGrid({
                     const merge=mergeLayout.at(rowIndex,columnIndex);
                     const Cell = data.kind === 'table' && rowIndex < tableHeaderRows(cells, data.headerRows) ? 'th' : 'td';
                     const format = tableCellFormat(cellFormats, rowIndex, columnIndex);
-                    const showText = previewOnly || format.textRotation !== 0;
+                    const rich=data.kind==='table'?tableCellDocument(data,rowIndex,columnIndex):undefined;
+                    const richHtml=rich?richCellPreview(rich):undefined;
+                    const showText = previewOnly || format.textRotation !== 0 || !!rich;
                     return (
                       <Cell key={columnIndex} rowSpan={merge?.rowSpan} colSpan={merge?.colSpan} style={tableCellAppearanceStyle(format)}
                         data-cell-selected={!previewOnly && selectedRow === rowIndex && selectedColumn === columnIndex ? 'true' : undefined}
@@ -393,7 +432,7 @@ function EditableGrid({
                         onFocus={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
                         onClick={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
                       >
-                        {showText ? (
+                        {richHtml!==undefined ? <div className="omi-table-cell-text omi-table-rich-preview" dir={format.textDirection} style={{...tableCellTextStyle(format.textRotation),textAlign:format.horizontalAlign??'start'}} dangerouslySetInnerHTML={{__html:richHtml}}/> : showText ? (
                           <span className="omi-table-cell-text" dir={format.textDirection} data-text-rotation={format.textRotation} style={{...tableCellTextStyle(format.textRotation),...(format.horizontalAlign?{textAlign:format.horizontalAlign,...(format.textRotation===0?{width:'100%'}:{})}:{})}}>{cell || '\u00a0'}</span>
                         ) : <textarea
                           rows={1}
@@ -462,7 +501,7 @@ function EditableGrid({
         </button>
         <button type="button" onClick={() => {
           const nextCells = removeTableRow(cells, cells.length - 1);
-          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), rowHeights:pruneTableRowHeights(nextCells,data.rowHeights), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
+          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), rowHeights:pruneTableRowHeights(nextCells,data.rowHeights), cellContent:pruneTableCellContent(nextCells,data.cellContent), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
         }}>
           {copy.removeRow}
         </button>
@@ -528,7 +567,15 @@ function EditableGrid({
             })}
           </details>
           <small>{copy.mergeHint}</small>
-          {selectedFormat.textRotation !== 0 ? <label className="omi-table-cell-text-editor"><span>{copy.editCellText}</span><textarea rows={2} dir={selectedFormat.textDirection} value={cells[selectedRow]?.[selectedColumn] ?? ''} onChange={(event) => onChange({ ...data, cells: updateTableCell(cells, selectedRow, selectedColumn, event.target.value) })} /></label> : null}
+          <details>
+            <summary>{copy.editCellText}</summary>
+            <RichCellEditor key={selectedRow+':'+selectedColumn} doc={selectedDoc??plainTableCellDocument(cells[selectedRow]?.[selectedColumn]??'')} label={copy.editCellText} onChange={doc=>{
+              const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(doc));
+              const content=pruneTableCellContent(nextCells,data.cellContent);
+              content[selectedRow+':'+selectedColumn]=JSON.stringify(doc);
+              onChange({...data,cells:nextCells,cellContent:content});
+            }}/>
+          </details>
         </details>
       ) : null}
       {data.kind === 'table' ? (
