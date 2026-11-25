@@ -6,7 +6,7 @@ import { loadPublicationStyle } from '../services/publicationStyleExport';
 import type { OmiTableBlockData } from '../types/omi';
 import type { VisualElementsCopy } from '../i18n/visualElements';
 import type { TableCellPosition } from '../model/tableLayout';
-import { bindPublicationCellStyle, detachPublicationCellStyles, selectedPublicationCellStyles, resetInheritedCellAppearance, bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
+import { derivePublicationTablePreset, normalizePresetFormat, type TableStyleRegion, bindPublicationCellStyle, detachPublicationCellStyles, selectedPublicationCellStyles, resetInheritedCellAppearance, bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
 
 function loadPresets():TableAppearancePreset[]{
   try{return readAppearancePresets(localStorage.getItem(TABLE_STYLE_STORAGE_KEY));}catch{return [];}
@@ -19,6 +19,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
   const [name,setName]=useState('');
   const [kind,setKind]=useState<'cell'|'table'>('cell');
   const [banded,setBanded]=useState(false);
+  const [region,setRegion]=useState<TableStyleRegion>('firstColumn');
   const [error,setError]=useState(false);
   useEffect(()=>{
     const refresh=(event:StorageEvent)=>{if(event.key===TABLE_STYLE_STORAGE_KEY||event.key===null)setPresets(loadPresets());};
@@ -29,6 +30,15 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
   const choices=[...builtins,...presets.map(preset=>({key:'custom:'+preset.name,label:preset.name+' ('+(preset.kind==='cell'?copy.cellStyleLabel:copy.tableStyleLabel)+')',preset})),...catalog.items.map(preset=>({key:'publication:'+preset.name,label:copy.publicationTableStyles+': '+preset.name+(preset.name===catalog.defaultTableStyle?' ★':''),preset}))];
   const choice=choices.find(item=>item.key===selected);
   const cellLinks=selectedPublicationCellStyles(table,start,end);
+  const publicationTable=selected.startsWith('publication:')&&choice?.preset.kind==='table'?choice.preset:undefined;
+  function updateRegion(clear:boolean){
+    if(!publicationTable)return;
+    const next={...publicationTable};
+    if(clear){if(region==='header'||region==='body')next[region]={};else delete next[region];}
+    else next[region]=normalizePresetFormat(captureCellPreset(table,start,publicationTable.name).format,false);
+    const changed=replacePublicationTablePreset(catalog,next);
+    if(changed)persistPublication(changed);else setError(true);
+  }
   function persist(next:TableAppearancePreset[]):boolean{
     try{localStorage.setItem(TABLE_STYLE_STORAGE_KEY,JSON.stringify(next));setPresets(next);setError(false);return true;}catch{setError(true);return false;}
   }
@@ -78,8 +88,20 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
       <button type="button" disabled={!cellLinks.length} onClick={()=>onChange(detachPublicationCellStyles(table,start,end))}>{copy.detachPublicationCellStyle}</button>
       <button type="button" disabled={!cellLinks.length&&!table.publicationTableStyle} onClick={()=>onChange(resetInheritedCellAppearance(table,catalog,start,end))}>{copy.resetInheritedCellAppearance}</button>
       <button type="button" disabled={!table.publicationTableStyle} onClick={()=>onChange(detachPublicationTableStyle(table))}>{copy.detachPublicationTableStyle}</button>
-      <button type="button" disabled={!choice||!selected.startsWith('publication:')} onClick={()=>{if(choice){const next=replacePublicationTablePreset(catalog,choice.preset.kind==='cell'?captureCellPreset(table,start,choice.preset.name):captureTablePreset(table,choice.preset.name,banded||!!choice.preset.alternate));if(next)persistPublication(next);}}}>{copy.updatePublicationTableStyle}</button>
+      <button type="button" disabled={!choice||!selected.startsWith('publication:')} onClick={()=>{if(choice){const next=replacePublicationTablePreset(catalog,choice.preset.kind==='cell'?captureCellPreset(table,start,choice.preset.name):{...choice.preset,...captureTablePreset(table,choice.preset.name,banded||!!choice.preset.alternate)});if(next)persistPublication(next);}}}>{copy.updatePublicationTableStyle}</button>
     </div>
+    {publicationTable?<details><summary>{copy.tableStyleRegions}</summary>
+      {publicationTable.basedOn?<small>{copy.tableStyleBasedOn}: {publicationTable.basedOn}</small>:null}
+      <div className="omi-table-cell-formatting-fields">
+        <label><span>{copy.tableStyleName}</span><input maxLength={80} value={name} onChange={event=>setName(event.target.value)}/></label>
+        <button type="button" disabled={!name.trim()} onClick={()=>{const next=derivePublicationTablePreset(catalog,name,publicationTable.name);if(next&&persistPublication(next)){setSelected('publication:'+name.trim());setName('');}else setError(true);}}>{copy.deriveTableStyle}</button>
+        <label><span>{copy.tableStyleRegions}</span><select value={region} onChange={event=>setRegion(event.target.value as TableStyleRegion)}>
+          <option value="header">{copy.tableRegionHeader}</option><option value="body">{copy.tableRegionBody}</option><option value="alternate">{copy.tableStyleBanded}</option><option value="firstColumn">{copy.tableRegionFirst}</option><option value="lastColumn">{copy.tableRegionLast}</option><option value="summary">{copy.tableRegionSummary}</option>
+        </select></label>
+        <button type="button" onClick={()=>updateRegion(false)}>{copy.captureTableRegion}</button>
+        <button type="button" onClick={()=>updateRegion(true)}>{copy.clearTableRegion}</button>
+      </div>
+    </details>:null}
     <small>{copy.publicationTableStyleHint}</small>
     <div className="omi-table-cell-formatting-fields">
       <label><span>{copy.tableStyleName}</span><input maxLength={80} value={name} onChange={event=>{setName(event.target.value);setError(false);}}/></label>
