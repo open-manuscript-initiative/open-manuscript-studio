@@ -1690,17 +1690,19 @@ test('native Word bookmarks resolve forward REF and PAGEREF fields and survive O
   const source=makeDocx('<w:p><w:r><w:t xml:space="preserve">Reference: </w:t></w:r>'+field(' REF Target \\h ','Target specimen')+'<w:r><w:t xml:space="preserve">, page </w:t></w:r>'+complex+'</w:p>'
     +'<w:p><w:bookmarkStart w:id="20" w:name="Target"/><w:r><w:t>Target specimen</w:t></w:r><w:bookmarkEnd w:id="20"/></w:p>'
     +'<w:p><w:r><w:t>Unresolved specimen </w:t></w:r>'+field('REF Missing','Missing cached')+'</w:p>'
-    +'<w:p><w:r><w:t>Prefix </w:t></w:r><w:bookmarkStart w:id="21" w:name="Partial"/><w:r><w:t>Selected text</w:t></w:r><w:bookmarkEnd w:id="21"/></w:p>'
+    +'<w:p><w:r><w:t xml:space="preserve">Prefix </w:t></w:r><w:bookmarkStart w:id="21" w:name="Partial"/><w:r><w:rPr><w:b/></w:rPr><w:t>Selected text</w:t></w:r><w:bookmarkEnd w:id="21"/><w:r><w:t xml:space="preserve"> suffix</w:t></w:r></w:p>'
     +'<w:p>'+field('REF Partial','Selected text')+'</w:p>');
   const plan=await parseDocxForStudio(source);
   assert.equal(plan.namedAnchors?.length,2);
-  assert.equal(plan.crossReferences?.length,2);
+  assert.equal(plan.crossReferences?.length,3);
   const target=plan.namedAnchors!.find(a=>a.name==='Target')!;
   assert.equal(target.targetKind,'block');
   assert.ok(plan.sections.flatMap(s=>s.blocks).some(b=>b.id===target.targetId&&blockText(b)==='Target specimen'));
-  assert.deepEqual(plan.crossReferences!.map(r=>r.targetId),[target.id,target.id]);
-  assert.deepEqual(plan.crossReferences!.map(r=>r.wordField),[{kind:'REF',cachedLabel:'Target specimen',hyperlink:true},{kind:'PAGEREF',cachedLabel:'7'}]);
-  assert.ok(plan.warnings.some(w=>w.code==='word-bookmark-range-approximated'));
+  const partial=plan.namedAnchors!.find(a=>a.name==='Partial')!;
+  assert.deepEqual(partial.source?.wordRange,{text:'Prefix Selected text suffix',start:7,end:20});
+  assert.deepEqual(plan.crossReferences!.map(r=>r.targetId),[target.id,target.id,partial.id]);
+  assert.deepEqual(plan.crossReferences!.map(r=>r.wordField),[{kind:'REF',cachedLabel:'Target specimen',hyperlink:true},{kind:'PAGEREF',cachedLabel:'7'},{kind:'REF',cachedLabel:'Selected text'}]);
+  assert.ok(!plan.warnings.some(w=>w.code==='word-bookmark-range-approximated'));
   assert.ok(plan.warnings.some(w=>w.code==='word-cross-reference-flattened'));
   const previous=useStudioStore.getState();
   try{
@@ -1717,10 +1719,18 @@ test('native Word bookmarks resolve forward REF and PAGEREF fields and survive O
     assert.match(xml,/<w:bookmarkStart w:id="1" w:name="Target"\/>[\s\S]*?Target specimen[\s\S]*?<w:bookmarkEnd w:id="1"\/>/);
     assert.ok(xml.includes('w:instr=" REF Target \\h "'));
     assert.match(xml,/w:instr=" PAGEREF Target "/);
-    assert.doesNotMatch(xml,/w:instr="[^"]*REF (?:Missing|Partial)/);
+    assert.doesNotMatch(xml,/w:instr="[^"]*REF Missing/);
+    assert.match(xml,/w:instr=" REF Partial "/);
+    assert.match(xml,/<w:t xml:space="preserve">Prefix <\/w:t><\/w:r><w:bookmarkStart w:id="2" w:name="Partial"\/><w:r>[\s\S]*?<w:t xml:space="preserve">Selected text<\/w:t><\/w:r><w:bookmarkEnd w:id="2"\/><w:r><w:t xml:space="preserve"> suffix<\/w:t>/);
+    const edited={...reopened,sections:reopened.sections.map(section=>({...section,blocks:section.blocks.map(block=>block.id===partial.targetId?{...block,content:block.content.replace('Prefix ','Changed ')}:block)}))};
+    const stale=buildDocxExport(edited);
+    const staleXml=readZipParts(stale.bytes).get('word/document.xml')!.toString('utf8');
+    assert.doesNotMatch(staleXml,/w:instr="[^"]*REF Partial|w:name="Partial"/);
+    assert.ok(stale.warnings.some(message=>message.includes('range no longer matches')));
     assert.match(xml,/Missing cached/);
     const roundtrip=await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'bookmark-fields.docx'));
-    assert.equal(roundtrip.crossReferences?.length,2);
+    assert.equal(roundtrip.crossReferences?.length,3);
+    assert.deepEqual(roundtrip.namedAnchors?.find(a=>a.name==='Partial')?.source?.wordRange,partial.source?.wordRange);
     assert.deepEqual(roundtrip.crossReferences!.map(r=>r.wordField),plan.crossReferences!.map(r=>r.wordField));
     assert.equal(parseWordCrossReference('REF Target \\n','1'),undefined);
     assert.equal(parseWordCrossReference('INCLUDETEXT Target','unsafe'),undefined);
