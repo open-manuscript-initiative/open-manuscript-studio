@@ -3,6 +3,7 @@ import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
 import { WORD_HYPHENATION_EXTENSION, wordHyphenationSettingsXml } from '../model/wordHyphenation';
+import { getDocumentStructureProfile } from '../model/documentProfile';
 import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import { resolvePublicationParagraphStyle } from './publicationStyleExport';
 import { paragraphFormattingWordXml } from '../model/directParagraphFormatting';
@@ -137,8 +138,16 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
       return { kind, id };
     };
 
-  const renderSections = (sections: typeof context.sections) => {
+  const noteScope=getDocumentStructureProfile(manuscript).noteNumberingScope;
+  const restartNotes=noteScope!=='continuous';
+  const sectionXml=()=>'<w:sectPr>'+(restartNotes?'<w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:endnotePr><w:numRestart w:val="eachSect"/></w:endnotePr><w:type w:val="continuous"/>':'')+'<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>';
+  let lastScope:string|undefined;
+  const renderSections = (sections: typeof context.sections,studyRoot?:string) => {
     for (const section of sections) {
+      const root=studyRoot??section.id;
+      const scope=noteScope==='study'?root:section.id;
+      if(restartNotes&&lastScope!==undefined&&lastScope!==scope)body.push('<w:p><w:pPr>'+sectionXml()+'</w:pPr></w:p>');
+      lastScope=scope;
       const level = Math.min(6, section.depth + 1);
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
       if (section.title.trim()) body.push(paragraph(heading, `Heading${level}`));
@@ -165,7 +174,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
         }
       }
-      renderSections(section.children);
+      renderSections(section.children,root);
     }
   };
   renderSections(context.sections);
@@ -188,7 +197,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   }
 
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:body>${body.join('')}${sectionXml()}</w:body></w:document>`;
 
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
