@@ -23,11 +23,12 @@ export function resizeTableColumn(widths: readonly number[], index: number, requ
   return next;
 }
 
-export function tableCellFormat(formats: Record<string, OmiTableCellFormat> | undefined, row: number, column: number): Required<OmiTableCellFormat> {
+export function tableCellFormat(formats: Record<string, OmiTableCellFormat> | undefined, row: number, column: number): OmiTableCellFormat & Required<Pick<OmiTableCellFormat,'textRotation'|'textDirection'>> {
   const format = formats?.[`${row}:${column}`];
   return {
     textRotation: format?.textRotation === -90 || format?.textRotation === 90 || format?.textRotation === 180 ? format.textRotation : 0,
     textDirection: format?.textDirection === 'ltr' || format?.textDirection === 'rtl' ? format.textDirection : 'auto',
+    ...normalizeTableCellAppearance(format),
   };
 }
 
@@ -131,4 +132,24 @@ export function setTableRowSplitOverride(table: OmiTableBlockData,row:number,pol
   if(policy==='inherit') delete next[String(row)];
   else if(policy==='allow'||policy==='keep') next[String(row)]=policy;
   return next;
+}
+
+/** Strict whitelisting also prevents CSS/XML attribute injection by imported data. */
+export function normalizeTableCellAppearance(format?: OmiTableCellFormat): Pick<OmiTableCellFormat,'horizontalAlign'|'verticalAlign'|'backgroundColor'> {
+  const result: Pick<OmiTableCellFormat,'horizontalAlign'|'verticalAlign'|'backgroundColor'> = {};
+  const horizontal=format?.horizontalAlign;
+  const vertical=format?.verticalAlign;
+  const color=format?.backgroundColor;
+  if(horizontal==='left'||horizontal==='center'||horizontal==='right'||horizontal==='justify') result.horizontalAlign=horizontal;
+  if(vertical==='top'||vertical==='middle'||vertical==='bottom') result.verticalAlign=vertical;
+  if(typeof color==='string' && /^#[0-9a-f]{6}$/i.test(color)) result.backgroundColor=color.toUpperCase();
+  return result;
+}
+export function tableCellAppearanceStyle(format: OmiTableCellFormat) {
+  const normalized=normalizeTableCellAppearance(format);
+  return {
+    ...(normalized.horizontalAlign?{textAlign:normalized.horizontalAlign}:{}),
+    ...(normalized.verticalAlign?{verticalAlign:normalized.verticalAlign}:{}),
+    ...(normalized.backgroundColor?{backgroundColor:normalized.backgroundColor}:{}),
+  };
 }
