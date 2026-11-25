@@ -121,6 +121,7 @@ interface FieldState {
 
 export interface DocxManuscriptImportPlan {
   wordHyphenation?:WordHyphenationSettings;
+  noteNumberingScope?:'section';
   fileName: string;
   title: string;
   titleSource: 'core-properties' | 'title-style' | 'filename';
@@ -223,11 +224,31 @@ export async function parseDocxManuscript(
   // content. Flatten only their block-level sdtContent children here, keeping
   // document order and leaving inline controls to the inline parser.
   const children = structuredBlockChildren(body);
+  const sectionProperties=(p:Element)=>directChildrenByLocalName(directChildrenByLocalName(p,'pPr')[0]??p,'sectPr')[0];
+  const nativeSections=[...children.map(sectionProperties).filter((p):p is Element=>Boolean(p)),...directChildrenByLocalName(body,'sectPr')];
+  const settings=archive.has('word/settings.xml')?parseXml(await archive.text('word/settings.xml')).documentElement:undefined;
+  const restart=(root:Element|undefined,kind:'footnote'|'endnote')=>{
+    const props=root&&directChildrenByLocalName(root,kind+'Pr')[0];
+    const node=props&&directChildrenByLocalName(props,'numRestart')[0];
+    return node?attributeByLocalName(node,'val'):undefined;
+  };
+  const kinds=(['footnote','endnote'] as const).filter(kind=>descendantsByLocalName(body,kind+'Reference').length>0);
+  const modes=kinds.flatMap(kind=>(nativeSections.length?nativeSections:[undefined]).map(p=>restart(p,kind)??restart(settings,kind)??'continuous'));
+  const sectionRestart=modes.length>0&&modes.every(mode=>mode==='eachSect');
+  if(!sectionRestart&&modes.some(mode=>mode!=='continuous'))warnings.push(warning('note-numbering-restart-not-fully-supported'));
   let index = 0;
+  let pendingSection=false;
 
   while (index < children.length) {
     const child = children[index];
     if (!child) break;
+    if(sectionRestart&&pendingSection){
+      const nextHeading=child.localName==='p'&&resolveParagraphHeadingLevel(child,resolveParagraphStyle(child,styles))!==undefined&&!paragraphHasNoteReference(child)&&paragraphPlainText(child).trim();
+      headingStack.length=0;
+      if(!nextHeading&&sections.at(-1)?.blocks.length){sections.push({id:crypto.randomUUID(),title:'',blocks:[]});stats.sections+=1;}
+      pendingSection=false;
+    }
+    if(sectionRestart&&child.localName==='p'&&sectionProperties(child))pendingSection=true;
 
     if (child.localName === 'tbl') {
       const section = ensureSection(sections);
@@ -343,6 +364,7 @@ export async function parseDocxManuscript(
       const trailingVisuals: OmiBlock[] = [];
 
       while (index < children.length) {
+        if(listParagraphs.length&&sectionRestart&&pendingSection)break;
         const paragraph = children[index];
         if (!paragraph || paragraph.localName !== 'p') break;
         const paragraphStyle = resolveParagraphStyle(paragraph, styles);
@@ -381,6 +403,7 @@ export async function parseDocxManuscript(
           )),
         );
         stats.paragraphs += 1;
+        if(sectionRestart&&sectionProperties(paragraph))pendingSection=true;
         index += 1;
       }
 
@@ -509,11 +532,13 @@ export async function parseDocxManuscript(
   stats.notes = annotations.length;
   stats.citations = citations.length;
   stats.references = bibliographicRecords.length;
+  if(sectionRestart&&sections.length>Math.max(1,nativeSections.length))warnings.push(warning('note-numbering-logical-section-approximation'));
   stats.warnings = warnings.length;
 
   return {
     fileName: file.name,
     ...(wordHyphenation?{wordHyphenation}:{}),
+    ...(sectionRestart?{noteNumberingScope:'section' as const}:{}),
     title,
     titleSource,
     locale: normalizeInlineLanguageTag(core.language),
