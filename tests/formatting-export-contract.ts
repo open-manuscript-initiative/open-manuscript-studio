@@ -23,8 +23,6 @@ const cases = [
   { id: 'C12', mark: 'omiSubscript', html: 'sub', jats: 'sub', idml: 'Subscript', odt: null, odtProperty: ['text-position', 'sub'], idmlProperty: ['Position', 'Subscript'] },
 ];
 const sample = 'Árvíztűrő tükörfúrógép – Manuscript 123';
-const strict = process.env.OMI_FORMATTING_STRICT === '1';
-function todo(reason: string): string | false { return strict ? false : reason; }
 
 // These two exporters use stored ZIP entries (no compression/data descriptors).
 // Read their actual emitted XML rather than searching for XML in binary bytes.
@@ -124,7 +122,7 @@ export function registerFormattingExportContracts(): void {
       await t.test(item.id + ' JATS exact sample markup', () => assert.ok(jatsSamples.some(value => jats.includes(value))));
       await t.test(item.id + ' PDF print HTML exact sample markup', () => assert.ok(htmlSamples.some(value => print.includes(value))));
       await t.test(item.id + ' IDML applied style and definition', () => assertIdmlStyle(idml, sample, item.idml, item.idmlProperty));
-      await t.test(item.id + ' ODT applied style and reimport', { todo: item.odt ? false : todo('Exact ODT small caps or vertical position remains an acceptance gap') }, async () => {
+      await t.test(item.id + ' ODT applied style and reimport', async () => {
         assertOdtStyle(odt, sample, item.odtProperty, item.odt ?? undefined);
         const reimport = await parseOdtForStudio(new File([new Uint8Array(odtResult.bytes)], 'case.odt'));
         const candidates = reimport.sections.flatMap(section => section.blocks).flatMap(block => {
@@ -155,7 +153,7 @@ export function registerFormattingExportContracts(): void {
         const ranges = [...parts].filter(([name]) => /^Stories\/.*\.xml$/.test(name)).flatMap(([, source]) => elements(xml(source), 'CharacterStyleRange'));
         assert.equal(ranges.filter(el => attr(el, 'AppliedLanguage') === lang).map(el => el.textContent).join('').includes(text!), true);
       });
-      await t.test(id + ' ODT language reimport', { todo: todo('ODT export does not yet preserve the inline language mark') }, async () => {
+      await t.test(id + ' ODT language reimport', async () => {
         const result = buildOdtExport(manuscript);
         const plan = await parseOdtForStudio(new File([new Uint8Array(result.bytes)], 'language.odt'));
         const candidates = plan.sections.flatMap(s => s.blocks).flatMap(b => {
