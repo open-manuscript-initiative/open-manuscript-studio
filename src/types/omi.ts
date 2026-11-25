@@ -440,6 +440,8 @@ export interface OmiTableBlockData {
   publicationTableStyle?: string;
   /** Named publication cell styles, keyed by zero-based row:column coordinates. */
   publicationCellStyles?: Record<string,string>;
+  /** Explicit local appearance fields; coordinates follow the cell on moves. */
+  publicationCellOverrides?: Record<string,(keyof OmiTableCellFormat)[]>;
   /** Sparse cell formatting, keyed by zero-based row:column coordinates. */
   cellFormats?: Record<string, OmiTableCellFormat>;
   /** Sparse rich cell documents (Tiptap JSON); cells remains the plain-text projection. */
