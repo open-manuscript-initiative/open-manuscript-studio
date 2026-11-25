@@ -178,7 +178,6 @@ export async function parseDocxManuscript(
   const provenance: OmiImportProvenance = {
     sourceFormat: 'docx',
     fileName: file.name,
-    ...(reviewChanges.length?{proofing:{trackChanges:false,changes:reviewChanges}}:{}),
     importedAt,
   };
   const warnings: DocxImportWarning[] = [];
@@ -680,6 +679,7 @@ export async function parseDocxManuscript(
 
   return {
     fileName: file.name,
+    ...(reviewChanges.length?{proofing:{trackChanges:false,changes:reviewChanges}}:{}),
     ...(wordHyphenation?{wordHyphenation}:{}),
     ...(sectionRestart?{noteNumberingScope:'section' as const}:{}),
     title,
