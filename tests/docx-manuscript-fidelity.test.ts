@@ -1477,3 +1477,42 @@ test('explicit mixed writing directions survive Word import, editor projection a
   assert.equal(normalizeParagraphValue('omiParagraphDirection','rtl;display:none'),undefined);
   assert.equal(normalizeDirectValue('omiTextDirection','auto'),undefined);
 });
+
+test('Word hyphenation defaults and paragraph suppression survive portable and native roundtrip',async()=>{
+  const {WORD_HYPHENATION_EXTENSION,normalizeWordHyphenation,wordHyphenationSettingsXml,validateWordHyphenation}=await import('../src/model/wordHyphenation.ts');
+  const {buildPdfPrintDocument}=await import('../src/services/exportPdf.ts');
+  const settings='<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:autoHyphenation w:val="1"/><w:consecutiveHyphenLimit w:val="2"/><w:hyphenationZone w:val="360"/><w:doNotHyphenateCaps w:val="0"/></w:settings>';
+  const body='<w:p><w:pPr><w:suppressAutoHyphens w:val="0"/></w:pPr><w:r><w:t>Hyphenation enabled specimen</w:t></w:r></w:p><w:p><w:pPr><w:suppressAutoHyphens/></w:pPr><w:r><w:t>Hyphenation disabled specimen</w:t></w:r></w:p><w:p><w:r><w:t>Inherited hyphenation specimen</w:t></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body,{entries:[textZipEntry('word/settings.xml',settings)]}));
+  assert.deepEqual(plan.wordHyphenation,{automatic:true,suppressCapitalized:false,zoneTwips:360,consecutiveLimit:2});
+  const inspect=(sections:typeof plan.sections)=>{
+    for(const [sample,expected] of [['Hyphenation enabled specimen',true],['Hyphenation disabled specimen',false],['Inherited hyphenation specimen',undefined]] as const){
+      const block=sections.flatMap(s=>s.blocks).find(b=>b.content.includes(sample))!;
+      assert.ok(block,sample);
+      const paragraph=findNodes(JSON.parse(block.content),'paragraph')[0];
+      assert.equal(paragraph?.attrs?.omiAutoHyphenation,expected,sample);
+    }
+  };
+  inspect(plan.sections);
+  const previous=useStudioStore.getState();
+  try{
+    applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
+    const manuscript=useStudioStore.getState().manuscript;
+    const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+    const reopened=parseOmiJson(serializeOmiJson(projected));
+    assert.deepEqual(reopened.extensions?.[WORD_HYPHENATION_EXTENSION],plan.wordHyphenation);
+    inspect(reopened.sections);
+    const result=buildDocxExport(reopened);
+    const parts=readZipParts(result.bytes);
+    const xml=parts.get('word/settings.xml')!.toString('utf8');
+    for(const element of ['<w:autoHyphenation w:val="1"/>','<w:consecutiveHyphenLimit w:val="2"/>','<w:hyphenationZone w:val="360"/>','<w:doNotHyphenateCaps w:val="0"/>'])assert.ok(xml.includes(element),element);
+    const reimport=await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'hyphenation.docx'));
+    assert.deepEqual(reimport.wordHyphenation,plan.wordHyphenation);
+    inspect(reimport.sections);
+    const print=buildPdfPrintDocument(reopened);
+    assert.match(print,/<p[^>]*data-omi-no-hyphenation="true"[^>]*hyphens:none[^>]*>Hyphenation disabled specimen<\/p>/);
+    assert.equal(wordHyphenationSettingsXml({automatic:false,zoneTwips:-1,unknown:'"><bad/>'}),'<w:autoHyphenation w:val="0"/>');
+    assert.equal(normalizeWordHyphenation({zoneTwips:'360'}),undefined);
+    assert.throws(()=>validateWordHyphenation({automatic:true,zoneTwips:-1}));
+  }finally{useStudioStore.setState(previous,true);}
+});
