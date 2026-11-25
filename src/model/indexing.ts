@@ -2,6 +2,8 @@ export interface OmiIndexDefinition {
   id: string;
   title: string;
   kind?: string;
+  /** Original Word XE/INDEX type identifier (one ASCII letter). */
+  wordType?: string;
 }
 
 export type OmiIndexEntryRelation = 'location' | 'see' | 'see-also';
@@ -43,16 +45,20 @@ export interface OmiIndexEntry {
   source?: {
     format: 'manual' | 'docx-xe' | 'ai-suggestion' | string;
     instruction?: string;
+    fieldForm?: 'simple' | 'complex';
   };
 }
 
 export interface OmiGeneratedIndex {
   id: string;
+  indexId?: string;
+  wordColumns?: number;
   kind: 'name' | 'subject' | string;
   title?: string;
   source?: {
     format: 'docx-index' | string;
     instruction?: string;
+    fieldForm?: 'simple' | 'complex';
   };
 }
 
