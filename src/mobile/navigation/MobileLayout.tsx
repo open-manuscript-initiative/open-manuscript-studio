@@ -22,6 +22,7 @@ import { countStudyNotes, resolveCurrentStudy } from '../../model/currentStudyNo
 import { getCurrentStudyNotesCopy } from '../../i18n/currentStudyNotes';
 import { getHeaderSupplementalCopy } from '../../i18n/headerSupplementalTranslations';
 import { Footer } from '../../components/Footer';
+import { HeaderNoteInsertButton } from '../../components/HeaderNoteInsertButton';
 import { HeaderInsertMenu } from '../../components/HeaderInsertMenu';
 import { HeaderFormattingButton, HeaderFormattingPanel } from '../../components/HeaderFormattingPanel';
 import { useFormattingStore } from '../../editor/useFormattingEditor';
@@ -171,6 +172,7 @@ export function MobileLayout({ children, documentTabs, onOpenMenu, onHome }: Mob
       {view === 'editor' ? (
         <div className="mobile-editor-tools">
         <div className="mobile-action-bar">
+          <HeaderNoteInsertButton className="mobile-action-button mobile-icon-action" />
           <button
             type="button"
             className="mobile-action-button mobile-icon-action"
