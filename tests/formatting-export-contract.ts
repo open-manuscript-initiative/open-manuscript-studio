@@ -318,3 +318,75 @@ test('IDML native table geometry, rich cell text, resources and nested table ord
   const ids=elements(story,'Table').flatMap(t=>[attr(t,'Self'),...['Row','Column','Cell'].flatMap(name=>direct(t,name).map(el=>attr(el,'Self')))]);
   assert.equal(new Set(ids).size,ids.length);
 });
+
+test('IDML table export/import roundtrip preserves geometry, source order and cell presentation',async()=>{
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {tableCellPlainText,tableCellDocument,cellNestedTable}=await import('../src/model/tableLayout.ts');
+  const {importIdmlTables}=await import('../src/services/idmlTableImport.ts');
+  const doc={type:'doc',content:[
+    {type:'paragraph',attrs:{omiSpaceAfter:5,omiAlign:'justify'},content:[{type:'text',text:'Before',marks:[{type:'bold'},{type:'omiFontSize',attrs:{value:13}},{type:'omiSourceFont',attrs:{family:'Noto Serif'}}]}]},
+    {type:'omiCellTable',attrs:{table:{kind:'table',headerRows:0,cells:[['A','B']]}}},
+    {type:'paragraph',content:[{type:'text',text:'After'}]}
+  ]};
+  const block=createTableBlock([['Header',''],[tableCellPlainText(doc),'Other'],['','Last']],{
+    headerRows:1,cellMerges:[{row:0,column:0,rowSpan:1,colSpan:2},{row:1,column:0,rowSpan:2,colSpan:1}],
+    cellContent:{'1:0':JSON.stringify(doc)},cellFormats:{'0:0':{backgroundColor:'#AABBCC',verticalAlign:'middle',textRotation:90,paddingPt:{top:3,left:5},borders:{bottom:{style:'dotted',widthPt:1,color:'#112233'},right:{style:'none'}}}},
+    rowHeights:{'0':{mode:'minimum',heightPt:24},'2':{mode:'exact',heightPt:30}}
+  });
+  assert.ok(block.visual?.kind==='table');
+  block.visual.columnWidths=[30,70];
+  const manuscript=createTestManuscript();
+  manuscript.sections[0]!.blocks.push(block);
+  const bytes=buildIdmlExport(manuscript).bytes;
+  const imported=await importIdmlTables(new File([new Uint8Array(bytes)],'roundtrip.idml'));
+  assert.equal(imported.blocks.length,1);
+  const table=imported.blocks[0]?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(table.cells,block.visual.cells);
+  assert.deepEqual(table.cellMerges,block.visual.cellMerges);
+  assert.equal(table.headerRows,1);
+  assert.ok(Math.abs(table.columnWidths![0]!-30)<0.001);
+  assert.deepEqual(table.rowHeights,block.visual.rowHeights);
+  assert.equal(table.cellFormats?.['0:0']?.backgroundColor,'#AABBCC');
+  assert.equal(table.cellFormats?.['0:0']?.textRotation,90);
+  assert.equal(table.cellFormats?.['0:0']?.verticalAlign,'middle');
+  assert.deepEqual(table.cellFormats?.['0:0']?.paddingPt,{top:3,left:5});
+  assert.deepEqual(table.cellFormats?.['0:0']?.borders,{bottom:{style:'dotted',widthPt:1,color:'#112233'},right:{style:'none'}});
+  const reopened=tableCellDocument(table,1,0);
+  assert.ok(reopened);
+  assert.deepEqual(reopened.content?.map(node=>node.type),['paragraph','omiCellTable','paragraph']);
+  assert.deepEqual(cellNestedTable(reopened.content![1]!)?.cells,[['A','B']]);
+  assert.equal(reopened.content?.[0]?.attrs?.omiSpaceAfter,5);
+  assert.equal(reopened.content?.[0]?.attrs?.omiAlign,'justify');
+  const marks=reopened.content?.[0]?.content?.[0]?.marks;
+  assert.ok(marks?.some(m=>m.type==='bold'));
+  assert.ok(marks?.some(m=>m.type==='omiSourceFont'&&m.attrs?.family==='Noto Serif'));
+  assert.ok(marks?.some(m=>m.type==='omiFontSize'&&m.attrs?.value===13));
+  assert.equal(table.provenance?.sourceFormat,'idml');
+  assert.match(table.provenance?.sourcePart??'',/^Stories\//);
+});
+test('IDML importer resolves inherited styles and rejects malformed geometry, DTD and excessive dimensions',async()=>{
+  const {importIdmlTables}=await import('../src/services/idmlTableImport.ts');
+  const {createStoreZip,textZipEntry}=await import('../src/services/simpleZip.ts');
+  const make=(story:string,design='<Document><Story src="Stories/Story_test.xml"/></Document>')=>new File([new Uint8Array(createStoreZip([
+    textZipEntry('designmap.xml',design),
+    textZipEntry('Stories/Story_test.xml',story),
+    textZipEntry('Resources/Styles.xml','<Styles><CellStyle Self="base" TopInset="5"/><CellStyle Self="derived" BasedOn="base" VerticalJustification="BottomAlign"/><ParagraphStyle Self="p" Justification="RightAlign"/><CharacterStyle Self="char" FontStyle="Bold" PointSize="15"/></Styles>')
+  ]))],'fixture.idml');
+  const tbl=(cell:string)=>'<Story><Table HeaderRowCount="0" BodyRowCount="1" ColumnCount="1"><Row Name="0" AutoGrow="true"/><Column Name="0" SingleColumnWidth="100"/>'+cell+'</Table></Story>';
+  const cell='<Cell Name="0:0" AppliedCellStyle="derived"><ParagraphStyleRange AppliedParagraphStyle="p"><CharacterStyleRange AppliedCharacterStyle="char"><Content>Hello</Content><Br/></CharacterStyleRange></ParagraphStyleRange></Cell>';
+  const result=await importIdmlTables(make(tbl(cell)));
+  const table=result.blocks[0]?.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(table.cells,[['Hello']]);
+  assert.equal(table.cellFormats?.['0:0']?.verticalAlign,'bottom');
+  assert.equal(table.cellFormats?.['0:0']?.paddingPt?.top,5);
+  const rich=JSON.parse(table.cellContent!['0:0']!);
+  assert.equal(rich.content[0].attrs.omiAlign,'right');
+  assert.ok(rich.content[0].content[0].marks.some((m:{type:string})=>m.type==='bold'));
+  await assert.rejects(importIdmlTables(make(tbl(cell+cell))),/Overlapping/);
+  await assert.rejects(importIdmlTables(make(tbl(''))),/Incomplete/);
+  await assert.rejects(importIdmlTables(make(tbl(cell).replace('ColumnCount="1"','ColumnCount="10001"'))),/quota/);
+  await assert.rejects(importIdmlTables(make(tbl(cell),'<!DOCTYPE Document [<!ENTITY e "bad">]><Document>&e;</Document>')),/declarations/);
+  await assert.rejects(importIdmlTables(make(tbl(cell),'<Document><Story src="../external.xml"/></Document>')),/story reference/);
+});
