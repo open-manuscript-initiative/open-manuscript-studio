@@ -9,6 +9,7 @@ import { ojsPublicationCopy } from '../i18n/ojsPublication';
 import { PublicationFrameEditor } from './PublicationFrameEditor';
 import { PublicationMatterEditor } from './PublicationMatterEditor';
 import { PublicationTemplatePanel } from './PublicationTemplatePanel';
+import { PublicationTableStylesPanel } from './PublicationTableStylesPanel';
 import { PublicationPageStylesPanel } from './PublicationPageStylesPanel';
 import { publicationPageStylesCopy } from '../i18n/publicationPageStyles';
 import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
@@ -97,7 +98,7 @@ import { PublicationGraphicsContext, readPublicationViewOptions, savePublication
 import './PublicationStyleEditor.css';
 
 type PageOrientation = 'portrait' | 'landscape';
-type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'pageStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | 'thumbnails' | 'units' | 'view' | null;
+type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'tableStyles' | 'pageStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | 'thumbnails' | 'units' | 'view' | null;
 type SystemFontLoadStatus = 'fallback' | 'loading' | 'loaded' | 'unsupported' | 'denied' | 'error';
 
 const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
@@ -965,6 +966,13 @@ function PublicationStyleEditorWorkspace() {
               open={openPanel === 'paragraphStyles'}
               onToggle={() => toggleSidebarPanel('paragraphStyles')}
             />
+            <PublicationRibbonMenuButton
+              panelId="tableStyles"
+              label={getVisualElementsCopy(locale).tableAppearanceStyles}
+              icon={<SquareDashed size={18} aria-hidden="true" />}
+              open={openPanel === 'tableStyles'}
+              onToggle={() => toggleSidebarPanel('tableStyles')}
+            />
             {documentViewMode === 'print' ? (
               <>
                 <PublicationRibbonMenuButton
@@ -1240,6 +1248,17 @@ function PublicationStyleEditorWorkspace() {
             </fieldset>
           </div>
         ) : null}
+
+        {openPanel === 'tableStyles' ? <div id="publication-style-ribbon-panel-tableStyles" className="publication-style-ribbon-panel" role="dialog" aria-label={getVisualElementsCopy(locale).tableAppearanceStyles}>
+          <PublicationTableStylesPanel key={manuscript.id} catalog={style.tableStyles} copy={getVisualElementsCopy(locale)} onChange={tableStyles=>patchStyle(current=>({...current,tableStyles}))} onRename={(tableStyles,from,to)=>{
+            const next={...style,tableStyles};
+            // Synchronize an unsaved local style before the atomic rename.
+            stageAppliedPublicationStyle(style);
+            stageAppliedPublicationStyle(next,{from,to});
+            synchronizedStyleRef.current=getAppliedPublicationTemplate(useStudioStore.getState().manuscript)?.style;
+            patchStyle(()=>next);
+          }} />
+        </div> : null}
 
         {openPanel === 'pageStyles' ? <div id="publication-style-ribbon-panel-pageStyles" className="publication-style-ribbon-panel" role="dialog" aria-label={publicationPageStylesCopy(locale).title}>
           <PublicationPageStylesPanel style={style} sections={manuscript.sections} locale={locale} selectedSectionId={useStudioStore.getState().selectedSectionId} onChange={setStyle}

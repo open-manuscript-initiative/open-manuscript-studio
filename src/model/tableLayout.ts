@@ -38,6 +38,44 @@ export function tableCellFormat(formats: Record<string, OmiTableCellFormat> | un
   };
 }
 
+export const TABLE_OVERRIDE_FIELDS=['horizontalAlign','verticalAlign','backgroundColor','borders','paddingPt','textRotation','textDirection'] as const satisfies readonly (keyof OmiTableCellFormat)[];
+export function prunePublicationCellOverrides(cells:readonly (readonly string[])[],source?:OmiTableBlockData['publicationCellOverrides']):NonNullable<OmiTableBlockData['publicationCellOverrides']>{
+  const result:NonNullable<OmiTableBlockData['publicationCellOverrides']>={};
+  for(const [key,value] of Object.entries(source??{})){
+    const m=/^(0|[1-9][0-9]*):(0|[1-9][0-9]*)$/.exec(key);
+    if(!m||cells[Number(m[1])]?.[Number(m[2])]===undefined||!Array.isArray(value))continue;
+    const fields=TABLE_OVERRIDE_FIELDS.filter(field=>value.includes(field));
+    if(fields.length)result[key]=fields;
+  }
+  return result;
+}
+/** Record the intent of a local edit, even if its value equals the style. */
+export function editTableRangeAppearance(table:OmiTableBlockData,start:TableCellPosition,end:TableCellPosition,patch:OmiTableCellFormat|((format:ReturnType<typeof tableCellFormat>)=>OmiTableCellFormat)):OmiTableBlockData{
+  const formats=pruneTableCellFormats(table.cells,table.cellFormats);
+  const overrides=prunePublicationCellOverrides(table.cells,table.publicationCellOverrides);
+  for(const {row,column} of tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows)){
+    const key=row+':'+column;
+    const current=tableCellFormat(formats,row,column);
+    const delta=typeof patch==='function'?patch(current):patch;
+    formats[key]=tableCellFormat({[key]:{...current,...delta}},row,column);
+    const named=!!table.publicationCellStyles?.[key];
+    if(named||table.publicationTableStyle){
+      const fields=new Set(overrides[key]??[]);
+      for(const field of TABLE_OVERRIDE_FIELDS)if(Object.prototype.hasOwnProperty.call(delta,field)&&(named||field!=='textRotation'&&field!=='textDirection'))fields.add(field);
+      if(fields.size)overrides[key]=TABLE_OVERRIDE_FIELDS.filter(field=>fields.has(field));
+    }
+  }
+  const next={...table,cellFormats:formats};
+  if(Object.keys(overrides).length)next.publicationCellOverrides=overrides;else delete next.publicationCellOverrides;
+  return next;
+}
+export function prunePublicationCellStyles(cells:readonly (readonly string[])[],bindings?:Record<string,string>):Record<string,string>{
+  return Object.fromEntries(Object.entries(bindings??{}).filter(([key,name])=>{
+    const match=/^(0|[1-9][0-9]*):(0|[1-9][0-9]*)$/.exec(key);
+    return !!match&&cells[Number(match[1])]?.[Number(match[2])]!==undefined&&typeof name==='string'&&name.length>0&&name.length<=80&&name.trim()===name;
+  }));
+}
+
 export function pruneTableCellFormats(cells: readonly (readonly string[])[], formats?: Record<string, OmiTableCellFormat>): Record<string, OmiTableCellFormat> {
   return Object.fromEntries(Object.entries(formats ?? {}).filter(([key]) => {
     const match = /^(\d+):(\d+)$/.exec(key);
@@ -393,6 +431,7 @@ export function normalizeNestedCellTable(value:unknown,depth=1,budget={cells:100
   budget.cells-=count;
   const cells=raw.cells.map(row=>[...row]);
   const table:OmiTableBlockData={kind:'table',cells,headerRows:tableHeaderRows(cells,raw.headerRows),rowSplitDefault:tableRowSplitDefault(raw.rowSplitDefault)};
+  if(typeof raw.publicationTableStyle==='string'&&raw.publicationTableStyle.trim()===raw.publicationTableStyle&&raw.publicationTableStyle.length>0&&raw.publicationTableStyle.length<=80) table.publicationTableStyle=raw.publicationTableStyle;
   if(Array.isArray(raw.columnWidths)) table.columnWidths=tableColumnWidths(cells,raw.columnWidths);
   if(raw.fontSizeReduction===0||raw.fontSizeReduction===1) table.fontSizeReduction=raw.fontSizeReduction;
   const formats:NonNullable<OmiTableBlockData['cellFormats']>={};
@@ -407,6 +446,10 @@ export function normalizeNestedCellTable(value:unknown,depth=1,budget={cells:100
       content[key]=JSON.stringify(doc);
     }
   }
+  const bindings=prunePublicationCellStyles(cells,raw.publicationCellStyles);
+  if(Object.keys(bindings).length) table.publicationCellStyles=bindings;
+  const appearanceOverrides=prunePublicationCellOverrides(cells,raw.publicationCellOverrides);
+  if(Object.keys(appearanceOverrides).length)table.publicationCellOverrides=appearanceOverrides;
   if(Object.keys(formats).length) table.cellFormats=formats;
   if(Object.keys(content).length) table.cellContent=content;
   const merges=tableMergeLayout(cells,raw.cellMerges,table.headerRows).merges;
@@ -524,6 +567,8 @@ export function reorderTableAxis(table:OmiTableBlockData,axis:TableReorderAxis,i
   if(merges&&tableMergeLayout(cells,merges,table.headerRows).merges.length!==merges.length) return undefined;
   const next:OmiTableBlockData={...table,cells,
     ...(table.cellFormats?{cellFormats:remapCells(table.cellFormats)}:{}),
+    ...(table.publicationCellStyles?{publicationCellStyles:remapCells(prunePublicationCellStyles(table.cells,table.publicationCellStyles))}:{}),
+    ...(table.publicationCellOverrides?{publicationCellOverrides:remapCells(prunePublicationCellOverrides(table.cells,table.publicationCellOverrides))}:{}),
     ...(table.cellContent?{cellContent:remapCells(table.cellContent)}:{}),
     ...(table.cellMerges?{cellMerges:merges}:{}),
     ...(axis==='row'&&table.rowHeights?{rowHeights:remapRows(table.rowHeights)}:{}),

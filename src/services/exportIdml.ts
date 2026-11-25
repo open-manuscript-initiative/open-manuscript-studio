@@ -73,6 +73,7 @@ export function buildIdmlExport(
   const tableNoteLabels=new Map<string,string>();
   const tableFonts=new Set<string>();
   let nextTableId=0;
+  const tableNumberingLists:string[]=[];
   const directColors = new Set<string>();
   const publishableAnnotations = manuscript.annotations.filter((note) =>
     note.type === 'note' && note.renderingHint !== 'hidden' && !note.visibility);
@@ -107,7 +108,7 @@ export function buildIdmlExport(
           if(block.visual.caption?.trim())storyParts.push(styledParagraph(block.visual.caption,'OMI Figure Caption'));
           storyParts.push(idmlTableParagraph(block.visual,frameRight-frameLeft,{
             fresh:()=> 'uOmiTable'+(++nextTableId),colors:directColors,fonts:tableFonts,
-            annotations:annotationsById,noteLabels:tableNoteLabels,report
+            annotations:annotationsById,noteLabels:tableNoteLabels,report,numberingLists:tableNumberingLists
           }));
           continue;
         }
@@ -170,6 +171,7 @@ export function buildIdmlExport(
   <idPkg:Styles src="Resources/Styles.xml"/>
   <idPkg:Preferences src="Resources/Preferences.xml"/>
   <Layer Self="${layerId}" Name="OMI Content" Visible="true" Locked="false" IgnoreWrap="false" ShowGuides="true" LockGuides="false" UI="true" Expendable="true" Printable="true"/>
+  ${tableNumberingLists.map(id=>`<NumberingList Self="${id}" Name="${id.slice('NumberingList/'.length)}" ContinueNumbersAcrossStories="false" ContinueNumbersAcrossDocuments="false"/>`).join('\n  ')}
   <idPkg:Spread src="Spreads/Spread_${spreadId}.xml"/>
   <idPkg:Story src="Stories/Story_${storyId}.xml"/>
 </Document>`;
@@ -648,6 +650,7 @@ function styledRunsParagraph(
   directColors?: Set<string>,
   paragraphAttributes = '',
   preserveExplicitFont=false,
+  paragraphProperties='',
 ): string {
   const content = runs
     .flatMap((run) => {
@@ -673,7 +676,7 @@ function styledRunsParagraph(
       });
     })
     .join('');
-  return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}"${paragraphAttributes}>${content}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
+  return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}"${paragraphAttributes}>${paragraphProperties}${content}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
 }
 
 
@@ -835,6 +838,7 @@ interface IdmlTableContext {
   fonts:Set<string>;
   annotations:ReadonlyMap<string,OmiManuscript['annotations'][number]>;
   noteLabels:Map<string,string>;
+  numberingLists:string[];
   report:(code:string,message:string)=>void;
 }
 function idmlTableColor(value:string|undefined,context:IdmlTableContext):string {
@@ -885,7 +889,7 @@ function idmlTableParagraph(table:OmiTableBlockData,width:number,context:IdmlTab
     }
     const doc=tableCellDocument(table,r,c)??plainTableCellDocument(text);
     const innerWidth=Math.max(0.01,widths.slice(c,c+(merge?.colSpan??1)).reduce((sum,w)=>sum+w,0)-(format.paddingPt?.left??0)-(format.paddingPt?.right??0));
-    const paragraph=(node:NoteJsonNode,prefix='')=>{
+    const paragraph=(node:NoteJsonNode,list?:IdmlCellListParagraph)=>{
       const runs=(node.content??[]).flatMap<OmiInlineRun>(child=>{
         if(child.type==='omiNote'){
           const noteId=child.attrs?.noteId;
@@ -899,7 +903,7 @@ function idmlTableParagraph(table:OmiTableBlockData,width:number,context:IdmlTab
         if(child.type==='omiTab')return [{text:'\t',semantics:[]}];
         return extractOmiInlineRuns(JSON.stringify(child));
       });
-      if(prefix)runs.unshift({text:prefix,semantics:[]});
+      if(list?.literalPrefix)runs.unshift({text:list.literalPrefix,semantics:[]});
       for(const run of runs){
         if(run.sourceFontFamily)context.fonts.add(run.sourceFontFamily);
         if(run.link)context.report('table-link-projected-as-text','preserves visible link text, not the hyperlink destination.');
@@ -908,20 +912,72 @@ function idmlTableParagraph(table:OmiTableBlockData,width:number,context:IdmlTab
       }
       const paragraphAttrs=effectiveCellParagraphAttrs(node.attrs,format.horizontalAlign);
       if(paragraphAttrs.omiLineRule==='atLeast'||paragraphAttrs.omiParagraphBackground||paragraphAttrs.omiParagraphBorders||paragraphAttrs.omiParagraphTabs)context.report('table-paragraph-typography-partial','some cell paragraph overrides have no exact mapping.');
-      return styledRunsParagraph(runs,styleName,undefined,undefined,context.colors,directParagraphAttributes(JSON.stringify({type:'paragraph',attrs:paragraphAttrs})),true);
+      const attrs=directParagraphAttributes(JSON.stringify({type:'paragraph',attrs:paragraphAttrs}));
+      // Explicit paragraph indents take precedence over list defaults.
+      const listAttrs=list?Object.fromEntries(Object.entries(list.attrs).filter(([key])=>!attrs.includes(' '+key+'='))):{};
+      return styledRunsParagraph(runs,styleName,undefined,undefined,context.colors,attrs+idmlLocalAttributes(listAttrs),true,list?.properties??'');
     };
     const blocks=(nodes:readonly NoteJsonNode[],depth=0):string=>nodes.map(node=>{
       if(node.type==='paragraph')return paragraph(node);
       const nested=cellNestedTable(node);
       if(nested)return idmlTableParagraph(nested,innerWidth,context);
       if(node.type==='bulletList'||node.type==='orderedList'){
-        context.report('table-list-projected-as-text','cell list markers are editable literal text; native numbering relationships and custom numbering patterns are not retained.');
-        const start=Number(normalizeListAttribute('omiListStart',node.attrs?.start??node.attrs?.omiListStart)??1);
-        return (node.content??[]).map((item,index)=>(item.content??[]).map((child,j)=>child.type==='paragraph'?paragraph(child,j===0?'  '.repeat(depth)+(node.type==='orderedList'?(start+index)+'. ':'• '):''):blocks([child],depth+1)).join('')).join('');
+        const sourceId=normalizeListAttribute('omiListId',node.attrs?.omiListId);
+        if(typeof sourceId==='string')context.report('table-list-sequence-partial','source list identities are scoped to separate structural lists; cross-list continuation is not retained.');
+        const listId='NumberingList/OMI Cell List '+(context.numberingLists.length+1);
+        context.numberingLists.push(listId);
+        return (node.content??[]).map((item,index)=>(item.content??[]).map((child,j)=>child.type==='paragraph'?paragraph(child,j===0?idmlCellListParagraph(node,depth,index,listId,context):idmlCellListContinuation(node,depth,listId)):blocks([child],depth+1)).join('')).join('');
       }
       return '';
     }).join('');
     return '<Cell'+idmlLocalAttributes(props)+'>'+(blocks(doc.content??[])||styledParagraph('',styleName))+'</Cell>';
   }).join('')).join('');
   return '<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/OMI Table Cell"><CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Table'+idmlLocalAttributes(attrs)+'>'+rows+columns+cells+'</Table><Br/></CharacterStyleRange></ParagraphStyleRange>';
+}
+
+interface IdmlCellListParagraph {
+  attrs:Record<string,string|number|boolean>;
+  properties?:string;
+  literalPrefix?:string;
+}
+const IDML_LIST_FORMATS:Record<string,string>={decimal:'1, 2, 3, 4...',upperRoman:'I, II, III, IV...',lowerRoman:'i, ii, iii, iv...',upperLetter:'A, B, C, D...',lowerLetter:'a, b, c, d...',decimalZero:'01, 02, 03, 04...'};
+function idmlCellListContinuation(node:NoteJsonNode,depth:number,id:string):IdmlCellListParagraph {
+  const left=Number(normalizeListAttribute('omiListLeft',node.attrs?.omiListLeft)??(depth+1)*360)/20;
+  return {attrs:{BulletsAndNumberingListType:'NoList',LeftIndent:left,FirstLineIndent:0},properties:'<Properties><AppliedNumberingList type="object">'+xml(id)+'</AppliedNumberingList></Properties>'};
+}
+/** Each structural list owns an independent native sequence. A nested list
+ * is independent too, with its own level and indentation. The OMI model
+ * does not express InDesign's cross-story numbering/restart rules. */
+function idmlCellListParagraph(node:NoteJsonNode,depth:number,index:number,id:string,context:IdmlTableContext):IdmlCellListParagraph {
+  const a=node.attrs;
+  const format=String(normalizeListAttribute('omiListFormat',a?.omiListFormat)??(node.type==='bulletList'?'bullet':'decimal'));
+  const level=Number(normalizeListAttribute('omiListLevel',a?.omiListLevel)??depth);
+  const start=Number(normalizeListAttribute('omiListOverrideStart',a?.omiListOverrideStart)??normalizeListAttribute('omiListStart',a?.start??a?.omiListStart)??1);
+  const left=Number(normalizeListAttribute('omiListLeft',a?.omiListLeft)??(depth+1)*360)/20;
+  const hanging=Number(normalizeListAttribute('omiListHanging',a?.omiListHanging)??360)/20;
+  const attrs:IdmlCellListParagraph['attrs']={LeftIndent:left,FirstLineIndent:-hanging};
+  const label=normalizeListAttribute('omiListLabel',a?.omiListLabel);
+  if(format==='none')return {attrs:{...attrs,BulletsAndNumberingListType:'NoList'}};
+  if(format==='bullet'){
+    const bullet=typeof label==='string'&&label?label:'•';
+    const chars=Array.from(bullet);
+    if(chars.length!==1){
+      context.report('table-list-pattern-partial','multi-character bullet labels are projected as literal text.');
+      return {attrs:{...attrs,BulletsAndNumberingListType:'NoList'},literalPrefix:bullet+' '};
+    }
+    return {attrs:{...attrs,BulletsAndNumberingListType:'BulletList',BulletsTextAfter:'^t',NumberingLevel:level+1},properties:'<Properties><BulletChar BulletCharacterType="UnicodeOnly" BulletCharacterValue="'+chars[0]!.codePointAt(0)+'"/><AppliedNumberingList type="object">'+xml(id)+'</AppliedNumberingList></Properties>'};
+  }
+  let expression='^#.^t';
+  if(typeof label==='string'){
+    // Word-style level placeholders: only the current level is exact for
+    // independent structural lists; parent counters are not inferred.
+    const placeholders=[...label.matchAll(/%([1-9])/g)];
+    if(placeholders.length===1&&Number(placeholders[0]![1])===level+1&&!label.includes('^')){
+      expression=label.replace(/%[1-9]/,'^#')+'^t';
+    }else{
+      context.report('table-list-pattern-partial','custom or parent-level numbering expressions use the current level number instead.');
+    }
+  }
+  Object.assign(attrs,{BulletsAndNumberingListType:'NumberedList',NumberingExpression:expression,NumberingLevel:level+1,NumberingStartAt:start,NumberingContinue:index!==0});
+  return {attrs,properties:'<Properties><NumberingFormat type="string">'+xml(IDML_LIST_FORMATS[format]??IDML_LIST_FORMATS.decimal!)+'</NumberingFormat><AppliedNumberingList type="object">'+xml(id)+'</AppliedNumberingList></Properties>'};
 }

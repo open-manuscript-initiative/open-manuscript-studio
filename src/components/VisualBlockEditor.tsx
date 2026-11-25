@@ -61,8 +61,10 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, formatTableRange, planTableAxisMove, reorderTableAxis, type TableReorderAxis } from '../model/tableLayout';
+import { prunePublicationCellOverrides, editTableRangeAppearance, prunePublicationCellStyles, pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, planTableAxisMove, reorderTableAxis, type TableReorderAxis } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
+import { applyDefaultPublicationTableStyle, inheritPublicationTableGeometry } from '../model/tableAppearancePresets';
+import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
 import { TableAppearancePanel } from './TableAppearancePanel';
 import { TableRangeTypographyPanel } from './TableRangeTypographyPanel';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
@@ -416,7 +418,7 @@ function RichCellEditor({doc,onChange,label,depth,blockId}:{doc:NoteJsonNode;onC
       <button type="button" title={copy.bulletList} aria-label={copy.bulletList} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleBulletList().run()}>•</button>
       <button type="button" title={copy.orderedList} aria-label={copy.orderedList} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleOrderedList().run()}>1.</button>
       <button type="button" title={visualCopy.cellListIndent} aria-label={visualCopy.cellListIndent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().sinkListItem('listItem').run()}>→</button>
-      {depth<MAX_NESTED_TABLE_DEPTH?<button type="button" title={visualCopy.insertNestedTable} aria-label={visualCopy.insertNestedTable} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().insertContent({type:'omiCellTable',attrs:{table:{kind:'table',cells:[['',''],['','']],headerRows:0}}}).run()}>{visualCopy.insertNestedTable}</button>:null}
+      {depth<MAX_NESTED_TABLE_DEPTH?<button type="button" title={visualCopy.insertNestedTable} aria-label={visualCopy.insertNestedTable} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().insertContent({type:'omiCellTable',attrs:{table:applyDefaultPublicationTableStyle({kind:'table',cells:[['',''],['','']],headerRows:0},getAppliedPublicationTemplate(useStudioStore.getState().manuscript)?.style.tableStyles)}}).run()}>{visualCopy.insertNestedTable}</button>:null}
       {(['footnote','endnote','author-note'] as const).map(kind=><button type="button" key={kind} onMouseDown={e=>e.preventDefault()} onClick={()=>insertNote(kind)}>{kind==='footnote'?t('notes.footnote'):kind==='endnote'?t('notes.endnote'):t('notes.authorNote')}</button>)}
       {blockId?<button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>{citationPosition.current=editor?.state.selection.to??null;setPickingCitation(true);}}>{visualCopy.insertCellCitation}</button>:null}
       <button type="button" title={visualCopy.cellListOutdent} aria-label={visualCopy.cellListOutdent} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().liftListItem('listItem').run()}>←</button>
@@ -505,23 +507,26 @@ function EditableGrid({
   const measureRow=(row:HTMLTableRowElement)=>{const rect=row.getBoundingClientRect();return {measured:rect.height,scale:row.offsetHeight>0?rect.height/row.offsetHeight:1};};
   const reduction = data.kind === 'table' && data.fontSizeReduction === 0 ? 0 : 1;
 
+  const catalog=()=>getAppliedPublicationTemplate(useStudioStore.getState().manuscript)?.style.tableStyles;
+  const inherit=(next:OmiTableBlockData)=>data.kind==='table'?inheritPublicationTableGeometry(data,next,catalog()):next;
   const canMove=(axis:TableReorderAxis,direction:-1|1)=>data.kind==='table'&&!previewOnly&&!rangeEnd&&!!planTableAxisMove(data,axis,axis==='row'?rawRow:rawColumn,direction);
   function moveAxis(axis:TableReorderAxis,direction:-1|1):void {
     if(data.kind!=='table'||previewOnly||rangeEnd) return;
+    const plan=planTableAxisMove(data,axis,axis==='row'?rawRow:rawColumn,direction);
     const result=reorderTableAxis(data,axis,axis==='row'?rawRow:rawColumn,direction);
-    if(!result) return;
+    if(!result||!plan) return;
     setSelection(axis==='row'?{row:result.index,column:rawColumn}:{row:rawRow,column:result.index});
-    onChange(result.table);
+    onChange(inheritPublicationTableGeometry(data,result.table,catalog(),p=>axis==='row'?{row:plan.order[p.row]!,column:p.column}:{row:p.row,column:plan.order[p.column]!}));
   }
   function updateColumns(nextCells: string[][], nextWidths: number[]): void {
     onChange(data.kind === 'table'
-      ? { ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellMerges: tableMergeLayout(nextCells,data.cellMerges,headerCount).merges, cellContent:pruneTableCellContent(nextCells,data.cellContent), cellFormats: pruneTableCellFormats(nextCells, cellFormats) }
+      ? inherit({ ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellMerges: tableMergeLayout(nextCells,data.cellMerges,headerCount).merges, cellContent:pruneTableCellContent(nextCells,data.cellContent), publicationCellStyles: data.publicationCellStyles?prunePublicationCellStyles(nextCells,data.publicationCellStyles):undefined, publicationCellOverrides: data.publicationCellOverrides?prunePublicationCellOverrides(nextCells,data.publicationCellOverrides):undefined, cellFormats: pruneTableCellFormats(nextCells, cellFormats) })
       : { ...data, cells: nextCells });
   }
 
   function updateSelectedFormat(patch: OmiTableCellFormat|((format:ReturnType<typeof tableCellFormat>)=>OmiTableCellFormat)): void {
     if (data.kind !== 'table' || previewOnly) return;
-    onChange({...data,cellFormats:formatTableRange(data,start,boundedEnd??start,patch)});
+    onChange(editTableRangeAppearance(data,start,boundedEnd??start,patch));
   }
 
   // Reset before measuring so shortening a cell can also shrink its row. Observe
@@ -583,12 +588,10 @@ function EditableGrid({
                           style={{textAlign:format.horizontalAlign}}
                           aria-label={`${copy.cell} ${rowIndex + 1}, ${columnIndex + 1}`}
                           value={cell}
-                          onChange={(event) =>
-                            onChange({
-                              ...data,
-                              cells: updateTableCell(cells, rowIndex, columnIndex, event.target.value),
-                            })
-                          }
+                          onChange={(event) => {
+                            const nextCells=updateTableCell(cells,rowIndex,columnIndex,event.target.value);
+                            onChange(data.kind==='table'?inherit({...data,cells:nextCells}):{...data,cells:nextCells});
+                          }}
                         />}
                         {!previewOnly && data.kind==='table' && rowHandles[rowIndex]===columnIndex ? (
                           <span className="omi-table-row-resize" role="separator" tabIndex={0} aria-orientation="horizontal"
@@ -679,7 +682,7 @@ function EditableGrid({
       </div>
       {!previewOnly ? <>
       <div className="omi-table-actions" style={continuationStyle(cells.length)}>
-        <button type="button" onClick={() => onChange({ ...data, cells: addTableRow(cells) })}>
+        <button type="button" onClick={() => onChange(data.kind==='table'?inherit({...data,cells:addTableRow(cells)}):{...data,cells:addTableRow(cells)})}>
           <Plus size={14} aria-hidden="true" /> {copy.addRow}
         </button>
         <button type="button" onClick={() => updateColumns(addTableColumn(cells), [...widths, 100 / Math.max(1, widths.length)])}>
@@ -687,7 +690,7 @@ function EditableGrid({
         </button>
         <button type="button" onClick={() => {
           const nextCells = removeTableRow(cells, cells.length - 1);
-          onChange(data.kind === 'table' ? { ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), rowHeights:pruneTableRowHeights(nextCells,data.rowHeights), cellContent:pruneTableCellContent(nextCells,data.cellContent), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, cellFormats: pruneTableCellFormats(nextCells, cellFormats) } : { ...data, cells: nextCells });
+          onChange(data.kind === 'table' ? inherit({ ...data, cells: nextCells, headerRows: tableHeaderRows(nextCells, data.headerRows), rowSplitOverrides: pruneTableRowSplitOverrides(nextCells,data.rowSplitOverrides), rowHeights:pruneTableRowHeights(nextCells,data.rowHeights), cellContent:pruneTableCellContent(nextCells,data.cellContent), cellMerges: tableMergeLayout(nextCells,data.cellMerges,tableHeaderRows(nextCells,data.headerRows)).merges, publicationCellStyles: data.publicationCellStyles?prunePublicationCellStyles(nextCells,data.publicationCellStyles):undefined, publicationCellOverrides: data.publicationCellOverrides?prunePublicationCellOverrides(nextCells,data.publicationCellOverrides):undefined, cellFormats: pruneTableCellFormats(nextCells, cellFormats) }) : { ...data, cells: nextCells });
         }}>
           {copy.removeRow}
         </button>
@@ -745,7 +748,7 @@ function EditableGrid({
           <div className="omi-table-actions">
             <button type="button" disabled={multi||!mergeRight} onClick={()=>{if(mergeRight) onChange({...data,cellMerges:mergeRight});}} title={copy.mergeRight}><Merge size={14} aria-hidden="true"/><ArrowRight size={12} aria-hidden="true"/>{copy.mergeRight}</button>
             <button type="button" disabled={multi||!mergeDown} onClick={()=>{if(mergeDown) onChange({...data,cellMerges:mergeDown});}} title={copy.mergeDown}><Merge size={14} aria-hidden="true"/><ArrowDown size={12} aria-hidden="true"/>{copy.mergeDown}</button>
-            <button type="button" disabled={multi||!selectedMerge} onClick={()=>onChange({...data,cellMerges:splitTableMerge(cells,data.cellMerges,selectedRow,selectedColumn,headerCount)})}><Split size={14} aria-hidden="true"/>{copy.splitCell}</button>
+            <button type="button" disabled={multi||!selectedMerge} onClick={()=>onChange(inherit({...data,cellMerges:splitTableMerge(cells,data.cellMerges,selectedRow,selectedColumn,headerCount)}))}><Split size={14} aria-hidden="true"/>{copy.splitCell}</button>
           </div>
           <details>
             <summary>{copy.cellEdges}</summary>
@@ -793,7 +796,7 @@ function EditableGrid({
               const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(doc));
               const content=pruneTableCellContent(nextCells,data.cellContent);
               content[selectedRow+':'+selectedColumn]=JSON.stringify(doc);
-              return onChange({...data,cells:nextCells,cellContent:content},insertion,citation);
+              return onChange(inherit({...data,cells:nextCells,cellContent:content}),insertion,citation);
             }}/>
             {selectedDoc?.content?.map((node,index)=>{
               const nested=cellNestedTable(node);
@@ -806,7 +809,7 @@ function EditableGrid({
                 const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(valid));
                 const content=pruneTableCellContent(nextCells,data.cellContent);
                 content[selectedRow+':'+selectedColumn]=JSON.stringify(valid);
-                return onChange({...data,cells:nextCells,cellContent:content},insertion,citation);
+                return onChange(inherit({...data,cells:nextCells,cellContent:content}),insertion,citation);
               }}/></details>;
             })}
           </details>:null}

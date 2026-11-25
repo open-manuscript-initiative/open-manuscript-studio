@@ -1,3 +1,4 @@
+import { refreshPublicationTables } from './tableAppearancePresets';
 import { applyPublicationProfileDefaults, BUILTIN_PUBLICATION_PROFILES, type OmiPublicationProfile } from './publicationProfile';
 import { validatePublisherProfile } from './publisherProfileImport';
 import { getDocumentStructureProfile, type OmiDocumentStructureProfile } from './documentProfile';
@@ -141,7 +142,7 @@ export function applyPublicationTemplate(state: OmiManuscriptState, template: Pu
   return {
     ...applyPublicationProfileDefaults(publication, profile), assets,
     documentStructure: { ...getDocumentStructureProfile(state), ...template.structureDefaults },
-    sections: synchronizeCrossReferenceLabels(state.sections, state.crossReferences ?? [], profile.rules.objects.numbering, state.locale),
+    sections: synchronizeCrossReferenceLabels(refreshPublicationTables(state.sections, getAppliedPublicationTemplate(state)?.style.tableStyles, applied.style.tableStyles), state.crossReferences ?? [], profile.rules.objects.numbering, state.locale),
     extensions: { ...state.extensions, [PUBLICATION_MATTER_EXTENSION]: matter, [PUBLICATION_TEMPLATE_EXTENSION]: applied },
   };
 }

@@ -4,16 +4,17 @@ The exporter writes editable `Table`, `Row`, `Column` and `Cell` objects in the 
 
 ## Explicit limitations
 
-- Table lists are editable literal labels rather than native list numbering; custom numbering patterns are not faithfully represented.
+- Cell ordered lists and single-code-point bullets are emitted as native paragraph numbering/bullets, not text prefixes. Each structural list owns a separate named sequence, with start/restart, level, Roman/alphabetic/decimal formats, hanging indents and unnumbered continuation paragraphs. Compound parent-counter expressions and continuation across distinct structural lists produce explicit partial-fidelity diagnostics. Multi-character bullets fall back to literal labels. Native list reconstruction on import is supported for the mapped formats. Bullets carry their level and named sequence reference; unnumbered continuation paragraphs carry an explicit list reference so the importer can reattach them.
 - Cell notes are projected into distinct `[T1]`, `[T2]` markers and note-list text. Adobe documents that native footnotes cannot be added to tables. The OMI document remains unchanged.
 - Intra-row page splitting, explicit cell writing direction, some paragraph decorations and advanced character typography produce loss diagnostics. Exact row height can overset text. InDesign's shared border conflict resolution can differ from the Studio.
-- This is export only; IDML table import, linked named table/cell style inheritance, multi-frame pagination and visual verification in Adobe InDesign remain open.
+- Native table import is available separately; linked named table/cell style inheritance, multi-frame pagination and visual verification in Adobe InDesign remain open.
 
 ## References
 
 - https://idml.paged.media/tables/the-table-model/
 - https://idml.paged.media/tables/rows-columns-cells/
 - https://idml.paged.media/styles/table-and-cell-styles/
+- https://idml.paged.media/typography/lists-keep-span/
 - https://helpx.adobe.com/indesign/desktop/add-tables-and-data/create-tables/add-content-to-a-table.html
 
 Regression tests inspect the actual stored ZIP XML, including native geometry, nested content order, style and color references, and public-export filtering. They do not substitute for opening and rendering the package in InDesign.
