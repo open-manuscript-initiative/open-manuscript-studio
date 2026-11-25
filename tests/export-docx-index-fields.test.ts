@@ -34,6 +34,20 @@ test('exports semantic OMI index occurrences as Word XE fields', () => {
   assert.equal((xml.match(/w:fldCharType="begin"/g) ?? []).length, 2);
 });
 
+test('escapes Word XE quotes, backslashes and literal colons without changing hierarchy', () => {
+  for (const fieldForm of ['simple', 'complex'] as const) {
+    const xml = renderWordIndexEntryFields([{
+      id: 'escaped-entry',
+      kind: 'subject',
+      terms: ['A\\B:C"D', 'Nested:term'],
+      sortKey: 'Sort\\key:"quoted"',
+      source: { format: 'docx-xe', fieldForm },
+    }]);
+    const expected = ' XE &quot;A\\\\B\\:C\\&quot;D:Nested\\:term&quot; \\y &quot;Sort\\\\key:\\&quot;quoted\\&quot;&quot; ';
+    assert.ok(xml.includes(expected), xml);
+  }
+});
+
 test('exports a dirty Word INDEX field whose page numbers are recalculated after pagination', () => {
   const xml = renderWordGeneratedIndexField('hu');
   assert.match(xml, /w:dirty="true"/);
