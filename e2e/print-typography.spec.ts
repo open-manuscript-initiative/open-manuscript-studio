@@ -29,7 +29,10 @@ test('semantic text roles offer editable point presets, languages and inherited 
   await list.getByRole('option', { name: 'Title', exact: true }).click();
   await panel.getByRole('button', { name: 'Basic character formats', exact: true }).click();
   const size = panel.getByRole('spinbutton', { name: 'Size', exact: true });
-  expect(await size.evaluate((element) => Array.from((element as HTMLInputElement).list?.options ?? []).map((option) => option.value))).toContain('12');
+  const sizeOptions = panel.getByRole('combobox', { name: 'Size', exact: true });
+  await expect(sizeOptions.locator('option[value="12"]')).toHaveText('12 pt');
+  await sizeOptions.selectOption('14');
+  await expect(size).toHaveValue('14');
   await size.fill('27.3');
   await panel.getByRole('spinbutton', { name: 'Leading', exact: true }).fill('32.7');
   await panel.getByRole('button', { name: 'Advanced character formats', exact: true }).click();
