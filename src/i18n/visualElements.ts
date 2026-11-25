@@ -40,6 +40,17 @@ export interface VisualElementsCopy {
   equationLatex: string;
   equationLabel: string;
   cellFormatting: string;
+  cellEdges: string;
+  cellEdgeUnit: string;
+  cellBorderStyle: string;
+  cellBorderNone: string;
+  cellBorderSolid: string;
+  cellBorderDashed: string;
+  cellBorderDotted: string;
+  cellBorderDouble: string;
+  cellBorderWidth: string;
+  cellBorderColor: string;
+  cellPadding: string;
   cellHorizontalAlign: string;
   cellVerticalAlign: string;
   cellAppearanceDefault: string;
@@ -100,6 +111,7 @@ export interface VisualElementsCopy {
 const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   en: {
     cellHorizontalAlign: "Horizontal alignment", cellVerticalAlign: "Vertical alignment", cellAppearanceDefault: "Default", cellAlignLeft: "Left", cellAlignCenter: "Center", cellAlignRight: "Right", cellAlignJustify: "Justified", cellAlignTop: "Top", cellAlignMiddle: "Middle", cellAlignBottom: "Bottom", cellBackground: "Cell background", cellClearBackground: "Clear background",
+    cellEdges: "Cell borders and padding", cellEdgeUnit: "Unit", cellBorderStyle: "Border style", cellBorderNone: "No border", cellBorderSolid: "Solid", cellBorderDashed: "Dashed", cellBorderDotted: "Dotted", cellBorderDouble: "Double", cellBorderWidth: "Line width", cellBorderColor: "Border color", cellPadding: "Inner padding",
     cellFormatting: 'Cell formatting', cellRow: 'Cell row', cellColumn: 'Cell column', textRotation: 'Text rotation', rotationNone: 'No rotation', rotationClockwise: '90° clockwise', rotationCounterclockwise: '90° counterclockwise', rotationUpsideDown: '180° upside down', textDirection: 'Writing direction', directionAuto: 'Automatic', directionLtr: 'Left to right', directionRtl: 'Right to left', editCellText: 'Selected cell text', mobilePreviewNote: 'Mobile shows the current publication layout. Full editing is available on a desktop.',
     mergeRight: "Merge right", mergeDown: "Merge down", splitCell: "Split cell", mergeHint: "Only empty adjacent cells can be merged; split first to change a conflicting header boundary.",
     rowPagination: "Row pagination", rowSplitDefault: "Table default", rowSplitSelected: "Selected row", rowSplitKeep: "Keep row together", rowSplitAllow: "Allow row to split", rowSplitInherit: "Use table default", rowSplitHint: "The live editor breaks between rows; splitting within a row is an export setting.",
@@ -115,6 +127,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   },
   hu: {
     cellHorizontalAlign: "Vízszintes igazítás", cellVerticalAlign: "Függőleges igazítás", cellAppearanceDefault: "Alapértelmezett", cellAlignLeft: "Balra", cellAlignCenter: "Középre", cellAlignRight: "Jobbra", cellAlignJustify: "Sorkizárt", cellAlignTop: "Felülre", cellAlignMiddle: "Középre", cellAlignBottom: "Alulra", cellBackground: "Cella háttérszíne", cellClearBackground: "Háttérszín törlése",
+    cellEdges: "Cellaszegélyek és belső margók", cellEdgeUnit: "Mértékegység", cellBorderStyle: "Szegély típusa", cellBorderNone: "Nincs szegély", cellBorderSolid: "Folytonos", cellBorderDashed: "Szaggatott", cellBorderDotted: "Pontozott", cellBorderDouble: "Dupla", cellBorderWidth: "Vonalvastagság", cellBorderColor: "Szegélyszín", cellPadding: "Belső margó",
     cellFormatting: 'Cellaformázás', cellRow: 'Cella sora', cellColumn: 'Cella oszlopa', textRotation: 'Szöveg elforgatása', rotationNone: 'Nincs elforgatás', rotationClockwise: '90° jobbra', rotationCounterclockwise: '90° balra', rotationUpsideDown: '180° fejjel lefelé', textDirection: 'Írásirány', directionAuto: 'Automatikus', directionLtr: 'Balról jobbra', directionRtl: 'Jobbról balra', editCellText: 'Kijelölt cella szövege', mobilePreviewNote: 'Mobilon a kiadvány aktuális elrendezése tekinthető meg. A teljes szerkesztés asztali gépen érhető el.',
     mergeRight: "Egyesítés jobbra", mergeDown: "Egyesítés lefelé", splitCell: "Cella szétválasztása", mergeHint: "Csak üres szomszédos cellák egyesíthetők; a fejléc határának módosítása előtt válassza szét az érintett cellát.",
     rowPagination: "Sorok tördelése", rowSplitDefault: "Táblázat alapbeállítása", rowSplitSelected: "Kijelölt sor", rowSplitKeep: "Sor egyben tartása", rowSplitAllow: "Sor törése engedélyezett", rowSplitInherit: "Táblázat alapbeállításának használata", rowSplitHint: "Az élő szerkesztő sorhatárokon tördel; a soron belüli törés az export beállítása.",
@@ -130,6 +143,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   },
   de: {
     cellHorizontalAlign: "Horizontale Ausrichtung", cellVerticalAlign: "Vertikale Ausrichtung", cellAppearanceDefault: "Standard", cellAlignLeft: "Links", cellAlignCenter: "Zentriert", cellAlignRight: "Rechts", cellAlignJustify: "Blocksatz", cellAlignTop: "Oben", cellAlignMiddle: "Mittig", cellAlignBottom: "Unten", cellBackground: "Zellhintergrund", cellClearBackground: "Hintergrund entfernen",
+    cellEdges: "Zellrahmen und Innenabstände", cellEdgeUnit: "Maßeinheit", cellBorderStyle: "Rahmenart", cellBorderNone: "Kein Rahmen", cellBorderSolid: "Durchgezogen", cellBorderDashed: "Gestrichelt", cellBorderDotted: "Gepunktet", cellBorderDouble: "Doppelt", cellBorderWidth: "Linienstärke", cellBorderColor: "Rahmenfarbe", cellPadding: "Innenabstand",
     cellFormatting: 'Zellformatierung', cellRow: 'Zellzeile', cellColumn: 'Zellspalte', textRotation: 'Textdrehung', rotationNone: 'Keine Drehung', rotationClockwise: '90° im Uhrzeigersinn', rotationCounterclockwise: '90° gegen den Uhrzeigersinn', rotationUpsideDown: '180° auf dem Kopf', textDirection: 'Schreibrichtung', directionAuto: 'Automatisch', directionLtr: 'Links nach rechts', directionRtl: 'Rechts nach links', editCellText: 'Text der ausgewählten Zelle', mobilePreviewNote: 'Mobil wird das aktuelle Publikationslayout angezeigt. Die vollständige Bearbeitung ist am Desktop verfügbar.',
     mergeRight: "Nach rechts verbinden", mergeDown: "Nach unten verbinden", splitCell: "Zelle teilen", mergeHint: "Nur leere Nachbarzellen können verbunden werden; vor einer Änderung der Kopfzeilengrenze die betroffene Zelle teilen.",
     rowPagination: "Zeilenumbrüche", rowSplitDefault: "Tabellenstandard", rowSplitSelected: "Ausgewählte Zeile", rowSplitKeep: "Zeile zusammenhalten", rowSplitAllow: "Zeilenumbruch zulassen", rowSplitInherit: "Tabellenstandard verwenden", rowSplitHint: "Der Live-Editor trennt zwischen Zeilen; das Teilen innerhalb einer Zeile ist eine Exporteinstellung.",
@@ -172,6 +186,13 @@ export function getVisualElementsCopy(locale: string): VisualElementsCopy {
     nl: {"cellHorizontalAlign":"Horizontale uitlijning","cellVerticalAlign":"Verticale uitlijning","cellAppearanceDefault":"Standaard","cellAlignLeft":"Links","cellAlignCenter":"Centreren","cellAlignRight":"Rechts","cellAlignJustify":"Uitvullen","cellAlignTop":"Boven","cellAlignMiddle":"Midden","cellAlignBottom":"Onder","cellBackground":"Celachtergrond","cellClearBackground":"Achtergrond wissen"},
     pl: {"cellHorizontalAlign":"Wyrównanie poziome","cellVerticalAlign":"Wyrównanie pionowe","cellAppearanceDefault":"Domyślne","cellAlignLeft":"Do lewej","cellAlignCenter":"Do środka","cellAlignRight":"Do prawej","cellAlignJustify":"Wyjustowane","cellAlignTop":"Do góry","cellAlignMiddle":"Do środka","cellAlignBottom":"Do dołu","cellBackground":"Tło komórki","cellClearBackground":"Wyczyść tło"},
   };
+  const edgeCopies: Record<string,Pick<VisualElementsCopy,'cellEdges'|'cellEdgeUnit'|'cellBorderStyle'|'cellBorderNone'|'cellBorderSolid'|'cellBorderDashed'|'cellBorderDotted'|'cellBorderDouble'|'cellBorderWidth'|'cellBorderColor'|'cellPadding'>> = {
+    fr: {"cellEdges":"Bordures et marges internes","cellEdgeUnit":"Unité","cellBorderStyle":"Style de bordure","cellBorderNone":"Sans bordure","cellBorderSolid":"Continu","cellBorderDashed":"Tirets","cellBorderDotted":"Pointillé","cellBorderDouble":"Double","cellBorderWidth":"Épaisseur","cellBorderColor":"Couleur de bordure","cellPadding":"Marge interne"},
+    it: {"cellEdges":"Bordi e margini interni","cellEdgeUnit":"Unità","cellBorderStyle":"Stile del bordo","cellBorderNone":"Nessun bordo","cellBorderSolid":"Continuo","cellBorderDashed":"Tratteggiato","cellBorderDotted":"Punteggiato","cellBorderDouble":"Doppio","cellBorderWidth":"Spessore","cellBorderColor":"Colore del bordo","cellPadding":"Margine interno"},
+    es: {"cellEdges":"Bordes y márgenes internos","cellEdgeUnit":"Unidad","cellBorderStyle":"Estilo de borde","cellBorderNone":"Sin borde","cellBorderSolid":"Continuo","cellBorderDashed":"Discontinuo","cellBorderDotted":"Punteado","cellBorderDouble":"Doble","cellBorderWidth":"Grosor","cellBorderColor":"Color del borde","cellPadding":"Margen interno"},
+    nl: {"cellEdges":"Celranden en binnenmarges","cellEdgeUnit":"Eenheid","cellBorderStyle":"Randstijl","cellBorderNone":"Geen rand","cellBorderSolid":"Doorgetrokken","cellBorderDashed":"Gestreept","cellBorderDotted":"Gestippeld","cellBorderDouble":"Dubbel","cellBorderWidth":"Lijndikte","cellBorderColor":"Randkleur","cellPadding":"Binnenmarge"},
+    pl: {"cellEdges":"Obramowanie i marginesy komórki","cellEdgeUnit":"Jednostka","cellBorderStyle":"Styl obramowania","cellBorderNone":"Bez obramowania","cellBorderSolid":"Ciągła","cellBorderDashed":"Kreskowana","cellBorderDotted":"Kropkowana","cellBorderDouble":"Podwójna","cellBorderWidth":"Grubość","cellBorderColor":"Kolor obramowania","cellPadding":"Margines wewnętrzny"},
+  };
   const merge=mergeCopies[language];
-  return {...translated,...rowCopies[language],...appearanceCopies[language],tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
+  return {...translated,...rowCopies[language],...appearanceCopies[language],...edgeCopies[language],tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
 }
