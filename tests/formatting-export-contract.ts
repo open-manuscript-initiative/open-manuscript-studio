@@ -449,4 +449,7 @@ test('IDML native cell lists keep independent numbering, list levels, restarts a
   assert.equal(new Set(definitions).size,definitions.length);
   for(const el of elements(story,'AppliedNumberingList'))assert.ok(definitions.includes(el.textContent??''));
   assert.deepEqual(elements(cells[0]!,'Content').map(el=>el.textContent),['First','Continuation','Nested first','Nested second','Second','Bullet','Restart','Unnumbered']);
+  const {importIdmlTables}=await import('../src/services/idmlTableImport.ts');
+  const imported=await importIdmlTables(new File([new Uint8Array(exported.bytes)],'native-lists.idml'));
+  assert.ok(imported.warnings.includes('native-list-structure-not-imported'));
 });
