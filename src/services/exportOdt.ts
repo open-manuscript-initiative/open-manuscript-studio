@@ -8,7 +8,7 @@ import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExpo
 import { officeMetadataConversion, metadataConversionWarnings, type MetadataConversionObservation } from '../model/metadataConversion';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { extractOmiInlineRuns, semanticKindsFromMarks, inlineLanguageFromMarks, inlineSourceFontFamilyFromMarks, type OmiInlineRun } from '../model/inlineSemantics';
-import { isNoteAnnotation, getNoteKind } from '../model/notes';
+import { isNoteAnnotation, getNoteKind, getNoteCustomMark } from '../model/notes';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
@@ -174,7 +174,7 @@ function renderRun(run: OmiInlineRun, notes: Map<string, OmiManuscript['annotati
       if (note.bodyContent) {
         try { body = (JSON.parse(note.bodyContent) as OdtJsonNode).content?.map(node => renderOdtNode(node, new Map(), usedNotes, stylesRegistry)).join('') || body; } catch { /* Preserve plain note fallback. */ }
       }
-      value += `<text:note text:note-class="${noteClass}" text:id="${safeId(note.id)}"><text:note-citation/><text:note-body>${body}</text:note-body></text:note>`;
+      value += `<text:note text:note-class="${noteClass}" text:id="${safeId(note.id)}">${getNoteCustomMark(note)?'<text:note-citation text:label="*">*</text:note-citation>':'<text:note-citation/>'}<text:note-body>${body}</text:note-body></text:note>`;
     }
   }
   const style = stylesRegistry.character(run);
