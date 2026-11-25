@@ -1,3 +1,4 @@
+import { readWordPictureLayout } from '../model/wordPictureLayout';
 import { createNamedAnchor, normalizeWordBookmarkRange, simpleBookmarkParagraphText, type OmiNamedAnchor } from '../model/namedAnchors';
 import { createCrossReference } from '../model/crossReferences';
 import { parseWordCrossReference, type WordCrossReferenceField } from '../model/wordCrossReference';
@@ -1137,7 +1138,6 @@ async function extractParagraphVisuals(
     if (hasNonMathText) warnings.push(warning('inline-equation-promoted'));
   }
 
-  const seenTargets = new Set<string>();
   for (const blip of descendantsByLocalName(paragraph, 'blip')) {
     const relationId = attributeByLocalName(blip, 'embed');
     const composed = relationId ? composedImages.get(relationId) : undefined;
@@ -1149,21 +1149,24 @@ async function extractParagraphVisuals(
       if (!textBox) stats.images += 1;
       continue;
     }
-    const target = relationId ? relationships.get(relationId)?.target : undefined;
-    if (!target) continue;
-    const archivePath = normalizeWordTarget(target);
-    if (seenTargets.has(archivePath) || !archive.has(archivePath)) continue;
-    seenTargets.add(archivePath);
+    const relation = relationId ? relationships.get(relationId) : undefined;
+    if (!relation?.target || relation.targetMode?.toLowerCase() === 'external') continue;
+    const archivePath = normalizeWordTarget(relation.target);
+    if (!archive.has(archivePath)) continue;
 
     const bytes = await archive.bytes(archivePath);
     const mediaType = inferMediaTypeFromFileName(archivePath);
-    const docPr = descendantsByLocalName(paragraph, 'docPr')[0];
+    let drawing: Element | null = blip;
+    while (drawing && drawing.localName !== 'inline' && drawing.localName !== 'anchor') drawing = drawing.parentElement;
+    const docPr = descendantsByLocalName(drawing ?? paragraph, 'docPr')[0];
+    const wordPicture = drawing ? readWordPictureLayout(drawing) : undefined;
     blocks.push(
       createImageBlock({
         src: bytesToDataUrl(bytes, mediaType),
         mediaType,
         fileName: archivePath.split('/').pop(),
         alt: docPr?.getAttribute('descr') ?? docPr?.getAttribute('name') ?? '',
+        ...(wordPicture ? { wordPicture, width: wordPicture.cx / 9525, height: wordPicture.cy / 9525 } : {}),
         provenance: { ...provenance, sourcePart: archivePath },
       }),
     );
