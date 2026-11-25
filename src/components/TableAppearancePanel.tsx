@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PublicationTableConditionEditor } from './PublicationTableConditionEditor';
 import { useStudioStore } from '../app/useStudioStore';
 import { stageAppliedPublicationStyle } from '../app/publicationTemplateActions';
 import { getAppliedPublicationTemplate } from '../model/publicationTemplates';
@@ -6,7 +7,7 @@ import { loadPublicationStyle } from '../services/publicationStyleExport';
 import type { OmiTableBlockData } from '../types/omi';
 import type { VisualElementsCopy } from '../i18n/visualElements';
 import type { TableCellPosition } from '../model/tableLayout';
-import { selectedPublicationOverrideCount, MAX_TABLE_CONDITIONS, normalizeTableCondition, resolvePublicationTablePreset, type TableConditionOperator, derivePublicationTablePreset, normalizePresetFormat, type TableStyleRegion, bindPublicationCellStyle, detachPublicationCellStyles, selectedPublicationCellStyles, resetInheritedCellAppearance, bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
+import { selectedPublicationOverrideCount, resolvePublicationTablePreset, derivePublicationTablePreset, normalizePresetFormat, type TableStyleRegion, bindPublicationCellStyle, detachPublicationCellStyles, selectedPublicationCellStyles, resetInheritedCellAppearance, bindPublicationTableStyle, detachPublicationTableStyle, replacePublicationTablePreset, applyAppearancePreset, BUILTIN_TABLE_STYLES, captureCellPreset, captureTablePreset, MAX_TABLE_PRESETS, normalizeAppearancePreset, readAppearancePresets, TABLE_STYLE_STORAGE_KEY, normalizePublicationTableStyles, putPublicationTablePreset, removePublicationTablePreset, type PublicationTableStyles, type TableAppearancePreset } from '../model/tableAppearancePresets';
 
 function loadPresets():TableAppearancePreset[]{
   try{return readAppearancePresets(localStorage.getItem(TABLE_STYLE_STORAGE_KEY));}catch{return [];}
@@ -21,9 +22,6 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
   const [banded,setBanded]=useState(false);
   const [region,setRegion]=useState<TableStyleRegion>('firstColumn');
   const [error,setError]=useState(false);
-  const [operator,setOperator]=useState<TableConditionOperator>('lt');
-  const [operand,setOperand]=useState('0');
-  const [conditionColor,setConditionColor]=useState('#F4CCCC');
   useEffect(()=>{
     const refresh=(event:StorageEvent)=>{if(event.key===TABLE_STYLE_STORAGE_KEY||event.key===null)setPresets(loadPresets());};
     window.addEventListener('storage',refresh);
@@ -41,12 +39,6 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
     const changed=replacePublicationTablePreset(catalog,{...publicationTable,conditions:next});
     if(changed)persistPublication(changed);else setError(true);
   }
-  function addCondition(){
-    const rule=normalizeTableCondition({operator,value:operand,format:{backgroundColor:conditionColor}});
-    if(!rule||conditions.length>=MAX_TABLE_CONDITIONS){setError(true);return;}
-    saveConditions([...conditions,rule]);
-  }
-  const conditionLabels:Record<TableConditionOperator,string>={eq:'=',contains:copy.tableConditionContains,lt:'<',lte:'≤',gt:'>',gte:'≥',empty:copy.tableConditionEmpty,nonempty:copy.tableConditionNonempty};
   function updateRegion(clear:boolean){
     if(!publicationTable)return;
     const next={...publicationTable};
@@ -119,17 +111,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
         <button type="button" onClick={()=>updateRegion(true)}>{copy.clearTableRegion}</button>
       </div>
     </details>:null}
-    {publicationTable?<details><summary>{copy.tableConditions}</summary>
-      <div className="omi-table-cell-formatting-fields">
-        <label><span>{copy.tableConditions}</span><select value={operator} onChange={event=>setOperator(event.target.value as TableConditionOperator)}>{(Object.keys(conditionLabels) as TableConditionOperator[]).map(op=><option key={op} value={op}>{conditionLabels[op]}</option>)}</select></label>
-        <label><span>{copy.tableConditionValue}</span><input maxLength={256} disabled={operator==='empty'||operator==='nonempty'} value={operand} onChange={event=>setOperand(event.target.value)}/></label>
-        <label><span>{copy.cellBackground}</span><input type="color" value={conditionColor} onChange={event=>setConditionColor(event.target.value)}/></label>
-        <button type="button" disabled={conditions.length>=MAX_TABLE_CONDITIONS} onClick={addCondition}>{copy.addTableCondition}</button>
-      </div>
-      <small>{copy.tableConditionHint}</small>
-      {conditions.map((rule,index)=><div key={index} className="omi-table-cell-formatting-fields"><span>{conditionLabels[rule.operator]} {rule.value??''} {rule.format.backgroundColor??''}</span><button type="button" onClick={()=>saveConditions(conditions.filter((_,i)=>i!==index))}>{copy.deleteTableStyle}</button></div>)}
-      {publicationTable.basedOn&&publicationTable.conditions!==undefined?<button type="button" onClick={()=>{const next={...publicationTable};delete next.conditions;const changed=replacePublicationTablePreset(catalog,next);if(changed)persistPublication(changed);}}>{copy.clearTableRegion}</button>:null}
-    </details>:null}
+    {publicationTable?<PublicationTableConditionEditor key={publicationTable.name} rules={conditions} copy={copy} onChange={saveConditions} canInherit={!!publicationTable.basedOn&&publicationTable.conditions!==undefined} onInherit={()=>{const next={...publicationTable};delete next.conditions;const changed=replacePublicationTablePreset(catalog,next);if(changed)persistPublication(changed);}}/>:null}
     <small>{copy.publicationTableStyleHint}</small>
     <div className="omi-table-cell-formatting-fields">
       <label><span>{copy.tableStyleName}</span><input maxLength={80} value={name} onChange={event=>{setName(event.target.value);setError(false);}}/></label>
