@@ -40,6 +40,16 @@ export interface VisualElementsCopy {
   equationLatex: string;
   equationLabel: string;
   cellFormatting: string;
+  cellRange: string;
+  selectTableRow: string;
+  selectTableColumn: string;
+  selectWholeTable: string;
+  rangeEndRow: string;
+  rangeEndColumn: string;
+  selectedCellCount: string;
+  cellRangeHint: string;
+  mixedCellFormat: string;
+  applyCellColor: string;
   insertNestedTable: string;
   editNestedTable: string;
   cellListIndent: string;
@@ -135,6 +145,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     cellParagraphFormatting: "Paragraph formatting", cellParagraphLeftIndent: "Left indent", cellParagraphRightIndent: "Right indent", cellParagraphFirstIndent: "First-line indent", cellParagraphBefore: "Space before", cellParagraphAfter: "Space after", cellParagraphLineSpacing: "Line spacing", cellParagraphLineRule: "Line spacing mode",
     cellListIndent: "Increase list level", cellListOutdent: "Decrease list level",
     insertNestedTable: "Insert nested table", editNestedTable: "Edit nested table",
+    cellRange: "Cell range", selectTableRow: "Select row", selectTableColumn: "Select column", selectWholeTable: "Select whole table", rangeEndRow: "Last row", rangeEndColumn: "Last column", selectedCellCount: "Selected cells", cellRangeHint: "Click the ending cell or enter its coordinates. Cell properties apply to the selection; text and row properties remain individual.", mixedCellFormat: "Mixed", applyCellColor: "Apply current color",
     cellFormatting: 'Cell formatting', cellRow: 'Cell row', cellColumn: 'Cell column', textRotation: 'Text rotation', rotationNone: 'No rotation', rotationClockwise: '90° clockwise', rotationCounterclockwise: '90° counterclockwise', rotationUpsideDown: '180° upside down', textDirection: 'Writing direction', directionAuto: 'Automatic', directionLtr: 'Left to right', directionRtl: 'Right to left', editCellText: 'Selected cell text', mobilePreviewNote: 'Mobile shows the current publication layout. Full editing is available on a desktop.',
     mergeRight: "Merge right", mergeDown: "Merge down", splitCell: "Split cell", mergeHint: "Only empty adjacent cells can be merged; split first to change a conflicting header boundary.",
     rowHeightMode: "Row height mode", rowHeightAuto: "Automatic", rowHeightMinimum: "At least", rowHeightExact: "Exact", rowHeightValue: "Row height", rowHeightExactHint: "The Studio and HTML/PDF retain all text and expand the row if needed. Exact DOCX/ODT rows may clip text; review the exported document.",
@@ -155,6 +166,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     cellParagraphFormatting: "Bekezdésformázás", cellParagraphLeftIndent: "Bal oldali behúzás", cellParagraphRightIndent: "Jobb oldali behúzás", cellParagraphFirstIndent: "Első sor behúzása", cellParagraphBefore: "Térköz előtte", cellParagraphAfter: "Térköz utána", cellParagraphLineSpacing: "Sorköz", cellParagraphLineRule: "Sorköz módja",
     cellListIndent: "Listaszint növelése", cellListOutdent: "Listaszint csökkentése",
     insertNestedTable: "Beágyazott táblázat beszúrása", editNestedTable: "Beágyazott táblázat szerkesztése",
+    cellRange: "Cellatartomány", selectTableRow: "Sor kijelölése", selectTableColumn: "Oszlop kijelölése", selectWholeTable: "Teljes táblázat kijelölése", rangeEndRow: "Utolsó sor", rangeEndColumn: "Utolsó oszlop", selectedCellCount: "Kijelölt cellák", cellRangeHint: "Kattintson a tartomány végpontjára vagy adja meg a koordinátáit. A cellaformázás a kijelölésre vonatkozik, a szöveg és a sor beállításai egyediek.", mixedCellFormat: "Vegyes", applyCellColor: "Aktuális szín alkalmazása",
     cellFormatting: 'Cellaformázás', cellRow: 'Cella sora', cellColumn: 'Cella oszlopa', textRotation: 'Szöveg elforgatása', rotationNone: 'Nincs elforgatás', rotationClockwise: '90° jobbra', rotationCounterclockwise: '90° balra', rotationUpsideDown: '180° fejjel lefelé', textDirection: 'Írásirány', directionAuto: 'Automatikus', directionLtr: 'Balról jobbra', directionRtl: 'Jobbról balra', editCellText: 'Kijelölt cella szövege', mobilePreviewNote: 'Mobilon a kiadvány aktuális elrendezése tekinthető meg. A teljes szerkesztés asztali gépen érhető el.',
     mergeRight: "Egyesítés jobbra", mergeDown: "Egyesítés lefelé", splitCell: "Cella szétválasztása", mergeHint: "Csak üres szomszédos cellák egyesíthetők; a fejléc határának módosítása előtt válassza szét az érintett cellát.",
     rowHeightMode: "Sormagasság módja", rowHeightAuto: "Automatikus", rowHeightMinimum: "Minimális", rowHeightExact: "Rögzített", rowHeightValue: "Sormagasság", rowHeightExactHint: "A Stúdió és a HTML/PDF szükség esetén megnöveli a sort, hogy minden szöveg látható maradjon. A rögzített DOCX/ODT-sor levághatja a szöveget; ellenőrizze az exportot.",
@@ -175,6 +187,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     cellParagraphFormatting: "Absatzformatierung", cellParagraphLeftIndent: "Linker Einzug", cellParagraphRightIndent: "Rechter Einzug", cellParagraphFirstIndent: "Erstzeileneinzug", cellParagraphBefore: "Abstand davor", cellParagraphAfter: "Abstand danach", cellParagraphLineSpacing: "Zeilenabstand", cellParagraphLineRule: "Zeilenabstandsmodus",
     cellListIndent: "Listenebene erhöhen", cellListOutdent: "Listenebene verringern",
     insertNestedTable: "Verschachtelte Tabelle einfügen", editNestedTable: "Verschachtelte Tabelle bearbeiten",
+    cellRange: "Zellbereich", selectTableRow: "Zeile auswählen", selectTableColumn: "Spalte auswählen", selectWholeTable: "Ganze Tabelle auswählen", rangeEndRow: "Letzte Zeile", rangeEndColumn: "Letzte Spalte", selectedCellCount: "Ausgewählte Zellen", cellRangeHint: "Endzelle anklicken oder Koordinaten eingeben. Zellformatierung gilt für die Auswahl; Text und Zeilen bleiben individuell.", mixedCellFormat: "Gemischt", applyCellColor: "Aktuelle Farbe anwenden",
     cellFormatting: 'Zellformatierung', cellRow: 'Zellzeile', cellColumn: 'Zellspalte', textRotation: 'Textdrehung', rotationNone: 'Keine Drehung', rotationClockwise: '90° im Uhrzeigersinn', rotationCounterclockwise: '90° gegen den Uhrzeigersinn', rotationUpsideDown: '180° auf dem Kopf', textDirection: 'Schreibrichtung', directionAuto: 'Automatisch', directionLtr: 'Links nach rechts', directionRtl: 'Rechts nach links', editCellText: 'Text der ausgewählten Zelle', mobilePreviewNote: 'Mobil wird das aktuelle Publikationslayout angezeigt. Die vollständige Bearbeitung ist am Desktop verfügbar.',
     mergeRight: "Nach rechts verbinden", mergeDown: "Nach unten verbinden", splitCell: "Zelle teilen", mergeHint: "Nur leere Nachbarzellen können verbunden werden; vor einer Änderung der Kopfzeilengrenze die betroffene Zelle teilen.",
     rowHeightMode: "Zeilenhöhenmodus", rowHeightAuto: "Automatisch", rowHeightMinimum: "Mindestens", rowHeightExact: "Genau", rowHeightValue: "Zeilenhöhe", rowHeightExactHint: "Studio und HTML/PDF vergrößern die Zeile bei Bedarf. Exakte DOCX/ODT-Zeilen können Text abschneiden; Export prüfen.",
@@ -260,6 +273,13 @@ export function getVisualElementsCopy(locale: string): VisualElementsCopy {
     nl: {"resizeRow":"Rijhoogte aanpassen","resizeRowHint":"Sleep om te wijzigen; dubbelklik of Home voor automatisch. Pijlen: 1 pt, Shift: 10 pt."},
     pl: {"resizeRow":"Zmień wysokość wiersza","resizeRowHint":"Przeciągnij, aby zmienić; dwuklik lub Home przywraca automatykę. Strzałki: 1 pt, Shift: 10 pt."},
   };
+  const rangeCopies:Record<string,Pick<VisualElementsCopy,'cellRange'|'selectTableRow'|'selectTableColumn'|'selectWholeTable'|'rangeEndRow'|'rangeEndColumn'|'selectedCellCount'|'cellRangeHint'|'mixedCellFormat'|'applyCellColor'>>={
+    fr: {"cellRange":"Plage de cellules","selectTableRow":"Sélectionner la ligne","selectTableColumn":"Sélectionner la colonne","selectWholeTable":"Sélectionner le tableau","rangeEndRow":"Dernière ligne","rangeEndColumn":"Dernière colonne","selectedCellCount":"Cellules sélectionnées","cellRangeHint":"Choisir la cellule finale ou ses coordonnées. La mise en forme des cellules s’applique à la sélection ; texte et lignes restent individuels.","mixedCellFormat":"Mixte","applyCellColor":"Appliquer la couleur actuelle"},
+    it: {"cellRange":"Intervallo di celle","selectTableRow":"Seleziona riga","selectTableColumn":"Seleziona colonna","selectWholeTable":"Seleziona tabella","rangeEndRow":"Ultima riga","rangeEndColumn":"Ultima colonna","selectedCellCount":"Celle selezionate","cellRangeHint":"Scegli la cella finale o le coordinate. La formattazione si applica alla selezione; testo e righe restano individuali.","mixedCellFormat":"Misto","applyCellColor":"Applica colore corrente"},
+    es: {"cellRange":"Rango de celdas","selectTableRow":"Seleccionar fila","selectTableColumn":"Seleccionar columna","selectWholeTable":"Seleccionar tabla","rangeEndRow":"Última fila","rangeEndColumn":"Última columna","selectedCellCount":"Celdas seleccionadas","cellRangeHint":"Elige la celda final o sus coordenadas. El formato se aplica a la selección; texto y filas siguen siendo individuales.","mixedCellFormat":"Mixto","applyCellColor":"Aplicar color actual"},
+    nl: {"cellRange":"Celbereik","selectTableRow":"Rij selecteren","selectTableColumn":"Kolom selecteren","selectWholeTable":"Hele tabel selecteren","rangeEndRow":"Laatste rij","rangeEndColumn":"Laatste kolom","selectedCellCount":"Geselecteerde cellen","cellRangeHint":"Kies de eindcel of coördinaten. Celopmaak geldt voor de selectie; tekst en rijen blijven individueel.","mixedCellFormat":"Gemengd","applyCellColor":"Huidige kleur toepassen"},
+    pl: {"cellRange":"Zakres komórek","selectTableRow":"Zaznacz wiersz","selectTableColumn":"Zaznacz kolumnę","selectWholeTable":"Zaznacz tabelę","rangeEndRow":"Ostatni wiersz","rangeEndColumn":"Ostatnia kolumna","selectedCellCount":"Zaznaczone komórki","cellRangeHint":"Wybierz komórkę końcową lub współrzędne. Formatowanie dotyczy zaznaczenia; tekst i wiersze pozostają indywidualne.","mixedCellFormat":"Mieszane","applyCellColor":"Zastosuj bieżący kolor"},
+  };
   const merge=mergeCopies[language];
-  return {...translated,...rowCopies[language],...appearanceCopies[language],...edgeCopies[language],...heightCopies[language],...paragraphCopies[language],...cellListCopies[language],...nestedTableCopies[language],...rowResizeCopies[language],tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
+  return {...translated,...rowCopies[language],...appearanceCopies[language],...edgeCopies[language],...heightCopies[language],...paragraphCopies[language],...cellListCopies[language],...nestedTableCopies[language],...rowResizeCopies[language],...rangeCopies[language],tableHeaderRows:additionalHeaders[language] ?? translated.tableHeaderRows,...(merge?{mergeRight:merge[0],mergeDown:merge[1],splitCell:merge[2],mergeHint:merge[3]}:{})};
 }
