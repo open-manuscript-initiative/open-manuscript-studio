@@ -122,6 +122,7 @@ interface BlockEditorProps {
   publicationCorrections?: readonly OmiPublicationCorrection[];
   publicationFlowBreaks?: readonly OmiPublicationFlowBreak[];
   onProofingSelection?: (selection: ProofingSelection | null) => void;
+  reportProofingSelectionOnlyWhenFocused?: boolean;
   collaboration?: {
     fragment: Y.XmlFragment;
     provider: HocuspocusProvider;
@@ -146,6 +147,7 @@ function BlockEditorComponent({
   publicationCorrections = EMPTY_PUBLICATION_CORRECTIONS,
   publicationFlowBreaks = EMPTY_PUBLICATION_FLOW_BREAKS,
   onProofingSelection,
+  reportProofingSelectionOnlyWhenFocused = false,
   collaboration,
 }: BlockEditorProps) {
   const { t, locale } = useTranslation();
@@ -547,18 +549,22 @@ function BlockEditorComponent({
       ) {
         useStudioStore.getState().selectSection(active.sectionId);
       }
-      onProofingSelectionRef.current?.(
-        resolveProofingSelection(editor, active.blockId),
-      );
+      if (!reportProofingSelectionOnlyWhenFocused || editor.isFocused) {
+        onProofingSelectionRef.current?.(
+          resolveProofingSelection(editor, active.blockId),
+        );
+      }
     };
     syncActiveBlock();
     // Tiptap emits a transaction for selection changes as well. Listening to
     // both transaction and selectionUpdate duplicated active-block work.
     editor.on('transaction', syncActiveBlock);
+    if (reportProofingSelectionOnlyWhenFocused) editor.on('focus', syncActiveBlock);
     return () => {
       editor.off('transaction', syncActiveBlock);
+      if (reportProofingSelectionOnlyWhenFocused) editor.off('focus', syncActiveBlock);
     };
-  }, [continuous, editor]);
+  }, [continuous, editor, reportProofingSelectionOnlyWhenFocused]);
 
   useEffect(() => {
     if (!editor || continuous || !onProofingSelectionRef.current) return;
