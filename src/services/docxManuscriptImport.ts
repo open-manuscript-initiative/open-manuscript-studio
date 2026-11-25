@@ -1,3 +1,4 @@
+import { readWordSectionLayout } from '../model/wordSectionLayout';
 import { tableCellPlainText, normalizeCellParagraphAttrs, tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight, MAX_NESTED_TABLE_DEPTH, parseTableCellContent } from '../model/tableLayout';
 import { importedSourceStyle, type SourceStyle } from '../model/sourceWordStyles';
 import { normalizeListAttribute } from '../model/directListFormatting';
@@ -239,17 +240,31 @@ export async function parseDocxManuscript(
   if(!sectionRestart&&modes.some(mode=>mode!=='continuous'))warnings.push(warning('note-numbering-restart-not-fully-supported'));
   let index = 0;
   let pendingSection=false;
+  let physicalIndex=0,physicalStart=0;
+  const applyPhysicalLayout=()=>{
+    const props=nativeSections[physicalIndex++];
+    if(!props&&nativeSections.length===0)return;
+    const read=(tag:string,attr:string)=>{const node=props&&directChildrenByLocalName(props,tag)[0];return node?attributeByLocalName(node,attr):undefined;};
+    const wordSection=readWordSectionLayout(crypto.randomUUID(),read);
+    const count=Number(read('cols','num')??1);
+    const rawGap=read('cols','space'),gap=rawGap===undefined?undefined:Number(rawGap)*25.4/1440;
+    if(count>3||count<1||read('cols','equalWidth')==='0')warnings.push(warning('word-section-columns-partial'));
+    if(props&&directChildrenByLocalName(props,'headerReference').length+directChildrenByLocalName(props,'footerReference').length>0)warnings.push(warning('word-section-headers-footers-not-imported'));
+    for(const section of sections.slice(physicalStart))section.layout={...section.layout,wordSection,...(count===2||count===3?{columns:count,...(gap!==undefined&&Number.isFinite(gap)&&gap>=0&&gap<=50?{columnGapMm:gap}:{})}:{})};
+    physicalStart=sections.length;
+  };
 
   while (index < children.length) {
     const child = children[index];
     if (!child) break;
-    if(sectionRestart&&pendingSection){
+    if(pendingSection){
+      applyPhysicalLayout();
       const nextHeading=child.localName==='p'&&resolveParagraphHeadingLevel(child,resolveParagraphStyle(child,styles))!==undefined&&!paragraphHasNoteReference(child)&&paragraphPlainText(child).trim();
       headingStack.length=0;
       if(!nextHeading&&sections.at(-1)?.blocks.length){sections.push({id:crypto.randomUUID(),title:'',blocks:[]});stats.sections+=1;}
       pendingSection=false;
     }
-    if(sectionRestart&&child.localName==='p'&&sectionProperties(child))pendingSection=true;
+    if(child.localName==='p'&&sectionProperties(child))pendingSection=true;
 
     if (child.localName === 'tbl') {
       const section = ensureSection(sections);
@@ -365,7 +380,7 @@ export async function parseDocxManuscript(
       const trailingVisuals: OmiBlock[] = [];
 
       while (index < children.length) {
-        if(listParagraphs.length&&sectionRestart&&pendingSection)break;
+        if(listParagraphs.length&&pendingSection)break;
         const paragraph = children[index];
         if (!paragraph || paragraph.localName !== 'p') break;
         const paragraphStyle = resolveParagraphStyle(paragraph, styles);
@@ -404,7 +419,7 @@ export async function parseDocxManuscript(
           )),
         );
         stats.paragraphs += 1;
-        if(sectionRestart&&sectionProperties(paragraph))pendingSection=true;
+        if(sectionProperties(paragraph))pendingSection=true;
         index += 1;
       }
 
@@ -503,6 +518,7 @@ export async function parseDocxManuscript(
     index += 1;
   }
 
+  if(physicalStart<sections.length)applyPhysicalLayout();
   for (const section of sections) {
     if (section.blocks.length === 0) {
       section.blocks.push(createEmptyParagraphBlock());
