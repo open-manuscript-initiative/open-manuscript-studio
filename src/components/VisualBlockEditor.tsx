@@ -51,7 +51,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, formatTableRange } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, formatTableRange, planTableAxisMove, reorderTableAxis, type TableReorderAxis } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -422,6 +422,14 @@ function EditableGrid({
   const measureRow=(row:HTMLTableRowElement)=>{const rect=row.getBoundingClientRect();return {measured:rect.height,scale:row.offsetHeight>0?rect.height/row.offsetHeight:1};};
   const reduction = data.kind === 'table' && data.fontSizeReduction === 0 ? 0 : 1;
 
+  const canMove=(axis:TableReorderAxis,direction:-1|1)=>data.kind==='table'&&!previewOnly&&!rangeEnd&&!!planTableAxisMove(data,axis,axis==='row'?rawRow:rawColumn,direction);
+  function moveAxis(axis:TableReorderAxis,direction:-1|1):void {
+    if(data.kind!=='table'||previewOnly||rangeEnd) return;
+    const result=reorderTableAxis(data,axis,axis==='row'?rawRow:rawColumn,direction);
+    if(!result) return;
+    setSelection(axis==='row'?{row:result.index,column:rawColumn}:{row:rawRow,column:result.index});
+    onChange(result.table);
+  }
   function updateColumns(nextCells: string[][], nextWidths: number[]): void {
     onChange(data.kind === 'table'
       ? { ...data, cells: nextCells, columnWidths: tableColumnWidths(nextCells, nextWidths), cellMerges: tableMergeLayout(nextCells,data.cellMerges,headerCount).merges, cellContent:pruneTableCellContent(nextCells,data.cellContent), cellFormats: pruneTableCellFormats(nextCells, cellFormats) }
@@ -604,6 +612,18 @@ function EditableGrid({
           {copy.removeColumn}
         </button>
       </div>
+      {data.kind === 'table' ? (
+        <details className="omi-table-cell-formatting" style={continuationStyle(cells.length)}>
+          <summary>{copy.reorderTable}</summary>
+          <div className="omi-table-actions">
+            <button type="button" disabled={!canMove('row',-1)} onClick={()=>moveAxis('row',-1)}>{copy.moveRowUp}</button>
+            <button type="button" disabled={!canMove('row',1)} onClick={()=>moveAxis('row',1)}>{copy.moveRowDown}</button>
+            <button type="button" disabled={!canMove('column',-1)} onClick={()=>moveAxis('column',-1)}>{copy.moveColumnLeft}</button>
+            <button type="button" disabled={!canMove('column',1)} onClick={()=>moveAxis('column',1)}>{copy.moveColumnRight}</button>
+          </div>
+          <small>{copy.reorderTableHint}</small>
+        </details>
+      ):null}
       {data.kind === 'table' ? (
         <details className="omi-table-cell-formatting" style={continuationStyle(cells.length)}>
           <summary>{copy.cellFormatting}</summary>
