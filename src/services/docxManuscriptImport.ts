@@ -224,7 +224,11 @@ export async function parseDocxManuscript(
 
     if (child.localName === 'tbl') {
       const section = ensureSection(sections);
-      const table = parseWordTable(child,numbering);
+      const blockId=crypto.randomUUID();
+      // Bibliographic fields in cells retain their cached text until citation
+      // cluster traversal supports visual content; note anchors use the real registry.
+      const context:InlineContext={blockId,footnotes,endnotes,bibliographyByTag:new Map(),annotations,citations,citationClusters,warnings,stats};
+      const table = parseWordTable(child,numbering,relationships,context);
       if (table.cells.length) {
         section.blocks.push(
           createTableBlock(table.cells, {
@@ -236,7 +240,7 @@ export async function parseDocxManuscript(
             rowSplitOverrides: table.rowSplitOverrides,
             rowHeights: table.rowHeights,
             provenance,
-          }),
+          },blockId),
         );
         stats.tables += 1;
         if (table.mergedCells) warnings.push(warning('merged-table-cells'));
@@ -1144,7 +1148,7 @@ function resolveParagraphHeadingLevel(
   );
 }
 
-function parseWordTable(table: Element,numbering:WordNumbering,depth=0,budget={cells:10000}): {
+function parseWordTable(table: Element,numbering:WordNumbering,relationships:Map<string,Relationship>,context:InlineContext,depth=0,budget={cells:10000}): {
   cells: string[][];
   headerRows: number;
   mergedCells: boolean;
@@ -1248,15 +1252,7 @@ function parseWordTable(table: Element,numbering:WordNumbering,depth=0,budget={c
           }),
         }):{};
         if(attrs.omiAlign===format.horizontalAlign) delete attrs.omiAlign;
-        return {type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:descendantsByLocalName(p,'r').flatMap(run=>{
-        const marks=runMarks(run);
-        return Array.from(run.children).flatMap((node):TiptapNode[]=>{
-          if(node.localName==='t'&&node.textContent) return [{type:'text',text:node.textContent,marks}];
-          if(node.localName==='tab') return [{type:'omiTab'}];
-          if(node.localName==='br'||node.localName==='cr') return [{type:'hardBreak'}];
-          return [];
-        });
-      })};});
+        return {type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseParagraphInline(p,relationships,context)};});
       const nodes:TiptapNode[]=[];
       let listItems:ParsedListParagraph[]=[];
       const flush=()=>{if(listItems.length){nodes.push(...buildListNodes(listItems));listItems=[];}};
@@ -1264,7 +1260,7 @@ function parseWordTable(table: Element,numbering:WordNumbering,depth=0,budget={c
       for(const source of Array.from(cell.children)){
         if(source.localName==='tbl'){
           flush();
-          const child=parseWordTable(source,numbering,depth+1,budget);
+          const child=parseWordTable(source,numbering,relationships,context,depth+1,budget);
           const nestedTable:OmiTableBlockData={kind:'table',cells:child.cells,headerRows:child.headerRows,cellFormats:child.cellFormats,cellContent:child.cellContent,cellMerges:child.cellMerges,rowSplitDefault:'allow',rowSplitOverrides:child.rowSplitOverrides,rowHeights:child.rowHeights};
           if(child.mergedCells) mergedCells=true;
           if(child.cells.length) nodes.push({type:'omiCellTable',attrs:{table:nestedTable}});
@@ -1283,7 +1279,7 @@ function parseWordTable(table: Element,numbering:WordNumbering,depth=0,budget={c
       const doc={type:'doc',content:nodes};
       const rich=nodes.length>0&&nodes.some(p=>p.type!=='paragraph'||p.attrs||p.content?.some(n=>n.marks?.length||n.type!=='text')||nodes.length>1);
       const parsed=rich?parseTableCellContent(JSON.stringify(doc)):undefined;
-      if(nested&&!parsed) throw new Error('Nested table content could not be represented safely.');
+      if((nested||cellParagraphs.some(paragraphHasNoteReference))&&!parsed) throw new Error('Structured table content could not be represented safely.');
       const text=parsed?tableCellPlainText(parsed):descendantsByLocalName(cell,'p').map(paragraph=>paragraphPlainText(paragraph).trim()).filter(Boolean).join('\n');
       if(parsed) cellContent[`${rowIndex}:${columnIndex}`]=JSON.stringify(parsed);
       const vertical=prop('vMerge');
