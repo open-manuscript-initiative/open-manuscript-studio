@@ -495,6 +495,7 @@ export function PublicationDocumentCanvas({
     let measuring = false;
     let queued = false;
     let pending = false;
+    let structureVersion = 0;
     // Keep the last completed projection for unchanged block IDs. A newly
     // inserted paragraph temporarily follows its nearest preceding sheet.
     const updateProvisionalProjection = () => {
@@ -525,6 +526,7 @@ export function PublicationDocumentCanvas({
       queued = false;
       if (cancelled || !content.getClientRects().length) return;
       measuring = true;
+      const version = structureVersion;
       const flow = collectPublicationFlowElements(content);
       const noteElements = Array.from(
         noteMeasureRef.current?.querySelectorAll<HTMLElement>('[data-publication-note-id]') ?? [],
@@ -533,7 +535,7 @@ export function PublicationDocumentCanvas({
       let noteIndex = 0;
 
       const measureNotesChunk = () => {
-        if (cancelled || !content.getClientRects().length) { finish(); return; }
+        if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
         const startedAt = performance.now();
         while (noteIndex < noteElements.length
           && (noteIndex === 0 || performance.now() - startedAt < 8)) {
@@ -559,7 +561,7 @@ export function PublicationDocumentCanvas({
       let existingFlowBreakHeight = 0;
 
       const measureBlocksChunk = () => {
-        if (cancelled || !content.getClientRects().length) { finish(); return; }
+        if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
         const startedAt = performance.now();
         // This React-owned ancestor is outside ProseMirror's observed DOM.
         // Touching a paragraph/node-view style would make ProseMirror reparse
@@ -868,7 +870,7 @@ export function PublicationDocumentCanvas({
             const block = target?.closest<HTMLElement>('[data-block-id]');
             if (block && content.contains(block)) dirtyBlocks.add(block);
           }
-          if (structureChanged) updateProvisionalProjection();
+          if (structureChanged) { structureVersion += 1; updateProvisionalProjection(); }
           if (changed) schedule();
         });
     mutationObserver?.observe(content, {
