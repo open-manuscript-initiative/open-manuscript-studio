@@ -1,4 +1,4 @@
-import type { OmiTableCellFormat, OmiTableCellMerge, OmiTableBlockData, OmiTableRowSplitPolicy } from '../types/omi';
+import type { OmiTableCellFormat, OmiTableCellMerge, OmiTableBlockData, OmiTableRowSplitPolicy, OmiTableCellSide, OmiTableCellBorder } from '../types/omi';
 
 /** Relative widths keep the same table editable on screen and within print margins. */
 export function tableColumnWidths(cells: readonly (readonly string[])[], widths?: readonly number[]): number[] {
@@ -29,6 +29,7 @@ export function tableCellFormat(formats: Record<string, OmiTableCellFormat> | un
     textRotation: format?.textRotation === -90 || format?.textRotation === 90 || format?.textRotation === 180 ? format.textRotation : 0,
     textDirection: format?.textDirection === 'ltr' || format?.textDirection === 'rtl' ? format.textDirection : 'auto',
     ...normalizeTableCellAppearance(format),
+    ...normalizeTableCellEdges(format),
   };
 }
 
@@ -151,5 +152,51 @@ export function tableCellAppearanceStyle(format: OmiTableCellFormat) {
     ...(normalized.horizontalAlign?{textAlign:normalized.horizontalAlign}:{}),
     ...(normalized.verticalAlign?{verticalAlign:normalized.verticalAlign}:{}),
     ...(normalized.backgroundColor?{backgroundColor:normalized.backgroundColor}:{}),
+    ...tableCellEdgeStyle(format),
   };
+}
+
+export const TABLE_CELL_SIDES = ['top','right','bottom','left'] as const;
+export function normalizeTableCellEdges(format?: OmiTableCellFormat): Pick<OmiTableCellFormat,'borders'|'paddingPt'> {
+  const borders: Partial<Record<OmiTableCellSide,OmiTableCellBorder>>={};
+  const paddingPt: Partial<Record<OmiTableCellSide,number>>={};
+  for(const side of TABLE_CELL_SIDES){
+    const border=format?.borders?.[side];
+    if(border?.style==='none') borders[side]={style:'none'};
+    else if(border && ['solid','dashed','dotted','double'].includes(border.style)){
+      const width=typeof border.widthPt==='number' && Number.isFinite(border.widthPt)?border.widthPt:0.5;
+      borders[side]={style:border.style,widthPt:Math.min(12,Math.max(0.125,Math.round(width*8)/8)),color:typeof border.color==='string'&&/^#[0-9a-f]{6}$/i.test(border.color)?border.color.toUpperCase():'#000000'};
+    }
+    const padding=format?.paddingPt?.[side];
+    if(typeof padding==='number' && Number.isFinite(padding) && padding>=0) paddingPt[side]=Math.min(144,Math.round(padding*20)/20);
+  }
+  return {...(Object.keys(borders).length?{borders}:{}),...(Object.keys(paddingPt).length?{paddingPt}:{})};
+}
+export function tableCellEdgeStyle(format: OmiTableCellFormat): Record<string,string> {
+  const normalized=normalizeTableCellEdges(format);
+  const css: Record<string,string>={};
+  for(const side of TABLE_CELL_SIDES){
+    const key=side[0]!.toUpperCase()+side.slice(1);
+    const border=normalized.borders?.[side];
+    if(border) css['border'+key]=border.style==='none'?'none':border.widthPt+'pt '+border.style+' '+border.color;
+    const padding=normalized.paddingPt?.[side];
+    if(padding!==undefined) css['padding'+key]=padding+'pt';
+  }
+  return css;
+}
+/** ODF lengths: reject percentages, expressions and unitless nonzero values. */
+export function tableLengthPt(value: string | undefined): number | undefined {
+  if(value==='0') return 0;
+  const m=/^(\d+(?:\.\d+)?|\.\d+)(pt|pc|in|cm|mm)$/i.exec(value?.trim()??'');
+  if(!m) return undefined;
+  const factor:Record<string,number>={pt:1,pc:12,in:72,cm:72/2.54,mm:72/25.4};
+  const n=Number(m[1])*factor[m[2]!.toLowerCase()]!;
+  return Number.isFinite(n)?n:undefined;
+}
+export function odtTableCellBorder(value: string | undefined): OmiTableCellBorder | undefined {
+  if(value?.trim()==='none') return {style:'none'};
+  const m=/^(\S+)\s+(solid|dashed|dotted|double)\s+(#[0-9a-f]{6})$/i.exec(value?.trim()??'');
+  if(!m) return undefined;
+  const widthPt=tableLengthPt(m[1]);
+  return widthPt===undefined?undefined:{style:m[2]!.toLowerCase() as OmiTableCellBorder['style'],widthPt,color:m[3]};
 }
