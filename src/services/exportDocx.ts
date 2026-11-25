@@ -224,7 +224,9 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   }
 
   for(const index of manuscript.generatedIndexes??[]){
-    const key=index.indexId??DEFAULT_INDEX_ID;
+    // Legacy generated indexes were keyed by kind, before explicit indexId was introduced.
+    const candidates=(manuscript.indexDefinitions??[]).filter(definition=>definition.kind===index.kind);
+    const key=index.indexId??(candidates.length===1?candidates[0]!.id:DEFAULT_INDEX_ID);
     if(![...indexEntriesByBlock.values()].some(entries=>entries.some(entry=>(entry.indexId??DEFAULT_INDEX_ID)===key)))continue;
     if(key!==DEFAULT_INDEX_ID&&!indexTypes.has(key))continue;
     const title=index.title?.trim()||manuscript.indexDefinitions?.find(d=>d.id===key)?.title||localizedIndexLabel(context.locale);
