@@ -1428,3 +1428,52 @@ test('named source paragraph style survives structured text, editor projection a
   assert.match(xml,/<w:tab\/>/);
   inspect((await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'source-paragraph-style.docx'))).sections);
 });
+
+test('explicit mixed writing directions survive Word import, editor projection and OMI/DOCX reopen',async()=>{
+  const {paragraphFormattingCss,normalizeParagraphValue}=await import('../src/model/directParagraphFormatting.ts');
+  const {normalizeDirectValue}=await import('../src/model/directFormatting.ts');
+  const body='<w:p><w:pPr><w:bidi/></w:pPr><w:r><w:rPr><w:rtl/><w:lang w:val="he-IL"/></w:rPr><w:t>שלום עולם</w:t></w:r><w:r><w:rPr><w:rtl w:val="0"/></w:rPr><w:t> Latin 123</w:t></w:r></w:p><w:p><w:pPr><w:bidi w:val="0"/></w:pPr><w:r><w:rPr><w:lang w:val="ar-SA"/></w:rPr><w:t>مرحبا</w:t></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body));
+  const inspect=(sections:typeof plan.sections)=>{
+    const blocks=sections.flatMap(s=>s.blocks);
+    const first=blocks.find(b=>b.content.includes('Latin 123'))!;
+    const second=blocks.find(b=>b.content.includes('مرحبا'))!;
+    assert.ok(first&&second);
+    const a=JSON.parse(first.content) as TiptapNode,b=JSON.parse(second.content) as TiptapNode;
+    assert.equal(findNodes(a,'paragraph')[0]?.attrs?.omiParagraphDirection,'rtl');
+    assert.equal(findNodes(b,'paragraph')[0]?.attrs?.omiParagraphDirection,'ltr');
+    const direction=(n:TiptapNode)=>n.marks?.find(m=>m.type==='omiTextDirection')?.attrs?.value;
+    assert.equal(direction(findNodes(a,'text').find(n=>n.text?.includes('שלום'))!),'rtl');
+    assert.equal(direction(findNodes(a,'text').find(n=>n.text?.includes('Latin'))!),'ltr');
+    assert.equal(direction(findNodes(b,'text')[0]!),undefined,'Language must not imply a direct direction override');
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Bidirectional text'}),sections:plan.sections};
+  const projected={...manuscript,sections:projectContinuousManuscriptDocument(buildContinuousManuscriptDocument(manuscript.sections),manuscript.sections)};
+  const reopened=parseOmiJson(serializeOmiJson(projected));
+  inspect(reopened.sections);
+  const docx=buildDocxExport(reopened);
+  const word=readZipParts(docx.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(word,/<w:bidi w:val="1"\/>/);
+  assert.match(word,/<w:bidi w:val="0"\/>/);
+  assert.match(word,/<w:rtl w:val="1"\/>/);
+  assert.match(word,/<w:rtl w:val="0"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(docx.bytes)],'mixed-direction.docx'))).sections);
+  const {renderHtmlArticle}=await import('../src/services/exportHtml.ts');
+  const html=renderHtmlArticle(reopened).html;
+  assert.match(html,/direction:rtl;unicode-bidi:embed/);
+  assert.match(html,/direction:ltr;unicode-bidi:embed/);
+  const odt=buildOdtExport(reopened);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/style:writing-mode="rl-tb"/);
+  assert.match(odtXml,/style:writing-mode="lr-tb"/);
+  const imported=await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'mixed-direction.odt'));
+  const importedBlocks=imported.sections.flatMap(s=>s.blocks);
+  for(const [sample,dir] of [['Latin 123','rtl'],['مرحبا','ltr']]){
+    const block=importedBlocks.find(b=>b.content.includes(sample!))!;
+    assert.equal(findNodes(JSON.parse(block.content),'paragraph')[0]?.attrs?.omiParagraphDirection,dir);
+  }
+  assert.equal(paragraphFormattingCss({omiParagraphDirection:'rtl'},'print'),'direction:rtl');
+  assert.equal(normalizeParagraphValue('omiParagraphDirection','rtl;display:none'),undefined);
+  assert.equal(normalizeDirectValue('omiTextDirection','auto'),undefined);
+});
