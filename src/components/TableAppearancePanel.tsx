@@ -25,7 +25,7 @@ export function TableAppearancePanel({table,start,end,copy,onChange}:{table:OmiT
     window.addEventListener('storage',refresh);
     return ()=>window.removeEventListener('storage',refresh);
   },[]);
-  const builtins=[{key:'builtin:grid',label:copy.tableStyleGrid,preset:BUILTIN_TABLE_STYLES.grid},{key:'builtin:minimal',label:copy.tableStyleMinimal,preset:BUILTIN_TABLE_STYLES.minimal},{key:'builtin:banded',label:copy.tableStyleBanded,preset:BUILTIN_TABLE_STYLES.banded}];
+  const builtins:{key:string;label:string;preset:TableAppearancePreset}[]=[{key:'builtin:grid',label:copy.tableStyleGrid,preset:BUILTIN_TABLE_STYLES.grid},{key:'builtin:minimal',label:copy.tableStyleMinimal,preset:BUILTIN_TABLE_STYLES.minimal},{key:'builtin:banded',label:copy.tableStyleBanded,preset:BUILTIN_TABLE_STYLES.banded}];
   const choices=[...builtins,...presets.map(preset=>({key:'custom:'+preset.name,label:preset.name+' ('+(preset.kind==='cell'?copy.cellStyleLabel:copy.tableStyleLabel)+')',preset})),...catalog.items.map(preset=>({key:'publication:'+preset.name,label:copy.publicationTableStyles+': '+preset.name+(preset.name===catalog.defaultTableStyle?' ★':''),preset}))];
   const choice=choices.find(item=>item.key===selected);
   function persist(next:TableAppearancePreset[]):boolean{
