@@ -251,7 +251,7 @@ export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:1
     const validBlock=(node:NoteJsonNode,depth:number):boolean=>{
       if(depth>8||!node||typeof node!=='object') return false;
       if(node.type==='paragraph'){
-        if(node.content!==undefined&&(!Array.isArray(node.content)||!node.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab'))) return false;
+        if(node.content!==undefined&&(!Array.isArray(node.content)||!node.content.every(n=>n?.type==='text'&&typeof n.text==='string'&&(n.marks===undefined||Array.isArray(n.marks)&&n.marks.every(m=>m&&typeof m.type==='string'))||n?.type==='hardBreak'||n?.type==='omiTab'||n?.type==='omiNote'&&typeof n.attrs?.noteId==='string'&&!!n.attrs.noteId.trim()&&typeof n.attrs.anchorId==='string'&&!!n.attrs.anchorId.trim()))) return false;
         paragraphs.push(node);
         return true;
       }
@@ -285,6 +285,11 @@ export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:1
       const attrs=normalizeCellParagraphAttrs(p.attrs);
       if(Object.keys(attrs).length) p.attrs=attrs; else delete p.attrs;
       for(const n of p.content??[]){
+        if(n.type==='omiNote'){
+          const a=n.attrs!;
+          n.attrs={noteId:a.noteId,anchorId:a.anchorId,label:typeof a.label==='string'?a.label.slice(0,32):'?',noteType:a.noteType==='endnote'||a.noteType==='author-note'?a.noteType:'footnote'};
+          delete n.text;delete n.content;delete n.marks;continue;
+        }
         if(n.type!=='text'){delete n.attrs;delete n.marks;continue;}
         n.marks=n.marks?.flatMap<NonNullable<NoteJsonNode['marks']>[number]>(mark=>{
           const name=mark.type!;
@@ -317,7 +322,7 @@ export function parseTableCellContent(value:unknown,tableDepth=0,budget={cells:1
 export function tableCellPlainText(doc:NoteJsonNode):string {
   const paragraphs:string[]=[];
   const visit=(node:NoteJsonNode)=>{
-    if(node.type==='paragraph') paragraphs.push((node.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.text??'').join(''));
+    if(node.type==='paragraph') paragraphs.push((node.content??[]).map(n=>n.type==='hardBreak'?'\n':n.type==='omiTab'?'\t':n.type==='omiNote'?'':n.text??'').join(''));
     else if(node.type==='omiCellTable') {const table=node.attrs?.table as OmiTableBlockData|undefined;if(table) paragraphs.push(table.cells.map(row=>row.join('\t')).join('\n'));}
     else for(const child of node.content??[]) visit(child);
   };
