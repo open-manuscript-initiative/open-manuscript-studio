@@ -2,7 +2,11 @@ import type { OmiTableBlockData, OmiTableCellFormat, OmiBlock, OmiSection } from
 import { normalizeTableCellAppearance, normalizeTableCellEdges, tableCellFormat, tableHeaderRows, tableRangeAnchors, pruneTableCellFormats, prunePublicationCellStyles, tableMergeLayout, parseTableCellContent, cellNestedTable, MAX_NESTED_TABLE_DEPTH, type TableCellPosition } from './tableLayout';
 
 export type CellStylePreset={kind:'cell';name:string;format:OmiTableCellFormat};
-export type TableStylePreset={kind:'table';name:string;basedOn?:string;header:OmiTableCellFormat;body:OmiTableCellFormat;alternate?:OmiTableCellFormat;firstColumn?:OmiTableCellFormat;lastColumn?:OmiTableCellFormat;summary?:OmiTableCellFormat};
+export type TableStylePreset={kind:'table';name:string;basedOn?:string;header:OmiTableCellFormat;body:OmiTableCellFormat;alternate?:OmiTableCellFormat;firstColumn?:OmiTableCellFormat;lastColumn?:OmiTableCellFormat;summary?:OmiTableCellFormat;conditions?:TableCondition[]};
+export type TableConditionOperator='eq'|'contains'|'lt'|'lte'|'gt'|'gte'|'empty'|'nonempty';
+export type TableCondition={operator:TableConditionOperator;value?:string;format:OmiTableCellFormat};
+export const MAX_TABLE_CONDITIONS=24;
+const CONDITION_OPERATORS=['eq','contains','lt','lte','gt','gte','empty','nonempty'] as const;
 export type TableStyleRegion='header'|'body'|'alternate'|'firstColumn'|'lastColumn'|'summary';
 const OPTIONAL_REGIONS=['alternate','firstColumn','lastColumn','summary'] as const;
 export type TableAppearancePreset=CellStylePreset|TableStylePreset;
@@ -35,9 +39,41 @@ export function normalizeAppearancePreset(value:unknown):TableAppearancePreset|u
     const result:TableStylePreset={kind:'table',name,header:normalizePresetFormat(raw.header,false),body:normalizePresetFormat(raw.body,false)};
     if(typeof raw.basedOn==='string'&&raw.basedOn.length>0&&raw.basedOn.length<=80&&raw.basedOn.trim()===raw.basedOn)result.basedOn=raw.basedOn;
     for(const region of OPTIONAL_REGIONS)if(raw[region]&&typeof raw[region]==='object'&&!Array.isArray(raw[region]))result[region]=normalizePresetFormat(raw[region],false);
+    if(Array.isArray(raw.conditions))result.conditions=raw.conditions.slice(0,MAX_TABLE_CONDITIONS).flatMap(entry=>{const rule=normalizeTableCondition(entry);return rule?[rule]:[];});
     return result;
   }
   return undefined;
+}
+/** Strict decimal input, including a single comma decimal separator. No
+ * grouping, units, exponent, formula, or locale-dependent coercion. */
+function conditionNumber(value:string):number|undefined{
+  const text=value.trim();
+  if(!/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(text))return undefined;
+  const n=Number(text.replace(',','.'));
+  return Number.isFinite(n)?n:undefined;
+}
+export function normalizeTableCondition(value:unknown):TableCondition|undefined{
+  if(!value||typeof value!=='object'||Array.isArray(value))return undefined;
+  const raw=value as Record<string,unknown>;
+  const operator=CONDITION_OPERATORS.find(op=>op===raw.operator);
+  if(!operator||!raw.format||typeof raw.format!=='object'||Array.isArray(raw.format))return undefined;
+  const format=normalizePresetFormat(raw.format,false);
+  if(!Object.keys(format).length)return undefined;
+  if(operator==='empty'||operator==='nonempty')return {operator,format};
+  if(typeof raw.value!=='string'||raw.value.length>256||!raw.value.trim())return undefined;
+  const operand=raw.value.trim();
+  if(operator!=='eq'&&operator!=='contains'&&conditionNumber(operand)===undefined)return undefined;
+  return {operator,value:operand,format};
+}
+export function matchesTableCondition(rule:TableCondition,cell:string):boolean{
+  const text=cell.trim(),operand=rule.value??'';
+  if(rule.operator==='empty')return !text;
+  if(rule.operator==='nonempty')return !!text;
+  if(rule.operator==='eq')return text===operand;
+  if(rule.operator==='contains')return text.includes(operand);
+  const a=conditionNumber(text),b=conditionNumber(operand);
+  if(a===undefined||b===undefined)return false;
+  switch(rule.operator){case 'lt':return a<b;case 'lte':return a<=b;case 'gt':return a>b;case 'gte':return a>=b;default:return false;}
 }
 export function readAppearancePresets(json:string|null):TableAppearancePreset[]{
   if(!json||json.length>1000000) return [];
@@ -80,7 +116,7 @@ export function applyAppearancePreset(table:OmiTableBlockData,preset:TableAppear
     if(valid.kind==='cell'){formats[key]=normalizePresetFormat(valid.format,true);delete bindings[key];}
     else{
       if(bindings[key])continue;
-      const source=regionFormat(valid,row,headers,column,table.cells.length,table.cells[row]?.length??0);
+      const source=regionFormat(valid,row,headers,column,table.cells.length,table.cells[row]?.length??0,table.cells[row]?.[column]??'');
       const existing=tableCellFormat(formats,row,column);
       formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...normalizePresetFormat(source,false)};
     }
@@ -192,6 +228,7 @@ function resolveTablePreset(items:readonly TableAppearancePreset[],name:string,s
   for(const region of OPTIONAL_REGIONS){
     if(parent[region]||preset[region])result[region]={...parent[region],...preset[region]};
   }
+  if(preset.conditions!==undefined||parent.conditions!==undefined)result.conditions=preset.conditions??parent.conditions;
   return result;
 }
 export function resolvePublicationTablePreset(catalog:PublicationTableStyles|undefined,name:string):TableStylePreset|undefined{
@@ -202,11 +239,13 @@ export function derivePublicationTablePreset(catalog:PublicationTableStyles,name
 }
 /** Header wins over body regions. Within body: base, band, first column,
  * last column, summary (last body row), then named cell/direct overrides. */
-function regionFormat(preset:TableStylePreset,row:number,headers:number,column:number,rows:number,columns:number):OmiTableCellFormat{
+function regionFormat(preset:TableStylePreset,row:number,headers:number,column:number,rows:number,columns:number,value:string):OmiTableCellFormat{
   if(row<headers)return normalizePresetFormat(preset.header,false);
   // Legacy alternate formats replace the body; extended regions overlay it.
   const base=preset.alternate&&(row-headers)%2===1?preset.alternate:preset.body;
-  return normalizePresetFormat({...base,...(column===0?preset.firstColumn:{}),...(column===columns-1?preset.lastColumn:{}),...(row===rows-1?preset.summary:{})},false);
+  const format={...base,...(column===0?preset.firstColumn:{}),...(column===columns-1?preset.lastColumn:{}),...(row===rows-1?preset.summary:{})};
+  for(const condition of preset.conditions??[])if(matchesTableCondition(condition,value))Object.assign(format,condition.format);
+  return normalizePresetFormat(format,false);
 }
 /** Map old visible anchors to their new coordinates; new anchors inherit the
  * new region, while direct appearance differences and text direction travel
@@ -224,9 +263,9 @@ function materializeInheritedGeometry(previous:OmiTableBlockData,next:OmiTableBl
     const oldKey=source.row+':'+source.column;
     const existingAnchor=previous.cells[source.row]?.[source.column]!==undefined&&!oldLayout.covered(source.row,source.column);
     const orientation=tableCellFormat(formats,row,column);
-    const format:OmiTableCellFormat={textRotation:orientation.textRotation,textDirection:orientation.textDirection,...regionFormat(current,row,headers,column,next.cells.length,next.cells[row]?.length??0)};
+    const format:OmiTableCellFormat={textRotation:orientation.textRotation,textDirection:orientation.textDirection,...regionFormat(current,row,headers,column,next.cells.length,next.cells[row]?.length??0,next.cells[row]?.[column]??'')};
     if(existingAnchor&&previous.cellFormats?.[oldKey]){
-      const baseline=regionFormat(old,source.row,oldHeaders,source.column,previous.cells.length,previous.cells[source.row]?.length??0);
+      const baseline=regionFormat(old,source.row,oldHeaders,source.column,previous.cells.length,previous.cells[source.row]?.length??0,previous.cells[source.row]?.[source.column]??'');
       const existing=normalizePresetFormat(previous.cellFormats[oldKey],false);
       for(const field of fields){
         if(!sameFormat(existing[field],baseline[field])){
@@ -331,7 +370,7 @@ export function resetInheritedCellAppearance(table:OmiTableBlockData,catalog:Pub
     if(cell?.kind==='cell')formats[key]=normalizePresetFormat(cell.format,true);
     else if(preset?.kind==='table'){
       const existing=tableCellFormat(formats,row,column);
-      formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...regionFormat(preset,row,headers,column,table.cells.length,table.cells[row]?.length??0)};
+      formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...regionFormat(preset,row,headers,column,table.cells.length,table.cells[row]?.length??0,table.cells[row]?.[column]??'')};
     }
   }
   return sameFormat(formats,table.cellFormats??{})?table:{...table,cellFormats:formats};
