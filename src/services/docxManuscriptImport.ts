@@ -735,7 +735,8 @@ function parseParagraphInline(
           context.warnings.push(warning('missing-note-body'));
         }
         let noteBody = noteBodies.get(noteId);
-        const marker=node.nextElementSibling;
+        const siblings=Array.from(run.children);
+        const marker=siblings[siblings.indexOf(node)+1];
         const customMark= /^(?:1|true|on)$/i.test(attributeByLocalName(node,'customMarkFollows')??'')&&marker?.localName==='t'&&marker.textContent?.startsWith('*')?'*' as const:undefined;
         if(customMark&&marker){skipStar.add(marker);if(noteBody)noteBody=removeSourceStar(noteBody);}
         else if(attributeByLocalName(node,'customMarkFollows')&&attributeByLocalName(node,'customMarkFollows')!=='0')context.warnings.push(warning('unsupported-custom-note-mark'));
