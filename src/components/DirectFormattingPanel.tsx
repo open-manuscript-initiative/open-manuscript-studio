@@ -3,6 +3,7 @@ import { normalizeSourceStyle, sourceStyleBundle } from '../model/sourceWordStyl
 import type { Editor } from '@tiptap/core';
 import { EyeOff, Unlink, RotateCcw, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
+import { PUBLICATION_FONT_SIZE_PRESETS } from './PublicationPointInput';
 import { normalizeParagraphValue, paragraphBorders, paragraphTabs, BORDER_SIDES, type ParagraphFormat, type ParagraphBorder, type ParagraphTab } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
 import { getRichTextCopy } from '../i18n/richText';
@@ -81,7 +82,7 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
       {choices ? <select aria-label={label} value={value} onChange={event => choose(event.target.value)}>
         <option value="" disabled>{current.mixed ? mixed : reset}</option>
         {choices.map(choice => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
-      </select> : <input aria-label={label} type={kind} step={kind === 'number' ? '0.5' : undefined}
+      </select> : <><input aria-label={label} type={kind} step={kind === 'number' ? 'any' : undefined}
         placeholder={current.mixed ? mixed : undefined} value={value}
         onChange={event => kind === 'color' ? choose(event.target.value) : update(event.target.value)}
         onBlur={() => {
@@ -91,7 +92,11 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
           }
           setEditing(false);
         }}
-        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); apply(); } }} />}
+        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); apply(); } }} />
+        {name === 'omiFontSize' ? <select aria-label={label} value={current.value && PUBLICATION_FONT_SIZE_PRESETS.includes(Number(current.value)) ? current.value : ''} onChange={event => choose(event.target.value)}>
+          <option value="" disabled>—</option>
+          {PUBLICATION_FONT_SIZE_PRESETS.map(size => <option key={size} value={size}>{size} pt</option>)}
+        </select> : null}</>}
     </label>
     <button type="button" aria-label={copy.apply + ': ' + label} title={copy.apply} disabled={normalized === undefined || normalized === null} onMouseDown={e => e.preventDefault()} onClick={apply}>✓</button>
     <button type="button" aria-label={reset + ': ' + label} title={reset} onMouseDown={e => e.preventDefault()} onClick={() => { if (paragraph) editor.chain().focus().updateAttributes('paragraph', { [name]: null }).run(); else applyMark(editor, name, null); setEditing(false); }}><RemoveFormatting size={15} aria-hidden="true" /></button>
