@@ -1,3 +1,4 @@
+import { normalizeRunningVariants, type RunningVariants } from './wordRunningMatter';
 /** Bounded native Word page settings. Twips avoid conversion drift.
  * groupId identifies a physical source section spanning multiple headings. */
 export interface WordSectionLayout {
@@ -8,6 +9,10 @@ export interface WordSectionLayout {
   orientation?:'portrait'|'landscape';
   margins?:Partial<Record<'top'|'right'|'bottom'|'left'|'header'|'footer'|'gutter',number>>;
   pageNumberStart?:number;
+  evenAndOddHeaders?:boolean;
+  differentFirstPage?:boolean;
+  headers?:RunningVariants;
+  footers?:RunningVariants;
 }
 const breakTypes=['continuous','nextPage','oddPage','evenPage','nextColumn'] as const;
 const sides=['top','right','bottom','left','header','footer','gutter'] as const;
@@ -22,6 +27,11 @@ export function normalizeWordSectionLayout(input:unknown):WordSectionLayout|unde
   if(breakTypes.includes(v.breakType as typeof breakTypes[number]))out.breakType=v.breakType as WordSectionLayout['breakType'];
   for(const key of ['pageWidthTwips','pageHeightTwips'] as const){const n=bounded(v[key],1,31680);if(n!==undefined)out[key]=n;}
   if(v.orientation==='portrait'||v.orientation==='landscape')out.orientation=v.orientation;
+  if(typeof v.evenAndOddHeaders==='boolean')out.evenAndOddHeaders=v.evenAndOddHeaders;
+  if(typeof v.differentFirstPage==='boolean')out.differentFirstPage=v.differentFirstPage;
+  const headers=normalizeRunningVariants(v.headers),footers=normalizeRunningVariants(v.footers);
+  if(headers)out.headers=headers;
+  if(footers)out.footers=footers;
   const start=bounded(v.pageNumberStart,0,32767);if(start!==undefined)out.pageNumberStart=start;
   if(v.margins&&typeof v.margins==='object'&&!Array.isArray(v.margins)){
     const margins:NonNullable<WordSectionLayout['margins']>={};
