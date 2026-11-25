@@ -12,6 +12,7 @@ export type RangeParagraphFormat=typeof CELL_PARAGRAPH_FORMATS[number];
 export type RangeTypographyChange=
   |{kind:'mark';name:RangeMark;enabled:boolean}
   |{kind:'direct';name:RangeDirectFormat;value:string|number|null}
+  |{kind:'font';value:string|null}
   |{kind:'paragraph';name:RangeParagraphFormat;value:string|number|null}
   |{kind:'lineSpacing';rule:'auto'|'exact'|'atLeast';value:number|null};
 
@@ -54,6 +55,11 @@ export function applyRangeTypography(table:OmiTableBlockData,start:TableCellPosi
     value=change.value===null?undefined:normalizeDirectValue(change.name,change.value);
     if(change.value!==null&&value===undefined)return table;
   }
+  if(change.kind==='font'){
+    const family=change.value?.trim();
+    if(change.value!==null&&(!family||family.length>128||!Array.from(family).every(character=>{const code=character.charCodeAt(0);return code>=32&&code!==127&&!';{}<>'.includes(character); })))return table;
+    value=family;
+  }
   if(change.kind==='paragraph'){
     if(!CELL_PARAGRAPH_FORMATS.includes(change.name)||change.name==='omiLineRule'||change.name==='omiLineSpacing')return table;
     value=change.value===null?undefined:normalizeParagraphValue(change.name,change.value);
@@ -86,12 +92,13 @@ export function applyRangeTypography(table:OmiTableBlockData,start:TableCellPosi
       for(const node of p.content??[]){
         if(node.type!=='text'||!node.text)continue;
         const existing=node.marks??[];
+        const name=change.kind==='font'?'omiSourceFont':change.name;
         const enabled=change.kind==='mark'?change.enabled:value!==undefined;
         const other=change.kind==='mark'&&enabled?(change.name==='omiSuperscript'?'omiSubscript':change.name==='omiSubscript'?'omiSuperscript':undefined):undefined;
-        const original=existing.find(mark=>mark.type===change.name);
+        const original=existing.find(mark=>mark.type===name);
         // Enabling underline must not replace an existing underline variant.
-        const replacement=enabled?(change.kind==='mark'?(original??{type:change.name}):{type:change.name,attrs:{value}}):undefined;
-        const marks=existing.filter(mark=>mark.type!==change.name&&(!other||mark.type!==other));
+        const replacement=enabled?(change.kind==='mark'?(original??{type:name}):{type:name,attrs:change.kind==='font'?{family:value}:{value}}):undefined;
+        const marks=existing.filter(mark=>mark.type!==name&&(!other||mark.type!==other));
         if(replacement)marks.push(replacement);
         if(marks.length)node.marks=marks;else delete node.marks;
       }
@@ -104,4 +111,21 @@ export function applyRangeTypography(table:OmiTableBlockData,start:TableCellPosi
     cellContent[key]=JSON.stringify(valid);changed=true;
   }
   return changed?{...table,cellContent}:table;
+}
+
+export type RangeField = RangeDirectFormat|RangeParagraphFormat|'omiSourceFont';
+/** Uniform, mixed or absent field value; empty paragraphs participate only in
+ * paragraph formatting, not in character formatting. */
+export function rangeTypographyValue(table:OmiTableBlockData,start:TableCellPosition,end:TableCellPosition,field:RangeField):{value:string;mixed:boolean}{
+  const values=new Set<string>();
+  const paragraph=CELL_PARAGRAPH_FORMATS.includes(field as RangeParagraphFormat);
+  for(const {doc} of selectedDocuments(table,start,end))visitParagraphs(doc,p=>{
+    if(paragraph){values.add(String(p.attrs?.[field]??''));return;}
+    for(const node of p.content??[]){
+      if(node.type!=='text'||!node.text)continue;
+      const mark=node.marks?.find(m=>m.type===field);
+      values.add(String(mark?.attrs?.[field==='omiSourceFont'?'family':'value']??''));
+    }
+  });
+  return {value:values.size===1?[...values][0]??'':'',mixed:values.size>1};
 }
