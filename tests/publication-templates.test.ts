@@ -530,3 +530,33 @@ test('standalone table style preview is isolated and duplication preserves ances
   assert.equal(preview.cellFormats?.['0:0']?.backgroundColor,'#E6E6E6');
   assert.equal(derived.items.length,2);
 });
+
+test('renaming table and cell styles preserves assignments, ancestry and nested formatting',async()=>{
+  const {BUILTIN_TABLE_STYLES,normalizePublicationTableStyles,derivePublicationTablePreset,renamePublicationTablePreset,renamePublicationTableBindings,bindPublicationTableStyle,bindPublicationCellStyle,resolvePublicationTablePreset,validatePublicationTableStyles}=await import('../src/model/tableAppearancePresets.ts');
+  const {tableCellDocument,cellNestedTable}=await import('../src/model/tableLayout.ts');
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const initial=normalizePublicationTableStyles({items:[BUILTIN_TABLE_STYLES.grid,{kind:'cell',name:'Note',format:{backgroundColor:'#123456'}}],defaultTableStyle:'grid'})!;
+  const catalog=derivePublicationTablePreset(initial,'Derived','grid')!;
+  const at={row:0,column:0};
+  const nested=bindPublicationCellStyle(bindPublicationTableStyle({kind:'table',cells:[['N']]},catalog,'grid'),catalog,'Note',at,at);
+  const parent=bindPublicationTableStyle({kind:'table',cells:[['N']],cellContent:{'0:0':JSON.stringify({type:'doc',content:[{type:'omiCellTable',attrs:{table:nested}}]})}},catalog,'grid');
+  const sections=[{id:'s',title:'Section',blocks:[{...createTableBlock([['N']]),visual:parent}]}];
+  const renamed=renamePublicationTablePreset(catalog,'grid','Base')!;
+  validatePublicationTableStyles(renamed);
+  assert.equal(renamed.defaultTableStyle,'Base');
+  assert.deepEqual(resolvePublicationTablePreset(renamed,'Derived'),resolvePublicationTablePreset(catalog,'Derived'));
+  assert.equal(renamePublicationTablePreset(catalog,'grid','Note'),undefined);
+  assert.equal(renamePublicationTablePreset(catalog,'grid','  '),undefined);
+  const changed=renamePublicationTableBindings(sections,'grid','Base','table');
+  const cellChanged=renamePublicationTableBindings(changed,'Note','Annotation','cell');
+  const visual=cellChanged[0]!.blocks[0]!.visual;
+  assert.ok(visual?.kind==='table');
+  assert.equal(visual.publicationTableStyle,'Base');
+  assert.equal(visual.cellFormats,parent.cellFormats);
+  const inner=cellNestedTable(tableCellDocument(visual,0,0)!.content![0]!)!;
+  assert.equal(inner.publicationTableStyle,'Base');
+  assert.equal(inner.publicationCellStyles?.['0:0'],'Annotation');
+  assert.equal(inner.cellFormats?.['0:0']?.backgroundColor,'#123456');
+  assert.equal(parent.publicationTableStyle,'grid');
+  assert.equal(renamePublicationTableBindings(sections,'Missing','Other','table'),sections);
+});
