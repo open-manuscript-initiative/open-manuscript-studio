@@ -1,4 +1,4 @@
-import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy, TABLE_CELL_SIDES } from '../model/tableLayout';
+import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
@@ -314,7 +314,7 @@ function wordTable(table: OmiTableBlockData, warnings: string[]): string {
       const format = tableCellFormat(table.cellFormats,merge?.row??r,c);
       const rotation = format.textRotation === -90 ? 'btLr' : format.textRotation === 90 ? 'tbRl' : undefined;
       if (format.textRotation === 180 || format.textDirection !== 'auto') partial = true;
-      const borderXml=TABLE_CELL_SIDES.map(side=>{
+      const borderXml=(['top','left','bottom','right'] as const).map(side=>{
         const edge=format.borders?.[side];
         if(!edge) return '';
         // Suppress internal top/bottom borders of vertical merge continuations.
@@ -323,7 +323,7 @@ function wordTable(table: OmiTableBlockData, warnings: string[]): string {
         const val=edge.style==='solid'?'single':edge.style;
         return '<w:'+side+' w:val="'+val+'" w:sz="'+Math.round((edge.widthPt??0.5)*8)+'" w:color="'+(edge.color??'#000000').slice(1)+'"/>';
       }).join('');
-      const marginXml=TABLE_CELL_SIDES.map(side=>{
+      const marginXml=(['top','left','bottom','right'] as const).map(side=>{
         const n=format.paddingPt?.[side];
         return n===undefined?'':'<w:'+side+' w:w="'+Math.round(n*20)+'" w:type="dxa"/>';
       }).join('');
