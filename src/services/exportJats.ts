@@ -825,7 +825,19 @@ function renderTable(block: OmiBlock, state: RenderState): string {
       if(layout.covered(r,c)) return '';
       const m=layout.at(r,c);
       const doc=tableCellDocument(visual,r,c);
-      const rich=doc?.content?.map(p=>{const table=cellNestedTable(p);return table?escapeXml(table.cells.map(row=>row.join(' | ')).join('\n')).replace(/\n/g,'<break/>'):p.type==='paragraph'?renderInlineChildren(p.content??[],state):renderBlockNode(p,state,block.id,1);}).join('<break/>');
+      const renderCellNodes=(nodes:NonNullable<typeof doc>['content']):string=>(nodes??[]).map(p=>{
+        const table=cellNestedTable(p);
+        if(table){
+          const inner=tableMergeLayout(table.cells,table.cellMerges,table.headerRows);
+          return table.cells.map((row,rr)=>row.flatMap((value,cc)=>{
+            if(inner.covered(rr,cc))return [];
+            const rich=tableCellDocument(table,rr,cc);
+            return [rich?renderCellNodes(rich.content):escapeXml(value)];
+          }).join(' | ')).join('<break/>');
+        }
+        return p.type==='paragraph'?renderInlineChildren(p.content??[],state):renderBlockNode(p,state,block.id,1);
+      }).join('<break/>');
+      const rich=doc?renderCellNodes(doc.content):undefined;
       return '<'+cellTag+(m && m.rowSpan>1?' rowspan="'+m.rowSpan+'"':'')+(m && m.colSpan>1?' colspan="'+m.colSpan+'"':'')+'>'+(rich??escapeXml(cell))+'</'+cellTag+'>';
     }).join('')+'</tr>';
   const table = `<table>${
