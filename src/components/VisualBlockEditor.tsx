@@ -2,6 +2,8 @@ import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tip
 import { generateHTML, Node as TiptapNode } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
+import { OmiNoteExtension } from '../editor/extensions/OmiNoteExtension';
+import { collectNoteAnchorsInBlock } from '../model/notes';
 import { getRichTextCopy } from '../i18n/richText';
 import { useFormattingEditor } from '../editor/useFormattingEditor';
 import type { NoteJsonNode } from '../model/noteRichText';
@@ -94,7 +96,12 @@ export function VisualBlockEditor({
   }
 
   function update(next: OmiVisualBlockData): void {
-    if (!previewOnly) stageUpdateVisualBlock(block.id, next);
+    if(previewOnly) return;
+    if(visual.kind==='table'&&next.kind==='table'){
+      const keys=(table:OmiTableBlockData)=>collectNoteAnchorsInBlock('',sectionId,block.id,table).map(a=>a.noteId+'\\u0000'+a.anchorId).sort();
+      if(JSON.stringify(keys(visual))!==JSON.stringify(keys(next))) return;
+    }
+    stageUpdateVisualBlock(block.id,next);
   }
 
   function remove(): void {
@@ -313,7 +320,7 @@ const NestedCellTableNode=TiptapNode.create({
     })])]] as import('@tiptap/pm/model').DOMOutputSpec;
   },
 });
-const cellExtensions=()=>[NestedCellTableNode,StarterKit.configure({heading:false,blockquote:false,codeBlock:false,horizontalRule:false,link:false,underline:false}),...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter(e=>!['omiBlockTypeMenu','omiSourceWordParagraphStyle','omiWordCharacterStyle'].includes(e.name))];
+const cellExtensions=()=>[OmiNoteExtension.extend({addKeyboardShortcuts(){return {};}}),NestedCellTableNode,StarterKit.configure({heading:false,blockquote:false,codeBlock:false,horizontalRule:false,link:false,underline:false}),...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter(e=>!['omiBlockTypeMenu','omiSourceWordParagraphStyle','omiWordCharacterStyle'].includes(e.name))];
 
 function RichCellEditor({doc,onChange,label,depth}:{doc:NoteJsonNode;onChange:(doc:NoteJsonNode)=>void;label:string;depth:number}){
   const {locale}=useTranslation();
