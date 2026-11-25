@@ -39,8 +39,9 @@ function selectedValue(editor: Editor, name: string, attribute: string): { value
   });
   return { value: values.size === 1 ? [...values][0]! : '', mixed: values.size > 1 };
 }
-function applyMark(editor: Editor, name: string, attrs: Record<string, unknown> | null): void {
-  const chain = editor.chain().focus();
+function applyMark(editor: Editor, name: string, attrs: Record<string, unknown> | null, restoreFocus = true): void {
+  const chain = editor.chain();
+  if (restoreFocus) chain.focus(undefined, { scrollIntoView: false });
   if (editor.state.selection.empty && editor.isActive(name)) chain.extendMarkRange(name);
   if (attrs) chain.setMark(name, attrs).run();
   else chain.unsetMark(name).run();
@@ -57,21 +58,28 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
   const [editing, setEditing] = useState(false);
   const value = editing ? draft : current.value || defaultValue || '';
   const normalized = normalize(value);
-  const apply = () => {
-    if (normalized === undefined || normalized === null) return;
-    if (paragraph) editor.chain().focus().updateAttributes('paragraph', { [name]: normalized }).run();
-    else applyMark(editor, name, { [attribute]: normalized });
+  const applyValue = (next: string, restoreFocus: boolean) => {
+    const nextValue = normalize(next);
+    if (nextValue === undefined || nextValue === null) return;
+    if (paragraph) {
+      const chain = editor.chain();
+      if (restoreFocus) chain.focus(undefined, { scrollIntoView: false });
+      chain.updateAttributes('paragraph', { [name]: nextValue }).run();
+    } else applyMark(editor, name, { [attribute]: nextValue }, restoreFocus);
     setEditing(false);
   };
+  const apply = () => applyValue(value, true);
   const update = (next: string) => { setDraft(next); setEditing(true); };
+  const choose = (next: string) => { applyValue(next, false); };
   return <div className="omi-direct-format-field">
     <label title={current.mixed ? mixed : label}>
       {icon}<span>{label}</span>
-      {choices ? <select aria-label={label} value={value} onChange={event => update(event.target.value)}>
+      {choices ? <select aria-label={label} value={value} onChange={event => choose(event.target.value)}>
         {choices.map(choice => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
       </select> : <input aria-label={label} type={kind} step={kind === 'number' ? '0.5' : undefined}
         placeholder={current.mixed ? mixed : undefined} value={value}
-        onChange={event => update(event.target.value)}
+        onChange={event => kind === 'color' ? choose(event.target.value) : update(event.target.value)}
+        onBlur={() => { if (editing) applyValue(draft, false); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); apply(); } }} />}
     </label>
     <button type="button" aria-label={copy.apply + ': ' + label} title={copy.apply} disabled={normalized === undefined || normalized === null} onMouseDown={e => e.preventDefault()} onClick={apply}>✓</button>
