@@ -215,7 +215,10 @@ export function projectContinuousManuscriptDocument(
       continue;
     }
 
-    if (!currentSection) {
+    const sourceSection=typeof attrs.omiSectionId==='string'?previousSectionsById.get(attrs.omiSectionId):undefined;
+    const retainedPhysicalBoundary=Boolean(currentSection&&sourceSection&&!sourceSection.title.trim()&&!usedSectionIds.has(sourceSection.id)&&sourceSection.layout?.wordSection&&sourceSection.layout.wordSection.groupId!==currentSection.layout?.wordSection?.groupId);
+    if (!currentSection||retainedPhysicalBoundary) {
+      if(retainedPhysicalBoundary)headingStack.length=0;
       const sectionId = uniqueId(attrs.omiSectionId, usedSectionIds);
       const previousSection = previousSectionsById.get(sectionId);
       currentSection = withParentSectionId(
