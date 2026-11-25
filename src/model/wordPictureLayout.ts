@@ -35,7 +35,9 @@ export function normalizeWordPictureLayout(value: unknown): WordPictureLayout | 
     if (!record(h)||!record(v)||!['column','page','margin'].includes(String(h.relativeFrom))||!['paragraph','page','margin'].includes(String(v.relativeFrom))) return undefined;
     if (!(h.align!==undefined ? ['left','center','right'].includes(String(h.align)) && h.offset===undefined : integer(h.offset,-EMU_LIMIT))) return undefined;
     if (!(v.align!==undefined ? ['top','center','bottom'].includes(String(v.align)) && v.offset===undefined : integer(v.offset,-EMU_LIMIT))) return undefined;
-    result.floating={wrapText:f.wrapText,distL:f.distL,distR:f.distR,distT:f.distT,distB:f.distB,horizontal:h,vertical:v} as WordPictureLayout['floating'];
+    result.floating={wrapText:f.wrapText as NonNullable<WordPictureLayout['floating']>['wrapText'],distL:f.distL,distR:f.distR,distT:f.distT,distB:f.distB,
+      horizontal:{relativeFrom:h.relativeFrom,...(h.align!==undefined?{align:h.align}:{offset:h.offset})} as NonNullable<WordPictureLayout['floating']>['horizontal'],
+      vertical:{relativeFrom:v.relativeFrom,...(v.align!==undefined?{align:v.align}:{offset:v.offset})} as NonNullable<WordPictureLayout['floating']>['vertical']};
   }
   if (value.originalRaster !== undefined) {
     if (typeof value.originalRaster !== 'string' || !/^data:image\/(?:png|jpeg|gif);base64,/.test(value.originalRaster) || value.originalRaster.length>35000050) return undefined;
