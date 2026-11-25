@@ -137,11 +137,16 @@ function extractWordParagraphDisplayText(paragraph: string): string {
 }
 
 function collectFieldInstructions(xml: string): string[] {
-  const tokens = xml.match(/<w:fldChar\b[^>]*\/?\s*>|<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/gi) ?? [];
+  const tokens = xml.match(/<w:fldSimple\b[^>]*>|<w:fldChar\b[^>]*\/?\s*>|<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/gi) ?? [];
   const result: string[] = [];
   const stack: Array<{ instruction: string }> = [];
 
   for (const token of tokens) {
+    if(/^<w:fldSimple\b/i.test(token)){
+      const raw=/\bw:instr\s*=\s*(["'])(.*?)\1/i.exec(token)?.[2];
+      if(raw)result.push(decodeXml(raw));
+      continue;
+    }
     if (/^<w:fldChar\b/i.test(token)) {
       const type = /\bw:fldCharType="([^"]+)"/i.exec(token)?.[1]?.toLowerCase();
       if (type === 'begin') stack.push({ instruction: '' });
