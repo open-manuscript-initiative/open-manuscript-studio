@@ -46,11 +46,12 @@ import type {
   OmiChartStyle,
   OmiTableBlockData,
   OmiTableCellFormat,
+  OmiTableRowHeight,
   OmiVisualBlockData,
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -407,6 +408,10 @@ function EditableGrid({
   };
   const drag = useRef<{ index: number; start: number; width: number; widths: number[] } | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
+  const rowDrag=useRef<{row:number;pointer:number;start:number;measured:number;scale:number;height:OmiTableRowHeight}|null>(null);
+  const [rowPreview,setRowPreview]=useState<{row:number;height:OmiTableRowHeight}|null>(null);
+  const rowHandles=cells.map((row,r)=>row.findIndex((_,c)=>!mergeLayout.covered(r,c)&&(mergeLayout.at(r,c)?.rowSpan??1)===1));
+  const measureRow=(row:HTMLTableRowElement)=>{const rect=row.getBoundingClientRect();return {measured:rect.height,scale:row.offsetHeight>0?rect.height/row.offsetHeight:1};};
   const reduction = data.kind === 'table' && data.fontSizeReduction === 0 ? 0 : 1;
 
   function updateColumns(nextCells: string[][], nextWidths: number[]): void {
@@ -454,7 +459,7 @@ function EditableGrid({
                     <td colSpan={widths.length}><div style={{ height: item.height }} /></td>
                   </tr>
                 ))}
-                <tr key={rowIndex} data-omi-row-split={data.kind==='table'?tableRowSplitPolicy(data,rowIndex):undefined} data-omi-row-height={data.kind==='table'?tableRowHeight(data,rowIndex).mode:undefined} style={{...continuationStyle(rowIndex),...(data.kind==='table'?tableRowHeightStyle(tableRowHeight(data,rowIndex)):{})}}>
+                <tr key={rowIndex} data-omi-row-split={data.kind==='table'?tableRowSplitPolicy(data,rowIndex):undefined} data-omi-row-height={data.kind==='table'?tableRowHeight(data,rowIndex).mode:undefined} style={{...continuationStyle(rowIndex),...(data.kind==='table'?tableRowHeightStyle(rowPreview?.row===rowIndex?rowPreview.height:tableRowHeight(data,rowIndex)):{})}}>
                   {row.map((cell, columnIndex) => {
                     if(mergeLayout.covered(rowIndex,columnIndex)) return null;
                     const merge=mergeLayout.at(rowIndex,columnIndex);
@@ -485,6 +490,49 @@ function EditableGrid({
                             })
                           }
                         />}
+                        {!previewOnly && data.kind==='table' && rowHandles[rowIndex]===columnIndex ? (
+                          <span className="omi-table-row-resize" role="separator" tabIndex={0} aria-orientation="horizontal"
+                            aria-label={copy.resizeRow+' '+(rowIndex+1)}
+                            aria-valuemin={0} aria-valuemax={1584}
+                            aria-valuenow={(()=>{const height=rowPreview?.row===rowIndex?rowPreview.height:tableRowHeight(data,rowIndex);return height.mode==='auto'?0:height.heightPt;})()}
+                            aria-valuetext={(()=>{const height=rowPreview?.row===rowIndex?rowPreview.height:tableRowHeight(data,rowIndex);return height.mode==='auto'?copy.rowHeightAuto:height.heightPt+' pt';})()}
+                            title={copy.resizeRowHint}
+                            onKeyDown={event=>{
+                              if(!['ArrowUp','ArrowDown','Home'].includes(event.key)) return;
+                              event.preventDefault();event.stopPropagation();
+                              const row=event.currentTarget.closest('tr');if(!row) return;
+                              const {measured,scale}=measureRow(row);
+                              const height=event.key==='Home'?{mode:'auto'} as const:resizeTableRowHeight(tableRowHeight(data,rowIndex),measured,(event.key==='ArrowDown'?1:-1)*(event.shiftKey?10:1)*scale/0.75,scale);
+                              onChange({...data,rowHeights:setTableRowHeight(data,rowIndex,height)});
+                            }}
+                            onPointerDown={event=>{
+                              if(!event.isPrimary||event.button!==0) return;
+                              const row=event.currentTarget.closest('tr');if(!row) return;
+                              event.preventDefault();event.stopPropagation();
+                              const {measured,scale}=measureRow(row);
+                              rowDrag.current={row:rowIndex,pointer:event.pointerId,start:event.clientY,measured,scale,height:tableRowHeight(data,rowIndex)};
+                              event.currentTarget.setPointerCapture(event.pointerId);
+                            }}
+                            onPointerMove={event=>{
+                              const current=rowDrag.current;
+                              if(!current||current.pointer!==event.pointerId||!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+                              setRowPreview({row:current.row,height:resizeTableRowHeight(current.height,current.measured,event.clientY-current.start,current.scale)});
+                            }}
+                            onPointerUp={event=>{
+                              const current=rowDrag.current;
+                              if(!current||current.pointer!==event.pointerId) return;
+                              rowDrag.current=null;setRowPreview(null);
+                              if(event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+                              if(Math.abs(event.clientY-current.start)>=1){
+                                const height=resizeTableRowHeight(current.height,current.measured,event.clientY-current.start,current.scale);
+                                onChange({...data,rowHeights:setTableRowHeight(data,current.row,height)});
+                              }
+                            }}
+                            onPointerCancel={()=>{rowDrag.current=null;setRowPreview(null);}}
+                            onLostPointerCapture={()=>{rowDrag.current=null;setRowPreview(null);}}
+                            onDoubleClick={event=>{event.stopPropagation();onChange({...data,rowHeights:setTableRowHeight(data,rowIndex,{mode:'auto'})});}}
+                          />
+                        ):null}
                         {!previewOnly && data.kind === 'table' && rowIndex === 0 && !merge && columnIndex < widths.length - 1 ? (
                           <span
                             className="omi-table-column-resize"
