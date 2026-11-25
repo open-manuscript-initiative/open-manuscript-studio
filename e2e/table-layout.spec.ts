@@ -275,3 +275,30 @@ test('apply built-in table appearance and save a reusable local cell style',asyn
   await panel.getByRole('button',{name:'Delete saved style',exact:true}).click();
   await expect(panel.getByRole('combobox',{name:'Table style',exact:true})).toHaveValue('builtin:grid');
 });
+
+test('cell note toolbar creates a shared note annotation and note card deletes it atomically',async({page})=>{
+  const canvas=await openTables(page,2);
+  await canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true}).click();
+  await canvas.getByText('Cell formatting',{exact:true}).click();
+  const editor=canvas.getByRole('textbox',{name:'Selected cell text',exact:true});
+  await editor.click();
+  await editor.press('End');
+  await canvas.getByRole('button',{name:'Footnote',exact:true}).click();
+  const card=canvas.locator('.omi-note-editor-card').first();
+  await expect(card).toBeVisible();
+  await expect(editor.locator('[data-omi-note]')).toHaveCount(1);
+  const snapshot=()=>page.evaluate(async()=>{
+    const {useStudioStore}=await import('/src/app/useStudioStore.ts');
+    const state=useStudioStore.getState();
+    return {annotations:state.manuscript.annotations,events:state.pendingChangeSet?.events??[]};
+  });
+  const added=await snapshot();
+  expect(added.annotations.some(n=>n.targetBlockId==='layout-table'&&n.noteKind==='footnote')).toBeTruthy();
+  expect(added.events.some(e=>e.operation==='annotation.create')).toBeTruthy();
+  expect(added.events.some(e=>e.operation==='block.update'&&e.targetId==='layout-table')).toBeTruthy();
+  page.once('dialog',dialog=>dialog.accept());
+  await card.getByRole('button',{name:'Delete',exact:true}).click();
+  await expect(editor.locator('[data-omi-note]')).toHaveCount(0);
+  await expect.poll(async()=>(await snapshot()).annotations.filter(n=>n.targetBlockId==='layout-table').length).toBe(0);
+  await expect(canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true})).toHaveValue('Row 0');
+});
