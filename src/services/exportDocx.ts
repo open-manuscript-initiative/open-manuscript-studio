@@ -1,3 +1,4 @@
+import { nativeOmml } from './wordEquationExport';
 import { WordImageRegistry } from './wordImageExport';
 import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model/wordTextBoxLink';
 import { textBoxDocument, boxNumber, boxColor, boxFont, visualTextBoxText } from '../model/textBoxes';
@@ -188,6 +189,14 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           if (block.visual.caption?.trim()) body.push(paragraph(block.visual.caption));
           body.push(wordTable(block.visual, warnings, numbering, sourceStyles,resolveNote,9026,documentLinks));
           continue;
+        }
+        if(block.visual?.kind==='equation'&&block.visual.notation==='omml'){
+          const equation=nativeOmml(block.visual.source);
+          if(equation){
+            body.push('<w:p>'+equation+indexFields+'</w:p>');
+            if(block.visual.caption?.trim())body.push(paragraph(block.visual.caption));
+            continue;
+          }
         }
         if(block.visual?.kind==='image'){
           const picture=images.render(block.visual,indexFields);
