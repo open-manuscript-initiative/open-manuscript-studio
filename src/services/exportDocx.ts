@@ -1,4 +1,4 @@
-import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy } from '../model/tableLayout';
+import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, tableRowSplitPolicy, tableRowHeight } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
@@ -343,9 +343,12 @@ function wordTable(table: OmiTableBlockData, warnings: string[]): string {
       return '<w:tc><w:tcPr>'+properties+'</w:tcPr>'+content+'</w:tc>';
     }).join('');
     const split=tableRowSplitPolicy(table,r);
-    const properties=(split==='keep'?'<w:cantSplit/>':'<w:cantSplit w:val="0"/>')+(r<headerRows?'<w:tblHeader/>':'');
+    const height=tableRowHeight(table,r);
+    const heightXml=height.mode==='auto'?'':'<w:trHeight w:val="'+Math.round(height.heightPt*20)+'" w:hRule="'+(height.mode==='exact'?'exact':'atLeast')+'"/>';
+    const properties=(split==='keep'?'<w:cantSplit/>':'<w:cantSplit w:val="0"/>')+heightXml+(r<headerRows?'<w:tblHeader/>':'');
     return '<w:tr><w:trPr>'+properties+'</w:trPr>'+cells+'</w:tr>';
   }).join('');
+  if (table.cells.some((_,r)=>tableRowHeight(table,r).mode==='exact')) warnings.push('Exact row heights in Word can clip overflowing text; review the target document.');
   if (partial) warnings.push('Some cell rotation or writing direction has no exact DOCX table mapping.');
   if (table.fontSizeReduction !== 0) warnings.push('DOCX table font reduction is not preserved.');
   const total = widths.reduce((sum,width)=>sum+width,0);
