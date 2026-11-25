@@ -114,3 +114,31 @@ test('cell merges retain the matrix and reject overlap, nonempty cells and heade
   }
   assert.deepEqual(cells,[['Header',''],['Anchor',''],['','']]);
 });
+
+test('row pagination defaults, overrides, resets and deletion are non-destructive', async () => {
+  const {tableRowSplitPolicy,setTableRowSplitOverride,pruneTableRowSplitOverrides}=await import('../src/model/tableLayout.ts');
+  const cells=[['H'],['A'],['B']];
+  const block=createTableBlock(cells,{headerRows:1},'pagination-table');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  assert.equal(tableRowSplitPolicy(table,1),'keep');
+  table.rowSplitDefault='allow';
+  table.rowSplitOverrides=setTableRowSplitOverride(table,1,'keep');
+  assert.equal(tableRowSplitPolicy(table,1),'keep');
+  assert.equal(tableRowSplitPolicy(table,2),'allow');
+  assert.deepEqual(setTableRowSplitOverride(table,1,'inherit'),{});
+  assert.deepEqual(pruneTableRowSplitOverrides(cells.slice(0,2),{'1':'keep','2':'allow','01':'keep'}),{'1':'keep'});
+  assert.deepEqual(setTableRowSplitOverride(table,Infinity,'allow'),{'1':'keep'});
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(block);
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const v=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(v?.kind==='table');
+  assert.equal(v.rowSplitDefault,'allow');
+  assert.deepEqual(v.rowSplitOverrides,{'1':'keep'});
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<tr><td>A<\/td><\/tr>/);
+    assert.match(html,/<tr data-omi-row-split="allow"><td>B<\/td><\/tr>/);
+    assert.match(html,/tbody tr\[data-omi-row-split="allow"\]/);
+  }
+});
