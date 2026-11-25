@@ -1949,3 +1949,41 @@ test('native OMML preserves nested equations and rejects active or foreign sourc
   assert.ok(fallback.warnings.some(message=>message.includes('equation')&&message.includes('descriptive text')));
   assert.doesNotMatch(readZipParts(fallback.bytes).get('word/document.xml')!.toString('utf8'),/<unsafe\/>/);
 });
+
+
+test('Word review comments and reversible tracked changes survive OMI persistence without public leakage',async()=>{
+  const {advancedCases,createAdvancedDocx}=await import('./generate-advanced-formatting-fixtures.ts');
+  const {restoreProofingChange}=await import('../src/model/proofing.ts');
+  const previous=useStudioStore.getState();
+  try{
+    for(const id of ['R03','R04']){
+      const fixture=advancedCases.find(item=>item.id===id)!;
+      const input=createAdvancedDocx(fixture);
+      const plan=await parseDocxForStudio(new File([new Uint8Array(input)],id+'.docx'));
+      applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',importMode:'editorial'});
+      const imported=useStudioStore.getState().manuscript;
+      const reopened=parseOmiJson(serializeOmiJson(imported));
+      const docx=readZipParts(buildDocxExport(reopened).bytes);
+      const documentXml=docx.get('word/document.xml')!.toString('utf8');
+      assert.ok(!docx.has('word/comments.xml'));
+      assert.doesNotMatch(documentXml,/Review root|Review reply|<w:(?:commentRangeStart|commentReference|rPrChange)\b/);
+      if(id==='R03'){
+        const root=reopened.annotations.find(a=>a.type==='comment'&&a.body==='Review root')!;
+        const reply=reopened.annotations.find(a=>a.type==='comment'&&a.body==='Review reply')!;
+        assert.ok(root&&reply);
+        assert.equal(reply.replyToCommentId,root.id);
+        assert.equal(root.targetText,'Review target');
+        assert.equal(root.visibility,'editor_only');
+      }else{
+        const change=reopened.proofing?.changes[0]!;
+        assert.ok(change);
+        assert.match(change.before,/"italic"/);
+        assert.match(change.after,/"bold"/);
+        const block=reopened.sections.flatMap(s=>s.blocks).find(b=>b.id===change.targetBlockId)!;
+        assert.equal(block.content,change.after);
+        const restored=restoreProofingChange(reopened.sections,change);
+        assert.equal(restored.flatMap(s=>s.blocks).find(b=>b.id===change.targetBlockId)?.content,change.before);
+      }
+    }
+  }finally{useStudioStore.setState(previous,true);}
+});
