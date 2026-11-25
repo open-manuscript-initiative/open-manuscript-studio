@@ -361,6 +361,10 @@ function validateSection(
 }
 
 function validateStudioExtensions(value: Record<string, unknown>): void {
+  if(value.tableOfContents!==undefined){
+    const toc=value.tableOfContents;
+    if(!isRecord(toc)||typeof toc.id!=='string'||!toc.id.trim()||typeof toc.minLevel!=='number'||typeof toc.maxLevel!=='number'||!Number.isInteger(toc.minLevel)||!Number.isInteger(toc.maxLevel)||toc.minLevel<1||toc.maxLevel>9||toc.minLevel>toc.maxLevel||typeof toc.hyperlinks!=='boolean'||typeof toc.useOutlineLevels!=='boolean'||(toc.omitPageNumbers!==undefined&&typeof toc.omitPageNumbers!=='boolean')||(toc.title!==undefined&&typeof toc.title!=='string'))invalid('Invalid table of contents definition.');
+  }
   const wordHyphenation=isRecord(value.extensions)?value.extensions[WORD_HYPHENATION_EXTENSION]:undefined;
   if(wordHyphenation!==undefined){try{validateWordHyphenation(wordHyphenation);}catch(error){invalid(error instanceof Error?error.message:'Invalid Word hyphenation settings.');}}
   const template = isRecord(value.extensions) ? value.extensions[PUBLICATION_TEMPLATE_EXTENSION] : undefined;
