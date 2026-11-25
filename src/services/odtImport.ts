@@ -1,4 +1,4 @@
-import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder, normalizeTableRowHeight } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder, normalizeTableRowHeight, tableCellPlainText } from '../model/tableLayout';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
 import { OdtZip } from './odtZip';
@@ -76,6 +76,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
       const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
       const rowHeights: Record<string,OmiTableRowHeight> = {};
       const cellFormats: Record<string,OmiTableCellFormat> = {};
+      const cellContent:Record<string,string>={};
       let headerRows=0, bodyStarted=false;
       const rowElements=Array.from(child.getElementsByTagNameNS('*','table-row')).filter(row=>{
         let owner=row.parentNode;
@@ -121,7 +122,13 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
           }
           Object.assign(format,normalizeTableCellEdges({borders,paddingPt}));
           if(Object.keys(format).length) cellFormats[`${rows.length}:${col}`]=format;
-          values.push(paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
+          // Notes and nested tables retain the existing plain fallback rather
+          // than introducing orphan annotation anchors into cell content.
+          const supported=!cell.getElementsByTagNameNS('*','note').length&&!cell.getElementsByTagNameNS('*','table').length;
+          const doc:NoteJsonNode={type:'doc',content: supported?paragraphs.map(p=>({type:'paragraph',content:parseInlineChildren(p,'',[],createEmptyDocxImportStats(),provenance,[],textStyles,listStyleTypes) as NoteJsonNode[]})):[]};
+          const rich=supported&&!!doc.content?.length&&doc.content.some(p=>doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
+          if(rich) cellContent[`${rows.length}:${col}`]=JSON.stringify(doc);
+          values.push(rich?tableCellPlainText(doc):paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
         }
         if(!values.length) continue;
         // Resolve named row styles, including inherited styles, without looping on malformed cycles.
@@ -155,7 +162,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
         const cells=rows.map(row=>Array.from({length:width},(_,c)=>row[c]??''));
         const cellMerges=tableMergeLayout(cells,merges,headerRows).merges;
         if(cellMerges.length!==merges.length) warnings.push({code:'merged-table-cells',severity:'warning',message:'Some ODT cell merges could not be preserved without hiding data.'});
-        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges,cellFormats,rowSplitDefault:'allow',rowSplitOverrides,rowHeights})); stats.tables+=1;
+        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges,cellFormats,rowSplitDefault:'allow',rowSplitOverrides,rowHeights,cellContent})); stats.tables+=1;
       }
       frontMatter = false;
       continue;
