@@ -1,9 +1,10 @@
-import { useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
+import { saveExportText } from '../services/exportFileDelivery';
 import { PublicationTableConditionEditor } from './PublicationTableConditionEditor';
 import type { VisualElementsCopy } from '../i18n/visualElements';
 import type { OmiTableCellFormat } from '../types/omi';
 import { tableCellAppearanceStyle, tableCellFormat, tableCellTextStyle } from '../model/tableLayout';
-import { BUILTIN_TABLE_STYLES, derivePublicationTablePreset, duplicatePublicationTablePreset, renamePublicationTablePreset, normalizePublicationTableStyles, normalizePresetFormat, publicationTableStylePreview, putPublicationTablePreset, removePublicationTablePreset, replacePublicationTablePreset, resolvePublicationTablePreset, type PublicationTableStyles, type TableStyleRegion } from '../model/tableAppearancePresets';
+import { MAX_TABLE_STYLE_TRANSFER_BYTES, serializePublicationTableStyles, parsePublicationTableStylesTransfer, mergePublicationTableStyles, BUILTIN_TABLE_STYLES, derivePublicationTablePreset, duplicatePublicationTablePreset, renamePublicationTablePreset, normalizePublicationTableStyles, normalizePresetFormat, publicationTableStylePreview, putPublicationTablePreset, removePublicationTablePreset, replacePublicationTablePreset, resolvePublicationTablePreset, type PublicationTableStyles, type TableStyleRegion } from '../model/tableAppearancePresets';
 
 type Props={catalog?:PublicationTableStyles;copy:VisualElementsCopy;onChange:(catalog:PublicationTableStyles)=>void;onRename:(catalog:PublicationTableStyles,from:string,to:string)=>void};
 export function PublicationTableStylesPanel({catalog:source,copy,onChange,onRename}:Props){
@@ -13,6 +14,25 @@ export function PublicationTableStylesPanel({catalog:source,copy,onChange,onRena
   const [kind,setKind]=useState<'table'|'cell'>('table');
   const [region,setRegion]=useState<TableStyleRegion>('body');
   const [error,setError]=useState(false);
+  const [transferError,setTransferError]=useState(false);
+  const [transferBusy,setTransferBusy]=useState(false);
+  const [incoming,setIncoming]=useState<PublicationTableStyles>();
+  const [importDefault,setImportDefault]=useState(false);
+  const fileRef=useRef<HTMLInputElement>(null);
+  let transfer:ReturnType<typeof mergePublicationTableStyles>|undefined;
+  if(incoming){try{transfer=mergePublicationTableStyles(catalog,incoming,importDefault);}catch{/* show invalid merge before committing */}}
+  async function readTransfer(file:File){
+    setTransferBusy(true);setTransferError(false);setIncoming(undefined);setImportDefault(false);
+    try{
+      if(file.size>MAX_TABLE_STYLE_TRANSFER_BYTES)throw new Error('File too large.');
+      setIncoming(parsePublicationTableStylesTransfer(await file.text()));
+    }catch{setTransferError(true);}finally{setTransferBusy(false);}
+  }
+  async function exportTransfer(selected?:string){
+    setTransferBusy(true);setTransferError(false);
+    try{await saveExportText(serializePublicationTableStyles(catalog,selected),'publication-table-styles.omi-styles.json','application/json');}
+    catch{setTransferError(true);}finally{setTransferBusy(false);}
+  }
   const preset=catalog.items.find(p=>p.name===selection)??catalog.items[0];
   const local=preset?.kind==='table'?preset[region]??{}:preset?.kind==='cell'?preset.format:{};
   const resolved=preset?.kind==='table'?resolvePublicationTablePreset(catalog,preset.name):undefined;
@@ -57,6 +77,23 @@ export function PublicationTableStylesPanel({catalog:source,copy,onChange,onRena
       <button type="button" disabled={!preset||!name.trim()||name.trim()===preset.name} onClick={()=>{if(!preset)return;const to=name.trim();const next=renamePublicationTablePreset(catalog,preset.name,to);if(!next){setError(true);return;}try{onRename(next,preset.name,to);setSelection(to);setName('');setError(false);}catch{setError(true);}}}>{copy.renameTableStyle}</button>
       <button type="button" disabled={!preset} onClick={()=>{if(preset)commit(removePublicationTablePreset(catalog,preset.name),'');}}>{copy.removeStyleFromPublication}</button>
     </div>
+    <details><summary>{copy.tableStyleTransfer}</summary>
+      <div className="omi-table-actions">
+        <button type="button" disabled={transferBusy||!catalog.items.length} onClick={()=>void exportTransfer()}>{copy.exportTableCatalog}</button>
+        <button type="button" disabled={transferBusy||!preset} onClick={()=>{if(preset)void exportTransfer(preset.name);}}>{copy.exportSelectedTableStyle}</button>
+        <button type="button" disabled={transferBusy} onClick={()=>fileRef.current?.click()}>{copy.importTableCatalog}</button>
+        <input ref={fileRef} hidden type="file" accept=".json,application/json" aria-label={copy.importTableCatalog} onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void readTransfer(file);}}/>
+      </div>
+      {incoming?<div>
+        <p>{copy.tableStyleTransferCount}: {incoming.items.length}</p>
+        {incoming.defaultTableStyle?<label><input type="checkbox" checked={importDefault} onChange={e=>setImportDefault(e.target.checked)}/>{copy.importTableDefault} ({incoming.defaultTableStyle})</label>:null}
+        {transfer?.renamed.length?<><p>{copy.tableStyleTransferRenamed}</p><ul>{transfer.renamed.map(({from,to})=><li key={from}>{from} → {to}</li>)}</ul></>:null}
+        {!transfer?<p role="alert">{copy.tableStyleTransferError}</p>:null}
+        <div className="omi-table-actions"><button type="button" disabled={!transfer||!incoming.items.length||transferBusy} onClick={()=>{if(transfer){commit(transfer.catalog);setIncoming(undefined);setImportDefault(false);}}}>{copy.applyTableImport}</button>
+        <button type="button" onClick={()=>{setIncoming(undefined);setImportDefault(false);}}>{copy.cancelConditionEdit}</button></div>
+      </div>:null}
+      {transferError?<p role="alert">{copy.tableStyleTransferError}</p>:null}
+    </details>
     {preset?<><div className="publication-style-grid">
       {preset.kind==='table'?<label><span>{copy.tableStyleRegions}</span><select value={region} onChange={e=>setRegion(e.target.value as TableStyleRegion)}>{(Object.keys(labels) as TableStyleRegion[]).map(key=><option key={key} value={key}>{labels[key]}</option>)}</select></label>:null}
       {preset.kind==='table'&&preset.basedOn?<p>{copy.tableStyleBasedOn}: {preset.basedOn}</p>:null}
