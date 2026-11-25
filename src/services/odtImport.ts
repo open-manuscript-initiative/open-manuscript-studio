@@ -1,4 +1,4 @@
-import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, tableLengthPt, odtTableCellBorder, normalizeTableRowHeight } from '../model/tableLayout';
 import { normalizeParagraphValue } from '../model/directParagraphFormatting';
 import { readOdtDirectProperties, readOdtParagraphProperties } from './odtFormatting';
 import { OdtZip } from './odtZip';
@@ -9,7 +9,7 @@ import { createImageBlock, createTableBlock } from '../model/visualBlocks';
 import { noteBodyPlainText, type NoteJsonNode } from '../model/noteRichText';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import { withParentSectionId } from '../model/sectionStructure';
-import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge, OmiTableRowSplitPolicy, OmiTableCellFormat } from '../types/omi';
+import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge, OmiTableRowSplitPolicy, OmiTableCellFormat, OmiTableRowHeight } from '../types/omi';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 import { createEmptyDocxImportStats, mergeDetectedAuthors, parseDetectedAuthors, type DocxImportWarning } from '../model/docxImport';
 
@@ -74,6 +74,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
       const rows: string[][] = [];
       const merges: OmiTableCellMerge[] = [];
       const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
+      const rowHeights: Record<string,OmiTableRowHeight> = {};
       const cellFormats: Record<string,OmiTableCellFormat> = {};
       let headerRows=0, bodyStarted=false;
       const rowElements=Array.from(child.getElementsByTagNameNS('*','table-row')).filter(row=>{
@@ -125,16 +126,26 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
         if(!values.length) continue;
         // Resolve named row styles, including inherited styles, without looping on malformed cycles.
         const visited=new Set<string>();
+        const rowProps:Record<string,string>={};
         let name=row.getAttribute('table:style-name')??'';
         while(name&&!visited.has(name)){
           visited.add(name);
           const style=textStyles.get(name);
           if(!style||style.getAttribute('style:family')!=='table-row') break;
           const properties=Array.from(style.children).find(node=>node.localName==='table-row-properties');
-          const value=properties?.getAttribute('fo:keep-together');
-          if(value==='always'||value==='auto'){rowSplitOverrides[String(rows.length)]=value==='always'?'keep':'allow';break;}
+          for(const attr of ['fo:keep-together','style:row-height','style:min-row-height','style:use-optimal-row-height']){
+            const value=properties?.getAttribute(attr);
+            if(value && rowProps[attr]===undefined) rowProps[attr]=value;
+          }
           name=style.getAttribute('style:parent-style-name')??'';
         }
+        const split=rowProps['fo:keep-together'];
+        if(split==='always'||split==='auto') rowSplitOverrides[String(rows.length)]=split==='always'?'keep':'allow';
+        const minimum=tableLengthPt(rowProps['style:min-row-height']);
+        const fixed=tableLengthPt(rowProps['style:row-height']);
+        const height=normalizeTableRowHeight(rowProps['style:use-optimal-row-height']==='true'?
+          {mode:'minimum',heightPt:minimum??fixed}:fixed!==undefined?{mode:'exact',heightPt:fixed}:{mode:'minimum',heightPt:minimum});
+        if(height.mode!=='auto') rowHeights[String(rows.length)]=height;
         if(!bodyStarted && (row.parentNode as XmlElement | null)?.localName==='table-header-rows') headerRows++; else bodyStarted=true;
         rows.push(values);
       }
@@ -144,7 +155,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
         const cells=rows.map(row=>Array.from({length:width},(_,c)=>row[c]??''));
         const cellMerges=tableMergeLayout(cells,merges,headerRows).merges;
         if(cellMerges.length!==merges.length) warnings.push({code:'merged-table-cells',severity:'warning',message:'Some ODT cell merges could not be preserved without hiding data.'});
-        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges,cellFormats,rowSplitDefault:'allow',rowSplitOverrides})); stats.tables+=1;
+        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges,cellFormats,rowSplitDefault:'allow',rowSplitOverrides,rowHeights})); stats.tables+=1;
       }
       frontMatter = false;
       continue;
