@@ -63,6 +63,8 @@ export function odtParagraphProperties(attrs: Record<string, unknown> | undefine
     p['fo:border-' + side] = b.style === 'nil' ? 'none' : b.width + 'pt ' + (b.style === 'single' ? 'solid' : b.style) + ' ' + b.color;
     if (b.style !== 'nil') p['fo:padding-' + side] = b.space + 'pt';
   }
+  const direction = v('omiParagraphDirection');
+  if (direction) p['style:writing-mode'] = direction === 'rtl' ? 'rl-tb' : 'lr-tb';
   if (v('omiAlign')) p['fo:text-align'] = String(v('omiAlign'));
   for (const [name, property] of [
     ['omiLeftIndent','fo:margin-left'], ['omiRightIndent','fo:margin-right'], ['omiFirstLineIndent','fo:text-indent'],
@@ -103,8 +105,11 @@ export function readOdtParagraphProperties(read: (name: string) => string | unde
     if (match) borders[side] = {width:lengthPt(match[1]),style:match[2] === 'solid'?'single':match[2],color:match[3],space:lengthPt(read('fo:padding-'+side) ?? read('fo:padding')) ?? 0};
   }
   if (Object.keys(borders).length) add('omiParagraphBorders',borders);
+  const mode=read('style:writing-mode');
+  const direction=mode==='rl-tb'||mode==='rl'?'rtl':mode==='lr-tb'||mode==='lr'?'ltr':undefined;
+  add('omiParagraphDirection',direction);
   const alignment = read('fo:text-align');
-  add('omiAlign', alignment === 'start' ? 'left' : alignment === 'end' ? 'right' : alignment);
+  add('omiAlign', alignment === 'start' ? direction==='rtl'?'right':'left' : alignment === 'end' ? direction==='rtl'?'left':'right' : alignment);
   for (const [name, property] of [
     ['omiLeftIndent','fo:margin-left'], ['omiRightIndent','fo:margin-right'], ['omiFirstLineIndent','fo:text-indent'],
     ['omiSpaceBefore','fo:margin-top'], ['omiSpaceAfter','fo:margin-bottom'],
