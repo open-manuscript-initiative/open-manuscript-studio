@@ -6,6 +6,8 @@ import { getParentSectionId, getSectionDepth, withParentSectionId } from '../mod
 import { isVisualBlock } from '../model/visualBlocks';
 import type { OmiBlock, OmiSection, OmiVisualBlockData } from '../types/omi';
 
+import type { DerivedCache } from '../model/derivedMemoryCache';
+
 export const OMI_VISUAL_NODE = 'omiVisualBlock';
 
 export interface ContinuousNodeAttributes {
@@ -23,7 +25,7 @@ export interface ContinuousNodeAttributes {
 export interface ProjectContinuousDocumentOptions {
   createId?: () => string;
   /** Only pass for immutable JSON snapshots from ContinuousSnapshotCache. */
-  textContentCache?: WeakMap<JSONContent, string>;
+  textContentCache?: DerivedCache<JSONContent, string>;
 }
 
 interface ResolvedTopLevelPosition {
@@ -374,7 +376,7 @@ function textBlockFromNode(
   blockId: string,
   previousBlock: OmiBlock | undefined,
   type: string,
-  textContentCache?: WeakMap<JSONContent, string>,
+  textContentCache?: DerivedCache<JSONContent, string>,
 ): OmiBlock {
   const attrs = (editorNode.attrs ?? {}) as ContinuousNodeAttributes;
   const paragraphStyleId = type === 'heading'

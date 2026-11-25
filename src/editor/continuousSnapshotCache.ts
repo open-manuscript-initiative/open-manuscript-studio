@@ -1,6 +1,8 @@
 import type { JSONContent } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 
+import { createDerivedCache } from '../model/derivedMemoryCache';
+
 interface CachedNode {
   json: JSONContent;
   serialized: string;
@@ -10,7 +12,9 @@ interface CachedNode {
  * Keep one JSON projection per surviving top-level node; weak keys release old
  * revisions automatically. Never mutate the returned JSON projection. */
 export class ContinuousSnapshotCache {
-  private readonly nodes = new WeakMap<ProseMirrorNode, CachedNode>();
+  private readonly nodes = createDerivedCache<ProseMirrorNode, CachedNode>(
+    (value) => 512 + value.serialized.length * 8,
+  );
 
   snapshot(doc: ProseMirrorNode): { document: JSONContent; serialized: string } {
     // Keep arbitrary root attributes/marks on the exact native serialization path.

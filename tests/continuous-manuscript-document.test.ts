@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Schema, Fragment } from '@tiptap/pm/model';
+import { DerivedMemoryPool, cacheBudgetMiB, createDerivedCache, MIB } from '../src/model/derivedMemoryCache.ts';
 import { ContinuousSnapshotCache } from '../src/editor/continuousSnapshotCache.ts';
 import type { JSONContent } from '@tiptap/core';
 
@@ -304,4 +305,34 @@ test('large continuous snapshots serialize exactly and only replace edited top-l
   const reordered = cache.snapshot(doc.copy(Fragment.fromArray([paragraphs[1]!, paragraphs[0]!, ...paragraphs.slice(2)])));
   const moved = projectContinuousManuscriptDocument(reordered.document, initial, { textContentCache: projectionCache });
   assert.deepEqual(moved[0]!.blocks.slice(0, 2).map(block => block.id), ['p-1', 'p-0']);
+});
+
+test('shared derived cache obeys budget, LRU, oversize and pressure without altering source', () => {
+  const pool = new DerivedMemoryPool();
+  pool.setBudget(512);
+  const a = createDerivedCache<object, string>(() => 256, pool);
+  const b = createDerivedCache<object, string>(() => 256, pool);
+  const first = {}, second = {}, third = {};
+  a.set(first, 'one'); b.set(second, 'two');
+  assert.equal(a.get(first), 'one');
+  a.set(third, 'three');
+  assert.equal(b.get(second), undefined);
+  assert.equal(a.get(first), 'one');
+  assert.equal(pool.estimatedBytes, 512);
+  pool.setBudget(0);
+  assert.equal(a.get(first), undefined);
+  assert.equal(pool.estimatedBytes, 0);
+  a.set(first, 'one');
+  assert.equal(a.get(first), undefined);
+  pool.setBudget(MIB);
+  a.set(first, 'one');
+  pool.clear();
+  assert.equal(a.get(first), undefined);
+  assert.equal(cacheBudgetMiB(2, true, 'performance'), 16);
+  assert.equal(cacheBudgetMiB(6, true, 'balanced'), 64);
+  assert.equal(cacheBudgetMiB(8, true, 'performance'), 256);
+  assert.equal(cacheBudgetMiB(12, false, 'economy'), 128);
+  assert.equal(cacheBudgetMiB(undefined, true, 'balanced'), 16);
+  assert.equal(cacheBudgetMiB(8, true, 'performance', 240), 0);
+  assert.equal(cacheBudgetMiB(8, true, 'performance', 512), 32);
 });

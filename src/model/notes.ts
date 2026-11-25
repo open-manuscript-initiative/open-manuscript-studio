@@ -12,6 +12,8 @@ import { getDocumentStructureProfile } from './documentProfile';
 import { getStudyRootSectionId } from './sectionStructure';
 import { findManuscriptBlock, mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
 
+import { createDerivedCache } from './derivedMemoryCache';
+
 export type OmiNoteKind =
   | 'footnote'
   | 'endnote'
@@ -101,7 +103,9 @@ export function getNoteKind(
 
 // Weak keys avoid retaining closed documents or replaced blocks. Cache only
 // plain structured-text blocks; table visuals keep their full traversal.
-const textNoteAnchorCache = new WeakMap<OmiBlock, { sectionId: string; blockId: string; content: string; anchors: NoteAnchorOccurrence[] }>();
+const textNoteAnchorCache = createDerivedCache<OmiBlock, { sectionId: string; blockId: string; content: string; anchors: NoteAnchorOccurrence[] }>(
+  (value) => 256 + value.content.length * 2 + value.anchors.reduce((sum, anchor) => sum + 256 + 2 * (anchor.noteId.length + anchor.anchorId.length + anchor.blockId.length + anchor.sectionId.length), 0),
+);
 
 export function collectNoteAnchors(
   state: Pick<OmiManuscriptState, 'sections'>,

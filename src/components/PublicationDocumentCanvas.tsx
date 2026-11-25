@@ -12,6 +12,7 @@ import type { PublicationLayoutIssue, PublicationLayoutIssueReporter } from '../
 import { renderPublicationNoteBody, type PublicationNoteBody } from '../services/publicationNoteBody';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import type { JSONContent } from '@tiptap/core';
+import { createTextProjectionCache } from '../model/derivedMemoryCache';
 import { FileCode2, FileText } from 'lucide-react';
 import {
   useEffect,
@@ -866,7 +867,7 @@ export function PublicationDocumentCanvas({
     viewMode,
   ]);
 
-  const projectionCache = useRef(new WeakMap<JSONContent, string>());
+  const [projectionCache] = useState(() => createTextProjectionCache<JSONContent>());
   function updateDocument(_documentId: string, content: string, snapshot?: JSONContent): void {
     let parsed: JSONContent;
     try {
@@ -877,7 +878,7 @@ export function PublicationDocumentCanvas({
     const currentSections = useStudioStore.getState().manuscript.sections;
     stageContinuousDocumentChange(
       projectContinuousManuscriptDocument(parsed, currentSections, {
-        textContentCache: snapshot ? projectionCache.current : undefined,
+        textContentCache: snapshot ? projectionCache : undefined,
       }),
     );
   }

@@ -4,6 +4,9 @@ mod updater;
 #[cfg(target_os = "android")]
 mod opened_documents;
 
+#[cfg(target_os = "android")]
+mod editor_memory;
+
 #[cfg(mobile)]
 fn install_mobile_crypto_provider() {
     let _ = rustls::crypto::ring::default_provider().install_default();
@@ -31,7 +34,7 @@ pub fn run() {
     #[cfg(target_os = "android")]
     let builder = builder
         .manage(opened_documents::OpenedDocuments::default())
-        .invoke_handler(tauri::generate_handler![opened_documents::take_opened_documents]);
+        .invoke_handler(tauri::generate_handler![opened_documents::take_opened_documents, editor_memory::editor_memory_info]);
 
     #[cfg(desktop)]
     let builder = builder.invoke_handler(tauri::generate_handler![

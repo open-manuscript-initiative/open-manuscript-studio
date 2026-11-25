@@ -9,6 +9,7 @@ import {
   type ChangeEvent,
 } from 'react';
 import type { JSONContent } from '@tiptap/core';
+import { createTextProjectionCache } from '../model/derivedMemoryCache';
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 
@@ -121,7 +122,7 @@ function StudyEditor({
     );
   }, [sectionNumbers, study.sections]);
 
-  const projectionCache = useRef(new WeakMap<JSONContent, string>());
+  const [projectionCache] = useState(() => createTextProjectionCache<JSONContent>());
   const updateDocument = useCallback((_documentId: string, content: string, snapshot?: JSONContent) => {
     let parsed: JSONContent;
     try {
@@ -141,7 +142,7 @@ function StudyEditor({
     const projectedStudy = projectContinuousManuscriptDocument(
       parsed,
       currentStudy.sections,
-      { textContentCache: snapshot ? projectionCache.current : undefined },
+      { textContentCache: snapshot ? projectionCache : undefined },
     );
     // The store update below is synchronous. Remember the exact projected
     // section objects so the resulting React render can reuse Tiptap's own
