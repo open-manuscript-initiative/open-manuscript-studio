@@ -159,3 +159,24 @@ test('cell appearance is validated, portable and rendered at the selected coordi
     assert.match(html,/<td>Untouched<\/td>/);
   }
 });
+
+test('cell edges preserve explicit none, zero padding and safe physical dimensions', async () => {
+  const {normalizeTableCellEdges,tableCellEdgeStyle,tableLengthPt,odtTableCellBorder}=await import('../src/model/tableLayout.ts');
+  const input={borders:{top:{style:'solid',widthPt:0.51,color:'#aabbcc'},right:{style:'none'},bottom:{style:'dotted',widthPt:1,color:'#112233'}},paddingPt:{left:3.17,right:0}} as const;
+  const normalized=normalizeTableCellEdges(input);
+  assert.deepEqual(normalized,{borders:{top:{style:'solid',widthPt:0.5,color:'#AABBCC'},right:{style:'none'},bottom:{style:'dotted',widthPt:1,color:'#112233'}},paddingPt:{right:0,left:3.15}});
+  assert.deepEqual(tableCellEdgeStyle(input),{borderTop:'0.5pt solid #AABBCC',borderRight:'none',paddingRight:'0pt',borderBottom:'1pt dotted #112233',paddingLeft:'3.15pt'});
+  assert.equal(tableLengthPt('25.4mm'),72);
+  assert.equal(tableLengthPt('2pc'),24);
+  assert.equal(tableLengthPt('calc(1pt)'),undefined);
+  assert.deepEqual(odtTableCellBorder('0.5pt dashed #AABBCC'),{style:'dashed',widthPt:0.5,color:'#AABBCC'});
+  assert.deepEqual(normalizeTableCellEdges({paddingPt:{top:-5,left:NaN},borders:{top:{style:'solid',color:'red;position:fixed',widthPt:Infinity}}}),{borders:{top:{style:'solid',color:'#000000',widthPt:0.5}}});
+  const manuscript=createVersionedTestManuscript();
+  manuscript.sections[0]!.blocks.push(createTableBlock([['A','B']],{headerRows:0,cellFormats:{'0:0':normalized}},'edge-cell'));
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/border-top:0.5pt solid #AABBCC/);
+    assert.match(html,/padding-right:0pt/);
+    assert.match(html,/<td>B<\/td>/);
+  }
+});
