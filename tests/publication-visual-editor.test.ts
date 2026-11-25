@@ -895,3 +895,13 @@ test('full line geometry leaves space for a footnote at a page boundary', () => 
   assert.equal(layout.flowBreaks[0]?.textOffset, 6);
   assert.equal(layout.pageNotes?.[1]?.[0]?.id, 'note');
 });
+
+test('live facing-page pagination retains stable block projections and coalesces updates', () => {
+  assert.ok(documentCanvas.includes('publicationEditorBlockSelector(child, index)'));
+  assert.ok(documentCanvas.includes('element.dataset.blockId'));
+  assert.ok(documentCanvas.includes('if (measuring) { pending = true; return; }'));
+  assert.ok(documentCanvas.includes('if (queued) return;'));
+  assert.ok(documentCanvas.includes('if (structureChanged) updateProvisionalProjection();'));
+  assert.ok(documentCanvas.includes('!facingPages && (document.content?.length ?? 0)'));
+  assert.ok(documentCanvas.includes('measuredNotes.delete(measuredNote)'));
+});
