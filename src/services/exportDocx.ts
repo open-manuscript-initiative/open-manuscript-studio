@@ -1,3 +1,5 @@
+import { toPortableBookmarkName } from '../model/namedAnchors';
+import { normalizeWordCrossReferenceField, type WordCrossReferenceField } from '../model/wordCrossReference';
 import { RUNNING_VARIANTS, normalizeRunningVariants, type RunningKind, type RunningParagraph } from '../model/wordRunningMatter';
 import { wordSectionGeometryXml } from '../model/wordSectionLayout';
 import { DEFAULT_SECTION_COLUMN_GAP_MM } from '../model/sectionLayout';
@@ -61,6 +63,8 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const warnings: string[] = [...metadataConversionWarnings(metadataConversion), ...semanticLossWarnings(semanticLosses)];
   if (JSON.stringify(manuscript).includes('omiHiddenText')) warnings.push('Editable DOCX preserves hidden text. Hidden formatting is not redaction; do not distribute this file as a redacted document.');
   const body: string[] = [];
+  const bookmarkRegistry=new WordBookmarkRegistry(manuscript,context.sections,warnings);
+  const resolveCrossReference=(id:string)=>bookmarkRegistry.reference(id);
   const sourceStyles = new SourceWordStyleRegistry();
   const numbering = new WordListNumbering();
   const fundingStatement = profile.rules.notes.fundingStarNote
@@ -152,7 +156,8 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
       if(lastLayout?.wordSection?.evenAndOddHeaders===true)evenAndOddHeaders=true;
       const level = Math.min(6, section.depth + 1);
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
-      if (section.title.trim()) body.push(paragraph(heading, `Heading${level}`));
+      if (section.title.trim()) body.push(bookmarkRegistry.wrap(section.id,paragraph(heading, `Heading${level}`)));
+      else if(bookmarkRegistry.has(section.id))body.push(bookmarkRegistry.wrap(section.id,paragraph('')));
       for (const block of section.blocks) {
         const indexFields = renderWordIndexEntryFields(indexEntriesByBlock.get(block.id) ?? []);
         if (block.visual?.kind === 'table' && block.visual.cells.length && block.visual.cells.some(row=>row.length)) {
@@ -167,13 +172,13 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           warnings.push(`Structured ${block.visual.kind} object ${block.id} was exported as descriptive text in DOCX.`);
           continue;
         }
-        const lists = renderWordLists(block.content, numbering, resolveNote, indexFields, sourceStyles);
-        if (lists !== undefined) { body.push(lists); continue; }
-        const rendered = renderWordContent(block.content, resolveNote);
-        if (rendered) body.push(richParagraph(rendered, indexFields, block.content, sourceStyles));
+        const lists = renderWordLists(block.content, numbering, resolveNote, indexFields, sourceStyles,resolveCrossReference);
+        if (lists !== undefined) { body.push(bookmarkRegistry.wrap(block.id,lists)); continue; }
+        const rendered = renderWordContent(block.content, resolveNote,resolveCrossReference);
+        if (rendered.length) body.push(bookmarkRegistry.wrap(block.id,richParagraph(rendered, indexFields, block.content, sourceStyles)));
         else {
           const text = blockPlainText(block);
-          if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
+          if (text || indexFields||bookmarkRegistry.has(block.id)) body.push(bookmarkRegistry.wrap(block.id,paragraph(text, undefined, indexFields)));
         }
       }
       renderSections(section.children,root);
@@ -288,6 +293,46 @@ class WordRunningMatterRegistry{
   entries(){return this.parts.map(p=>textZipEntry('word/'+p.name,p.body));}
 }
 
+/** Allocate unique, case-insensitive Word names for semantic block/section targets.
+ * No source XML or arbitrary field instructions are copied. */
+class WordBookmarkRegistry {
+  private readonly byId=new Map<string,{id:number;name:string;targetId:string}>();
+  private readonly byTarget=new Map<string,Array<{id:number;name:string}>>();
+  private readonly references:Map<string,NonNullable<OmiManuscript['crossReferences']>[number]>;
+  constructor(manuscript:OmiManuscript,sections:ReturnType<typeof buildPublicationRenderingContext>['sections'],warnings:string[]){
+    this.references=new Map((manuscript.crossReferences??[]).map(ref=>[ref.id,ref]));
+    const allowed=new Set<string>();
+    const visit=(items:typeof sections)=>{for(const section of items){allowed.add(section.id);for(const block of section.blocks)if(!block.visual)allowed.add(block.id);visit(section.children);}};
+    visit(sections);
+    const used=new Set<string>();
+    for(const anchor of manuscript.namedAnchors??[]){
+      if(!allowed.has(anchor.targetId)){warnings.push('Word bookmark '+anchor.name+' has no supported exported target.');continue;}
+      const base=toPortableBookmarkName(anchor.exportName||anchor.name);
+      let name=base,n=2;
+      while(used.has(name.toLowerCase())){const suffix='_'+n++;name=base.slice(0,40-suffix.length)+suffix;}
+      used.add(name.toLowerCase());
+      const item={id:this.byId.size+1,name,targetId:anchor.targetId};
+      this.byId.set(anchor.id,item);
+      const list=this.byTarget.get(anchor.targetId)??[];list.push(item);this.byTarget.set(anchor.targetId,list);
+    }
+  }
+  has(targetId:string):boolean{return this.byTarget.has(targetId);}
+  reference(id:string):NativeWordField|undefined{
+    const reference=this.references.get(id);
+    const target=reference?.targetKind==='bookmark'?this.byId.get(reference.targetId):undefined;
+    const field=normalizeWordCrossReferenceField(reference?.wordField);
+    return target&&field?{...field,name:target.name}:undefined;
+  }
+  wrap(targetId:string,body:string):string{
+    const entries=this.byTarget.get(targetId);
+    if(!entries?.length)return body;
+    const open=entries.map(item=>'<w:bookmarkStart w:id="'+item.id+'" w:name="'+item.name+'"/>').join('');
+    const close=[...entries].reverse().map(item=>'<w:bookmarkEnd w:id="'+item.id+'"/>').join('');
+    // Keep the bookmark in the first generated paragraph, after paragraph properties.
+    return body.replace(/^<w:p>(<w:pPr>[\s\S]*?<\/w:pPr>)?([\s\S]*?)<\/w:p>/,(_all,properties:string|undefined,content:string)=>'<w:p>'+(properties??'')+open+content+close+'</w:p>');
+  }
+}
+
 type NumberingGroup = { id: number; levels: Map<number,string>; overrides: Map<number,number> };
 class WordListNumbering {
   private readonly groups: NumberingGroup[] = [];
@@ -323,7 +368,7 @@ class WordListNumbering {
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' + abstracts + nums + '</w:numbering>';
   }
 }
-function renderWordLists(content: string, numbering: WordListNumbering, resolveNote: (id:string)=>WordNoteReference|undefined, suffix: string, sourceStyles: SourceWordStyleRegistry): string | undefined {
+function renderWordLists(content: string, numbering: WordListNumbering, resolveNote: (id:string)=>WordNoteReference|undefined, suffix: string, sourceStyles: SourceWordStyleRegistry,resolveCrossReference?:ResolveWordCrossReference): string | undefined {
   let root: NoteJsonNode;
   try { root = JSON.parse(content) as NoteJsonNode; } catch { return undefined; }
   const list = (node: NoteJsonNode) => node.type === 'orderedList' || node.type === 'bulletList';
@@ -331,7 +376,7 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
   if (!nodes.some(list)) return undefined;
   const output: string[] = [];
   const renderParagraph = (node: NoteJsonNode, numPr = '') => {
-    const runs = renderJsonNode(node,resolveNote);
+    const runs = renderJsonNode(node,resolveNote,resolveCrossReference);
     const last = runs.at(-1);
     if (last && !('kind' in last) && last.text === '\n') runs.pop();
     const sourceParagraph = node.attrs?.omiWordParagraphStyle;
@@ -477,7 +522,10 @@ function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '
 type WordNoteKind = 'footnote' | 'endnote';
 type WordNoteBody={id:number;body:NoteJsonNode;customMark?:'*';funding?:boolean};
 type NativeWordNoteReference={kind:WordNoteKind;id:number;customMark?:'*'};
-type WordInlinePart = OmiInlineRun | NativeWordNoteReference;
+type NativeWordField=WordCrossReferenceField&{name:string};
+type ResolveWordCrossReference=(id:string)=>NativeWordField|undefined;
+type WordTextRun=OmiInlineRun&{wordField?:NativeWordField};
+type WordInlinePart = WordTextRun | NativeWordNoteReference;
 type WordNoteReference = NativeWordNoteReference | OmiInlineRun;
 
 function wordNoteReference(kind: WordNoteKind, id: number, customMark?:'*'): string {
@@ -489,9 +537,10 @@ function wordNoteReference(kind: WordNoteKind, id: number, customMark?:'*'): str
 function renderWordContent(
   content: string,
   resolveNote: (noteId: string) => WordNoteReference | undefined,
+  resolveCrossReference?:ResolveWordCrossReference,
 ): WordInlinePart[] {
   try {
-    const runs = renderJsonNode(JSON.parse(content) as NoteJsonNode, resolveNote);
+    const runs = renderJsonNode(JSON.parse(content) as NoteJsonNode, resolveNote,resolveCrossReference);
     const last = runs.at(-1);
     if (last && !('kind' in last) && last.text === '\n') runs.pop();
     return runs;
@@ -510,6 +559,7 @@ function renderJsonContent(document: NoteJsonNode): string {
 function renderJsonNode(
   node: NoteJsonNode,
   resolveNote?: (noteId: string) => WordNoteReference | undefined,
+  resolveCrossReference?:ResolveWordCrossReference,
 ): WordInlinePart[] {
   if (typeof node.text === 'string') {
     return [{
@@ -531,10 +581,13 @@ function renderJsonNode(
     return typeof label === 'string' ? [{ text: label, semantics: [] }] : [];
   }
   if (node.type === 'omiCitation' || node.type === 'omiCrossReference') {
+    const id=node.attrs?.crossReferenceId;
+    const field=node.type==='omiCrossReference'&&typeof id==='string'?resolveCrossReference?.(id):undefined;
+    if(field)return [{text:field.cachedLabel,semantics:[],wordField:field}];
     const label = node.attrs?.label;
     return typeof label === 'string' ? [{ text: label, semantics: [] }] : [];
   }
-  const children = (node.content ?? []).flatMap((child) => renderJsonNode(child, resolveNote));
+  const children = (node.content ?? []).flatMap((child) => renderJsonNode(child, resolveNote,resolveCrossReference));
   if ((node.type === 'paragraph' || node.type === 'blockquote' || node.type === 'codeBlock') && children.length) {
     children.push({ text: '\n', semantics: [] });
   }
@@ -574,7 +627,12 @@ function noteParagraphStyle(id: string, name: string): string {
   return `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>`;
 }
 
-function wordRun(run: OmiInlineRun, sourceStyles?: SourceWordStyleRegistry, sourceParagraph?: unknown): string {
+function wordRun(run: WordTextRun, sourceStyles?: SourceWordStyleRegistry, sourceParagraph?: unknown): string {
+  if(run.wordField){
+    const field=normalizeWordCrossReferenceField({kind:run.wordField.kind,cachedLabel:run.wordField.cachedLabel,...(run.wordField.hyperlink!==undefined?{hyperlink:run.wordField.hyperlink}:{})});
+    const name=run.wordField.name;
+    if(field&&/^[A-Za-z_][A-Za-z0-9_]{0,39}$/.test(name))return '<w:fldSimple w:instr=" '+field.kind+' '+name+(field.hyperlink?' \\h':'')+' "><w:r><w:t xml:space="preserve">'+xml(field.cachedLabel)+'</w:t></w:r></w:fldSimple>';
+  }
   const imported = sourceStyles?.register(run.sourceWordStyle);
   const styleId = imported ?? (sourceParagraph ? undefined : wordCharacterStyleId(run.semantics));
   const paragraphStyle = resolveSourceStyle(sourceParagraph);
