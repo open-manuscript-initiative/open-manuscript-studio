@@ -23,6 +23,7 @@ import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
 import { ClosedDocumentScreen } from './components/ClosedDocumentScreen';
 import { ProofreadingController } from './components/ProofreadingController';
+import { NoteHoverPreview } from './components/NoteHoverPreview';
 import { ExternalDocumentSourceReview } from './components/ExternalDocumentSourceReview';
 import {
   DesktopDocumentTabs,
@@ -464,6 +465,7 @@ function StudioApplication() {
     return (
       <>
         <ProofreadingController />
+      <NoteHoverPreview key={activeDesktopTabId + ':' + activeManuscriptId} />
         <MobileLayout
           onOpenMenu={() => setMenuOpen(true)}
           onHome={navigateHome}
@@ -502,6 +504,7 @@ function StudioApplication() {
       onHome={navigateHome}
     >
       <ProofreadingController />
+        <NoteHoverPreview key={activeDesktopTabId + ':' + activeManuscriptId} />
       <DesktopDocumentTabs
         tabs={desktopTabs}
         activeTabId={activeDesktopTabId}

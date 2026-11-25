@@ -1,0 +1,30 @@
+.omi-note-hover-preview {
+  position: fixed;
+  z-index: 1600;
+  box-sizing: border-box;
+  max-width: min(28rem, calc(100vw - 16px));
+  max-height: min(16rem, calc(100vh - 16px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #98a2b3;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #101828;
+  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.18);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.omi-note-hover-preview .omi-note-preview-link {
+  text-decoration: underline;
+}
+@media (prefers-color-scheme: dark) {
+  .omi-note-hover-preview {
+    background: #1d2939;
+    color: #f2f4f7;
+    border-color: #667085;
+  }
+}

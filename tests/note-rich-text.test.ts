@@ -90,3 +90,23 @@ test('publication rendering retains legacy plain notes and their generated citat
   assert.match(rendered.html, /Scholar/);
   assert.equal(rendered.text, noteBodyPlainText(createNoteBodyDocument(note, [record], 'apa-7', 'en')));
 });
+
+test('read-only hover preview retains formatting and citations without navigable links or raw HTML', () => {
+  const note = { id: 'preview', type: 'note', body: 'old', bodyContent: JSON.stringify({
+    type: 'doc', content: [{ type: 'paragraph', content: [
+      { type: 'text', text: '<b>Literal</b>', marks: [{ type: 'italic' }] },
+      { type: 'text', text: ' source', marks: [{ type: 'omiLink', attrs: { href: 'https://example.org' } }] },
+      { type: 'omiCitation', attrs: { citationId: 'c', label: 'stale' } },
+    ] }],
+  }), noteCitations: [{ id: 'c', target: record.id }] } as OmiAnnotation;
+  const before = JSON.stringify(note);
+  const preview = renderPublicationNoteBody(note, [record], 'apa-7', 'en', { previewOnly: true });
+  const exported = renderPublicationNoteBody(note, [record], 'apa-7', 'en');
+  assert.match(preview.html, /<em>&lt;b&gt;Literal&lt;\/b&gt;<\/em>/);
+  assert.match(preview.html, /<span class="omi-note-preview-link"> source<\/span>/);
+  assert.match(preview.html, /Scholar/);
+  assert.doesNotMatch(preview.html, /<a\s|href=|<b>/);
+  assert.match(exported.html, /<a href="https:\/\/example.org\//);
+  assert.equal(preview.text, exported.text);
+  assert.equal(JSON.stringify(note), before);
+});
