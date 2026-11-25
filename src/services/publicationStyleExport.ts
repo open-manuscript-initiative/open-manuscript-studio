@@ -1,3 +1,4 @@
+import { normalizePublicationTableStyles, type PublicationTableStyles } from '../model/tableAppearancePresets';
 import { publicationFirstPageNumber } from '../model/publicationSpreads';
 import { inlinePublicationArtifactImages } from './publicationHtmlArtifact';
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
@@ -36,6 +37,7 @@ export type PublicationStyle = Omit<PublicationStyleTemplate, 'paragraphStyles' 
   paragraphStyles: PublicationParagraphStyleCollection;
   noteCitationStyles?: { first?: OmiCitationStyleId; subsequent?: OmiCitationStyleId };
   pageStyles?: PublicationPageStyleCollection;
+  tableStyles?: PublicationTableStyles;
 };
 export type PublicationPublisherIdentity = typeof publisherJson;
 export type PublicationStyleTarget = 'html' | 'print';
@@ -94,6 +96,7 @@ export function normalizePublicationStyle(style: PublicationStyle): PublicationS
       style.paragraphStyles,
       fallback.paragraphStyles,
     )),
+    ...(style.tableStyles===undefined?{}:{tableStyles:normalizePublicationTableStyles(style.tableStyles)}),
     noteCitationStyles: {
       first: CITATION_STYLE_CATALOG.some((item) => item.id === style.noteCitationStyles?.first) ? style.noteCitationStyles?.first : undefined,
       subsequent: CITATION_STYLE_CATALOG.some((item) => item.id === style.noteCitationStyles?.subsequent) ? style.noteCitationStyles?.subsequent : undefined,
