@@ -234,3 +234,23 @@ test('format a rectangular range, whole column and return to single cell editing
   await expect(table.locator('[data-cell-range="true"]')).toHaveCount(0);
   await expect(canvas.getByRole('button',{name:'Cell range',exact:true})).toHaveCount(0);
 });
+
+test('reorder selected table rows and columns without moving header into body',async({page})=>{
+  const canvas=await openTables(page,2);
+  await canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true}).click();
+  await canvas.getByText('Reorder rows and columns',{exact:true}).click();
+  await expect(canvas.getByRole('button',{name:'Move row up',exact:true})).toBeDisabled();
+  await canvas.getByRole('button',{name:'Move row down',exact:true}).click();
+  await expect(canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true})).toHaveValue('Row 1');
+  await expect(canvas.getByRole('textbox',{name:'Cell 3, 1',exact:true})).toHaveValue('Row 0');
+  await expect(canvas.getByRole('button',{name:'Move row down',exact:true})).toBeDisabled();
+  await canvas.getByRole('button',{name:'Move column right',exact:true}).click();
+  await expect(canvas.getByRole('textbox',{name:'Cell 1, 1',exact:true})).toHaveValue('Description');
+  await expect(canvas.getByRole('textbox',{name:'Cell 1, 2',exact:true})).toHaveValue('Name');
+  await expect(canvas.getByRole('textbox',{name:'Cell 3, 2',exact:true})).toHaveValue('Row 0');
+  await canvas.getByRole('button',{name:'Move column left',exact:true}).click();
+  await canvas.getByRole('button',{name:'Move row up',exact:true}).click();
+  await expect(canvas.getByRole('textbox',{name:'Cell 2, 1',exact:true})).toHaveValue('Row 0');
+  await page.setViewportSize({width:480,height:900});
+  await expect(canvas.getByRole('button',{name:'Move row up',exact:true})).toHaveCount(0);
+});
