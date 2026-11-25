@@ -1,5 +1,5 @@
 import type { OmiTableBlockData, OmiTableCellFormat, OmiBlock, OmiSection } from '../types/omi';
-import { normalizeTableCellAppearance, normalizeTableCellEdges, tableCellFormat, tableHeaderRows, tableRangeAnchors, pruneTableCellFormats, prunePublicationCellStyles, tableMergeLayout, parseTableCellContent, cellNestedTable, MAX_NESTED_TABLE_DEPTH, type TableCellPosition } from './tableLayout';
+import { normalizeTableCellAppearance, normalizeTableCellEdges, tableCellFormat, tableHeaderRows, tableRangeAnchors, pruneTableCellFormats, prunePublicationCellStyles, prunePublicationCellOverrides, TABLE_OVERRIDE_FIELDS, tableMergeLayout, parseTableCellContent, cellNestedTable, MAX_NESTED_TABLE_DEPTH, type TableCellPosition } from './tableLayout';
 
 export type CellStylePreset={kind:'cell';name:string;format:OmiTableCellFormat};
 export type TableStylePreset={kind:'table';name:string;basedOn?:string;header:OmiTableCellFormat;body:OmiTableCellFormat;alternate?:OmiTableCellFormat;firstColumn?:OmiTableCellFormat;lastColumn?:OmiTableCellFormat;summary?:OmiTableCellFormat;conditions?:TableCondition[]};
@@ -110,12 +110,14 @@ export function applyAppearancePreset(table:OmiTableBlockData,preset:TableAppear
   if(!targets.length) return table;
   const formats=pruneTableCellFormats(table.cells,table.cellFormats);
   const bindings=prunePublicationCellStyles(table.cells,table.publicationCellStyles);
+  const overrides=prunePublicationCellOverrides(table.cells,table.publicationCellOverrides);
   const headers=tableHeaderRows(table.cells,table.headerRows);
   for(const {row,column} of targets){
     const key=row+':'+column;
-    if(valid.kind==='cell'){formats[key]=normalizePresetFormat(valid.format,true);delete bindings[key];}
+    if(valid.kind==='cell'){formats[key]=normalizePresetFormat(valid.format,true);delete bindings[key];if(table.publicationTableStyle)overrides[key]=TABLE_OVERRIDE_FIELDS.filter(field=>field!=='textRotation'&&field!=='textDirection');else delete overrides[key];}
     else{
       if(bindings[key])continue;
+      delete overrides[key];
       const source=regionFormat(valid,row,headers,column,table.cells.length,table.cells[row]?.length??0,table.cells[row]?.[column]??'');
       const existing=tableCellFormat(formats,row,column);
       formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...normalizePresetFormat(source,false)};
@@ -124,6 +126,7 @@ export function applyAppearancePreset(table:OmiTableBlockData,preset:TableAppear
   // Applying a non-publication table preset explicitly replaces the live link.
   const next={...table,cellFormats:formats};
   if(Object.keys(bindings).length)next.publicationCellStyles=bindings;else delete next.publicationCellStyles;
+  if(Object.keys(overrides).length)next.publicationCellOverrides=overrides;else delete next.publicationCellOverrides;
   if(valid.kind==='table')delete next.publicationTableStyle;
   return next;
 }
@@ -190,7 +193,11 @@ export function bindPublicationTableStyle(table:OmiTableBlockData,catalog:Public
 }
 export function detachPublicationTableStyle(table:OmiTableBlockData):OmiTableBlockData{
   if(!table.publicationTableStyle)return table;
-  const next={...table};delete next.publicationTableStyle;return next;
+  const next={...table};delete next.publicationTableStyle;
+  const overrides=prunePublicationCellOverrides(table.cells,table.publicationCellOverrides);
+  for(const key of Object.keys(overrides))if(!table.publicationCellStyles?.[key])delete overrides[key];
+  if(Object.keys(overrides).length)next.publicationCellOverrides=overrides;else delete next.publicationCellOverrides;
+  return next;
 }
 /** Replace a definition without changing its name or default assignment. */
 export function replacePublicationTablePreset(catalog:PublicationTableStyles,preset:TableAppearancePreset):PublicationTableStyles|undefined{
@@ -264,11 +271,11 @@ function materializeInheritedGeometry(previous:OmiTableBlockData,next:OmiTableBl
     const existingAnchor=previous.cells[source.row]?.[source.column]!==undefined&&!oldLayout.covered(source.row,source.column);
     const orientation=tableCellFormat(formats,row,column);
     const format:OmiTableCellFormat={textRotation:orientation.textRotation,textDirection:orientation.textDirection,...regionFormat(current,row,headers,column,next.cells.length,next.cells[row]?.length??0,next.cells[row]?.[column]??'')};
-    if(existingAnchor&&previous.cellFormats?.[oldKey]){
+    if((existingAnchor||previous.publicationCellOverrides?.[oldKey]?.length)&&previous.cellFormats?.[oldKey]){
       const baseline=regionFormat(old,source.row,oldHeaders,source.column,previous.cells.length,previous.cells[source.row]?.length??0,previous.cells[source.row]?.[source.column]??'');
       const existing=normalizePresetFormat(previous.cellFormats[oldKey],false);
       for(const field of fields){
-        if(!sameFormat(existing[field],baseline[field])){
+        if(previous.publicationCellOverrides?.[oldKey]?.includes(field)||(existingAnchor&&!sameFormat(existing[field],baseline[field]))){
           Object.assign(format,{[field]:existing[field]});
           if(existing[field]===undefined)delete format[field];
         }
@@ -346,8 +353,11 @@ export function bindPublicationCellStyle(table:OmiTableBlockData,catalog:Publica
   if(!targets.length)return table;
   const next=applyAppearancePreset(table,preset,start,end);
   const bindings=prunePublicationCellStyles(next.cells,next.publicationCellStyles);
-  for(const {row,column} of targets)bindings[row+':'+column]=name;
-  return {...next,publicationCellStyles:bindings};
+  const overrides=prunePublicationCellOverrides(next.cells,next.publicationCellOverrides);
+  for(const {row,column} of targets){const key=row+':'+column;bindings[key]=name;delete overrides[key];}
+  const result={...next,publicationCellStyles:bindings};
+  if(Object.keys(overrides).length)result.publicationCellOverrides=overrides;else delete result.publicationCellOverrides;
+  return result;
 }
 export function detachPublicationCellStyles(table:OmiTableBlockData,start:TableCellPosition,end:TableCellPosition):OmiTableBlockData{
   const bindings=prunePublicationCellStyles(table.cells,table.publicationCellStyles);
@@ -369,16 +379,21 @@ export function resetInheritedCellAppearance(table:OmiTableBlockData,catalog:Pub
   const preset=table.publicationTableStyle?resolvePublicationTablePreset(catalog,table.publicationTableStyle):undefined;
   const headers=tableHeaderRows(table.cells,table.headerRows);
   const formats=pruneTableCellFormats(table.cells,table.cellFormats);
+  const overrides=prunePublicationCellOverrides(table.cells,table.publicationCellOverrides);
   for(const {row,column} of tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows)){
     const key=row+':'+column;
     const cell=items.find(p=>p.kind==='cell'&&p.name===table.publicationCellStyles?.[key]);
-    if(cell?.kind==='cell')formats[key]=normalizePresetFormat(cell.format,true);
+    if(cell?.kind==='cell'){formats[key]=normalizePresetFormat(cell.format,true);delete overrides[key];}
     else if(preset?.kind==='table'){
+      delete overrides[key];
       const existing=tableCellFormat(formats,row,column);
       formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...regionFormat(preset,row,headers,column,table.cells.length,table.cells[row]?.length??0,table.cells[row]?.[column]??'')};
     }
   }
-  return sameFormat(formats,table.cellFormats??{})?table:{...table,cellFormats:formats};
+  if(sameFormat(formats,table.cellFormats??{})&&sameFormat(overrides,table.publicationCellOverrides??{}))return table;
+  const result={...table,cellFormats:formats};
+  if(Object.keys(overrides).length)result.publicationCellOverrides=overrides;else delete result.publicationCellOverrides;
+  return result;
 }
 /** Definition changes retain direct differences, including direction/rotation.
  * Deleting a definition freezes the resolved cell appearance and removes its link. */
@@ -398,7 +413,7 @@ export function refreshPublicationCellStyles(table:OmiTableBlockData,previous:Pu
     if(old?.kind==='cell'&&formats[key]){
       const baseline=normalizePresetFormat(old.format,true);
       const existing=normalizePresetFormat(formats[key],true);
-      for(const field of fields)if(!sameFormat(existing[field],baseline[field])){
+      for(const field of fields)if(table.publicationCellOverrides?.[key]?.includes(field)||!sameFormat(existing[field],baseline[field])){
         Object.assign(format,{[field]:existing[field]});
         if(existing[field]===undefined)delete format[field];
       }
@@ -442,4 +457,23 @@ export function renamePublicationTableBindings(sections:OmiSection[],from:string
     if(!table.publicationCellStyles||!Object.values(table.publicationCellStyles).includes(from))return table;
     return {...table,publicationCellStyles:Object.fromEntries(Object.entries(table.publicationCellStyles).map(([key,name])=>[key,name===from?to:name]))};
   });
+}
+
+/** Count selected visible cells with explicit or legacy inferred overrides. */
+export function selectedPublicationOverrideCount(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,start:TableCellPosition,end:TableCellPosition):number{
+  const items=normalizePublicationTableStyles(catalog)?.items??[];
+  const preset=table.publicationTableStyle?resolvePublicationTablePreset(catalog,table.publicationTableStyle):undefined;
+  const headers=tableHeaderRows(table.cells,table.headerRows);
+  return tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows).filter(({row,column})=>{
+    const key=row+':'+column;
+    const cell=items.find(p=>p.kind==='cell'&&p.name===table.publicationCellStyles?.[key]);
+    const named=cell?.kind==='cell';
+    if(!named&&!preset)return false;
+    const fields=TABLE_OVERRIDE_FIELDS.filter(field=>named||field!=='textRotation'&&field!=='textDirection');
+    if(fields.some(field=>table.publicationCellOverrides?.[key]?.includes(field)))return true;
+    if(!table.cellFormats?.[key])return false;
+    const baseline=named?normalizePresetFormat(cell.format,true):regionFormat(preset!,row,headers,column,table.cells.length,table.cells[row]?.length??0,table.cells[row]?.[column]??'');
+    const actual=normalizePresetFormat(table.cellFormats[key],named);
+    return fields.some(field=>!sameFormat(actual[field],baseline[field]));
+  }).length;
 }
