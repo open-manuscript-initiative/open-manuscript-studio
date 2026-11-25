@@ -1,3 +1,6 @@
+import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model/wordTextBoxLink';
+import { textBoxDocument, boxNumber, boxColor, boxFont } from '../model/textBoxes';
+import type { OmiTextBox } from '../types/omi';
 import { wordTocInstruction } from '../model/tableOfContents';
 import { normalizeExternalHref } from '../model/richText';
 import { toPortableBookmarkName } from '../model/namedAnchors';
@@ -67,6 +70,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const warnings: string[] = [...metadataConversionWarnings(metadataConversion), ...semanticLossWarnings(semanticLosses)];
   if (JSON.stringify(manuscript).includes('omiHiddenText')) warnings.push('Editable DOCX preserves hidden text. Hidden formatting is not redaction; do not distribute this file as a redacted document.');
   const body: string[] = [];
+  const textBoxes=new WordTextBoxRegistry(context.sections,warnings);
   const bookmarkRegistry=new WordBookmarkRegistry(manuscript,context.sections,warnings);
   const resolveCrossReference=(id:string)=>bookmarkRegistry.reference(id);
   const sourceStyles = new SourceWordStyleRegistry();
@@ -185,6 +189,11 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           body.push(wordTable(block.visual, warnings, numbering, sourceStyles,resolveNote,9026,documentLinks));
           continue;
         }
+        if(block.visual?.kind==='text-box'){
+          if(block.visual.caption?.trim())body.push(paragraph(block.visual.caption));
+          body.push(textBoxes.render(block.visual.textBox,indexFields));
+          continue;
+        }
         if (block.visual) {
           const text = blockPlainText(block);
           if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
@@ -233,7 +242,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     body[0]=paragraph(context.title,'Title',wordNoteReference('footnote',id,'*'));
   }
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:body>${body.join('')}${sectionXml()}</w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14"><w:body>${body.join('')}${sectionXml()}</w:body></w:document>`;
 
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -341,6 +350,69 @@ class WordHyperlinkRegistry{
   }
   relationships():string{return [...this.ids].map(([target,id])=>'<Relationship Id="'+id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="'+xml(target)+'" TargetMode="External"/>').join('');}
   entries(part:'footnotes'|'endnotes'){return this.ids.size?[textZipEntry('word/_rels/'+part+'.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+this.relationships()+'</Relationships>')]:[];}
+}
+
+/** Native legacy VML text boxes, regenerated from the bounded content profile.
+ * Names are unique per document; invalid, missing or cyclic links are omitted. */
+class WordTextBoxRegistry {
+  private readonly names=new Map<OmiTextBox,string>();
+  private readonly next=new Map<OmiTextBox,string>();
+  constructor(sections:ReturnType<typeof buildPublicationRenderingContext>['sections'],warnings:string[]){
+    const boxes:OmiTextBox[]=[];
+    const visit=(items:typeof sections)=>{for(const section of items){for(const block of section.blocks)if(block.visual?.kind==='text-box')boxes.push(block.visual.textBox);visit(section.children);}};
+    visit(sections);
+    const bySource=new Map<string,OmiTextBox>(),duplicate=new Set<string>(),used=new Set<string>();
+    const metadata=(box:OmiTextBox)=>normalizeWordTextBoxLink(box.extensions?.[WORD_TEXT_BOX_LINK_EXTENSION]);
+    for(const box of boxes){
+      const source=metadata(box);
+      if(source){
+        if(bySource.has(source.name))duplicate.add(source.name);
+        else bySource.set(source.name,box);
+      }
+      let name=source?.name??'OMIBox'+(this.names.size+1),suffix=2,base=name;
+      while(used.has(name.toLowerCase()))name=base.slice(0,70)+'_'+suffix++;
+      used.add(name.toLowerCase());this.names.set(box,name);
+    }
+    const edges=new Map<OmiTextBox,OmiTextBox>(),incoming=new Set<OmiTextBox>();
+    for(const box of boxes){
+      const source=metadata(box);if(!source?.next)continue;
+      const target=bySource.get(source.next);
+      if(!target||target===box||duplicate.has(source.name)||duplicate.has(source.next)||incoming.has(target)){warnings.push('Unresolved or ambiguous Word text-box link omitted.');continue;}
+      edges.set(box,target);incoming.add(target);
+    }
+    for(const [box,target] of edges){
+      const seen=new Set([box]);let cursor:OmiTextBox|undefined=target,cyclic=false;
+      while(cursor){if(seen.has(cursor)){cyclic=true;break;}seen.add(cursor);cursor=edges.get(cursor);}
+      if(cyclic){warnings.push('Cyclic Word text-box link omitted.');continue;}
+      const name=this.names.get(target);if(name)this.next.set(box,name);
+    }
+  }
+  render(box:OmiTextBox,suffix=''):string{
+    const name=this.names.get(box)??'OMITextBox';
+    const pt=(n:unknown,fallback=0,min=-100000,max=100000)=>String(Math.round(boxNumber(n,fallback,min,max)*75)/100)+'pt';
+    const next=this.next.get(box);
+    const style='position:absolute;width:'+pt(box.width,240,1)+';height:'+pt(box.height,90,1)
+      +(next?';mso-next-textbox:#'+next:'')
+      +(box.x?';margin-left:'+pt(box.x):'')+(box.y?';margin-top:'+pt(box.y):'')
+      +(box.rotation?';rotation:'+boxNumber(box.rotation,0,-360,360):'');
+    const padding=box.padding??[4,4,4,4];
+    const inset=[padding[3],padding[0],padding[1],padding[2]].map(value=>pt(value,4,0,1000)).join(',');
+    const fill=boxColor(box.background);
+    const body=textBoxDocument(box.content,box.contentProfile).content?.map(p=>{
+      const align=p.attrs?.textAlign==='justify'?'both':String(p.attrs?.textAlign??'left');
+      const before=Math.round(boxNumber(p.attrs?.spaceBefore,0,0,1000)*15),after=Math.round(boxNumber(p.attrs?.spaceAfter,0,0,1000)*15);
+      const line=Math.round(boxNumber(p.attrs?.lineHeight,1.15,0.5,10)*240);
+      const runs=(p.content??[]).map(n=>{
+        if(n.type==='hardBreak')return '<w:r><w:br/></w:r>';
+        const marks=n.marks??[],has=(type:string)=>marks.some(m=>m.type===type),font=marks.find(m=>m.type==='textBoxStyle')?.attrs;
+        const props=(has('bold')?'<w:b/>':'')+(has('italic')?'<w:i/>':'')+(has('underline')?'<w:u w:val="single"/>':'')+(has('strike')?'<w:strike/>':'')+(has('omiSmallCaps')?'<w:smallCaps/>':'')+(has('omiSuperscript')?'<w:vertAlign w:val="superscript"/>':has('omiSubscript')?'<w:vertAlign w:val="subscript"/>':'')
+          +(font?'<w:rFonts w:ascii="'+xml(boxFont(font.fontFamily))+'" w:hAnsi="'+xml(boxFont(font.fontFamily))+'"/><w:color w:val="'+boxColor(font.color,'#000000').slice(1)+'"/><w:sz w:val="'+Math.round(boxNumber(font.fontSize,16,1,400)*1.5)+'"/>':'');
+        return '<w:r>'+(props?'<w:rPr>'+props+'</w:rPr>':'')+(n.text??'').split(/(\t)/).map(part=>part==='\t'?'<w:tab/>':part?'<w:t xml:space="preserve">'+xml(part)+'</w:t>':'').join('')+'</w:r>';
+      }).join('');
+      return '<w:p><w:pPr><w:spacing w:before="'+before+'" w:after="'+after+'" w:line="'+line+'" w:lineRule="auto"/><w:jc w:val="'+align+'"/></w:pPr>'+runs+'</w:p>';
+    }).join('')||'<w:p/>';
+    return '<w:p><w:r><w:pict><v:shape id="'+xml(name)+'" style="'+xml(style)+'"'+(fill==='transparent'?' filled="f"':' fillcolor="'+fill+'"')+'><v:textbox inset="'+inset+'"><w:txbxContent>'+body+'</w:txbxContent></v:textbox></v:shape></w:pict></w:r>'+suffix+'</w:p>';
+  }
 }
 
 class WordBookmarkRegistry {
