@@ -51,7 +51,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs, cellNestedTable, MAX_NESTED_TABLE_DEPTH, resizeTableRowHeight, tableRangeAnchors, formatTableRange } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -379,6 +379,7 @@ function EditableGrid({
   const cells = data.cells;
   const previewOnly = useContext(PublicationPreviewContext);
   const [selection, setSelection] = useState({ row: 0, column: 0 });
+  const [rangeEnd,setRangeEnd]=useState<{row:number;column:number}|null>(null);
   const [edgeUnit,setEdgeUnit]=useState<'pt'|'mm'|'pc'>('pt');
   const edgeFactor=edgeUnit==='mm'?72/25.4:edgeUnit==='pc'?12:1;
   const rawRow = Math.max(0, Math.min(Math.trunc(selection.row), cells.length - 1));
@@ -394,6 +395,12 @@ function EditableGrid({
   const mergeDown=extendTableMerge(cells,mergeLayout.merges,selectedRow,selectedColumn,'down',headerCount);
   const cellFormats = data.kind === 'table' ? data.cellFormats : undefined;
   const selectedFormat = tableCellFormat(cellFormats, selectedRow, selectedColumn);
+  const start={row:rawRow,column:rawColumn};
+  const rangeTargets=data.kind==='table'&&rangeEnd?tableRangeAnchors(cells,start,rangeEnd,data.cellMerges,headerCount):[{row:selectedRow,column:selectedColumn}];
+  const rangeKeys=new Set(rangeTargets.map(p=>p.row+':'+p.column));
+  const multi=rangeTargets.length>1;
+  const mixed=(field:keyof OmiTableCellFormat)=>multi&&rangeTargets.some(p=>JSON.stringify(tableCellFormat(cellFormats,p.row,p.column)[field])!==JSON.stringify(selectedFormat[field]));
+  const selectCell=(row:number,column:number)=>{if(data.kind==='table'&&rangeEnd) setRangeEnd({row,column});else setSelection({row,column});};
   const selectedDoc=data.kind==='table'?tableCellDocument(data,selectedRow,selectedColumn):undefined;
   const columnWidths = data.kind === 'table' ? data.columnWidths : undefined;
   const widths = tableColumnWidths(cells, columnWidths);
@@ -420,9 +427,9 @@ function EditableGrid({
       : { ...data, cells: nextCells });
   }
 
-  function updateSelectedFormat(patch: OmiTableCellFormat): void {
+  function updateSelectedFormat(patch: OmiTableCellFormat|((format:ReturnType<typeof tableCellFormat>)=>OmiTableCellFormat)): void {
     if (data.kind !== 'table' || previewOnly) return;
-    onChange({ ...data, cellFormats: { ...pruneTableCellFormats(cells, cellFormats), [`${selectedRow}:${selectedColumn}`]: { ...selectedFormat, ...patch } } });
+    onChange({...data,cellFormats:formatTableRange(data,start,rangeEnd??start,patch)});
   }
 
   // Reset before measuring so shortening a cell can also shrink its row. Observe
@@ -470,10 +477,11 @@ function EditableGrid({
                     const showText = previewOnly || format.textRotation !== 0 || !!rich;
                     return (
                       <Cell key={columnIndex} rowSpan={merge?.rowSpan} colSpan={merge?.colSpan} style={tableCellAppearanceStyle(format)}
-                        data-cell-selected={!previewOnly && selectedRow === rowIndex && selectedColumn === columnIndex ? 'true' : undefined}
+                        data-cell-selected={!previewOnly && rangeKeys.has(rowIndex+':'+columnIndex) ? 'true' : undefined}
+                        data-cell-range={!previewOnly&&multi&&rangeKeys.has(rowIndex+':'+columnIndex)?'true':undefined}
                         tabIndex={!previewOnly && showText ? 0 : undefined}
-                        onFocus={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
-                        onClick={() => { if (!previewOnly) setSelection({ row: rowIndex, column: columnIndex }); }}
+                        onFocus={() => { if (!previewOnly && !rangeEnd) setSelection({ row: rowIndex, column: columnIndex }); }}
+                        onClick={(event) => { if (!previewOnly && !(event.target as HTMLElement).closest('[role="separator"]')) selectCell(rowIndex,columnIndex); }}
                       >
                         {richHtml!==undefined ? <div className="omi-table-cell-text omi-table-rich-preview" dir={format.textDirection} data-text-rotation={format.textRotation} style={{...tableCellTextStyle(format.textRotation),textAlign:format.horizontalAlign??'start'}} dangerouslySetInnerHTML={{__html:richHtml}}/> : showText ? (
                           <span className="omi-table-cell-text" dir={format.textDirection} data-text-rotation={format.textRotation} style={{...tableCellTextStyle(format.textRotation),...(format.horizontalAlign?{textAlign:format.horizontalAlign,...(format.textRotation===0?{width:'100%'}:{})}:{})}}>{cell || '\u00a0'}</span>
@@ -598,28 +606,41 @@ function EditableGrid({
       {data.kind === 'table' ? (
         <details className="omi-table-cell-formatting" style={continuationStyle(cells.length)}>
           <summary>{copy.cellFormatting}</summary>
+          <div className="omi-table-actions">
+            <button type="button" aria-pressed={!!rangeEnd} onClick={()=>setRangeEnd(rangeEnd?null:start)}>{copy.cellRange}</button>
+            <button type="button" onClick={()=>{setSelection({row:rawRow,column:0});setRangeEnd({row:rawRow,column:Math.max(0,widths.length-1)});}}>{copy.selectTableRow}</button>
+            <button type="button" onClick={()=>{setSelection({row:0,column:rawColumn});setRangeEnd({row:Math.max(0,cells.length-1),column:rawColumn});}}>{copy.selectTableColumn}</button>
+            <button type="button" onClick={()=>{setSelection({row:0,column:0});setRangeEnd({row:Math.max(0,cells.length-1),column:Math.max(0,widths.length-1)});}}>{copy.selectWholeTable}</button>
+          </div>
+          {rangeEnd?<div className="omi-table-cell-formatting-fields">
+            <label><span>{copy.rangeEndRow}</span><input type="number" min={1} max={cells.length} value={Math.min(rangeEnd.row+1,cells.length)} onChange={event=>{if(Number.isFinite(event.target.valueAsNumber))setRangeEnd({...rangeEnd,row:Math.min(cells.length-1,Math.max(0,Math.trunc(event.target.valueAsNumber)-1))});}}/></label>
+            <label><span>{copy.rangeEndColumn}</span><input type="number" min={1} max={widths.length} value={Math.min(rangeEnd.column+1,widths.length)} onChange={event=>{if(Number.isFinite(event.target.valueAsNumber))setRangeEnd({...rangeEnd,column:Math.min(widths.length-1,Math.max(0,Math.trunc(event.target.valueAsNumber)-1))});}}/></label>
+            <output aria-live="polite">{copy.selectedCellCount}: {rangeTargets.length}</output>
+            <small>{copy.cellRangeHint}</small>
+          </div>:null}
           <div className="omi-table-cell-formatting-fields">
-            <label><span>{copy.cellRow}</span><input type="number" min={1} max={cells.length} value={selectedRow + 1} onChange={(event) => setSelection({ row: Math.max(0, Number(event.target.value) - 1), column: selectedColumn })} /></label>
+            <label><span>{copy.cellRow}</span><input type="number" min={1} max={cells.length} value={rawRow + 1} onChange={(event) => setSelection({ row: Math.max(0, Number(event.target.value) - 1), column: selectedColumn })} /></label>
             <label><span>{copy.cellColumn}</span><input type="number" min={1} max={cells[selectedRow]?.length ?? 1} value={selectedColumn + 1} onChange={(event) => setSelection({ row: selectedRow, column: Math.max(0, Number(event.target.value) - 1) })} /></label>
-            <label><span>{copy.textRotation}</span><select value={selectedFormat.textRotation} onChange={(event) => updateSelectedFormat({ textRotation: Number(event.target.value) as OmiTableCellFormat['textRotation'] })}>
-              <option value={0}>{copy.rotationNone}</option><option value={90}>{copy.rotationClockwise}</option><option value={-90}>{copy.rotationCounterclockwise}</option><option value={180}>{copy.rotationUpsideDown}</option>
+            <label><span>{copy.textRotation}</span><select value={mixed('textRotation')?'mixed':selectedFormat.textRotation} onChange={(event) => updateSelectedFormat({ textRotation: Number(event.target.value) as OmiTableCellFormat['textRotation'] })}>
+              <option value="mixed" disabled>{copy.mixedCellFormat}</option><option value={0}>{copy.rotationNone}</option><option value={90}>{copy.rotationClockwise}</option><option value={-90}>{copy.rotationCounterclockwise}</option><option value={180}>{copy.rotationUpsideDown}</option>
             </select></label>
-            <label><span>{copy.textDirection}</span><select value={selectedFormat.textDirection} onChange={(event) => updateSelectedFormat({ textDirection: event.target.value as OmiTableCellFormat['textDirection'] })}>
-              <option value="auto">{copy.directionAuto}</option><option value="ltr">{copy.directionLtr}</option><option value="rtl">{copy.directionRtl}</option>
+            <label><span>{copy.textDirection}</span><select value={mixed('textDirection')?'mixed':selectedFormat.textDirection} onChange={(event) => updateSelectedFormat({ textDirection: event.target.value as OmiTableCellFormat['textDirection'] })}>
+              <option value="mixed" disabled>{copy.mixedCellFormat}</option><option value="auto">{copy.directionAuto}</option><option value="ltr">{copy.directionLtr}</option><option value="rtl">{copy.directionRtl}</option>
             </select></label>
-            <label><span>{copy.cellHorizontalAlign}</span><select value={selectedFormat.horizontalAlign??''} onChange={event=>updateSelectedFormat({horizontalAlign:(event.target.value||undefined) as OmiTableCellFormat['horizontalAlign']})}>
-              <option value="">{copy.cellAppearanceDefault}</option><option value="left">{copy.cellAlignLeft}</option><option value="center">{copy.cellAlignCenter}</option><option value="right">{copy.cellAlignRight}</option><option value="justify">{copy.cellAlignJustify}</option>
+            <label><span>{copy.cellHorizontalAlign}</span><select value={mixed('horizontalAlign')?'mixed':selectedFormat.horizontalAlign??''} onChange={event=>updateSelectedFormat({horizontalAlign:(event.target.value||undefined) as OmiTableCellFormat['horizontalAlign']})}>
+              <option value="mixed" disabled>{copy.mixedCellFormat}</option><option value="">{copy.cellAppearanceDefault}</option><option value="left">{copy.cellAlignLeft}</option><option value="center">{copy.cellAlignCenter}</option><option value="right">{copy.cellAlignRight}</option><option value="justify">{copy.cellAlignJustify}</option>
             </select></label>
-            <label><span>{copy.cellVerticalAlign}</span><select value={selectedFormat.verticalAlign??''} onChange={event=>updateSelectedFormat({verticalAlign:(event.target.value||undefined) as OmiTableCellFormat['verticalAlign']})}>
-              <option value="">{copy.cellAppearanceDefault}</option><option value="top">{copy.cellAlignTop}</option><option value="middle">{copy.cellAlignMiddle}</option><option value="bottom">{copy.cellAlignBottom}</option>
+            <label><span>{copy.cellVerticalAlign}</span><select value={mixed('verticalAlign')?'mixed':selectedFormat.verticalAlign??''} onChange={event=>updateSelectedFormat({verticalAlign:(event.target.value||undefined) as OmiTableCellFormat['verticalAlign']})}>
+              <option value="mixed" disabled>{copy.mixedCellFormat}</option><option value="">{copy.cellAppearanceDefault}</option><option value="top">{copy.cellAlignTop}</option><option value="middle">{copy.cellAlignMiddle}</option><option value="bottom">{copy.cellAlignBottom}</option>
             </select></label>
             <label><span>{copy.cellBackground}</span><input type="color" value={selectedFormat.backgroundColor??'#ffffff'} onChange={event=>updateSelectedFormat({backgroundColor:event.target.value})}/></label>
-            <button type="button" disabled={!selectedFormat.backgroundColor} onClick={()=>updateSelectedFormat({backgroundColor:undefined})}>{copy.cellClearBackground}</button>
+            <button type="button" disabled={!rangeTargets.some(p=>tableCellFormat(cellFormats,p.row,p.column).backgroundColor)} onClick={()=>updateSelectedFormat({backgroundColor:undefined})}>{copy.cellClearBackground}</button>
+            {multi?<button type="button" onClick={()=>updateSelectedFormat({backgroundColor:selectedFormat.backgroundColor??'#ffffff'})}>{copy.applyCellColor}</button>:null}
           </div>
           <div className="omi-table-actions">
-            <button type="button" disabled={!mergeRight} onClick={()=>{if(mergeRight) onChange({...data,cellMerges:mergeRight});}} title={copy.mergeRight}><Merge size={14} aria-hidden="true"/><ArrowRight size={12} aria-hidden="true"/>{copy.mergeRight}</button>
-            <button type="button" disabled={!mergeDown} onClick={()=>{if(mergeDown) onChange({...data,cellMerges:mergeDown});}} title={copy.mergeDown}><Merge size={14} aria-hidden="true"/><ArrowDown size={12} aria-hidden="true"/>{copy.mergeDown}</button>
-            <button type="button" disabled={!selectedMerge} onClick={()=>onChange({...data,cellMerges:splitTableMerge(cells,data.cellMerges,selectedRow,selectedColumn,headerCount)})}><Split size={14} aria-hidden="true"/>{copy.splitCell}</button>
+            <button type="button" disabled={multi||!mergeRight} onClick={()=>{if(mergeRight) onChange({...data,cellMerges:mergeRight});}} title={copy.mergeRight}><Merge size={14} aria-hidden="true"/><ArrowRight size={12} aria-hidden="true"/>{copy.mergeRight}</button>
+            <button type="button" disabled={multi||!mergeDown} onClick={()=>{if(mergeDown) onChange({...data,cellMerges:mergeDown});}} title={copy.mergeDown}><Merge size={14} aria-hidden="true"/><ArrowDown size={12} aria-hidden="true"/>{copy.mergeDown}</button>
+            <button type="button" disabled={multi||!selectedMerge} onClick={()=>onChange({...data,cellMerges:splitTableMerge(cells,data.cellMerges,selectedRow,selectedColumn,headerCount)})}><Split size={14} aria-hidden="true"/>{copy.splitCell}</button>
           </div>
           <details>
             <summary>{copy.cellEdges}</summary>
@@ -629,9 +650,11 @@ function EditableGrid({
               const padding=selectedFormat.paddingPt?.[side];
               const sideLabel={top:copy.cellAlignTop,right:copy.cellAlignRight,bottom:copy.cellAlignBottom,left:copy.cellAlignLeft}[side];
               const setEdge=(next:NonNullable<OmiTableCellFormat['borders']>[typeof side])=>{
-                const borders={...selectedFormat.borders};
-                if(next) borders[side]=next; else delete borders[side];
-                updateSelectedFormat({borders:normalizeTableCellEdges({borders}).borders});
+                updateSelectedFormat(format=>{
+                  const borders={...format.borders};
+                  if(next) borders[side]=next; else delete borders[side];
+                  return {borders:normalizeTableCellEdges({borders}).borders};
+                });
               };
               return <fieldset key={side}>
                 <legend>{sideLabel}</legend>
@@ -643,17 +666,20 @@ function EditableGrid({
                   <label><span>{copy.cellBorderWidth} ({edgeUnit})</span><input type="number" min={0.125/edgeFactor} max={12/edgeFactor} step="any" disabled={!edge||edge.style==='none'} value={edge?.widthPt===undefined?'':Number((edge.widthPt/edgeFactor).toFixed(3))} onChange={event=>{if(edge&&Number.isFinite(event.target.valueAsNumber)) setEdge({...edge,widthPt:event.target.valueAsNumber*edgeFactor});}}/></label>
                   <label><span>{copy.cellBorderColor}</span><input type="color" disabled={!edge||edge.style==='none'} value={edge?.color??'#000000'} onChange={event=>{if(edge) setEdge({...edge,color:event.target.value});}}/></label>
                   <label><span>{copy.cellPadding} ({edgeUnit})</span><input type="number" min={0} max={144/edgeFactor} step="any" placeholder={copy.cellAppearanceDefault} value={padding===undefined?'':Number((padding/edgeFactor).toFixed(3))} onChange={event=>{
-                    const paddingPt={...selectedFormat.paddingPt};
-                    if(event.target.value==='') delete paddingPt[side];
-                    else if(Number.isFinite(event.target.valueAsNumber)) paddingPt[side]=event.target.valueAsNumber*edgeFactor;
-                    updateSelectedFormat({paddingPt:normalizeTableCellEdges({paddingPt}).paddingPt});
+                    const value=event.target.value,number=event.target.valueAsNumber;
+                    updateSelectedFormat(format=>{
+                      const paddingPt={...format.paddingPt};
+                      if(value==='') delete paddingPt[side];
+                      else if(Number.isFinite(number)) paddingPt[side]=number*edgeFactor;
+                      return {paddingPt:normalizeTableCellEdges({paddingPt}).paddingPt};
+                    });
                   }}/></label>
                 </div>
               </fieldset>;
             })}
           </details>
           <small>{copy.mergeHint}</small>
-          <details open>
+          {!multi?<details open>
             <summary>{copy.editCellText}</summary>
             <RichCellEditor depth={depth} key={selectedRow+':'+selectedColumn} doc={selectedDoc??plainTableCellDocument(cells[selectedRow]?.[selectedColumn]??'')} label={copy.editCellText} onChange={doc=>{
               const nextCells=updateTableCell(cells,selectedRow,selectedColumn,tableCellPlainText(doc));
@@ -675,7 +701,7 @@ function EditableGrid({
                 onChange({...data,cells:nextCells,cellContent:content});
               }}/></details>;
             })}
-          </details>
+          </details>:null}
         </details>
       ) : null}
       {data.kind === 'table' ? (
