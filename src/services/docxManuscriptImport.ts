@@ -1,3 +1,4 @@
+import { readWordComments, importWordParagraphComments } from './docxReviewImport';
 import { readWordPictureLayout } from '../model/wordPictureLayout';
 import { createNamedAnchor, normalizeWordBookmarkRange, simpleBookmarkParagraphText, type OmiNamedAnchor } from '../model/namedAnchors';
 import { createCrossReference } from '../model/crossReferences';
@@ -48,6 +49,8 @@ import { withParentSectionId } from '../model/sectionStructure';
 import type {
   OmiAnnotation,
   OmiCrossReference,
+  OmiProofingChange,
+  OmiProofingState,
   OmiBibliographicContributor,
   OmiBibliographicRecord,
   OmiBlock,
@@ -132,6 +135,7 @@ interface FieldState {
 }
 
 export interface DocxManuscriptImportPlan {
+  proofing?: OmiProofingState;
   namedAnchors?:OmiNamedAnchor[];
   crossReferences?:OmiCrossReference[];
   wordHyphenation?:WordHyphenationSettings;
@@ -174,6 +178,7 @@ export async function parseDocxManuscript(
   const provenance: OmiImportProvenance = {
     sourceFormat: 'docx',
     fileName: file.name,
+    ...(reviewChanges.length?{proofing:{trackChanges:false,changes:reviewChanges}}:{}),
     importedAt,
   };
   const warnings: DocxImportWarning[] = [];
@@ -203,12 +208,17 @@ export async function parseDocxManuscript(
     throw new Error('The DOCX document body is missing.');
   }
 
-  if (descendantsByLocalName(body, 'del').length > 0) {
-    warnings.push(warning('tracked-deletions'));
+  let comments: ReturnType<typeof readWordComments> = new Map();
+  if (archive.has('word/comments.xml')) {
+    try {
+      comments=readWordComments(parseXml(await archive.text('word/comments.xml')),
+        archive.has('word/commentsExtended.xml')?parseXml(await archive.text('word/commentsExtended.xml')):undefined);
+    } catch { warnings.push(warning('comments-not-imported')); }
   }
-  if (descendantsByLocalName(body, 'commentReference').length > 0) {
-    warnings.push(warning('comments-not-imported'));
-  }
+  const reviewAnnotations: OmiAnnotation[]=[];
+  const importedCommentIds=new Set<string>();
+  const reviewChanges: OmiProofingChange[]=[];
+  let retainedRevisionCount=0;
   if (descendantsByLocalName(body, 'txbxContent').length > 0) {
     warnings.push(warning('text-boxes-flattened'));
   }
@@ -599,6 +609,9 @@ export async function parseDocxManuscript(
         content: JSON.stringify(tiptapContent),
       });
       captureBookmarks(child,blockId,'block',JSON.stringify(tiptapContent));
+      reviewAnnotations.push(...importWordParagraphComments(child,blockId,comments,importedCommentIds,importedAt));
+      const revision=importParagraphRevision(child,tiptapContent,context,relationships,importedAt);
+      if(revision){reviewChanges.push(revision.change);retainedRevisionCount+=revision.count;}
       stats.paragraphs += 1;
     }
     section.blocks.push(...visuals);
@@ -656,6 +669,10 @@ export async function parseDocxManuscript(
 
   stats.sections = sections.length;
   stats.notes = annotations.length;
+  annotations.push(...reviewAnnotations);
+  if(comments.size>importedCommentIds.size || (descendantsByLocalName(body,'commentReference').length>0&&!reviewAnnotations.length)) warnings.push(warning('comments-not-imported'));
+  const revisionCount=['ins','del','rPrChange'].reduce((sum,name)=>sum+descendantsByLocalName(body,name).length,0);
+  if(revisionCount>retainedRevisionCount)warnings.push(warning('tracked-deletions'));
   stats.citations = citations.length;
   stats.references = bibliographicRecords.length;
   if(sectionRestart&&sections.length>Math.max(1,nativeSections.length))warnings.push(warning('note-numbering-logical-section-approximation'));
@@ -972,6 +989,49 @@ function parseParagraphInline(
 
   if (field) finishField();
   return coalesceTextNodes(output);
+}
+
+/** OMI proofing rejects/restores an entire block. Reconstruct a single original
+ * block for simple run-level changes; never fabricate a snapshot for fields,
+ * notes, complex tables or moves. */
+function importParagraphRevision(paragraph:Element,current:TiptapNode,context:InlineContext,relationships:Map<string,Relationship>,timestamp:string):{change:OmiProofingChange;count:number}|undefined{
+  const revisions=['ins','del','rPrChange'].flatMap(name=>descendantsByLocalName(paragraph,name));
+  if(!revisions.length||current.content?.[0]?.type!=='paragraph')return undefined;
+  const safeRun=(element:Element)=>Array.from(element.children).every(child=>['rPr','t','delText','tab','br','cr'].includes(child.localName));
+  const safe=Array.from(paragraph.children).every(child=>{
+    if(['pPr','bookmarkStart','bookmarkEnd','commentRangeStart','commentRangeEnd','proofErr'].includes(child.localName))return true;
+    if(child.localName==='r')return safeRun(child);
+    return ['ins','del'].includes(child.localName)&&Array.from(child.children).every(run=>run.localName==='r'&&safeRun(run));
+  });
+  if(!safe)return undefined;
+  const original=paragraph.cloneNode(true) as Element;
+  for(const insertion of descendantsByLocalName(original,'ins'))insertion.parentNode?.removeChild(insertion);
+  for(const deletion of descendantsByLocalName(original,'del')){
+    const parent=deletion.parentNode;
+    if(!parent)continue;
+    for(const run of Array.from(deletion.children)){
+      for(const text of directChildrenByLocalName(run,'delText')){
+        const replacement=original.ownerDocument.createElementNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main','w:t');
+        replacement.textContent=text.textContent;
+        text.parentNode?.replaceChild(replacement,text);
+      }
+      parent.insertBefore(run,deletion);
+    }
+    parent.removeChild(deletion);
+  }
+  for(const change of descendantsByLocalName(original,'rPrChange')){
+    const properties=change.parentNode;
+    const previous=directChildrenByLocalName(change,'rPr')[0];
+    if(!properties||!previous||!properties.parentNode)return undefined;
+    properties.parentNode.replaceChild(previous.cloneNode(true),properties);
+  }
+  const oldInline=parseParagraphInline(original,relationships,{...context,wordReferences:undefined,annotations:[],citations:[],citationClusters:[],warnings:[],stats:createEmptyDocxImportStats()});
+  const before=JSON.stringify({...current,content:[{...current.content[0],content:oldInline}]});
+  const after=JSON.stringify(current);
+  if(before===after)return undefined;
+  const dates=revisions.map(item=>attributeByLocalName(item,'date')).filter((value):value is string=>!!value&&Number.isFinite(Date.parse(value))).sort();
+  const createdAt=dates.length?new Date(dates[0]!).toISOString():timestamp;
+  return {count:revisions.length,change:{id:crypto.randomUUID(),targetBlockId:context.blockId,before,after,status:'pending',createdAt,modifiedAt:timestamp}};
 }
 
 function paragraphHasNoteReference(paragraph: Element): boolean {
