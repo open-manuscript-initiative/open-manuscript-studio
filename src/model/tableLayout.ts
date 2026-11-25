@@ -1,4 +1,4 @@
-import type { OmiTableCellFormat, OmiTableCellMerge, OmiTableBlockData, OmiTableRowSplitPolicy, OmiTableCellSide, OmiTableCellBorder } from '../types/omi';
+import type { OmiTableCellFormat, OmiTableCellMerge, OmiTableBlockData, OmiTableRowSplitPolicy, OmiTableCellSide, OmiTableCellBorder, OmiTableRowHeight } from '../types/omi';
 
 /** Relative widths keep the same table editable on screen and within print margins. */
 export function tableColumnWidths(cells: readonly (readonly string[])[], widths?: readonly number[]): number[] {
@@ -199,4 +199,39 @@ export function odtTableCellBorder(value: string | undefined): OmiTableCellBorde
   if(!m) return undefined;
   const widthPt=tableLengthPt(m[1]);
   return widthPt===undefined?undefined:{style:m[2]!.toLowerCase() as OmiTableCellBorder['style'],widthPt,color:m[3]};
+}
+
+/** Canonical twip precision; reject malformed or non-positive fixed dimensions. */
+export function normalizeTableRowHeight(value: unknown): OmiTableRowHeight {
+  if(value && typeof value==='object'){
+    const candidate=value as {mode?:unknown;heightPt?:unknown};
+    if((candidate.mode==='minimum'||candidate.mode==='exact')&&typeof candidate.heightPt==='number'&&Number.isFinite(candidate.heightPt)&&candidate.heightPt>0){
+      return {mode:candidate.mode,heightPt:Math.min(1584,Math.max(0.05,Math.round(candidate.heightPt*20)/20))};
+    }
+  }
+  return {mode:'auto'};
+}
+export function tableRowHeight(table:Pick<OmiTableBlockData,'rowHeights'>,row:number): OmiTableRowHeight {
+  return normalizeTableRowHeight(table.rowHeights?.[String(row)]);
+}
+export function pruneTableRowHeights(cells: readonly (readonly string[])[],heights?: Record<string,OmiTableRowHeight>): Record<string,OmiTableRowHeight> {
+  const next:Record<string,OmiTableRowHeight>={};
+  for(const [key,value] of Object.entries(heights??{})){
+    if(!/^(0|[1-9][0-9]*)$/.test(key)||Number(key)>=cells.length) continue;
+    const height=normalizeTableRowHeight(value);
+    if(height.mode!=='auto') next[key]=height;
+  }
+  return next;
+}
+export function setTableRowHeight(table:OmiTableBlockData,row:number,height:OmiTableRowHeight): Record<string,OmiTableRowHeight>{
+  const next=pruneTableRowHeights(table.cells,table.rowHeights);
+  if(!Number.isSafeInteger(row)||row<0||row>=table.cells.length) return next;
+  const value=normalizeTableRowHeight(height);
+  if(value.mode==='auto') delete next[String(row)]; else next[String(row)]=value;
+  return next;
+}
+/** CSS table height is a minimum. In browser/print deliberately retain all text,
+ * even for native exact rows; no clipping or content mutation. */
+export function tableRowHeightStyle(height:OmiTableRowHeight): {height?:string} {
+  return height.mode==='auto'?{}:{height:height.heightPt+'pt'};
 }
