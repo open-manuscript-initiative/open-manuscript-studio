@@ -407,3 +407,36 @@ test('nested publication bindings survive rich-cell normalization and update thr
   assert.equal(read({...parent,...detached}).publicationTableStyle,undefined);
   assert.equal(read({...parent,...detached}).cellFormats?.['0:0']?.backgroundColor,'#123456');
 });
+
+test('named cell styles override table regions, refresh direct differences and reset selected overrides',async()=>{
+  const {BUILTIN_TABLE_STYLES,bindPublicationTableStyle,bindPublicationCellStyle,refreshPublicationTableTree,resetInheritedCellAppearance,detachPublicationCellStyles,replacePublicationTablePreset,removePublicationTablePreset,inheritPublicationTableGeometry}=await import('../src/model/tableAppearancePresets.ts');
+  const {planTableAxisMove,reorderTableAxis}=await import('../src/model/tableLayout.ts');
+  const start={row:1,column:0};
+  const cell={kind:'cell' as const,name:'Numeric',format:{horizontalAlign:'right' as const,backgroundColor:'#123456'}};
+  const catalog={items:[BUILTIN_TABLE_STYLES.banded,cell]};
+  const table=bindPublicationTableStyle({kind:'table',cells:[['H'],['A'],['B']],headerRows:1},catalog,'banded');
+  const linked=bindPublicationCellStyle(table,catalog,'Numeric',start,start);
+  assert.equal(linked.publicationCellStyles?.['1:0'],'Numeric');
+  const direct={...linked,cellFormats:{...linked.cellFormats,'1:0':{...linked.cellFormats?.['1:0'],backgroundColor:'#ABCDEF'}}};
+  const changed=replacePublicationTablePreset(catalog,{...cell,format:{horizontalAlign:'center',backgroundColor:'#654321'}})!;
+  const refreshed=refreshPublicationTableTree(direct,catalog,changed);
+  assert.equal(refreshed.cellFormats?.['1:0']?.horizontalAlign,'center');
+  assert.equal(refreshed.cellFormats?.['1:0']?.backgroundColor,'#ABCDEF');
+  const reset=resetInheritedCellAppearance(refreshed,changed,start,start);
+  assert.equal(reset.cellFormats?.['1:0']?.backgroundColor,'#654321');
+  const plan=planTableAxisMove(reset,'row',1,1)!;
+  const moved=reorderTableAxis(reset,'row',1,1)!;
+  const reflowed=inheritPublicationTableGeometry(reset,moved.table,changed,p=>({row:plan.order[p.row]!,column:p.column}));
+  assert.equal(reflowed.publicationCellStyles?.['2:0'],'Numeric');
+  assert.equal(reflowed.cellFormats?.['2:0']?.backgroundColor,'#654321');
+  assert.equal(reflowed.cellFormats?.['1:0']?.backgroundColor,undefined);
+  const detached=detachPublicationCellStyles(reset,start,start);
+  assert.equal(detached.publicationCellStyles,undefined);
+  assert.equal(detached.cellFormats,reset.cellFormats);
+  const removed=refreshPublicationTableTree(reset,changed,removePublicationTablePreset(changed,'Numeric'));
+  assert.equal(removed.publicationCellStyles,undefined);
+  assert.equal(removed.cellFormats?.['1:0']?.backgroundColor,'#654321');
+  const region=resetInheritedCellAppearance(detached,changed,start,start);
+  assert.equal(region.cellFormats?.['1:0']?.backgroundColor,undefined);
+  assert.equal(region.cells,table.cells);
+});
