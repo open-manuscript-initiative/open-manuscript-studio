@@ -1,7 +1,6 @@
 import { createNamedAnchor, type OmiNamedAnchor } from '../model/namedAnchors';
 import { createCrossReference } from '../model/crossReferences';
 import { parseWordCrossReference, type WordCrossReferenceField } from '../model/wordCrossReference';
-import type { OmiCrossReference } from '../types/omi';
 import { readWordRunningPart } from './docxRunningMatterImport';
 import { RUNNING_VARIANTS, type RunningVariants } from '../model/wordRunningMatter';
 import { readWordSectionLayout } from '../model/wordSectionLayout';
@@ -47,6 +46,7 @@ import {
 import { withParentSectionId } from '../model/sectionStructure';
 import type {
   OmiAnnotation,
+  OmiCrossReference,
   OmiBibliographicContributor,
   OmiBibliographicRecord,
   OmiBlock,
