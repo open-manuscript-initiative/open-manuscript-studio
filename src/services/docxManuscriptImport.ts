@@ -1,4 +1,4 @@
-import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES, normalizeTableRowHeight } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
@@ -46,6 +46,7 @@ import type {
   OmiTableCellFormat,
   OmiTableCellMerge,
   OmiTableRowSplitPolicy,
+  OmiTableRowHeight,
   OmiSection,
 } from '../types/omi';
 
@@ -230,6 +231,7 @@ export async function parseDocxManuscript(
             cellMerges: table.cellMerges,
             rowSplitDefault: 'allow',
             rowSplitOverrides: table.rowSplitOverrides,
+            rowHeights: table.rowHeights,
             provenance,
           }),
         );
@@ -1146,17 +1148,25 @@ function parseWordTable(table: Element): {
   cellFormats: Record<string, OmiTableCellFormat>;
   cellMerges: OmiTableCellMerge[];
   rowSplitOverrides: Record<string,OmiTableRowSplitPolicy>;
+  rowHeights: Record<string,OmiTableRowHeight>;
 } {
   const rows = directChildrenByLocalName(table, 'tr');
   const cellFormats: Record<string, OmiTableCellFormat> = {};
   let mergedCells = false;
   const merges: OmiTableCellMerge[] = [];
   const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
+  const rowHeights: Record<string,OmiTableRowHeight> = {};
   let active = new Map<number,OmiTableCellMerge>();
   const cells = rows.map((row,rowIndex)=>{
     const next = new Map<number,OmiTableCellMerge>();
     const values:string[]=[];
     const rowProperties=directChildrenByLocalName(row,'trPr')[0];
+    const height=rowProperties && directChildrenByLocalName(rowProperties,'trHeight')[0];
+    if(height){
+      const rule=attributeByLocalName(height,'hRule');
+      const value=normalizeTableRowHeight({mode:rule==='auto'?'auto':rule==='exact'?'exact':'minimum',heightPt:Number(attributeByLocalName(height,'val'))/20});
+      if(value.mode!=='auto') rowHeights[String(rowIndex)]=value;
+    }
     const cantSplit=rowProperties && directChildrenByLocalName(rowProperties,'cantSplit')[0];
     if(cantSplit) rowSplitOverrides[String(rowIndex)]=['0','false','off'].includes(attributeByLocalName(cantSplit,'val')?.toLowerCase()??'')?'allow':'keep';
     const before=rowProperties && directChildrenByLocalName(rowProperties,'gridBefore')[0];
@@ -1265,7 +1275,7 @@ function parseWordTable(table: Element): {
   const matrix=rectangularize(cells);
   const candidates=merges.filter(m=>m.rowSpan>1||m.colSpan>1);
   const cellMerges=tableMergeLayout(matrix,candidates,headerRows).merges;
-  return {cells:matrix,headerRows,mergedCells:mergedCells||cellMerges.length!==candidates.length,cellFormats,cellMerges,rowSplitOverrides};
+  return {cells:matrix,headerRows,mergedCells:mergedCells||cellMerges.length!==candidates.length,cellFormats,cellMerges,rowSplitOverrides,rowHeights};
 }
 
 function parseRelationships(xmlText: string): Map<string, Relationship> {
