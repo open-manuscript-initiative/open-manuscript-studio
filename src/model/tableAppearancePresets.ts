@@ -1,5 +1,5 @@
 import type { OmiTableBlockData, OmiTableCellFormat, OmiBlock, OmiSection } from '../types/omi';
-import { normalizeTableCellAppearance, normalizeTableCellEdges, tableCellFormat, tableHeaderRows, tableRangeAnchors, pruneTableCellFormats, type TableCellPosition } from './tableLayout';
+import { normalizeTableCellAppearance, normalizeTableCellEdges, tableCellFormat, tableHeaderRows, tableRangeAnchors, pruneTableCellFormats, tableMergeLayout, parseTableCellContent, cellNestedTable, MAX_NESTED_TABLE_DEPTH, type TableCellPosition } from './tableLayout';
 
 export type CellStylePreset={kind:'cell';name:string;format:OmiTableCellFormat};
 export type TableStylePreset={kind:'table';name:string;header:OmiTableCellFormat;body:OmiTableCellFormat;alternate?:OmiTableCellFormat};
@@ -153,34 +153,80 @@ export function refreshPublicationTableStyle(table:OmiTableBlockData,previous:Pu
   const current=normalizePublicationTableStyles(next)?.items.find(p=>p.kind==='table'&&p.name===name);
   if(!current||current.kind!=='table')return detachPublicationTableStyle(table);
   if(sameFormat(old,current))return table;
-  const refreshed=bindPublicationTableStyle(table,next,name);
-  if(!old||old.kind!=='table')return refreshed;
-  const formats={...refreshed.cellFormats};
-  const headers=tableHeaderRows(table.cells,table.headerRows);
+  if(!old||old.kind!=='table')return bindPublicationTableStyle(table,next,name);
+  return materializeInheritedGeometry(table,table,old,current);
+}
+function regionFormat(preset:TableStylePreset,row:number,headers:number):OmiTableCellFormat{
+  return normalizePresetFormat(row<headers?preset.header:preset.alternate&&(row-headers)%2===1?preset.alternate:preset.body,false);
+}
+/** Map old visible anchors to their new coordinates; new anchors inherit the
+ * new region, while direct appearance differences and text direction travel
+ * with existing anchors. Covered cells keep their dormant formatting. */
+function materializeInheritedGeometry(previous:OmiTableBlockData,next:OmiTableBlockData,old:TableStylePreset,current:TableStylePreset,sourceAt:(p:TableCellPosition)=>TableCellPosition=p=>p):OmiTableBlockData{
+  const formats=pruneTableCellFormats(next.cells,next.cellFormats);
+  const oldLayout=tableMergeLayout(previous.cells,previous.cellMerges,previous.headerRows);
+  const oldHeaders=tableHeaderRows(previous.cells,previous.headerRows);
+  const headers=tableHeaderRows(next.cells,next.headerRows);
   const fields=['horizontalAlign','verticalAlign','backgroundColor','borders','paddingPt'] as const;
-  for(const {row,column} of tableRangeAnchors(table.cells,{row:0,column:0},{row:table.cells.length-1,column:(table.cells[0]?.length??0)-1},table.cellMerges,table.headerRows)){
+  for(const {row,column} of tableRangeAnchors(next.cells,{row:0,column:0},{row:next.cells.length-1,column:(next.cells[0]?.length??0)-1},next.cellMerges,next.headerRows)){
     const key=row+':'+column;
-    if(!table.cellFormats?.[key])continue;
-    const baseline=normalizePresetFormat(row<headers?old.header:old.alternate&&(row-headers)%2===1?old.alternate:old.body,false);
-    const existing=normalizePresetFormat(table.cellFormats[key],false);
-    const format=formats[key];
-    if(!format)continue;
-    for(const field of fields){
-      if(!sameFormat(existing[field],baseline[field])){
-        // The indexed write is type-safe because both records use the same key.
-        Object.assign(format,{[field]:existing[field]});
-        if(existing[field]===undefined)delete format[field];
+    const source=sourceAt({row,column});
+    const oldKey=source.row+':'+source.column;
+    const existingAnchor=previous.cells[source.row]?.[source.column]!==undefined&&!oldLayout.covered(source.row,source.column);
+    const orientation=tableCellFormat(formats,row,column);
+    const format:OmiTableCellFormat={textRotation:orientation.textRotation,textDirection:orientation.textDirection,...regionFormat(current,row,headers)};
+    if(existingAnchor&&previous.cellFormats?.[oldKey]){
+      const baseline=regionFormat(old,source.row,oldHeaders);
+      const existing=normalizePresetFormat(previous.cellFormats[oldKey],false);
+      for(const field of fields){
+        if(!sameFormat(existing[field],baseline[field])){
+          Object.assign(format,{[field]:existing[field]});
+          if(existing[field]===undefined)delete format[field];
+        }
       }
     }
+    formats[key]=format;
   }
-  return {...refreshed,cellFormats:formats};
+  return sameFormat(formats,next.cellFormats)?next:{...next,cellFormats:formats};
+}
+/** Recompute banding after append/remove/move/split; sourceAt maps new
+ * coordinates back to the old matrix (identity for append/remove/split). */
+export function inheritPublicationTableGeometry(previous:OmiTableBlockData,next:OmiTableBlockData,catalog:PublicationTableStyles|undefined,sourceAt?:(p:TableCellPosition)=>TableCellPosition):OmiTableBlockData{
+  if(!next.publicationTableStyle||previous.publicationTableStyle!==next.publicationTableStyle)return next;
+  const preset=normalizePublicationTableStyles(catalog)?.items.find(p=>p.kind==='table'&&p.name===next.publicationTableStyle);
+  return preset?.kind==='table'?materializeInheritedGeometry(previous,next,preset,preset,sourceAt):next;
+}
+/** Rich cells store nested tables in their canonical JSON documents. Update
+ * only changed documents; the plain text projection and anchors are unchanged. */
+export function refreshPublicationTableTree(table:OmiTableBlockData,previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined,depth=0):OmiTableBlockData{
+  const refreshed=refreshPublicationTableStyle(table,previous,next);
+  if(depth>=MAX_NESTED_TABLE_DEPTH||!refreshed.cellContent)return refreshed;
+  let content:Record<string,string>|undefined;
+  for(const [key,value] of Object.entries(refreshed.cellContent)){
+    const doc=parseTableCellContent(value,depth);
+    if(!doc)continue;
+    let changed=false;
+    const nodes=doc.content?.map(node=>{
+      const nested=cellNestedTable(node);
+      if(!nested)return node;
+      const updated=refreshPublicationTableTree(nested,previous,next,depth+1);
+      if(updated===nested)return node;
+      changed=true;
+      return {...node,attrs:{...node.attrs,table:updated}};
+    });
+    if(changed){
+      content??={...refreshed.cellContent};
+      content[key]=JSON.stringify({...doc,content:nodes});
+    }
+  }
+  return content?{...refreshed,cellContent:content}:refreshed;
 }
 /** Traverse section and block trees without rewriting unrelated objects. */
 export function refreshPublicationTables(sections:OmiSection[],previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined):OmiSection[]{
   if(sameFormat(previous,next))return sections;
   function blocks(items:OmiBlock[]):OmiBlock[]{
     const result=items.map(block=>{
-      const visual=block.visual?.kind==='table'?refreshPublicationTableStyle(block.visual,previous,next):block.visual;
+      const visual=block.visual?.kind==='table'?refreshPublicationTableTree(block.visual,previous,next):block.visual;
       const children=block.children?blocks(block.children):undefined;
       return visual===block.visual&&children===block.children?block:{...block,visual,children};
     });
