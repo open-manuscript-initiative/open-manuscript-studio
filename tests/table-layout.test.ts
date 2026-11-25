@@ -142,3 +142,20 @@ test('row pagination defaults, overrides, resets and deletion are non-destructiv
     assert.match(html,/tbody tr\[data-omi-row-split="allow"\]/);
   }
 });
+
+test('cell appearance is validated, portable and rendered at the selected coordinates', async () => {
+  const {normalizeTableCellAppearance}=await import('../src/model/tableLayout.ts');
+  assert.deepEqual(normalizeTableCellAppearance({backgroundColor:'#aabbcc',horizontalAlign:'justify',verticalAlign:'middle'}),{backgroundColor:'#AABBCC',horizontalAlign:'justify',verticalAlign:'middle'});
+  assert.deepEqual(normalizeTableCellAppearance({backgroundColor:'red;position:fixed',horizontalAlign:'bogus',verticalAlign:'bad'} as never),{});
+  const manuscript=createVersionedTestManuscript();
+  const block=createTableBlock([['Heading','Other'],['Value','Untouched']],{headerRows:1,cellFormats:{'1:0':{horizontalAlign:'right',verticalAlign:'bottom',backgroundColor:'#DCE6F1'}}},'cell-appearance');
+  manuscript.sections[0]!.blocks.push(block);
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const v=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(v?.kind==='table');
+  assert.deepEqual(v.cellFormats,{'1:0':{horizontalAlign:'right',verticalAlign:'bottom',backgroundColor:'#DCE6F1'}});
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<td style="text-align:right;vertical-align:bottom;background-color:#DCE6F1">/);
+    assert.match(html,/<td>Untouched<\/td>/);
+  }
+});
