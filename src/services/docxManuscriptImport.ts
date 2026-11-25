@@ -1,4 +1,4 @@
-import { createNamedAnchor, type OmiNamedAnchor } from '../model/namedAnchors';
+import { createNamedAnchor, normalizeWordBookmarkRange, simpleBookmarkParagraphText, type OmiNamedAnchor } from '../model/namedAnchors';
 import { createCrossReference } from '../model/crossReferences';
 import { parseWordCrossReference, type WordCrossReferenceField } from '../model/wordCrossReference';
 import { readWordRunningPart } from './docxRunningMatterImport';
@@ -219,7 +219,7 @@ export async function parseDocxManuscript(
   const namedAnchors:OmiNamedAnchor[]=[];
   const bookmarkNames=new Map<string,{anchor:OmiNamedAnchor;whole:boolean}>();
   const wordReferences:PendingWordReference[]=[];
-  const captureBookmarks=(p:Element,targetId:string,targetKind:'section'|'block')=>{
+  const captureBookmarks=(p:Element,targetId:string,targetKind:'section'|'block',content?:string)=>{
     const children=Array.from(p.children);
     for(const start of children.filter(el=>el.localName==='bookmarkStart')){
       const name=attributeByLocalName(start,'name'),id=attributeByLocalName(start,'id');
@@ -229,9 +229,17 @@ export async function parseDocxManuscript(
       const end=children.findIndex(el=>el.localName==='bookmarkEnd'&&attributeByLocalName(el,'id')===id),begin=children.indexOf(start);
       const meaningful=(el:Element)=>!['pPr','bookmarkStart','bookmarkEnd','proofErr'].includes(el.localName);
       const whole=end>begin&&!children.slice(0,begin).some(meaningful)&&!children.slice(end+1).some(meaningful);
-      if(!whole)warnings.push(warning('word-bookmark-range-approximated'));
-      const anchor=createNamedAnchor({name,targetId,targetKind,source:{format:'docx',originalName:name}});
-      namedAnchors.push(anchor);bookmarkNames.set(key,{anchor,whole});
+      // Support bounded ranges in ordinary text-only paragraphs. Do not turn
+      // unsupported fields, drawings or multi-paragraph bookmarks into REF targets.
+      const textOf=(items:Element[])=>items.filter(meaningful).map(el=>paragraphPlainText(el)).join('');
+      const simple=children.filter(meaningful).every(el=>el.localName==='r'&&Array.from(el.children).every(node=>['rPr','t'].includes(node.localName)));
+      const fullText=textOf(children);
+      const range=!whole&&end>begin&&targetKind==='block'&&content&&simple&&simpleBookmarkParagraphText(content)===fullText
+        ?normalizeWordBookmarkRange({text:fullText,start:textOf(children.slice(0,begin)).length,end:textOf(children.slice(0,end)).length})
+        :undefined;
+      if(!whole&&!range)warnings.push(warning('word-bookmark-range-approximated'));
+      const anchor=createNamedAnchor({name,targetId,targetKind,source:{format:'docx',originalName:name,...(range?{wordRange:range}:{})}});
+      namedAnchors.push(anchor);bookmarkNames.set(key,{anchor,whole:whole||Boolean(range)});
     }
   };
   const annotations: OmiAnnotation[] = [];
@@ -589,7 +597,7 @@ export async function parseDocxManuscript(
         type,
         content: JSON.stringify(tiptapContent),
       });
-      captureBookmarks(child,blockId,'block');
+      captureBookmarks(child,blockId,'block',JSON.stringify(tiptapContent));
       stats.paragraphs += 1;
     }
     section.blocks.push(...visuals);
