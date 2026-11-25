@@ -43,7 +43,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -304,6 +304,8 @@ function EditableGrid({
   const cells = data.cells;
   const previewOnly = useContext(PublicationPreviewContext);
   const [selection, setSelection] = useState({ row: 0, column: 0 });
+  const [edgeUnit,setEdgeUnit]=useState<'pt'|'mm'|'pc'>('pt');
+  const edgeFactor=edgeUnit==='mm'?72/25.4:edgeUnit==='pc'?12:1;
   const rawRow = Math.max(0, Math.min(Math.trunc(selection.row), cells.length - 1));
   const rawColumn = Math.max(0, Math.min(Math.trunc(selection.column), (cells[rawRow]?.length ?? 1) - 1));
   const headerCount = data.kind==='table' ? tableHeaderRows(cells,data.headerRows) : 0;
@@ -493,6 +495,37 @@ function EditableGrid({
             <button type="button" disabled={!mergeDown} onClick={()=>{if(mergeDown) onChange({...data,cellMerges:mergeDown});}} title={copy.mergeDown}><Merge size={14} aria-hidden="true"/><ArrowDown size={12} aria-hidden="true"/>{copy.mergeDown}</button>
             <button type="button" disabled={!selectedMerge} onClick={()=>onChange({...data,cellMerges:splitTableMerge(cells,data.cellMerges,selectedRow,selectedColumn,headerCount)})}><Split size={14} aria-hidden="true"/>{copy.splitCell}</button>
           </div>
+          <details>
+            <summary>{copy.cellEdges}</summary>
+            <label><span>{copy.cellEdgeUnit}</span><select value={edgeUnit} onChange={event=>setEdgeUnit(event.target.value==='mm'?'mm':event.target.value==='pc'?'pc':'pt')}><option value="pt">pt</option><option value="mm">mm</option><option value="pc">pica</option></select></label>
+            {TABLE_CELL_SIDES.map(side=>{
+              const edge=selectedFormat.borders?.[side];
+              const padding=selectedFormat.paddingPt?.[side];
+              const sideLabel={top:copy.cellAlignTop,right:copy.cellAlignRight,bottom:copy.cellAlignBottom,left:copy.cellAlignLeft}[side];
+              const setEdge=(next:NonNullable<OmiTableCellFormat['borders']>[typeof side])=>{
+                const borders={...selectedFormat.borders};
+                if(next) borders[side]=next; else delete borders[side];
+                updateSelectedFormat({borders:normalizeTableCellEdges({borders}).borders});
+              };
+              return <fieldset key={side}>
+                <legend>{sideLabel}</legend>
+                <div className="omi-table-cell-formatting-fields">
+                  <label><span>{copy.cellBorderStyle}</span><select value={edge?.style??''} onChange={event=>{
+                    const style=event.target.value;
+                    setEdge(style===''?undefined:style==='none'?{style:'none'}:{style:style as 'solid'|'dashed'|'dotted'|'double',widthPt:edge?.widthPt??0.5,color:edge?.color??'#000000'});
+                  }}><option value="">{copy.cellAppearanceDefault}</option><option value="none">{copy.cellBorderNone}</option><option value="solid">{copy.cellBorderSolid}</option><option value="dashed">{copy.cellBorderDashed}</option><option value="dotted">{copy.cellBorderDotted}</option><option value="double">{copy.cellBorderDouble}</option></select></label>
+                  <label><span>{copy.cellBorderWidth} ({edgeUnit})</span><input type="number" min={0.125/edgeFactor} max={12/edgeFactor} step="any" disabled={!edge||edge.style==='none'} value={edge?.widthPt===undefined?'':Number((edge.widthPt/edgeFactor).toFixed(3))} onChange={event=>{if(edge&&Number.isFinite(event.target.valueAsNumber)) setEdge({...edge,widthPt:event.target.valueAsNumber*edgeFactor});}}/></label>
+                  <label><span>{copy.cellBorderColor}</span><input type="color" disabled={!edge||edge.style==='none'} value={edge?.color??'#000000'} onChange={event=>{if(edge) setEdge({...edge,color:event.target.value});}}/></label>
+                  <label><span>{copy.cellPadding} ({edgeUnit})</span><input type="number" min={0} max={144/edgeFactor} step="any" placeholder={copy.cellAppearanceDefault} value={padding===undefined?'':Number((padding/edgeFactor).toFixed(3))} onChange={event=>{
+                    const paddingPt={...selectedFormat.paddingPt};
+                    if(event.target.value==='') delete paddingPt[side];
+                    else if(Number.isFinite(event.target.valueAsNumber)) paddingPt[side]=event.target.valueAsNumber*edgeFactor;
+                    updateSelectedFormat({paddingPt:normalizeTableCellEdges({paddingPt}).paddingPt});
+                  }}/></label>
+                </div>
+              </fieldset>;
+            })}
+          </details>
           <small>{copy.mergeHint}</small>
           {selectedFormat.textRotation !== 0 ? <label className="omi-table-cell-text-editor"><span>{copy.editCellText}</span><textarea rows={2} dir={selectedFormat.textDirection} value={cells[selectedRow]?.[selectedColumn] ?? ''} onChange={(event) => onChange({ ...data, cells: updateTableCell(cells, selectedRow, selectedColumn, event.target.value) })} /></label> : null}
         </details>
