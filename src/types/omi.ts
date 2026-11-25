@@ -419,6 +419,8 @@ export interface OmiTableCellMerge {
 
 export type OmiTableRowSplitPolicy = 'keep' | 'allow';
 
+export type OmiTableRowHeight = {mode:'auto'} | {mode:'minimum'|'exact';heightPt:number};
+
 export interface OmiTableBlockData {
   kind: 'table';
   /** Rectangular cell matrix. Cell text is scholarly data, not presentation HTML. */
@@ -428,6 +430,8 @@ export interface OmiTableBlockData {
   rowSplitDefault?: OmiTableRowSplitPolicy;
   /** Explicit overrides keyed by zero-based row index. */
   rowSplitOverrides?: Record<string, OmiTableRowSplitPolicy>;
+  /** Row heights use typographic points, keyed by zero-based row index. */
+  rowHeights?: Record<string,OmiTableRowHeight>;
   /** Relative column widths; normalized to percentages at rendering time. */
   columnWidths?: number[];
   /** Point reduction from body text. Defaults to one point. */
