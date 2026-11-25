@@ -1765,3 +1765,33 @@ test('Word hyperlinks retain safe external relationships, tooltips and internal 
   assert.match(parts.get('word/footnotes.xml')!.toString('utf8'),/<w:hyperlink r:id="rIdHyperlink1"/);
   inspect(await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'native-links.docx')));
 });
+
+test('simple and complex Word TOC fields remain semantic and regenerate native instructions',async()=>{
+  const {wordTocInstruction}=await import('../src/model/tableOfContents.ts');
+  const simple='<w:p><w:fldSimple w:instr=" TOC \\o &quot;2-4&quot; \\h \\u \\n "><w:r><w:t>Cached row not manuscript text</w:t></w:r></w:fldSimple></w:p>';
+  const body='<w:p><w:r><w:t>Body before contents</w:t></w:r></w:p>'+simple+'<w:p><w:r><w:t>Cached row not manuscript text</w:t></w:r></w:p><w:p><w:r><w:t>Body after contents</w:t></w:r></w:p>';
+  const plan=await parseDocxForStudio(makeDocx(body));
+  assert.equal(plan.tableOfContents?.minLevel,2);
+  assert.equal(plan.tableOfContents?.maxLevel,4);
+  assert.equal(plan.tableOfContents?.useOutlineLevels,true);
+  assert.equal(plan.tableOfContents?.omitPageNumbers,true);
+  assert.equal(plan.tableOfContents?.source?.wordHyperlinks,true);
+  assert.equal(plan.sections.flatMap(s=>s.blocks).filter(b=>b.content.includes('Cached row not manuscript text')).length,1);
+  const manuscript=parseOmiJson(serializeOmiJson({...createBlankManuscript({kind:'study',locale:'en',title:'Native contents'}),sections:plan.sections,tableOfContents:plan.tableOfContents}));
+  const word=buildDocxExport(manuscript);
+  const parts=readZipParts(word.bytes);
+  const document=parts.get('word/document.xml')!.toString('utf8');
+  assert.ok(document.includes('w:instr=" TOC \\o &quot;2-4&quot; \\h \\u \\n " w:dirty="true"'));
+  assert.match(parts.get('word/settings.xml')!.toString('utf8'),/w:updateFields w:val="true"/);
+  assert.equal((document.match(/Cached row not manuscript text/g)??[]).length,1);
+  const reopened=await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'toc.docx'));
+  assert.equal(reopened.tableOfContents?.minLevel,2);
+  assert.equal(reopened.tableOfContents?.maxLevel,4);
+  assert.equal(reopened.tableOfContents?.omitPageNumbers,true);
+  const complex='<w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> TOC \\o "1-3" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>Cached contents</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>';
+  const complexPlan=await parseDocxForStudio(makeDocx(complex+'<w:p><w:r><w:t>Body text</w:t></w:r></w:p>'));
+  assert.equal(complexPlan.tableOfContents?.source?.wordHyperlinks,false);
+  assert.equal(wordTocInstruction(complexPlan.tableOfContents!),' TOC \\o "1-3" ');
+  assert.equal(wordTocInstruction({...plan.tableOfContents!,minLevel:0}),undefined);
+  assert.equal(wordTocInstruction({...plan.tableOfContents!,source:{format:'docx-toc',instruction:'INCLUDETEXT unsafe',wordHyperlinks:false}}),' TOC \\o "2-4" \\u \\n ');
+});
