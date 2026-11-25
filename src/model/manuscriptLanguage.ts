@@ -77,7 +77,11 @@ const SPECIAL_LABELS: Record<
 export function normalizeManuscriptLanguageTag(
   value: string,
 ): string | null {
-  const candidate = value.trim().replaceAll('_', '-');
+  const input = value.trim();
+  // Legacy locale spellings may use underscores for language/script/region
+  // and variants. Extension singletons must use standard BCP 47 syntax.
+  if (input.includes('_') && input.split(/[-_]/).some((part) => part.length === 1)) return null;
+  const candidate = input.replaceAll('_', '-');
 
   if (candidate.length === 0 || candidate.length > 100) {
     return null;

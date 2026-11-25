@@ -7,6 +7,7 @@ import {
   normalizeExternalHref,
   normalizeInlineLanguageTag,
 } from '../src/model/richText.ts';
+import { normalizeManuscriptLanguageTag } from '../src/model/manuscriptLanguage.ts';
 
 test('normalizes browser-safe external links and rejects active protocols', () => {
   assert.equal(
@@ -31,6 +32,25 @@ test('normalizes BCP 47 inline language tags independently from UI locales', () 
   assert.equal(normalizeInlineLanguageTag('la'), 'la');
   assert.equal(normalizeInlineLanguageTag('zh-Hant-TW'), 'zh-Hant-TW');
   assert.equal(normalizeInlineLanguageTag('not_a_language'), undefined);
+});
+
+test('shares canonical manuscript and inline language tags without collapsing regions or scripts', () => {
+  for (const [input, expected] of [
+    ['hu', 'hu'], ['hu_HU', 'hu-HU'], ['HU-hu', 'hu-HU'],
+    ['de_DE', 'de-DE'], ['en_GB', 'en-GB'], ['el_GR', 'el-GR'],
+    ['he_IL', 'he-IL'], ['ar_SA', 'ar-SA'], ['sr_Latn_RS', 'sr-Latn-RS'],
+    ['zh_Hant_TW', 'zh-Hant-TW'], ['en-US-u-ca-gregory', 'en-US-u-ca-gregory'],
+    ['und', 'und'], ['grc', 'grc'],
+  ] as const) {
+    assert.equal(normalizeInlineLanguageTag(input), expected);
+    assert.equal(normalizeManuscriptLanguageTag(input), expected);
+    assert.equal(normalizeInlineLanguageTag(expected), expected);
+  }
+  for (const input of ['', 'not_a_language', 'hu__HU', 'hu HU', 'en_US.UTF-8', 'x'.repeat(101)]) {
+    assert.equal(normalizeInlineLanguageTag(input), undefined);
+    assert.equal(normalizeManuscriptLanguageTag(input), null);
+  }
+  assert.equal(normalizeInlineLanguageTag(undefined), undefined);
 });
 
 test('extracts semantic emphasis from common Word inline CSS only', () => {

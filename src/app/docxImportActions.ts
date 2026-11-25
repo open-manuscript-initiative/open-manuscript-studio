@@ -79,6 +79,7 @@ export function applyDocxImportPlan(
     tombstones: [],
     sections,
     annotations,
+    ...(plan.proofing?{proofing:plan.proofing}:{}),
     bibliographicRecords: plan.bibliographicRecords,
     citations: plan.citations,
     citationClusters: plan.citationClusters,

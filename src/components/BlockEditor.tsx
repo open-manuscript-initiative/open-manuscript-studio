@@ -721,13 +721,14 @@ function BlockEditorComponent({
   }
 
   function insertNote(): void {
-    if (!editor || !capabilities.insertNotes) return;
+    if (!editor || !editor.isEditable || !capabilities.insertNotes) return;
+    if (!editor.state.selection.$to.parent.isTextblock) return;
     collapseSelectionToEnd();
     setCitationPickerOpen(false);
     setCrossReferencePickerOpen(false);
     setIntegrationAction(null);
     closeSecondaryEditors();
-    editor.chain().focus().insertOmiNote({ noteType: 'footnote' }).insertContent(' ').run();
+    editor.chain().focus().insertOmiNote({ noteType: 'footnote' }).run();
   }
 
   function insertCitationCluster(selections: CitationPickerSelection[]): void {
@@ -843,7 +844,7 @@ function BlockEditorComponent({
       onAssistant={externalIntegrationsAllowed ? () => openIntegrationAction('agent') : undefined}
     />
   ) : null;
-  useFormattingEditor(editor, { actions: selectionActions });
+  useFormattingEditor(editor, { actions: selectionActions, onNote: effectiveEditable && capabilities.insertNotes && proofingMode !== 'none' ? insertNote : undefined });
 
   if (!editor) {
     return (

@@ -27,6 +27,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import { AccountPanel } from './AccountPanel';
 import { DesktopDocumentOutline } from './DesktopDocumentOutline';
+import { HeaderNoteInsertButton } from './HeaderNoteInsertButton';
 import { HeaderInsertMenu } from './HeaderInsertMenu';
 import { HeaderFormattingButton, HeaderFormattingPanel } from './HeaderFormattingPanel';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -172,6 +173,7 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
 
         <div className="focus-header-secondary-row">
           <div className="focus-header-tools">
+            <HeaderNoteInsertButton />
             <button
               type="button"
               className="focus-menu-button focus-outline-button"

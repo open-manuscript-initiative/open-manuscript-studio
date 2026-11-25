@@ -91,7 +91,8 @@ export function RichTextToolbar({
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkDraft, setLinkDraft] = useState('');
   const [linkError, setLinkError] = useState(false);
-  const [languageDraft, setLanguageDraft] = useState(manuscriptLanguage);
+  const defaultLanguage = normalizeInlineLanguageTag(manuscriptLanguage) ?? 'en';
+  const [languageDraft, setLanguageDraft] = useState(defaultLanguage);
   const [languageError, setLanguageError] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const floating = useSelectionToolbarLayout(
@@ -316,13 +317,13 @@ export function RichTextToolbar({
   const currentLanguage = useMemo(() => {
     void revision;
     const value = editor.getAttributes('omiLanguage').lang;
-    return typeof value === 'string' ? value : '';
+    return typeof value === 'string' ? normalizeInlineLanguageTag(value) ?? '' : '';
   }, [editor, revision]);
 
   const languageOptions = useMemo(() => {
     const normalized = [
       currentLanguage,
-      manuscriptLanguage,
+      defaultLanguage,
       ...manuscriptLanguages,
     ]
       .map((language) => normalizeInlineLanguageTag(language))
@@ -332,7 +333,7 @@ export function RichTextToolbar({
       tag,
       label: getManuscriptLanguageDisplayName(tag, locale),
     }));
-  }, [currentLanguage, locale, manuscriptLanguage, manuscriptLanguages]);
+  }, [currentLanguage, locale, defaultLanguage, manuscriptLanguages]);
 
   if ((!inHeader && (!position || headerOpen)) || editor.isDestroyed) {
     return null;
@@ -419,7 +420,7 @@ export function RichTextToolbar({
 
   function removeLanguage(): void {
     editor.chain().focus().unsetMark('omiLanguage').run();
-    setLanguageDraft(manuscriptLanguage);
+    setLanguageDraft(defaultLanguage);
     setLanguageError(false);
   }
 
@@ -530,7 +531,7 @@ export function RichTextToolbar({
             setLinkOpen(false);
             setDirectOpen(false);
             setParagraphOpen(false);
-            setLanguageDraft(currentLanguage || manuscriptLanguage);
+            setLanguageDraft(currentLanguage || defaultLanguage);
             setLanguageError(false);
             setMoreOpen((value) => !value);
           }}

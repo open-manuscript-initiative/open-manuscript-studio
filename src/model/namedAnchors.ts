@@ -3,6 +3,33 @@ import { walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 export type OmiNamedAnchorTargetKind = 'section' | 'block';
 
+/** Exact same-paragraph Word bookmark range, in UTF-16 text offsets.
+ * The snapshot prevents silently widening or misplacing a range after editing. */
+export interface WordBookmarkRange {
+  text: string;
+  start: number;
+  end: number;
+}
+export function normalizeWordBookmarkRange(value: unknown): WordBookmarkRange | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const range = value as Record<string, unknown>;
+  if (typeof range.text !== 'string' || range.text.length > 16384 ||
+      typeof range.start !== 'number' || typeof range.end !== 'number' ||
+      !Number.isInteger(range.start) || !Number.isInteger(range.end) ||
+      range.start < 0 || range.end <= range.start || range.end > range.text.length ||
+      Object.keys(range).some(key => !['text', 'start', 'end'].includes(key))) return undefined;
+  return {text: range.text, start: range.start, end: range.end};
+}
+export function simpleBookmarkParagraphText(content: string): string | undefined {
+  try {
+    const root = JSON.parse(content);
+    const paragraph = root.type === 'doc' && root.content?.length === 1 ? root.content[0] : undefined;
+    if (paragraph?.type !== 'paragraph' || !Array.isArray(paragraph.content) ||
+        !paragraph.content.every((node: {type?: unknown; text?: unknown}) => node.type === 'text' && typeof node.text === 'string')) return undefined;
+    return paragraph.content.map((node: {text: string}) => node.text).join('');
+  } catch { return undefined; }
+}
+
 export interface OmiNamedAnchor {
   id: string;
   name: string;
@@ -14,6 +41,7 @@ export interface OmiNamedAnchor {
   source?: {
     format?: string;
     originalName?: string;
+    wordRange?: WordBookmarkRange;
   };
 }
 

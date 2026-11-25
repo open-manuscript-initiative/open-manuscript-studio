@@ -1,3 +1,4 @@
+import { readWordPictureLayout } from '../model/wordPictureLayout';
 import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink, type WordTextBoxLink } from '../model/wordTextBoxLink';
 import { TEXT_BOX_CONTENT_PROFILE, encodeTextBoxContent } from "../model/textBoxContent";
 import { DOMParser as XmlParser, XMLSerializer as XmlSerializer, type Node as XmlNode } from "@xmldom/xmldom";
@@ -327,6 +328,7 @@ export async function prepareWordDrawings(
     images.set(key, {
       src: dataUrl(new TextEncoder().encode(svg), "image/svg+xml"),
       mediaType: "image/svg+xml",
+      ...(!labels.length && picture.crop ? { wordPicture: readWordPictureLayout(picture.container, bitmap) } : {}),
       textBoxes: labels.map((label) => ({
         ...readTextBox(label, defaultFont, theme, styles),
         x: label.x - minX,

@@ -6,8 +6,11 @@ export function registerPrintHyphenationContracts(): void {
   test('P19: language-specific dictionaries yield reversible discretionary break offsets', async t => {
     for (const [lang, module, word] of [
       ['hu-HU', 'hu', 'tudományos'],
+      ['hu_HU', 'hu', 'tudományos'],
+      ['hu', 'hu', 'tudományos'],
       ['de-DE', 'de', 'Wissenschaftlichkeit'],
       ['en-GB', 'en-gb', 'internationalization'],
+      ['en_GB', 'en-gb', 'internationalization'],
       ['en-US', 'en', 'internationalization'],
     ]) {
       await t.test(lang!, async () => {

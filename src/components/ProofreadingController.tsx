@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 
+import { normalizeManuscriptLanguageTag } from '../model/manuscriptLanguage';
 import { useStudioStore } from '../app/useStudioStore';
 import { useProofreadingPreferences } from '../editor/proofreadingPreferences';
 
@@ -10,7 +11,7 @@ export function ProofreadingController() {
   useEffect(() => {
     const applyToEditor = (editor: HTMLElement) => {
       editor.setAttribute('spellcheck', spellcheckEnabled ? 'true' : 'false');
-      editor.setAttribute('lang', manuscriptLanguage || 'en');
+      editor.setAttribute('lang', normalizeManuscriptLanguageTag(manuscriptLanguage) ?? 'en');
     };
     const apply = (root: ParentNode = document) => {
       root.querySelectorAll<HTMLElement>('.omi-tiptap-editor').forEach((editor) => {

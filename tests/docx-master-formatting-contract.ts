@@ -346,6 +346,7 @@ function nodes(node: Node): Node[] { return [node, ...(node.content ?? []).flatM
 function modelText(node: Node): string {
   if (node.type === 'hardBreak') return '\n';
   if (node.type === 'omiTab') return '\t';
+  if (node.type === 'omiCrossReference') return typeof node.attrs?.label === 'string' ? node.attrs.label : '';
   return (node.text ?? '') + (node.content ?? []).map(modelText).join('');
 }
 function modelCase(manuscript: OmiManuscript, id: string): Node {
@@ -436,8 +437,11 @@ function assertModel(manuscript: OmiManuscript, item: Case): void {
   if (item.id === 'S02') assertModelMark(p, item.sample!, 'italic');
   if (item.id === 'X02') {
     assert.ok(modelText(p).includes('Hivatkozási cél'));
-    assert.ok(nodes(p).some(n => n.type === 'omiCrossReference'), 'REF field was flattened to text');
-    assert.ok(manuscript.crossReferences?.some(ref => ref.targetKind === 'bookmark'), 'No semantic bookmark cross-reference');
+    const marker = nodes(p).find(n => n.type === 'omiCrossReference' && n.attrs?.label === 'Hivatkozási cél');
+    assert.ok(marker, 'REF field or its cached label was lost');
+    const reference = manuscript.crossReferences?.find(ref => ref.id === marker.attrs?.crossReferenceId);
+    assert.ok(reference?.targetKind === 'bookmark', 'No matching semantic bookmark cross-reference');
+    assert.ok(manuscript.namedAnchors?.some(anchor => anchor.id === reference.targetId && anchor.name === 'OMITest'), 'REF target bookmark is missing');
   }
   if (item.id === 'X03') assertModelMark(p, 'Open Manuscript Initiative', 'omiLink', { href: 'https://openmanuscript.org/' });
 }
@@ -479,20 +483,19 @@ function wordGap(id: string): string | undefined {
   if (paragraphFormatCases[id]) return undefined;
   if (id.startsWith('P')) return 'Native paragraph layout properties are not round-tripped yet';
   // S01/S02 native style assertions pass; S01 model retention is tracked separately.
-  if (id.startsWith('L')) return 'Style-based native list numbering is not round-tripped yet';
-  if (id === 'N05' || id === 'N06') return 'Right-to-left Word run property is not round-tripped yet';
+  // L01–L05 and N05–N06 native assertions passed the integrated #1033 full build.
   // F01/F02 native note color is now a mandatory regression contract.
   if (id === 'T01') return undefined;
-  if (['I01', 'E01'].includes(id)) return 'DOCX publication exporter currently emits a descriptive text fallback';
-  if (['X01', 'X02', 'X03', 'X04'].includes(id)) return 'Native bookmark, field, hyperlink or section metadata is not round-tripped yet';
+  // E01 native OMML export is required.
+  // X02 partial bookmark REF is now a required native regression contract.
   return undefined;
 }
-function modelGap(id: string): string | undefined {
-  if (id === 'R01' || id === 'R02') return 'Word review metadata is not imported as editable OMI review objects yet';
-  if (id.startsWith('L')) return 'Style-based numbering is currently flattened on import';
+function modelGap(_id: string): string | undefined {
+  // R01/R02 private comments and block revisions are mandatory.
+  // L01–L05 model retention is now mandatory.
   // S01 checks the portable source style bundle, not the unrelated publisher style ID.
-  if (id === 'X02') return 'REF fields are currently flattened on import';
-  // X03 model retention passes; the native DOCX export assertion remains open.
+  // X02 semantic REF retention is now mandatory.
+  // X01, X03 and X04 native assertions are mandatory after #1033.
   return undefined;
 }
 function todo(reason: string | undefined): string | boolean { return strict ? false : reason ?? false; }

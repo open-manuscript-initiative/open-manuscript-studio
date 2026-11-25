@@ -1,3 +1,5 @@
+import { normalizeManuscriptLanguageTag } from './manuscriptLanguage';
+
 export interface SemanticInlineStyle {
   strong: boolean;
   emphasis: boolean;
@@ -42,15 +44,7 @@ export function normalizeExternalHref(
 export function normalizeInlineLanguageTag(
   value: string | undefined,
 ): string | undefined {
-  const input = (value ?? '').trim();
-  if (!input) return undefined;
-
-  try {
-    const [canonical] = Intl.getCanonicalLocales(input);
-    return canonical;
-  } catch {
-    return undefined;
-  }
+  return normalizeManuscriptLanguageTag(value ?? '') ?? undefined;
 }
 
 /**
