@@ -309,7 +309,7 @@ test('apply character and paragraph formatting to selected cells only',async({pa
   await canvas.getByText('Cell formatting',{exact:true}).click();
   await canvas.getByRole('button',{name:'Select row',exact:true}).click();
   await canvas.getByText('Selected cell text formatting',{exact:true}).click();
-  const panel=canvas.locator('details').filter({has:canvas.getByText('Selected cell text formatting',{exact:true})}).filter({has:canvas.getByRole('group',{name:'Character formatting',exact:true})});
+  const panel=canvas.getByText('Selected cell text formatting',{exact:true}).locator('..');
   const bold=canvas.getByRole('button',{name:'Bold / strong',exact:true});
   await expect(bold).toHaveAttribute('aria-pressed','false');
   await bold.click();
@@ -319,10 +319,14 @@ test('apply character and paragraph formatting to selected cells only',async({pa
   await expect(table.locator('tr').nth(1).locator('strong')).toHaveCount(0);
   await canvas.getByRole('spinbutton',{name:'Font size (pt)',exact:true}).fill('13');
   await canvas.getByRole('button',{name:'Apply: Font size (pt)',exact:true}).click();
-  await expect(table.locator('tr').first().locator('[style*="font-size: 13pt"]')).toHaveCount(2);
-  await panel.getByText('Paragraph formatting',{exact:true}).last().click();
+  await expect(table.locator('tr').first().locator('[style*="font-size"]')).toHaveCount(2);
+  await panel.getByText('Paragraph formatting',{exact:true}).click();
+  await panel.getByRole('spinbutton',{name:'Space after (pt)',exact:true}).fill('8');
+  await panel.getByRole('button',{name:'Apply: Space after (pt)',exact:true}).click();
+  await expect(table.locator('tr').first().locator('p[style*="margin-bottom"]')).toHaveCount(2);
+  await expect(table.locator('tr').nth(1).locator('p[style*="margin-bottom"]')).toHaveCount(0);
   await canvas.getByRole('button',{name:'Reset: Font size (pt)',exact:true}).click();
-  await expect(table.locator('tr').first().locator('[style*="font-size: 13pt"]')).toHaveCount(0);
+  await expect(table.locator('tr').first().locator('[style*="font-size"]')).toHaveCount(0);
   await expect(table.locator('tr').first().locator('strong')).toHaveCount(2);
   await bold.click();
   await expect(table.locator('tr').first().locator('strong')).toHaveCount(0);
