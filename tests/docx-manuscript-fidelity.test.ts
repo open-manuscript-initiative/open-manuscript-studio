@@ -1272,3 +1272,91 @@ test('Word cell footnotes and endnotes retain anchors, bodies and native roundtr
   assert.match(readZipParts(odt.bytes).get('content.xml')!.toString('utf8'),/<table:table[\s\S]*?text:note-class="footnote"[\s\S]*?text:note-class="endnote"[\s\S]*?<\/table:table>/);
   inspect(await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-notes.odt')));
 });
+
+test('live publication table appearance survives OMI reopening and native publication exports',async()=>{
+  const {createVersionedTestManuscript}=await import('./testManuscriptFixture.ts');
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const {bindPublicationTableStyle,bindPublicationCellStyle,normalizePublicationTableStyles,derivePublicationTablePreset,replacePublicationTablePreset,resetInheritedCellAppearance,serializePublicationTableStyles,parsePublicationTableStylesTransfer,mergePublicationTableStyles}=await import('../src/model/tableAppearancePresets.ts');
+  const {editTableRangeAppearance}=await import('../src/model/tableLayout.ts');
+  const {stageAppliedPublicationStyle}=await import('../src/app/publicationTemplateActions.ts');
+  const {stageInsertBlocks}=await import('../src/app/visualBlockActions.ts');
+  const {clonePublicationStyleTemplate}=await import('../src/services/publicationStyleExport.ts');
+  const {getAppliedPublicationTemplate}=await import('../src/model/publicationTemplates.ts');
+  const {renderHtmlArticle}=await import('../src/services/exportHtml.ts');
+  const {buildPdfPrintDocument}=await import('../src/services/exportPdf.ts');
+  const initial=normalizePublicationTableStyles({items:[
+    {kind:'table',name:'Base',header:{backgroundColor:'#112233'},body:{backgroundColor:'#EEEEEE',horizontalAlign:'left'},conditions:[{operator:'lt',value:'0',format:{backgroundColor:'#AA0000'}}]},
+    {kind:'cell',name:'Numeric',format:{backgroundColor:'#445566',horizontalAlign:'right',verticalAlign:'middle',paddingPt:{left:4},borders:{bottom:{style:'solid',widthPt:1,color:'#123456'}}}}
+  ],defaultTableStyle:'Base'})!;
+  const derived=derivePublicationTablePreset(initial,'Report','Base')!;
+  const previous=useStudioStore.getState();
+  try{
+    useStudioStore.getState().loadManuscript(createVersionedTestManuscript());
+    const style={...clonePublicationStyleTemplate(),tableStyles:derived};
+    stageAppliedPublicationStyle(style);
+    const block=createTableBlock([['Live header','Other header'],['-15','Named value'],['Direct value','Reset value']],{headerRows:1},'live-table-export');
+    assert.ok(block.visual?.kind==='table');
+    const named={row:1,column:1},direct={row:2,column:0},reset={row:2,column:1};
+    let table=bindPublicationTableStyle(block.visual,derived,'Report');
+    table=bindPublicationCellStyle(table,derived,'Numeric',named,named);
+    table=editTableRangeAppearance(table,direct,direct,{backgroundColor:'#ABCDEF'});
+    table=editTableRangeAppearance(table,reset,reset,{backgroundColor:'#ABCDEF',horizontalAlign:'center'});
+    table=resetInheritedCellAppearance(table,derived,reset,reset,['backgroundColor']);
+    block.visual=table;
+    const sectionId=useStudioStore.getState().manuscript.sections[0]!.id;
+    assert.equal(stageInsertBlocks(sectionId,0,[block]),true);
+    const base=derived.items.find(p=>p.name==='Base')!;assert.ok(base.kind==='table');
+    const updated=replacePublicationTablePreset(derived,{...base,header:{backgroundColor:'#223344'},body:{...base.body,backgroundColor:'#DDEEFF'}})!;
+    stageAppliedPublicationStyle({...style,tableStyles:updated});
+    useStudioStore.getState().checkpoint('manual');
+    const reopened=parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    const v=reopened.sections.flatMap(s=>s.blocks).find(b=>b.id===block.id)?.visual;
+    assert.ok(v?.kind==='table');
+    assert.deepEqual(v.cells,table.cells);
+    assert.equal(v.publicationTableStyle,'Report');
+    assert.equal(v.publicationCellStyles?.['1:1'],'Numeric');
+    assert.deepEqual(v.publicationCellOverrides?.['2:0'],['backgroundColor']);
+    assert.deepEqual(v.publicationCellOverrides?.['2:1'],['horizontalAlign']);
+    assert.equal(v.cellFormats?.['0:0']?.backgroundColor,'#223344');
+    assert.equal(v.cellFormats?.['1:0']?.backgroundColor,'#AA0000');
+    assert.equal(v.cellFormats?.['1:1']?.backgroundColor,'#445566');
+    assert.equal(v.cellFormats?.['2:0']?.backgroundColor,'#ABCDEF');
+    assert.equal(v.cellFormats?.['2:1']?.backgroundColor,'#DDEEFF');
+    assert.equal(v.cellFormats?.['2:1']?.horizontalAlign,'center');
+    const portableCatalog=getAppliedPublicationTemplate(reopened)?.style.tableStyles;
+    assert.ok(portableCatalog);
+    const imported=mergePublicationTableStyles({items:[]},parsePublicationTableStylesTransfer(serializePublicationTableStyles(portableCatalog)),true);
+    assert.deepEqual(imported.catalog,portableCatalog);
+    for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+      for(const color of ['223344','AA0000','445566','ABCDEF','DDEEFF'])assert.ok(html.includes('background-color:#'+color),color);
+      assert.match(html,/border-bottom:1pt solid #123456/);
+      assert.match(html,/padding-left:4pt/);
+      assert.match(html,/Named value/);
+    }
+    const word=buildDocxExport(reopened);
+    const wordXml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+    for(const color of ['223344','AA0000','445566','ABCDEF','DDEEFF'])assert.ok(wordXml.includes('w:fill="'+color+'"'),color);
+    assert.match(wordXml,/w:vAlign w:val="center"/);
+    const odt=buildOdtExport(reopened);
+    const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+    for(const color of ['223344','AA0000','445566','ABCDEF','DDEEFF'])assert.ok(odtXml.includes('fo:background-color="#'+color+'"'),color);
+    assert.match(odtXml,/fo:padding-left="4pt"/);
+    const idml=buildIdmlExport(reopened);
+    const story=[...readZipParts(idml.bytes)].filter(([name])=>name.startsWith('Stories/')&&name.endsWith('.xml')).map(([,bytes])=>bytes.toString('utf8')).join('');
+    for(const color of ['223344','AA0000','445566','ABCDEF','DDEEFF'])assert.ok(story.includes('FillColor="Color/OMI-'+color+'"'),color);
+    assert.match(story,/LeftInset="4"/);
+    assert.match(story,/BottomEdgeStrokeWeight="1"/);
+    // Native office formats carry materialized appearance, not OMI live bindings.
+    for(const sections of [(await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'live.docx'))).sections,(await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'live.odt'))).sections]){
+      const exported=sections.flatMap(s=>s.blocks).find(b=>b.visual?.kind==='table'&&b.visual.cells[0]?.[0]==='Live header')?.visual;
+      assert.ok(exported?.kind==='table');
+      assert.deepEqual(exported.cells,v.cells);
+      for(const [key,color] of Object.entries({'0:0':'#223344','1:0':'#AA0000','1:1':'#445566','2:0':'#ABCDEF','2:1':'#DDEEFF'}))assert.equal(exported.cellFormats?.[key]?.backgroundColor,color,key);
+      assert.equal(exported.cellFormats?.['2:1']?.horizontalAlign,'center');
+      assert.equal(exported.cellFormats?.['1:1']?.verticalAlign,'middle');
+      assert.equal(exported.cellFormats?.['1:1']?.paddingPt?.left,4);
+      assert.equal(exported.cellFormats?.['1:1']?.borders?.bottom?.widthPt,1);
+      assert.equal(exported.publicationTableStyle,undefined);
+    }
+  }finally{useStudioStore.setState(previous,true);}
+});
