@@ -372,23 +372,40 @@ export function selectedPublicationCellStyles(table:OmiTableBlockData,start:Tabl
     const name=table.publicationCellStyles?.[row+':'+column];return name?[name]:[];
   }))];
 }
-/** Reapply the selected cell's named definition, or its table region if
- * unbound. Table presets do not own rotation or writing direction. */
-export function resetInheritedCellAppearance(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,start:TableCellPosition,end:TableCellPosition):OmiTableBlockData{
+type TableOverrideField=typeof TABLE_OVERRIDE_FIELDS[number];
+/** Resolve the same inherited baseline for reset and override inspection. */
+function cellAppearanceBaseline(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined){
   const items=normalizePublicationTableStyles(catalog)?.items??[];
+  const namedCells=new Map(items.flatMap(p=>p.kind==='cell'?[[p.name,p] as const]:[]));
   const preset=table.publicationTableStyle?resolvePublicationTablePreset(catalog,table.publicationTableStyle):undefined;
   const headers=tableHeaderRows(table.cells,table.headerRows);
+  return (row:number,column:number):{format:OmiTableCellFormat;fields:readonly TableOverrideField[];named:boolean}|undefined=>{
+    const cell=namedCells.get(table.publicationCellStyles?.[row+':'+column]??'');
+    if(cell)return {format:normalizePresetFormat(cell.format,true),fields:TABLE_OVERRIDE_FIELDS,named:true};
+    if(!preset)return undefined;
+    return {format:regionFormat(preset,row,headers,column,table.cells.length,table.cells[row]?.length??0,table.cells[row]?.[column]??''),fields:TABLE_OVERRIDE_FIELDS.filter(field=>field!=='textRotation'&&field!=='textDirection'),named:false};
+  };
+}
+/** Reapply only requested inherited properties (or all when omitted).
+ * Preserve unselected properties, named links, content, and geometry. */
+export function resetInheritedCellAppearance(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,start:TableCellPosition,end:TableCellPosition,fields?:readonly TableOverrideField[]):OmiTableBlockData{
+  const baselineAt=cellAppearanceBaseline(table,catalog);
   const formats=pruneTableCellFormats(table.cells,table.cellFormats);
   const overrides=prunePublicationCellOverrides(table.cells,table.publicationCellOverrides);
   for(const {row,column} of tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows)){
+    const baseline=baselineAt(row,column);
+    if(!baseline)continue;
+    const selected=baseline.fields.filter(field=>fields===undefined||fields.includes(field));
+    if(!selected.length)continue;
     const key=row+':'+column;
-    const cell=items.find(p=>p.kind==='cell'&&p.name===table.publicationCellStyles?.[key]);
-    if(cell?.kind==='cell'){formats[key]=normalizePresetFormat(cell.format,true);delete overrides[key];}
-    else if(preset?.kind==='table'){
-      delete overrides[key];
-      const existing=tableCellFormat(formats,row,column);
-      formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...regionFormat(preset,row,headers,column,table.cells.length,table.cells[row]?.length??0,table.cells[row]?.[column]??'')};
+    const format:OmiTableCellFormat={...tableCellFormat(formats,row,column)};
+    for(const field of selected){
+      if(baseline.format[field]===undefined)delete format[field];
+      else Object.assign(format,{[field]:baseline.format[field]});
     }
+    formats[key]=format;
+    const remaining=overrides[key]?.filter(field=>!selected.includes(field));
+    if(remaining?.length)overrides[key]=remaining;else delete overrides[key];
   }
   if(sameFormat(formats,table.cellFormats??{})&&sameFormat(overrides,table.publicationCellOverrides??{}))return table;
   const result={...table,cellFormats:formats};
@@ -459,23 +476,29 @@ export function renamePublicationTableBindings(sections:OmiSection[],from:string
   });
 }
 
-/** Count selected visible cells with explicit or legacy inferred overrides. */
-export function selectedPublicationOverrideCount(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,start:TableCellPosition,end:TableCellPosition):number{
-  const items=normalizePublicationTableStyles(catalog)?.items??[];
-  const preset=table.publicationTableStyle?resolvePublicationTablePreset(catalog,table.publicationTableStyle):undefined;
-  const headers=tableHeaderRows(table.cells,table.headerRows);
-  return tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows).filter(({row,column})=>{
+/** Inspect selected visible anchors once; count explicit and legacy inferred
+ * overrides per property, and each affected cell only once overall. */
+export function selectedPublicationOverrideDetails(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,start:TableCellPosition,end:TableCellPosition):{count:number;fields:Partial<Record<TableOverrideField,number>>}{
+  const baselineAt=cellAppearanceBaseline(table,catalog);
+  const fields:Partial<Record<TableOverrideField,number>>={};
+  let count=0;
+  for(const {row,column} of tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows)){
     const key=row+':'+column;
-    const cell=items.find(p=>p.kind==='cell'&&p.name===table.publicationCellStyles?.[key]);
-    const named=cell?.kind==='cell';
-    if(!named&&!preset)return false;
-    const fields=TABLE_OVERRIDE_FIELDS.filter(field=>named||field!=='textRotation'&&field!=='textDirection');
-    if(fields.some(field=>table.publicationCellOverrides?.[key]?.includes(field)))return true;
-    if(!table.cellFormats?.[key])return false;
-    const baseline=named?normalizePresetFormat(cell.format,true):regionFormat(preset!,row,headers,column,table.cells.length,table.cells[row]?.length??0,table.cells[row]?.[column]??'');
-    const actual=normalizePresetFormat(table.cellFormats[key],named);
-    return fields.some(field=>!sameFormat(actual[field],baseline[field]));
-  }).length;
+    const baseline=baselineAt(row,column);
+    if(!baseline)continue;
+    const actual=table.cellFormats?.[key]?normalizePresetFormat(table.cellFormats[key],baseline.named):undefined;
+    let affected=false;
+    for(const field of baseline.fields){
+      if(table.publicationCellOverrides?.[key]?.includes(field)||(actual&&!sameFormat(actual[field],baseline.format[field]))){
+        fields[field]=(fields[field]??0)+1;affected=true;
+      }
+    }
+    if(affected)count++;
+  }
+  return {count,fields};
+}
+export function selectedPublicationOverrideCount(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,start:TableCellPosition,end:TableCellPosition):number{
+  return selectedPublicationOverrideDetails(table,catalog,start,end).count;
 }
 
 /** Ordered matching patches use last-match precedence; moving a rule never
