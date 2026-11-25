@@ -2,6 +2,7 @@ import { tableCellFormat, tableColumnWidths, tableHeaderRows, tableMergeLayout, 
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { SourceWordStyleRegistry } from './sourceWordStyleExport';
 import { resolveSourceStyle } from '../model/sourceWordStyles';
+import { WORD_HYPHENATION_EXTENSION, wordHyphenationSettingsXml } from '../model/wordHyphenation';
 import { paragraphFormattingWordXml } from '../model/directParagraphFormatting';
 import { directFormattingFromMarks, directFormattingWordXml } from '../model/directFormatting';
 import { visualTextBoxText } from '../model/textBoxes';
@@ -198,7 +199,7 @@ ${characterStylesXml()}${sourceStyles.xml()}
 </w:styles>`;
 
   const settingsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:updateFields w:val="true"/></w:settings>`;
+<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${wordHyphenationSettingsXml(manuscript.extensions?.[WORD_HYPHENATION_EXTENSION])}<w:updateFields w:val="true"/></w:settings>`;
 
   const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(context.title)}</dc:title><dc:language>${xml(context.locale)}</dc:language><cp:lastModifiedBy>Open Manuscript Studio</cp:lastModifiedBy><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`;
