@@ -2,7 +2,7 @@ import { WORD_TEXT_BOX_LINK_EXTENSION, normalizeWordTextBoxLink } from '../model
 import { textBoxDocument, boxNumber, boxColor, boxFont, visualTextBoxText } from '../model/textBoxes';
 import { wordTocInstruction } from '../model/tableOfContents';
 import { normalizeExternalHref } from '../model/richText';
-import { toPortableBookmarkName } from '../model/namedAnchors';
+import { toPortableBookmarkName, normalizeWordBookmarkRange, simpleBookmarkParagraphText, type WordBookmarkRange } from '../model/namedAnchors';
 import { normalizeWordCrossReferenceField, type WordCrossReferenceField } from '../model/wordCrossReference';
 import { RUNNING_VARIANTS, normalizeRunningVariants, type RunningKind, type RunningParagraph } from '../model/wordRunningMatter';
 import { wordSectionGeometryXml } from '../model/wordSectionLayout';
@@ -201,7 +201,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
         const lists = renderWordLists(block.content, numbering, resolveNote, indexFields, sourceStyles,resolveCrossReference,documentLinks);
         if (lists !== undefined) { body.push(bookmarkRegistry.wrap(block.id,lists)); continue; }
         const rendered = renderWordContent(block.content, resolveNote,resolveCrossReference);
-        if (rendered.length) body.push(bookmarkRegistry.wrap(block.id,richParagraph(rendered, indexFields, block.content, sourceStyles,documentLinks)));
+        if (rendered.length) body.push(bookmarkRegistry.wrap(block.id,richParagraph(rendered, indexFields, block.content, sourceStyles,documentLinks,bookmarkRegistry.ranges(block.id))));
         else {
           const text = blockPlainText(block);
           if (text || indexFields||bookmarkRegistry.has(block.id)) body.push(bookmarkRegistry.wrap(block.id,paragraph(text, undefined, indexFields)));
@@ -417,21 +417,23 @@ class WordTextBoxRegistry {
 
 class WordBookmarkRegistry {
   private readonly byId=new Map<string,{id:number;name:string;targetId:string}>();
-  private readonly byTarget=new Map<string,Array<{id:number;name:string}>>();
+  private readonly byTarget=new Map<string,Array<{id:number;name:string;range?:WordBookmarkRange}>>();
   private readonly references:Map<string,NonNullable<OmiManuscript['crossReferences']>[number]>;
   constructor(manuscript:OmiManuscript,sections:ReturnType<typeof buildPublicationRenderingContext>['sections'],warnings:string[]){
     this.references=new Map((manuscript.crossReferences??[]).map(ref=>[ref.id,ref]));
-    const allowed=new Set<string>();
-    const visit=(items:typeof sections)=>{for(const section of items){allowed.add(section.id);for(const block of section.blocks)if(!block.visual)allowed.add(block.id);visit(section.children);}};
+    const allowed=new Set<string>(), blockText=new Map<string,string>();
+    const visit=(items:typeof sections)=>{for(const section of items){allowed.add(section.id);for(const block of section.blocks)if(!block.visual){allowed.add(block.id);const text=simpleBookmarkParagraphText(block.content);if(text!==undefined)blockText.set(block.id,text);}visit(section.children);}};
     visit(sections);
     const used=new Set<string>();
     for(const anchor of manuscript.namedAnchors??[]){
       if(!allowed.has(anchor.targetId)){warnings.push('Word bookmark '+anchor.name+' has no supported exported target.');continue;}
+      const range=normalizeWordBookmarkRange(anchor.source?.wordRange);
+      if(anchor.source?.wordRange!==undefined&&(!range||blockText.get(anchor.targetId)!==range.text)){warnings.push('Word bookmark '+anchor.name+' range no longer matches its paragraph; native reference omitted.');continue;}
       const base=toPortableBookmarkName(anchor.exportName||anchor.name);
       let name=base,n=2;
       while(used.has(name.toLowerCase())){const suffix='_'+n++;name=base.slice(0,40-suffix.length)+suffix;}
       used.add(name.toLowerCase());
-      const item={id:this.byId.size+1,name,targetId:anchor.targetId};
+      const item={id:this.byId.size+1,name,targetId:anchor.targetId,...(range?{range}:{})};
       this.byId.set(anchor.id,item);
       const list=this.byTarget.get(anchor.targetId)??[];list.push(item);this.byTarget.set(anchor.targetId,list);
     }
@@ -443,8 +445,9 @@ class WordBookmarkRegistry {
     const field=normalizeWordCrossReferenceField(reference?.wordField);
     return target&&field?{...field,name:target.name}:undefined;
   }
+  ranges(targetId:string){return (this.byTarget.get(targetId)??[]).flatMap(item=>item.range?[{id:item.id,name:item.name,range:item.range}]:[]);}
   wrap(targetId:string,body:string):string{
-    const entries=this.byTarget.get(targetId);
+    const entries=this.byTarget.get(targetId)?.filter(item=>!item.range);
     if(!entries?.length)return body;
     const open=entries.map(item=>'<w:bookmarkStart w:id="'+item.id+'" w:name="'+item.name+'"/>').join('');
     const close=[...entries].reverse().map(item=>'<w:bookmarkEnd w:id="'+item.id+'"/>').join('');
@@ -623,7 +626,7 @@ function wordStyledText(value: string, styleId?: string): string {
   return `<w:r>${rPr}<w:t xml:space="preserve">${xml(value)}</w:t></w:r>`;
 }
 
-function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '', sourceStyles?: SourceWordStyleRegistry,links?:WordHyperlinkRegistry): string {
+function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '', sourceStyles?: SourceWordStyleRegistry,links?:WordHyperlinkRegistry,ranges:readonly {id:number;name:string;range:WordBookmarkRange}[]=[]): string {
   let properties = '';
   let sourceParagraph: unknown;
   try {
@@ -635,8 +638,32 @@ function richParagraph(runs: readonly WordInlinePart[], suffix = '', content = '
       properties = (id ? `<w:pStyle w:val="${id}"/>` : '') + paragraphFormattingWordXml(paragraph.attrs);
     }
   } catch { /* Plain-text fallback has no local paragraph overrides. */ }
-  const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id, run.customMark) : wordRun(run, sourceStyles, sourceParagraph,links)).join('');
+  const render=(run:WordInlinePart)=>'kind' in run ? wordNoteReference(run.kind,run.id,run.customMark) : wordRun(run,sourceStyles,sourceParagraph,links);
+  const rendered = ranges.length ? renderBookmarkRanges(runs,ranges,render) : runs.map(render).join('');
   return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${rendered}${suffix}</w:p>`;
+}
+
+/** Insert exact bookmark boundaries between formatted runs without widening
+ * the selected range. Registry only admits unchanged, text-only paragraphs. */
+function renderBookmarkRanges(runs:readonly WordInlinePart[], ranges:readonly {id:number;name:string;range:WordBookmarkRange}[], render:(run:WordInlinePart)=>string):string {
+  const events=ranges.flatMap(({id,name,range})=>[
+    {offset:range.start,closing:false,xml:'<w:bookmarkStart w:id="'+id+'" w:name="'+name+'"/>'},
+    {offset:range.end,closing:true,xml:'<w:bookmarkEnd w:id="'+id+'"/>'},
+  ]).sort((a,b)=>a.offset-b.offset||Number(b.closing)-Number(a.closing));
+  let offset=0,index=0,output='';
+  for(const run of runs){
+    if('kind' in run){output+=render(run);continue;}
+    const end=offset+run.text.length;
+    let cursor=offset;
+    while(index<events.length&&events[index]!.offset<=end){
+      const event=events[index++]!;
+      if(event.offset>cursor)output+=render({...run,text:run.text.slice(cursor-offset,event.offset-offset)});
+      output+=event.xml;cursor=event.offset;
+    }
+    if(cursor<end)output+=render({...run,text:run.text.slice(cursor-offset)});
+    offset=end;
+  }
+  return output;
 }
 
 type WordNoteKind = 'footnote' | 'endnote';
