@@ -70,7 +70,7 @@ export function applyDocxImportPlan(
     title: plan.title,
     abstract: plan.abstract,
     keywords: plan.keywords,
-    documentStructure: createDocumentStructureProfile('study'),
+    documentStructure: {...createDocumentStructureProfile('study'),...(plan.noteNumberingScope==='section'?{noteNumberingScope:'section' as const}:{})},
     sectionNumberingStyle: 'none',
     citationStyle: current.citationStyle ?? 'apa-7',
     crossReferenceNumbering: 'document',
