@@ -1,3 +1,4 @@
+import { sameTableCitationAnchors, tableCitationAnchors } from '../model/citationClusters';
 import {
   formatCrossReferenceLabel, removeCrossReferenceAnchorFromSections,
   synchronizeCrossReferenceLabels,
@@ -154,6 +155,8 @@ export function stageUpdateVisualBlock(
   useStudioStore.setState((state) => {
     const located = findBlock(state.manuscript, blockId);
     if (!located || !located.block.visual) return state;
+    if(located.block.visual.kind==='table'&&visual.kind==='table'&&!sameTableCitationAnchors(located.block.visual,visual))return state;
+    if(located.block.visual.kind==='table'&&visual.kind!=='table'&&tableCitationAnchors(located.block.visual).length)return state;
 
     if (JSON.stringify(located.block.visual) === JSON.stringify(visual)) {
       return state;
@@ -227,6 +230,7 @@ export function stageConvertTableToText(blockId: string): boolean {
   useStudioStore.setState((state) => {
     const located = findBlock(state.manuscript, blockId);
     if (!located || located.block.visual?.kind !== 'table') return state;
+    if(tableCitationAnchors(located.block.visual).length)return state;
 
     const replacement = tableRowsToParagraphBlocks(
       located.block.visual.cells,
