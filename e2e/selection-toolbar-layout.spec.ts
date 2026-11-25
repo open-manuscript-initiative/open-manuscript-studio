@@ -194,6 +194,10 @@ test('shared character and paragraph icon panels edit independent properties and
   await character.click();
   const panel = toolbar.locator('.omi-direct-formatting');
   const size = panel.getByRole('spinbutton', { name: 'Font size (pt)', exact: true });
+  const sizeChoices = panel.getByRole('combobox', { name: 'Font size (pt)', exact: true });
+  await expect(sizeChoices.locator('option[value="12"]')).toHaveText('12 pt');
+  await sizeChoices.selectOption('14');
+  await expect(editor.locator('[data-omi-format="omiFontSize"][data-omi-format-value="14"]')).toHaveText('Select these words');
   await size.fill('16');
   await panel.getByRole('button', { name: 'Apply: Font size (pt)', exact: true }).click();
   await expect(editor.locator('[data-omi-format="omiFontSize"][data-omi-format-value="16"]')).toHaveText('Select these words');
