@@ -1,4 +1,4 @@
-import { refreshPublicationTables } from '../model/tableAppearancePresets';
+import { refreshPublicationTables, renamePublicationTablePreset, renamePublicationTableBindings, normalizePublicationTableStyles } from '../model/tableAppearancePresets';
 import { useStudioStore } from './useStudioStore';
 import { getAppliedPublicationTemplate, PUBLICATION_TEMPLATE_EXTENSION, type PublicationTemplate } from '../model/publicationTemplates';
 import { prepareTemplatedPublication } from '../services/publicationTemplates';
@@ -20,16 +20,26 @@ export async function stagePublicationTemplate(template: PublicationTemplate): P
 }
 
 /** Keep the template's working style inside the portable document. */
-export function stageAppliedPublicationStyle(style: PublicationStyle): void {
+export function stageAppliedPublicationStyle(style: PublicationStyle,rename?:{from:string;to:string}): void {
   const manuscript = useStudioStore.getState().manuscript;
   const applied = getAppliedPublicationTemplate(manuscript) ?? {
     version: 1 as const, source: 'document-style' as const, id: 'publication-format', name: style.name, association: style.name, style: undefined,
   };
   if (JSON.stringify(applied.style) === JSON.stringify(style)) return;
   const profile = manuscript.embeddedPublicationProfile;
+  let previousCatalog=applied.style?.tableStyles;
+  let sections=manuscript.sections;
+  if(rename){
+    const original=previousCatalog?.items.find(p=>p.name===rename.from);
+    const normalized=normalizePublicationTableStyles(previousCatalog);
+    const renamed=normalized&&renamePublicationTablePreset(normalized,rename.from,rename.to);
+    if(!original||!renamed||JSON.stringify(renamed)!==JSON.stringify(style.tableStyles))throw new Error('Invalid or stale table style rename.');
+    sections=renamePublicationTableBindings(sections,rename.from,rename.to,original.kind);
+    previousCatalog=renamed;
+  }
   stageTemplateState({
     ...extractManuscriptState(manuscript),
-    sections: refreshPublicationTables(manuscript.sections, applied.style?.tableStyles, style.tableStyles),
+    sections: refreshPublicationTables(sections, previousCatalog, style.tableStyles),
     embeddedPublicationProfile: profile ? { ...profile, publicationStyle: structuredClone(style) } : profile,
     extensions: { ...manuscript.extensions, [PUBLICATION_TEMPLATE_EXTENSION]: { ...applied, style: structuredClone(style) } },
   }, 'Changed publication template style');
