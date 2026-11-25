@@ -1549,3 +1549,33 @@ test('Word note paragraphs retain pagination flags and complete multi-paragraph 
   assert.equal((foot.match(/<w:footnoteRef\/>/g)??[]).length,1);
   inspect(await parseDocxForStudio(new File([new Uint8Array(result.bytes)],'note-pagination.docx')));
 });
+
+test('Word each-section note restart survives physical section import and native re-export',async()=>{
+  const {buildNoteNumberMap}=await import('../src/model/notes.ts');
+  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const props='<w:sectPr><w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:type w:val="continuous"/></w:sectPr>';
+  const body='<w:p><w:r><w:t>First section specimen</w:t><w:footnoteReference w:id="1"/></w:r></w:p><w:p><w:pPr>'+props+'</w:pPr></w:p><w:p><w:r><w:t>Second section specimen</w:t><w:footnoteReference w:id="2"/></w:r></w:p>'+props;
+  const file=makeDocx(body,{footnotes:'<w:footnotes xmlns:w="'+ns+'"><w:footnote w:id="1"><w:p><w:r><w:t>First note</w:t></w:r></w:p></w:footnote><w:footnote w:id="2"><w:p><w:r><w:t>Second note</w:t></w:r></w:p></w:footnote></w:footnotes>'});
+  const plan=await parseDocxForStudio(file);
+  assert.equal(plan.noteNumberingScope,'section');
+  assert.equal(plan.sections.length,2);
+  const previous=useStudioStore.getState();
+  try{
+    applyDocxImportPlan(plan,{importDetectedAuthors:false,source:'',selfAuthoredExternal:true});
+    const manuscript=parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    assert.equal(manuscript.documentStructure?.noteNumberingScope,'section');
+    assert.deepEqual([...buildNoteNumberMap(manuscript).values()],[1,1]);
+    const word=buildDocxExport(manuscript);
+    const xml=readZipParts(word.bytes).get('word/document.xml')!.toString('utf8');
+    assert.match(xml,/<w:pPr><w:sectPr><w:footnotePr><w:numRestart w:val="eachSect"\/>/);
+    assert.match(xml,/<w:endnotePr><w:numRestart w:val="eachSect"\/>/);
+    assert.match(xml,/<w:footnoteReference w:id="1"\/>/);
+    assert.match(xml,/<w:footnoteReference w:id="2"\/>/);
+    const reopened=await parseDocxForStudio(new File([new Uint8Array(word.bytes)],'section-notes.docx'));
+    assert.equal(reopened.noteNumberingScope,'section');
+    assert.equal(reopened.sections.length,2);
+    assert.deepEqual(reopened.annotations.map(n=>n.body),['First note','Second note']);
+    const continuous=buildDocxExport({...manuscript,documentStructure:{...manuscript.documentStructure!,noteNumberingScope:'continuous'}});
+    assert.doesNotMatch(readZipParts(continuous.bytes).get('word/document.xml')!.toString('utf8'),/w:numRestart/);
+  }finally{useStudioStore.setState(previous,true);}
+});
