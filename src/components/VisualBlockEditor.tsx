@@ -50,7 +50,7 @@ import type {
   OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
-import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent } from '../model/tableLayout';
+import { pruneTableCellFormats, resizeTableColumn, tableCellFormat, tableCellTextStyle, tableColumnWidths, tableHeaderRows, tableMergeLayout, extendTableMerge, splitTableMerge, tableRowSplitDefault, tableRowSplitPolicy, setTableRowSplitOverride, pruneTableRowSplitOverrides, tableCellAppearanceStyle, TABLE_CELL_SIDES, normalizeTableCellEdges, tableRowHeight, tableRowHeightStyle, setTableRowHeight, pruneTableRowHeights, tableCellDocument, plainTableCellDocument, tableCellPlainText, parseTableCellContent, pruneTableCellContent, normalizeCellParagraphAttrs } from '../model/tableLayout';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationPreviewContext } from './PublicationPreviewContext';
 import { PublicationGraphicsContext } from './publicationViewOptions';
@@ -310,6 +310,9 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
   useFormattingEditor(editor);
   const marks=['bold','italic','omiUnderline','strike','omiSmallCaps','omiSuperscript','omiSubscript'];
   const active=useEditorState({editor,selector:({editor:e})=>marks.map(m=>e?.isActive(m)??false)});
+  const paragraph=useEditorState({editor,selector:({editor:e})=>normalizeCellParagraphAttrs(e?.getAttributes('paragraph'))})??{};
+  const visualCopy=getVisualElementsCopy(locale);
+  const setParagraph=(name:string,value:string|number|null)=>editor?.chain().focus().updateAttributes('paragraph',{[name]:value}).run();
   useEffect(()=>{
     if(!editor) return;
     const next=editor.schema.nodeFromJSON(doc).toJSON();
@@ -319,7 +322,21 @@ function RichCellEditor({doc,onChange,label}:{doc:NoteJsonNode;onChange:(doc:Not
     <div className="omi-table-actions" role="group" aria-label={copy.toolbar}>
       {[copy.bold,copy.italic,copy.underline,copy.strike,copy.smallCaps,copy.superscript,copy.subscript].map((title,i)=><button type="button" key={marks[i]} title={title} aria-label={title} aria-pressed={active?.[i]??false} onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().toggleMark(marks[i]!).run()}>{['B','I','U','S','Aa','x²','x₂'][i]}</button>)}
       <button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>editor?.chain().focus().unsetAllMarks().run()}>{copy.clearMarks}</button>
-    </div><EditorContent editor={editor}/>
+    </div>
+    <details>
+      <summary>{visualCopy.cellParagraphFormatting}</summary>
+      <div className="omi-table-cell-formatting-fields">
+        <label><span>{visualCopy.cellHorizontalAlign}</span><select value={String(paragraph.omiAlign??'')} onChange={e=>setParagraph('omiAlign',e.target.value||null)}>
+          <option value="">{visualCopy.cellAppearanceDefault}</option><option value="left">{visualCopy.cellAlignLeft}</option><option value="center">{visualCopy.cellAlignCenter}</option><option value="right">{visualCopy.cellAlignRight}</option><option value="justify">{visualCopy.cellAlignJustify}</option>
+        </select></label>
+        {([['omiLeftIndent',visualCopy.cellParagraphLeftIndent],['omiRightIndent',visualCopy.cellParagraphRightIndent],['omiFirstLineIndent',visualCopy.cellParagraphFirstIndent],['omiSpaceBefore',visualCopy.cellParagraphBefore],['omiSpaceAfter',visualCopy.cellParagraphAfter],['omiLineSpacing',visualCopy.cellParagraphLineSpacing]] as const).map(([name,title])=><label key={name}><span>{title}{name==='omiLineSpacing'&&(!paragraph.omiLineRule||paragraph.omiLineRule==='auto')?' (×)':' (pt)'}</span>
+          <input type="number" step="any" min={name==='omiFirstLineIndent'?-1000:name==='omiLineSpacing'?0.05:0} max={1000} value={String(paragraph[name]??'')} placeholder={visualCopy.cellAppearanceDefault} onChange={e=>{if(e.target.value==='')setParagraph(name,null);else if(Number.isFinite(e.target.valueAsNumber))setParagraph(name,e.target.valueAsNumber);}}/>
+        </label>)}
+        <label><span>{visualCopy.cellParagraphLineRule}</span><select value={String(paragraph.omiLineRule??'auto')} onChange={e=>{const rule=e.target.value;editor?.chain().focus().updateAttributes('paragraph',{omiLineRule:rule,omiLineSpacing:paragraph.omiLineRule===rule?paragraph.omiLineSpacing??(rule==='auto'?1:12):rule==='auto'?1:12}).run();}}>
+          <option value="auto">{visualCopy.rowHeightAuto}</option><option value="exact">{visualCopy.rowHeightExact}</option><option value="atLeast">{visualCopy.rowHeightMinimum}</option>
+        </select></label>
+      </div>
+    </details><EditorContent editor={editor}/>
   </div>;
 }
 function richCellPreview(doc:NoteJsonNode):string|undefined{
