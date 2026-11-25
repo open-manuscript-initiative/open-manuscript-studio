@@ -1,3 +1,4 @@
+import { importIdmlTables } from './idmlTableImport';
 import { prepareWordDrawings } from './docxDrawingImport';
 import { sanitizeMathMlForPreview } from '../model/equationRendering';
 import {
@@ -30,6 +31,7 @@ export async function importVisualBlocksFromFile(file: File): Promise<OmiBlock[]
   }
 
   const lowerName = file.name.toLowerCase();
+  if(lowerName.endsWith('.idml')) return (await importIdmlTables(file)).blocks;
   const provenance = createProvenance(file.name, inferSourceFormat(lowerName));
 
   if (file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(lowerName)) {
