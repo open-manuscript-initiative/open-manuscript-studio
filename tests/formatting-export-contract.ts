@@ -143,10 +143,13 @@ export function registerFormattingExportContracts(): void {
     for (const [id, lang, text] of languages) {
       const manuscript = specimen(id!);
       await t.test(id + ' HTML, JATS and PDF source language annotation', () => {
-        const htmlSample = '<span lang="' + lang + '">' + text + '</span>';
-        assert.ok(renderHtmlArticle(manuscript).html.includes(htmlSample));
+        const assertLanguage = (source: string) => {
+          const document = new DOMParser().parseFromString(source, 'text/html') as unknown as Document;
+          assert.ok(elements(document, 'span').some(span => attr(span, 'lang') === lang && span.textContent === text), 'Missing language annotation on exact sample: ' + lang);
+        };
+        assertLanguage(renderHtmlArticle(manuscript).html);
         assert.ok(renderJatsArticle(manuscript).xml.includes('<named-content xml:lang="' + lang + '">' + text + '</named-content>'));
-        assert.ok(buildPdfPrintDocument(manuscript).includes(htmlSample));
+        assertLanguage(buildPdfPrintDocument(manuscript));
       });
       await t.test(id + ' IDML applied language on the sample', () => {
         const parts = storedParts(buildIdmlExport(manuscript).bytes);
