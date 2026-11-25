@@ -17,7 +17,9 @@ const options = (cwd: string, timeoutMs = 2_000) => ({
 // it cannot run or keep a CPU/memory-consuming Chrome child alive.
 async function isExecuting(pid: number): Promise<boolean> {
   const stat = await readFile(`/proc/${pid}/stat`, 'utf8').catch((error: NodeJS.ErrnoException) => {
-    if (error.code === 'ENOENT') return null;
+    // The process can disappear after /proc/stat is opened but before it is read.
+    // Linux then returns ESRCH instead of ENOENT; both mean the PID is gone.
+    if (error.code === 'ENOENT' || error.code === 'ESRCH') return null;
     throw error;
   });
   if (stat === null) return false;
