@@ -590,3 +590,26 @@ test('explicit same-value overrides survive style changes and reset clears their
   assert.deepEqual(cellNestedTable(tableCellDocument(nested,0,0)!.content![0]!)?.publicationCellOverrides?.['1:0'],['horizontalAlign']);
   assert.deepEqual(prunePublicationCellOverrides([['A']],{'0:0':['backgroundColor','backgroundColor'],'1:0':['borders']}),{'0:0':['backgroundColor']});
 });
+
+test('conditional rule ordering changes overlapping properties without losing other patches',async()=>{
+  const {bindPublicationTableStyle,normalizePublicationTableStyles,moveTableCondition,refreshPublicationTableTree,replacePublicationTablePreset,normalizeTableCondition}=await import('../src/model/tableAppearancePresets.ts');
+  const first=normalizeTableCondition({operator:'lt',value:'0',format:{backgroundColor:'#FF0000',horizontalAlign:'right',paddingPt:{top:3}}})!;
+  const second=normalizeTableCondition({operator:'lt',value:'-10',format:{backgroundColor:'#AA0000',verticalAlign:'middle',borders:{bottom:{style:'solid',widthPt:1,color:'#123456'}}}})!;
+  const catalog=normalizePublicationTableStyles({items:[{kind:'table',name:'T',header:{},body:{},conditions:[first,second]}]})!;
+  const table=bindPublicationTableStyle({kind:'table',cells:[['-15'],['2']],headerRows:0},catalog,'T');
+  assert.equal(table.cellFormats?.['0:0']?.backgroundColor,'#AA0000');
+  assert.equal(table.cellFormats?.['0:0']?.horizontalAlign,'right');
+  assert.equal(table.cellFormats?.['0:0']?.verticalAlign,'middle');
+  assert.equal(table.cellFormats?.['0:0']?.borders?.bottom?.widthPt,1);
+  const ordered=moveTableCondition([first,second],1,-1);
+  assert.deepEqual(ordered,[second,first]);
+  const preset=catalog.items[0]!;assert.ok(preset.kind==='table');
+  const next=replacePublicationTablePreset(catalog,{...preset,conditions:ordered})!;
+  const updated=refreshPublicationTableTree(table,catalog,next);
+  assert.equal(updated.cellFormats?.['0:0']?.backgroundColor,'#FF0000');
+  assert.equal(updated.cellFormats?.['0:0']?.verticalAlign,'middle');
+  assert.deepEqual(preset.conditions,[first,second]);
+  assert.deepEqual(moveTableCondition(ordered,0,-1),ordered);
+  assert.deepEqual(moveTableCondition(ordered,1,1),ordered);
+  assert.equal(updated.cellFormats?.['1:0']?.backgroundColor,undefined);
+});
