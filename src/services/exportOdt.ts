@@ -1,4 +1,4 @@
-import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy } from '../model/tableLayout';
+import { tableMergeLayout, tableHeaderRows, tableRowSplitPolicy, tableCellFormat } from '../model/tableLayout';
 import { paragraphTabs } from '../model/directParagraphFormatting';
 import { odtCharacterProperties, odtParagraphProperties, odtRunHasDirectFormatting } from './odtFormatting';
 import { directFormattingFromMarks } from '../model/directFormatting';
@@ -92,7 +92,10 @@ function renderBlock(block: OmiBlock, notes: Map<string, OmiManuscript['annotati
     const rows=table.cells.map((row,r)=>'<table:table-row table:style-name="'+stylesRegistry.tableRow(tableRowSplitPolicy(table,r))+'">'+row.map((cell,c)=>{
       if(layout.covered(r,c)) return '<table:covered-table-cell/>';
       const m=layout.at(r,c);
-      return '<table:table-cell office:value-type="string"'+(m&&m.rowSpan>1?' table:number-rows-spanned="'+m.rowSpan+'"':'')+(m&&m.colSpan>1?' table:number-columns-spanned="'+m.colSpan+'"':'')+'><text:p>'+escape(cell)+'</text:p></table:table-cell>';
+      const format=tableCellFormat(table.cellFormats,r,c);
+      const cellStyle=stylesRegistry.tableCell(format.verticalAlign,format.backgroundColor);
+      const paraStyle=stylesRegistry.cellParagraph(format.horizontalAlign);
+      return '<table:table-cell office:value-type="string"'+(cellStyle?' table:style-name="'+cellStyle+'"':'')+(m&&m.rowSpan>1?' table:number-rows-spanned="'+m.rowSpan+'"':'')+(m&&m.colSpan>1?' table:number-columns-spanned="'+m.colSpan+'"':'')+'>'+cell.split(/\r\n?|\n/).map(line=>'<text:p'+(paraStyle?' text:style-name="'+paraStyle+'"':'')+'>'+escape(line)+'</text:p>').join('')+'</table:table-cell>';
     }).join('')+'</table:table-row>');
     const head=headerRows?'<table:table-header-rows>'+rows.slice(0,headerRows).join('')+'</table:table-header-rows>':'';
     return `<table:table table:name="OMITable${safeId(block.id)}">${head}${rows.slice(headerRows).join('')}</table:table>`;
@@ -172,8 +175,8 @@ function renderRun(run: OmiInlineRun, notes: Map<string, OmiManuscript['annotati
 
 /** Per-export style registry; no shared mutable state or arbitrary XML. */
 class AutomaticStyles {
-  private readonly definitions = new Map<string, { name: string; family: 'text' | 'paragraph' | 'table-row'; properties: Record<string, string>; children: string }>();
-  private register(family: 'text' | 'paragraph' | 'table-row', properties: Record<string, string>, prefix: string, children = ''): string | undefined {
+  private readonly definitions = new Map<string, { name: string; family: 'text' | 'paragraph' | 'table-row' | 'table-cell'; properties: Record<string, string>; children: string }>();
+  private register(family: 'text' | 'paragraph' | 'table-row' | 'table-cell', properties: Record<string, string>, prefix: string, children = ''): string | undefined {
     if (!Object.keys(properties).length && !children) return undefined;
     const key = JSON.stringify([family, prefix, children, Object.entries(properties).sort(([a], [b]) => a.localeCompare(b))]);
     const existing = this.definitions.get(key);
@@ -196,12 +199,18 @@ class AutomaticStyles {
     const content = tabs.map(t=>'<style:tab-stop style:position="'+t.position+'pt" style:type="'+(t.alignment==='decimal'?'char':t.alignment)+'"'+(t.alignment==='decimal'?' style:char="."':'')+(t.leader==='none'?'':' style:leader-style="solid" style:leader-text="'+leader[t.leader]+'"')+'/>').join('');
     return this.register('paragraph', odtParagraphProperties(attrs), 'OMIPara', content?'<style:tab-stops>'+content+'</style:tab-stops>':'');
   }
+  tableCell(vertical: string | undefined, color: string | undefined): string | undefined {
+    return this.register('table-cell',{...(vertical?{'style:vertical-align':vertical}:{}),...(color?{'fo:background-color':color}:{})},'OMICell');
+  }
+  cellParagraph(horizontal: string | undefined): string | undefined {
+    return this.register('paragraph',horizontal?{'fo:text-align':horizontal}:{},'OMICellPara');
+  }
   tableRow(policy: 'keep' | 'allow'): string {
     return this.register('table-row', {'fo:keep-together':policy==='keep'?'always':'auto'}, 'OMIRow')!;
   }
   xml(): string {
     return [...this.definitions.values()].map(({ name, family, properties, children }) => {
-      const tag = family === 'text' ? 'style:text-properties' : family==='table-row' ? 'style:table-row-properties' : 'style:paragraph-properties';
+      const tag = family === 'text' ? 'style:text-properties' : family==='table-row' ? 'style:table-row-properties' : family==='table-cell' ? 'style:table-cell-properties' : 'style:paragraph-properties';
       const attributes = Object.entries(properties).map(([key, value]) => ' ' + key + '="' + escape(value) + '"').join('');
       return '<style:style style:name="' + name + '" style:family="' + family + '"><' + tag + attributes + (children ? '>' + children + '</' + tag + '>' : '/>') + '</style:style>';
     }).join('');
