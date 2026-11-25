@@ -1917,3 +1917,35 @@ test('native Word images retain raster bytes, crop, dimensions and square wrappi
   assert.equal(normalizeWordPictureLayout({cx:914400,cy:457200,crop:{l:90000,t:0,r:10000,b:0}}),undefined);
   assert.equal(normalizeWordPictureLayout({cx:914400,cy:457200,originalRaster:'https://example.org/image.png'}),undefined);
 });
+
+
+test('native OMML preserves nested equations and rejects active or foreign source markup',async()=>{
+  const {advancedCases,createAdvancedDocx}=await import('./generate-advanced-formatting-fixtures.ts');
+  const {nativeOmml}=await import('../src/services/wordEquationExport.ts');
+  const fixture=advancedCases.find(item=>item.id==='E02')!;
+  const input=createAdvancedDocx(fixture);
+  const plan=await parseDocxForStudio(new File([new Uint8Array(input)],'native-equations.docx'));
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Native equations'}),sections:plan.sections};
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const exported=buildDocxExport(reopened);
+  const documentXml=readZipParts(exported.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(documentXml,/<m:f><m:num><m:rad><m:deg\/><m:e><m:r><m:t>x<\/m:t>/);
+  assert.match(documentXml,/<m:den><m:sSup><m:e><m:r><m:t>y<\/m:t><\/m:r><\/m:e><m:sup><m:r><m:t>2<\/m:t>/);
+  const again=await parseDocxForStudio(new File([new Uint8Array(exported.bytes)],'native-equations-reopened.docx'));
+  const equation=again.sections.flatMap(section=>section.blocks).find(block=>block.visual?.kind==='equation')?.visual;
+  assert.ok(equation?.kind==='equation');
+  assert.equal(equation.latex,'\\frac{\\sqrt{x}}{y^{2}}');
+  const ns='http://schemas.openxmlformats.org/officeDocument/2006/math';
+  const safe='<m:oMath xmlns:m="'+ns+'"><m:r><m:t xml:space="preserve">a &amp; b &lt; c</m:t></m:r></m:oMath>';
+  assert.match(nativeOmml(safe)!,/a &amp; b &lt; c/);
+  for(const hostile of [
+    '<!DOCTYPE m:oMath [<!ENTITY x SYSTEM "file:///etc/passwd">]>'+safe,
+    '<m:oMath xmlns:m="'+ns+'" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:fldSimple w:instr="INCLUDETEXT external"/></m:oMath>',
+    '<m:oMath xmlns:m="'+ns+'"><m:r><m:t onclick="bad">x</m:t></m:r></m:oMath>',
+    '<m:oMath xmlns:m="'+ns+'"><m:unknown/></m:oMath>',
+  ])assert.equal(nativeOmml(hostile),undefined);
+  const unsafe={...reopened,sections:reopened.sections.map(section=>({...section,blocks:section.blocks.map(block=>block.visual?.kind==='equation'?{...block,visual:{...block.visual,source:'<unsafe/>'}}:block)}))};
+  const fallback=buildDocxExport(unsafe);
+  assert.ok(fallback.warnings.some(message=>message.includes('equation')&&message.includes('descriptive text')));
+  assert.doesNotMatch(readZipParts(fallback.bytes).get('word/document.xml')!.toString('utf8'),/<unsafe\/>/);
+});
