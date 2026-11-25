@@ -93,6 +93,7 @@ function parseCellBlocks(cell:XmlElement,context:Context,depth:number):NoteJsonN
   function readParagraph(element:XmlElement):void{
     const raw=properties(element),p={...resolvedStyle(raw.AppliedParagraphStyle,context),...raw};
     const attrs=paragraphAttrs(p);
+    if(p.BulletsAndNumberingListType==='NumberedList'||p.BulletsAndNumberingListType==='BulletList')context.warnings.add('native-list-structure-not-imported');
     let inline:NoteJsonNode[]=[];
     const flush=(force=false)=>{if(inline.length||force)result.push({type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:inline});inline=[];};
     let ended=false;
