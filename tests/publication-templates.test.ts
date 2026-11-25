@@ -365,3 +365,45 @@ test('editing the working publication catalog updates bound tables in the portab
     assert.ok(reopened.revisionHistory.revisions.every(revision=>inspectRevisionStateIntegrity(revision).status!=='mismatch'));
   }finally{useStudioStore.setState(previous,true);}
 });
+
+test('linked table geometry inherits new rows and columns and reflows bands without losing direct overrides',async()=>{
+  const {BUILTIN_TABLE_STYLES,bindPublicationTableStyle,inheritPublicationTableGeometry}=await import('../src/model/tableAppearancePresets.ts');
+  const {addTableRow,addTableColumn}=await import('../src/model/visualBlocks.ts');
+  const {planTableAxisMove,reorderTableAxis}=await import('../src/model/tableLayout.ts');
+  const catalog={items:[BUILTIN_TABLE_STYLES.banded],defaultTableStyle:'banded'};
+  const bound=bindPublicationTableStyle({kind:'table',cells:[['H'],['A'],['B']],headerRows:1},catalog,'banded');
+  const initial={...bound,cellFormats:{...bound.cellFormats,'1:0':{...bound.cellFormats?.['1:0'],horizontalAlign:'right' as const}}};
+  const expanded=inheritPublicationTableGeometry(initial,{...initial,cells:addTableColumn(addTableRow(initial.cells))},catalog);
+  assert.equal(expanded.cellFormats?.['0:1']?.backgroundColor,'#DCE6F1');
+  assert.equal(expanded.cellFormats?.['2:1']?.backgroundColor,'#F1F4F7');
+  assert.equal(expanded.cellFormats?.['3:0']?.backgroundColor,undefined);
+  assert.equal(expanded.cellFormats?.['1:0']?.horizontalAlign,'right');
+  const plan=planTableAxisMove(expanded,'row',1,1)!;
+  const moved=reorderTableAxis(expanded,'row',1,1)!;
+  const reflowed=inheritPublicationTableGeometry(expanded,moved.table,catalog,p=>({row:plan.order[p.row]!,column:p.column}));
+  assert.equal(reflowed.cells[2]?.[0],'A');
+  assert.equal(reflowed.cellFormats?.['2:0']?.backgroundColor,'#F1F4F7');
+  assert.equal(reflowed.cellFormats?.['2:0']?.horizontalAlign,'right');
+  assert.equal(reflowed.cellFormats?.['1:0']?.backgroundColor,undefined);
+  assert.equal(reflowed.cellFormats?.['1:0']?.horizontalAlign,undefined);
+  const unlinked={kind:'table' as const,cells:[['X']]};
+  const more={...unlinked,cells:[['X'],['']]};
+  assert.equal(inheritPublicationTableGeometry(unlinked,more,catalog),more);
+});
+
+test('nested publication bindings survive rich-cell normalization and update through unlinked parents',async()=>{
+  const {BUILTIN_TABLE_STYLES,bindPublicationTableStyle,refreshPublicationTableTree,removePublicationTablePreset}=await import('../src/model/tableAppearancePresets.ts');
+  const {cellNestedTable,tableCellDocument}=await import('../src/model/tableLayout.ts');
+  const catalog={items:[BUILTIN_TABLE_STYLES.banded],defaultTableStyle:'banded'};
+  const nested=bindPublicationTableStyle({kind:'table',cells:[['N']],headerRows:1},catalog,'banded');
+  const parent={kind:'table' as const,cells:[['N']],cellContent:{'0:0':JSON.stringify({type:'doc',content:[{type:'omiCellTable',attrs:{table:nested}}]})}};
+  const read=(table:typeof parent)=>cellNestedTable(tableCellDocument(table,0,0)!.content![0]!)!;
+  assert.equal(read(parent).publicationTableStyle,'banded');
+  const next={...catalog,items:[{...BUILTIN_TABLE_STYLES.banded,header:{backgroundColor:'#123456',borders:BUILTIN_TABLE_STYLES.banded.header.borders,paddingPt:BUILTIN_TABLE_STYLES.banded.header.paddingPt}}]};
+  const refreshed=refreshPublicationTableTree(parent,catalog,next);
+  assert.equal(refreshed.cells,parent.cells);
+  assert.equal(read({...parent,...refreshed}).cellFormats?.['0:0']?.backgroundColor,'#123456');
+  const detached=refreshPublicationTableTree(refreshed,next,removePublicationTablePreset(next,'banded'));
+  assert.equal(read({...parent,...detached}).publicationTableStyle,undefined);
+  assert.equal(read({...parent,...detached}).cellFormats?.['0:0']?.backgroundColor,'#123456');
+});
