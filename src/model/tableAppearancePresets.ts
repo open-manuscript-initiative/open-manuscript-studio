@@ -2,7 +2,9 @@ import type { OmiTableBlockData, OmiTableCellFormat, OmiBlock, OmiSection } from
 import { normalizeTableCellAppearance, normalizeTableCellEdges, tableCellFormat, tableHeaderRows, tableRangeAnchors, pruneTableCellFormats, prunePublicationCellStyles, tableMergeLayout, parseTableCellContent, cellNestedTable, MAX_NESTED_TABLE_DEPTH, type TableCellPosition } from './tableLayout';
 
 export type CellStylePreset={kind:'cell';name:string;format:OmiTableCellFormat};
-export type TableStylePreset={kind:'table';name:string;header:OmiTableCellFormat;body:OmiTableCellFormat;alternate?:OmiTableCellFormat};
+export type TableStylePreset={kind:'table';name:string;basedOn?:string;header:OmiTableCellFormat;body:OmiTableCellFormat;alternate?:OmiTableCellFormat;firstColumn?:OmiTableCellFormat;lastColumn?:OmiTableCellFormat;summary?:OmiTableCellFormat};
+export type TableStyleRegion='header'|'body'|'alternate'|'firstColumn'|'lastColumn'|'summary';
+const OPTIONAL_REGIONS=['alternate','firstColumn','lastColumn','summary'] as const;
 export type TableAppearancePreset=CellStylePreset|TableStylePreset;
 export const TABLE_STYLE_STORAGE_KEY='omi.table-appearance-presets.v1';
 export const MAX_TABLE_PRESETS=50;
@@ -29,7 +31,12 @@ export function normalizeAppearancePreset(value:unknown):TableAppearancePreset|u
   const name=typeof raw.name==='string'?raw.name.trim():'';
   if(!name||name.length>80) return undefined;
   if(raw.kind==='cell'&&raw.format&&typeof raw.format==='object') return {kind:'cell',name,format:normalizePresetFormat(raw.format,true)};
-  if(raw.kind==='table'&&raw.header&&typeof raw.header==='object'&&raw.body&&typeof raw.body==='object') return {kind:'table',name,header:normalizePresetFormat(raw.header,false),body:normalizePresetFormat(raw.body,false),...(raw.alternate&&typeof raw.alternate==='object'?{alternate:normalizePresetFormat(raw.alternate,false)}:{})};
+  if(raw.kind==='table'&&raw.header&&typeof raw.header==='object'&&raw.body&&typeof raw.body==='object'){
+    const result:TableStylePreset={kind:'table',name,header:normalizePresetFormat(raw.header,false),body:normalizePresetFormat(raw.body,false)};
+    if(typeof raw.basedOn==='string'&&raw.basedOn.length>0&&raw.basedOn.length<=80&&raw.basedOn.trim()===raw.basedOn)result.basedOn=raw.basedOn;
+    for(const region of OPTIONAL_REGIONS)if(raw[region]&&typeof raw[region]==='object'&&!Array.isArray(raw[region]))result[region]=normalizePresetFormat(raw[region],false);
+    return result;
+  }
   return undefined;
 }
 export function readAppearancePresets(json:string|null):TableAppearancePreset[]{
@@ -73,7 +80,7 @@ export function applyAppearancePreset(table:OmiTableBlockData,preset:TableAppear
     if(valid.kind==='cell'){formats[key]=normalizePresetFormat(valid.format,true);delete bindings[key];}
     else{
       if(bindings[key])continue;
-      const source=row<headers?valid.header:valid.alternate&&(row-headers)%2===1?valid.alternate:valid.body;
+      const source=regionFormat(valid,row,headers,column,table.cells.length,table.cells[row]?.length??0);
       const existing=tableCellFormat(formats,row,column);
       formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...normalizePresetFormat(source,false)};
     }
@@ -99,6 +106,15 @@ export function normalizePublicationTableStyles(value:unknown):PublicationTableS
     const preset=normalizeAppearancePreset(entry);
     if(preset&&!items.some(p=>p.name===preset.name))items.push(preset);
   }
+  // Strip invalid links during tolerant normalization; strict import validation
+  // rejects the resulting mismatch, including missing parents and cycles.
+  const validParents=items.filter((p):p is TableStylePreset=>p.kind==='table');
+  for(let i=0;i<items.length;i++){
+    const preset=items[i];
+    if(preset?.kind==='table'&&preset.basedOn&&!resolveTablePreset(validParents,preset.name)){
+      const flat={...preset};delete flat.basedOn;items[i]=flat;
+    }
+  }
   const defaultTableStyle=typeof raw.defaultTableStyle==='string'&&items.some(p=>p.kind==='table'&&p.name===raw.defaultTableStyle)?raw.defaultTableStyle:undefined;
   return {items,...(defaultTableStyle?{defaultTableStyle}:{})};
 }
@@ -113,10 +129,13 @@ export function putPublicationTablePreset(catalog:PublicationTableStyles|undefin
   const current=normalizePublicationTableStyles(catalog)??{items:[]};
   const valid=normalizeAppearancePreset(preset);
   if(!valid||current.items.length>=MAX_TABLE_PRESETS||current.items.some(p=>p.name===valid.name))return undefined;
-  return {...current,items:[...current.items,valid]};
+  const next={...current,items:[...current.items,valid]};
+  if(valid.kind==='table'&&!resolveTablePreset(next.items,valid.name))return undefined;
+  return next;
 }
 export function removePublicationTablePreset(catalog:PublicationTableStyles,name:string):PublicationTableStyles{
-  return {items:catalog.items.filter(p=>p.name!==name),...(catalog.defaultTableStyle&&catalog.defaultTableStyle!==name?{defaultTableStyle:catalog.defaultTableStyle}:{})};
+  const items=catalog.items.filter(p=>p.name!==name).map(p=>p.kind==='table'&&p.basedOn===name?resolveTablePreset(catalog.items,p.name)??p:p);
+  return {items,...(catalog.defaultTableStyle&&catalog.defaultTableStyle!==name?{defaultTableStyle:catalog.defaultTableStyle}:{})};
 }
 /** Apply a snapshot default only to deliberately created, blank tables.
  * Never implicitly restyle imported data or existing publication tables. */
@@ -129,7 +148,7 @@ export function applyDefaultPublicationTableStyle(table:OmiTableBlockData,catalo
 
 /** Bind by catalog name; retain materialized formatting for portable exports. */
 export function bindPublicationTableStyle(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,name:string):OmiTableBlockData{
-  const preset=normalizePublicationTableStyles(catalog)?.items.find(p=>p.kind==='table'&&p.name===name);
+  const preset=resolvePublicationTablePreset(catalog,name);
   if(!preset)return table;
   return {...applyAppearancePreset(table,preset,{row:0,column:0},{row:0,column:0}),publicationTableStyle:name};
 }
@@ -141,7 +160,9 @@ export function detachPublicationTableStyle(table:OmiTableBlockData):OmiTableBlo
 export function replacePublicationTablePreset(catalog:PublicationTableStyles,preset:TableAppearancePreset):PublicationTableStyles|undefined{
   const valid=normalizeAppearancePreset(preset);
   if(!valid||!catalog.items.some(p=>p.kind===valid.kind&&p.name===valid.name))return undefined;
-  return {...catalog,items:catalog.items.map(p=>p.name===valid.name?valid:p)};
+  const next={...catalog,items:catalog.items.map(p=>p.name===valid.name?valid:p)};
+  if(valid.kind==='table'&&!resolveTablePreset(next.items,valid.name))return undefined;
+  return next;
 }
 function sameFormat(a:unknown,b:unknown):boolean{
   return JSON.stringify(a)===JSON.stringify(b);
@@ -152,15 +173,40 @@ function sameFormat(a:unknown,b:unknown):boolean{
 export function refreshPublicationTableStyle(table:OmiTableBlockData,previous:PublicationTableStyles|undefined,next:PublicationTableStyles|undefined):OmiTableBlockData{
   const name=table.publicationTableStyle;
   if(!name)return table;
-  const old=normalizePublicationTableStyles(previous)?.items.find(p=>p.kind==='table'&&p.name===name);
-  const current=normalizePublicationTableStyles(next)?.items.find(p=>p.kind==='table'&&p.name===name);
+  const old=resolvePublicationTablePreset(previous,name);
+  const current=resolvePublicationTablePreset(next,name);
   if(!current||current.kind!=='table')return detachPublicationTableStyle(table);
   if(sameFormat(old,current))return table;
   if(!old||old.kind!=='table')return bindPublicationTableStyle(table,next,name);
   return materializeInheritedGeometry(table,table,old,current);
 }
-function regionFormat(preset:TableStylePreset,row:number,headers:number):OmiTableCellFormat{
-  return normalizePresetFormat(row<headers?preset.header:preset.alternate&&(row-headers)%2===1?preset.alternate:preset.body,false);
+/** Resolve sparse child patches without mutating the portable definitions. */
+function resolveTablePreset(items:readonly TableAppearancePreset[],name:string,seen=new Set<string>()):TableStylePreset|undefined{
+  if(seen.has(name)||seen.size>=MAX_TABLE_PRESETS)return undefined;
+  const preset=items.find(p=>p.kind==='table'&&p.name===name);
+  if(!preset||preset.kind!=='table')return undefined;
+  if(!preset.basedOn)return preset;
+  const parent=resolveTablePreset(items,preset.basedOn,new Set([...seen,name]));
+  if(!parent)return undefined;
+  const result:TableStylePreset={kind:'table',name,header:{...parent.header,...preset.header},body:{...parent.body,...preset.body}};
+  for(const region of OPTIONAL_REGIONS){
+    if(parent[region]||preset[region])result[region]={...parent[region],...preset[region]};
+  }
+  return result;
+}
+export function resolvePublicationTablePreset(catalog:PublicationTableStyles|undefined,name:string):TableStylePreset|undefined{
+  return resolveTablePreset(normalizePublicationTableStyles(catalog)?.items??[],name);
+}
+export function derivePublicationTablePreset(catalog:PublicationTableStyles,name:string,basedOn:string):PublicationTableStyles|undefined{
+  return putPublicationTablePreset(catalog,{kind:'table',name,basedOn,header:{},body:{}});
+}
+/** Header wins over body regions. Within body: base, band, first column,
+ * last column, summary (last body row), then named cell/direct overrides. */
+function regionFormat(preset:TableStylePreset,row:number,headers:number,column:number,rows:number,columns:number):OmiTableCellFormat{
+  if(row<headers)return normalizePresetFormat(preset.header,false);
+  // Legacy alternate formats replace the body; extended regions overlay it.
+  const base=preset.alternate&&(row-headers)%2===1?preset.alternate:preset.body;
+  return normalizePresetFormat({...base,...(column===0?preset.firstColumn:{}),...(column===columns-1?preset.lastColumn:{}),...(row===rows-1?preset.summary:{})},false);
 }
 /** Map old visible anchors to their new coordinates; new anchors inherit the
  * new region, while direct appearance differences and text direction travel
@@ -178,9 +224,9 @@ function materializeInheritedGeometry(previous:OmiTableBlockData,next:OmiTableBl
     const oldKey=source.row+':'+source.column;
     const existingAnchor=previous.cells[source.row]?.[source.column]!==undefined&&!oldLayout.covered(source.row,source.column);
     const orientation=tableCellFormat(formats,row,column);
-    const format:OmiTableCellFormat={textRotation:orientation.textRotation,textDirection:orientation.textDirection,...regionFormat(current,row,headers)};
+    const format:OmiTableCellFormat={textRotation:orientation.textRotation,textDirection:orientation.textDirection,...regionFormat(current,row,headers,column,next.cells.length,next.cells[row]?.length??0)};
     if(existingAnchor&&previous.cellFormats?.[oldKey]){
-      const baseline=regionFormat(old,source.row,oldHeaders);
+      const baseline=regionFormat(old,source.row,oldHeaders,source.column,previous.cells.length,previous.cells[source.row]?.length??0);
       const existing=normalizePresetFormat(previous.cellFormats[oldKey],false);
       for(const field of fields){
         if(!sameFormat(existing[field],baseline[field])){
@@ -197,7 +243,7 @@ function materializeInheritedGeometry(previous:OmiTableBlockData,next:OmiTableBl
  * coordinates back to the old matrix (identity for append/remove/split). */
 export function inheritPublicationTableGeometry(previous:OmiTableBlockData,next:OmiTableBlockData,catalog:PublicationTableStyles|undefined,sourceAt?:(p:TableCellPosition)=>TableCellPosition):OmiTableBlockData{
   if(!next.publicationTableStyle||previous.publicationTableStyle!==next.publicationTableStyle)return next;
-  const preset=normalizePublicationTableStyles(catalog)?.items.find(p=>p.kind==='table'&&p.name===next.publicationTableStyle);
+  const preset=resolvePublicationTablePreset(catalog,next.publicationTableStyle);
   return preset?.kind==='table'?materializeInheritedGeometry(previous,next,preset,preset,sourceAt):next;
 }
 /** Rich cells store nested tables in their canonical JSON documents. Update
@@ -276,7 +322,7 @@ export function selectedPublicationCellStyles(table:OmiTableBlockData,start:Tabl
  * unbound. Table presets do not own rotation or writing direction. */
 export function resetInheritedCellAppearance(table:OmiTableBlockData,catalog:PublicationTableStyles|undefined,start:TableCellPosition,end:TableCellPosition):OmiTableBlockData{
   const items=normalizePublicationTableStyles(catalog)?.items??[];
-  const preset=items.find(p=>p.kind==='table'&&p.name===table.publicationTableStyle);
+  const preset=table.publicationTableStyle?resolvePublicationTablePreset(catalog,table.publicationTableStyle):undefined;
   const headers=tableHeaderRows(table.cells,table.headerRows);
   const formats=pruneTableCellFormats(table.cells,table.cellFormats);
   for(const {row,column} of tableRangeAnchors(table.cells,start,end,table.cellMerges,table.headerRows)){
@@ -285,7 +331,7 @@ export function resetInheritedCellAppearance(table:OmiTableBlockData,catalog:Pub
     if(cell?.kind==='cell')formats[key]=normalizePresetFormat(cell.format,true);
     else if(preset?.kind==='table'){
       const existing=tableCellFormat(formats,row,column);
-      formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...regionFormat(preset,row,headers)};
+      formats[key]={textRotation:existing.textRotation,textDirection:existing.textDirection,...regionFormat(preset,row,headers,column,table.cells.length,table.cells[row]?.length??0)};
     }
   }
   return sameFormat(formats,table.cellFormats??{})?table:{...table,cellFormats:formats};
