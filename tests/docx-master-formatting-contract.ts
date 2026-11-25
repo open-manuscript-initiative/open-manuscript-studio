@@ -479,20 +479,19 @@ function wordGap(id: string): string | undefined {
   if (paragraphFormatCases[id]) return undefined;
   if (id.startsWith('P')) return 'Native paragraph layout properties are not round-tripped yet';
   // S01/S02 native style assertions pass; S01 model retention is tracked separately.
-  if (id.startsWith('L')) return 'Style-based native list numbering is not round-tripped yet';
-  if (id === 'N05' || id === 'N06') return 'Right-to-left Word run property is not round-tripped yet';
+  // L01–L05 and N05–N06 native assertions passed the integrated #1033 full build.
   // F01/F02 native note color is now a mandatory regression contract.
   if (id === 'T01') return undefined;
   if (['I01', 'E01'].includes(id)) return 'DOCX publication exporter currently emits a descriptive text fallback';
-  if (['X01', 'X02', 'X03', 'X04'].includes(id)) return 'Native bookmark, field, hyperlink or section metadata is not round-tripped yet';
+  if (id === 'X02') return 'Native REF field is not round-tripped in the master specimen yet';
   return undefined;
 }
 function modelGap(id: string): string | undefined {
   if (id === 'R01' || id === 'R02') return 'Word review metadata is not imported as editable OMI review objects yet';
-  if (id.startsWith('L')) return 'Style-based numbering is currently flattened on import';
+  // L01–L05 model retention is now mandatory.
   // S01 checks the portable source style bundle, not the unrelated publisher style ID.
   if (id === 'X02') return 'REF fields are currently flattened on import';
-  // X03 model retention passes; the native DOCX export assertion remains open.
+  // X01, X03 and X04 native assertions are mandatory after #1033.
   return undefined;
 }
 function todo(reason: string | undefined): string | boolean { return strict ? false : reason ?? false; }
