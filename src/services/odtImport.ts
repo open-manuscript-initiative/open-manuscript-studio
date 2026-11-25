@@ -125,12 +125,14 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
           // Notes and nested tables retain the existing plain fallback rather
           // than introducing orphan annotation anchors into cell content.
           const supported=!cell.getElementsByTagNameNS('*','note').length&&!cell.getElementsByTagNameNS('*','table').length;
-          const doc:NoteJsonNode={type:'doc',content:supported?paragraphs.map(p=>{
+          const doc:NoteJsonNode={type:'doc',content:supported?Array.from(cell.children).flatMap((p):NoteJsonNode[]=>{
+            if(p.localName==='list') return parseOdtList(p,listStyleTypes.get(p.getAttribute('text:style-name')??'')??false,'',[],createEmptyDocxImportStats(),provenance,[],listStyleTypes,textStyles) as NoteJsonNode[];
+            if(p.localName!=='p'&&p.localName!=='h') return [];
             const attrs=normalizeCellParagraphAttrs(odtParagraphAttrs(p.getAttribute('text:style-name')??'',textStyles).attrs);
             if(attrs.omiAlign===format.horizontalAlign) delete attrs.omiAlign;
-            return {type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseInlineChildren(p,'',[],createEmptyDocxImportStats(),provenance,[],textStyles,listStyleTypes) as NoteJsonNode[]};
+            return [{type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:parseInlineChildren(p,'',[],createEmptyDocxImportStats(),provenance,[],textStyles,listStyleTypes) as NoteJsonNode[]}];
           }):[]};
-          const rich=supported&&!!doc.content?.length&&doc.content.some(p=>p.attrs||doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
+          const rich=supported&&!!doc.content?.length&&doc.content.some(p=>p.type!=='paragraph'||p.attrs||doc.content!.length>1||p.content?.some(n=>n.marks?.length||n.type!=='text'));
           if(rich) cellContent[`${rows.length}:${col}`]=JSON.stringify(doc);
           values.push(rich?tableCellPlainText(doc):paragraphs.length?paragraphs.map(p=>plainText(p)).join('\n'):plainText(cell).trim());
         }
