@@ -104,7 +104,7 @@ import { CrossReferencePicker } from './CrossReferencePicker';
 import { NoteEditorCard } from './NoteEditorCard';
 import { ProofreadingSuggestionCard } from './ProofreadingSuggestionCard';
 import { RichTextToolbar } from './RichTextToolbar';
-import { useFormattingEditor } from '../editor/useFormattingEditor';
+import { useFormattingEditor, useFormattingStore } from '../editor/useFormattingEditor';
 import { SelectionActionToolbar } from './SelectionActionToolbar';
 import { SelectionIntegrationDialog } from './SelectionIntegrationDialog';
 
@@ -623,7 +623,9 @@ function BlockEditorComponent({
     const incomingDocument = parseStoredContent(content);
     if (documentsAreEqual(editor.getJSON(), incomingDocument)) return;
 
-    if (editor.isFocused) {
+    const formattingActive = useFormattingStore.getState().target?.editor === editor
+      && Boolean(document.activeElement?.closest('[data-editor-formatting-controls], .omi-rich-text-toolbar'));
+    if (editor.isFocused || formattingActive) {
       const { from, to } = editor.state.selection;
       editor
         .chain()
