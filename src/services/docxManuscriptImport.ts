@@ -904,10 +904,21 @@ function parseParagraphInline(
 
     if (element.localName === 'hyperlink') {
       const relationshipId = attributeByLocalName(element, 'id');
-      const target = relationshipId ? relationships.get(relationshipId)?.target : undefined;
-      const href = normalizeExternalHref(target);
+      const relationship=relationshipId?relationships.get(relationshipId):undefined;
+      const target=relationship?.targetMode?.toLowerCase()==='external'&&relationship.type?.endsWith('/hyperlink')?relationship.target:undefined;
+      const href=normalizeExternalHref(target);
+      const anchor=attributeByLocalName(element,'anchor');
+      if(!relationshipId&&anchor&&/^[_A-Za-z][_A-Za-z0-9]{0,39}$/.test(anchor)&&context.wordReferences&&!field){
+        const label=descendantsByLocalName(element,'t').map(t=>t.textContent??'').join('');
+        if(label.length<=4096&&label){
+          const id='xref-'+crypto.randomUUID(),anchorId='anchor-'+crypto.randomUUID();
+          context.wordReferences.push({id,anchorId,blockId:context.blockId,name:anchor,field:{kind:'HYPERLINK',cachedLabel:label}});
+          output.push({type:'omiCrossReference',attrs:{crossReferenceId:id,anchorId,label,unresolved:false}});
+          return;
+        }
+      }
       const marks = href
-        ? mergeMarks(inheritedMarks, [{ type: 'omiLink', attrs: { href } }])
+        ? mergeMarks(inheritedMarks, [{ type: 'omiLink', attrs: { href,...(attributeByLocalName(element,'tooltip')?{title:attributeByLocalName(element,'tooltip')}: {}) } }])
         : inheritedMarks;
       if (href) context.stats.links += 1;
       for (const child of Array.from(element.children)) visitElement(child, marks);
