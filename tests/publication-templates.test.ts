@@ -350,6 +350,7 @@ test('editing the working publication catalog updates bound tables in the portab
     const block=createTableBlock([['Header'],['Body']],{headerRows:1});
     assert.ok(block.visual?.kind==='table');
     block.visual=bindPublicationTableStyle(block.visual,initial.tableStyles,'banded');
+    useStudioStore.getState().addSection();
     const sectionId=useStudioStore.getState().manuscript.sections[0]!.id;
     assert.equal(stageInsertBlocks(sectionId,0,[block]),true);
     const changed={...initial,tableStyles:normalizePublicationTableStyles({items:[{...BUILTIN_TABLE_STYLES.banded,header:{backgroundColor:'#123456'}}],defaultTableStyle:'banded'})};
