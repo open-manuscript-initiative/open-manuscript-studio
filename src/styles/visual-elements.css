@@ -376,6 +376,7 @@
 .omi-table-editor .omi-table-cell-text { padding: .48rem .55rem; }
 .omi-table-editor textarea { text-align: start; }
 .omi-table-editor [data-cell-selected="true"] { box-shadow: inset 0 0 0 2px rgba(76, 110, 245, .35); }
+.omi-table-editor [data-cell-range="true"] { outline: 2px solid #4c6ef5; outline-offset: -2px; }
 .omi-table-cell-formatting { margin-top: .65rem; font: .8rem system-ui; }
 .omi-table-cell-formatting summary { cursor: pointer; }
 .omi-table-cell-formatting-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .5rem; margin-top: .5rem; }
