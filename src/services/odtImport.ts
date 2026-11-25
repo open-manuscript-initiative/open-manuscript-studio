@@ -9,7 +9,7 @@ import { createImageBlock, createTableBlock } from '../model/visualBlocks';
 import { noteBodyPlainText, type NoteJsonNode } from '../model/noteRichText';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import { withParentSectionId } from '../model/sectionStructure';
-import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge } from '../types/omi';
+import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection, OmiTableCellMerge, OmiTableRowSplitPolicy } from '../types/omi';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 import { createEmptyDocxImportStats, mergeDetectedAuthors, parseDetectedAuthors, type DocxImportWarning } from '../model/docxImport';
 
@@ -73,6 +73,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
     if (child.localName === 'table') {
       const rows: string[][] = [];
       const merges: OmiTableCellMerge[] = [];
+      const rowSplitOverrides: Record<string,OmiTableRowSplitPolicy> = {};
       let headerRows=0, bodyStarted=false;
       const rowElements=Array.from(child.getElementsByTagNameNS('*','table-row')).filter(row=>{
         let owner=row.parentNode;
@@ -89,6 +90,18 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
           values.push(plainText(cell).trim());
         }
         if(!values.length) continue;
+        // Resolve named row styles, including inherited styles, without looping on malformed cycles.
+        const visited=new Set<string>();
+        let name=row.getAttribute('table:style-name')??'';
+        while(name&&!visited.has(name)){
+          visited.add(name);
+          const style=textStyles.get(name);
+          if(!style||style.getAttribute('style:family')!=='table-row') break;
+          const properties=Array.from(style.children).find(node=>node.localName==='table-row-properties');
+          const value=properties?.getAttribute('fo:keep-together');
+          if(value==='always'||value==='auto'){rowSplitOverrides[String(rows.length)]=value==='always'?'keep':'allow';break;}
+          name=style.getAttribute('style:parent-style-name')??'';
+        }
         if(!bodyStarted && (row.parentNode as XmlElement | null)?.localName==='table-header-rows') headerRows++; else bodyStarted=true;
         rows.push(values);
       }
@@ -98,7 +111,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
         const cells=rows.map(row=>Array.from({length:width},(_,c)=>row[c]??''));
         const cellMerges=tableMergeLayout(cells,merges,headerRows).merges;
         if(cellMerges.length!==merges.length) warnings.push({code:'merged-table-cells',severity:'warning',message:'Some ODT cell merges could not be preserved without hiding data.'});
-        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges})); stats.tables+=1;
+        ensureSection(sections).blocks.push(createTableBlock(cells,{provenance,headerRows,cellMerges,rowSplitDefault:'allow',rowSplitOverrides})); stats.tables+=1;
       }
       frontMatter = false;
       continue;
