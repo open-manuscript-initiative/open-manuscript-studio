@@ -44,6 +44,7 @@ export type OmiChangeOperation =
   | 'section.remove'
   | 'section.restore'
   | 'block.content.set'
+  | 'block.update'
   | 'block.paragraph-style.set'
   | 'block.remove'
   | 'block.restore'
