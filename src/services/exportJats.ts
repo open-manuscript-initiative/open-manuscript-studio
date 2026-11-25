@@ -17,7 +17,7 @@ import { renderBibliography, renderCitationCluster } from '../model/cslRendering
 import { getBibliographyRecords } from '../model/citations';
 import { getManuscriptFundingStatement } from '../model/semanticFields';
 import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText';
-import { buildNoteNumberMap, getNoteKind } from '../model/notes';
+import { buildNoteLabelMap, getNoteKind } from '../model/notes';
 import { renderLatexMath } from '../model/equationRendering';
 import {
   buildPublicationRenderingContext,
@@ -1087,12 +1087,7 @@ function xmlIdForTarget(target: OmiCrossReferenceTarget): string {
 }
 
 function collectNoteLabels(manuscript: OmiManuscript, includeLocalNotes: boolean): Map<string, string> {
-  return new Map(
-    [...buildNoteNumberMap(manuscript, undefined, { includeLocalNotes })].map(([noteId, number]) => [
-      noteId,
-      String(number),
-    ]),
-  );
+  return buildNoteLabelMap(manuscript,undefined,{includeLocalNotes});
 }
 
 function parseStructuredContent(content: string): JsonNode | undefined {
