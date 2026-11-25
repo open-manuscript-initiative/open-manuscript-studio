@@ -1070,3 +1070,27 @@ test('solid cell shading and alignment survive native Word and ODT roundtrips', 
   assert.match(odtXml,/fo:text-align="justify"/);
   inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'cell-appearance.odt'))).sections);
 });
+
+test('direct physical cell borders and margins survive DOCX and ODT reopening', async () => {
+  const source=makeDocx('<w:p><w:r><w:t>Cell edges</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="4" w:color="AABBCC"/><w:right w:val="nil"/><w:bottom w:val="dashed" w:sz="8" w:color="112233"/></w:tcBorders><w:tcMar><w:left w:w="63" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:r><w:t>Value</w:t></w:r></w:p></w:tc></w:tr></w:tbl>');
+  const plan=await parseDocxForStudio(source);
+  const inspect=(sections:typeof plan.sections)=>{
+    const table=sections.flatMap(s=>s.blocks).map(b=>b.visual).find(v=>v?.kind==='table');
+    assert.ok(table?.kind==='table');
+    assert.deepEqual(table.cellFormats?.['0:0']?.borders,{top:{style:'solid',widthPt:0.5,color:'#AABBCC'},right:{style:'none'},bottom:{style:'dashed',widthPt:1,color:'#112233'}});
+    assert.deepEqual(table.cellFormats?.['0:0']?.paddingPt,{right:0,left:3.15});
+  };
+  inspect(plan.sections);
+  const manuscript={...createBlankManuscript({kind:'study',locale:'en',title:'Edges'}),sections:plan.sections};
+  const docx=buildDocxExport(manuscript);
+  const docxXml=readZipParts(docx.bytes).get('word/document.xml')!.toString('utf8');
+  assert.match(docxXml,/<w:top w:val="single" w:sz="4" w:color="AABBCC"\/>/);
+  assert.match(docxXml,/<w:right w:val="nil"\/>/);
+  assert.match(docxXml,/<w:left w:w="63" w:type="dxa"\/>/);
+  inspect((await parseDocxForStudio(new File([new Uint8Array(docx.bytes)],'edges.docx'))).sections);
+  const odt=buildOdtExport(manuscript);
+  const odtXml=readZipParts(odt.bytes).get('content.xml')!.toString('utf8');
+  assert.match(odtXml,/fo:border-top="0.5pt solid #AABBCC"/);
+  assert.match(odtXml,/fo:padding-right="0pt"/);
+  inspect((await parseOdtForStudio(new File([new Uint8Array(odt.bytes)],'edges.odt'))).sections);
+});
