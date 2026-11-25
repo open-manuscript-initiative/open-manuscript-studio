@@ -487,3 +487,29 @@ test('first and last columns and summary row cascade and follow geometry',async(
   assert.equal(grown.cellFormats?.['3:2']?.backgroundColor,'#444444');
   assert.equal(grown.cellFormats?.['3:0']?.horizontalAlign,'left');
 });
+
+test('conditional table formatting follows cell values and respects named cell and direct overrides',async()=>{
+  const {bindPublicationTableStyle,bindPublicationCellStyle,inheritPublicationTableGeometry,normalizePublicationTableStyles,refreshPublicationTableTree,replacePublicationTablePreset,validatePublicationTableStyles,derivePublicationTablePreset}=await import('../src/model/tableAppearancePresets.ts');
+  const catalog=normalizePublicationTableStyles({items:[{kind:'table',name:'Values',header:{backgroundColor:'#111111'},body:{backgroundColor:'#FFFFFF'},conditions:[{operator:'lt',value:'0',format:{backgroundColor:'#FF0000'}},{operator:'lte',value:'-10',format:{backgroundColor:'#AA0000'}},{operator:'empty',format:{backgroundColor:'#EEEEEE'}}]},{kind:'cell',name:'Manual',format:{backgroundColor:'#123456'}}]})!;
+  validatePublicationTableStyles(catalog);
+  const child=derivePublicationTablePreset(catalog,'Child','Values')!;
+  const table=bindPublicationTableStyle({kind:'table',headerRows:1,cells:[['-15',''],['-2,5','-15'],['','text']]},child,'Child');
+  assert.equal(table.cellFormats?.['0:0']?.backgroundColor,'#111111');
+  assert.equal(table.cellFormats?.['1:0']?.backgroundColor,'#FF0000');
+  assert.equal(table.cellFormats?.['1:1']?.backgroundColor,'#AA0000');
+  assert.equal(table.cellFormats?.['2:0']?.backgroundColor,'#EEEEEE');
+  const changed=inheritPublicationTableGeometry(table,{...table,cells:[['-15',''],['2','-15'],['','text']]},child);
+  assert.equal(changed.cellFormats?.['1:0']?.backgroundColor,'#FFFFFF');
+  const direct={...changed,cellFormats:{...changed.cellFormats,'1:0':{...changed.cellFormats?.['1:0'],backgroundColor:'#ABCDEF'}}};
+  const edited=inheritPublicationTableGeometry(direct,{...direct,cells:[['-15',''],['-2','-15'],['','text']]},child);
+  assert.equal(edited.cellFormats?.['1:0']?.backgroundColor,'#ABCDEF');
+  const named=bindPublicationCellStyle(edited,child,'Manual',{row:1,column:1},{row:1,column:1});
+  const parent=child.items.find(p=>p.name==='Values')!;
+  assert.ok(parent.kind==='table');
+  const next=replacePublicationTablePreset(child,{...parent,conditions:[]})!;
+  const refreshed=refreshPublicationTableTree(named,child,next);
+  assert.equal(refreshed.cellFormats?.['1:1']?.backgroundColor,'#123456');
+  assert.equal(refreshed.cellFormats?.['2:0']?.backgroundColor,'#FFFFFF');
+  assert.equal(refreshed.cellFormats?.['1:0']?.backgroundColor,'#ABCDEF');
+  assert.throws(()=>validatePublicationTableStyles({items:[{kind:'table',name:'Bad',header:{},body:{},conditions:[{operator:'gt',value:'not a number',format:{backgroundColor:'#123456'}}]}]}));
+});
