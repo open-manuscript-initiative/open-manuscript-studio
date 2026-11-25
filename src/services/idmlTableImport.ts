@@ -98,7 +98,7 @@ function parseCellBlocks(cell:XmlElement,context:Context,depth:number):NoteJsonN
     const raw=properties(element),p={...resolvedStyle(raw.AppliedParagraphStyle,context),...raw};
     const attrs=paragraphAttrs(p);
     let inline:NoteJsonNode[]=[];
-    const flush=(force=false)=>{if(inline.length||force)result.push({node:{type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:inline},properties:p});inline=[];};
+    const flush=(force=false)=>{if(inline.length||force)result.push({node:{type:'paragraph',...(Object.keys(attrs).length?{attrs}:{}),content:inline},properties:p,continuationReference:raw.BulletsAndNumberingListType==='NoList'?raw.AppliedNumberingList:undefined});inline=[];};
     let ended=false;
     function read(el:XmlElement,inherited:Props):void{
       const name=el.localName;
