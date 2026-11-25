@@ -180,3 +180,26 @@ test('cell edges preserve explicit none, zero padding and safe physical dimensio
     assert.match(html,/<td>B<\/td>/);
   }
 });
+
+test('row heights retain native semantics and keep browser content visible', async () => {
+  const {normalizeTableRowHeight,tableRowHeight,setTableRowHeight,pruneTableRowHeights,tableRowHeightStyle}=await import('../src/model/tableLayout.ts');
+  assert.deepEqual(normalizeTableRowHeight({mode:'exact',heightPt:20.126}),{mode:'exact',heightPt:20.15});
+  for(const height of [undefined,{mode:'exact',heightPt:0},{mode:'minimum',heightPt:Infinity},{mode:'invalid',heightPt:12}]) assert.deepEqual(normalizeTableRowHeight(height),{mode:'auto'});
+  const manuscript=createVersionedTestManuscript();
+  const block=createTableBlock([['A'],['Long text that must remain visible'],['C']],{headerRows:0,rowHeights:{'0':{mode:'minimum',heightPt:24},'1':{mode:'exact',heightPt:6}}},'row-height');
+  const table=block.visual;
+  assert.ok(table?.kind==='table');
+  assert.deepEqual(tableRowHeight(table,2),{mode:'auto'});
+  assert.deepEqual(tableRowHeightStyle(tableRowHeight(table,1)),{height:'6pt'});
+  assert.deepEqual(setTableRowHeight(table,0,{mode:'auto'}),{'1':{mode:'exact',heightPt:6}});
+  assert.deepEqual(pruneTableRowHeights(table.cells.slice(0,1),table.rowHeights),{'0':{mode:'minimum',heightPt:24}});
+  manuscript.sections[0]!.blocks.push(block);
+  const reopened=parseOmiJson(serializeOmiJson(manuscript));
+  const v=reopened.sections[0]!.blocks.at(-1)?.visual;
+  assert.ok(v?.kind==='table');
+  assert.deepEqual(v.rowHeights,table.rowHeights);
+  for(const html of [renderHtmlArticle(reopened).html,buildPdfPrintDocument(reopened)]){
+    assert.match(html,/<tr data-omi-row-height="minimum" style="height:24pt">/);
+    assert.match(html,/<tr data-omi-row-height="exact" style="height:6pt"><td>Long text that must remain visible<\/td>/);
+  }
+});
