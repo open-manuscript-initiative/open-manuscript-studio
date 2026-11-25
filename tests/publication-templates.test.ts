@@ -310,3 +310,29 @@ test('portable publication template retains table and cell style catalog and app
     await assert.rejects(validatePublicationTemplate(bad),/Invalid publication table styles/);
   }
 });
+
+test('publication table bindings refresh named styles without touching unrelated tables or direct overrides',async()=>{
+  const {BUILTIN_TABLE_STYLES,bindPublicationTableStyle,detachPublicationTableStyle,refreshPublicationTableStyle,replacePublicationTablePreset,removePublicationTablePreset}=await import('../src/model/tableAppearancePresets.ts');
+  const {createTableBlock}=await import('../src/model/visualBlocks.ts');
+  const block=createTableBlock([['Header','B'],['Body','C'],['Alternate','D']],{headerRows:1});
+  assert.ok(block.visual?.kind==='table');
+  const original={items:[BUILTIN_TABLE_STYLES.banded],defaultTableStyle:'banded'};
+  const bound=bindPublicationTableStyle(block.visual,original,'banded');
+  assert.equal(bound.publicationTableStyle,'banded');
+  const overridden={...bound,cellFormats:{...bound.cellFormats,'1:0':{...bound.cellFormats?.['1:0'],backgroundColor:'#ABCDEF',textRotation:90 as const}}};
+  const next=replacePublicationTablePreset(original,{...BUILTIN_TABLE_STYLES.banded,header:{backgroundColor:'#123456'},body:{backgroundColor:'#654321'},alternate:{backgroundColor:'#AABBCC'}});
+  assert.ok(next);
+  const refreshed=refreshPublicationTableStyle(overridden,original,next);
+  assert.equal(refreshed.cellFormats?.['0:0']?.backgroundColor,'#123456');
+  assert.equal(refreshed.cellFormats?.['1:1']?.backgroundColor,'#654321');
+  assert.equal(refreshed.cellFormats?.['1:0']?.backgroundColor,'#ABCDEF');
+  assert.equal(refreshed.cellFormats?.['1:0']?.textRotation,90);
+  assert.equal(refreshed.cellFormats?.['2:1']?.backgroundColor,'#AABBCC');
+  assert.equal(refreshed.cells,bound.cells);
+  assert.equal(refreshPublicationTableStyle(block.visual,original,next),block.visual);
+  assert.equal(refreshPublicationTableStyle(bound,original,original),bound);
+  const detached=detachPublicationTableStyle(refreshed);
+  assert.equal(detached.publicationTableStyle,undefined);
+  assert.equal(detached.cellFormats,refreshed.cellFormats);
+  assert.equal(refreshPublicationTableStyle(refreshed,next,removePublicationTablePreset(next,'banded')).publicationTableStyle,undefined);
+});
