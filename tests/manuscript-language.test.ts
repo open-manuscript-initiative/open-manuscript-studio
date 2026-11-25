@@ -9,6 +9,7 @@ import {
   isValidManuscriptLanguageTag,
   normalizeManuscriptLanguageTag,
 } from '../src/model/manuscriptLanguage.ts';
+import { normalizeContentLanguages } from '../src/languages/languagePreferences.ts';
 
 test('contains the complete ISO 639-1 language code set without duplicates', () => {
   assert.equal(ISO_639_1_LANGUAGE_CODES.length, 184);
@@ -79,4 +80,13 @@ test('manuscript language options do not shrink with a non-original UI locale', 
   for (const code of EU_OFFICIAL_MANUSCRIPT_LANGUAGE_CODES) {
     assert.ok(tags.has(code));
   }
+});
+
+test('normalizes saved manuscript and metadata language preferences without losing distinct regions', () => {
+  assert.deepEqual(normalizeContentLanguages(['hu_HU', 'hu-HU', 'HU_hu', ' hu ', 'de_DE', 'de-DE', 'sr_Latn_RS', 'not_a_language', null]), [
+    'hu-HU', 'hu', 'de-DE', 'sr-Latn-RS',
+  ]);
+  assert.deepEqual(normalizeContentLanguages(['en_GB', 'en_US', 'en']), ['en-GB', 'en-US', 'en']);
+  assert.deepEqual(normalizeContentLanguages(['', '***', null]), ['en', 'hu', 'de']);
+  assert.deepEqual(normalizeContentLanguages(undefined), ['en', 'hu', 'de']);
 });

@@ -3,6 +3,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { normalizeManuscriptLanguageTag } from '../model/manuscriptLanguage';
 
 export interface ContentLanguagePreferences {
   manuscriptLanguages: string[];
@@ -16,15 +17,15 @@ const METADATA_LANGUAGES_KEY =
   'omi-studio-enabled-metadata-languages';
 const CHANGE_EVENT = 'omi-studio-content-language-preferences-change';
 
-function normalizeLanguages(value: unknown): string[] {
+export function normalizeContentLanguages(value: unknown): string[] {
   if (!Array.isArray(value)) return [...DEFAULT_LANGUAGES];
 
   const unique = [
     ...new Set(
       value
         .filter((item): item is string => typeof item === 'string')
-        .map((item) => item.trim())
-        .filter(Boolean),
+        .map(normalizeManuscriptLanguageTag)
+        .filter((item): item is string => item !== null),
     ),
   ];
 
@@ -38,7 +39,7 @@ function readStoredLanguages(key: string): string[] {
   if (!raw) return [...DEFAULT_LANGUAGES];
 
   try {
-    return normalizeLanguages(JSON.parse(raw));
+    return normalizeContentLanguages(JSON.parse(raw));
   } catch {
     return [...DEFAULT_LANGUAGES];
   }
@@ -56,7 +57,7 @@ function writeLanguages(key: string, languages: readonly string[]): void {
 
   window.localStorage.setItem(
     key,
-    JSON.stringify(normalizeLanguages([...languages])),
+    JSON.stringify(normalizeContentLanguages([...languages])),
   );
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }

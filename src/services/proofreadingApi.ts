@@ -1,3 +1,4 @@
+import { normalizeManuscriptLanguageTag } from '../model/manuscriptLanguage';
 import { getStudioIntegrationApiBaseUrl } from './studioServer';
 const API_BASE_URL = getStudioIntegrationApiBaseUrl();
 
@@ -34,7 +35,7 @@ export async function checkProofreading(input: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      language: input.language,
+      language: normalizeManuscriptLanguageTag(input.language) ?? 'und',
       text: input.text,
       blockId: input.blockId,
     }),

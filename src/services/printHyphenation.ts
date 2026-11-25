@@ -1,3 +1,5 @@
+import { normalizeManuscriptLanguageTag } from '../model/manuscriptLanguage';
+
 type HyphenateSync = (
   text: string,
   options?: { minWordLength?: number; hyphenChar?: string },
@@ -264,9 +266,10 @@ async function loadHyphenator(
 }
 
 function parseLocale(languageTag: string | null | undefined): Intl.Locale | null {
-  if (!languageTag) return null;
+  const canonical = normalizeManuscriptLanguageTag(languageTag ?? '');
+  if (!canonical) return null;
   try {
-    return new Intl.Locale(languageTag.trim().replaceAll('_', '-'));
+    return new Intl.Locale(canonical);
   } catch {
     return null;
   }
