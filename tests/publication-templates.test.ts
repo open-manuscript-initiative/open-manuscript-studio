@@ -641,3 +641,46 @@ test('standalone table style transfer preserves ancestry and collision-safe impo
   const full=normalizePublicationTableStyles({items:Array.from({length:50},(_,i)=>({kind:'cell',name:String(i),format:{}}))})!;
   assert.throws(()=>mergePublicationTableStyles(full,source));
 });
+
+test('property reset restores only the selected fields and reports mixed selection overrides',async()=>{
+  const {bindPublicationTableStyle,bindPublicationCellStyle,normalizePublicationTableStyles,resetInheritedCellAppearance,selectedPublicationOverrideDetails,refreshPublicationTableTree}=await import('../src/model/tableAppearancePresets.ts');
+  const {editTableRangeAppearance}=await import('../src/model/tableLayout.ts');
+  const a={row:0,column:0},b={row:0,column:1};
+  const catalog=normalizePublicationTableStyles({items:[{kind:'table',name:'T',header:{},body:{backgroundColor:'#FFFFFF',horizontalAlign:'left'},conditions:[{operator:'lt',value:'0',format:{backgroundColor:'#FF0000'}}]},{kind:'cell',name:'C',format:{backgroundColor:'#EEEEEE',horizontalAlign:'right',textRotation:90}}]})!;
+  const original=bindPublicationCellStyle(bindPublicationTableStyle({kind:'table',headerRows:0,cells:[['-1','2']]},catalog,'T'),catalog,'C',b,b);
+  const edited=editTableRangeAppearance(original,a,b,{backgroundColor:'#ABCDEF',horizontalAlign:'center',textRotation:180});
+  assert.deepEqual(selectedPublicationOverrideDetails(edited,catalog,a,b),{count:2,fields:{horizontalAlign:2,backgroundColor:2,textRotation:1}});
+  const restored=resetInheritedCellAppearance(edited,catalog,a,b,['backgroundColor']);
+  assert.equal(restored.cellFormats?.['0:0']?.backgroundColor,'#FF0000');
+  assert.equal(restored.cellFormats?.['0:1']?.backgroundColor,'#EEEEEE');
+  assert.equal(restored.cellFormats?.['0:0']?.horizontalAlign,'center');
+  assert.equal(restored.cellFormats?.['0:1']?.textRotation,180);
+  assert.deepEqual(selectedPublicationOverrideDetails(restored,catalog,a,b),{count:2,fields:{horizontalAlign:2,textRotation:1}});
+  assert.equal(restored.cells,original.cells);
+  assert.equal(restored.publicationCellStyles,original.publicationCellStyles);
+  const rotation=resetInheritedCellAppearance(restored,catalog,a,b,['textRotation']);
+  assert.equal(rotation.cellFormats?.['0:0']?.textRotation,180);
+  assert.equal(rotation.cellFormats?.['0:1']?.textRotation,90);
+  const changed=normalizePublicationTableStyles({items:[{kind:'table',name:'T',header:{},body:{backgroundColor:'#123456',horizontalAlign:'right'}},{kind:'cell',name:'C',format:{backgroundColor:'#654321',horizontalAlign:'left',textRotation:0}}]})!;
+  const refreshed=refreshPublicationTableTree(rotation,catalog,changed);
+  assert.equal(refreshed.cellFormats?.['0:0']?.backgroundColor,'#123456');
+  assert.equal(refreshed.cellFormats?.['0:1']?.backgroundColor,'#654321');
+  assert.equal(refreshed.cellFormats?.['0:0']?.horizontalAlign,'center');
+  const all=resetInheritedCellAppearance(refreshed,changed,a,b);
+  assert.equal(selectedPublicationOverrideDetails(all,changed,a,b).count,0);
+  assert.equal(all.publicationCellOverrides,undefined);
+  assert.equal(all.cellFormats?.['0:0']?.textRotation,180);
+});
+test('legacy inferred overrides can be reset by property without changing unlinked cells',async()=>{
+  const {bindPublicationTableStyle,normalizePublicationTableStyles,resetInheritedCellAppearance,selectedPublicationOverrideDetails}=await import('../src/model/tableAppearancePresets.ts');
+  const pos={row:0,column:0};
+  const catalog=normalizePublicationTableStyles({items:[{kind:'table',name:'T',header:{},body:{}}]})!;
+  const bound=bindPublicationTableStyle({kind:'table',cells:[['X']]},catalog,'T');
+  const legacy={...bound,cellFormats:{'0:0':{backgroundColor:'#123456',horizontalAlign:'right' as const}}};
+  assert.deepEqual(selectedPublicationOverrideDetails(legacy,catalog,pos,pos),{count:1,fields:{horizontalAlign:1,backgroundColor:1}});
+  const reset=resetInheritedCellAppearance(legacy,catalog,pos,pos,['backgroundColor']);
+  assert.equal(reset.cellFormats?.['0:0']?.backgroundColor,undefined);
+  assert.equal(reset.cellFormats?.['0:0']?.horizontalAlign,'right');
+  const unlinked={...legacy,publicationTableStyle:undefined};
+  assert.equal(resetInheritedCellAppearance(unlinked,catalog,pos,pos,['backgroundColor']),unlinked);
+});
