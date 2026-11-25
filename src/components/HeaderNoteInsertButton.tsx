@@ -7,7 +7,7 @@ import { useFormattingStore } from '../editor/useFormattingEditor';
 export function HeaderNoteInsertButton({className='focus-menu-button',publication=false}:{className?:string;publication?:boolean}) {
   const {t}=useTranslation();
   const target=useFormattingStore(state=>state.target);
-  const label=t('editor.addNote');
+  const label=t('editor.insertNote');
   const available=Boolean(target?.insertNote && !target.editor.isDestroyed && target.editor.isEditable
     && Boolean(target.editor.view.dom.closest('.publication-document-canvas'))===publication);
   return <button type="button" className={className+' focus-insert-note-button'} aria-label={label} title={label}
