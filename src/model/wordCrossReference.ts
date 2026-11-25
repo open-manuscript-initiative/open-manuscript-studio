@@ -1,14 +1,14 @@
 /** Explicit, bounded Word field semantics. Cached labels are display fallbacks
  * until a layout engine (for PAGEREF) or Word recalculates the field. */
 export interface WordCrossReferenceField {
-  kind:'REF'|'PAGEREF';
+  kind:'REF'|'PAGEREF'|'HYPERLINK';
   cachedLabel:string;
   hyperlink?:boolean;
 }
 export function normalizeWordCrossReferenceField(input:unknown):WordCrossReferenceField|undefined{
   if(!input||typeof input!=='object'||Array.isArray(input))return undefined;
   const v=input as Record<string,unknown>;
-  if((v.kind!=='REF'&&v.kind!=='PAGEREF')||typeof v.cachedLabel!=='string'||v.cachedLabel.length>4096||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(v.cachedLabel))return undefined;
+  if((v.kind!=='REF'&&v.kind!=='PAGEREF'&&v.kind!=='HYPERLINK')||typeof v.cachedLabel!=='string'||v.cachedLabel.length>4096||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(v.cachedLabel))return undefined;
   if(v.hyperlink!==undefined&&typeof v.hyperlink!=='boolean')return undefined;
   if(Object.keys(v).some(key=>!['kind','cachedLabel','hyperlink'].includes(key)))return undefined;
   return {kind:v.kind,cachedLabel:v.cachedLabel,...(v.hyperlink!==undefined?{hyperlink:v.hyperlink}:{})};
