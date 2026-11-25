@@ -440,3 +440,18 @@ test('named cell styles override table regions, refresh direct differences and r
   assert.equal(region.cellFormats?.['1:0']?.backgroundColor,undefined);
   assert.equal(region.cells,table.cells);
 });
+
+test('nested cell bindings are preserved by normalization and invalid coordinates are pruned',async()=>{
+  const {bindPublicationCellStyle,refreshPublicationTableTree}=await import('../src/model/tableAppearancePresets.ts');
+  const {tableCellDocument,cellNestedTable,prunePublicationCellStyles}=await import('../src/model/tableLayout.ts');
+  const pos={row:0,column:0};
+  const preset={kind:'cell' as const,name:'Note',format:{backgroundColor:'#123456'}};
+  const catalog={items:[preset]};
+  const nested=bindPublicationCellStyle({kind:'table',cells:[['N']]},catalog,'Note',pos,pos);
+  const parent={kind:'table' as const,cells:[['N']],cellContent:{'0:0':JSON.stringify({type:'doc',content:[{type:'omiCellTable',attrs:{table:nested}}]})}};
+  const refreshed=refreshPublicationTableTree(parent,catalog,{items:[{...preset,format:{backgroundColor:'#654321'}}]});
+  const cellTable=cellNestedTable(tableCellDocument(refreshed,0,0)!.content![0]!)!;
+  assert.equal(cellTable.publicationCellStyles?.['0:0'],'Note');
+  assert.equal(cellTable.cellFormats?.['0:0']?.backgroundColor,'#654321');
+  assert.deepEqual(prunePublicationCellStyles([['N']],{'0:0':'Note','0:1':'Note','1:0':'Note','00:0':'Note','0:00':'Note'}),{'0:0':'Note'});
+});
