@@ -57,7 +57,9 @@ export async function readDocxNotes(archive: WordNoteArchive): Promise<{
     if (archive.has(relsPart)) {
       for (const relationship of descendants(parseXml(await archive.text(relsPart)), 'Relationship')) {
         const id = attr(relationship, 'Id');
-        const href = normalizeExternalHref(attr(relationship, 'Target'));
+        const target=attr(relationship,'Target');
+        const type=attr(relationship,'Type');
+        const href=target&&/^(https?:|mailto:)/i.test(target.trim())&&attr(relationship,'TargetMode')?.toLowerCase()==='external'&&(!type||type.endsWith('/hyperlink'))?normalizeExternalHref(target):undefined;
         if (id && href) relationships.set(id, href);
       }
     }
@@ -92,12 +94,13 @@ export async function readDocxNotes(archive: WordNoteArchive): Promise<{
           }
           if (element.localName === 'hyperlink') {
             const href = relationships.get(attr(element, 'id') ?? '');
-            if (href) marks = mergeMarks(marks, [{ type: 'omiLink', attrs: { href } }]);
+            if (href) marks = mergeMarks(marks, [{ type: 'omiLink', attrs: { href,...(attr(element,'tooltip')?{title:attr(element,'tooltip')}:{}) } }]);
           }
           const instruction = element.localName === 'fldSimple'
             ? attr(element, 'instr')
             : [...fields].reverse().find((field) => field.result)?.instruction;
-          const fieldHref = instruction ? normalizeExternalHref(parseWordHyperlinkInstruction(instruction)) : undefined;
+          const fieldTarget=instruction?parseWordHyperlinkInstruction(instruction):undefined;
+          const fieldHref=fieldTarget&&/^(https?:|mailto:)/i.test(fieldTarget.trim())?normalizeExternalHref(fieldTarget):undefined;
           if (fieldHref) marks = mergeMarks(marks, [{ type: 'omiLink', attrs: { href: fieldHref } }]);
           if (element.localName === 't') {
             if (fields.some((field) => !field.result)) return;
