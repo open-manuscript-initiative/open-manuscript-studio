@@ -1,4 +1,4 @@
-import { tableMergeLayout, normalizeTableCellAppearance } from '../model/tableLayout';
+import { tableMergeLayout, normalizeTableCellAppearance, normalizeTableCellEdges, TABLE_CELL_SIDES } from '../model/tableLayout';
 import { normalizeListAttribute } from '../model/directListFormatting';
 import { readWordParagraphFormatting, readWordParagraphDecoration } from '../model/directParagraphFormatting';
 import { wordDirectFormatting, mergeWordDirectFormatting } from './docxDirectFormatting';
@@ -1187,7 +1187,29 @@ function parseWordTable(table: Element): {
         verticalAlign:va==='center'?'middle':va as OmiTableCellFormat['verticalAlign'],
         backgroundColor:fill && (!pattern||pattern==='clear') && !attributeByLocalName(shading!,'themeFill')?'#'+fill:undefined,
       });
-      Object.assign(format,appearance);
+      const borderProps=prop('tcBorders');
+      const marginProps=prop('tcMar');
+      const borders: NonNullable<OmiTableCellFormat['borders']>={};
+      const paddingPt: NonNullable<OmiTableCellFormat['paddingPt']>={};
+      for(const side of TABLE_CELL_SIDES){
+        const edge=borderProps && directChildrenByLocalName(borderProps,side)[0];
+        if(edge){
+          const val=attributeByLocalName(edge,'val');
+          const style=val==='single'?'solid':val==='dashSmallGap'||val==='dashed'?'dashed':val==='dotted'?'dotted':val==='double'?'double':undefined;
+          if(val==='nil'||val==='none') borders[side]={style:'none'};
+          else if(style){
+            const raw=attributeByLocalName(edge,'sz');
+            const color=attributeByLocalName(edge,'color');
+            borders[side]={style,widthPt:raw!==undefined&&raw!==''?Number(raw)/8:undefined,color:color&&color!=='auto'?'#'+color:undefined};
+          }
+        }
+        const margin=marginProps && directChildrenByLocalName(marginProps,side)[0];
+        if(margin && attributeByLocalName(margin,'type')==='dxa'){
+          const raw=attributeByLocalName(margin,'w');
+          if(raw!==undefined&&raw!=='') paddingPt[side]=Number(raw)/20;
+        }
+      }
+      Object.assign(format,appearance,normalizeTableCellEdges({borders,paddingPt}));
       if(Object.keys(format).length) cellFormats[`${rowIndex}:${columnIndex}`]=format;
       const span=prop('gridSpan');
       const rawSpan=span?Number(attributeByLocalName(span,'val')):1;
