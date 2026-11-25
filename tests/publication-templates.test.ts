@@ -455,3 +455,35 @@ test('nested cell bindings are preserved by normalization and invalid coordinate
   assert.equal(cellTable.cellFormats?.['0:0']?.backgroundColor,'#654321');
   assert.deepEqual(prunePublicationCellStyles([['N']],{'0:0':'Note','0:1':'Note','1:0':'Note','00:0':'Note','0:00':'Note'}),{'0:0':'Note'});
 });
+
+test('multi-level derived table styles resolve live parent edits and reject invalid ancestry',async()=>{
+  const {BUILTIN_TABLE_STYLES,derivePublicationTablePreset,replacePublicationTablePreset,resolvePublicationTablePreset,bindPublicationTableStyle,refreshPublicationTableTree,removePublicationTablePreset,validatePublicationTableStyles,normalizePublicationTableStyles}=await import('../src/model/tableAppearancePresets.ts');
+  const base=normalizePublicationTableStyles({items:[BUILTIN_TABLE_STYLES.grid]})!;
+  const child=derivePublicationTablePreset(base,'Child','grid')!;
+  const chain=derivePublicationTablePreset(child,'Grandchild','Child')!;
+  const changed=replacePublicationTablePreset(chain,{...BUILTIN_TABLE_STYLES.grid,header:{backgroundColor:'#123456'}})!;
+  validatePublicationTableStyles(changed);
+  assert.equal(resolvePublicationTablePreset(changed,'Grandchild')?.header.backgroundColor,'#123456');
+  const table=bindPublicationTableStyle({kind:'table',cells:[['H'],['A']],headerRows:1},chain,'Grandchild');
+  assert.equal(refreshPublicationTableTree(table,chain,changed).cellFormats?.['0:0']?.backgroundColor,'#123456');
+  assert.equal(replacePublicationTablePreset(chain,{kind:'table',name:'grid',basedOn:'Grandchild',header:{},body:{}}),undefined);
+  assert.equal(derivePublicationTablePreset(chain,'Invalid','Missing'),undefined);
+  assert.throws(()=>validatePublicationTableStyles({items:[{kind:'table',name:'Bad',basedOn:'Bad',header:{},body:{}}]}));
+  const removed=removePublicationTablePreset(changed,'grid');
+  assert.equal(resolvePublicationTablePreset(removed,'Grandchild')?.header.backgroundColor,'#123456');
+  assert.equal(resolvePublicationTablePreset(removed,'Child')?.basedOn,undefined);
+});
+test('first and last columns and summary row cascade and follow geometry',async()=>{
+  const {bindPublicationTableStyle,inheritPublicationTableGeometry,normalizePublicationTableStyles}=await import('../src/model/tableAppearancePresets.ts');
+  const catalog=normalizePublicationTableStyles({items:[{kind:'table',name:'Regions',header:{backgroundColor:'#111111'},body:{backgroundColor:'#222222'},firstColumn:{horizontalAlign:'left'},lastColumn:{horizontalAlign:'right',backgroundColor:'#333333'},summary:{backgroundColor:'#444444'}}]})!;
+  const table=bindPublicationTableStyle({kind:'table',cells:[['H','I'],['A','B'],['T','S']],headerRows:1},catalog,'Regions');
+  assert.equal(table.cellFormats?.['0:1']?.backgroundColor,'#111111');
+  assert.equal(table.cellFormats?.['1:0']?.horizontalAlign,'left');
+  assert.equal(table.cellFormats?.['1:1']?.horizontalAlign,'right');
+  assert.equal(table.cellFormats?.['2:1']?.backgroundColor,'#444444');
+  const grown=inheritPublicationTableGeometry(table,{...table,cells:[['H','I',''],['A','B',''],['T','S',''],['','','']]},catalog);
+  assert.equal(grown.cellFormats?.['2:1']?.backgroundColor,'#222222');
+  assert.equal(grown.cellFormats?.['2:2']?.backgroundColor,'#333333');
+  assert.equal(grown.cellFormats?.['3:2']?.backgroundColor,'#444444');
+  assert.equal(grown.cellFormats?.['3:0']?.horizontalAlign,'left');
+});
