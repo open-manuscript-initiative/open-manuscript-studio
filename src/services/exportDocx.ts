@@ -221,7 +221,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     if(![...indexEntriesByBlock.values()].some(entries=>entries.some(entry=>(entry.indexId??DEFAULT_INDEX_ID)===key)))continue;
     if(key!==DEFAULT_INDEX_ID&&!indexTypes.has(key))continue;
     const title=index.title?.trim()||manuscript.indexDefinitions?.find(d=>d.id===key)?.title||localizedIndexLabel(context.locale);
-    body.push(paragraph(title));
+    body.push(paragraph(title,index.source?.fieldForm==='simple'?'OMIIndexTitle':'Heading1'));
     body.push(renderWordGeneratedIndexField(context.locale,index,indexTypes.get(key)));
   }
 
@@ -239,7 +239,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
 <w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/><w:unhideWhenUsed/></w:style>
-${style('Title', 'Title', 32, true)}${style('Subtitle', 'Subtitle', 24, false)}${style('Author', 'Author', 22, false)}${noteParagraphStyle('FundingNote', 'funding note')}
+${style('OMIIndexTitle', 'OMI index title', 28, true)}${style('Title', 'Title', 32, true)}${style('Subtitle', 'Subtitle', 24, false)}${style('Author', 'Author', 22, false)}${noteParagraphStyle('FundingNote', 'funding note')}
 ${noteParagraphStyle('FootnoteText', 'footnote text')}${noteParagraphStyle('EndnoteText', 'endnote text')}
 ${characterStyle('FootnoteReference', 'footnote reference', '<w:vertAlign w:val="superscript"/>')}${characterStyle('EndnoteReference', 'endnote reference', '<w:vertAlign w:val="superscript"/>')}
 ${[1,2,3,4,5,6].map((level) => headingStyle(level)).join('')}
