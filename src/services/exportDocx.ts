@@ -89,6 +89,50 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     body.push(paragraph(`${localizedLabel(context.locale, 'keywords')}: ${context.keywords.join('; ')}`));
   }
 
+    const resolveNote = (noteId: string): WordNoteReference | undefined => {
+      const note = annotationsById.get(noteId);
+      if (!note) {
+        warnings.push(`DOCX note anchor ${noteId} has no matching OMI note.`);
+        return undefined;
+      }
+      const semanticKind = getNoteKind(note);
+      if (semanticKind === 'author-note' && localNoteLayout !== 'with-notes') {
+        referencedNoteIds.add(noteId);
+        if (localNoteLayout === 'margin') {
+          warnings.push(`DOCX margin placement for local note ${noteId} is not supported; the note is preserved inline in parentheses.`);
+        }
+        return { text: ` (${note.body})`, semantics: [] };
+      }
+      const kind = semanticKind === 'endnote' ? 'endnote' : 'footnote';
+      let id = noteReferenceIds[kind].get(noteId);
+      if (id === undefined) {
+        id = noteReferenceIds[kind].size + 1;
+        noteReferenceIds[kind].set(noteId, id);
+        referencedNoteIds.add(noteId);
+        const citationRules = manuscript.embeddedPublicationProfile?.rules.citations;
+        const precedingNotes = manuscript.annotations
+          .slice(0, manuscript.annotations.indexOf(note))
+          .filter(isNoteAnnotation);
+        const previouslyCitedTargets = [...new Set(precedingNotes.flatMap((annotation) =>
+          annotation.noteCitations?.map((citation) => citation.target) ?? [],
+        ))];
+        const noteDocument = createNoteBodyDocument(
+          note,
+          manuscript.bibliographicRecords ?? [],
+          citationRules?.noteFirstStyle ?? manuscript.citationStyle ?? 'apa-7',
+          manuscript.locale,
+          {
+            subsequentStyle: citationRules?.noteSubsequentStyle,
+            previouslyCitedTargets,
+          },
+        );
+        const noteBody = renderJsonContent(noteDocument);
+        const target = kind === 'footnote' ? footnotes : endnotes;
+        target.push({ id, body: noteBody });
+      }
+      return { kind, id };
+    };
+
   const renderSections = (sections: typeof context.sections) => {
     for (const section of sections) {
       const level = Math.min(6, section.depth + 1);
@@ -99,7 +143,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
         if (block.visual?.kind === 'table' && block.visual.cells.length && block.visual.cells.some(row=>row.length)) {
           if (indexFields) body.push(paragraph('', undefined, indexFields));
           if (block.visual.caption?.trim()) body.push(paragraph(block.visual.caption));
-          body.push(wordTable(block.visual, warnings, numbering, sourceStyles));
+          body.push(wordTable(block.visual, warnings, numbering, sourceStyles,resolveNote));
           continue;
         }
         if (block.visual) {
@@ -108,49 +152,6 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           warnings.push(`Structured ${block.visual.kind} object ${block.id} was exported as descriptive text in DOCX.`);
           continue;
         }
-        const resolveNote = (noteId: string): WordNoteReference | undefined => {
-          const note = annotationsById.get(noteId);
-          if (!note) {
-            warnings.push(`DOCX note anchor ${noteId} has no matching OMI note.`);
-            return undefined;
-          }
-          const semanticKind = getNoteKind(note);
-          if (semanticKind === 'author-note' && localNoteLayout !== 'with-notes') {
-            referencedNoteIds.add(noteId);
-            if (localNoteLayout === 'margin') {
-              warnings.push(`DOCX margin placement for local note ${noteId} is not supported; the note is preserved inline in parentheses.`);
-            }
-            return { text: ` (${note.body})`, semantics: [] };
-          }
-          const kind = semanticKind === 'endnote' ? 'endnote' : 'footnote';
-          let id = noteReferenceIds[kind].get(noteId);
-          if (id === undefined) {
-            id = noteReferenceIds[kind].size + 1;
-            noteReferenceIds[kind].set(noteId, id);
-            referencedNoteIds.add(noteId);
-            const citationRules = manuscript.embeddedPublicationProfile?.rules.citations;
-            const precedingNotes = manuscript.annotations
-              .slice(0, manuscript.annotations.indexOf(note))
-              .filter(isNoteAnnotation);
-            const previouslyCitedTargets = [...new Set(precedingNotes.flatMap((annotation) =>
-              annotation.noteCitations?.map((citation) => citation.target) ?? [],
-            ))];
-            const noteDocument = createNoteBodyDocument(
-              note,
-              manuscript.bibliographicRecords ?? [],
-              citationRules?.noteFirstStyle ?? manuscript.citationStyle ?? 'apa-7',
-              manuscript.locale,
-              {
-                subsequentStyle: citationRules?.noteSubsequentStyle,
-                previouslyCitedTargets,
-              },
-            );
-            const noteBody = renderJsonContent(noteDocument);
-            const target = kind === 'footnote' ? footnotes : endnotes;
-            target.push({ id, body: noteBody });
-          }
-          return { kind, id };
-        };
         const lists = renderWordLists(block.content, numbering, resolveNote, indexFields, sourceStyles);
         if (lists !== undefined) { body.push(lists); continue; }
         const rendered = renderWordContent(block.content, resolveNote);
@@ -300,7 +301,7 @@ function renderWordLists(content: string, numbering: WordListNumbering, resolveN
 }
 
 /** Native editable tables; the model intentionally stores plain rectangular cells. */
-function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordListNumbering,sourceStyles:SourceWordStyleRegistry,availableWidth=9026): string {
+function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordListNumbering,sourceStyles:SourceWordStyleRegistry,resolveNote:(id:string)=>WordNoteReference|undefined,availableWidth=9026): string {
   const widths = tableColumnWidths(table.cells, table.columnWidths).map(percent=>Math.max(1,Math.round(percent*availableWidth/100)));
   const headerRows = tableHeaderRows(table.cells, table.headerRows);
   const layout = tableMergeLayout(table.cells,table.cellMerges,headerRows);
@@ -338,9 +339,9 @@ function wordTable(table: OmiTableBlockData, warnings: string[],numbering:WordLi
       const doc=continuing?undefined:tableCellDocument(table,r,c);
       const rich=doc?.content?.map(p=>{
         const nested=cellNestedTable(p);
-        if(nested) return wordTable(nested,warnings,numbering,sourceStyles,Math.max(1,cellWidth));
-        if(p.type==='orderedList'||p.type==='bulletList') return renderWordLists(JSON.stringify({type:'doc',content:[cellDocumentWithDefaults(p,format.horizontalAlign)]}),numbering,()=>undefined,'',sourceStyles)??'';
-        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':extractOmiInlineRuns(JSON.stringify(n)).map(run=>wordRun(run,undefined,{})).join('')).join('');
+        if(nested) return wordTable(nested,warnings,numbering,sourceStyles,resolveNote,Math.max(1,cellWidth));
+        if(p.type==='orderedList'||p.type==='bulletList') return renderWordLists(JSON.stringify({type:'doc',content:[cellDocumentWithDefaults(p,format.horizontalAlign)]}),numbering,resolveNote,'',sourceStyles)??'';
+        const runs=(p.content??[]).map(n=>n.type==='hardBreak'?'<w:r><w:br/></w:r>':n.type==='omiTab'?'<w:r><w:tab/></w:r>':renderJsonNode(n,resolveNote).map(run=>'kind' in run?wordNoteReference(run.kind,run.id):wordRun(run,undefined,{})).join('')).join('');
         const properties=paragraphFormattingWordXml(effectiveCellParagraphAttrs(p.attrs,format.horizontalAlign));
         return '<w:p>'+(properties?'<w:pPr>'+properties+'</w:pPr>':'')+runs+'</w:p>';
       }).join('');
