@@ -1,4 +1,4 @@
-import { tableMergeLayout, tableHeaderRows, tableCellDocument } from '../model/tableLayout';
+import { tableMergeLayout, tableHeaderRows, tableCellDocument, cellNestedTable } from '../model/tableLayout';
 import { visualTextBoxText, visualTextBoxDiagnostics } from '../model/textBoxes';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -825,7 +825,7 @@ function renderTable(block: OmiBlock, state: RenderState): string {
       if(layout.covered(r,c)) return '';
       const m=layout.at(r,c);
       const doc=tableCellDocument(visual,r,c);
-      const rich=doc?.content?.map(p=>p.type==='paragraph'?renderInlineChildren(p.content??[],state):renderBlockNode(p,state,block.id,1)).join('<break/>');
+      const rich=doc?.content?.map(p=>{const table=cellNestedTable(p);return table?escapeXml(table.cells.map(row=>row.join(' | ')).join('\n')).replace(/\n/g,'<break/>'):p.type==='paragraph'?renderInlineChildren(p.content??[],state):renderBlockNode(p,state,block.id,1);}).join('<break/>');
       return '<'+cellTag+(m && m.rowSpan>1?' rowspan="'+m.rowSpan+'"':'')+(m && m.colSpan>1?' colspan="'+m.colSpan+'"':'')+'>'+(rich??escapeXml(cell))+'</'+cellTag+'>';
     }).join('')+'</tr>';
   const table = `<table>${
