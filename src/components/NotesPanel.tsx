@@ -5,7 +5,7 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import {
   getNoteKind,
-  getNoteNumber,
+  getNoteLabel,
   sortNotesByDocumentOrder,
 } from '../model/notes';
 import { NoteEditorCard } from './NoteEditorCard';
@@ -61,7 +61,7 @@ export function NotesPanel({ onNavigate }: NotesPanelProps) {
 
             const preview = createNotePreview(note.body ?? '');
             const kind = getNoteKind(note);
-            const number = getNoteNumber(manuscript, note.id);
+            const number = getNoteLabel(manuscript, note.id);
 
             return (
               <button
