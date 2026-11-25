@@ -76,8 +76,8 @@ test('paragraph type actions follow and affect only the active text block', () =
 });
 
 test('focused editor content resync preserves the active selection atomically', () => {
-  assert.match(blockEditor, /const formattingActive = useFormattingStore\.getState\(\)\.target\?\.editor === editor/);
-  assert.match(blockEditor, /document\.activeElement\?\.closest\('\[data-editor-formatting-controls\], \.omi-rich-text-toolbar'\)/);
+  assert.ok(blockEditor.includes('const formattingActive = useFormattingStore.getState().target?.editor === editor'));
+  assert.ok(blockEditor.includes("document.activeElement?.closest('[data-editor-formatting-controls], .omi-rich-text-toolbar')"));
   assert.match(
     blockEditor,
     /if \(editor\.isFocused \|\| formattingActive\) \{[\s\S]*const \{ from, to \} = editor\.state\.selection;[\s\S]*\.chain\(\)[\s\S]*\.setContent\(incomingDocument, \{ emitUpdate: false \}\)[\s\S]*\.setTextSelection\(\{ from, to \}\)[\s\S]*\.run\(\);[\s\S]*return;/,
