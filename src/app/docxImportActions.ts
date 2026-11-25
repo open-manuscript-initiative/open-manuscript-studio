@@ -85,6 +85,7 @@ export function applyDocxImportPlan(
     crossReferences: plan.crossReferences??[],
     ...(plan.namedAnchors?.length?{namedAnchors:plan.namedAnchors}:{}),
     ...(plan.indexEntries ? { indexEntries: plan.indexEntries } : {}),
+    ...(plan.indexDefinitions ? { indexDefinitions: plan.indexDefinitions } : {}),
     ...(plan.generatedIndexes ? { generatedIndexes: plan.generatedIndexes } : {}),
     ...(plan.tableOfContents ? { tableOfContents: plan.tableOfContents } : {}),
     createdAt: timestamp,
