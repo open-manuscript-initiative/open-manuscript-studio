@@ -405,3 +405,16 @@ export function refreshPublicationCellStyles(table:OmiTableBlockData,previous:Pu
   if(Object.keys(bindings).length)result.publicationCellStyles=bindings;else delete result.publicationCellStyles;
   return result;
 }
+
+/** Copy the raw definition (including ancestry), not its rendered snapshot. */
+export function duplicatePublicationTablePreset(catalog:PublicationTableStyles,source:string,name:string):PublicationTableStyles|undefined{
+  const preset=catalog.items.find(item=>item.name===source);
+  return preset?putPublicationTablePreset(catalog,{...preset,name}):undefined;
+}
+/** Preview is an isolated sample, never part of the manuscript. */
+export function publicationTableStylePreview(catalog:PublicationTableStyles,name:string):OmiTableBlockData{
+  const table:OmiTableBlockData={kind:'table',headerRows:1,cells:[['A','B','C'],['1','-15','25'],['2','0',''],['3','10','50'],['Σ','-5','75']]};
+  const preset=catalog.items.find(item=>item.name===name);
+  if(preset?.kind==='cell')return bindPublicationCellStyle(table,catalog,name,{row:1,column:1},{row:2,column:1});
+  return bindPublicationTableStyle(table,catalog,name);
+}
