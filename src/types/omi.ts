@@ -323,6 +323,8 @@ export interface OmiCrossReference {
   targetId: string;
   targetKind: OmiCrossReferenceTargetKind;
   displayStyle: OmiCrossReferenceDisplayStyle;
+  /** Native Word REF/PAGEREF semantics and cached display fallback. */
+  wordField?: import('../model/wordCrossReference').WordCrossReferenceField;
   createdAt?: string;
   modifiedAt?: string;
 }
