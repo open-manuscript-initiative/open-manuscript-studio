@@ -206,6 +206,7 @@ interface ComplexPaginationResume {
   retain: ComplexPaginationCheckpoint[];
   preparedMetrics?: PublicationPreparedMetrics;
   bytes: number;
+  limit: number;
 }
 
 const MAX_COMPLEX_CHECKPOINTS = 3;
@@ -260,26 +261,28 @@ function unchangedComplexPrefix(previous: ComplexLayoutSnapshot, blocks: readonl
 }
 
 function complexResume(previous: ComplexLayoutSnapshot | undefined, blocks: readonly PublicationFlowBlock[],
-  notes: PublicationFootnotes | undefined, preparedMetrics?: PublicationPreparedMetrics): ComplexPaginationResume {
+  notes: PublicationFootnotes | undefined, preparedMetrics: PublicationPreparedMetrics | undefined, limit: number): ComplexPaginationResume {
   const prefix = previous ? unchangedComplexPrefix(previous, blocks, notes) : 0;
   const keepSections = preparedMetrics ? firstKeepSectionIndexes(blocks) : undefined;
   const retain = (previous?.checkpoints ?? []).filter(cp => cp.blockIndex <= prefix
     && safeComplexBoundary(blocks, cp.blockIndex, keepSections));
-  return { checkpoint: retain.at(-1), retain, preparedMetrics, bytes: retain.reduce((sum, cp) => sum + checkpointBytes(cp), 0) };
+  const bytes = retain.reduce((sum, cp) => sum + checkpointBytes(cp), 0);
+  if (bytes > limit) return { retain: [], preparedMetrics, bytes: 0, limit };
+  return { checkpoint: retain.at(-1), retain, preparedMetrics, bytes, limit };
 }
 
 function wantsComplexCheckpoint(resume: ComplexPaginationResume | undefined, blocks: readonly PublicationFlowBlock[],
   index: number, keepSections?: ReadonlyMap<string | undefined, number>): boolean {
   return !!resume && blocks.length >= 96 && resume.retain.length < MAX_COMPLEX_CHECKPOINTS
-    && resume.bytes < MAX_COMPLEX_CHECKPOINT_BYTES && index < blocks.length
+    && resume.bytes < resume.limit && index < blocks.length
     && index >= Math.ceil(blocks.length * (resume.retain.length + 1) / (MAX_COMPLEX_CHECKPOINTS + 1))
     && safeComplexBoundary(blocks, index, keepSections);
 }
 
 function retainComplexCheckpoint(resume: ComplexPaginationResume, checkpoint: ComplexPaginationCheckpoint) {
   const bytes = checkpointBytes(checkpoint);
-  if (resume.bytes + bytes > MAX_COMPLEX_CHECKPOINT_BYTES) {
-    resume.bytes = MAX_COMPLEX_CHECKPOINT_BYTES;
+  if (resume.bytes + bytes > resume.limit) {
+    resume.bytes = resume.limit;
     return;
   }
   resume.retain.push(checkpoint);
@@ -309,10 +312,32 @@ export interface PublicationPreparedMetrics {
  * snapshots. Complex pages can reuse a complete result only when every
  * measured layout input matches and the prepared metrics state can be restored.
  */
+/** Estimated retained layout cost; not a JS heap measurement. */
+function measuredInputBytes(blocks: readonly PublicationFlowBlock[], notes?: PublicationFootnotes): number {
+  return 1024 + (notes?.heights.size ?? 0) * 128 + blocks.reduce((sum, block) => sum + 256
+    + (block.noteIds?.length ?? 0) * 64
+    + (block.lines ?? []).reduce((lineSum, line) => lineSum + 128 + (line.noteIds?.length ?? 0) * 64, 0)
+    + ((block.insertedPagesBefore?.length ?? 0) + (block.insertedPagesAfter?.length ?? 0)) * 128, 0);
+}
+
+function layoutBytes(layout: PublicationPageLayout): number {
+  return 512 + layout.placements.length * 64 + layout.flowBreaks.length * 96
+    + (layout.pageNotes ?? []).reduce((sum, notes) => sum + 64 + notes.length * 96, 0)
+    + (layout.pageSectionIds?.length ?? 0) * 64 + (layout.insertedPages?.length ?? 0) * 128
+    + (layout.sectionWarnings?.length ?? 0) * 128;
+}
+
 export function createIncrementalPublicationPaginator() {
   let previous: FixedLayoutSnapshot | undefined;
   let complex: ComplexLayoutSnapshot | undefined;
+  let budgetBytes = 16 * 1024 * 1024;
+  const clear = () => { previous = undefined; complex = undefined; };
   return {
+    setBudget(bytes: number) {
+      const next = Number.isFinite(bytes) ? Math.max(0, Math.floor(bytes)) : 0;
+      if (next < budgetBytes) clear();
+      budgetBytes = next;
+    },
     paginate(
       blocks: readonly PublicationFlowBlock[],
       usablePageHeight: number,
@@ -321,6 +346,11 @@ export function createIncrementalPublicationPaginator() {
       pageMetrics?: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
       preparedMetrics?: PublicationPreparedMetrics,
     ): PublicationPageLayout {
+      const inputBytes = measuredInputBytes(blocks, footnotes);
+      if (budgetBytes === 0 || inputBytes >= budgetBytes) {
+        clear();
+        return paginatePublicationBlocks(blocks, usablePageHeight, pageOverhead, footnotes, pageMetrics);
+      }
       if (pageMetrics || (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length)))) {
         previous = undefined;
         const canCache = !pageMetrics || !!preparedMetrics;
@@ -333,19 +363,26 @@ export function createIncrementalPublicationPaginator() {
         }
         const compatible = canCache && complex && complex.geometryKey === (pageMetrics ? preparedMetrics?.key : undefined)
           && complex.bodyHeight === usablePageHeight && complex.pageOverhead === pageOverhead ? complex : undefined;
-        const resume = canCache ? complexResume(compatible, blocks, footnotes, preparedMetrics) : undefined;
+        const resume = canCache ? complexResume(compatible, blocks, footnotes, preparedMetrics,
+          Math.min(MAX_COMPLEX_CHECKPOINT_BYTES, Math.floor((budgetBytes - inputBytes) / 2))) : undefined;
         const layout = pageMetrics ? paginateStyledPages(blocks, pageMetrics, footnotes, resume)
           : paginateWithFootnotes(blocks, usablePageHeight, pageOverhead, footnotes!, resume);
-        complex = canCache ? { blocks, bodyHeight: usablePageHeight, pageOverhead,
+        const metricsState = pageMetrics && canCache ? preparedMetrics?.snapshot() : undefined;
+        const metricBytes = metricsState ? (metricsState.heights.length + metricsState.prefix.length + metricsState.cache.length) * 96
+          + metricsState.insertionStyles.size * 128 : 0;
+        const fits = inputBytes + layoutBytes(layout) + metricBytes + (resume?.bytes ?? 0) <= budgetBytes;
+        complex = canCache && fits ? { blocks, bodyHeight: usablePageHeight, pageOverhead,
           footnotes: footnotes ? { ...footnotes, heights: new Map(footnotes.heights) } : undefined,
           geometryKey: pageMetrics ? preparedMetrics?.key : undefined,
-          metricsState: pageMetrics ? preparedMetrics?.snapshot() : undefined, checkpoints: resume?.retain ?? [], layout } : undefined;
+          metricsState, checkpoints: resume?.retain ?? [], layout } : undefined;
         return layout;
       }
       complex = undefined;
-      return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead, previous, (snapshot) => { previous = snapshot; });
+      return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead, previous, (snapshot) => {
+        previous = inputBytes + layoutBytes(snapshot.layout) + snapshot.checkpoints.length * 64 <= budgetBytes ? snapshot : undefined;
+      });
     },
-    clear() { previous = undefined; complex = undefined; },
+    clear,
   };
 }
 
