@@ -55,6 +55,13 @@ export interface PublicationPageMetrics {
  * Section-master changes can invalidate an earlier page after a later page
  * was measured (for example, while reserving continued footnotes).
  */
+export interface PublicationPageMetricsSnapshot {
+  insertionStyles: Map<number, string>;
+  heights: number[];
+  prefix: number[];
+  cache: ({ sectionId?: string } & PublicationPageMetrics)[];
+}
+
 export function createPublicationPageMetricsResolver(
   geometryFor: (index: number, sectionId?: string, insertedStyleId?: string) => { height: number; bodyHeight: number; topMargin: number },
   pageGap: number,
@@ -94,7 +101,16 @@ export function createPublicationPageMetricsResolver(
     cache[index] = measured;
     return measured;
   };
-  return { metrics, insertionStyles };
+  const snapshot = (): PublicationPageMetricsSnapshot => ({
+    insertionStyles: new Map(insertionStyles), heights: heights.slice(), prefix: prefix.slice(), cache: cache.slice(),
+  });
+  const restore = (saved: PublicationPageMetricsSnapshot) => {
+    insertionStyles.clear(); for (const [index, style] of saved.insertionStyles) insertionStyles.set(index, style);
+    heights.length = 0; heights.length = saved.heights.length; saved.heights.forEach((value, index) => { heights[index] = value; });
+    prefix.length = 0; for (const value of saved.prefix) prefix.push(value);
+    cache.length = 0; cache.length = saved.cache.length; saved.cache.forEach((value, index) => { cache[index] = value; });
+  };
+  return { metrics, insertionStyles, snapshot, restore };
 }
 
 /**
@@ -147,28 +163,226 @@ function sameFixedBlock(left: PublicationFlowBlock, right: PublicationFlowBlock)
     });
 }
 
+function sameOrdered<T>(left: readonly T[] | undefined, right: readonly T[] | undefined, equal: (a: T, b: T) => boolean): boolean {
+  return (left?.length ?? 0) === (right?.length ?? 0) && (left ?? []).every((item, index) => equal(item, right![index]!));
+}
+
+function sameComplexBlock(left: PublicationFlowBlock, right: PublicationFlowBlock): boolean {
+  return sameFixedBlock(left, right) && left.sectionId === right.sectionId
+    && left.keepSectionTogether === right.keepSectionTogether && left.keepSectionId === right.keepSectionId
+    && sameOrdered(left.noteIds, right.noteIds, (a, b) => a === b)
+    && sameOrdered(left.lines, right.lines, (a, b) => sameOrdered(a.noteIds, b.noteIds, (x, y) => x === y))
+    && sameOrdered(left.insertedPagesBefore, right.insertedPagesBefore, (a, b) => a.id === b.id && a.styleId === b.styleId)
+    && sameOrdered(left.insertedPagesAfter, right.insertedPagesAfter, (a, b) => a.id === b.id && a.styleId === b.styleId);
+}
+
+function sameFootnoteGeometry(left: PublicationFootnotes | undefined, right: PublicationFootnotes | undefined): boolean {
+  if (!left || !right) return left === right;
+  return left.lineHeight === right.lineHeight && left.separatorHeight === right.separatorHeight
+    && left.allowPageContinuation === right.allowPageContinuation && left.heights.size === right.heights.size
+    && [...left.heights].every(([id, height]) => right.heights.get(id) === height);
+}
+
+interface ComplexPaginationCheckpoint {
+  blockIndex: number;
+  page: number;
+  position: number;
+  naturalBottom: number;
+  inlineHeight: number;
+  previousDelta: number;
+  pageNotes: PublicationPageNote[][];
+  pageNoteHeights: number[];
+  seen: Set<string>;
+  placements: PublicationBlockPlacement[];
+  flowBreaks: PublicationFlowBreak[];
+  pageSectionIds?: (string | undefined)[];
+  insertedPages?: NonNullable<PublicationPageLayout['insertedPages']>;
+  movedSections?: Set<string>;
+  metricsState?: PublicationPageMetricsSnapshot;
+}
+
+interface ComplexPaginationResume {
+  checkpoint?: ComplexPaginationCheckpoint;
+  retain: ComplexPaginationCheckpoint[];
+  preparedMetrics?: PublicationPreparedMetrics;
+  bytes: number;
+  limit: number;
+}
+
+const MAX_COMPLEX_CHECKPOINTS = 3;
+const MAX_COMPLEX_CHECKPOINT_BYTES = 8 * 1024 * 1024;
+
+function checkpointBytes(checkpoint: ComplexPaginationCheckpoint): number {
+  // Conservative estimate of copied references, containers, and metric entries.
+  return 512 + checkpoint.placements.length * 16 + checkpoint.flowBreaks.length * 16
+    + checkpoint.pageNoteHeights.length * 16 + checkpoint.seen.size * 96
+    + checkpoint.pageNotes.reduce((sum, fragments) => sum + 64 + fragments.length * 16, 0)
+    + (checkpoint.pageSectionIds?.length ?? 0) * 16 + (checkpoint.insertedPages?.length ?? 0) * 16
+    + (checkpoint.movedSections?.size ?? 0) * 96
+    + (checkpoint.metricsState ? (checkpoint.metricsState.heights.length + checkpoint.metricsState.prefix.length
+      + checkpoint.metricsState.cache.length) * 24 + checkpoint.metricsState.insertionStyles.size * 96 : 0);
+}
+
+function firstKeepSectionIndexes(blocks: readonly PublicationFlowBlock[]): Map<string | undefined, number> {
+  const first = new Map<string | undefined, number>();
+  blocks.forEach((block, index) => {
+    const id = block.keepSectionId ?? block.sectionId;
+    if (block.keepSectionTogether && !first.has(id)) first.set(id, index);
+  });
+  return first;
+}
+
+function safeComplexBoundary(blocks: readonly PublicationFlowBlock[], index: number, keepSections?: ReadonlyMap<string | undefined, number>): boolean {
+  if (index <= 0 || index > blocks.length || blocks[index - 1]?.keepWithNext) return false;
+  if (!keepSections || index === blocks.length) return true;
+  const next = blocks[index]!;
+  // A keep-section group that started earlier must not look across the checkpoint.
+  return (keepSections.get(next.keepSectionId ?? next.sectionId) ?? Infinity) >= index;
+}
+
+function sameNotePolicy(a?: PublicationFootnotes, b?: PublicationFootnotes): boolean {
+  return !a || !b ? a === b : a.lineHeight === b.lineHeight
+    && a.separatorHeight === b.separatorHeight && a.allowPageContinuation === b.allowPageContinuation;
+}
+
+function unchangedComplexPrefix(previous: ComplexLayoutSnapshot, blocks: readonly PublicationFlowBlock[], notes?: PublicationFootnotes): number {
+  if (!sameNotePolicy(previous.footnotes, notes)) return 0;
+  const equalNote = (id: string) => previous.footnotes?.heights.get(id) === notes?.heights.get(id)
+    && previous.footnotes?.heights.has(id) === notes?.heights.has(id);
+  let index = 0;
+  while (index < blocks.length && index < previous.blocks.length) {
+    const block = blocks[index]!;
+    if (!sameComplexBlock(previous.blocks[index]!, block)
+      || block.noteIds?.some(id => !equalNote(id))
+      || block.lines?.some(line => line.noteIds?.some(id => !equalNote(id)))) break;
+    index += 1;
+  }
+  return index;
+}
+
+function complexResume(previous: ComplexLayoutSnapshot | undefined, blocks: readonly PublicationFlowBlock[],
+  notes: PublicationFootnotes | undefined, preparedMetrics: PublicationPreparedMetrics | undefined, limit: number): ComplexPaginationResume {
+  const prefix = previous ? unchangedComplexPrefix(previous, blocks, notes) : 0;
+  const keepSections = preparedMetrics ? firstKeepSectionIndexes(blocks) : undefined;
+  const retain = (previous?.checkpoints ?? []).filter(cp => cp.blockIndex <= prefix
+    && safeComplexBoundary(blocks, cp.blockIndex, keepSections));
+  const bytes = retain.reduce((sum, cp) => sum + checkpointBytes(cp), 0);
+  if (bytes > limit) return { retain: [], preparedMetrics, bytes: 0, limit };
+  return { checkpoint: retain.at(-1), retain, preparedMetrics, bytes, limit };
+}
+
+function wantsComplexCheckpoint(resume: ComplexPaginationResume | undefined, blocks: readonly PublicationFlowBlock[],
+  index: number, keepSections?: ReadonlyMap<string | undefined, number>): boolean {
+  return !!resume && blocks.length >= 96 && resume.retain.length < MAX_COMPLEX_CHECKPOINTS
+    && resume.bytes < resume.limit && index < blocks.length
+    && index >= Math.ceil(blocks.length * (resume.retain.length + 1) / (MAX_COMPLEX_CHECKPOINTS + 1))
+    && safeComplexBoundary(blocks, index, keepSections);
+}
+
+function retainComplexCheckpoint(resume: ComplexPaginationResume, checkpoint: ComplexPaginationCheckpoint) {
+  const bytes = checkpointBytes(checkpoint);
+  if (resume.bytes + bytes > resume.limit) {
+    resume.bytes = resume.limit;
+    return;
+  }
+  resume.retain.push(checkpoint);
+  resume.bytes += bytes;
+}
+
+interface ComplexLayoutSnapshot {
+  blocks: readonly PublicationFlowBlock[];
+  bodyHeight: number;
+  pageOverhead: number;
+  footnotes?: PublicationFootnotes;
+  geometryKey?: object;
+  metricsState?: PublicationPageMetricsSnapshot;
+  checkpoints: ComplexPaginationCheckpoint[];
+  layout: PublicationPageLayout;
+}
+
+export interface PublicationPreparedMetrics {
+  /** Identifies all inputs affecting page geometry, stable for one canvas effect. */
+  key: object;
+  snapshot: () => PublicationPageMetricsSnapshot;
+  restore: (snapshot: PublicationPageMetricsSnapshot) => void;
+}
+
 /**
  * One canvas owns one cache. Inputs and returned layouts are immutable
- * snapshots. Variable page masters and footnotes still use full pagination:
- * their carried state needs a different checkpoint contract.
+ * snapshots. Complex pages can reuse a complete result only when every
+ * measured layout input matches and the prepared metrics state can be restored.
  */
+/** Estimated retained layout cost; not a JS heap measurement. */
+function measuredInputBytes(blocks: readonly PublicationFlowBlock[], notes?: PublicationFootnotes): number {
+  return 1024 + (notes?.heights.size ?? 0) * 128 + blocks.reduce((sum, block) => sum + 256
+    + (block.noteIds?.length ?? 0) * 64
+    + (block.lines ?? []).reduce((lineSum, line) => lineSum + 128 + (line.noteIds?.length ?? 0) * 64, 0)
+    + ((block.insertedPagesBefore?.length ?? 0) + (block.insertedPagesAfter?.length ?? 0)) * 128, 0);
+}
+
+function layoutBytes(layout: PublicationPageLayout): number {
+  return 512 + layout.placements.length * 64 + layout.flowBreaks.length * 96
+    + (layout.pageNotes ?? []).reduce((sum, notes) => sum + 64 + notes.length * 96, 0)
+    + (layout.pageSectionIds?.length ?? 0) * 64 + (layout.insertedPages?.length ?? 0) * 128
+    + (layout.sectionWarnings?.length ?? 0) * 128;
+}
+
 export function createIncrementalPublicationPaginator() {
   let previous: FixedLayoutSnapshot | undefined;
+  let complex: ComplexLayoutSnapshot | undefined;
+  let budgetBytes = 16 * 1024 * 1024;
+  const clear = () => { previous = undefined; complex = undefined; };
   return {
+    setBudget(bytes: number) {
+      const next = Number.isFinite(bytes) ? Math.max(0, Math.floor(bytes)) : 0;
+      if (next < budgetBytes) clear();
+      budgetBytes = next;
+    },
     paginate(
       blocks: readonly PublicationFlowBlock[],
       usablePageHeight: number,
       pageOverhead: number,
       footnotes?: PublicationFootnotes,
       pageMetrics?: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
+      preparedMetrics?: PublicationPreparedMetrics,
     ): PublicationPageLayout {
-      if (pageMetrics || (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length)))) {
-        previous = undefined;
+      const inputBytes = measuredInputBytes(blocks, footnotes);
+      if (budgetBytes === 0 || inputBytes >= budgetBytes) {
+        clear();
         return paginatePublicationBlocks(blocks, usablePageHeight, pageOverhead, footnotes, pageMetrics);
       }
-      return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead, previous, (snapshot) => { previous = snapshot; });
+      if (pageMetrics || (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length)))) {
+        previous = undefined;
+        const canCache = !pageMetrics || !!preparedMetrics;
+        if (canCache && complex && complex.geometryKey === (pageMetrics ? preparedMetrics?.key : undefined)
+          && complex.bodyHeight === usablePageHeight && complex.pageOverhead === pageOverhead
+          && sameFootnoteGeometry(complex.footnotes, footnotes)
+          && sameOrdered(complex.blocks, blocks, sameComplexBlock)) {
+          if (complex.metricsState) preparedMetrics?.restore(complex.metricsState);
+          return complex.layout;
+        }
+        const compatible = canCache && complex && complex.geometryKey === (pageMetrics ? preparedMetrics?.key : undefined)
+          && complex.bodyHeight === usablePageHeight && complex.pageOverhead === pageOverhead ? complex : undefined;
+        const resume = canCache ? complexResume(compatible, blocks, footnotes, preparedMetrics,
+          Math.min(MAX_COMPLEX_CHECKPOINT_BYTES, Math.floor((budgetBytes - inputBytes) / 2))) : undefined;
+        const layout = pageMetrics ? paginateStyledPages(blocks, pageMetrics, footnotes, resume)
+          : paginateWithFootnotes(blocks, usablePageHeight, pageOverhead, footnotes!, resume);
+        const metricsState = pageMetrics && canCache ? preparedMetrics?.snapshot() : undefined;
+        const metricBytes = metricsState ? (metricsState.heights.length + metricsState.prefix.length + metricsState.cache.length) * 96
+          + metricsState.insertionStyles.size * 128 : 0;
+        const fits = inputBytes + layoutBytes(layout) + metricBytes + (resume?.bytes ?? 0) <= budgetBytes;
+        complex = canCache && fits ? { blocks, bodyHeight: usablePageHeight, pageOverhead,
+          footnotes: footnotes ? { ...footnotes, heights: new Map(footnotes.heights) } : undefined,
+          geometryKey: pageMetrics ? preparedMetrics?.key : undefined,
+          metricsState, checkpoints: resume?.retain ?? [], layout } : undefined;
+        return layout;
+      }
+      complex = undefined;
+      return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead, previous, (snapshot) => {
+        previous = inputBytes + layoutBytes(snapshot.layout) + snapshot.checkpoints.length * 64 <= budgetBytes ? snapshot : undefined;
+      });
     },
-    clear() { previous = undefined; },
+    clear,
   };
 }
 
@@ -182,10 +396,14 @@ function paginateFixedPublicationBlocks(
   const bodyHeight = positive(usablePageHeight, 1);
   const chromeHeight = nonNegative(pageOverhead);
   let resume = 0;
+  let suffixStart = blocks.length;
   if (previous && previous.bodyHeight === bodyHeight && previous.chromeHeight === chromeHeight) {
     while (resume < blocks.length && resume < previous.blocks.length
       && sameFixedBlock(blocks[resume]!, previous.blocks[resume]!)) resume += 1;
     if (resume === blocks.length && resume === previous.blocks.length) return previous.layout;
+    if (blocks.length === previous.blocks.length) {
+      while (suffixStart > resume && sameFixedBlock(blocks[suffixStart - 1]!, previous.blocks[suffixStart - 1]!)) suffixStart -= 1;
+    }
     // The preceding block may keep with the changed block, even when its own
     // geometry is identical. Recompute it too, including append/delete cases.
     resume = Math.max(0, resume - 1);
@@ -199,6 +417,17 @@ function paginateFixedPublicationBlocks(
   const checkpoints: FixedLayoutCheckpoint[] = resume ? previous!.checkpoints.slice(0, resume) : [];
 
   for (let index = resume; index < blocks.length; index += 1) {
+    // At an unchanged suffix, all the future inputs (including keep-with-next
+    // lookahead) and the carried geometry must match exactly before reuse.
+    const stable = previous && index >= suffixStart && index > 0 ? previous.checkpoints[index - 1] : undefined;
+    if (stable && stable.insertedSpace === insertedSpace && stable.insertedInlineHeight === insertedInlineHeight
+      && stable.lastOccupiedPage === lastOccupiedPage && stable.flowBreakCount === flowBreaks.length) {
+      for (let i = index; i < previous!.layout.placements.length; i++) placements.push(previous!.layout.placements[i]!);
+      for (let i = stable.flowBreakCount; i < previous!.layout.flowBreaks.length; i++) flowBreaks.push(previous!.layout.flowBreaks[i]!);
+      for (let i = index; i < previous!.checkpoints.length; i++) checkpoints.push(previous!.checkpoints[i]!);
+      lastOccupiedPage = previous!.checkpoints.at(-1)!.lastOccupiedPage;
+      break;
+    }
     const block = blocks[index]!;
     const naturalTop = nonNegative(block.top);
     const blockHeight = nonNegative(block.height);
@@ -326,16 +555,23 @@ function paginateStyledPages(
   blocks: readonly PublicationFlowBlock[],
   metrics: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
   notes?: PublicationFootnotes,
+  resume?: ComplexPaginationResume,
 ): PublicationPageLayout {
-  const pageSectionIds: (string | undefined)[] = [];
-  const pageNotes: PublicationPageNote[][] = [];
-  const pageNoteHeights: number[] = [];
-  const placements: PublicationBlockPlacement[] = [], flowBreaks: PublicationFlowBreak[] = [];
-  const insertedPages: NonNullable<PublicationPageLayout['insertedPages']> = [];
-  const movedSections = new Set<string>();
-  const seen = new Set<string>();
+  const checkpoint = resume?.checkpoint;
+  if (checkpoint?.metricsState) resume?.preparedMetrics?.restore(checkpoint.metricsState);
+  const startBlock = checkpoint?.blockIndex ?? 0;
+  const keepSections = resume ? firstKeepSectionIndexes(blocks) : undefined;
+  const pageSectionIds = checkpoint?.pageSectionIds?.slice() ?? [];
+  const pageNotes = checkpoint?.pageNotes.map(fragments => fragments.slice()) ?? [];
+  const pageNoteHeights = checkpoint?.pageNoteHeights.slice() ?? [];
+  const placements = checkpoint?.placements.slice() ?? [];
+  const flowBreaks = checkpoint?.flowBreaks.slice() ?? [];
+  const insertedPages = checkpoint?.insertedPages?.slice() ?? [];
+  const movedSections = new Set(checkpoint?.movedSections);
+  const seen = new Set(checkpoint?.seen);
   const lineHeight = positive(notes?.lineHeight ?? 1, 1), separator = nonNegative(notes?.separatorHeight ?? 0);
-  const units = blocks.flatMap((block, blockIndex) => {
+  const units = blocks.slice(startBlock).flatMap((block, localIndex) => {
+    const blockIndex = startBlock + localIndex;
     const lines = normalizeLines(block.lines, block.height);
     const split = block.splittable && !block.keepTogether && lines.length;
     return (split ? lines : [{ top: 0, height: block.height, textOffset: 0, noteIds: block.noteIds }]).map((line, index, all) => ({
@@ -347,7 +583,8 @@ function paginateStyledPages(
       keepSectionId: block.keepSectionId ?? block.sectionId,
     }));
   });
-  let page = 0, position = 0, naturalBottom = 0, inlineHeight = 0, previousDelta = 0;
+  let page = checkpoint?.page ?? 0, position = checkpoint?.position ?? 0, naturalBottom = checkpoint?.naturalBottom ?? 0;
+  let inlineHeight = checkpoint?.inlineHeight ?? 0, previousDelta = checkpoint?.previousDelta ?? 0;
   const ensurePage = (index: number, sectionId?: string) => {
     while (pageSectionIds.length <= index) pageSectionIds.push(sectionId);
   };
@@ -356,6 +593,12 @@ function paginateStyledPages(
   const capacity = (index: number) => Math.max(lineHeight, Math.floor((metrics(index, pageSectionIds[index]).bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
   for (let index = 0; index < units.length; index += 1) {
     const first = units[index]!;
+    if (resume && first.first && first.blockIndex > startBlock && wantsComplexCheckpoint(resume, blocks, first.blockIndex, keepSections)) {
+      retainComplexCheckpoint(resume, { blockIndex: first.blockIndex, page, position, naturalBottom, inlineHeight, previousDelta,
+        pageNotes: pageNotes.map(fragments => fragments.slice()), pageNoteHeights: pageNoteHeights.slice(), seen: new Set(seen),
+        placements: placements.slice(), flowBreaks: flowBreaks.slice(), pageSectionIds: pageSectionIds.slice(),
+        insertedPages: insertedPages.slice(), movedSections: new Set(movedSections), metricsState: resume.preparedMetrics?.snapshot() });
+    }
     ensurePage(page, first.sectionId);
     if (position <= 0.5 && !pageNotes[page]?.length) pageSectionIds[page] = first.sectionId;
     const advance = () => { page += 1; position = 0; ensurePage(page, first.sectionId); };
@@ -369,8 +612,11 @@ function paginateStyledPages(
         advance();
       }
     }
-    const sectionStart = first.sectionId !== undefined && (index === 0 || units[index - 1]?.sectionId !== first.sectionId);
-    const keepSection = (index === 0 || units[index - 1]?.keepSectionId !== first.keepSectionId) && blocks[first.blockIndex]!.keepSectionTogether;
+    const previousSectionId = index > 0 ? units[index - 1]?.sectionId : blocks[startBlock - 1]?.sectionId;
+    const previousKeepSectionId = index > 0 ? units[index - 1]?.keepSectionId : blocks[startBlock - 1]?.keepSectionId ?? blocks[startBlock - 1]?.sectionId;
+    const atBeginning = index === 0 && startBlock === 0;
+    const sectionStart = first.sectionId !== undefined && (atBeginning || previousSectionId !== first.sectionId);
+    const keepSection = (atBeginning || previousKeepSectionId !== first.keepSectionId) && blocks[first.blockIndex]!.keepSectionTogether;
     const group = [first];
     while (units[index + group.length] && !units[index + group.length]!.forceBreak && !units[index + group.length]!.insertedPagesBefore?.length
       && !group.at(-1)!.insertedPagesAfter?.length
@@ -565,7 +811,10 @@ function paginateWithFootnotes(
   usablePageHeight: number,
   pageOverhead: number,
   notes: PublicationFootnotes,
+  resume?: ComplexPaginationResume,
 ): PublicationPageLayout {
+  const checkpoint = resume?.checkpoint;
+  const startBlock = checkpoint?.blockIndex ?? 0;
   const bodyHeight = positive(usablePageHeight, 1);
   const stride = bodyHeight + nonNegative(pageOverhead);
   // offsetTop is integer-rounded while DOM ranges and CSS spacers are fractional.
@@ -574,12 +823,13 @@ function paginateWithFootnotes(
   const lineHeight = positive(notes.lineHeight, 1);
   const separator = nonNegative(notes.separatorHeight);
   const noteCapacity = Math.max(lineHeight, Math.floor((bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
-  const pageNotes: PublicationPageNote[][] = [];
-  const pageNoteHeights: number[] = [];
-  const seen = new Set<string>();
-  const placements: PublicationBlockPlacement[] = [];
-  const flowBreaks: PublicationFlowBreak[] = [];
-  const units = blocks.flatMap((block, blockIndex) => {
+  const pageNotes = checkpoint?.pageNotes.map(fragments => fragments.slice()) ?? [];
+  const pageNoteHeights = checkpoint?.pageNoteHeights.slice() ?? [];
+  const seen = new Set(checkpoint?.seen);
+  const placements = checkpoint?.placements.slice() ?? [];
+  const flowBreaks = checkpoint?.flowBreaks.slice() ?? [];
+  const units = blocks.slice(startBlock).flatMap((block, localIndex) => {
+    const blockIndex = startBlock + localIndex;
     const lines = normalizeLines(block.lines, block.height);
     const split = block.splittable && !block.keepTogether && lines.length;
     return (split ? lines : [{ top: 0, height: block.height, textOffset: 0, noteIds: block.noteIds }]).map((line, index, all) => ({
@@ -595,14 +845,19 @@ function paginateWithFootnotes(
   });
   const reserved = (page: number) => pageNotes[page]?.length
     ? separator + (pageNoteHeights[page] ?? 0) : 0;
-  let page = 0;
-  let position = 0;
-  let naturalBottom = 0;
-  let inlineHeight = 0;
-  let previousDelta = 0;
+  let page = checkpoint?.page ?? 0;
+  let position = checkpoint?.position ?? 0;
+  let naturalBottom = checkpoint?.naturalBottom ?? 0;
+  let inlineHeight = checkpoint?.inlineHeight ?? 0;
+  let previousDelta = checkpoint?.previousDelta ?? 0;
 
   for (let index = 0; index < units.length; index += 1) {
     const first = units[index]!;
+    if (resume && first.first && first.blockIndex > startBlock && wantsComplexCheckpoint(resume, blocks, first.blockIndex)) {
+      retainComplexCheckpoint(resume, { blockIndex: first.blockIndex, page, position, naturalBottom, inlineHeight, previousDelta,
+        pageNotes: pageNotes.map(fragments => fragments.slice()), pageNoteHeights: pageNoteHeights.slice(), seen: new Set(seen),
+        placements: placements.slice(), flowBreaks: flowBreaks.slice() });
+    }
     const group = [first];
     while (group[group.length - 1]!.keepNext && units[index + group.length]) {
       group.push(units[index + group.length]!);

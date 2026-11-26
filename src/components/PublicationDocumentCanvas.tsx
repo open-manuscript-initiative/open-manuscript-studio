@@ -12,10 +12,11 @@ import type { PublicationLayoutIssue, PublicationLayoutIssueReporter } from '../
 import { renderPublicationNoteBody, type PublicationNoteBody } from '../services/publicationNoteBody';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import type { JSONContent } from '@tiptap/core';
-import { createTextProjectionCache } from '../model/derivedMemoryCache';
+import { createTextProjectionCache, editorMemoryPool } from '../model/derivedMemoryCache';
 import { FileCode2, FileText } from 'lucide-react';
 import {
   useEffect,
+  useCallback,
   useContext,
   useId,
   useLayoutEffect,
@@ -41,6 +42,7 @@ import {
 import {
   buildContinuousManuscriptDocument,
   projectContinuousManuscriptDocument,
+  sectionsShareIdentity,
 } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
 import {
@@ -54,7 +56,7 @@ import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
 import type { OmiBibliographicRecord, OmiBlock, OmiSection } from '../types/omi';
-import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
+import { buildSectionNumberMap } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
   buildPublicationTextRoleCss,
@@ -70,6 +72,9 @@ import { BlockEditor } from './BlockEditor';
 import { TablePaginationContext } from './TablePaginationContext';
 import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
 import { PublicationSectionRuler } from './PublicationSectionRuler';
+import { canvasPageGeometry } from './publicationPageGeometry';
+import { publicationWorkerSections } from './publicationPaginationEngine';
+import { createPublicationPaginationWorkerClient } from './publicationPaginationWorkerClient';
 import {
   coalescePublicationTextLines,
   createPublicationPageMetricsResolver,
@@ -297,16 +302,7 @@ export function PublicationDocumentCanvas({
   const navigationCss = navigationSelector ? `#${canvasId} .publication-document-content .omi-continuous-tiptap-editor > ${navigationSelector}{outline:2px solid #b45309;outline-offset:3px}` : '';
 
   const sectionNumbers = useMemo(
-    () => new Map(
-      manuscript.sections.map((section) => [
-        section.id,
-        formatHierarchicalSectionNumber(
-          manuscript.sections,
-          section.id,
-          manuscript.sectionNumberingStyle,
-        ),
-      ]),
-    ),
+    () => buildSectionNumberMap(manuscript.sections, manuscript.sectionNumberingStyle),
     [manuscript.sectionNumberingStyle, manuscript.sections],
   );
   const paragraphStyleNextById = useMemo(
@@ -318,21 +314,27 @@ export function PublicationDocumentCanvas({
     ),
     [style.paragraphStyles],
   );
-  const document = useMemo(
-    () => buildContinuousManuscriptDocument(
+  const localProjectionRef = useRef<{ manuscriptId: string; sections: readonly OmiSection[]; content: string; nodeCount: number; sectionNumbers: ReadonlyMap<string, string>; nextStyles: ReadonlyMap<string, string>; defaultStyle: string } | null>(null);
+  const document = useMemo(() => {
+    if (viewMode !== 'print') return { content: '', nodeCount: 0 };
+    const previous = localProjectionRef.current;
+    if (previous && previous.manuscriptId === manuscriptId
+      && previous.nextStyles === paragraphStyleNextById
+      && previous.defaultStyle === style.paragraphStyles.defaultStyleId
+      && previous.sectionNumbers.size === sectionNumbers.size
+      && [...sectionNumbers].every(([id, number]) => previous.sectionNumbers.get(id) === number)
+      && sectionsShareIdentity(manuscript.sections, previous.sections)) {
+      return { content: previous.content, nodeCount: previous.nodeCount };
+    }
+    const built = buildContinuousManuscriptDocument(
       manuscript.sections,
       sectionNumbers,
       paragraphStyleNextById,
       style.paragraphStyles.defaultStyleId,
-    ),
-    [
-      manuscript.sections,
-      paragraphStyleNextById,
-      sectionNumbers,
-      style.paragraphStyles.defaultStyleId,
-    ],
-  );
-  const paginationDebounceMs = (document.content?.length ?? 0) > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
+    );
+    return { content: JSON.stringify(built), nodeCount: built.content?.length ?? 0 };
+  }, [manuscriptId, manuscript.sections, paragraphStyleNextById, sectionNumbers, style.paragraphStyles.defaultStyleId, viewMode]);
+  const paginationDebounceMs = document.nodeCount > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
     ? LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS
     : 0;
   const contributors = useMemo(
@@ -538,10 +540,19 @@ export function PublicationDocumentCanvas({
       return resolved;
     };
     const paginator = createIncrementalPublicationPaginator();
+    const worker = typeof Worker === 'undefined' ? undefined : createPublicationPaginationWorkerClient({
+      style, sections: publicationWorkerSections(layoutSectionsRef.current), scale, pageGap, topMargin, usablePageHeight, pageOverhead,
+    });
     let measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
     const measuredWidths = new WeakMap<HTMLElement, number>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
     let measuredNotes = new WeakMap<HTMLElement, number>();
+    const visibilityChanged = () => {
+      if (content.ownerDocument.visibilityState !== 'hidden') return;
+      paginator.setBudget(0);
+      worker?.clearCache();
+    };
+    content.ownerDocument.addEventListener('visibilitychange', visibilityChanged);
     const finish = () => {
       measuring = false;
       if (pending && !cancelled) { pending = false; schedule(); }
@@ -685,159 +696,172 @@ export function PublicationDocumentCanvas({
           return;
         }
         if (cancelled) return;
-        const { metrics, insertionStyles } = createPublicationPageMetricsResolver(
+        const { metrics, insertionStyles, snapshot, restore } = createPublicationPageMetricsResolver(
           (index, sectionId, insertedStyleId) => canvasPageGeometry(
             preparedPageStyles.resolve(index, sectionId, insertedStyleId), scale,
           ),
           pageGap,
           topMargin,
         );
-        const layout = paginator.paginate(
-          measuredBlocks,
-          usablePageHeight,
-          pageOverhead,
-          { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight,
-            allowPageContinuation: noteStyle.footnoteContinueOnNextPage !== false },
+        const footnotes = { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight,
+          allowPageContinuation: noteStyle.footnoteContinueOnNextPage !== false };
+        const cacheBudget = content.ownerDocument.visibilityState === 'hidden' ? 0 : Math.max(0,
+          Math.min(16 * 1024 * 1024, Math.floor(editorMemoryPool.budgetBytes / 8), editorMemoryPool.budgetBytes - editorMemoryPool.estimatedBytes));
+        paginator.setBudget(cacheBudget);
+        const localLayout = () => paginator.paginate(measuredBlocks, usablePageHeight, pageOverhead, footnotes,
           style.pageStyles ? metrics : undefined,
-        );
-        const sectionWarnings = layout.sectionWarnings ?? publicationSectionFitWarnings(measuredBlocks, layout,
-          () => ({ bodyHeight: usablePageHeight, bodyTop: 0 }));
-        const diagnosticCopy = publicationPaginationCopy(locale);
-        const issues: PublicationLayoutIssue[] = sectionWarnings.map((warning) => ({
-          id: `section:${warning.sectionId}`, sectionId: warning.sectionId,
-          message: `${layoutSectionsRef.current.find((section) => section.id === warning.sectionId)?.title || diagnosticCopy.untitled}: ${diagnosticCopy[warning.reason]}`,
-        }));
-        const presentBlocks = new Set(flow.map((item) => publicationFlowBlockId(item.element) ?? (item.element.classList.contains('publication-document-front-matter') ? PUBLICATION_BODY_START : undefined)));
-        for (const insertion of style.pageStyles?.insertions ?? []) if (!presentBlocks.has(insertion.beforeBlockId ?? insertion.afterBlockId)) issues.push({
-          id: `insertion:${insertion.id}`, insertionId: insertion.id, message: diagnosticCopy.missingAnchor,
-        });
-        measuredBlocks.forEach((block, index) => {
-          const pageIndex = layout.placements[index]?.pageIndex ?? 0;
-          if ((!block.splittable || block.keepTogether) && block.height > metrics(pageIndex, layout.pageSectionIds?.[pageIndex]).bodyHeight + 0.5) issues.push({
-            id: `block:${index}`, blockId: publicationFlowBlockId(flow[index]!.element), sectionId: block.sectionId,
-            message: diagnosticCopy.blockOverflow,
+          style.pageStyles ? { key: preparedPageStyles, snapshot, restore } : undefined);
+        const publishLayout = (layout: PublicationPageLayout) => {
+          if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
+          const sectionWarnings = layout.sectionWarnings ?? publicationSectionFitWarnings(measuredBlocks, layout,
+            () => ({ bodyHeight: usablePageHeight, bodyTop: 0 }));
+          const diagnosticCopy = publicationPaginationCopy(locale);
+          const issues: PublicationLayoutIssue[] = sectionWarnings.map((warning) => ({
+            id: `section:${warning.sectionId}`, sectionId: warning.sectionId,
+            message: `${layoutSectionsRef.current.find((section) => section.id === warning.sectionId)?.title || diagnosticCopy.untitled}: ${diagnosticCopy[warning.reason]}`,
+          }));
+          const presentBlocks = new Set(flow.map((item) => publicationFlowBlockId(item.element) ?? (item.element.classList.contains('publication-document-front-matter') ? PUBLICATION_BODY_START : undefined)));
+          for (const insertion of style.pageStyles?.insertions ?? []) if (!presentBlocks.has(insertion.beforeBlockId ?? insertion.afterBlockId)) issues.push({
+            id: `insertion:${insertion.id}`, insertionId: insertion.id, message: diagnosticCopy.missingAnchor,
           });
-        });
-        reportIssues.current?.(manuscriptId, issues);
-        const pageGeometries = Array.from({ length: layout.pageCount }, (_, index) =>
-          canvasPageGeometry(preparedPageStyles.resolve(index, layout.pageSectionIds?.[index], insertionStyles.get(index)), scale));
-        const sheetPositions = arrangePublicationSheets(pageGeometries, facingPages, pageGap).pages;
-        const projectionRules = new Map<string, string>();
-        const css = buildPaginationCss({
-          projectionRules,
-          canvasId,
-          flow,
-          placements: layout.placements,
-          firstPageNumber,
-          mirroredMargins: style.page.mirroredMargins,
-          innerMargin,
-          outerMargin,
-          firstPageLeftMargin,
-          styledPageGeometry: pageGeometries,
-          sheetPositions,
-          scale,
-        });
-        const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
-          (flowBreak) => {
-            const targetElement = flow[flowBreak.blockIndex]?.element;
-            const targetBlockId = targetElement ? publicationFlowBlockId(targetElement) : undefined;
-            return targetBlockId
-              ? [{
-                  targetBlockId,
-                  textOffset: flowBreak.textOffset,
-                  height: flowBreak.height,
-                  ...(facingPages ? continuationProjection(
-                    pageGeometries, sheetPositions,
-                    layout.placements[flowBreak.blockIndex]!.pageIndex, flowBreak.pageIndex,
-                  ) : {}),
-                }]
-              : [];
-          },
-        );
+          measuredBlocks.forEach((block, index) => {
+            const pageIndex = layout.placements[index]?.pageIndex ?? 0;
+            if ((!block.splittable || block.keepTogether) && block.height > metrics(pageIndex, layout.pageSectionIds?.[pageIndex]).bodyHeight + 0.5) issues.push({
+              id: `block:${index}`, blockId: publicationFlowBlockId(flow[index]!.element), sectionId: block.sectionId,
+              message: diagnosticCopy.blockOverflow,
+            });
+          });
+          reportIssues.current?.(manuscriptId, issues);
+          const pageGeometries = Array.from({ length: layout.pageCount }, (_, index) =>
+            canvasPageGeometry(preparedPageStyles.resolve(index, layout.pageSectionIds?.[index], insertionStyles.get(index)), scale));
+          const sheetPositions = arrangePublicationSheets(pageGeometries, facingPages, pageGap).pages;
+          const projectionRules = new Map<string, string>();
+          const css = buildPaginationCss({
+            projectionRules,
+            canvasId,
+            flow,
+            placements: layout.placements,
+            firstPageNumber,
+            mirroredMargins: style.page.mirroredMargins,
+            innerMargin,
+            outerMargin,
+            firstPageLeftMargin,
+            styledPageGeometry: pageGeometries,
+            sheetPositions,
+            scale,
+          });
+          const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
+            (flowBreak) => {
+              const targetElement = flow[flowBreak.blockIndex]?.element;
+              const targetBlockId = targetElement ? publicationFlowBlockId(targetElement) : undefined;
+              return targetBlockId
+                ? [{
+                    targetBlockId,
+                    textOffset: flowBreak.textOffset,
+                    height: flowBreak.height,
+                    ...(facingPages ? continuationProjection(
+                      pageGeometries, sheetPositions,
+                      layout.placements[flowBreak.blockIndex]!.pageIndex, flowBreak.pageIndex,
+                    ) : {}),
+                  }]
+                : [];
+            },
+          );
 
-        // Read-only previews use the measured line positions; no editable DOM
-        // is cloned or modified by thumbnail rendering.
-        const validBlockIds = new Set<string>(), blockSectionIds = new Map<string, string>();
-        const visitBlocks = (blocks: OmiBlock[], sectionId: string) => { for (const block of blocks) { validBlockIds.add(block.id); blockSectionIds.set(block.id, sectionId); visitBlocks(block.children ?? [], sectionId); } };
-        for (const section of layoutSectionsRef.current) visitBlocks(section.blocks, section.id);
-        const blockIds = flow.map((item) => publicationFlowBlockId(item.element));
-        const flowAnchors = publicationFlowAnchors(blockIds, validBlockIds);
-        const insertedByPage = new Map(layout.insertedPages?.map((item) => [item.pageIndex, item]));
-        const insertionsById = new Map(style.pageStyles?.insertions?.map((item) => [item.id, item]));
-        const studyRoots = new Map<string, string | undefined>();
-        const studyRoot = (sectionId: string) => {
-          if (!studyRoots.has(sectionId)) studyRoots.set(sectionId, getStudyRootSectionId(layoutSectionsRef.current, sectionId));
-          return studyRoots.get(sectionId);
-        };
-        const thumbnails: PublicationBodyPageThumbnail[] = pageGeometries.map((geometry, index) => {
-          const inserted = insertedByPage.get(index);
-          const insertion = inserted ? insertionsById.get(inserted.id) : undefined;
-          const anchorSection = insertion?.beforeBlockId === PUBLICATION_BODY_START ? layoutSectionsRef.current[0]?.id
-            : blockSectionIds.get(insertion?.beforeBlockId ?? insertion?.afterBlockId ?? '');
-          return { id: inserted ? `inserted:${inserted.id}` : `body:${index}`, insertionId: inserted?.id,
-            number: firstPageNumber + index, styleId: preparedPageStyles.resolve(index, layout.pageSectionIds?.[index], insertionStyles.get(index)).id,
-            width: geometry.width, height: geometry.height, marks: [], studyId: studyRoot(layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
+          // Read-only previews use the measured line positions; no editable DOM
+          // is cloned or modified by thumbnail rendering.
+          const validBlockIds = new Set<string>(), blockSectionIds = new Map<string, string>();
+          const visitBlocks = (blocks: OmiBlock[], sectionId: string) => { for (const block of blocks) { validBlockIds.add(block.id); blockSectionIds.set(block.id, sectionId); visitBlocks(block.children ?? [], sectionId); } };
+          for (const section of layoutSectionsRef.current) visitBlocks(section.blocks, section.id);
+          const blockIds = flow.map((item) => publicationFlowBlockId(item.element));
+          const flowAnchors = publicationFlowAnchors(blockIds, validBlockIds);
+          const insertedByPage = new Map(layout.insertedPages?.map((item) => [item.pageIndex, item]));
+          const insertionsById = new Map(style.pageStyles?.insertions?.map((item) => [item.id, item]));
+          const studyRoots = new Map<string, string | undefined>();
+          const studyRoot = (sectionId: string) => {
+            if (!studyRoots.has(sectionId)) studyRoots.set(sectionId, getStudyRootSectionId(layoutSectionsRef.current, sectionId));
+            return studyRoots.get(sectionId);
           };
-        });
-        const breaksByBlock = new Map<number, typeof layout.flowBreaks[number][]>();
-        for (const point of layout.flowBreaks) {
-          const group = breaksByBlock.get(point.blockIndex) ?? [];
-          group.push(point); breaksByBlock.set(point.blockIndex, group);
-        }
-        let priorInlineHeight = 0;
-        measuredBlocks.forEach((block, index) => {
-          const placement = layout.placements[index]; if (!placement) return;
-          const id = blockIds[index];
-          const anchor = flowAnchors[index];
-          const lines = block.lines?.length ? block.lines : [{ top: 0, height: block.height, textOffset: 0 }];
-          const breaks = breaksByBlock.get(index) ?? [];
-          let page = placement.pageIndex, inline = 0;
-          const text = flow[index]!.element.textContent ?? '';
-          const graphic = !block.splittable && !!flow[index]!.element.querySelector('img,svg,table');
-          const breaksByOffset = new Map<number, typeof breaks>();
-          for (const point of breaks) {
-            const group = breaksByOffset.get(point.textOffset) ?? [];
-            group.push(point); breaksByOffset.set(point.textOffset, group);
-          }
-          lines.forEach((line, lineIndex) => {
-            for (const point of (breaksByOffset.get(line.textOffset) ?? [])) { page = point.pageIndex; inline += point.height; }
-            const thumbnail = thumbnails[page], geometry = pageGeometries[page]; if (!thumbnail || !geometry) return;
-            if (thumbnail.marks.length < 96) {
-              const y = block.top + line.top + placement.translateY + priorInlineHeight + inline - metrics(page, layout.pageSectionIds?.[page]).bodyTop + geometry.topMargin;
-              const count = (lines[lineIndex + 1]?.textOffset ?? text.length) - line.textOffset;
-              thumbnail.marks.push({ x: geometry.left, y: Math.max(0, Math.min(geometry.height, y)),
-                width: geometry.bodyWidth * (block.splittable ? Math.min(1, Math.max(0.12, count / 70)) : 1), height: Math.max(1, Math.min(line.height * 0.4, geometry.height)), graphic,
-              });
-            }
-            thumbnail.studyId ??= studyRoot(block.sectionId ?? blockSectionIds.get(anchor ?? '') ?? '');
-            if (anchor) { thumbnail.firstBlockId ??= anchor; thumbnail.lastBlockId = anchor; }
-            if (!thumbnail.id.startsWith('inserted:') && thumbnail.id === `body:${page}`) thumbnail.id = `text:${id ?? `front-${index}`}:${line.textOffset}`;
+          const thumbnails: PublicationBodyPageThumbnail[] = pageGeometries.map((geometry, index) => {
+            const inserted = insertedByPage.get(index);
+            const insertion = inserted ? insertionsById.get(inserted.id) : undefined;
+            const anchorSection = insertion?.beforeBlockId === PUBLICATION_BODY_START ? layoutSectionsRef.current[0]?.id
+              : blockSectionIds.get(insertion?.beforeBlockId ?? insertion?.afterBlockId ?? '');
+            return { id: inserted ? `inserted:${inserted.id}` : `body:${index}`, insertionId: inserted?.id,
+              number: firstPageNumber + index, styleId: preparedPageStyles.resolve(index, layout.pageSectionIds?.[index], insertionStyles.get(index)).id,
+              width: geometry.width, height: geometry.height, marks: [], studyId: studyRoot(layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
+            };
           });
-          priorInlineHeight += breaks.reduce((sum, point) => sum + point.height, 0);
-        });
-        const frontIndex = flow.findIndex((item) => item.element.classList.contains('publication-document-front-matter'));
-        const frontPage = layout.placements[frontIndex]?.pageIndex;
-        if (frontPage !== undefined && thumbnails[frontPage]) thumbnails[frontPage]!.firstBlockId = PUBLICATION_BODY_START;
-        // Footnote-only sheets use the nearest manuscript boundary for additions.
-        fillPublicationThumbnailBoundaries(thumbnails);
-        if (!content.getClientRects().length) { finish(); return; }
-        projectionRulesRef.current = projectionRules;
-        updateProvisionalProjection();
-        pageCountChange.current?.(manuscriptId, layout.pageCount);
-        setPagination((current) => (
-          current.preparedManuscriptId === manuscriptId
-            && current.pageCount === layout.pageCount
-            && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
-            && JSON.stringify(current.pageSectionIds) === JSON.stringify(layout.pageSectionIds)
-            && JSON.stringify(current.insertedPages) === JSON.stringify(layout.insertedPages)
-            && JSON.stringify(current.sectionWarnings) === JSON.stringify(sectionWarnings)
-            && JSON.stringify(current.thumbnails) === JSON.stringify(thumbnails)
-            && current.css === css
-            && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
-            ? current
-            : { preparedManuscriptId: manuscriptId, pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds, insertedPages: layout.insertedPages, sectionWarnings, thumbnails }
-        ));
-        finish();
+          const breaksByBlock = new Map<number, typeof layout.flowBreaks[number][]>();
+          for (const point of layout.flowBreaks) {
+            const group = breaksByBlock.get(point.blockIndex) ?? [];
+            group.push(point); breaksByBlock.set(point.blockIndex, group);
+          }
+          let priorInlineHeight = 0;
+          measuredBlocks.forEach((block, index) => {
+            const placement = layout.placements[index]; if (!placement) return;
+            const id = blockIds[index];
+            const anchor = flowAnchors[index];
+            const lines = block.lines?.length ? block.lines : [{ top: 0, height: block.height, textOffset: 0 }];
+            const breaks = breaksByBlock.get(index) ?? [];
+            let page = placement.pageIndex, inline = 0;
+            const text = flow[index]!.element.textContent ?? '';
+            const graphic = !block.splittable && !!flow[index]!.element.querySelector('img,svg,table');
+            const breaksByOffset = new Map<number, typeof breaks>();
+            for (const point of breaks) {
+              const group = breaksByOffset.get(point.textOffset) ?? [];
+              group.push(point); breaksByOffset.set(point.textOffset, group);
+            }
+            lines.forEach((line, lineIndex) => {
+              for (const point of (breaksByOffset.get(line.textOffset) ?? [])) { page = point.pageIndex; inline += point.height; }
+              const thumbnail = thumbnails[page], geometry = pageGeometries[page]; if (!thumbnail || !geometry) return;
+              if (thumbnail.marks.length < 96) {
+                const y = block.top + line.top + placement.translateY + priorInlineHeight + inline - metrics(page, layout.pageSectionIds?.[page]).bodyTop + geometry.topMargin;
+                const count = (lines[lineIndex + 1]?.textOffset ?? text.length) - line.textOffset;
+                thumbnail.marks.push({ x: geometry.left, y: Math.max(0, Math.min(geometry.height, y)),
+                  width: geometry.bodyWidth * (block.splittable ? Math.min(1, Math.max(0.12, count / 70)) : 1), height: Math.max(1, Math.min(line.height * 0.4, geometry.height)), graphic,
+                });
+              }
+              thumbnail.studyId ??= studyRoot(block.sectionId ?? blockSectionIds.get(anchor ?? '') ?? '');
+              if (anchor) { thumbnail.firstBlockId ??= anchor; thumbnail.lastBlockId = anchor; }
+              if (!thumbnail.id.startsWith('inserted:') && thumbnail.id === `body:${page}`) thumbnail.id = `text:${id ?? `front-${index}`}:${line.textOffset}`;
+            });
+            priorInlineHeight += breaks.reduce((sum, point) => sum + point.height, 0);
+          });
+          const frontIndex = flow.findIndex((item) => item.element.classList.contains('publication-document-front-matter'));
+          const frontPage = layout.placements[frontIndex]?.pageIndex;
+          if (frontPage !== undefined && thumbnails[frontPage]) thumbnails[frontPage]!.firstBlockId = PUBLICATION_BODY_START;
+          // Footnote-only sheets use the nearest manuscript boundary for additions.
+          fillPublicationThumbnailBoundaries(thumbnails);
+          if (!content.getClientRects().length) { finish(); return; }
+          projectionRulesRef.current = projectionRules;
+          updateProvisionalProjection();
+          pageCountChange.current?.(manuscriptId, layout.pageCount);
+          setPagination((current) => (
+            current.preparedManuscriptId === manuscriptId
+              && current.pageCount === layout.pageCount
+              && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
+              && JSON.stringify(current.pageSectionIds) === JSON.stringify(layout.pageSectionIds)
+              && JSON.stringify(current.insertedPages) === JSON.stringify(layout.insertedPages)
+              && JSON.stringify(current.sectionWarnings) === JSON.stringify(sectionWarnings)
+              && JSON.stringify(current.thumbnails) === JSON.stringify(thumbnails)
+              && current.css === css
+              && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
+              ? current
+              : { preparedManuscriptId: manuscriptId, pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds, insertedPages: layout.insertedPages, sectionWarnings, thumbnails }
+          ));
+          finish();
+        };
+        // DOM measurement stays on the main thread; only numeric pagination
+        // for larger publications is delegated to the persistent worker.
+        if (worker?.available && measuredBlocks.length > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT) {
+          paginator.clear();
+          void worker.paginate(measuredBlocks, footnotes, cacheBudget).then(result => {
+            if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
+            if (result) { restore(result.metricsState); publishLayout(result.layout); }
+            else publishLayout(localLayout());
+          });
+        } else { worker?.clearCache(); publishLayout(localLayout()); }
       };
 
       measureNotesChunk();
@@ -923,6 +947,8 @@ export function PublicationDocumentCanvas({
 
     return () => {
       cancelled = true;
+      worker?.close();
+      content.ownerDocument.removeEventListener('visibilitychange', visibilityChanged);
       cancelFontPreparation();
       if (scheduleTimer !== null) clearTimeout(scheduleTimer);
       cancelAnimationFrame(frame);
@@ -956,7 +982,7 @@ export function PublicationDocumentCanvas({
   ]);
 
   const [projectionCache] = useState(() => createTextProjectionCache<JSONContent>());
-  function updateDocument(_documentId: string, content: string, snapshot?: JSONContent): void {
+  const updateDocument = useCallback((_documentId: string, content: string, snapshot?: JSONContent): void => {
     let parsed: JSONContent;
     try {
       parsed = snapshot ?? JSON.parse(content) as JSONContent;
@@ -964,12 +990,23 @@ export function PublicationDocumentCanvas({
       return;
     }
     const currentSections = useStudioStore.getState().manuscript.sections;
-    stageContinuousDocumentChange(
-      projectContinuousManuscriptDocument(parsed, currentSections, {
-        textContentCache: snapshot ? projectionCache : undefined,
-      }),
-    );
-  }
+    const projected = projectContinuousManuscriptDocument(parsed, currentSections, {
+      textContentCache: snapshot ? projectionCache : undefined,
+    });
+    // Structural changes may require regenerated heading/next-style attributes.
+    // Reuse only for stable section hierarchy and block identity/style metadata.
+    const stableStructure = currentSections.length === projected.length && projected.every((section, index) => {
+      const old = currentSections[index]!;
+      return section.id === old.id && section.title === old.title
+        && section.blocks.length === old.blocks.length
+        && section.blocks.every((block, i) => block.id === old.blocks[i]!.id
+          && block.type === old.blocks[i]!.type && block.paragraphStyleId === old.blocks[i]!.paragraphStyleId);
+    }) && publicationSectionLayoutKey(currentSections) === publicationSectionLayoutKey(projected);
+    localProjectionRef.current = stableStructure ? { manuscriptId, sections: projected, content,
+      nodeCount: parsed.content?.length ?? 0, sectionNumbers, nextStyles: paragraphStyleNextById,
+      defaultStyle: style.paragraphStyles.defaultStyleId } : null;
+    stageContinuousDocumentChange(projected);
+  }, [manuscriptId, projectionCache, sectionNumbers, paragraphStyleNextById, style.paragraphStyles.defaultStyleId]);
 
   const body = style.styles.body;
   const title = style.styles.articleTitlePrimary;
@@ -1385,7 +1422,7 @@ export function PublicationDocumentCanvas({
                       blockId={`omi-publication-document-${manuscript.id}`}
                       blockType="manuscript"
                       editable={!previewOnly && !presentation}
-                      content={JSON.stringify(document)}
+                      content={document.content}
                       onUpdate={updateDocument}
                       manuscriptLanguage={manuscript.locale}
                       className="publication-layout-document-editor"
@@ -1966,16 +2003,6 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
     notes: 'Notes',
     empty: 'The document does not yet contain body text.',
   };
-}
-
-function canvasPageGeometry(resolved: ReturnType<ReturnType<typeof createPublicationPageStyleResolver>['resolve']>, scale: number) {
-  const p = resolved.page, unit = PIXELS_PER_MM * scale;
-  const inner = (p.margins.inner + p.gutter) * unit, outer = p.margins.outer * unit;
-  const mirrored = p.mirroredMargins && resolved.pageNumber % 2 === 0;
-  const width = p.width * unit, height = p.height * unit;
-  const topMargin = p.margins.top * unit, bottomMargin = p.margins.bottom * unit;
-  return { width, height, topMargin, bottomMargin, left: mirrored ? outer : inner, right: mirrored ? inner : outer,
-    bodyHeight: Math.max(10 * unit, height - topMargin - bottomMargin), bodyWidth: Math.max(10 * unit, width - inner - outer) };
 }
 
 /** Relative to the block's starting sheet, including mirrored inside margins. */

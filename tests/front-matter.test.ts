@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { useStudioStore } from '../src/app/useStudioStore.ts';
+import { stageSubtitleChange, stageMottoChange, stageTitleMatterChange } from '../src/app/manuscriptFrontMatterActions.ts';
 import { createPublicationMatterFrame, fitPublicationMatterImage, matterFrameBoxStyle, matterImageStyle, reorderPublicationMatterFrame, resizePublicationMatterImage } from '../src/model/publicationMatterFrames.ts';
 import { PUBLICATION_MEASUREMENT_UNITS, formatPublicationMeasurement, isPublicationMeasurementUnit, parsePublicationMeasurement, publicationMeasurementFromMm, publicationMeasurementToMm } from '../src/model/publicationMeasurementUnits.ts';
 import { frameGraphicTransform } from '../src/model/publicationFramePages.ts';
@@ -391,4 +393,42 @@ test('publication measurement units use DTP points and picas with physical round
   }
   assert.equal(parsePublicationMeasurement(formatPublicationMeasurement(1, 'pc'), 'pc', 1, 2000), 1);
   assert.equal(parsePublicationMeasurement('0.0000001', 'mm', .000001, 20000), undefined);
+});
+
+test('front-matter edits retain body identity and checkpoint the same semantic changes', () => {
+  const original = createVersionedTestManuscript();
+  useStudioStore.getState().loadManuscript(original);
+  try {
+    const initial = useStudioStore.getState().manuscript;
+    const sections = initial.sections;
+    const agents = initial.agents;
+    const annotations = initial.annotations;
+    const originalTitle = initial.title;
+    useStudioStore.getState().setTitle('New');
+    useStudioStore.getState().setTitle('New title');
+    useStudioStore.getState().setAbstract('Abstract');
+    stageSubtitleChange('Subtitle');
+    stageMottoChange('Motto');
+    stageTitleMatterChange('halfTitle', 'Half title');
+    const state = useStudioStore.getState();
+    assert.strictEqual(state.manuscript.sections, sections);
+    assert.strictEqual(state.manuscript.agents, agents);
+    assert.strictEqual(state.manuscript.annotations, annotations);
+    assert.equal(state.manuscript.title, 'New title');
+    assert.equal(initial.title, originalTitle);
+    assert.equal(state.pendingChangeSet?.events.find((event) => event.path === '/title')?.previousValue, originalTitle);
+    assert.equal(state.pendingChangeSet?.events.find((event) => event.path === '/title')?.nextValue, 'New title');
+    state.checkpoint('idle');
+    const committed = useStudioStore.getState().manuscript;
+    const snapshot = committed.revisionHistory.revisions.at(-1)?.snapshot.state;
+    assert.equal(snapshot?.title, 'New title');
+    assert.equal(snapshot?.subtitle, 'Subtitle');
+    assert.equal(snapshot?.motto, 'Motto');
+    assert.equal(snapshot?.abstract, 'Abstract');
+    assert.equal(snapshot?.titleMatter?.halfTitle, 'Half title');
+    assert.deepEqual(snapshot?.sections, sections);
+    assert.notStrictEqual(snapshot?.sections, sections);
+  } finally {
+    useStudioStore.getState().loadManuscript(original);
+  }
 });

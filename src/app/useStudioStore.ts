@@ -149,7 +149,6 @@ export const useStudioStore = create<StudioState>((set) => ({
       return stageWorkingChange(
         state,
         {
-          ...extractManuscriptState(state.manuscript),
           title,
         },
         'Changed manuscript title',
@@ -174,7 +173,6 @@ export const useStudioStore = create<StudioState>((set) => ({
       return stageWorkingChange(
         state,
         {
-          ...extractManuscriptState(state.manuscript),
           abstract: abstractText,
         },
         'Changed manuscript abstract',
@@ -947,7 +945,7 @@ export const useStudioStore = create<StudioState>((set) => ({
 
 function stageWorkingChange(
   state: StudioState,
-  nextState: OmiManuscriptState,
+  nextState: Partial<OmiManuscriptState>,
   summary: string,
   events: CreateChangeEventInput[],
   timestamp = new Date().toISOString(),
@@ -965,9 +963,11 @@ function stageWorkingChange(
 
   scheduleAutomaticCheckpoint();
 
+  const { authors: _legacyAuthors, ...manuscriptWithoutLegacyAuthors } = state.manuscript;
   return {
     manuscript: {
-      ...state.manuscript,
+      ...manuscriptWithoutLegacyAuthors,
+      tombstones: state.manuscript.tombstones ?? [],
       ...nextState,
       updatedAt: timestamp,
     },
