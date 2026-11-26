@@ -1,5 +1,5 @@
 import { createNoteBodyDocument, noteBodyPlainText, type NoteCitationStyleOptions, type NoteJsonNode } from '../model/noteRichText';
-import { cssStringLiteral } from './embeddedCss';
+import { authorFontStyle } from './embeddedCss';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import type { OmiAnnotation, OmiBibliographicRecord, OmiCitationStyleId } from '../types/omi';
 
@@ -60,7 +60,7 @@ function applyMarks(text: string, marks: NonNullable<NoteJsonNode['marks']>, pre
       case 'omiSourceFont': {
         const family = typeof mark.attrs?.family === 'string' ? mark.attrs.family.trim() : '';
         return family && family.length <= 128
-          ? `<span data-omi-source-font="${escape(family)}" style="${escape('font-family:' + cssStringLiteral(family))}">${html}</span>`
+          ? `<span data-omi-source-font="${escape(family)}" style="${escape(authorFontStyle(family))}">${html}</span>`
           : html;
       }
       case 'omiLanguage': {
