@@ -359,10 +359,14 @@ function paginateFixedPublicationBlocks(
   const bodyHeight = positive(usablePageHeight, 1);
   const chromeHeight = nonNegative(pageOverhead);
   let resume = 0;
+  let suffixStart = blocks.length;
   if (previous && previous.bodyHeight === bodyHeight && previous.chromeHeight === chromeHeight) {
     while (resume < blocks.length && resume < previous.blocks.length
       && sameFixedBlock(blocks[resume]!, previous.blocks[resume]!)) resume += 1;
     if (resume === blocks.length && resume === previous.blocks.length) return previous.layout;
+    if (blocks.length === previous.blocks.length) {
+      while (suffixStart > resume && sameFixedBlock(blocks[suffixStart - 1]!, previous.blocks[suffixStart - 1]!)) suffixStart -= 1;
+    }
     // The preceding block may keep with the changed block, even when its own
     // geometry is identical. Recompute it too, including append/delete cases.
     resume = Math.max(0, resume - 1);
@@ -376,6 +380,17 @@ function paginateFixedPublicationBlocks(
   const checkpoints: FixedLayoutCheckpoint[] = resume ? previous!.checkpoints.slice(0, resume) : [];
 
   for (let index = resume; index < blocks.length; index += 1) {
+    // At an unchanged suffix, all the future inputs (including keep-with-next
+    // lookahead) and the carried geometry must match exactly before reuse.
+    const stable = previous && index >= suffixStart && index > 0 ? previous.checkpoints[index - 1] : undefined;
+    if (stable && stable.insertedSpace === insertedSpace && stable.insertedInlineHeight === insertedInlineHeight
+      && stable.lastOccupiedPage === lastOccupiedPage && stable.flowBreakCount === flowBreaks.length) {
+      for (let i = index; i < previous!.layout.placements.length; i++) placements.push(previous!.layout.placements[i]!);
+      for (let i = stable.flowBreakCount; i < previous!.layout.flowBreaks.length; i++) flowBreaks.push(previous!.layout.flowBreaks[i]!);
+      for (let i = index; i < previous!.checkpoints.length; i++) checkpoints.push(previous!.checkpoints[i]!);
+      lastOccupiedPage = previous!.checkpoints.at(-1)!.lastOccupiedPage;
+      break;
+    }
     const block = blocks[index]!;
     const naturalTop = nonNegative(block.top);
     const blockHeight = nonNegative(block.height);
