@@ -63,8 +63,8 @@ export const MAX_ISSUE_PAGE_TEXT_BYTES = 16 * 1024 * 1024;
 export function parseIssuePageText(text: string, expectedPages: number): string[] {
   if (!Number.isSafeInteger(expectedPages) || expectedPages < 1 || expectedPages > MAX_ISSUE_PDF_PAGES) throw new Error('Invalid issue page count.');
   const pages = text.split('\f');
-  if (pages.length === expectedPages + 1 && !pages[pages.length - 1]!.trim()) pages.pop();
-  if (pages.length !== expectedPages) throw new Error('PDF text does not match physical page count.');
+  if (pages.length !== expectedPages + 1 || pages[pages.length - 1]!.trim()) throw new Error('PDF text does not match physical page count.');
+  pages.pop();
   return pages;
 }
 
