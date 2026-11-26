@@ -54,7 +54,7 @@ import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
 import type { OmiBibliographicRecord, OmiBlock, OmiSection } from '../types/omi';
-import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
+import { buildSectionNumberMap } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
   buildPublicationTextRoleCss,
@@ -297,16 +297,7 @@ export function PublicationDocumentCanvas({
   const navigationCss = navigationSelector ? `#${canvasId} .publication-document-content .omi-continuous-tiptap-editor > ${navigationSelector}{outline:2px solid #b45309;outline-offset:3px}` : '';
 
   const sectionNumbers = useMemo(
-    () => new Map(
-      manuscript.sections.map((section) => [
-        section.id,
-        formatHierarchicalSectionNumber(
-          manuscript.sections,
-          section.id,
-          manuscript.sectionNumberingStyle,
-        ),
-      ]),
-    ),
+    () => buildSectionNumberMap(manuscript.sections, manuscript.sectionNumberingStyle),
     [manuscript.sectionNumberingStyle, manuscript.sections],
   );
   const paragraphStyleNextById = useMemo(
