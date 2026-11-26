@@ -300,3 +300,63 @@ test('fixed geometry footnotes can reuse an unchanged layout, but never a change
   assert.notStrictEqual(next, original);
   assert.deepEqual(next, paginatePublicationBlocks(changed, 100, 20, notes));
 });
+
+test('complex dirty-prefix pagination preserves carried notes and inserted masters after late edits', () => {
+  for (const styled of [false, true]) {
+    const paginator = createIncrementalPublicationPaginator();
+    const key = {};
+    const blocks: PublicationFlowBlock[] = Array.from({ length: 400 }, (_, i) => ({
+      sectionId: 'section-' + Math.floor(i / 50), top: i * 24, height: 24,
+      splittable: true, keepWithNext: i % 19 === 0,
+      forcePageBreakBefore: i % 50 === 0,
+      lines: [{ top: 0, height: 12, textOffset: 0, noteIds: i % 9 === 0 ? ['n' + i] : [] },
+        { top: 12, height: 12, textOffset: 10 }],
+      noteIds: i % 9 === 0 ? ['n' + i] : [],
+      insertedPagesBefore: styled && i === 250 ? [{ id: 'plate-page', styleId: 'plate' }] : undefined,
+    }));
+    const heights = new Map(Array.from({ length: 45 }, (_, i) => ['n' + i * 9, 70 + (i % 4) * 15] as const));
+    const notes = { heights, lineHeight: 5, separatorHeight: 5 };
+    const geometry = (_index: number, section?: string, style?: string) => ({
+      height: style === 'plate' ? 210 : section === 'section-3' ? 150 : 130,
+      bodyHeight: style === 'plate' ? 170 : section === 'section-3' ? 110 : 90,
+      topMargin: 20,
+    });
+    const run = (input: PublicationFlowBlock[], cold = false) => {
+      const resolver = createPublicationPageMetricsResolver(geometry, 10, 20);
+      const options = styled ? { key, snapshot: resolver.snapshot, restore: resolver.restore } : undefined;
+      const metrics = styled ? resolver.metrics : undefined;
+      const layout = cold ? paginatePublicationBlocks(input, 90, 40, notes, metrics)
+        : paginator.paginate(input, 90, 40, notes, metrics, options);
+      return { layout, state: resolver.snapshot() };
+    };
+    const first = run(blocks);
+    assert.deepEqual(first, run(blocks, true));
+    const changed = blocks.map((block, i) => i === 350 ? { ...block, height: 36, lines: [...block.lines!, { top: 24, height: 12, textOffset: 20 }] } : i > 350 ? { ...block, top: block.top + 12 } : block);
+    heights.set('n351', 180);
+    const second = run(changed);
+    assert.deepEqual(second, run(changed, true));
+    assert.strictEqual(second.layout.placements[0], first.layout.placements[0]);
+    assert.notStrictEqual(second.layout.placements[350], first.layout.placements[350]);
+    // A changed early note invalidates every checkpoint after its anchor.
+    heights.set('n0', 190);
+    const third = run(changed);
+    assert.deepEqual(third, run(changed, true));
+    assert.notStrictEqual(third.layout.placements[0], second.layout.placements[0]);
+    for (const input of [changed.slice(0, 310), changed.slice(0, 20), [...changed, { top: 9612, height: 12 }], changed]) {
+      assert.deepEqual(run(input), run(input, true));
+    }
+  }
+});
+
+test('complex prefix cache invalidates when a previously missing early footnote becomes measurable', () => {
+  const paginator = createIncrementalPublicationPaginator();
+  const blocks: PublicationFlowBlock[] = Array.from({ length: 120 }, (_, i) => ({
+    top: i * 15, height: 15, noteIds: i === 0 ? ['missing'] : i === 100 ? ['late'] : [],
+  }));
+  const notes = { heights: new Map([['late', 80]]), lineHeight: 5, separatorHeight: 5 };
+  const original = paginator.paginate(blocks, 100, 20, notes);
+  notes.heights.set('missing', 100);
+  const next = paginator.paginate(blocks, 100, 20, notes);
+  assert.notStrictEqual(next.placements[0], original.placements[0]);
+  assert.deepEqual(next, paginatePublicationBlocks(blocks, 100, 20, notes));
+});
