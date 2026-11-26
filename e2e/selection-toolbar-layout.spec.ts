@@ -248,6 +248,50 @@ test('authoring font family picker changes selected text and restores the inheri
   await expect(editor).toContainText('Select these words to format them.');
 });
 
+test('publication font fallback retains original face for multilingual text', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { authorFontStyle } = await import('/src/services/embeddedCss.ts');
+    const { clonePublicationStyleTemplate, publicationAuthorFontOverrideCss } = await import('/src/services/publicationStyleExport.ts');
+    const style = clonePublicationStyleTemplate();
+    style.fonts.body.family = 'Publisher Test Serif';
+    style.overrideAuthorFonts = true;
+    const host = document.createElement('div');
+    host.id = 'font-fallback-test';
+    const rule = document.createElement('style');
+    rule.textContent = publicationAuthorFontOverrideCss(style, '#font-fallback-test')
+      + '#font-fallback-test .note { --omi-publication-primary-font: "Publisher Note Serif"; }';
+    const run = document.createElement('span');
+    run.dataset.omiSourceFont = 'Original Greek Font';
+    run.style.cssText = authorFontStyle('Original Greek Font');
+    run.textContent = 'árvíztűrő Ἐν ἀρχῇ שָׁלוֹם العربية';
+    host.append(run);
+    document.body.append(host, rule);
+    const overridden = getComputedStyle(run).fontFamily;
+    const text = run.textContent;
+    host.className = 'note';
+    const note = document.createElement('div');
+    note.className = 'note';
+    host.append(note);
+    note.append(run);
+    const noteFont = getComputedStyle(run).fontFamily;
+    style.overrideAuthorFonts = false;
+    rule.textContent = publicationAuthorFontOverrideCss(style, '#font-fallback-test');
+    const restored = getComputedStyle(run).fontFamily;
+    const original = run.dataset.omiSourceFont;
+    rule.remove();
+    host.remove();
+    return { overridden, noteFont, restored, original, text };
+  });
+  expect(result.overridden).toMatch(/^"?Publisher Test Serif"?,\s*"?Original Greek Font"?/);
+  expect(result.noteFont).toMatch(/^"?Publisher Note Serif"?,\s*"?Original Greek Font"?/);
+  expect(result.restored).toMatch(/^"?Original Greek Font"?/);
+  expect(result.overridden).toContain('Noto Sans Hebrew');
+  expect(result.overridden).toContain('Noto Naskh Arabic');
+  expect(result.original).toBe('Original Greek Font');
+  expect(result.text).toBe('árvíztűrő Ἐν ἀρχῇ שָׁלוֹם العربية');
+});
+
 test('saved author font survives a reversible publication font override', async ({ page }) => {
   const { editor, toolbar } = await openToolbar(page);
   await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
