@@ -4,15 +4,22 @@ import type { Editor } from '@tiptap/core';
 import { EyeOff, Unlink, RotateCcw, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { PUBLICATION_FONT_SIZE_PRESETS } from './PublicationPointInput';
+import { fallbackSystemFontFamilies } from '../services/systemFonts';
 import { normalizeParagraphValue, paragraphBorders, paragraphTabs, BORDER_SIDES, type ParagraphFormat, type ParagraphBorder, type ParagraphTab } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
 import { getRichTextCopy } from '../i18n/richText';
 import type { SupportedLocale } from '../i18n/types';
 
+// Use the same common typefaces as the publication editor, without requesting
+// local-font permission just to open the authoring formatting panel.
+const AUTHORING_FONT_FAMILIES = fallbackSystemFontFamilies()
+  .map(({ family }) => family)
+  .filter(family => !['system-ui', 'sans-serif', 'serif', 'monospace'].includes(family));
+
 type Labels = readonly string[];
 const LABELS: Record<string, Labels> = {
   en: ['Character formatting','Font family','Font size (pt)','Text color','Character background','Highlight','Letter spacing (pt)','Baseline shift (pt)','Underline style','Single','Double','Dotted','Wavy','Uppercase','Double strike','Outline','Shadow','Character width (%)','Kerning threshold (pt)','Reset','Mixed formatting'],
-  hu: ['Karakterformázás','Betűcsalád','Betűméret (pt)','Betűszín','Karakterháttér','Kiemelés','Betűköz (pt)','Alapvonal-eltolás (pt)','Aláhúzás típusa','Egyszeres','Dupla','Pontozott','Hullámos','Nagybetűs','Dupla áthúzás','Körvonal','Árnyék','Betűszélesség (%)','Alávágási küszöb (pt)','Alaphelyzet','Vegyes formázás'],
+  hu: ['Karakterformázás','Betűtípus','Betűméret (pt)','Betűszín','Karakterháttér','Kiemelés','Betűköz (pt)','Alapvonal-eltolás (pt)','Aláhúzás típusa','Egyszeres','Dupla','Pontozott','Hullámos','Nagybetűs','Dupla áthúzás','Körvonal','Árnyék','Betűszélesség (%)','Alávágási küszöb (pt)','Alaphelyzet','Vegyes formázás'],
   de: ['Zeichenformatierung','Schriftfamilie','Schriftgröße (pt)','Schriftfarbe','Zeichenhintergrund','Hervorhebung','Laufweite (pt)','Grundlinienversatz (pt)','Unterstreichungsart','Einfach','Doppelt','Gepunktet','Wellig','Versalien','Doppelt durchgestrichen','Kontur','Schatten','Zeichenbreite (%)','Kerning-Schwelle (pt)','Zurücksetzen','Gemischte Formatierung'],
   fr: ['Mise en forme des caractères','Police','Taille (pt)','Couleur du texte','Arrière-plan','Surlignage','Interlettrage (pt)','Décalage vertical (pt)','Type de soulignement','Simple','Double','Pointillé','Ondulé','Majuscules','Double barré','Contour','Ombre','Largeur (%)','Seuil de crénage (pt)','Réinitialiser','Formats mixtes'],
   it: ['Formattazione caratteri','Famiglia di caratteri','Dimensione (pt)','Colore del testo','Sfondo','Evidenziazione','Spaziatura (pt)','Spostamento verticale (pt)','Tipo di sottolineatura','Singola','Doppia','Punteggiata','Ondulata','Maiuscolo','Doppio barrato','Contorno','Ombra','Larghezza (%)','Soglia crenatura (pt)','Ripristina','Formati misti'],
@@ -60,6 +67,9 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
   const editSelection = useRef<{ from: number; to: number } | null>(null);
   const value = editing ? draft : current.value || (choices ? '' : defaultValue || '');
   const normalized = normalize(value);
+  const fontFamilies = name === 'omiSourceFont'
+    ? [...new Set([...AUTHORING_FONT_FAMILIES, ...(current.value ? [current.value] : [])])]
+    : [];
   const applyValue = (next: string, restoreFocus: boolean) => {
     const nextValue = normalize(next);
     if (nextValue === undefined || nextValue === null) return;
@@ -93,6 +103,10 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
           setEditing(false);
         }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); apply(); } }} />
+        {name === 'omiSourceFont' ? <select aria-label={label} value={current.value} onChange={event => choose(event.target.value)}>
+          <option value="" disabled>{current.mixed ? mixed : reset}</option>
+          {fontFamilies.map(family => <option key={family} value={family} style={{ fontFamily: family }}>{family}</option>)}
+        </select> : null}
         {name === 'omiFontSize' ? <select aria-label={label} value={current.value && PUBLICATION_FONT_SIZE_PRESETS.includes(Number(current.value)) ? current.value : ''} onChange={event => choose(event.target.value)}>
           <option value="" disabled>—</option>
           {PUBLICATION_FONT_SIZE_PRESETS.map(size => <option key={size} value={size}>{size} pt</option>)}
@@ -213,7 +227,7 @@ export function DirectFormattingPanel({ editor, locale }: { editor: Editor; loca
     <div className="omi-direct-format-fields">
       <SourceStyleControls editor={editor} locale={locale} kind="character"/>
       <FormatField {...common} name="omiSourceFont" attribute="family" label={l[1]!} icon={<Type size={16} aria-hidden="true" />}
-        normalize={v => { const value = v.trim(); return value && value.length <= 128 && Array.from(value).every(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127) ? value : undefined; }} />
+        normalize={v => { const value = v.trim(); return value && value.length <= 128 && Array.from(value).every(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127 && !';{}<>'.includes(c)) ? value : undefined; }} />
       {field('omiFontSize', 2, <LetterText size={16} aria-hidden="true" />, 'number', '12')}
       {field('omiTextColor', 3, <Palette size={16} aria-hidden="true" />, 'color', '#000000')}
       {field('omiCharacterBackground', 4, <Palette size={16} aria-hidden="true" />, 'color', '#ffffff')}
