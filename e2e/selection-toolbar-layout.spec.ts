@@ -248,6 +248,49 @@ test('authoring font family picker changes selected text and restores the inheri
   await expect(editor).toContainText('Select these words to format them.');
 });
 
+test('saved author font survives a reversible publication font override', async ({ page }) => {
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+  await toolbar.getByRole('combobox', { name: 'Font family', exact: true }).selectOption('Arial');
+  await expect(editor.locator('[data-omi-source-font="Arial"]')).toHaveText('Select these words');
+  const saved = await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { serializeOmiJson } = await import('/src/services/exportOmi.ts');
+    const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
+    const { loadPublicationStyle, buildPublicationStyleCss } = await import('/src/services/publicationStyleExport.ts');
+    const { stageAppliedPublicationStyle } = await import('/src/app/publicationTemplateActions.ts');
+    useStudioStore.getState().checkpoint('manual');
+    const before = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    const style = loadPublicationStyle(before);
+    stageAppliedPublicationStyle({ ...style, overrideAuthorFonts: true });
+    useStudioStore.getState().checkpoint('manual');
+    const overridden = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    const persisted = loadPublicationStyle(overridden);
+    stageAppliedPublicationStyle({ ...persisted, overrideAuthorFonts: false });
+    useStudioStore.getState().checkpoint('manual');
+    const restored = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    return {
+      before: JSON.stringify(before.sections),
+      overridden: JSON.stringify(overridden.sections),
+      restored: JSON.stringify(restored.sections),
+      enabled: persisted.overrideAuthorFonts,
+      disabled: loadPublicationStyle(restored).overrideAuthorFonts,
+      printCss: buildPublicationStyleCss(persisted, 'print'),
+      htmlCss: buildPublicationStyleCss(persisted, 'html'),
+      restoredCss: buildPublicationStyleCss(loadPublicationStyle(restored), 'html'),
+    };
+  });
+  expect(saved.before).toContain('omiSourceFont');
+  expect(saved.before).toContain('Arial');
+  expect(saved.overridden).toBe(saved.before);
+  expect(saved.restored).toBe(saved.before);
+  expect(saved.enabled).toBe(true);
+  expect(saved.disabled).toBe(false);
+  expect(saved.printCss).toContain('[data-omi-source-font] { font-family: inherit !important; }');
+  expect(saved.htmlCss).toContain('[data-omi-source-font] { font-family: inherit !important; }');
+  expect(saved.restoredCss).not.toContain('[data-omi-source-font] { font-family: inherit !important; }');
+});
+
 test('shared character and paragraph icon panels edit independent properties and restore inherited formatting', async ({ page }) => {
   const { editor, toolbar } = await openToolbar(page);
   const character = toolbar.getByRole('button', { name: 'Character formatting', exact: true });
