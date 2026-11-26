@@ -911,6 +911,13 @@ test('live facing-page pagination retains stable block projections and coalesces
   assert.ok(documentCanvas.includes('if (measuring) { pending = true; return; }'));
   assert.ok(documentCanvas.includes('if (queued) return;'));
   assert.ok(documentCanvas.includes('if (structureChanged) { structureVersion += 1; updateProvisionalProjection(); }'));
-  assert.ok(documentCanvas.includes('!facingPages && (document.content?.length ?? 0)'));
+  assert.ok(documentCanvas.includes('const paginationDebounceMs = (document.content?.length ?? 0)'));
   assert.ok(documentCanvas.includes('measuredNotes.delete(measuredNote)'));
+});
+
+test('front-matter autosizing does not reschedule pagination on unrelated renders', () => {
+  assert.ok(documentCanvas.includes('}, [value, layoutKey, previewOnly]);'));
+  assert.ok(documentCanvas.includes('if (nextWidth === width) return;'));
+  assert.ok(documentCanvas.includes("target?.matches('.publication-document-front-matter textarea')"));
+  assert.ok(documentCanvas.includes("record.attributeName === 'style'"));
 });
