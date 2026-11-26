@@ -423,3 +423,21 @@ test('publication worker client reuses one worker and falls back on failure or c
   const unavailable = createPublicationPaginationWorkerClient(config, () => { throw new Error('Worker unavailable'); });
   assert.equal(await unavailable.paginate(blocks, notes), null);
 });
+
+test('fixed-page pagination stops when the unchanged suffix has identical carried state', () => {
+  const paginator = createIncrementalPublicationPaginator();
+  const blocks: PublicationFlowBlock[] = Array.from({ length: 1000 }, (_, index) => ({
+    top: index * 20, height: 20, splittable: false,
+    lines: [{ top: 0, height: 20, textOffset: 0 }],
+  }));
+  const first = paginator.paginate(blocks, 100, 20);
+  const changed = blocks.map((block, index) => index === 500 ? { ...block, lines: [{ top: 0, height: 20, textOffset: 2 }] } : block);
+  const second = paginator.paginate(changed, 100, 20);
+  assert.deepEqual(second, paginatePublicationBlocks(changed, 100, 20));
+  assert.notStrictEqual(second.placements[500], first.placements[500]);
+  assert.strictEqual(second.placements[501], first.placements[501]);
+  assert.strictEqual(second.placements[999], first.placements[999]);
+  const moved = changed.map((block, index) => index === 500 ? { ...block, height: 40 } : index > 500 ? { ...block, top: block.top + 20 } : block);
+  assert.deepEqual(paginator.paginate(moved, 100, 20), paginatePublicationBlocks(moved, 100, 20));
+  assert.deepEqual(paginator.paginate(changed, 130, 30), paginatePublicationBlocks(changed, 130, 30));
+});
