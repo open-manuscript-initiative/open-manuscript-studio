@@ -188,6 +188,156 @@ test('panel placement also works with the keyboard and can return to selection f
 });
 
 
+test('authoring font picker loads installed families only on request and keeps common fonts', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'queryLocalFonts', {
+      configurable: true,
+      value: async () => [{ family: 'Local Test Serif', fullName: 'Local Test Serif Regular', postscriptName: 'LocalTestSerif-Regular', style: 'Regular' }],
+    });
+  });
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  const family = panel.getByRole('combobox', { name: 'Font family', exact: true });
+  await expect(family.locator('option[value="Local Test Serif"]')).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Load system fonts', exact: true }).click();
+  await expect(family.locator('option[value="Local Test Serif"]')).toHaveCount(1);
+  await expect(family.locator('option[value="Arial"]')).toHaveCount(1);
+  await family.selectOption('Local Test Serif');
+  await expect(editor.locator('[data-omi-source-font="Local Test Serif"]')).toHaveText('Select these words');
+  await expect(panel.getByRole('button', { name: 'Refresh system fonts', exact: true })).toBeEnabled();
+});
+
+test('authoring font picker keeps common fonts when local access is denied', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'queryLocalFonts', {
+      configurable: true,
+      value: async () => { throw new DOMException('Permission denied', 'NotAllowedError'); },
+    });
+  });
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  await panel.getByRole('button', { name: 'Load system fonts', exact: true }).click();
+  await expect(panel.getByRole('status')).toHaveText('Could not read system fonts');
+  await panel.getByRole('combobox', { name: 'Font family', exact: true }).selectOption('Arial');
+  await expect(editor.locator('[data-omi-source-font="Arial"]')).toHaveText('Select these words');
+});
+
+test('authoring font family picker changes selected text and restores the inherited font', async ({ page }) => {
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  const family = panel.getByRole('combobox', { name: 'Font family', exact: true });
+  await expect(family.locator('option[value="Arial"]')).toHaveText('Arial');
+  await family.selectOption('Arial');
+  const formatted = editor.locator('[data-omi-source-font="Arial"]');
+  await expect(formatted).toHaveText('Select these words');
+  await expect(formatted).toHaveCSS('font-family', /Arial/);
+  await expect(family).toHaveValue('Arial');
+  await family.selectOption('Times New Roman');
+  await expect(editor.locator('[data-omi-source-font="Times New Roman"]')).toHaveText('Select these words');
+  await expect(editor.locator('[data-omi-source-font="Arial"]')).toHaveCount(0);
+  const custom = panel.getByRole('textbox', { name: 'Font family', exact: true });
+  await custom.fill('Publisher Serif');
+  await panel.getByRole('button', { name: 'Apply: Font family', exact: true }).click();
+  await expect(editor.locator('[data-omi-source-font="Publisher Serif"]')).toHaveText('Select these words');
+  await expect(family).toHaveValue('Publisher Serif');
+  await panel.getByRole('button', { name: 'Reset: Font family', exact: true }).click();
+  await expect(editor.locator('[data-omi-source-font]')).toHaveCount(0);
+  await expect(editor).toContainText('Select these words to format them.');
+});
+
+test('publication font fallback retains original face for multilingual text', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { authorFontStyle } = await import('/src/services/embeddedCss.ts');
+    const { clonePublicationStyleTemplate, publicationAuthorFontOverrideCss } = await import('/src/services/publicationStyleExport.ts');
+    const style = clonePublicationStyleTemplate();
+    style.fonts.body.family = 'Publisher Test Serif';
+    style.overrideAuthorFonts = true;
+    const host = document.createElement('div');
+    host.id = 'font-fallback-test';
+    const rule = document.createElement('style');
+    rule.textContent = publicationAuthorFontOverrideCss(style, '#font-fallback-test')
+      + '#font-fallback-test .note { --omi-publication-primary-font: "Publisher Note Serif"; }';
+    const run = document.createElement('span');
+    run.dataset.omiSourceFont = 'Original Greek Font';
+    run.style.cssText = authorFontStyle('Original Greek Font');
+    run.textContent = 'árvíztűrő Ἐν ἀρχῇ שָׁלוֹם العربية';
+    host.append(run);
+    document.body.append(host, rule);
+    const overridden = getComputedStyle(run).fontFamily;
+    const text = run.textContent;
+    host.className = 'note';
+    const note = document.createElement('div');
+    note.className = 'note';
+    host.append(note);
+    note.append(run);
+    const noteFont = getComputedStyle(run).fontFamily;
+    style.overrideAuthorFonts = false;
+    rule.textContent = publicationAuthorFontOverrideCss(style, '#font-fallback-test');
+    const restored = getComputedStyle(run).fontFamily;
+    const original = run.dataset.omiSourceFont;
+    rule.remove();
+    host.remove();
+    return { overridden, noteFont, restored, original, text };
+  });
+  expect(result.overridden).toMatch(/^"?Publisher Test Serif"?,\s*"?Original Greek Font"?/);
+  expect(result.noteFont).toMatch(/^"?Publisher Note Serif"?,\s*"?Original Greek Font"?/);
+  expect(result.restored).toMatch(/^"?Original Greek Font"?/);
+  expect(result.overridden).toContain('Noto Sans Hebrew');
+  expect(result.overridden).toContain('Noto Naskh Arabic');
+  expect(result.original).toBe('Original Greek Font');
+  expect(result.text).toBe('árvíztűrő Ἐν ἀρχῇ שָׁלוֹם العربية');
+});
+
+test('saved author font survives a reversible publication font override', async ({ page }) => {
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+  await toolbar.getByRole('combobox', { name: 'Font family', exact: true }).selectOption('Arial');
+  await expect(editor.locator('[data-omi-source-font="Arial"]')).toHaveText('Select these words');
+  const saved = await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { serializeOmiJson } = await import('/src/services/exportOmi.ts');
+    const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
+    const { loadPublicationStyle, buildPublicationStyleCss } = await import('/src/services/publicationStyleExport.ts');
+    const { stageAppliedPublicationStyle } = await import('/src/app/publicationTemplateActions.ts');
+    // A blank study has no title until the author supplies one. Portable OMI
+    // requires a non-empty title; exercise the real metadata action before saving.
+    useStudioStore.getState().setTitle('Author font round-trip');
+    useStudioStore.getState().checkpoint('manual');
+    const before = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    const style = loadPublicationStyle(before);
+    stageAppliedPublicationStyle({ ...style, overrideAuthorFonts: true });
+    useStudioStore.getState().checkpoint('manual');
+    const overridden = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    const persisted = loadPublicationStyle(overridden);
+    stageAppliedPublicationStyle({ ...persisted, overrideAuthorFonts: false });
+    useStudioStore.getState().checkpoint('manual');
+    const restored = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
+    return {
+      before: JSON.stringify(before.sections),
+      overridden: JSON.stringify(overridden.sections),
+      restored: JSON.stringify(restored.sections),
+      enabled: persisted.overrideAuthorFonts,
+      disabled: loadPublicationStyle(restored).overrideAuthorFonts,
+      printCss: buildPublicationStyleCss(persisted, 'print'),
+      htmlCss: buildPublicationStyleCss(persisted, 'html'),
+      restoredCss: buildPublicationStyleCss(loadPublicationStyle(restored), 'html'),
+    };
+  });
+  expect(saved.before).toContain('omiSourceFont');
+  expect(saved.before).toContain('Arial');
+  expect(saved.overridden).toBe(saved.before);
+  expect(saved.restored).toBe(saved.before);
+  expect(saved.enabled).toBe(true);
+  expect(saved.disabled).toBe(false);
+  expect(saved.printCss).toContain('[data-omi-source-font] { font-family: var(--omi-publication-primary-font), var(--omi-author-font-family,');
+  expect(saved.htmlCss).toContain('[data-omi-source-font] { font-family: var(--omi-publication-primary-font), var(--omi-author-font-family,');
+  expect(saved.restoredCss).not.toContain('[data-omi-source-font] { font-family: var(--omi-publication-primary-font), var(--omi-author-font-family,');
+});
+
 test('shared character and paragraph icon panels edit independent properties and restore inherited formatting', async ({ page }) => {
   const { editor, toolbar } = await openToolbar(page);
   const character = toolbar.getByRole('button', { name: 'Character formatting', exact: true });

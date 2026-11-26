@@ -27,7 +27,7 @@ import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
 import { getPublicationCoverSheet } from '../model/publicationCoverSheet';
 import { getPublicationMatter, publicationMatterPages, type PublicationMatterPage } from '../model/publicationMatter';
-import { cssStringLiteral } from './embeddedCss';
+import { authorFontStyle, cssStringLiteral } from './embeddedCss';
 import {
   buildPublicationRenderingContext,
   type OmiPublicationRenderingContext,
@@ -1077,6 +1077,12 @@ function applyMarks(
         return `<sup>${output}</sup>`;
       case 'omiSubscript':
         return `<sub>${output}</sub>`;
+      case 'omiSourceFont': {
+        const family = (stringAttr(mark.attrs, 'family') ?? '').trim();
+        return family && family.length <= 128
+          ? `<span data-omi-source-font="${escapeAttribute(family)}" style="${escapeAttribute(authorFontStyle(family))}">${output}</span>`
+          : output;
+      }
       case 'omiLanguage': {
         const lang = stringAttr(mark.attrs, 'lang');
         return lang ? `<span lang="${escapeAttribute(normalizeLanguage(lang))}">${output}</span>` : output;

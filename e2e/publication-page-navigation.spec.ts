@@ -11,7 +11,11 @@ async function openPublication(page: Page) {
 async function setup(page: Page) {
   await installMockStudioApi(page); await signInToStudio(page);
   await page.getByRole('button', { name: /^New OMI study/ }).click();
-  await page.evaluate(async () => {
+  await expect(page.locator('.omi-continuous-tiptap-editor[contenteditable="true"]').first()).toBeVisible();
+  // Retain the asynchronous fixture in a remote object until its imports
+  // and store update finish. A bare evaluate promise can be collected by
+  // Chromium while resolving Vite modules in a fresh browser context.
+  const fixture = await page.evaluateHandle(() => ({ ready: (async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     const { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY } = await import('/src/services/publicationStyleExport.ts');
     const { capturePublicationPageStyle } = await import('/src/model/publicationPageStyles.ts');
@@ -29,7 +33,12 @@ async function setup(page: Page) {
         { id: 'b', title: 'Study B', blocks: [{ id: 'b-body', type: 'paragraph', content: rich('LAST_BODY_PARAGRAPH') }] },
       ],
     });
-  });
+  })() }));
+  try {
+    await fixture.evaluate(({ ready }) => ready);
+  } finally {
+    await fixture.dispose();
+  }
   return openPublication(page);
 }
 

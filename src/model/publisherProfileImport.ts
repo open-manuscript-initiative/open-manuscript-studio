@@ -86,6 +86,7 @@ export function validatePublisherProfile(value: unknown): ProtectablePublication
     shape(style, requiredStyle, '/publicationStyle');
     const page = object(style.page, '/publicationStyle/page');
     if (page.facingPages !== undefined && typeof page.facingPages !== 'boolean') fail('/publicationStyle/page/facingPages');
+    if (style.overrideAuthorFonts !== undefined && typeof style.overrideAuthorFonts !== 'boolean') fail('/publicationStyle/overrideAuthorFonts');
     if (style.pageStyles !== undefined) validatePublicationPageStyles(style.pageStyles);
     if (style.tableStyles !== undefined) validatePublicationTableStyles(style.tableStyles);
     const paragraphs = object(style.paragraphStyles, '/publicationStyle/paragraphStyles');

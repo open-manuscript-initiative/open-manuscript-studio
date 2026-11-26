@@ -18,7 +18,7 @@ import type {
   OmiPublicationCorrection,
   OmiCitationStyleId,
 } from '../types/omi';
-import { cssStringLiteral } from './embeddedCss';
+import { AUTHOR_FONT_FALLBACKS, cssStringLiteral } from './embeddedCss';
 import { renderPublisherHtmlArticle } from './exportPublisherHtmlPackage';
 import { hyphenatePrintHtml } from './printHyphenation';
 import { CITATION_STYLE_CATALOG } from '../model/cslRendering';
@@ -38,6 +38,8 @@ export type PublicationStyle = Omit<PublicationStyleTemplate, 'paragraphStyles' 
   noteCitationStyles?: { first?: OmiCitationStyleId; subsequent?: OmiCitationStyleId };
   pageStyles?: PublicationPageStyleCollection;
   tableStyles?: PublicationTableStyles;
+  /** Presentation-only: let named publication styles override saved author fonts. */
+  overrideAuthorFonts?: boolean;
 };
 export type PublicationPublisherIdentity = typeof publisherJson;
 export type PublicationStyleTarget = 'html' | 'print';
@@ -74,6 +76,7 @@ export function normalizePublicationStyle(style: PublicationStyle): PublicationS
   return {
     ...fallback,
     ...style,
+    ...(style.overrideAuthorFonts === true ? { overrideAuthorFonts: true } : {}),
     page: {
       ...fallback.page,
       ...style.page,
@@ -420,7 +423,7 @@ export function buildPublicationTextRoleCss(style: PublicationStyle, target: Pub
       ? mergePublicationParagraphStyleProperties(publicationParagraphStyleDefaults(style), sparse) as ResolvedPublicationParagraphStyle : resolved;
     if (inline && !sparse.openType) advanced.openType = {};
     const rules = [
-      sparse.fontFamily !== undefined ? `font-family:${cssFontFamily(sparse.fontFamily, style.fonts.body.fallback)}` : '',
+      sparse.fontFamily !== undefined ? `font-family:${cssFontFamily(sparse.fontFamily, style.fonts.body.fallback)};--omi-publication-primary-font:${cssStringLiteral(sparse.fontFamily)}` : '',
       sparse.fontSize !== undefined ? `font-size:${point(sparse.fontSize)}` : '',
       sparse.lineHeight !== undefined ? `line-height:${point(sparse.lineHeight)}` : '',
       sparse.fontWeight !== undefined ? `font-weight:${finite(sparse.fontWeight, 400)}` : '',
@@ -462,6 +465,16 @@ export function resetPublicationStyle(): PublicationStyle {
 export function resetPublicationPublisherIdentity(): PublicationPublisherIdentity {
   window.localStorage.removeItem(PUBLICATION_PUBLISHER_STORAGE_KEY);
   return clonePublicationPublisherTemplate();
+}
+
+export function publicationAuthorFontOverrideCss(style: PublicationStyle, scope = ''): string {
+  if (style.overrideAuthorFonts !== true) return '';
+  const root = scope || ':root';
+  const marked = scope ? scope + ' [data-omi-source-font]' : '[data-omi-source-font]';
+  return [
+    `${root} { --omi-publication-primary-font: ${cssStringLiteral(style.fonts.body.family)}; }`,
+    `${marked} { font-family: var(--omi-publication-primary-font), var(--omi-author-font-family, ${cssStringLiteral(style.fonts.body.fallback)}), ${cssStringLiteral(style.fonts.body.fallback)}, ${AUTHOR_FONT_FALLBACKS} !important; }`,
+  ].join('\n');
 }
 
 export function buildPublicationStyleCss(
@@ -512,12 +525,13 @@ body { font-family: var(--omi-publication-font); font-size: ${body.fontSize}pt; 
 figure { margin-left: 0; margin-right: 0; }
 figcaption { font-size: ${figureCaption.fontSize}pt; line-height: ${figureCaption.lineHeight}pt; text-align: ${alignment(figureCaption.alignment, target)}; margin: ${figureCaption.spaceBefore}pt 0 ${figureCaption.spaceAfter}pt; }
 table caption { font-size: ${tableCaption.fontSize}pt; line-height: ${tableCaption.lineHeight}pt; text-align: ${alignment(tableCaption.alignment, target)}; margin: ${tableCaption.spaceBefore}pt 0 ${tableCaption.spaceAfter}pt; }
-.article-notes, .footnotes, [role="doc-endnotes"], .omi-page-footnote { font-family: ${noteFamily}; font-size: ${footnote.fontSize}pt; line-height: ${footnote.lineHeight}pt; }
+.article-notes, .footnotes, [role="doc-endnotes"], .omi-page-footnote { font-family: ${noteFamily}; --omi-publication-primary-font: ${cssStringLiteral(style.fonts.note.family)}; font-size: ${footnote.fontSize}pt; line-height: ${footnote.lineHeight}pt; }
 .bibliography p, .references li { font-size: ${bibliography.fontSize}pt; line-height: ${bibliography.lineHeight}pt; text-align: ${alignment(bibliography.alignment, target)}; padding-left: ${bibliography.hangingIndent}mm; text-indent: -${bibliography.hangingIndent}mm; }
 img, svg, table { max-width: 100%; }
 ${paragraphStyleRules}
 ${TABLE_LAYOUT_CSS}
 ${buildPublicationTextRoleCss(style, target)}
+${publicationAuthorFontOverrideCss(style)}
 `;
 
   if (target === 'html') {
@@ -618,7 +632,7 @@ export function buildPublicationParagraphStyleRules(
       );
     }
     return [
-      `${paragraphSelector} { font-family: ${cssFontFamily(resolved.fontFamily, style.fonts.body.fallback)}; font-size: ${finite(resolved.fontSize, 10.5)}pt; line-height: ${finite(resolved.lineHeight, 12.5)}pt; font-weight: ${finite(resolved.fontWeight, 400)}; font-style: ${fontStyle(resolved.fontStyle)}; text-align: ${alignment(resolved.alignment, target)}; text-indent: ${finite(resolved.firstLineIndent, 0)}mm; margin-top: ${finite(resolved.spaceBefore, 0)}pt; margin-bottom: ${finite(resolved.spaceAfter, 0)}pt; margin-left: ${finite(resolved.leftIndent, 0)}mm; margin-right: ${finite(resolved.rightIndent, 0)}mm; color: ${cssColorValue(resolved.fillColor, 'currentColor')}; -webkit-hyphens: ${target === 'print' && resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${target === 'print' && resolved.hyphenation ? 'auto' : 'none'}; widows: ${integer(resolved.widows, 2)}; orphans: ${integer(resolved.orphans, 2)}; ${keepRules} ${extendedParagraphStyleCss(resolved, target)} }`,
+      `${paragraphSelector} { font-family: ${cssFontFamily(resolved.fontFamily, style.fonts.body.fallback)}; --omi-publication-primary-font: ${cssStringLiteral(resolved.fontFamily)}; font-size: ${finite(resolved.fontSize, 10.5)}pt; line-height: ${finite(resolved.lineHeight, 12.5)}pt; font-weight: ${finite(resolved.fontWeight, 400)}; font-style: ${fontStyle(resolved.fontStyle)}; text-align: ${alignment(resolved.alignment, target)}; text-indent: ${finite(resolved.firstLineIndent, 0)}mm; margin-top: ${finite(resolved.spaceBefore, 0)}pt; margin-bottom: ${finite(resolved.spaceAfter, 0)}pt; margin-left: ${finite(resolved.leftIndent, 0)}mm; margin-right: ${finite(resolved.rightIndent, 0)}mm; color: ${cssColorValue(resolved.fillColor, 'currentColor')}; -webkit-hyphens: ${target === 'print' && resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${target === 'print' && resolved.hyphenation ? 'auto' : 'none'}; widows: ${integer(resolved.widows, 2)}; orphans: ${integer(resolved.orphans, 2)}; ${keepRules} ${extendedParagraphStyleCss(resolved, target)} }`,
       `${containerSelector} { ${keepRules} }`,
       ...extraRules,
     ].join('\n');
