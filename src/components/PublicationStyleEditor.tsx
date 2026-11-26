@@ -1268,7 +1268,7 @@ function PublicationStyleEditorWorkspace() {
 
         {openPanel === 'pageStyles' ? <div id="publication-style-ribbon-panel-pageStyles" className="publication-style-ribbon-panel" role="dialog" aria-label={publicationPageStylesCopy(locale).title}>
           <PublicationPageStylesPanel style={style} sections={manuscript.sections} locale={locale} selectedSectionId={useStudioStore.getState().selectedSectionId} onChange={setStyle}
-            checker={<PublicationLayoutChecker locale={locale} enabled={checkerEnabled} onEnabled={setCheckerEnabled} issues={layoutIssues} onNavigate={navigateLayoutIssue} />} />
+            checker={<PublicationLayoutChecker manuscript={manuscript} locale={locale} enabled={checkerEnabled} onEnabled={setCheckerEnabled} issues={layoutIssues} onNavigate={navigateLayoutIssue} />} />
         </div> : null}
 
         {openPanel === 'page' ? (
