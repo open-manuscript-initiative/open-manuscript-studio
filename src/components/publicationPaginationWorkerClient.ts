@@ -50,16 +50,17 @@ export function createPublicationPaginationWorkerClient(
     return worker;
   };
   return {
-    async paginate(blocks: readonly PublicationFlowBlock[], footnotes: PublicationFootnotes): Promise<PublicationPaginationResult | null> {
+    async paginate(blocks: readonly PublicationFlowBlock[], footnotes: PublicationFootnotes, budgetBytes?: number): Promise<PublicationPaginationResult | null> {
       const port = ensure();
       if (!port || pending) return null;
       return new Promise(resolve => {
         const id = ++nextId;
         pending = { id, resolve, timer: setTimeout(stop, timeoutMs) };
-        try { port.postMessage({ kind: 'paginate', id, blocks, footnotes }); }
+        try { port.postMessage({ kind: 'paginate', id, blocks, footnotes, budgetBytes }); }
         catch { stop(); }
       });
     },
+    clearCache() { try { worker?.postMessage({ kind: 'clear' }); } catch { stop(); } },
     close: stop,
   };
 }
