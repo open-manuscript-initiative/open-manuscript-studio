@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createPublicationPaginationEngine, publicationWorkerSections, type PublicationWorkerRequest, type PublicationWorkerResponse } from '../src/components/publicationPaginationEngine.ts';
+import { createPublicationPaginationWorkerClient, type PublicationWorkerPort } from '../src/components/publicationPaginationWorkerClient.ts';
+import { canvasPageGeometry } from '../src/components/publicationPageGeometry.ts';
 import { createFrameLayout, flowFrameStories, FRAME_LAYOUT_EXTENSION, linkFrames, unlinkFrames, updateFrameStoryText, validateFrameLayout, RECTANGLE_POINTS, type PublicationFrame } from '../src/model/publicationFrames.ts';
 import { paginateAutomaticFrameLayout, createDefaultFlowFrameLayout } from '../src/model/publicationAutoFlow.ts';
 import { framePageStyle, withFramePages } from '../src/model/publicationFramePages.ts';
@@ -359,4 +362,64 @@ test('complex prefix cache invalidates when a previously missing early footnote 
   const next = paginator.paginate(blocks, 100, 20, notes);
   assert.notStrictEqual(next.placements[0], original.placements[0]);
   assert.deepEqual(next, paginatePublicationBlocks(blocks, 100, 20, notes));
+});
+
+test('worker-safe pagination engine produces the same styled page layout and compact hierarchy', () => {
+  const style = clonePublicationStyleTemplate();
+  style.pageStyles = { version: 1, styles: [], sections: [], pages: [] };
+  const source = [{ id: 's', title: 'Private body title', blocks: [{ id: 'p', type: 'paragraph' as const, content: 'Private manuscript body' }] }];
+  const sections = publicationWorkerSections(source);
+  assert.equal(sections[0]?.title, '');
+  assert.deepEqual(sections[0]?.blocks, []);
+  const config = { style, sections, scale: 1, pageGap: 20, topMargin: 20, usablePageHeight: 100, pageOverhead: 40 };
+  const engine = createPublicationPaginationEngine(config);
+  const blocks: PublicationFlowBlock[] = [{ sectionId: 's', top: 0, height: 50, noteIds: ['a'] },
+    { sectionId: 's', top: 50, height: 60, insertedPagesBefore: [{ id: 'blank' }] }];
+  const notes = { heights: new Map([['a', 80]]), lineHeight: 5, separatorHeight: 5 };
+  const resolver = createPublicationPageMetricsResolver((index, section, inserted) =>
+    canvasPageGeometry(resolvePublicationPageStyle(style, sections, index, section, inserted), config.scale), config.pageGap, config.topMargin);
+  const expected = paginatePublicationBlocks(blocks, 100, 40, notes, resolver.metrics);
+  const actual = engine(blocks, notes);
+  assert.deepEqual(actual.layout, expected);
+  assert.deepEqual(actual.metricsState, resolver.snapshot());
+  assert.strictEqual(engine(structuredClone(blocks), notes).layout, actual.layout);
+});
+
+test('publication worker client reuses one worker and falls back on failure or cancellation', async () => {
+  const style = clonePublicationStyleTemplate();
+  const config = { style, sections: [], scale: 1, pageGap: 20, topMargin: 20, usablePageHeight: 100, pageOverhead: 40 };
+  const engine = createPublicationPaginationEngine(config);
+  let configured = 0, created = 0, terminated = 0, fail = false, hang = false;
+  const factory = (): PublicationWorkerPort => {
+    created += 1;
+    const port: PublicationWorkerPort = {
+      onmessage: null, onerror: null, onmessageerror: null,
+      postMessage(message: PublicationWorkerRequest) {
+        if (message.kind === 'configure') { configured += 1; return; }
+        if (hang) return;
+        const response: PublicationWorkerResponse = fail ? { id: message.id, failed: true }
+          : { id: message.id, result: engine(message.blocks, message.footnotes) };
+        queueMicrotask(() => port.onmessage?.({ data: response } as MessageEvent<PublicationWorkerResponse>));
+      },
+      terminate() { terminated += 1; },
+    };
+    return port;
+  };
+  const client = createPublicationPaginationWorkerClient(config, factory, 100);
+  const blocks = [{ top: 0, height: 30 }];
+  const notes = { heights: new Map<string, number>(), lineHeight: 5, separatorHeight: 5 };
+  assert.deepEqual(await client.paginate(blocks, notes), engine(blocks, notes));
+  assert.ok(await client.paginate(blocks, notes));
+  assert.equal(created, 1); assert.equal(configured, 1);
+  fail = true;
+  assert.equal(await client.paginate(blocks, notes), null);
+  assert.equal(terminated, 1);
+  assert.equal(await client.paginate(blocks, notes), null);
+  const cancelled = createPublicationPaginationWorkerClient(config, factory, 100);
+  hang = true;
+  const pending = cancelled.paginate(blocks, notes);
+  cancelled.close();
+  assert.equal(await pending, null);
+  const unavailable = createPublicationPaginationWorkerClient(config, () => { throw new Error('Worker unavailable'); });
+  assert.equal(await unavailable.paginate(blocks, notes), null);
 });
