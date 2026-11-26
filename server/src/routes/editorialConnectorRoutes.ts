@@ -4,12 +4,14 @@ import {
   requireSession,
   type AuthenticatedRequest,
 } from '../middleware/requireSession.js';
+import { ojsIssuePagesRequest } from '../contracts/ojsIssuePagesContract.js';
 import { ojsMetadataRequest } from '../contracts/ojsMetadataContract.js';
 import { workflowInspectionRequest } from '../contracts/editorialConnectorContract.js';
 import {
   inspectEditorialCapabilities,
   inspectEditorialWorkflow,
   reconcileEditorialMetadata,
+  reconcileOjsIssuePages,
 } from '../services/editorialConnectorService.js';
 import { RemoteError } from '../integrations/publishing/nativePublishingClient.js';
 import {
@@ -82,4 +84,11 @@ editorialConnectorRouter.post(
   handler((user, id, body) =>
     reconcileEditorialMetadata(user, id, ojsMetadataRequest.parse(body)),
   ),
+);
+
+editorialConnectorRouter.post(
+  `${prefix}/issue-page-range`,
+  versionedEditorialBoundary(''),
+  requireSession,
+  handler((user, id, body) => reconcileOjsIssuePages(user, id, ojsIssuePagesRequest.parse(body))),
 );
