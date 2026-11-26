@@ -1,3 +1,4 @@
+import { validateOjsIssuePagesResponse, type OjsIssuePagesRequest } from '../contracts/ojsIssuePagesContract.js';
 import { findEditorialConnection } from '../repositories/editorialConnectorRepository.js';
 import {
   nativeClient,
@@ -136,4 +137,21 @@ export async function reconcileEditorialMetadata(
       );
   }
   return parsed.data;
+}
+
+
+export async function reconcileOjsIssuePages(userId: string, connectionId: string, input: OjsIssuePagesRequest) {
+  const client = await connection(userId, connectionId);
+  if (client.provider !== 'ojs') throw new RemoteError(409, 'Printed issue pages require an OJS connection.');
+  const available = record(await client.remote('GET', 'omi-integration'));
+  if (available.protocol !== 'omi-integration/1' || available.profile !== 'omi-integration/1/ojs' ||
+      !Array.isArray(available.capabilities) || !available.capabilities.includes('issue.pages.write')) {
+    throw new RemoteError(409, 'Update the OJS integration plugin to support printed page ranges.');
+  }
+  const raw = await client.remote('POST', 'omi-integration/issue-page-range', input);
+  try {
+    return validateOjsIssuePagesResponse(input, raw);
+  } catch {
+    throw new RemoteError(502, 'OJS returned an incompatible page range response. Inspect the destination before retrying.');
+  }
 }
