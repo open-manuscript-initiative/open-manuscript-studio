@@ -13,6 +13,8 @@ import {
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 
+import { validateOjsLaunchTarget } from './issueLaunchBoundary.js';
+
 export interface LaunchClaims {
   protocol: string;
   profile?: string;
@@ -22,6 +24,7 @@ export interface LaunchClaims {
     type?: string;
     path?: string;
   };
+  issue?: { externalId?: string };
   submission?: {
     externalId?: string;
   };
@@ -100,7 +103,7 @@ function validateClaimsShape(
   );
 }
 
-export async function verifyOjsLaunch(payload: string, signature: string) {
+export async function verifyOjsLaunch(payload: string, signature: string, target: 'submission' | 'issue' = 'submission') {
   let claimsValue: unknown;
   try {
     claimsValue = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
@@ -134,6 +137,7 @@ export async function verifyOjsLaunch(payload: string, signature: string) {
     throw new Error('Expired or invalid launch assertion.');
   }
   if (claims.nonce.length < 1 || claims.nonce.length > 256) throw new Error('Invalid launch nonce.');
+  validateOjsLaunchTarget(claims, target);
   if (claims.actorMode === 'review') validateReviewerBoundary(claims);
 
   if (claims.apiBaseUrl) {
