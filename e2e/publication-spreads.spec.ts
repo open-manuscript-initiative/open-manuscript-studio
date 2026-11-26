@@ -1,16 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
-
-declare global {
-  interface Window {
-    __omiSpreadPersistence?: {
-      hasEdit: () => boolean;
-      roundTrip: () => { facingPages?: boolean; pageNumberStart?: number };
-    };
-  }
-}
-
 test.use({ launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } });
 
 test('facing pages keep continued paragraphs, table rows and footnotes editable on their sheets', async ({ page }) => {
@@ -21,37 +11,7 @@ test('facing pages keep continued paragraphs, table rows and footnotes editable 
   // Load a real browser module, not a CDP-awaited dynamic-import Promise.
   // The module exposes synchronous checks only in this isolated test page.
   // Wait for readiness explicitly; a module failure must fail the test.
-  await page.addScriptTag({ type: 'module', content: [
-    "    import { useStudioStore } from '/src/app/useStudioStore.ts';",
-    "    import { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY, loadPublicationStyle } from '/src/services/publicationStyleExport.ts';",
-    "    import { serializeOmiJson } from '/src/services/exportOmi.ts';",
-    "    import { parseOmiJson } from '/src/services/omiPortableFormat.ts';",
-    "    import { createNoteAnnotation } from '/src/model/notes.ts';",
-    "    import { createTableBlock } from '/src/model/visualBlocks.ts';",
-    "    const style = clonePublicationStyleTemplate();",
-    "    style.page.pageNumberStart = 2;",
-    "    localStorage.setItem(PUBLICATION_STYLE_STORAGE_KEY, JSON.stringify(style));",
-    "    const current = useStudioStore.getState().manuscript;",
-    "    const rich = (index: number) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [",
-    "      { type: 'text', text: `Paragraph ${index}. ` + 'Continuous text crossing the spine and flowing onto the next sheet. '.repeat(65) },",
-    "      { type: 'omiNote', attrs: { noteId: `n-${index}`, anchorId: `a-${index}`, label: `${index + 1}`, noteType: 'footnote' } },",
-    "      { type: 'text', text: ' After the note.' },",
-    "    ] }] });",
-    "    useStudioStore.getState().loadManuscript({ ...current, title: 'Facing pages trial', sections: [{ id: 's', title: '', blocks: [",
-    "      ...Array.from({ length: 3 }, (_, i) => ({ id: `p-${i}`, type: 'paragraph', content: rich(i) })),",
-    "      createTableBlock(Array.from({ length: 50 }, (_, i) => [`Row ${i}`, 'Table text. '.repeat(4)]), {}, 'spread-table'),",
-    "    ] }], annotations: Array.from({ length: 3 }, (_, i) => createNoteAnnotation({",
-    "      id: `n-${i}`, anchorId: `a-${i}`, targetBlockId: `p-${i}`, body: `Note ${i}. ` + 'A footnote on its reference page. '.repeat(5),",
-    "    })) });",
-    "    window.__omiSpreadPersistence = {",
-    "      hasEdit: () => useStudioStore.getState().manuscript.sections.some(section => section.blocks.some(block => block.content.includes('EDITED'))),",
-    "      roundTrip: () => {",
-    "        useStudioStore.getState().checkpoint('manual');",
-    "        return loadPublicationStyle(parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript))).page;",
-    "      },",
-    "    };",
-    "",
-  ].join('\n') });
+  await page.addScriptTag({ type: 'module', url: '/e2e/support/publicationSpreadFixture.ts' });
   await page.waitForFunction(() => typeof window.__omiSpreadPersistence?.roundTrip === 'function');
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
