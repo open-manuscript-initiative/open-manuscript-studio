@@ -284,7 +284,17 @@ integrationRouter.get('/ojs/issue-handoff/:token', (request, response) => {
     response.status(410).json({ error: { code: 'OJS_ISSUE_HANDOFF_EXPIRED', message: 'The issue handoff is invalid, expired, or already used.' } });
     return;
   }
-  response.type('application/json').send(handoff);
+  let parsedHandoff: unknown;
+  try {
+    parsedHandoff = JSON.parse(handoff);
+  } catch {
+    response.status(500).json({
+      error: { code: 'OJS_ISSUE_HANDOFF_INVALID', message: 'The stored issue handoff payload is invalid.' },
+    });
+    return;
+  }
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  response.status(200).json(parsedHandoff);
 });
 
 let activeIssueImports = 0;
