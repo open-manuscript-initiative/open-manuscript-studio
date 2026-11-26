@@ -396,9 +396,10 @@ test('publication worker client reuses one worker and falls back on failure or c
       onmessage: null, onerror: null, onmessageerror: null,
       postMessage(message: PublicationWorkerRequest) {
         if (message.kind === 'configure') { configured += 1; return; }
+        if (message.kind === 'clear') { engine.clear(); return; }
         if (hang) return;
         const response: PublicationWorkerResponse = fail ? { id: message.id, failed: true }
-          : { id: message.id, result: engine(message.blocks, message.footnotes) };
+          : { id: message.id, result: engine(message.blocks, message.footnotes, message.budgetBytes) };
         queueMicrotask(() => port.onmessage?.({ data: response } as MessageEvent<PublicationWorkerResponse>));
       },
       terminate() { terminated += 1; },
@@ -440,4 +441,27 @@ test('fixed-page pagination stops when the unchanged suffix has identical carrie
   const moved = changed.map((block, index) => index === 500 ? { ...block, height: 40 } : index > 500 ? { ...block, top: block.top + 20 } : block);
   assert.deepEqual(paginator.paginate(moved, 100, 20), paginatePublicationBlocks(moved, 100, 20));
   assert.deepEqual(paginator.paginate(changed, 130, 30), paginatePublicationBlocks(changed, 130, 30));
+});
+
+test('adaptive pagination budget releases optional snapshots without changing output', () => {
+  const blocks: PublicationFlowBlock[] = Array.from({ length: 300 }, (_, i) => ({ top: i * 20, height: 20, noteIds: i === 10 ? ['n'] : [] }));
+  const notes = { heights: new Map([['n', 120]]), lineHeight: 5, separatorHeight: 5 };
+  for (const withNotes of [false, true]) {
+    const paginator = createIncrementalPublicationPaginator();
+    const footnotes = withNotes ? notes : undefined;
+    const expected = paginatePublicationBlocks(blocks, 100, 20, footnotes);
+    const first = paginator.paginate(blocks, 100, 20, footnotes);
+    assert.strictEqual(paginator.paginate(blocks, 100, 20, footnotes), first);
+    paginator.setBudget(0);
+    const cold = paginator.paginate(blocks, 100, 20, footnotes);
+    assert.notStrictEqual(cold, first);
+    assert.notStrictEqual(paginator.paginate(blocks, 100, 20, footnotes), cold);
+    assert.deepEqual(cold, expected);
+    paginator.setBudget(1024);
+    assert.notStrictEqual(paginator.paginate(blocks, 100, 20, footnotes), paginator.paginate(blocks, 100, 20, footnotes));
+    paginator.setBudget(8 * 1024 * 1024);
+    const warm = paginator.paginate(blocks, 100, 20, footnotes);
+    assert.strictEqual(paginator.paginate(blocks, 100, 20, footnotes), warm);
+    assert.deepEqual(warm, expected);
+  }
 });
