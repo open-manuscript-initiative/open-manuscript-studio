@@ -5,7 +5,7 @@ import { placePublicationEmptyPage, type PublicationBodyPageThumbnail } from '..
 import { getStudyRootSectionId, partitionManuscriptStudies } from '../model/sectionStructure';
 import { stageMoveSectionToSibling } from '../app/sectionActions';
 import { arrangePublicationSheets, publicationFirstPageNumber, type PublicationSheetPosition } from '../model/publicationSpreads';
-import { resolvePublicationPageStyle, PUBLICATION_BODY_START, publicationPageStyles, publicationSectionPageRules, publicationSectionLayoutKey } from '../model/publicationPageStyles';
+import { createPublicationPageStyleResolver, PUBLICATION_BODY_START, publicationPageStyles, publicationSectionLayoutKey } from '../model/publicationPageStyles';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import { publicationPaginationCopy } from '../i18n/publicationPagination';
 import type { PublicationLayoutIssue, PublicationLayoutIssueReporter } from '../model/publicationLayoutDiagnostics';
@@ -196,6 +196,7 @@ export function PublicationDocumentCanvas({
   const layoutSectionsRef = useRef(manuscript.sections);
   layoutSectionsRef.current = manuscript.sections;
   const sectionLayoutKey = publicationSectionLayoutKey(manuscript.sections);
+  const preparedPageStyles = useMemo(() => createPublicationPageStyleResolver(style, layoutSectionsRef.current), [style, sectionLayoutKey]);
   const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
   const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
   const [stageWidth, setStageWidth] = useState(0);
@@ -269,7 +270,7 @@ export function PublicationDocumentCanvas({
       const sectionId = pagination.pageSectionIds?.[index];
       const insertedPage = pagination.insertedPages?.find((item) => item.pageIndex === index);
       const insertedStyleId = insertedPage ? insertedPage.styleId ?? '' : undefined;
-      const resolved = resolvePublicationPageStyle(style, manuscript.sections, index, sectionId, insertedStyleId);
+      const resolved = preparedPageStyles.resolve(index, sectionId, insertedStyleId);
       const geometry = canvasPageGeometry(resolved, scale);
       const firstSectionPage = !seenHeaders.has(resolved.headerSectionId);
       seenHeaders.add(resolved.headerSectionId);
@@ -277,7 +278,7 @@ export function PublicationDocumentCanvas({
     }
     const arranged = arrangePublicationSheets(pages, facingPages, pageGap);
     return { ...arranged, pages: pages.map((page, index) => ({ ...page, ...arranged.pages[index]! })) };
-  }, [style, manuscript.sections, pagination.pageSectionIds, pagination.insertedPages, pageCount, scale, pageGap, facingPages]);
+  }, [preparedPageStyles, pagination.pageSectionIds, pagination.insertedPages, pageCount, scale, pageGap, facingPages]);
   const styledPages = styledSheetLayout.pages;
   const fitWarningCss = viewMode === 'print' ? (pagination.sectionWarnings ?? []).map((warning) =>
     `#${canvasId} :is(h1,h2,h3,h4,h5,h6)[data-section-id=${cssStringLiteral(warning.sectionId)}]{position:relative}#${canvasId} :is(h1,h2,h3,h4,h5,h6)[data-section-id=${cssStringLiteral(warning.sectionId)}]::after{content:"⚠";position:absolute;right:100%;top:0;margin-right:.35em;color:#b45309;font:14px sans-serif;pointer-events:none}`,
@@ -515,6 +516,16 @@ export function PublicationDocumentCanvas({
       const css = provisional.join('\n');
       if (provisionalProjectionRef.current.textContent !== css) provisionalProjectionRef.current.textContent = css;
     };
+    // Immutable style definitions are resolved on demand once per layout snapshot.
+    const paragraphStyles = new Map<string | undefined, ReturnType<typeof resolvePublicationParagraphStyle>>();
+    const paragraphStyleFor = (id: string | undefined) => {
+      let resolved = paragraphStyles.get(id);
+      if (!resolved) {
+        resolved = resolvePublicationParagraphStyle(style, id);
+        paragraphStyles.set(id, resolved);
+      }
+      return resolved;
+    };
     let measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
     const measuredWidths = new WeakMap<HTMLElement, number>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
@@ -623,12 +634,9 @@ export function PublicationDocumentCanvas({
               ), undefined);
               if (line) line.noteIds = [...(line.noteIds ?? []), anchor.dataset.noteId!];
             }
-            const paragraphStyle = resolvePublicationParagraphStyle(
-              style,
-              element.dataset.paragraphStyleId,
-            );
+            const paragraphStyle = paragraphStyleFor(element.dataset.paragraphStyleId);
             const sectionId = element.dataset.sectionId ?? element.querySelector<HTMLElement>('[data-section-id]')?.dataset.sectionId;
-            const keepRule = publicationSectionPageRules(style, layoutSectionsRef.current, sectionId).filter((rule) => rule.keepTogether !== undefined).at(-1);
+            const keepRule = preparedPageStyles.rules(sectionId).filter((rule) => rule.keepTogether !== undefined).at(-1);
             measuredBlocks.push({
               top: Math.max(
                 0,
@@ -651,7 +659,7 @@ export function PublicationDocumentCanvas({
               insertedPagesAfter: publicationFlowBlockId(element) ? style.pageStyles?.insertions?.filter((item) => item.afterBlockId === publicationFlowBlockId(element)) : undefined,
               forcePageBreakBefore: blockCorrections.some((item) => item.kind === 'page-break-before')
                 || Boolean(element.dataset.sectionId && element.dataset.sectionId !== flow[flowIndex - 1]?.element.dataset.sectionId
-                  && publicationSectionPageRules(style, layoutSectionsRef.current, element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
+                  && preparedPageStyles.rules(element.dataset.sectionId).some((rule) => rule.sectionId === element.dataset.sectionId && (rule.startNewPage || rule.styleId || rule.runningHeaders))),
             });
             existingFlowBreakHeight += ownFlowBreakHeight;
             flowIndex += 1;
@@ -672,7 +680,7 @@ export function PublicationDocumentCanvas({
           if (insertedStyleId !== undefined && insertionStyles.get(index) !== insertedStyleId) { insertionStyles.set(index, insertedStyleId); metricCache.delete(index); }
           const cached = metricCache.get(index);
           if (cached && cached.sectionId === sectionId) return cached;
-          const resolved = resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId, insertionStyles.get(index));
+          const resolved = preparedPageStyles.resolve(index, sectionId, insertionStyles.get(index));
           metricPages[index] = canvasPageGeometry(resolved, scale);
           const previousHeight = metricPages.slice(0, index).reduce((sum, item) => sum + item.height + pageGap, 0);
           const measured = { sectionId, bodyHeight: metricPages[index]!.bodyHeight, bodyTop: previousHeight + metricPages[index]!.topMargin - topMargin };
@@ -710,7 +718,7 @@ export function PublicationDocumentCanvas({
         });
         reportIssues.current?.(manuscriptId, issues);
         const pageGeometries = Array.from({ length: layout.pageCount }, (_, index) =>
-          canvasPageGeometry(resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index], insertionStyles.get(index)), scale));
+          canvasPageGeometry(preparedPageStyles.resolve(index, layout.pageSectionIds?.[index], insertionStyles.get(index)), scale));
         const sheetPositions = arrangePublicationSheets(pageGeometries, facingPages, pageGap).pages;
         const projectionRules = new Map<string, string>();
         const css = buildPaginationCss({
@@ -757,7 +765,7 @@ export function PublicationDocumentCanvas({
           const anchorSection = insertion?.beforeBlockId === PUBLICATION_BODY_START ? layoutSectionsRef.current[0]?.id
             : blockSectionIds.get(insertion?.beforeBlockId ?? insertion?.afterBlockId ?? '');
           return { id: inserted ? `inserted:${inserted.id}` : `body:${index}`, insertionId: inserted?.id,
-            number: firstPageNumber + index, styleId: resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index], insertionStyles.get(index)).id,
+            number: firstPageNumber + index, styleId: preparedPageStyles.resolve(index, layout.pageSectionIds?.[index], insertionStyles.get(index)).id,
             width: geometry.width, height: geometry.height, marks: [], studyId: getStudyRootSectionId(layoutSectionsRef.current, layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
           };
         });
@@ -915,7 +923,7 @@ export function PublicationDocumentCanvas({
     pageGap,
     scale,
     topMargin,
-    sectionLayoutKey,
+    preparedPageStyles,
     style.page.mirroredMargins,
     style,
     usablePageHeight,
@@ -947,13 +955,13 @@ export function PublicationDocumentCanvas({
   const heading1 = style.styles.heading1;
   const heading2 = style.styles.heading2;
   const note = noteStyle;
-  const paragraphStyleCss = buildLiveParagraphStyleCss(
+  const paragraphStyleCss = useMemo(() => buildLiveParagraphStyleCss(
     canvasId,
     style,
     scale,
     viewMode,
   ) + '\n' + buildPublicationTextRoleCss(style, viewMode, manuscript.locale, `#${canvasId}`, scale)
-    + '\n' + publicationAuthorFontOverrideCss(style, `#${canvasId}`);
+    + '\n' + publicationAuthorFontOverrideCss(style, `#${canvasId}`), [canvasId, style, scale, viewMode, manuscript.locale]);
   const sectionLayoutCss = buildLiveSectionLayoutCss(
     canvasId,
     manuscript.sections,
@@ -1891,7 +1899,7 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
   };
 }
 
-function canvasPageGeometry(resolved: ReturnType<typeof resolvePublicationPageStyle>, scale: number) {
+function canvasPageGeometry(resolved: ReturnType<ReturnType<typeof createPublicationPageStyleResolver>['resolve']>, scale: number) {
   const p = resolved.page, unit = PIXELS_PER_MM * scale;
   const inner = (p.margins.inner + p.gutter) * unit, outer = p.margins.outer * unit;
   const mirrored = p.mirroredMargins && resolved.pageNumber % 2 === 0;
