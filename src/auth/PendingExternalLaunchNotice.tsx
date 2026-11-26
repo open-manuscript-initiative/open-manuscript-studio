@@ -24,6 +24,11 @@ export function PendingExternalLaunchNotice({
 }
 
 function getCopy(locale: string, platform: PendingExternalLaunchPlatform) {
+  if (platform === 'ojs-issue') {
+    if (locale === 'hu') return { title: 'OJS-lapszám megnyitása folyamatban', description: 'Jelentkezzen be a teljes tervezett folyóiratszám importálásához.' };
+    if (locale === 'de') return { title: 'OJS-Ausgabe wartet auf den Import', description: 'Melden Sie sich an, um die gesamte geplante Zeitschriftenausgabe zu importieren.' };
+    return { title: 'OJS issue waiting to import', description: 'Sign in to import the complete planned journal issue.' };
+  }
   const source = platform === 'ojs' ? 'OJS' : 'OMP';
 
   if (locale === 'hu') {
