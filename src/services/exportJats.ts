@@ -2,6 +2,7 @@ import { tableMergeLayout, tableHeaderRows, tableCellDocument, cellNestedTable }
 import { visualTextBoxText, visualTextBoxDiagnostics } from '../model/textBoxes';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
+import { getIssueStudyCitationMetadata } from '../model/issueStudyCitationMetadata';
 import {
   OMI_JATS_CONFORMANCE_RENDERER_VERSION,
   OMI_JATS_CONFORMANCE_TAG_SET,
@@ -240,6 +241,22 @@ function renderProcessingMeta(state: RenderState): string {
     ['omi-head-revision', context.headRevisionId],
     ['omi-publication-profile', `${context.profile.id}@${context.profile.version}`],
   ];
+
+  // Article Authoring intentionally has no Publishing journal-meta structure.
+  // Preserve the planned citation fields in schema-supported processing metadata.
+  const citation = getIssueStudyCitationMetadata(state.manuscript);
+  if (citation) {
+    const pairs: [string, string | undefined][] = [
+      ['omi-publication-status', citation.status], ['omi-journal-title', citation.journalTitle],
+      ['omi-article-doi', citation.articleDoi], ['omi-issue-doi', citation.issueDoi],
+      ['omi-journal-print-issn', citation.printIssn], ['omi-journal-online-issn', citation.onlineIssn],
+      ['omi-journal-volume', citation.volume], ['omi-journal-issue', citation.issue],
+      ['omi-planned-publication-year', citation.year], ['omi-journal-section', citation.sectionTitle],
+      ['omi-printed-pages', citation.pages], ['omi-first-printed-page', citation.firstPage],
+      ['omi-last-printed-page', citation.lastPage],
+    ];
+    for (const [name, value] of pairs) if (value) metadata.push([name, value]);
+  }
 
   if (context.motto) {
     metadata.push(

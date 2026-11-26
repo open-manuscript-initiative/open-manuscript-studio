@@ -133,3 +133,7 @@ Then restart the Studio API service and deploy the frontend `dist/` output using
 - Use a different shared secret for each external installation.
 - Use a different `INTEGRATION_MASTER_KEY` from every OJS/OMP shared secret.
 - Launch handoff data is stored only in `sessionStorage` and is consumed once by the authenticated Studio application.
+
+### Planned OJS issue progress
+
+Route `/integrations/ojs/issue-launch`, `/integrations/ojs/issue-progress/:token` and `/integrations/ojs/issue-handoff/:token` to the Studio API. An authenticated OJS issue assertion is redeemed once, then the browser is redirected to a fragment-based progress ticket. The progress page polls actual transfer milestones; only successful complete transfers produce an issue handoff. Progress tickets and handoffs are process-local, expire after ten minutes, and require the same backend instance. Restart or expiry requires a new launch from OJS. No persistent background queue or cross-instance recovery is provided. The ordinary article launch is unchanged.

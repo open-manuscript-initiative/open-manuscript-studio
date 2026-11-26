@@ -140,3 +140,28 @@ publicationPdfRouter.post('/slice/pdf', requireSession,
       response.status(503).json({ error: { code: 'PDF_SLICE_FAILED', message: 'The isolated PDF extraction could not complete. Check the physical page range and worker availability.' } });
     }
   });
+
+
+publicationPdfRouter.post('/inspect/pdf-pages', requireSession,
+  raw({ type: 'application/pdf', limit: MAX_ISSUE_PDF_BYTES, inflate: false }),
+  async (request, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    const owner = (request as AuthenticatedRequest).authUserId;
+    if (!owner) { response.sendStatus(401); return; }
+    if (!Buffer.isBuffer(request.body) || request.body.length < 5 ||
+        request.body.length > MAX_ISSUE_PDF_BYTES || request.body.subarray(0, 5).toString('ascii') !== '%PDF-') {
+      response.status(400).json({ error: { code: 'INVALID_ISSUE_PDF', message: 'Provide the rendered issue PDF.' } });
+      return;
+    }
+    try {
+      const socket = configuredPdfWorkerSocket();
+      if (!socket) throw new Error('Missing worker');
+      const bytes = await dispatchPdfWorkerTask('page-text', request.body, owner, socket, 140_000);
+      const parsed = z.object({ pageCount: z.number().int().min(1).max(2000), pages: z.array(z.string()).min(1).max(2000) }).parse(JSON.parse(bytes.toString('utf8')));
+      if (parsed.pages.length !== parsed.pageCount) throw new Error('Invalid page evidence');
+      response.status(200).json(parsed);
+    } catch {
+      response.status(503).json({ error: { code: 'PDF_PAGE_INSPECTION_FAILED', message: 'The isolated worker could not inspect the PDF pages.' } });
+    }
+  });

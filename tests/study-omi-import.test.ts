@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { projectIssueStudyForExport } from '../src/model/issueStudyExport.ts';
+import { renderHtmlArticle } from '../src/services/exportHtml.ts';
+import { renderJatsArticle } from '../src/services/exportJats.ts';
 
 import { createBlankManuscript } from '../src/document/createBlankManuscript.ts';
 import { createContribution, createPersonAgent } from '../src/model/identity.ts';
@@ -123,4 +126,43 @@ test('imports one complete OMI document as one independently editable study', ()
   assert.match(importedContent, new RegExp(mappedCitationId));
   assert.match(importedContent, new RegExp(mappedAnchorId));
   assert.doesNotMatch(importedContent, /source-citation|source-anchor/);
+});
+
+
+test('independent study export retains edited content and own public author, excludes other studies and private notes', () => {
+  const volume = createBlankManuscript({ kind: 'volume', publicationKind: 'journal-issue', title: 'Issue' });
+  const source = (title: string, name: string, body: string) => {
+    const study = createBlankManuscript({ kind: 'study', title, locale: 'hu', author: { displayName: name, givenName: name, email: '' } });
+    study.abstract = 'Abstract ' + name;
+    study.keywords = ['history'];
+    study.sections = [{ id: crypto.randomUUID(), title: 'Body', blocks: [{ id: crypto.randomUUID(), type: 'paragraph', content: body }] }];
+    study.bibliographicRecords = [{ id: crypto.randomUUID(), type: 'book', title: 'Reference ' + name, contributors: [], identifiers: [], status: 'resolved' }];
+    study.bibliographyAdditionalRecordIds = [study.bibliographicRecords[0]!.id];
+    study.contributions = study.contributions.map(item => ({ ...item, targetId: study.id }));
+    return extractManuscriptState(study);
+  };
+  const a = mergeOmiDocumentAsStudy(extractManuscriptState(volume), source('First article', 'Ada', 'First article text'));
+  const b = mergeOmiDocumentAsStudy(a.state, source('Second article', 'Bela', 'Second article text'));
+  const issue = { ...volume, ...b.state };
+  const body = issue.sections.find(section => section.id === a.importedSections[1]!.id)!.blocks[0]!;
+  body.content = 'Corrected first article text';
+  issue.annotations.push({ id: 'private', type: 'comment', targetBlockId: body.id, body: 'SECRET editorial comment', renderingHint: 'margin', visibility: 'editor_only' });
+  const before = JSON.stringify(issue);
+  const projected = projectIssueStudyForExport(issue, a.rootSectionId);
+  assert.equal(projected.title, 'First article');
+  assert.equal(projected.abstract, 'Abstract Ada');
+  assert.deepEqual(projected.bibliographicRecords?.map(record => record.title), ['Reference Ada']);
+  assert.equal(projected.contributions[0]?.targetId, projected.id);
+  assert.equal(projected.agents.length, 1);
+  assert.equal(projected.annotations.length, 0);
+  assert.equal(JSON.stringify(issue), before);
+  const html = renderHtmlArticle(projected).html;
+  const xml = renderJatsArticle(projected).xml;
+  for (const output of [html, xml]) {
+    assert.match(output, /Corrected first article text/);
+    assert.match(output, /Ada/);
+    assert.doesNotMatch(output, /Second article|Bela|SECRET editorial comment/);
+  }
+  issue.crossReferences = [{ id: 'cross', anchorId: 'cross-anchor', sourceBlockId: body.id, targetId: b.rootSectionId, targetKind: 'section', displayStyle: 'title' }];
+  assert.throws(() => projectIssueStudyForExport(issue, a.rootSectionId), /cross-study reference/);
 });

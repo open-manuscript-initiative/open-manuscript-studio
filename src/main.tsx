@@ -4,6 +4,7 @@ import './i18n/registerViteLocaleLoaders';
 import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
+import { getOjsIssueProgressToken, OjsIssueImportProgress } from './components/OjsIssueImportProgress';
 import { initializeLastSessionPersistence } from './app/lastSessionPersistence';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
 import {
@@ -57,7 +58,8 @@ import './styles/ui-density.css';
 import './styles/desktop-form-layout.css';
 import './styles/menu-appearance.css';
 
-restorePendingExternalLaunchToLocation();
+const issueProgressToken = getOjsIssueProgressToken();
+if (!issueProgressToken) restorePendingExternalLaunchToLocation();
 initializeMenuAppearancePreferences();
 initializeEditorMemoryPreferences();
 initializeRevisionIntegrity();
@@ -106,7 +108,7 @@ async function bootstrap(): Promise<void> {
   ).render(
     <React.StrictMode>
       <I18nProvider>
-        <App />
+        {issueProgressToken ? <OjsIssueImportProgress token={issueProgressToken} /> : <App />}
       </I18nProvider>
     </React.StrictMode>
   );

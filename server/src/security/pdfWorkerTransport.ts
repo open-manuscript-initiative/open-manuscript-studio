@@ -1,7 +1,7 @@
 import { request } from 'node:http';
 import { isAbsolute } from 'node:path';
 
-export type PdfWorkerTask = 'import' | 'render' | 'slice';
+export type PdfWorkerTask = 'import' | 'render' | 'slice' | 'page-text';
 const MAX_IMPORT_BYTES = 100 * 1024 * 1024;
 const MAX_RENDER_INPUT_BYTES = 48 * 1024 * 1024;
 const MAX_RENDER_OUTPUT_BYTES = 96 * 1024 * 1024;
@@ -32,8 +32,8 @@ export async function dispatchPdfWorkerTask(
   socketPath: string,
   timeoutMs: number,
 ): Promise<Buffer> {
-  const maxInput = task === 'import' ? MAX_IMPORT_BYTES : task === 'slice' ? MAX_RENDER_OUTPUT_BYTES + 8 : MAX_RENDER_INPUT_BYTES;
-  const maxOutput = task === 'import' ? MAX_LAYOUT_BYTES : MAX_RENDER_OUTPUT_BYTES;
+  const maxInput = task === 'import' ? MAX_IMPORT_BYTES : task === 'slice' ? MAX_RENDER_OUTPUT_BYTES + 8 : task === 'page-text' ? MAX_RENDER_OUTPUT_BYTES : MAX_RENDER_INPUT_BYTES;
+  const maxOutput = task === 'import' ? MAX_LAYOUT_BYTES : task === 'page-text' ? 16 * 1024 * 1024 : MAX_RENDER_OUTPUT_BYTES;
   if (!input.byteLength || input.byteLength > maxInput) {
     throw new Error('Isolated PDF worker input exceeds the configured size limit.');
   }
@@ -49,7 +49,7 @@ export async function dispatchPdfWorkerTask(
     };
     const req = request({
       socketPath,
-      path: task === 'import' ? '/v1/import' : task === 'slice' ? '/v1/slice' : '/v1/render',
+      path: task === 'import' ? '/v1/import' : task === 'slice' ? '/v1/slice' : task === 'page-text' ? '/v1/page-text' : '/v1/render',
       method: 'POST',
       headers: {
         'content-type': 'application/octet-stream',

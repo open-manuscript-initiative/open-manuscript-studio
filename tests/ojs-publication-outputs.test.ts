@@ -3,6 +3,7 @@ import { putAssetPayload } from '../src/services/assetRepository.ts';
 import assert from 'node:assert/strict';
 import { listOjsIssueTransferTargets, issueArtifactInspectRequest, assertIssueArtifactTarget } from '../src/model/ojsIssueTransferTargets.ts';
 import test from 'node:test';
+import { prepareOjsIssueBatch, type IssueBatchDependencies, type IssueBatchSelection } from '../src/app/ojsIssueBatchActions.ts';
 import {
   createInitialVersioningEnvelope,
   extractManuscriptState,
@@ -23,6 +24,7 @@ import {
 } from '../src/services/publicationStyleExport.ts';
 import {
   calculatePublicationProfileDigest,
+  createPublicationBuildManifest,
   verifyPublicationBuildArtifact,
 } from '../src/services/publicationBuildManifest.ts';
 import type {
@@ -477,4 +479,96 @@ test('issue writeback targets follow current study order and require exact remot
   for (const incorrect of [{ issueId: 8 }, { contextId: 6 }, { publicationId: 99 }, { installationId: 'other' }, { workflowToken: undefined }]) {
     assert.throws(() => assertIssueArtifactTarget(targets[1]!, { ...remote, ...incorrect }));
   }
+});
+
+
+function issueBatchFixture() {
+  const state = extractManuscriptState(study());
+  state.sections = [{ id: 'a', title: 'First', blocks: [] }, { id: 'b', title: 'Second', blocks: [] }];
+  state.extensions = { ...state.extensions, 'org.openmanuscript.ojs.issue': {
+    version: 1, installationId: 'installation-one', context: { externalId: '5' }, issue: { externalId: '7' },
+    sections: [{ articles: [
+      { rootSectionId: 'a', submissionExternalId: '12', publicationExternalId: '13' },
+      { rootSectionId: 'b', submissionExternalId: '14', publicationExternalId: '15' },
+    ] }],
+  }};
+  const source = { ...state, ...createInitialVersioningEnvelope(state, { summary: 'Issue batch', timestamp: state.updatedAt, completeness: 'complete' }) };
+  const selections: IssueBatchSelection[] = [
+    { rootSectionId: 'b', formats: ['html'], locale: 'hu', genreId: 2 },
+    { rootSectionId: 'a', formats: ['pdf-print', 'html'], locale: 'hu', genreId: 2 },
+  ];
+  const requests: PublicationArtifactRequest[] = [];
+  let workflowToken = 'a'.repeat(64);
+  let liveLayout = 'layout';
+  let failTransfer = 0;
+  let writes = 0;
+  const dependencies: IssueBatchDependencies = {
+    source, layoutKey: 'layout', connectionId: 'connection-one',
+    currentSource: () => source, currentLayoutKey: () => liveLayout, currentConnectionId: () => 'connection-one',
+    send: async (_, request) => {
+      requests.push(request);
+      if (request.action === 'inspect') return { target: { ...target(), submissionId: request.submissionId,
+        publicationId: request.publicationId!, issueId: 7, contextId: 5, installationId: 'installation-one', workflowToken } };
+      if (++writes === failTransfer) throw Error('Synthetic uncertain network result');
+      return { receipt: { ...receipt(request), issueId: 7, mediaType: request.mediaType.split(';')[0]! } };
+    },
+    prepare: async (item, formats) => formats.map(format => {
+      const fileName = item.rootSectionId + (format === 'pdf-print' ? '.pdf' : '.html');
+      const mediaType = format === 'pdf-print' ? 'application/pdf' : 'text/html;charset=utf-8';
+      const bytes = new TextEncoder().encode(item.rootSectionId + ':' + format);
+      const build = createPublicationBuildManifest({ manuscript: source, profile: resolvePublicationProfile(source), artifact: bytes,
+        output: { format, fileName, mediaType }, generator: { applicationVersion: '1', renderer: 'fixture', rendererVersion: '1' } });
+      return { format, mediaType, fileName, bytes, build, artifactBase64: 'not-trusted-by-batch' };
+    }),
+  };
+  return { source, selections, requests, dependencies,
+    changeToken: () => { workflowToken = 'b'.repeat(64); },
+    changeLayout: () => { liveLayout = 'changed'; },
+    failAt: (n: number) => { failTransfer = n; } };
+}
+
+test('issue batch prepares all selected outputs before writes and binds confirmed files to exact studies', async () => {
+  const fixture = issueBatchFixture();
+  const batch = await prepareOjsIssueBatch(fixture.dependencies, fixture.selections);
+  assert.deepEqual(batch.files.map(f => [f.rootSectionId, f.format]), [['a','pdf-print'],['a','html'],['b','html']]);
+  assert.equal(fixture.requests.length, 2);
+  assert.ok(fixture.requests.every(r => r.action === 'inspect'));
+  const result = await batch.execute(true);
+  assert.equal(result.failed, undefined);
+  assert.equal(result.receipts.length, 3);
+  const writes = fixture.requests.filter(r => r.action === 'transfer');
+  assert.deepEqual(writes.map(r => [r.submissionId, r.publicationId, r.expectedIssueId, r.expectedInstallationId]),
+    [[12,13,7,'installation-one'],[12,13,7,'installation-one'],[14,15,7,'installation-one']]);
+  assert.equal(atob(writes[0]!.artifactBase64), 'a:pdf-print');
+  assert.equal(writes[0]!.expectedWorkflowToken, 'a'.repeat(64));
+  await assert.rejects(batch.execute(true), /replay/);
+});
+
+test('a changed remote token, changed layout or incomplete local preparation prevents all writes', async () => {
+  const remote = issueBatchFixture();
+  const batch = await prepareOjsIssueBatch(remote.dependencies, remote.selections);
+  remote.changeToken();
+  await assert.rejects(batch.execute(true), /workflow changed/);
+  assert.ok(remote.requests.every(r => r.action === 'inspect'));
+  const local = issueBatchFixture();
+  const next = await prepareOjsIssueBatch(local.dependencies, local.selections);
+  local.changeLayout();
+  await assert.rejects(next.execute(true), /changed/);
+  assert.ok(local.requests.every(r => r.action === 'inspect'));
+  const incomplete = issueBatchFixture();
+  await assert.rejects(prepareOjsIssueBatch({ ...incomplete.dependencies, prepare: async () => [] }, incomplete.selections), /Incomplete/);
+  assert.ok(incomplete.requests.every(r => r.action === 'inspect'));
+});
+
+test('uncertain issue transfer preserves confirmed receipts and does not send subsequent files', async () => {
+  const fixture = issueBatchFixture();
+  fixture.failAt(2);
+  const batch = await prepareOjsIssueBatch(fixture.dependencies, fixture.selections);
+  const result = await batch.execute(true);
+  assert.equal(result.receipts.length, 1);
+  assert.equal(result.failed?.file.rootSectionId, 'a');
+  assert.equal(result.failed?.file.format, 'html');
+  assert.equal(result.failed?.outcome, 'unconfirmed');
+  assert.equal(fixture.requests.filter(r => r.action === 'transfer').length, 2);
+  await assert.rejects(batch.execute(true), /replay/);
 });
