@@ -123,12 +123,57 @@ export function buildSectionNumberMap(
   sections: readonly OmiSection[],
   style: OmiSectionNumberingStyle | undefined,
 ): Map<string, string> {
-  return new Map(
-    sections.map((section) => [
-      section.id,
-      formatHierarchicalSectionNumber(sections, section.id, style),
-    ]),
-  );
+  const normalized = normalizeSectionNumberingStyle(style);
+  if (normalized === 'none') return new Map(sections.map((section) => [section.id, '']));
+  // Build sibling ordinals and the parent index only once. Keep the first
+  // sibling ordinal and last section for duplicate IDs, matching the legacy
+  // lookup's findIndex/Map behavior even for malformed imported hierarchies.
+  const byId = new Map(sections.map((section) => [section.id, section]));
+  const siblingCounts = new Map<string | undefined, number>();
+  const ordinalByParent = new Map<string | undefined, Map<string, number>>();
+  for (const section of sections) {
+    const parent = getParentSectionId(section);
+    const ordinal = (siblingCounts.get(parent) ?? 0) + 1;
+    siblingCounts.set(parent, ordinal);
+    const ordinals = ordinalByParent.get(parent) ?? new Map<string, number>();
+    if (!ordinals.has(section.id)) ordinals.set(section.id, ordinal);
+    ordinalByParent.set(parent, ordinals);
+  }
+  const firstTitle = new Map<string, string>();
+  for (const section of sections) if (!firstTitle.has(section.id)) firstTitle.set(section.id, section.title);
+  const tokens = new Map<string, string>();
+  const resolve = (id: string): string => {
+    const chain: OmiSection[] = [];
+    const visited = new Set<string>();
+    let cursor = byId.get(id);
+    while (cursor && !tokens.has(cursor.id)) {
+      if (visited.has(cursor.id)) {
+        for (const section of chain) tokens.set(section.id, '');
+        return '';
+      }
+      visited.add(cursor.id);
+      chain.push(cursor);
+      const parent = getParentSectionId(cursor);
+      cursor = parent ? byId.get(parent) : undefined;
+    }
+    let token = cursor ? tokens.get(cursor.id)! : '';
+    if (cursor && !token) {
+      for (const section of chain) tokens.set(section.id, '');
+      return '';
+    }
+    for (let i = chain.length - 1; i >= 0; i--) {
+      const section = chain[i]!;
+      const ordinal = ordinalByParent.get(getParentSectionId(section))!.get(section.id)!;
+      const part = formatOrdinal(ordinal, normalized);
+      token = token ? `${token}.${part}` : part;
+      tokens.set(section.id, token);
+    }
+    return tokens.get(id) ?? '';
+  };
+  return new Map(sections.map((section) => {
+    const token = resolve(section.id);
+    return [section.id, token && !hasLeadingSectionNumber(firstTitle.get(section.id) ?? '') ? `${token}.` : ''];
+  }));
 }
 
 export function sectionNumberingStyleExample(
