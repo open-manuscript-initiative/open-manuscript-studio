@@ -28,6 +28,7 @@ import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
 import { getPublicationCoverSheet } from '../model/publicationCoverSheet';
 import { getPublicationMatter, publicationMatterPages, type PublicationMatterPage } from '../model/publicationMatter';
+import { publicationShortcodeValues, resolvePublicationShortcodes } from '../model/publicationShortcodes';
 import { authorFontStyle, cssStringLiteral } from './embeddedCss';
 import {
   buildPublicationRenderingContext,
@@ -750,6 +751,12 @@ function renderPublicationCoverSheets(model: NonNullable<ReturnType<typeof getPu
   }).join('');
 }
 
+function renderMatterShortcodes(content: string, targetId: string, state: RenderState): string {
+  const resolved = resolvePublicationShortcodes(content, publicationShortcodeValues(state.manuscript));
+  for (const key of resolved.missing) state.diagnostics.push({ code: 'publication-matter-shortcode-missing', severity: 'error', message: 'Missing publication metadata: ' + key, targetId });
+  return renderJsonNode(JSON.parse(resolved.content) as JsonNode, state);
+}
+
 function renderPublicationMatterPage(page: PublicationMatterPage, state: RenderState, panel?: { width: number; height: number; left: number }): string {
   const appearance = page.appearance;
   const justify = { top: 'flex-start', center: 'center', bottom: 'flex-end' }[appearance.vertical];
@@ -764,14 +771,14 @@ function renderPublicationMatterPage(page: PublicationMatterPage, state: RenderS
   const width = panel?.width ?? state.context.profile.publicationStyle?.page.width ?? (state.context.profile.rules.layout.pageSize === 'Letter' ? 215.9 : 210);
   const height = panel?.height ?? state.context.profile.publicationStyle?.page.height ?? (state.context.profile.rules.layout.pageSize === 'Letter' ? 279.4 : 297);
   const frames = (page.frames ?? []).map((frame, index) => renderPublicationMatterFrame(frame, index, width, height, state)).join('');
-  return `<section class="omi-publication-matter-page" data-publication-matter="${page.kind}" aria-label="${page.kind}" style="${escapeAttribute(styles + (frames || panel ? `;height:${height}mm;overflow:hidden` : '') + (panel ? `;width:${width}mm;min-height:${height}mm;position:absolute;left:${panel.left}mm;top:0;max-width:none` : ''))}">${image}<div class="omi-publication-matter-text">${renderJsonNode(JSON.parse(page.content) as JsonNode, state)}</div>${frames}</section>`;
+  return `<section class="omi-publication-matter-page" data-publication-matter="${page.kind}" aria-label="${page.kind}" style="${escapeAttribute(styles + (frames || panel ? `;height:${height}mm;overflow:hidden` : '') + (panel ? `;width:${width}mm;min-height:${height}mm;position:absolute;left:${panel.left}mm;top:0;max-width:none` : ''))}">${image}<div class="omi-publication-matter-text">${renderMatterShortcodes(page.content, page.kind, state)}</div>${frames}</section>`;
 }
 
 function renderPublicationMatterFrame(frame: PublicationMatterFrame, index: number, width: number, height: number, state: RenderState): string {
   const inline = (style: object) => Object.entries(style).map(([key, value]) => `${key.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}:${value}`).join(';');
   const box = inline({ ...matterFrameBoxStyle(frame, width, height), zIndex: index + 2 });
   let content = '';
-  if (frame.kind === 'text') content = renderJsonNode(JSON.parse(frame.content!) as JsonNode, state);
+  if (frame.kind === 'text') content = renderMatterShortcodes(frame.content!, frame.id, state);
   else if (frame.image) {
     const asset = state.assetMap.get(frame.image.assetId);
     if (!asset || !['image/png', 'image/jpeg', 'image/webp'].includes(asset.mediaType)) {

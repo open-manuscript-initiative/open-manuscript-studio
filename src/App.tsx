@@ -48,7 +48,7 @@ import {
   createManuscriptFromOjsLaunch,
 } from './integrations/ojs/importOjsLaunchLocalized';
 import { createJournalIssueFromOjsHandoff, fetchOjsIssueHandoff, type OjsIssueHandoff } from './integrations/ojs/importOjsIssue';
-import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue, type OjsIssueReview } from './integrations/ojs/reimportOjsIssue';
+import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue, refreshOjsPublicationMatter, type OjsIssueReview } from './integrations/ojs/reimportOjsIssue';
 import { OjsIssueReimportReview } from './components/OjsIssueReimportReview';
 import { MobileLayout } from './mobile/navigation/MobileLayout';
 import { isMobileStudio } from './mobile/platform/platform';
@@ -475,6 +475,19 @@ function StudioApplication() {
     const { review, launch, manuscriptId } = externalImportState;
     return <OjsIssueReimportReview review={review} locale={locale}
       onKeep={() => setExternalImportState({ status: 'idle' })}
+      onRefreshMatter={launch.context.publicationMatter ? () => {
+        try {
+          const current = useStudioStore.getState();
+          if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active issue changed. Launch it again from OJS.');
+          current.checkpoint('manual');
+          const base = useStudioStore.getState();
+          const next = refreshOjsPublicationMatter(base.manuscript, launch);
+          if (next !== base.manuscript) useStudioStore.setState({ manuscript: next, pendingChangeSet: null });
+          setExternalImportState({ status: 'idle' });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      } : undefined}
       onAdd={() => {
         try {
           const current = useStudioStore.getState();

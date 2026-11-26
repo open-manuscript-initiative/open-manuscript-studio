@@ -9,6 +9,8 @@ import { projectIssueStudyForExport } from '../src/model/issueStudyExport.ts';
 import { getIssueStudyCitationMetadata } from '../src/model/issueStudyCitationMetadata.ts';
 import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { renderJatsArticle } from '../src/services/exportJats.ts';
+import { publicationShortcodeValues, resolvePublicationShortcodes } from '../src/model/publicationShortcodes.ts';
+import { createPublicationMatter, PUBLICATION_MATTER_EXTENSION } from '../src/model/publicationMatter.ts';
 
 function fixture(): OjsIssueHandoff {
   const article = (id: string, title: string, sequence: number) => ({
@@ -170,4 +172,28 @@ test('issue HTML displays public authors under the correct study, not at issue l
   const article = projectIssueStudyForExport(issue, roots[0]!.id);
   assert.match(renderHtmlArticle(article).html, /FirstAuthor/);
   assert.doesNotMatch(renderHtmlArticle(article).html, /SecondAuthor/);
+});
+
+test('publication matter shortcodes expand current issue metadata and public authors without mutating template', () => {
+  const input = fixture();
+  input.context.publicationMatter = { publisher: { hu: 'Kiadó & Társai' }, address: 'Sárospatak', editorialBoard: [{ role: 'Főszerkesztő', members: [{ name: 'Public Editor', email: 'private@example.test' }] }] };
+  input.sections[0]!.articles[0]!.contributors = [{ name: { given: 'Ada', family: 'FirstAuthor' }, email: 'private-author@example.test' }];
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '[omi:imprint] / [omi:editorial-board] / [omi:authors]', marks: [{ type: 'bold' }] }] }] });
+  const values = publicationShortcodeValues(issue);
+  const resolved = resolvePublicationShortcodes(content, values);
+  assert.deepEqual(resolved.missing, []);
+  assert.match(resolved.content, /Public Editor/);
+  assert.match(resolved.content, /FirstAuthor/);
+  assert.match(resolved.content, /hardBreak/);
+  assert.doesNotMatch(resolved.content, /private@|private-author/);
+  const matter = createPublicationMatter(issue);
+  const page = matter.pages.find(item => item.kind === 'imprint-page')!;
+  page.enabled = true; page.content = content;
+  issue.extensions = { ...issue.extensions, [PUBLICATION_MATTER_EXTENSION]: matter };
+  const html = renderHtmlArticle(issue).html;
+  assert.match(html, /Kiadó &amp; Társai/);
+  assert.match(html, /Public Editor/);
+  assert.match(page.content, /\[omi:imprint\]/);
+  assert.deepEqual(resolvePublicationShortcodes(content.replace('[omi:authors]', '[omi:unknown]'), values).missing, ['unknown']);
 });
