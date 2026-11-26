@@ -188,6 +188,42 @@ test('panel placement also works with the keyboard and can return to selection f
 });
 
 
+test('authoring font picker loads installed families only on request and keeps common fonts', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'queryLocalFonts', {
+      configurable: true,
+      value: async () => [{ family: 'Local Test Serif', fullName: 'Local Test Serif Regular', postscriptName: 'LocalTestSerif-Regular', style: 'Regular' }],
+    });
+  });
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  const family = panel.getByRole('combobox', { name: 'Font family', exact: true });
+  await expect(family.locator('option[value="Local Test Serif"]')).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Load system fonts', exact: true }).click();
+  await expect(family.locator('option[value="Local Test Serif"]')).toHaveCount(1);
+  await expect(family.locator('option[value="Arial"]')).toHaveCount(1);
+  await family.selectOption('Local Test Serif');
+  await expect(editor.locator('[data-omi-source-font="Local Test Serif"]')).toHaveText('Select these words');
+  await expect(panel.getByRole('button', { name: 'Refresh system fonts', exact: true })).toBeEnabled();
+});
+
+test('authoring font picker keeps common fonts when local access is denied', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'queryLocalFonts', {
+      configurable: true,
+      value: async () => { throw new DOMException('Permission denied', 'NotAllowedError'); },
+    });
+  });
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  await panel.getByRole('button', { name: 'Load system fonts', exact: true }).click();
+  await expect(panel.getByRole('status')).toHaveText('Could not read system fonts');
+  await panel.getByRole('combobox', { name: 'Font family', exact: true }).selectOption('Arial');
+  await expect(editor.locator('[data-omi-source-font="Arial"]')).toHaveText('Select these words');
+});
+
 test('authoring font family picker changes selected text and restores the inherited font', async ({ page }) => {
   const { editor, toolbar } = await openToolbar(page);
   await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
