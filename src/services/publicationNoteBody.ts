@@ -1,4 +1,5 @@
 import { createNoteBodyDocument, noteBodyPlainText, type NoteCitationStyleOptions, type NoteJsonNode } from '../model/noteRichText';
+import { cssStringLiteral } from './embeddedCss';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../model/richText';
 import type { OmiAnnotation, OmiBibliographicRecord, OmiCitationStyleId } from '../types/omi';
 
@@ -55,6 +56,12 @@ function applyMarks(text: string, marks: NonNullable<NoteJsonNode['marks']>, pre
         const href = typeof mark.attrs?.href === 'string' ? normalizeExternalHref(mark.attrs.href) : undefined;
         if (previewOnly) return href ? `<span class="omi-note-preview-link">${html}</span>` : html;
         return href ? `<a href="${escape(href)}" rel="external">${html}</a>` : html;
+      }
+      case 'omiSourceFont': {
+        const family = typeof mark.attrs?.family === 'string' ? mark.attrs.family.trim() : '';
+        return family && family.length <= 128
+          ? `<span data-omi-source-font="${escape(family)}" style="${escape('font-family:' + cssStringLiteral(family))}">${html}</span>`
+          : html;
       }
       case 'omiLanguage': {
         const lang = typeof mark.attrs?.lang === 'string' ? normalizeInlineLanguageTag(mark.attrs.lang) : undefined;
