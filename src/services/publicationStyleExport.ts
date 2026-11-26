@@ -38,6 +38,8 @@ export type PublicationStyle = Omit<PublicationStyleTemplate, 'paragraphStyles' 
   noteCitationStyles?: { first?: OmiCitationStyleId; subsequent?: OmiCitationStyleId };
   pageStyles?: PublicationPageStyleCollection;
   tableStyles?: PublicationTableStyles;
+  /** Presentation-only: let named publication styles override saved author fonts. */
+  overrideAuthorFonts?: boolean;
 };
 export type PublicationPublisherIdentity = typeof publisherJson;
 export type PublicationStyleTarget = 'html' | 'print';
@@ -74,6 +76,7 @@ export function normalizePublicationStyle(style: PublicationStyle): PublicationS
   return {
     ...fallback,
     ...style,
+    ...(style.overrideAuthorFonts === true ? { overrideAuthorFonts: true } : {}),
     page: {
       ...fallback.page,
       ...style.page,
@@ -464,6 +467,12 @@ export function resetPublicationPublisherIdentity(): PublicationPublisherIdentit
   return clonePublicationPublisherTemplate();
 }
 
+export function publicationAuthorFontOverrideCss(style: PublicationStyle, scope = ''): string {
+  return style.overrideAuthorFonts === true
+    ? `${scope ? scope + ' ' : ''}[data-omi-source-font] { font-family: inherit !important; }`
+    : '';
+}
+
 export function buildPublicationStyleCss(
   style: PublicationStyle,
   target: PublicationStyleTarget,
@@ -518,6 +527,7 @@ img, svg, table { max-width: 100%; }
 ${paragraphStyleRules}
 ${TABLE_LAYOUT_CSS}
 ${buildPublicationTextRoleCss(style, target)}
+${publicationAuthorFontOverrideCss(style)}
 `;
 
   if (target === 'html') {
