@@ -381,7 +381,8 @@ test('author given and family names have independent publication typography', ()
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {
   assert.match(styleEditor, /<PublicationDocumentCanvas[\s\S]*style=\{style\}/);
   assert.match(documentCanvas, /buildContinuousManuscriptDocument\([\s\S]*manuscript\.sections/);
-  assert.match(documentCanvas, /stageContinuousDocumentChange\(\s*projectContinuousManuscriptDocument\(parsed,\s*currentSections,\s*\{\s*textContentCache:\s*snapshot\s*\?\s*projectionCache\s*:\s*undefined,\s*\}\)/);
+  assert.match(documentCanvas, /const projected = projectContinuousManuscriptDocument\(parsed, currentSections, \{\s*textContentCache: snapshot \? projectionCache : undefined,/);
+  assert.match(documentCanvas, /stageContinuousDocumentChange\(projected\)/);
   assert.match(documentCanvas, /const \[projectionCache\] = useState\(\(\) => createTextProjectionCache<JSONContent>\(\)\);/);
   assert.match(documentCanvas, /stageContinuousDocumentChange/);
   assert.match(documentCanvas, /<BlockEditor[\s\S]*continuous/);
@@ -911,7 +912,7 @@ test('live facing-page pagination retains stable block projections and coalesces
   assert.ok(documentCanvas.includes('if (measuring) { pending = true; return; }'));
   assert.ok(documentCanvas.includes('if (queued) return;'));
   assert.ok(documentCanvas.includes('if (structureChanged) { structureVersion += 1; updateProvisionalProjection(); }'));
-  assert.ok(documentCanvas.includes('const paginationDebounceMs = (document.content?.length ?? 0)'));
+  assert.ok(documentCanvas.includes('const paginationDebounceMs = document.nodeCount'));
   assert.ok(documentCanvas.includes('measuredNotes.delete(measuredNote)'));
 });
 
@@ -956,4 +957,13 @@ test('incremental paginator conservatively falls back for footnotes and variable
   assert.deepEqual(paginator.paginate(blocks, 100, 20, notes), paginatePublicationBlocks(blocks, 100, 20, notes));
   assert.deepEqual(paginator.paginate(blocks, 100, 20, notes, metrics), paginatePublicationBlocks(blocks, 100, 20, notes, metrics));
   assert.deepEqual(paginator.paginate(blocks, 100, 20), paginatePublicationBlocks(blocks, 100, 20));
+});
+
+test('publication local echo is guarded by manuscript, style, section identity and structure', () => {
+  assert.match(documentCanvas, /previous.manuscriptId === manuscriptId/);
+  assert.match(documentCanvas, /previous.nextStyles === paragraphStyleNextById/);
+  assert.match(documentCanvas, /sectionsShareIdentity\(manuscript.sections, previous.sections\)/);
+  assert.match(documentCanvas, /publicationSectionLayoutKey\(currentSections\) === publicationSectionLayoutKey\(projected\)/);
+  assert.match(documentCanvas, /content=\{document.content\}/);
+  assert.doesNotMatch(documentCanvas, /content=\{JSON.stringify\(document\)\}/);
 });

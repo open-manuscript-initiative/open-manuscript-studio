@@ -16,6 +16,7 @@ import { createTextProjectionCache, editorMemoryPool } from '../model/derivedMem
 import { FileCode2, FileText } from 'lucide-react';
 import {
   useEffect,
+  useCallback,
   useContext,
   useId,
   useLayoutEffect,
@@ -41,6 +42,7 @@ import {
 import {
   buildContinuousManuscriptDocument,
   projectContinuousManuscriptDocument,
+  sectionsShareIdentity,
 } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
 import {
@@ -321,21 +323,27 @@ export function PublicationDocumentCanvas({
     ),
     [style.paragraphStyles],
   );
-  const document = useMemo(
-    () => buildContinuousManuscriptDocument(
+  const localProjectionRef = useRef<{ manuscriptId: string; sections: readonly OmiSection[]; content: string; nodeCount: number; sectionNumbers: ReadonlyMap<string, string>; nextStyles: ReadonlyMap<string, string>; defaultStyle: string } | null>(null);
+  const document = useMemo(() => {
+    if (viewMode !== 'print') return { content: '', nodeCount: 0 };
+    const previous = localProjectionRef.current;
+    if (previous && previous.manuscriptId === manuscriptId
+      && previous.nextStyles === paragraphStyleNextById
+      && previous.defaultStyle === style.paragraphStyles.defaultStyleId
+      && previous.sectionNumbers.size === sectionNumbers.size
+      && [...sectionNumbers].every(([id, number]) => previous.sectionNumbers.get(id) === number)
+      && sectionsShareIdentity(manuscript.sections, previous.sections)) {
+      return { content: previous.content, nodeCount: previous.nodeCount };
+    }
+    const built = buildContinuousManuscriptDocument(
       manuscript.sections,
       sectionNumbers,
       paragraphStyleNextById,
       style.paragraphStyles.defaultStyleId,
-    ),
-    [
-      manuscript.sections,
-      paragraphStyleNextById,
-      sectionNumbers,
-      style.paragraphStyles.defaultStyleId,
-    ],
-  );
-  const paginationDebounceMs = (document.content?.length ?? 0) > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
+    );
+    return { content: JSON.stringify(built), nodeCount: built.content?.length ?? 0 };
+  }, [manuscriptId, manuscript.sections, paragraphStyleNextById, sectionNumbers, style.paragraphStyles.defaultStyleId, viewMode]);
+  const paginationDebounceMs = document.nodeCount > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
     ? LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS
     : 0;
   const contributors = useMemo(
@@ -983,7 +991,7 @@ export function PublicationDocumentCanvas({
   ]);
 
   const [projectionCache] = useState(() => createTextProjectionCache<JSONContent>());
-  function updateDocument(_documentId: string, content: string, snapshot?: JSONContent): void {
+  const updateDocument = useCallback((_documentId: string, content: string, snapshot?: JSONContent): void => {
     let parsed: JSONContent;
     try {
       parsed = snapshot ?? JSON.parse(content) as JSONContent;
@@ -991,12 +999,23 @@ export function PublicationDocumentCanvas({
       return;
     }
     const currentSections = useStudioStore.getState().manuscript.sections;
-    stageContinuousDocumentChange(
-      projectContinuousManuscriptDocument(parsed, currentSections, {
-        textContentCache: snapshot ? projectionCache : undefined,
-      }),
-    );
-  }
+    const projected = projectContinuousManuscriptDocument(parsed, currentSections, {
+      textContentCache: snapshot ? projectionCache : undefined,
+    });
+    // Structural changes may require regenerated heading/next-style attributes.
+    // Reuse only for stable section hierarchy and block identity/style metadata.
+    const stableStructure = currentSections.length === projected.length && projected.every((section, index) => {
+      const old = currentSections[index]!;
+      return section.id === old.id && section.title === old.title
+        && section.blocks.length === old.blocks.length
+        && section.blocks.every((block, i) => block.id === old.blocks[i]!.id
+          && block.type === old.blocks[i]!.type && block.paragraphStyleId === old.blocks[i]!.paragraphStyleId);
+    }) && publicationSectionLayoutKey(currentSections) === publicationSectionLayoutKey(projected);
+    localProjectionRef.current = stableStructure ? { manuscriptId, sections: projected, content,
+      nodeCount: parsed.content?.length ?? 0, sectionNumbers, nextStyles: paragraphStyleNextById,
+      defaultStyle: style.paragraphStyles.defaultStyleId } : null;
+    stageContinuousDocumentChange(projected);
+  }, [manuscriptId, projectionCache, sectionNumbers, paragraphStyleNextById, style.paragraphStyles.defaultStyleId]);
 
   const body = style.styles.body;
   const title = style.styles.articleTitlePrimary;
@@ -1412,7 +1431,7 @@ export function PublicationDocumentCanvas({
                       blockId={`omi-publication-document-${manuscript.id}`}
                       blockType="manuscript"
                       editable={!previewOnly && !presentation}
-                      content={JSON.stringify(document)}
+                      content={document.content}
                       onUpdate={updateDocument}
                       manuscriptLanguage={manuscript.locale}
                       className="publication-layout-document-editor"
