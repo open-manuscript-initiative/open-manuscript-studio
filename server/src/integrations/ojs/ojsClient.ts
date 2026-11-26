@@ -260,6 +260,10 @@ async function loadSourceDocument(
     throw new Error('The OJS DOCX source file exceeds the 25 MB import limit.');
   }
 
+  return convertOjsSource(bytes, { ...candidate, externalId: candidate.externalId });
+}
+
+function convertOjsSource(bytes: Buffer, candidate: OjsFileDescriptor & { externalId: string }): OjsSourceDocument {
   const parsed = parseDocxSource(
     bytes,
     candidate.externalId,
@@ -357,4 +361,168 @@ export async function loadOjsLaunchData(
     result.sourceDocument = sourceDocument;
   }
   return result;
+}
+
+export interface OjsIssueArticle extends OjsLaunchData {
+  submissionExternalId: string;
+  publicationExternalId: string;
+  sequence: number;
+  sourceDocument: OjsSourceDocument;
+}
+
+export interface OjsIssueSection {
+  externalId: string;
+  title: Record<string, unknown>;
+  sequence: number;
+  articles: OjsIssueArticle[];
+}
+
+export interface OjsIssueImportData {
+  context: Record<string, unknown>;
+  issue: Record<string, unknown>;
+  sections: OjsIssueSection[];
+}
+
+const MAX_ISSUE_ARTICLES = 100;
+const MAX_ISSUE_JSON_BYTES = 8 * 1024 * 1024;
+const MAX_ISSUE_HANDOFF_BYTES = 32 * 1024 * 1024;
+
+function issueObject(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid OJS issue response.');
+  return value as Record<string, unknown>;
+}
+
+function issueId(value: unknown): string {
+  if (typeof value !== 'string' || !/^[1-9][0-9]*$/.test(value)) throw new Error('Invalid OJS issue identifier.');
+  return value;
+}
+
+/** Enforce the limit during streaming, including responses without Content-Length. */
+async function readBoundedIssueBody(response: Response, limit: number): Promise<Buffer> {
+  if (Number(response.headers.get('content-length') || 0) > limit) {
+    await response.body?.cancel();
+    throw new Error('OJS issue response exceeds the import size limit.');
+  }
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('OJS issue response has no body.');
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel();
+        throw new Error('OJS issue response exceeds the import size limit.');
+      }
+      chunks.push(value);
+    }
+    return Buffer.concat(chunks, total);
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Fetch the complete issue in manifest order. Fail closed on missing content,
+ * identity mismatch or a changed publication; no incomplete handoff is returned.
+ */
+export async function loadOjsIssueImportData(
+  claims: LaunchClaims,
+  payload: string,
+  signature: string,
+  installationBaseUrl: string,
+): Promise<OjsIssueImportData> {
+  requireAnyScope(claims, ['issue.import.read']);
+  const expectedIssue = issueId(claims.issue?.externalId);
+  const expectedContext = issueId(claims.context?.externalId);
+  const trustedOrigin = new URL(installationBaseUrl).origin;
+  const authorization = `OMI ${payload}.${signature}`;
+  const manifestOperation = 'issue-import/manifest';
+  const fetchIssueJson = async (operation: string, url: URL) => {
+    const response = await fetchWithExplicitRedirects(operation, url, authorization, trustedOrigin);
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new Error(`OJS issue ${operation} failed with HTTP ${response.status}.`);
+    }
+    const body = await readBoundedIssueBody(response, MAX_ISSUE_JSON_BYTES);
+    return { data: issueObject(JSON.parse(body.toString('utf8'))), finalUrl: new URL(response.url) };
+  };
+  const manifest = await fetchIssueJson(manifestOperation, apiUrl(claims, manifestOperation));
+  const issue = issueObject(manifest.data.issue);
+  const context = issueObject(manifest.data.context);
+  if (issue.externalId !== expectedIssue || context.externalId !== expectedContext || issue.published !== false) {
+    throw new Error('OJS returned a different or published issue.');
+  }
+  if (!Array.isArray(manifest.data.sections)) throw new Error('OJS issue sections are missing.');
+  const sections: OjsIssueSection[] = [];
+  const seenSections = new Set<string>();
+  const seenArticles = new Set<string>();
+  let count = 0;
+  let outputBytes = Buffer.byteLength(JSON.stringify({ issue, context }), 'utf8');
+  const addSize = (value: unknown) => {
+    outputBytes += Buffer.byteLength(JSON.stringify(value), 'utf8');
+    if (outputBytes > MAX_ISSUE_HANDOFF_BYTES) throw new Error('OJS issue exceeds the 32 MB converted import limit.');
+  };
+
+  for (const sectionValue of manifest.data.sections) {
+    const section = issueObject(sectionValue);
+    const externalId = issueId(section.externalId);
+    if (seenSections.has(externalId)) throw new Error('Duplicate OJS section.');
+    seenSections.add(externalId);
+    if (!Array.isArray(section.articles)) throw new Error('OJS issue articles are missing.');
+    const title = Array.isArray(section.title) && section.title.length === 0 ? {} : issueObject(section.title);
+    const sequence = section.sequence;
+    if (typeof sequence !== 'number' || !Number.isFinite(sequence)) throw new Error('Invalid OJS section order.');
+    const resultSection: OjsIssueSection = { externalId, title, sequence, articles: [] };
+    addSize(resultSection);
+    for (const articleValue of section.articles) {
+      const article = issueObject(articleValue);
+      const submissionExternalId = issueId(article.submissionExternalId);
+      const publicationExternalId = issueId(article.publicationExternalId);
+      const articleSequence = article.sequence;
+      if (typeof articleSequence !== 'number' || !Number.isFinite(articleSequence)) throw new Error('Invalid OJS article order.');
+      if (seenArticles.has(submissionExternalId)) throw new Error('Duplicate OJS article.');
+      seenArticles.add(submissionExternalId);
+      if (++count > MAX_ISSUE_ARTICLES) throw new Error('OJS issue exceeds the 100 article import limit.');
+      if (Date.now() >= claims.exp * 1000) throw new Error('OJS issue assertion expired during import.');
+      const operation = `issue-import/articles/${submissionExternalId}`;
+      const articleResponse = await fetchIssueJson(operation,
+        siblingOperationUrl(manifest.finalUrl, manifestOperation, operation));
+      const submission = issueObject(articleResponse.data.submission);
+      if (submission.externalId !== submissionExternalId || submission.publicationExternalId !== publicationExternalId) {
+        throw new Error(`OJS article ${submissionExternalId} changed during import.`);
+      }
+      if (!Array.isArray(articleResponse.data.contributors) || !Array.isArray(articleResponse.data.files)) {
+        throw new Error(`OJS article ${submissionExternalId} has an invalid source manifest.`);
+      }
+      const files = articleResponse.data.files.map(issueObject) as OjsFileDescriptor[];
+      // OJS orders eligible files by editorial stage, latest version first.
+      // Do not silently replace an oversized or broken final source with an earlier draft.
+      const candidate = files[0];
+      if (!candidate || !isDocx(candidate)) throw new Error(`OJS article ${submissionExternalId} has no eligible DOCX source.`);
+      const fileId = issueId(candidate.externalId);
+      if (Number(candidate.size || 0) > MAX_SOURCE_FILE_BYTES) throw new Error(`OJS article ${submissionExternalId} exceeds the source size limit.`);
+      const fileOperation = `${operation}/files/${fileId}/content`;
+      const sourceResponse = await fetchWithExplicitRedirects(fileOperation,
+        siblingOperationUrl(manifest.finalUrl, manifestOperation, fileOperation),
+        authorization, trustedOrigin, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      if (!sourceResponse.ok) {
+        await sourceResponse.body?.cancel();
+        throw new Error(`OJS article ${submissionExternalId} source returned HTTP ${sourceResponse.status}.`);
+      }
+      const bytes = await readBoundedIssueBody(sourceResponse, MAX_SOURCE_FILE_BYTES);
+      const sourceDocument = convertOjsSource(bytes, { ...candidate, externalId: fileId });
+      const result: OjsIssueArticle = {
+        submissionExternalId, publicationExternalId, sequence: articleSequence, submission,
+        contributors: articleResponse.data.contributors,
+        files, sourceDocument,
+      };
+      addSize(result);
+      resultSection.articles.push(result);
+    }
+    sections.push(resultSection);
+  }
+  return { context, issue, sections };
 }

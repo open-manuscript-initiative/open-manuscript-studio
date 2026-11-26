@@ -62,7 +62,7 @@ runuser -u "$omi_api_user" -- env \
   "$omi_node_bin/npm" --prefix server run build
 
 # Do not copy a stale or partial dist after a failed build.
-for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js \
+for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js services/issuePdfSlice.js \
   security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js \
   security/pdfSubprocess.js; do
   test -s "server/dist/$file"
@@ -80,7 +80,7 @@ install -d -o root -g root -m 0755 /opt/omi-pdf-worker
 install -d -o root -g root -m 0755 /opt/omi-pdf-worker/{workers,services,security}
 printf '{"type":"module"}\n' > /opt/omi-pdf-worker/package.json
 chmod 0644 /opt/omi-pdf-worker/package.json
-for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js \
+for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js services/issuePdfSlice.js \
   security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js \
   security/pdfSubprocess.js; do
   install -o root -g root -m 0644 \
@@ -214,3 +214,7 @@ Restart only omi-studio-api.service so its process acquires the socket group mem
 The Ubuntu 24.04 IONOS/Plesk administrator verified Google Chrome Stable 156.0.8078.79 from Google's native amd64 .deb package. `google-chrome-stable` resolves through `/usr/bin/google-chrome-stable` to `/opt/google/chrome/chrome`; no `chromium` executable was found in the standard locations. The Chrome installation was performed as root, and package post-install scripts indicated a **pending kernel reboot**; defer that to a separate maintenance window. An APT warning about an invalidly suffixed MariaDB source-list filename is a separate packaging hygiene issue, not evidence that Chrome failed to install. Neither message is an instruction to run a global upgrade as part of this worker rollout.
 
 Before the worker's first start, recheck the actual executable and test a small PDF render under the isolated systemd identity. A green GitHub CI run does not validate Chromium in this host's PrivateNetwork/ProtectSystem/PrivateDevices sandbox. Do not deploy the new production API for PDF use until the independent worker smoke test passes; production requires the socket independently of the optional flag.
+
+### Physical issue PDF page extraction
+
+Install `qpdf` on the isolated worker host (`apt install qpdf` on Ubuntu/Debian) and check `qpdf --version` before deploying the updated worker modules. Restart the worker after installing the compiled `services/issuePdfSlice.js` alongside its existing modules. The authenticated `POST /api/publication/slice/pdf?firstPage=2&lastPage=5` endpoint accepts an `application/pdf` body and copies one inclusive physical range (1-based, at most 2,000 source pages and 96 MiB). It never runs qpdf in the API service. Missing worker or qpdf fails closed. Verify actual PDF page boundaries independently of the interactive editor's pagination. Printed content and page numbers are copied without reflow; document-level bookmarks, interactive links, metadata and accessibility structure are not guaranteed to survive extraction. Do not use this as a redaction or confidentiality boundary. Automatic range detection, article UI, provenance builds and OJS transfer are separate work.

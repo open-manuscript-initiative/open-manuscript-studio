@@ -1,4 +1,4 @@
-export type PendingExternalLaunchPlatform = 'ojs' | 'omp';
+export type PendingExternalLaunchPlatform = 'ojs' | 'omp' | 'ojs-issue';
 
 export interface PendingExternalLaunch {
   platform: PendingExternalLaunchPlatform;
@@ -14,6 +14,9 @@ export function getPendingExternalLaunchFromLocation(): PendingExternalLaunch | 
   if (typeof window === 'undefined') return null;
 
   const url = new URL(window.location.href);
+  const issueToken = normalizeToken(url.searchParams.get('omiOjsIssueLaunch'));
+  if (issueToken) return { platform: 'ojs-issue', token: issueToken, savedAt: Date.now() };
+
   const ojsToken = normalizeToken(url.searchParams.get('omiOjsLaunch'));
   if (ojsToken) {
     return { platform: 'ojs', token: ojsToken, savedAt: Date.now() };
@@ -59,7 +62,7 @@ export function restorePendingExternalLaunchToLocation(): PendingExternalLaunch 
 
   const url = new URL(window.location.href);
   url.searchParams.set(
-    stored.platform === 'ojs' ? 'omiOjsLaunch' : 'omiOmpLaunch',
+    stored.platform === 'ojs-issue' ? 'omiOjsIssueLaunch' : stored.platform === 'ojs' ? 'omiOjsLaunch' : 'omiOmpLaunch',
     stored.token,
   );
   window.history.replaceState(
@@ -103,7 +106,7 @@ function readStoredLaunch(): PendingExternalLaunch | null {
     const value = JSON.parse(raw) as Partial<PendingExternalLaunch>;
     const token = normalizeToken(value.token);
     if (
-      (value.platform !== 'ojs' && value.platform !== 'omp') ||
+      (value.platform !== 'ojs' && value.platform !== 'omp' && value.platform !== 'ojs-issue') ||
       !token ||
       typeof value.savedAt !== 'number' ||
       !Number.isFinite(value.savedAt) ||

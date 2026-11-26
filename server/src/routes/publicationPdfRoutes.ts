@@ -1,4 +1,6 @@
-import { Router } from 'express';
+import { Router, raw } from 'express';
+import { configuredPdfWorkerSocket, dispatchPdfWorkerTask } from '../security/pdfWorkerTransport.js';
+import { encodeIssuePdfSlice, MAX_ISSUE_PDF_BYTES } from '../services/issuePdfSlice.js';
 import { z } from 'zod';
 
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
@@ -106,3 +108,35 @@ function stripControlCharacters(value: string): string {
     })
     .join('');
 }
+
+
+// Never invoke a PDF parser inside the API process, even in development.
+publicationPdfRouter.post('/slice/pdf', requireSession,
+  raw({ type: 'application/pdf', limit: MAX_ISSUE_PDF_BYTES, inflate: false }),
+  async (request, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    const owner = (request as AuthenticatedRequest).authUserId;
+    if (!owner) { response.sendStatus(401); return; }
+    const query = z.object({ firstPage: z.string().regex(/^[1-9][0-9]{0,3}$/), lastPage: z.string().regex(/^[1-9][0-9]{0,3}$/) }).safeParse(request.query);
+    if (!query.success || !Buffer.isBuffer(request.body)) {
+      response.status(400).json({ error: { code: 'INVALID_PDF_SLICE', message: 'Provide a PDF and an inclusive physical page range.' } });
+      return;
+    }
+    let input: Buffer;
+    try {
+      input = encodeIssuePdfSlice(request.body, Number(query.data.firstPage), Number(query.data.lastPage));
+    } catch {
+      response.status(400).json({ error: { code: 'INVALID_PDF_SLICE', message: 'Invalid PDF or page range.' } });
+      return;
+    }
+    try {
+      const socket = configuredPdfWorkerSocket();
+      if (!socket) throw new Error('Missing worker');
+      const bytes = await dispatchPdfWorkerTask('slice', input, owner, socket, 190_000);
+      if (bytes.subarray(0, 5).toString('ascii') !== '%PDF-') throw new Error('Invalid output');
+      response.status(200).type('application/pdf').attachment('article.pdf').send(bytes);
+    } catch {
+      response.status(503).json({ error: { code: 'PDF_SLICE_FAILED', message: 'The isolated PDF extraction could not complete. Check the physical page range and worker availability.' } });
+    }
+  });
