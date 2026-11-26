@@ -288,7 +288,7 @@ export async function loadOmpVolumeImportData(
 ) {
   if (!claims.apiBaseUrl) throw new Error('Missing OMP volume API.');
   const trusted = await assertTrustedIntegrationUrl(claims.apiBaseUrl, installationBaseUrl);
-  const base = trusted.toString().replace(/\\/$/, '');
+  const base = trusted.toString().replace(/\/$/, '');
   const fetchSource = async (operation: string, accept: string, limit: number) => {
     if (Date.now() >= claims.exp * 1000) throw new Error('OMP volume assertion expired.');
     const response = await fetchWithSameOriginRedirects(new URL(endpoint(base, operation)), payload, signature, accept);
