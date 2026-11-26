@@ -685,7 +685,7 @@ export function PublicationDocumentCanvas({
           return;
         }
         if (cancelled) return;
-        const { metrics, insertionStyles } = createPublicationPageMetricsResolver(
+        const { metrics, insertionStyles, snapshot, restore } = createPublicationPageMetricsResolver(
           (index, sectionId, insertedStyleId) => canvasPageGeometry(
             preparedPageStyles.resolve(index, sectionId, insertedStyleId), scale,
           ),
@@ -699,6 +699,7 @@ export function PublicationDocumentCanvas({
           { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight,
             allowPageContinuation: noteStyle.footnoteContinueOnNextPage !== false },
           style.pageStyles ? metrics : undefined,
+          style.pageStyles ? { key: preparedPageStyles, snapshot, restore } : undefined,
         );
         const sectionWarnings = layout.sectionWarnings ?? publicationSectionFitWarnings(measuredBlocks, layout,
           () => ({ bodyHeight: usablePageHeight, bodyTop: 0 }));
