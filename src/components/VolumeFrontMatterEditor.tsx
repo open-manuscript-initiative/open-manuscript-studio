@@ -136,6 +136,12 @@ export function VolumeFrontMatterEditor({
     ? partitionManuscriptStudies(manuscript.sections)[0]?.rootSectionId ?? manuscript.id
     : manuscript.id;
   const copy = getVolumeFrontMatterCopy(locale, structure.kind);
+  const studyCopy = getVolumeFrontMatterCopy(locale, 'study');
+  const [selectedContributorStudy, setSelectedContributorStudy] = useState('');
+  const studies = structure.kind === 'volume' && structure.volumeKind === 'edited-volume'
+    ? partitionManuscriptStudies(manuscript.sections) : [];
+  const selectedStudy = studies.find(study => study.rootSectionId === selectedContributorStudy);
+  const selectedContributorTarget = selectedStudy?.rootSectionId ?? contributorTargetId;
   const setTitle = useStudioStore((state) => state.setTitle);
   const [activeTab, setActiveTab] = useState<VolumeFrontMatterTab>('title-matter');
 
@@ -245,10 +251,25 @@ export function VolumeFrontMatterEditor({
         </header>
       ) : activeTab === 'contributors' ? (
         <div id="omi-volume-contributors-panel" role="tabpanel">
+          {studies.length ? (
+            <label>
+              <span>{copy.contributors}</span>
+              <select value={selectedStudy?.rootSectionId ?? ''} onChange={(event) => setSelectedContributorStudy(event.target.value)}>
+                <option value="">{copy.contributorTitle}</option>
+                {studies.map(study => (
+                  <option key={study.rootSectionId} value={study.rootSectionId}>
+                    {study.sections.find(section => section.id === study.rootSectionId)?.title || study.rootSectionId}
+                    {' ('}{manuscript.contributions.filter(item => item.targetId === study.rootSectionId).length}{')'}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <ContributorEditor
-            targetId={contributorTargetId}
-            title={copy.contributorTitle}
-            description={copy.contributorDescription}
+            key={selectedContributorTarget}
+            targetId={selectedContributorTarget}
+            title={selectedStudy ? studyCopy.contributorTitle : copy.contributorTitle}
+            description={selectedStudy ? studyCopy.contributorDescription : copy.contributorDescription}
             className="omi-volume-contributor-editor"
           />
           <OjsContributorPanel contributors={ojsContributors} />

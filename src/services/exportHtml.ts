@@ -31,6 +31,7 @@ import { getPublicationMatter, publicationMatterPages, type PublicationMatterPag
 import { authorFontStyle, cssStringLiteral } from './embeddedCss';
 import {
   buildPublicationRenderingContext,
+  collectPublicationContributors,
   type OmiPublicationRenderingContext,
   type OmiRenderedSection,
 } from '../model/publicationRendering.ts';
@@ -360,24 +361,28 @@ function renderFront(
   )}\n</header>`;
 }
 
-function renderContributors(state: RenderState): string {
+function renderContributors(state: RenderState, targetId?: string): string {
   const { context } = state;
-  if (!context.contributors.length) return '';
+  const contributors = targetId ? collectPublicationContributors({
+    id: targetId, agents: state.manuscript.agents, contributions: state.manuscript.contributions,
+  }) : context.contributors;
+  if (!contributors.length) return '';
+  const affiliationId = (id: string) => htmlId('aff', targetId ? `${targetId}-${id}` : id);
   const rules = context.profile.rules.contributors;
   const affiliationMap = new Map(
-    context.contributors
+    contributors
       .flatMap((contributor) => contributor.affiliations)
       .map((affiliation) => [affiliation.id, affiliation]),
   );
 
-  const authors = context.contributors
+  const authors = contributors
     .map((contributor) => {
       const affiliationMarkers =
         rules.showAffiliations && rules.affiliationMode === 'markers'
           ? contributor.affiliations
               .map((affiliation) => {
                 const ordinal = Array.from(affiliationMap.keys()).indexOf(affiliation.id) + 1;
-                return `<a class="affiliation-marker" href="#${htmlId('aff', affiliation.id)}" aria-label="Affiliation ${ordinal}">${ordinal}</a>`;
+                return `<a class="affiliation-marker" href="#${affiliationId(affiliation.id)}" aria-label="Affiliation ${ordinal}">${ordinal}</a>`;
               })
               .join(',')
           : '';
@@ -429,7 +434,7 @@ function renderContributors(state: RenderState): string {
                   normalizeRorHref(affiliation.organizationIdentifier),
                 )}" rel="external">ROR</a>`
               : '';
-            return `<li id="${htmlId('aff', affiliation.id)}">${escapeHtml(details)}${
+            return `<li id="${affiliationId(affiliation.id)}">${escapeHtml(details)}${
               ror ? ` <span class="author-affiliation-inline">${ror}</span>` : ''
             }</li>`;
           })
@@ -468,6 +473,9 @@ function renderSection(section: OmiRenderedSection, state: RenderState): string 
     `<h${headingLevel}${ariaLevel}>${number}<span class="section-title">${escapeHtml(
       section.title,
     )}</span></h${headingLevel}>`,
+    // Imported studies own their authors; never promote them to issue-level authors.
+    section.depth === 0 && state.manuscript.sections.some(item => item.id === section.id && item.studyMetadata)
+      ? renderContributors(state, section.id) : '',
     body,
     children,
   ]
