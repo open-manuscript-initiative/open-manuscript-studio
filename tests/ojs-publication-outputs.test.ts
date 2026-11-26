@@ -1,6 +1,7 @@
 import { createAssetMetadata } from '../src/model/assets.ts';
 import { putAssetPayload } from '../src/services/assetRepository.ts';
 import assert from 'node:assert/strict';
+import { listOjsIssueTransferTargets, issueArtifactInspectRequest, assertIssueArtifactTarget } from '../src/model/ojsIssueTransferTargets.ts';
 import test from 'node:test';
 import {
   createInitialVersioningEnvelope,
@@ -452,4 +453,28 @@ test('styled PDF retains registered SVG figures while HTML reports its existing 
     prepare(source, 'html', context()),
     /Unsupported publication image/,
   );
+});
+
+test('issue writeback targets follow current study order and require exact remote identity', () => {
+  const source = extractManuscriptState(study());
+  source.sections = [{ id: 'b', title: 'Second', blocks: [] }, { id: 'a', title: 'First', blocks: [] }, { id: 'local', title: 'Local only', blocks: [] }];
+  source.extensions = { ...source.extensions, 'org.openmanuscript.ojs.issue': {
+    version: 1, installationId: 'installation-one', context: { externalId: '5' }, issue: { externalId: '7' },
+    sections: [{ articles: [
+      { rootSectionId: 'a', submissionExternalId: '12', publicationExternalId: '13' },
+      { rootSectionId: 'b', submissionExternalId: '14', publicationExternalId: '15' },
+      { rootSectionId: 'deleted', submissionExternalId: '16', publicationExternalId: '17' },
+    ] }],
+  }};
+  const targets = listOjsIssueTransferTargets(source);
+  assert.deepEqual(targets.map(t => t.rootSectionId), ['b', 'a']);
+  assert.deepEqual(issueArtifactInspectRequest(targets[1]!, 'document'), {
+    action: 'inspect', manuscriptId: 'document', submissionId: 12, publicationId: 13,
+    expectedIssueId: 7, expectedInstallationId: 'installation-one',
+  });
+  const remote = { ...target(), issueId: 7, contextId: 5, installationId: 'installation-one' };
+  assert.doesNotThrow(() => assertIssueArtifactTarget(targets[1]!, remote));
+  for (const incorrect of [{ issueId: 8 }, { contextId: 6 }, { publicationId: 99 }, { installationId: 'other' }, { workflowToken: undefined }]) {
+    assert.throws(() => assertIssueArtifactTarget(targets[1]!, { ...remote, ...incorrect }));
+  }
 });
