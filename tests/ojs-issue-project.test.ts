@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue } from '../src/integrations/ojs/reimportOjsIssue.ts';
 import { createJournalIssueFromOjsHandoff, OJS_ISSUE_ORIGIN, type OjsIssueHandoff } from '../src/integrations/ojs/importOjsIssue.ts';
 import { getDocumentStructureProfile } from '../src/model/documentProfile.ts';
 import { getPublicationMatter } from '../src/model/publicationMatter.ts';
@@ -50,4 +51,38 @@ test('rejects duplicate submissions and missing sources instead of partial issue
   const missing = fixture();
   delete missing.sections[1]!.articles[0]!.sourceDocument;
   assert.throws(() => createJournalIssueFromOjsHandoff(missing, 'hu'));
+});
+
+test('repeat import detects source changes, additions and removals, preserving local editing and revision identity', () => {
+  const original = fixture();
+  const document = createJournalIssueFromOjsHandoff(original, 'hu');
+  const first = document.sections[0]!;
+  first.title = 'Helyi szerkesztés';
+  const originalSections = structuredClone(document.sections);
+  assert.deepEqual(compareOjsIssue(document, original).items.map(item => item.status), ['unchanged', 'unchanged']);
+  const changed = fixture();
+  changed.sections[0]!.articles[0]!.sourceDocument!.paragraphs![0]!.text = 'New OJS version';
+  changed.sections[1]!.articles = [];
+  const incoming = structuredClone(original.sections[1]!.articles[0]!);
+  incoming.submissionExternalId = '9';
+  incoming.publicationExternalId = '9';
+  incoming.submission!.externalId = '9';
+  incoming.submission!.title = { hu: 'Új tanulmány' };
+  changed.sections[0]!.articles.push(incoming);
+  assert.deepEqual(compareOjsIssue(document, changed).items.map(item => item.status), ['changed', 'new', 'removed']);
+  const next = appendNewOjsStudies(document, changed);
+  assert.equal(next.id, document.id);
+  assert.equal(next.revisionHistory.revisions.length, document.revisionHistory.revisions.length + 1);
+  assert.deepEqual(next.sections.slice(0, originalSections.length), originalSections);
+  assert.deepEqual(next.sections.filter(item => !getParentSectionId(item)).map(item => item.title), ['Helyi szerkesztés', 'Recenzió', 'Új tanulmány']);
+  assert.equal(compareOjsIssue(next, changed).items.find(item => item.id === '9')?.status, 'unchanged');
+  assert.equal(appendNewOjsStudies(next, changed), next);
+  assert.equal(isSameOjsIssue(next, { ...changed, installation: { installationId: 'another' } }), false);
+});
+test('removed local study is never silently reinserted', () => {
+  const launch = fixture();
+  const document = createJournalIssueFromOjsHandoff(launch, 'hu');
+  document.sections = document.sections.filter(item => item.id !== document.sections[0]!.id);
+  assert.equal(compareOjsIssue(document, launch).items[0]?.status, 'locally-removed');
+  assert.equal(appendNewOjsStudies(document, launch), document);
 });
