@@ -53,7 +53,7 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
         const name = styles[styleIndex]?.name ?? copy.defaultStyle;
         const renderArtwork = !supportsViewportObservation || selected === index || index < 4 || visibleArtwork.has(item.id);
         return <button type="button" key={item.id} className="publication-page-thumbnail" data-thumbnail-page={index} data-thumbnail-id={item.id}
-          data-thumbnail-style={item.styleId} aria-current={selected === index ? 'page' : undefined}
+          data-thumbnail-style={item.styleId} data-thumbnail-artwork={String(renderArtwork)} aria-current={selected === index ? 'page' : undefined}
           aria-label={`${copy.page} ${item.number}: ${name}${item.label ? ` — ${item.label}` : ''}`}
           draggable={item.canMoveUp || item.canMoveDown} onClick={() => onSelect(index)}
           onDragStart={(event) => {
