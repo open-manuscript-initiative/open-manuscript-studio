@@ -29,7 +29,6 @@ export function OjsIssuePrintedPagePanel({ connection, active, disabled, layoutK
   const [confirmed, setConfirmed] = useState(false);
   const [result, setResult] = useState<PrintedPageBatchResult>();
   const [error, setError] = useState('');
-  const [needsReview, setNeedsReview] = useState(false);
   const current = inspection?.source === source && inspection.connection === connection &&
     inspection.origin === origin && inspection.layoutKey === layoutKey;
   const rows = current ? inspection.rows : [];
@@ -43,7 +42,7 @@ export function OjsIssuePrintedPagePanel({ connection, active, disabled, layoutK
   const start = () => { lock.current = true; setBusy(true); onBusyChange(true); setError(''); setConfirmed(false); };
   const stop = () => { lock.current = false; setBusy(false); onBusyChange(false); };
   async function inspect() {
-    if (lock.current || disabled || needsReview || !connection) return;
+    if (lock.current || disabled || !connection) return;
     start(); setInspection(undefined);
     try {
       const targets = listOjsIssueTransferTargets(source);
@@ -64,7 +63,7 @@ export function OjsIssuePrintedPagePanel({ connection, active, disabled, layoutK
       ? field === 'reviewed' ? { ...row, reviewed: value === true } : { ...row, [field]: String(value), reviewed: false } : row) } : previous);
   }
   async function apply() {
-    if (lock.current || disabled || !current || !valid || !confirmed || needsReview) return;
+    if (lock.current || disabled || !current || !valid || !confirmed) return;
     start();
     try {
       const batch = preparePrintedPageBatch({ rows,
@@ -74,12 +73,12 @@ export function OjsIssuePrintedPagePanel({ connection, active, disabled, layoutK
       });
       const outcome = await batch.execute(true);
       setResult(outcome);
-      if (outcome.failed) { setNeedsReview(true); onReviewRequired(); }
+      if (outcome.failed) onReviewRequired();
     } catch (cause) { fail(cause); } finally { setInspection(undefined); stop(); }
   }
   return <section className="ojs-issue-workspace" hidden={!active} aria-label={copy.title}>
     <h4>{copy.title}</h4><p>{copy.help}</p>
-    <fieldset disabled={disabled || busy || needsReview}>
+    <fieldset disabled={disabled || busy}>
       <button type="button" disabled={!connection} onClick={() => void inspect()}>{copy.inspect}</button>
       {inspection && !current ? <p role="alert">{copy.stale}</p> : null}
       {rows.map(row => <article className="ojs-issue-workspace-row" key={row.target.rootSectionId}>
@@ -106,6 +105,5 @@ export function OjsIssuePrintedPagePanel({ connection, active, disabled, layoutK
         OJS #{receipt.submissionId}: {receipt.previousPages ?? '—'} → {receipt.pages} {receipt.unchanged ? '(' + copy.unchanged + ')' : '✓'}
       </li>)}</ul>
     </div> : null}
-    {needsReview ? <><p role="alert">{copy.uncertain}</p><label><input type="checkbox" checked={false} onChange={event => { if (event.target.checked) setNeedsReview(false); }} /> {copy.checked}</label></> : null}
   </section>;
 }
