@@ -4,6 +4,7 @@ import './i18n/registerViteLocaleLoaders';
 import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
+import { getOjsIssueProgressToken, OjsIssueImportProgress } from './components/OjsIssueImportProgress';
 import { initializeLastSessionPersistence } from './app/lastSessionPersistence';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
 import {
@@ -101,12 +102,13 @@ async function bootstrap(): Promise<void> {
     console.warn('Studio session restore could not complete.', error);
   });
 
+  const issueProgressToken = getOjsIssueProgressToken();
   ReactDOM.createRoot(
     document.getElementById('root') as HTMLElement
   ).render(
     <React.StrictMode>
       <I18nProvider>
-        <App />
+        {issueProgressToken ? <OjsIssueImportProgress token={issueProgressToken} /> : <App />}
       </I18nProvider>
     </React.StrictMode>
   );
