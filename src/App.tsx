@@ -47,6 +47,7 @@ import {
 import {
   createManuscriptFromOjsLaunch,
 } from './integrations/ojs/importOjsLaunchLocalized';
+import { createJournalIssueFromOjsHandoff, fetchOjsIssueHandoff, type OjsIssueHandoff, OJS_ISSUE_ORIGIN } from './integrations/ojs/importOjsIssue';
 import { MobileLayout } from './mobile/navigation/MobileLayout';
 import { isMobileStudio } from './mobile/platform/platform';
 import { connectAndroidDocumentOpening } from './services/androidDocumentOpening';
@@ -81,7 +82,7 @@ const LEGACY_OJS_LAUNCH_STORAGE_KEY = 'omi:ojs-launch';
 
 function hasInitialOjsLaunch(): boolean {
   const url = new URL(window.location.href);
-  if (url.searchParams.has('omiOjsLaunch')) return true;
+  if (url.searchParams.has('omiOjsLaunch') || url.searchParams.has('omiOjsIssueLaunch')) return true;
 
   try {
     return window.sessionStorage.getItem(LEGACY_OJS_LAUNCH_STORAGE_KEY) !== null;
@@ -233,6 +234,8 @@ function StudioApplication() {
   // Effect cleanup must not discard a redeemed one-time token. Reuse the
   // request when React replays the effect while its first fetch is pending.
   const ojsHandoffRequests = useRef(new Map<string, Promise<AssignmentAwareLaunch | null>>());
+  const issueHandoffRequests = useRef(new Map<string, Promise<OjsIssueHandoff>>());
+  const issueImportLocale = useRef(locale);
 
   useEffect(() => {
     if (reviewMode) {
@@ -250,7 +253,9 @@ function StudioApplication() {
       const url = new URL(window.location.href);
       const ompHandoffToken = url.searchParams.get('omiOmpLaunch');
       const ojsHandoffToken = url.searchParams.get('omiOjsLaunch');
+      const issueToken = url.searchParams.get('omiOjsIssueLaunch');
       const hasLaunchRequest = Boolean(ompHandoffToken)
+        || Boolean(issueToken)
         || Boolean(ojsHandoffToken)
         || hasInitialOjsLaunch();
 
@@ -262,6 +267,39 @@ function StudioApplication() {
       if (!cancelled) setExternalImportState({ status: 'loading' });
 
       try {
+        if (issueToken) {
+          if (ompHandoffToken || ojsHandoffToken) throw new Error('Conflicting external launch tokens.');
+          let request = issueHandoffRequests.current.get(issueToken);
+          if (!request) {
+            request = fetchOjsIssueHandoff(issueToken);
+            issueHandoffRequests.current.set(issueToken, request);
+          }
+          const launch = await request;
+          if (cancelled) return;
+          const current = useStudioStore.getState();
+          const origin = current.manuscript.extensions?.[OJS_ISSUE_ORIGIN] as {
+            installationId?: string; context?: { externalId?: string }; issue?: { externalId?: string };
+          } | undefined;
+          // Do not overwrite edits to the same currently open issue on reimport.
+          if (!(current.hasOpenDocument && origin &&
+            origin.installationId === launch.installation?.installationId &&
+            origin.context?.externalId === launch.context?.externalId &&
+            origin.issue?.externalId === launch.issue?.externalId)) {
+            const manuscript = createJournalIssueFromOjsHandoff(launch, issueImportLocale.current);
+            if (current.hasOpenDocument) current.checkpoint('manual');
+            clearDocumentClosedState();
+            loadManuscript(manuscript);
+          }
+          setOjsContributors([]);
+          setExternalWorkflowContext(null);
+          setOjsAssignment(null);
+          setOmpAuthorAssignment(null);
+          issueHandoffRequests.current.delete(issueToken);
+          url.searchParams.delete('omiOjsIssueLaunch');
+          window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+          setExternalImportState({ status: 'idle' });
+          return;
+        }
         if (ompHandoffToken) {
           const launch = await fetchOmpHandoff(ompHandoffToken);
           if (cancelled) return;
