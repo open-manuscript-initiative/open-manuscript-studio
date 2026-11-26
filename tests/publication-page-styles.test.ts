@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { capturePublicationPageStyle, publicationPageStyles, removePublicationPageStyle, resolvePublicationPageStyle, validatePublicationPageStyles, withoutPublicationPageAssignments, publicationSectionLayoutKey } from '../src/model/publicationPageStyles.ts';
+import { createPublicationPageStyleResolver, capturePublicationPageStyle, publicationPageStyles, removePublicationPageStyle, resolvePublicationPageStyle, validatePublicationPageStyles, withoutPublicationPageAssignments, publicationSectionLayoutKey } from '../src/model/publicationPageStyles.ts';
 import { clonePublicationStyleTemplate, clonePublicationPublisherTemplate, renderStyleBasedHtml, loadPublicationStyle, withPrintRunningHeader } from '../src/services/publicationStyleExport.ts';
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
 import { buildPublicationPageStylesCss } from '../src/services/publicationPageStyleCss.ts';
@@ -150,4 +150,31 @@ test('physical page exceptions exclude cover/title sheets and both PDF export pa
   const reusable = withoutPublicationPageAssignments(style);
   assert.equal(reusable.pageStyles!.sections.length, 0); assert.equal(reusable.pageStyles!.pages.length, 0);
   assert.equal(style.pageStyles!.sections.length, 1); assert.equal(style.pageStyles!.pages.length, 1);
+});
+
+test('prepared page resolver reuses a single section traversal across a long publication', () => {
+  const style = configured();
+  style.page.pageNumberStart = 11;
+  style.pageStyles!.pages.push({ from: 12, to: 14, styleId: 'opening' });
+  let traversals = 0;
+  const observedSections = new Proxy(sections, {
+    get(target, property, receiver) {
+      if (property === Symbol.iterator) traversals += 1;
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  const prepared = createPublicationPageStyleResolver(style, observedSections);
+  for (let page = 0; page < 1000; page += 1) {
+    const sectionId = page % 2 === 0 ? 'child' : 'article-b';
+    const inserted = page % 11 === 0 ? '' : undefined;
+    assert.deepEqual(prepared.resolve(page, sectionId, inserted), resolvePublicationPageStyle(style, sections, page, sectionId, inserted));
+  }
+  assert.equal(traversals, 1);
+  assert.equal(prepared.resolve(0, 'child').id, 'opening');
+  assert.equal(prepared.resolve(0, 'child', '').id, 'default');
+  assert.strictEqual(prepared.rules('child'), prepared.rules('child'));
+  const changed = structuredClone(style);
+  changed.pageStyles!.styles[0]!.page.margins.top = 55;
+  assert.equal(createPublicationPageStyleResolver(changed, sections).resolve(0, 'child').page.margins.top, 55);
+  assert.equal(prepared.resolve(0, 'child').page.margins.top, 40);
 });

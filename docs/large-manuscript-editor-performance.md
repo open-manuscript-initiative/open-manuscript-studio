@@ -192,3 +192,30 @@ the app and associated WebView renderer processes, foreground/background/return,
 p95 key-to-paint, peak PSS and OOM/renderer restarts, and compare cached/uncached
 editing fidelity. The JS accounting is not PSS, and these measurements are not
 yet available. No final store memory requirement is claimed.
+
+
+## Phase 4a — repeatable publication input benchmark
+
+Run the opt-in browser harness on the same machine, browser build, viewport and
+power settings before and after merging publication optimizations:
+
+```sh
+OMI_PUBLICATION_BENCHMARK=1 npx playwright test e2e/publication-performance.spec.ts --project=desktop-chromium --workers=1 --retries=0
+```
+
+The fixture is synthetic and contains no private manuscript data. It exercises
+a title-only manuscript and 100, 400 and 1,000 body blocks, including both
+single-page and facing-page rendering for the 400-block case. These are block
+counts, not page counts. Each run types 30 characters at a 20 ms requested
+inter-key delay and checks that the text is present.
+
+The Playwright report attaches JSON with open-to-caret time (including driver
+overhead), median/p95/maximum keydown-to-second-animation-frame latency (a
+paint proxy, not hardware/display timing), observed long tasks, DOM node count
+and optional Chromium JS heap estimate. The heap estimate is not native RSS or
+Android PSS. No absolute timing threshold is imposed on shared CI machines.
+
+The harness uses source-module fixtures and the development server; it is a
+repeatable comparative diagnostic, not release-build evidence. Repeat on
+production WebView builds with device-side tracing and the representative
+publication workloads before setting release latency or memory budgets.

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { publicationFontRequests, preparePublicationFonts } from '../src/services/publicationFontWarmup.ts';
+import { clonePublicationStyleTemplate } from '../src/services/publicationStyleExport.ts';
 
 import { contributorNameParts } from '../src/model/contributorName.ts';
 import {
@@ -169,4 +171,46 @@ test('print preserves all four alignments while responsive HTML omits justificat
   }
   assert.equal(style.styles.body.alignment, 'justify');
   assert.match(buildPublicationStyleCss(style, 'print'), /hyphens: auto/);
+});
+
+test('publication font preparation deduplicates configured faces and covers common formatting', () => {
+  const style = clonePublicationStyleTemplate();
+  style.fonts.body.family = 'Example Serif';
+  style.fonts.note.family = 'Example Serif';
+  const requests = publicationFontRequests(style);
+  assert.equal(new Set(requests).size, requests.length);
+  assert.ok(requests.includes('normal 400 16px "Example Serif"'));
+  assert.ok(requests.includes('italic 700 16px "Example Serif"'));
+  assert.ok(requests.length <= 24);
+});
+
+test('font preparation skips ready faces and continues after load failure', async () => {
+  const loads: string[] = [];
+  const fonts = {
+    check: (face: string) => face === 'ready',
+    load: async (face: string): Promise<FontFace[]> => {
+      loads.push(face);
+      if (face === 'missing') throw new Error('unavailable');
+      return [];
+    },
+  };
+  await new Promise<void>((resolve) => {
+    preparePublicationFonts(fonts, ['ready', 'missing', 'pending'], resolve, 100);
+  });
+  assert.deepEqual(loads, ['missing', 'pending']);
+  let immediate = false;
+  preparePublicationFonts(undefined, [], () => { immediate = true; });
+  assert.equal(immediate, true);
+});
+
+test('font preparation cannot hold pagination indefinitely and cancelled work never publishes', async () => {
+  const fonts = { check: () => false, load: () => new Promise<FontFace[]>(() => {}) };
+  await new Promise<void>((resolve) => {
+    preparePublicationFonts(fonts, ['slow'], resolve, 0);
+  });
+  let called = false;
+  const cancel = preparePublicationFonts(fonts, ['slow'], () => { called = true; }, 0);
+  cancel();
+  await new Promise<void>((resolve) => { setTimeout(resolve, 5); });
+  assert.equal(called, false);
 });

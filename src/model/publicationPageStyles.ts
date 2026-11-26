@@ -45,49 +45,72 @@ export function capturePublicationPageStyle(style: PublicationStyle, id: string,
   return { id, name, page: structuredClone(style.page), runningHeaders: structuredClone(style.runningHeaders), showFirstPage: style.firstPage.showRunningHeader };
 }
 
-/** An explicit descendant overrides its ancestor; unconfigured subsections inherit. */
-export function publicationSectionPageRules(style: PublicationStyle, sections: readonly OmiSection[], sectionId?: string): PublicationSectionPageRule[] {
-  const map = new Map<string, { section: OmiSection; parent?: string }>();
+/** Prepare lookup indexes once for an immutable publication layout snapshot.
+ * Consumers must create a new resolver when style or section hierarchy changes.
+ */
+export function createPublicationPageStyleResolver(style: PublicationStyle, sections: readonly OmiSection[]) {
+  const collection = publicationPageStyles(style);
+  const parents = new Map<string, string | undefined>();
   const visit = (items: readonly OmiSection[], parent?: string) => {
     for (const section of items) {
-      if (map.has(section.id)) continue;
-      map.set(section.id, { section, parent: getParentSectionId(section) ?? parent });
+      if (parents.has(section.id)) continue;
+      parents.set(section.id, getParentSectionId(section) ?? parent);
       visit(section.children ?? [], section.id);
     }
   };
   visit(sections);
-  const result: PublicationSectionPageRule[] = [], seen = new Set<string>();
-  let id = sectionId;
-  while (id && !seen.has(id)) {
-    seen.add(id);
-    const rule = style.pageStyles?.sections.find((item) => item.sectionId === id);
-    if (rule) result.unshift(rule);
-    id = map.get(id)?.parent;
-  }
-  return result;
+  const rulesById = new Map<string, PublicationSectionPageRule>();
+  for (const rule of collection.sections) if (!rulesById.has(rule.sectionId)) rulesById.set(rule.sectionId, rule);
+  const masters = new Map<string, PublicationPageStyle>();
+  for (const master of collection.styles) if (!masters.has(master.id)) masters.set(master.id, master);
+  const rulesCache = new Map<string | undefined, PublicationSectionPageRule[]>();
+  const defaultMaster = capturePublicationPageStyle(style, 'default', style.name);
+  const firstPageNumber = publicationFirstPageNumber(style.page);
+  const rules = (sectionId?: string): PublicationSectionPageRule[] => {
+    const cached = rulesCache.get(sectionId);
+    if (cached) return cached;
+    const result: PublicationSectionPageRule[] = [], seen = new Set<string>();
+    let id = sectionId;
+    while (id && !seen.has(id)) {
+      seen.add(id);
+      const rule = rulesById.get(id);
+      if (rule) result.unshift(rule);
+      id = parents.get(id);
+    }
+    rulesCache.set(sectionId, result);
+    return result;
+  };
+  const resolve = (pageIndex: number, sectionId?: string, insertedStyleId?: string) => {
+    let result = defaultMaster;
+    let headerSectionId: string | undefined;
+    for (const rule of rules(sectionId)) {
+      const master = rule.styleId === undefined ? undefined : masters.get(rule.styleId);
+      if (master) { result = master; headerSectionId = rule.sectionId; }
+      if (rule.runningHeaders) { result = { ...result, runningHeaders: rule.runningHeaders }; headerSectionId = rule.sectionId; }
+      if (rule.showFirstPage !== undefined) result = { ...result, showFirstPage: rule.showFirstPage };
+    }
+    const number = firstPageNumber + pageIndex;
+    // Later physical-page assignments win, including an assignment to a
+    // missing master (which falls back to the section master).
+    for (let index = collection.pages.length - 1; index >= 0; index -= 1) {
+      const assignment = collection.pages[index]!;
+      if (number < assignment.from || number > assignment.to) continue;
+      result = masters.get(assignment.styleId) ?? result;
+      break;
+    }
+    if (insertedStyleId !== undefined) result = masters.get(insertedStyleId) ?? defaultMaster;
+    return { ...result, headerSectionId, pageNumber: number };
+  };
+  return { rules, resolve };
+}
+
+/** An explicit descendant overrides its ancestor; unconfigured subsections inherit. */
+export function publicationSectionPageRules(style: PublicationStyle, sections: readonly OmiSection[], sectionId?: string): PublicationSectionPageRule[] {
+  return createPublicationPageStyleResolver(style, sections).rules(sectionId);
 }
 
 export function resolvePublicationPageStyle(style: PublicationStyle, sections: readonly OmiSection[], pageIndex: number, sectionId?: string, insertedStyleId?: string) {
-  const collection = publicationPageStyles(style);
-  const rules = publicationSectionPageRules(style, sections, sectionId);
-  let result = capturePublicationPageStyle(style, 'default', style.name);
-  let headerSectionId: string | undefined;
-  for (const rule of rules) {
-    const master = collection.styles.find((item) => item.id === rule.styleId);
-    if (master) { result = master; headerSectionId = rule.sectionId; }
-    if (rule.runningHeaders) { result = { ...result, runningHeaders: rule.runningHeaders }; headerSectionId = rule.sectionId; }
-    if (rule.showFirstPage !== undefined) result = { ...result, showFirstPage: rule.showFirstPage };
-  }
-  const number = publicationFirstPageNumber(style.page) + pageIndex;
-  const assignment = [...collection.pages].reverse().find((item) => number >= item.from && number <= item.to);
-  const master = collection.styles.find((item) => item.id === assignment?.styleId);
-  // Explicit pages override the section geometry/header style, while keeping section tokens.
-  if (master) result = master;
-  // An empty string explicitly selects the publication default for an inserted
-  // sheet, independently of section masters and physical-page exceptions.
-  if (insertedStyleId !== undefined) result = collection.styles.find((item) => item.id === insertedStyleId)
-    ?? capturePublicationPageStyle(style, 'default', style.name);
-  return { ...result, headerSectionId, pageNumber: number };
+  return createPublicationPageStyleResolver(style, sections).resolve(pageIndex, sectionId, insertedStyleId);
 }
 
 /** Reusable formats carry masters, never another document's section/page bindings. */
