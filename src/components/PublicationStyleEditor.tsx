@@ -1361,6 +1361,11 @@ function PublicationStyleEditorWorkspace() {
                 loadLabel={systemFontLoadStatus === 'loaded' ? copy.refreshSystemFonts : copy.loadSystemFonts}
                 onLoad={() => void loadSystemFonts()}
               />
+              <label className="publication-checkbox">
+                <input type="checkbox" checked={style.overrideAuthorFonts === true}
+                  onChange={event => patchStyle(current => ({ ...current, overrideAuthorFonts: event.target.checked }))} />
+                <span>{({ hu: 'Szerzői betűtípusok felülbírálása a kiadványstílusokkal', de: 'Autorenschriften durch Publikationsstile ersetzen', en: 'Override author fonts with publication styles', fr: 'Remplacer les polices des auteurs par les styles de publication', it: 'Sostituisci i caratteri degli autori con gli stili di pubblicazione', es: 'Sustituir las fuentes del autor por los estilos de publicación', nl: 'Auteurslettertypen vervangen door publicatiestijlen', pl: 'Zastąp czcionki autora stylami publikacji' } as Record<string, string>)[locale] ?? 'Override author fonts with publication styles'}</span>
+              </label>
               <div className="publication-style-grid">
                 <FontFamilySelect
                   label={copy.font}
