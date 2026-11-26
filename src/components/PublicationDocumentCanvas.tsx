@@ -1,7 +1,7 @@
 import { HeaderNoteInsertButton } from './HeaderNoteInsertButton';
 import { PublicationPageNavigator } from './PublicationPageNavigator';
 import { createPortal } from 'react-dom';
-import { placePublicationEmptyPage, type PublicationBodyPageThumbnail } from '../model/publicationPageNavigation';
+import { placePublicationEmptyPage, publicationFlowAnchors, fillPublicationThumbnailBoundaries, type PublicationBodyPageThumbnail } from '../model/publicationPageNavigation';
 import { getStudyRootSectionId, partitionManuscriptStudies } from '../model/sectionStructure';
 import { stageMoveSectionToSibling } from '../app/sectionActions';
 import { arrangePublicationSheets, publicationFirstPageNumber, type PublicationSheetPosition } from '../model/publicationSpreads';
@@ -751,14 +751,22 @@ export function PublicationDocumentCanvas({
         const visitBlocks = (blocks: OmiBlock[], sectionId: string) => { for (const block of blocks) { validBlockIds.add(block.id); blockSectionIds.set(block.id, sectionId); visitBlocks(block.children ?? [], sectionId); } };
         for (const section of layoutSectionsRef.current) visitBlocks(section.blocks, section.id);
         const blockIds = flow.map((item) => publicationFlowBlockId(item.element));
+        const flowAnchors = publicationFlowAnchors(blockIds, validBlockIds);
+        const insertedByPage = new Map(layout.insertedPages?.map((item) => [item.pageIndex, item]));
+        const insertionsById = new Map(style.pageStyles?.insertions?.map((item) => [item.id, item]));
+        const studyRoots = new Map<string, string | undefined>();
+        const studyRoot = (sectionId: string) => {
+          if (!studyRoots.has(sectionId)) studyRoots.set(sectionId, getStudyRootSectionId(layoutSectionsRef.current, sectionId));
+          return studyRoots.get(sectionId);
+        };
         const thumbnails: PublicationBodyPageThumbnail[] = pageGeometries.map((geometry, index) => {
-          const inserted = layout.insertedPages?.find((item) => item.pageIndex === index);
-          const insertion = style.pageStyles?.insertions?.find((item) => item.id === inserted?.id);
+          const inserted = insertedByPage.get(index);
+          const insertion = inserted ? insertionsById.get(inserted.id) : undefined;
           const anchorSection = insertion?.beforeBlockId === PUBLICATION_BODY_START ? layoutSectionsRef.current[0]?.id
             : blockSectionIds.get(insertion?.beforeBlockId ?? insertion?.afterBlockId ?? '');
           return { id: inserted ? `inserted:${inserted.id}` : `body:${index}`, insertionId: inserted?.id,
             number: firstPageNumber + index, styleId: resolvePublicationPageStyle(style, layoutSectionsRef.current, index, layout.pageSectionIds?.[index], insertionStyles.get(index)).id,
-            width: geometry.width, height: geometry.height, marks: [], studyId: getStudyRootSectionId(layoutSectionsRef.current, layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
+            width: geometry.width, height: geometry.height, marks: [], studyId: studyRoot(layout.pageSectionIds?.[index] ?? anchorSection ?? ''),
           };
         });
         const breaksByBlock = new Map<number, typeof layout.flowBreaks[number][]>();
@@ -770,21 +778,28 @@ export function PublicationDocumentCanvas({
         measuredBlocks.forEach((block, index) => {
           const placement = layout.placements[index]; if (!placement) return;
           const id = blockIds[index];
-          const anchor = id && validBlockIds.has(id) ? id : blockIds.slice(index + 1).find((candidate) => candidate && validBlockIds.has(candidate));
+          const anchor = flowAnchors[index];
           const lines = block.lines?.length ? block.lines : [{ top: 0, height: block.height, textOffset: 0 }];
           const breaks = breaksByBlock.get(index) ?? [];
           let page = placement.pageIndex, inline = 0;
           const text = flow[index]!.element.textContent ?? '';
+          const graphic = !block.splittable && !!flow[index]!.element.querySelector('img,svg,table');
+          const breaksByOffset = new Map<number, typeof breaks>();
+          for (const point of breaks) {
+            const group = breaksByOffset.get(point.textOffset) ?? [];
+            group.push(point); breaksByOffset.set(point.textOffset, group);
+          }
           lines.forEach((line, lineIndex) => {
-            for (const point of breaks.filter((item) => item.textOffset === line.textOffset)) { page = point.pageIndex; inline += point.height; }
+            for (const point of (breaksByOffset.get(line.textOffset) ?? [])) { page = point.pageIndex; inline += point.height; }
             const thumbnail = thumbnails[page], geometry = pageGeometries[page]; if (!thumbnail || !geometry) return;
-            const y = block.top + line.top + placement.translateY + priorInlineHeight + inline - metrics(page, layout.pageSectionIds?.[page]).bodyTop + geometry.topMargin;
-            const count = (lines[lineIndex + 1]?.textOffset ?? text.length) - line.textOffset;
-            if (thumbnail.marks.length < 96) thumbnail.marks.push({ x: geometry.left, y: Math.max(0, Math.min(geometry.height, y)),
-              width: geometry.bodyWidth * (block.splittable ? Math.min(1, Math.max(0.12, count / 70)) : 1), height: Math.max(1, Math.min(line.height * 0.4, geometry.height)),
-              graphic: !block.splittable && !!flow[index]!.element.querySelector('img,svg,table'),
-            });
-            thumbnail.studyId ??= getStudyRootSectionId(layoutSectionsRef.current, block.sectionId ?? blockSectionIds.get(anchor ?? '') ?? '');
+            if (thumbnail.marks.length < 96) {
+              const y = block.top + line.top + placement.translateY + priorInlineHeight + inline - metrics(page, layout.pageSectionIds?.[page]).bodyTop + geometry.topMargin;
+              const count = (lines[lineIndex + 1]?.textOffset ?? text.length) - line.textOffset;
+              thumbnail.marks.push({ x: geometry.left, y: Math.max(0, Math.min(geometry.height, y)),
+                width: geometry.bodyWidth * (block.splittable ? Math.min(1, Math.max(0.12, count / 70)) : 1), height: Math.max(1, Math.min(line.height * 0.4, geometry.height)), graphic,
+              });
+            }
+            thumbnail.studyId ??= studyRoot(block.sectionId ?? blockSectionIds.get(anchor ?? '') ?? '');
             if (anchor) { thumbnail.firstBlockId ??= anchor; thumbnail.lastBlockId = anchor; }
             if (!thumbnail.id.startsWith('inserted:') && thumbnail.id === `body:${page}`) thumbnail.id = `text:${id ?? `front-${index}`}:${line.textOffset}`;
           });
@@ -794,10 +809,7 @@ export function PublicationDocumentCanvas({
         const frontPage = layout.placements[frontIndex]?.pageIndex;
         if (frontPage !== undefined && thumbnails[frontPage]) thumbnails[frontPage]!.firstBlockId = PUBLICATION_BODY_START;
         // Footnote-only sheets use the nearest manuscript boundary for additions.
-        thumbnails.forEach((item, index) => {
-          item.firstBlockId ??= thumbnails.slice(index + 1).find((next) => next.firstBlockId)?.firstBlockId ?? thumbnails.slice(0, index).reverse().find((previous) => previous.lastBlockId)?.lastBlockId;
-          item.lastBlockId ??= item.firstBlockId;
-        });
+        fillPublicationThumbnailBoundaries(thumbnails);
         if (!content.getClientRects().length) { finish(); return; }
         projectionRulesRef.current = projectionRules;
         updateProvisionalProjection();
@@ -1030,14 +1042,20 @@ export function PublicationDocumentCanvas({
     : undefined;
   const studies = partitionManuscriptStudies(manuscript.sections);
   const pageCollection = publicationPageStyles(style);
+  const studyIndexes = new Map(studies.map((study, index) => [study.rootSectionId, index]));
+  const sectionTitles = new Map(manuscript.sections.map((section) => [section.id, section.title]));
+  const firstPageByStudy = new Map<string | undefined, number>();
+  for (const [index, item] of (pagination.thumbnails ?? []).entries()) {
+    if (!firstPageByStudy.has(item.studyId)) firstPageByStudy.set(item.studyId, index);
+  }
   const navigationPages = (pagination.thumbnails ?? []).map((item, index) => {
-    const studyIndex = studies.findIndex((study) => study.rootSectionId === item.studyId);
+    const studyIndex = item.studyId === undefined ? -1 : studyIndexes.get(item.studyId) ?? -1;
     return { ...item,
-      label: manuscript.sections.find((section) => section.id === item.studyId)?.title,
+      label: item.studyId === undefined ? undefined : sectionTitles.get(item.studyId),
       canInsert: !!onStyleChange && (pageCollection.insertions?.length ?? 0) < 100 && (!!item.insertionId || !!item.firstBlockId),
       canDelete: !!onStyleChange && !!item.insertionId,
-      moveUpTarget: item.insertionId ? index - 1 : pagination.thumbnails?.findIndex((candidate) => candidate.studyId === studies[studyIndex - 1]?.rootSectionId),
-      moveDownTarget: item.insertionId ? index + 1 : pagination.thumbnails?.findIndex((candidate) => candidate.studyId === studies[studyIndex + 1]?.rootSectionId),
+      moveUpTarget: item.insertionId ? index - 1 : firstPageByStudy.get(studies[studyIndex - 1]?.rootSectionId) ?? -1,
+      moveDownTarget: item.insertionId ? index + 1 : firstPageByStudy.get(studies[studyIndex + 1]?.rootSectionId) ?? -1,
       canMoveUp: item.insertionId ? !!onStyleChange && index > 0 : studyIndex > 0,
       canMoveDown: item.insertionId ? !!onStyleChange && index < pagination.pageCount - 1 : studyIndex >= 0 && studyIndex < studies.length - 1,
     };
