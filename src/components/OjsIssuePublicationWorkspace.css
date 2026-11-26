@@ -1,0 +1,6 @@
+.ojs-issue-workspace { display: grid; gap: .75rem; min-width: 0; }
+.ojs-issue-workspace fieldset { display: grid; gap: .75rem; min-width: 0; padding: 0; border: 0; }
+.ojs-issue-workspace-row { display: grid; gap: .5rem; padding: .75rem; border: 1px solid currentColor; border-radius: .5rem; overflow-wrap: anywhere; }
+.ojs-issue-workspace select { max-width: 100%; }
+.ojs-issue-workspace button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.ojs-issue-workspace li { overflow-wrap: anywhere; margin-block: .35rem; }
