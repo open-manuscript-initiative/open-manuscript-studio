@@ -71,7 +71,7 @@ import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
 import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
   coalescePublicationTextLines,
-  paginatePublicationBlocks,
+  createIncrementalPublicationPaginator,
   publicationSectionFitWarnings,
   type PublicationPageLayout,
   type PublicationFlowBlock,
@@ -515,6 +515,7 @@ export function PublicationDocumentCanvas({
       const css = provisional.join('\n');
       if (provisionalProjectionRef.current.textContent !== css) provisionalProjectionRef.current.textContent = css;
     };
+    const paginator = createIncrementalPublicationPaginator();
     let measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
     const measuredWidths = new WeakMap<HTMLElement, number>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
@@ -682,7 +683,7 @@ export function PublicationDocumentCanvas({
           metricCache.set(index, measured);
           return measured;
         };
-        const layout = paginatePublicationBlocks(
+        const layout = paginator.paginate(
           measuredBlocks,
           usablePageHeight,
           pageOverhead,
