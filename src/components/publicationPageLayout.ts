@@ -207,6 +207,7 @@ function paginateStyledPages(
 ): PublicationPageLayout {
   const pageSectionIds: (string | undefined)[] = [];
   const pageNotes: PublicationPageNote[][] = [];
+  const pageNoteHeights: number[] = [];
   const placements: PublicationBlockPlacement[] = [], flowBreaks: PublicationFlowBreak[] = [];
   const insertedPages: NonNullable<PublicationPageLayout['insertedPages']> = [];
   const movedSections = new Set<string>();
@@ -229,7 +230,7 @@ function paginateStyledPages(
     while (pageSectionIds.length <= index) pageSectionIds.push(sectionId);
   };
   const reservation = (index: number) => pageNotes[index]?.length
-    ? separator + pageNotes[index]!.reduce((sum, fragment) => sum + fragment.height, 0) : 0;
+    ? separator + (pageNoteHeights[index] ?? 0) : 0;
   const capacity = (index: number) => Math.max(lineHeight, Math.floor((metrics(index, pageSectionIds[index]).bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
   for (let index = 0; index < units.length; index += 1) {
     const first = units[index]!;
@@ -254,11 +255,14 @@ function paginateStyledPages(
       && ((keepSection && units[index + group.length]!.keepSectionId === first.keepSectionId) || group.at(-1)!.keepNext)) group.push(units[index + group.length]!);
     if (group.at(-1)!.top + group.at(-1)!.height - first.top > metrics(page, pageSectionIds[page]).bodyHeight) group.splice(1);
     const groupNotes = () => [...new Set(group.flatMap((unit) => [...unit.noteIds]))].filter((id) => !seen.has(id) && notes?.heights.has(id));
-    const notesHeight = groupNotes().reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
-    if (group.length > 1 && group.at(-1)!.top + group.at(-1)!.height - first.top + Math.min(capacity(page), notesHeight) + (notesHeight ? separator : 0) > metrics(page, pageSectionIds[page]).bodyHeight - 2) group.splice(1);
+    let ids = groupNotes();
+    let newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
+    if (group.length > 1 && group.at(-1)!.top + group.at(-1)!.height - first.top + Math.min(capacity(page), newNoteHeight) + (newNoteHeight ? separator : 0) > metrics(page, pageSectionIds[page]).bodyHeight - 2) {
+      group.splice(1);
+      ids = groupNotes();
+      newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
+    }
     const last = group.at(-1)!, height = last.top + last.height - first.top;
-    const ids = groupNotes();
-    const newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
     position += Math.max(0, first.top - naturalBottom);
     if (first.forceBreak && position > 0.5) advance();
     const reserved = () => newNoteHeight ? separator + Math.min(capacity(page), Math.max(0, reservation(page) - separator) + newNoteHeight) : reservation(page);
@@ -282,10 +286,10 @@ function paginateStyledPages(
       while (remaining > 0.01) {
         ensurePage(notePage, first.sectionId);
         const fragments = pageNotes[notePage] ??= [];
-        const used = fragments.reduce((sum, fragment) => sum + fragment.height, 0);
+        const used = pageNoteHeights[notePage] ?? 0;
         const following = notePage === page ? (ids.length - noteIndex - 1) * lineHeight : 0;
         const slice = Math.min(remaining, Math.max(0, capacity(notePage) - used - following));
-        if (slice > 0.01) { fragments.push({ id, offset, height: slice }); offset += slice; remaining -= slice; }
+        if (slice > 0.01) { fragments.push({ id, offset, height: slice }); pageNoteHeights[notePage] = used + slice; offset += slice; remaining -= slice; }
         notePage += 1;
       }
     }
@@ -449,6 +453,7 @@ function paginateWithFootnotes(
   const separator = nonNegative(notes.separatorHeight);
   const noteCapacity = Math.max(lineHeight, Math.floor((bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
   const pageNotes: PublicationPageNote[][] = [];
+  const pageNoteHeights: number[] = [];
   const seen = new Set<string>();
   const placements: PublicationBlockPlacement[] = [];
   const flowBreaks: PublicationFlowBreak[] = [];
@@ -466,10 +471,8 @@ function paginateWithFootnotes(
       keepNext: index === all.length - 1 && block.keepWithNext,
     }));
   });
-  const reserved = (page: number) => {
-    const fragments = pageNotes[page] ?? [];
-    return fragments.length ? separator + fragments.reduce((sum, fragment) => sum + fragment.height, 0) : 0;
-  };
+  const reserved = (page: number) => pageNotes[page]?.length
+    ? separator + (pageNoteHeights[page] ?? 0) : 0;
   let page = 0;
   let position = 0;
   let naturalBottom = 0;
@@ -525,13 +528,14 @@ function paginateWithFootnotes(
       let notePage = page;
       while (remaining > 0.01) {
         const fragments = pageNotes[notePage] ??= [];
-        const used = fragments.reduce((sum, fragment) => sum + fragment.height, 0);
+        const used = pageNoteHeights[notePage] ?? 0;
         // Leave at least one line for every other reference introduced here.
         const followingStarts = notePage === page ? (ids.length - noteIndex - 1) * lineHeight : 0;
         const available = Math.max(0, noteCapacity - used - followingStarts);
         const slice = Math.min(remaining, available);
         if (slice > 0.01) {
           fragments.push({ id, offset, height: slice });
+          pageNoteHeights[notePage] = used + slice;
           offset += slice;
           remaining -= slice;
         }
