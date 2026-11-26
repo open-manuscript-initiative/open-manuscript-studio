@@ -34,7 +34,8 @@ export function createPublicationPaginationEngine(configuration: PublicationPagi
   const { style, sections, scale, pageGap, topMargin, usablePageHeight, pageOverhead } = configuration;
   const prepared = createPublicationPageStyleResolver(style, sections);
   const paginator = createIncrementalPublicationPaginator();
-  return (blocks: readonly PublicationFlowBlock[], footnotes?: PublicationFootnotes): PublicationPaginationResult => {
+  const paginate = (blocks: readonly PublicationFlowBlock[], footnotes?: PublicationFootnotes, budgetBytes?: number): PublicationPaginationResult => {
+    if (budgetBytes !== undefined) paginator.setBudget(budgetBytes);
     const resolver = createPublicationPageMetricsResolver((index, section, inserted) =>
       canvasPageGeometry(prepared.resolve(index, section, inserted), scale), pageGap, topMargin);
     const layout = paginator.paginate(blocks, usablePageHeight, pageOverhead, footnotes,
@@ -42,9 +43,11 @@ export function createPublicationPaginationEngine(configuration: PublicationPagi
       style.pageStyles ? { key: prepared, snapshot: resolver.snapshot, restore: resolver.restore } : undefined);
     return { layout, metricsState: resolver.snapshot() };
   };
+  return Object.assign(paginate, { clear: paginator.clear });
 }
 
 export type PublicationWorkerRequest =
   | { kind: 'configure'; configuration: PublicationPaginationConfiguration }
-  | { kind: 'paginate'; id: number; blocks: readonly PublicationFlowBlock[]; footnotes: PublicationFootnotes };
+  | { kind: 'clear' }
+  | { kind: 'paginate'; id: number; blocks: readonly PublicationFlowBlock[]; footnotes: PublicationFootnotes; budgetBytes?: number };
 export type PublicationWorkerResponse = { id: number; result: PublicationPaginationResult } | { id: number; failed: true };
