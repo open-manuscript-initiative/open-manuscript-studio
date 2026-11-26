@@ -150,3 +150,24 @@ test('removed local study is never silently reinserted', () => {
   assert.equal(compareOjsIssue(document, launch).items[0]?.status, 'locally-removed');
   assert.equal(appendNewOjsStudies(document, launch), document);
 });
+
+
+test('issue HTML displays public authors under the correct study, not at issue level', () => {
+  const input = fixture();
+  input.sections[0]!.articles[0]!.contributors = [{ name: { given: 'Ada', family: 'FirstAuthor' }, email: 'private-ada@example.test' }];
+  input.sections[1]!.articles[0]!.contributors = [{ name: { given: 'Bela', family: 'SecondAuthor' } }];
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const roots = issue.sections.filter(section => !getParentSectionId(section));
+  assert.equal(issue.contributions.filter(item => item.targetId === issue.id).length, 0);
+  const html = renderHtmlArticle(issue).html;
+  const first = html.indexOf('data-omi-section-id="' + roots[0]!.id + '"');
+  const second = html.indexOf('data-omi-section-id="' + roots[1]!.id + '"');
+  assert.ok(first >= 0 && second > first);
+  assert.ok(html.indexOf('FirstAuthor', first) < second && html.indexOf('FirstAuthor', first) >= first);
+  assert.ok(html.indexOf('SecondAuthor', second) >= second);
+  assert.doesNotMatch(html.slice(first, second), /SecondAuthor/);
+  assert.doesNotMatch(html, /private-ada@example.test/);
+  const article = projectIssueStudyForExport(issue, roots[0]!.id);
+  assert.match(renderHtmlArticle(article).html, /FirstAuthor/);
+  assert.doesNotMatch(renderHtmlArticle(article).html, /SecondAuthor/);
+});
