@@ -39,6 +39,7 @@ import {
   fetchOmpHandoff,
   type OmpNativeAuthorContext,
 } from './integrations/omp/importOmpLaunch';
+import { createVolumeFromOmpHandoff, fetchOmpVolumeHandoff, isSameOmpVolume, type OmpVolumeHandoff } from './integrations/omp/importOmpVolume';
 import {
   clearOjsLaunchPayload,
   readOjsLaunchPayload,
@@ -95,7 +96,8 @@ function hasInitialOjsLaunch(): boolean {
 }
 
 function hasInitialOmpLaunch(): boolean {
-  return new URL(window.location.href).searchParams.has('omiOmpLaunch');
+  const params = new URL(window.location.href).searchParams;
+  return params.has('omiOmpLaunch') || params.has('omiOmpVolumeLaunch');
 }
 
 async function fetchOjsHandoff(token: string): Promise<AssignmentAwareLaunch | null> {
@@ -238,6 +240,7 @@ function StudioApplication() {
   // request when React replays the effect while its first fetch is pending.
   const ojsHandoffRequests = useRef(new Map<string, Promise<AssignmentAwareLaunch | null>>());
   const issueHandoffRequests = useRef(new Map<string, Promise<OjsIssueHandoff>>());
+  const volumeHandoffRequests = useRef(new Map<string, Promise<OmpVolumeHandoff>>());
   const issueImportLocale = useRef(locale);
 
   useEffect(() => {
@@ -254,10 +257,11 @@ function StudioApplication() {
 
     const importLaunch = async () => {
       const url = new URL(window.location.href);
+      const volumeToken = url.searchParams.get('omiOmpVolumeLaunch');
       const ompHandoffToken = url.searchParams.get('omiOmpLaunch');
       const ojsHandoffToken = url.searchParams.get('omiOjsLaunch');
       const issueToken = url.searchParams.get('omiOjsIssueLaunch');
-      const hasLaunchRequest = Boolean(ompHandoffToken)
+      const hasLaunchRequest = Boolean(volumeToken) || Boolean(ompHandoffToken)
         || Boolean(issueToken)
         || Boolean(ojsHandoffToken)
         || hasInitialOjsLaunch();
@@ -270,6 +274,33 @@ function StudioApplication() {
       if (!cancelled) setExternalImportState({ status: 'loading' });
 
       try {
+        if (volumeToken) {
+          if (issueToken || ompHandoffToken || ojsHandoffToken) throw new Error('Conflicting external launch tokens.');
+          let request = volumeHandoffRequests.current.get(volumeToken);
+          if (!request) {
+            request = fetchOmpVolumeHandoff(volumeToken);
+            volumeHandoffRequests.current.set(volumeToken, request);
+          }
+          const launch = await request;
+          if (cancelled) return;
+          const current = useStudioStore.getState();
+          const existing = (current.hasOpenDocument && isSameOmpVolume(current.manuscript, launch))
+            || documentSessions.getSnapshot().tabs.some(tab => isSameOmpVolume(tab.manuscript, launch));
+          volumeHandoffRequests.current.delete(volumeToken);
+          url.searchParams.delete('omiOmpVolumeLaunch');
+          window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+          if (existing) throw new Error('This OMP volume is already open. Existing edits are preserved.');
+          const manuscript = createVolumeFromOmpHandoff(launch, issueImportLocale.current);
+          if (current.hasOpenDocument) current.checkpoint('manual');
+          clearDocumentClosedState();
+          setOjsContributors([]);
+          setExternalWorkflowContext(null);
+          setOjsAssignment(null);
+          setOmpAuthorAssignment(null);
+          loadManuscript(manuscript);
+          setExternalImportState({ status: 'idle' });
+          return;
+        }
         if (issueToken) {
           if (ompHandoffToken || ojsHandoffToken) throw new Error('Conflicting external launch tokens.');
           let request = issueHandoffRequests.current.get(issueToken);

@@ -42,8 +42,7 @@ integrationRouter.get('/omp/volume-launch', async (request, response) => {
     const data = await loadOmpVolumeImportData(verified.claims, payload, signature, verified.installation.baseUrl);
     const token = createOmpVolumeHandoff({ protocol: 'omi-integration/1', profile: 'omi-integration/1/omp',
       kind: 'volume', installation: verified.installation, ...data });
-    // API-only receiver until the browser volume assembly is implemented.
-    response.status(200).json({ handoffToken: token });
+    response.redirect(302, `/?omiOmpVolumeLaunch=${encodeURIComponent(token)}`);
   } catch {
     response.status(400).json({ error: { code: 'OMP_VOLUME_IMPORT_FAILED',
       message: 'Unable to import the complete volume. Open it again in OMP.' } });
