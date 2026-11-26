@@ -106,7 +106,7 @@ export function createPublicationPageMetricsResolver(
   });
   const restore = (saved: PublicationPageMetricsSnapshot) => {
     insertionStyles.clear(); for (const [index, style] of saved.insertionStyles) insertionStyles.set(index, style);
-    heights.length = saved.heights.length; heights.fill(0); saved.heights.forEach((value, index) => { heights[index] = value; });
+    heights.length = 0; heights.length = saved.heights.length; saved.heights.forEach((value, index) => { heights[index] = value; });
     prefix.length = 0; for (const value of saved.prefix) prefix.push(value);
     cache.length = 0; cache.length = saved.cache.length; saved.cache.forEach((value, index) => { cache[index] = value; });
   };
