@@ -64,7 +64,7 @@ export function projectIssueStudyForExport(issue: OmiManuscript, rootSectionId: 
   if (crossReferences.some(ref => !localTargets.has(ref.targetId))) throw new Error('A cross-study reference requires editorial resolution before standalone export.');
   const sourceAttributions = (issue.sourceAttributions ?? []).filter(item => belongs(item.sourceObjectId) || noteIds.has(item.sourceObjectId));
   const recordIds = new Set([...citations.map(item => item.target), ...sourceAttributions.map(item => item.targetBibliographicRecordId)]);
-  const additional = [...new Set(options.additionalBibliographyRecordIds ?? [])];
+  const additional = [...new Set([...(meta.bibliographyAdditionalRecordIds ?? []), ...(options.additionalBibliographyRecordIds ?? [])])];
   additional.forEach(id => recordIds.add(id));
   const bibliographicRecords = (issue.bibliographicRecords ?? []).filter(record => recordIds.has(record.id));
   if (bibliographicRecords.length !== recordIds.size) throw new Error('Unresolved study bibliographic record.');
