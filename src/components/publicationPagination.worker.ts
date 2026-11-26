@@ -10,9 +10,10 @@ scope.onmessage = ({ data }) => {
     engine = createPublicationPaginationEngine(data.configuration);
     return;
   }
+  if (data.kind === 'clear') { engine?.clear(); return; }
   try {
     if (!engine) throw new Error('Publication pagination is not configured');
-    scope.postMessage({ id: data.id, result: engine(data.blocks, data.footnotes) });
+    scope.postMessage({ id: data.id, result: engine(data.blocks, data.footnotes, data.budgetBytes) });
   } catch {
     scope.postMessage({ id: data.id, failed: true });
   }
