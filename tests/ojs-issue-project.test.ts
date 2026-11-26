@@ -3,14 +3,13 @@ import test from 'node:test';
 import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue, refreshOjsPublicationMatter } from '../src/integrations/ojs/reimportOjsIssue.ts';
 import { createJournalIssueFromOjsHandoff, OJS_ISSUE_ORIGIN, type OjsIssueHandoff } from '../src/integrations/ojs/importOjsIssue.ts';
 import { getDocumentStructureProfile } from '../src/model/documentProfile.ts';
-import { getPublicationMatter } from '../src/model/publicationMatter.ts';
+import { createPublicationMatter, getPublicationMatter, PUBLICATION_MATTER_EXTENSION } from '../src/model/publicationMatter.ts';
 import { getParentSectionId } from '../src/model/sectionStructure.ts';
 import { projectIssueStudyForExport } from '../src/model/issueStudyExport.ts';
 import { getIssueStudyCitationMetadata } from '../src/model/issueStudyCitationMetadata.ts';
 import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { renderJatsArticle } from '../src/services/exportJats.ts';
 import { publicationShortcodeValues, resolvePublicationShortcodes, resolvePublicationMatterText } from '../src/model/publicationShortcodes.ts';
-import { createPublicationMatter, PUBLICATION_MATTER_EXTENSION } from '../src/model/publicationMatter.ts';
 
 function fixture(): OjsIssueHandoff {
   const article = (id: string, title: string, sequence: number) => ({
