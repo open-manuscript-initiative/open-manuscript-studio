@@ -1,3 +1,4 @@
+import { createRunningStudyFields, normalizeRunningShortcodes, containsStudyRunningShortcodes } from '../model/publicationRunningShortcodes';
 import { normalizePublicationTableStyles, type PublicationTableStyles } from '../model/tableAppearancePresets';
 import { publicationFirstPageNumber } from '../model/publicationSpreads';
 import { inlinePublicationArtifactImages } from './publicationHtmlArtifact';
@@ -918,12 +919,16 @@ export function withPublicationStyleCss(
 
 export function withPrintRunningHeader(
   html: string,
-  manuscript: Pick<OmiManuscript, 'title' | 'updatedAt'> & Partial<Pick<OmiManuscript, 'sections'>>,
+  manuscript: Pick<OmiManuscript, 'title' | 'updatedAt'> & Partial<OmiManuscript>,
   style: PublicationStyle,
   identity: PublicationPublisherIdentity = loadPublicationPublisherIdentity(),
 ): string {
   if (!style.runningHeaders.enabled && !style.pageStyles) return html;
+  const studyFields = manuscript.id && manuscript.locale && manuscript.sections && manuscript.agents && manuscript.contributions ? createRunningStudyFields(manuscript as OmiManuscript) : undefined;
+  const dynamicStudy = !!studyFields && studyFields.bySection.size > 0 && [style.runningHeaders, ...(style.pageStyles?.styles.map(item => item.runningHeaders) ?? []), ...(style.pageStyles?.sections.flatMap(item => item.runningHeaders ? [item.runningHeaders] : []) ?? [])].some(header => [header.even.left, header.even.right, header.odd.left, header.odd.right].some(containsStudyRunningShortcodes));
+  const effectiveStyle = dynamicStudy && !style.pageStyles ? { ...style, pageStyles: { version: 1 as const, styles: [], sections: [], pages: [] } } : style;
   const values = {
+    ...studyFields?.fallback,
     articleTitle: manuscript.title,
     shortArticleTitle: shortenText(manuscript.title, 72),
     journalTitle: identity.journalTitle || style.name,
@@ -957,7 +962,7 @@ export function withPrintRunningHeader(
 `;
   return html.replace(
     '</head>',
-    `  <style data-omi-print-running-headers>${headerCss}\n${buildPublicationPageStylesCss(style, manuscript.sections ?? [], manuscript.title, identity, manuscript.updatedAt.slice(0, 4), bodyPageOffset)}</style>\n</head>`,
+    `  <style data-omi-print-running-headers>${headerCss}\n${buildPublicationPageStylesCss(effectiveStyle, manuscript.sections ?? [], manuscript.title, identity, manuscript.updatedAt.slice(0, 4), bodyPageOffset, studyFields)}</style>\n</head>`,
   );
 }
 
@@ -1238,9 +1243,9 @@ function runningHeaderCssContent(
   values: Record<string, string>,
 ): string {
   const pageMarker = '\u0000omi-page-number\u0000';
-  const rendered = template
+  const rendered = normalizeRunningShortcodes(template)
     .replace(
-      /\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g,
+      /\{\{([a-zA-Z][a-zA-Z0-9-]*)\}\}/g,
       (_match, key: string) => key === 'pageNumber' ? pageMarker : values[key] ?? '',
     )
     .replace(/\s*\/\s*(?=\()/g, ' ')

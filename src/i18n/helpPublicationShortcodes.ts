@@ -243,7 +243,8 @@ export function getPublicationShortcodeHelp(locale: string) {
   const language = locale.toLowerCase().split(/[-_]/)[0] as keyof typeof copy;
   const text = copy[language] ?? copy.en;
   const fields = PUBLICATION_SHORTCODES.map((key, index) => ({ key, label: text.fields[index] }));
-  const topic: HelpTopic = { title: text.title, body: text.body, tips: [...text.tips, languageTips[language] ?? languageTips.en, ...fields.map(field => '[omi:' + field.key + '] — ' + field.label)] };
+  const runningTip = language === 'hu' ? 'Oldalstílusok és szakaszfejlécek: [omi:article-doi], [omi:article-title], [omi:short-article-title], [omi:article-authors], [omi:page-number]. A belív élőfejében a tanulmány és a nyomtatott oldal adatait használják; nem borítómezők.' : language === 'de' ? 'Kolumnentitel: [omi:article-doi], [omi:article-title], [omi:short-article-title], [omi:article-authors], [omi:page-number]. Nur im Seitenkopf des Inhalts.' : 'Running headers: [omi:article-doi], [omi:article-title], [omi:short-article-title], [omi:article-authors], [omi:page-number]. These use the study and printed page context, not cover metadata.';
+  const topic: HelpTopic = { title: text.title, body: text.body, tips: [...text.tips, runningTip, languageTips[language] ?? languageTips.en, ...fields.map(field => '[omi:' + field.key + '] — ' + field.label)] };
   return { topic, fields, insert: text.insert };
 }
 

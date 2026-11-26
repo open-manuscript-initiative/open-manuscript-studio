@@ -1,3 +1,5 @@
+import { createRunningStudyFields, normalizeRunningShortcodes } from '../src/model/publicationRunningShortcodes.ts';
+import { withPrintRunningHeader, clonePublicationStyleTemplate } from '../src/services/publicationStyleExport.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue, refreshOjsPublicationMatter } from '../src/integrations/ojs/reimportOjsIssue.ts';
@@ -236,4 +238,29 @@ test('bilingual title matter resolves locale variants independently of document 
   assert.match(html, /Főszerkesztő/);
   assert.match(html, /Editor-in-chief/);
   assert.match(page.content, /\[omi:editorial-board:en\]/);
+});
+
+test('running fields use the current study DOI and real page counter', () => {
+  const input = fixture();
+  input.issue.doi = '10.1234/issue';
+  for (const [index, section] of input.sections.entries()) {
+    const article = section.articles[0]!;
+    article.submission = { ...article.submission, publicationExternalId: article.publicationExternalId, citationMetadata: { doi: '10.1234/article.' + index } };
+  }
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const roots = issue.sections.filter(section => !getParentSectionId(section));
+  const fields = createRunningStudyFields(issue);
+  assert.equal(fields.bySection.get(roots[0]!.id)?.['article-doi'], '10.1234/article.0');
+  assert.equal(fields.bySection.get(roots[1]!.id)?.['article-doi'], '10.1234/article.1');
+  assert.equal(fields.fallback['article-doi'], '');
+  assert.equal(normalizeRunningShortcodes('[omi:page-number]'), '{{pageNumber}}');
+  const style = clonePublicationStyleTemplate();
+  style.runningHeaders.enabled = true;
+  style.runningHeaders.odd.left = '[omi:article-doi]';
+  style.runningHeaders.odd.right = '[omi:page-number]';
+  const html = withPrintRunningHeader(renderHtmlArticle(issue).html, issue, style);
+  assert.match(html, /string\(omi_running_article_doi, first\)/);
+  assert.match(html, /omi_running_article_doi "10\.1234\/article\.0"/);
+  assert.match(html, /omi_running_article_doi "10\.1234\/article\.1"/);
+  assert.match(html, /counter\(page\)/);
 });

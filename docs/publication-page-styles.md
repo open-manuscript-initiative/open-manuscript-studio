@@ -79,3 +79,7 @@ The setting is part of the publication style, including OMI files and reusable
 templates. IDML carries FacingPages and the odd starting page number. PDF keeps
 individual pages in reading order; the workspace spread is not printer
 imposition. Disable Facing pages to return to the vertical single-page view.
+
+## Study-aware running-header shortcodes
+
+In **Page styles and section headers**, use `[omi:article-doi]`, `[omi:article-title]`, `[omi:short-article-title]`, `[omi:article-authors]` or `[omi:page-number]` in the odd/even header fields. The page number uses the printed counter, not the imported OJS page range. DOI is taken from the exact imported article publication (or a standalone study DOI); an issue DOI is never substituted. Subsections inherit their containing study identity. Example: even left `[omi:page-number]`, even right `[omi:article-authors]`; odd left `[omi:short-article-title]`, odd right `[omi:page-number]`. On shared pages the layout selects a study by the page's section context; start studies on new pages for unambiguous running heads. These are body running-header fields, not cover fields. Continuous HTML has no physical running heads. Check final paginated PDF output; no automatic DOI assignment or footer redesign is implied.
