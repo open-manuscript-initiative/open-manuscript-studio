@@ -8,7 +8,7 @@ import { useFormattingEditor } from '../editor/useFormattingEditor';
 import { getPublicationMatterCopy } from '../i18n/publicationMatter';
 import { getRichTextCopy } from '../i18n/richText';
 import { useTranslation } from '../i18n';
-import { PUBLICATION_SHORTCODES } from '../model/publicationShortcodes';
+import { getPublicationShortcodeHelp } from '../i18n/helpPublicationShortcodes';
 
 const extensions = () => [StarterKit.configure({ horizontalRule: false, link: false, underline: false }),
   ...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS.filter((extension) => extension.name !== 'omiBlockTypeMenu')];
@@ -38,7 +38,8 @@ export function MatterRichText({ content, onChange, readOnly, toolbarHost, label
     const max = editor.state.doc.content.size;
     editor.commands.setTextSelection({ from: Math.min(from, max), to: Math.min(to, max) });
   }, [editor, content]);
-  const shortcodeLabel = locale === 'hu' ? 'Adatmező beszúrása' : locale === 'de' ? 'Datenfeld einfügen' : 'Insert metadata field';
+  const shortcodeHelp = getPublicationShortcodeHelp(locale);
+  const shortcodeLabel = shortcodeHelp.insert;
   const toolbar = editor && !readOnly ? <div className="omi-publication-matter-format" role="group" aria-label={format.toolbar}>
     {[format.bold, format.italic, format.underline, format.smallCaps, format.superscript, format.subscript].map((label, index) => <button type="button" key={label} title={label} aria-label={label} aria-pressed={active?.[index] ?? false}
       onMouseDown={(event) => event.preventDefault()} onClick={() => editor.chain().focus().toggleMark(marks[index]!).run()}>{['B', 'I', 'U', 'Aa', 'x²', 'x₂'][index]}</button>)}
@@ -47,7 +48,7 @@ export function MatterRichText({ content, onChange, readOnly, toolbarHost, label
       if (key) editor.chain().focus().insertContent('[omi:' + key + ']').run();
     }}>
       <option value="">{shortcodeLabel}</option>
-      {PUBLICATION_SHORTCODES.map(key => <option key={key} value={key}>{'[omi:' + key + ']'}</option>)}
+      {shortcodeHelp.fields.map(({ key, label }) => <option key={key} value={key}>{label + ' — [omi:' + key + ']'}</option>)}
     </select>
   </div> : null;
   return <>{toolbarHost ? createPortal(toolbar, toolbarHost) : null}<EditorContent editor={editor} /></>;

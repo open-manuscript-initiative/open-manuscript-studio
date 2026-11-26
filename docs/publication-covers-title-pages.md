@@ -114,3 +114,42 @@ This is a Studio extension; the canonical OMI file-format version is unchanged.
 These pages do not replace JATS article metadata or the Word/ODT scholarly-text
 export paths. Printer-specific bleed, flaps, binding calculations and imposition remain
 outside this page editor. Use the printer's final binding measurements for production.
+
+## Title matter — dynamic metadata fields (shortcodes)
+
+Open Publishing → Publication editor → Covers and title pages. Select a page or text frame, place the cursor, and choose Insert metadata field. You may also type a shortcode. Keep each token together with the same formatting. Enable Preview metadata fields to see resolved text; turn it off to edit the tokens.
+
+| Shortcode | Value |
+| --- | --- |
+| `[omi:imprint]` | Imprint (colophon or publisher/address/contact, copyright and available identifiers) |
+| `[omi:editorial-board]` | Editorial board / native public masthead, grouped by role |
+| `[omi:authors]` | Publication authors |
+| `[omi:contents]` | Contents: study authors and titles |
+| `[omi:journal]` | Journal / series name |
+| `[omi:publisher]` | Publisher |
+| `[omi:address]` | Mailing address / publication place |
+| `[omi:contact]` | Contact name |
+| `[omi:title]` | Publication title |
+| `[omi:volume]` | Volume |
+| `[omi:number]` | Issue number |
+| `[omi:year]` | Year |
+| `[omi:issn]` | Print ISSN |
+| `[omi:eissn]` | Electronic ISSN |
+| `[omi:isbn]` | ISBN |
+| `[omi:doi]` | DOI |
+
+Save the layout as a publication template; the tokens are retained and resolve against the current publication in preview and HTML/PDF output, not against the previous issue.
+
+For an existing OJS issue, reopen it from OJS and choose Refresh imprint and editorial board. This updates the imported snapshot without replacing the article text or layout. Native OJS masthead data requires the compatible connector; custom masthead plugins may need an adapter.
+
+Missing or unknown fields remain visible as tokens and produce export diagnostics. Check the final PDF, especially frame overflow. Contents lists authors and titles, not page numbers. IDML, DOCX and ODT shortcode expansion is not established.
+
+```text
+IMPRINT
+[omi:imprint]
+
+Editorial board
+[omi:editorial-board]
+
+[omi:journal] [omi:volume]/[omi:number] ([omi:year])
+```

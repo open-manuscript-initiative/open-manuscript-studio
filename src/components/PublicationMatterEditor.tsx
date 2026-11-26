@@ -11,6 +11,7 @@ import { useStudioStore } from '../app/useStudioStore';
 import { importPublicationMatterImage, stagePublicationMatter } from '../app/publicationMatterActions';
 import { createPublicationMatter, getPublicationMatter, publicationMatterTemplate, type PublicationMatterPage, type PublicationMatterPageKind } from '../model/publicationMatter';
 import { getPublicationMatterCopy } from '../i18n/publicationMatter';
+import { getPublicationShortcodeHelp } from '../i18n/helpPublicationShortcodes';
 import { useTranslation } from '../i18n';
 import { getAssetPayload } from '../services/assetRepository';
 import { loadPublicationStyle } from '../services/publicationStyleExport';
@@ -19,6 +20,7 @@ import './PublicationMatterEditor.css';
 export function PublicationMatterEditor({ widthMm, heightMm, bodyPageCount, readOnly = false }: { widthMm?: number; heightMm?: number; bodyPageCount?: number; readOnly?: boolean }) {
   const { locale } = useTranslation();
   const copy = getPublicationMatterCopy(locale);
+  const shortcodeHelp = getPublicationShortcodeHelp(locale).topic;
   const manuscript = useStudioStore((state) => state.manuscript);
   const [defaultStyle] = useState(() => loadPublicationStyle(manuscript));
   const [unit] = usePublicationMeasurementUnit();
@@ -74,6 +76,11 @@ export function PublicationMatterEditor({ widthMm, heightMm, bodyPageCount, read
 
   return <section className="omi-publication-matter-editor" aria-label={copy.title}>
     <h2>{copy.title}</h2><p>{copy.description}</p>
+    <details className="omi-publication-matter-shortcode-help">
+      <summary>{shortcodeHelp.title}</summary>
+      <p>{shortcodeHelp.body}</p>
+      <ul>{shortcodeHelp.tips?.map(tip => <li key={tip}>{tip}</li>)}</ul>
+    </details>
     <label>{copy.kind}<select aria-label={copy.kind} disabled={readOnly} value={model.publicationKind}
       onChange={(event) => stagePublicationMatter({ ...model, publicationKind: event.target.value as 'volume' | 'journal-issue' })}>
       <option value="volume">{copy.volume}</option><option value="journal-issue">{copy.journal}</option>
