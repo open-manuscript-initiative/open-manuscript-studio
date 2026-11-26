@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createIssuePdfReviewRows, editIssuePdfReviewRow, reviewedIssuePdfRanges } from '../src/model/issuePdfReview.ts';
 import { proposeIssuePdfRanges, validateReviewedIssueRanges } from '../src/model/issuePdfPageRanges.ts';
 
 const first = { rootSectionId: 'a', title: 'First', startText: 'First study about historical manuscripts', endText: 'Final sentence of the first contribution' };
@@ -27,4 +28,30 @@ test('shared pages are rejected; review must cover every study in current order'
   assert.throws(() => validateReviewedIssueRanges(5, ['a','b'], [{ rootSectionId:'a', firstPage:1,lastPage:3 },{ rootSectionId:'b', firstPage:3,lastPage:5 }]));
   assert.throws(() => validateReviewedIssueRanges(5, ['a','b'], [{ rootSectionId:'a', firstPage:1,lastPage:2 }]));
   assert.doesNotThrow(() => validateReviewedIssueRanges(5, ['a','b'], [{ rootSectionId:'a', firstPage:1,lastPage:2 },{ rootSectionId:'b', firstPage:4,lastPage:5 }]));
+});
+
+
+test('range suggestions are never implicitly approved and editing revokes confirmation', () => {
+  const rows = createIssuePdfReviewRows([
+    { rootSectionId: 'a', title: 'A', firstPage: 3, lastPage: 7, requiresReview: true },
+    { rootSectionId: 'b', title: 'B', problem: 'missing-anchor', requiresReview: true },
+  ]);
+  assert.deepEqual(rows.map(row => [row.first, row.last, row.reviewed]), [['3','7',false],['','',false]]);
+  assert.throws(() => reviewedIssuePdfRanges(20, ['a','b'], rows));
+  const approved = [{ ...rows[0]!, reviewed: true }, { ...rows[1]!, first: '8', last: '20', reviewed: true }];
+  assert.deepEqual(reviewedIssuePdfRanges(20, ['a','b'], approved), [
+    { rootSectionId: 'a', firstPage: 3, lastPage: 7 }, { rootSectionId: 'b', firstPage: 8, lastPage: 20 },
+  ]);
+  const edited = editIssuePdfReviewRow(approved, 'b', 'first', '9');
+  assert.equal(edited[1]?.reviewed, false);
+  assert.equal(edited[0]?.reviewed, true);
+  assert.throws(() => reviewedIssuePdfRanges(20, ['a','b'], edited));
+});
+test('review rejects incomplete, reordered, overlapping and non-decimal range inputs', () => {
+  const row = { rootSectionId: 'a', first: '3', last: '7', reviewed: true };
+  const next = { rootSectionId: 'b', first: '8', last: '20', reviewed: true };
+  for (const invalid of [
+    [row], [next,row], [row,{...next, first:'7'}], [row,{...next, last:'21'}],
+    [{...row,first:'3e0'},next], [{...row,first:'3.0'},next], [{...row,first:''},next],
+  ]) assert.throws(() => reviewedIssuePdfRanges(20,['a','b'],invalid));
 });
