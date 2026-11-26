@@ -1077,6 +1077,12 @@ function applyMarks(
         return `<sup>${output}</sup>`;
       case 'omiSubscript':
         return `<sub>${output}</sub>`;
+      case 'omiSourceFont': {
+        const family = (stringAttr(mark.attrs, 'family') ?? '').trim();
+        return family && family.length <= 128
+          ? `<span data-omi-source-font="${escapeAttribute(family)}" style="${escapeAttribute('font-family:' + cssStringLiteral(family))}">${output}</span>`
+          : output;
+      }
       case 'omiLanguage': {
         const lang = stringAttr(mark.attrs, 'lang');
         return lang ? `<span lang="${escapeAttribute(normalizeLanguage(lang))}">${output}</span>` : output;
