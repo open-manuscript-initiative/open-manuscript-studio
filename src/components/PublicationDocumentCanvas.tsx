@@ -550,7 +550,7 @@ export function PublicationDocumentCanvas({
     let measuredNotes = new WeakMap<HTMLElement, number>();
     const visibilityChanged = () => {
       if (content.ownerDocument.visibilityState !== 'hidden') return;
-      paginator.clear();
+      paginator.setBudget(0);
       worker?.clearCache();
     };
     content.ownerDocument.addEventListener('visibilitychange', visibilityChanged);
@@ -855,7 +855,7 @@ export function PublicationDocumentCanvas({
         };
         // DOM measurement stays on the main thread; only numeric pagination
         // for larger publications is delegated to the persistent worker.
-        if (worker && measuredBlocks.length > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT) {
+        if (worker?.available && measuredBlocks.length > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT) {
           paginator.clear();
           void worker.paginate(measuredBlocks, footnotes, cacheBudget).then(result => {
             if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
