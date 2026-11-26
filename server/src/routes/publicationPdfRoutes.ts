@@ -150,8 +150,16 @@ publicationPdfRouter.post('/inspect/pdf-pages', requireSession,
     const owner = (request as AuthenticatedRequest).authUserId;
     if (!owner) { response.sendStatus(401); return; }
     const body: unknown = request.body;
-    if (!Buffer.isBuffer(body) || body.length < 5 ||
-        body.length > MAX_ISSUE_PDF_BYTES || body.subarray(0, 5).toString('ascii') !== '%PDF-') {
+    // Express may supply JSON, form data or no body instead of raw bytes.
+    // Exclude strings and arrays explicitly before using Buffer-only operations.
+    if (!request.is('application/pdf') || typeof body !== 'object' || body === null ||
+        Array.isArray(body) || !Buffer.isBuffer(body)) {
+      response.status(400).json({ error: { code: 'INVALID_ISSUE_PDF', message: 'Provide the rendered issue PDF.' } });
+      return;
+    }
+    const byteLength = Buffer.byteLength(body);
+    if (byteLength < 5 || byteLength > MAX_ISSUE_PDF_BYTES ||
+        body.compare(Buffer.from('%PDF-', 'ascii'), 0, 5, 0, 5) !== 0) {
       response.status(400).json({ error: { code: 'INVALID_ISSUE_PDF', message: 'Provide the rendered issue PDF.' } });
       return;
     }
