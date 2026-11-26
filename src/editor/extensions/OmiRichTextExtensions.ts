@@ -1,3 +1,4 @@
+import { authorFontStyle } from '../../services/embeddedCss';
 import { LIST_ATTRIBUTE_NAMES, normalizeListAttribute, listPresentation } from '../../model/directListFormatting';
 import { normalizeSourceStyle } from '../../model/sourceWordStyles';
 import { PARAGRAPH_FORMAT_NAMES, normalizeParagraphValue, paragraphFormattingCss } from '../../model/directParagraphFormatting';
@@ -261,7 +262,7 @@ export const OmiSourceFontExtension = Mark.create({
       typeof HTMLAttributes.family === 'string' ? HTMLAttributes.family : null,
     );
     return family
-      ? ['span', { 'data-omi-source-font': family, style: 'font-family:"' + family.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"' }, 0]
+      ? ['span', { 'data-omi-source-font': family, style: authorFontStyle(family) }, 0]
       : ['span', {}, 0];
   },
 });
