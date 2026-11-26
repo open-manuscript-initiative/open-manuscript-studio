@@ -64,6 +64,7 @@ import {
   type PublicationStyle,
 } from '../services/publicationStyleExport';
 import { cssStringLiteral } from '../services/embeddedCss';
+import { preparePublicationFonts, publicationFontRequests } from '../services/publicationFontWarmup';
 import type { OmiPublicationFlowBreak } from '../editor/extensions/OmiProofingMarksExtension';
 import { BlockEditor } from './BlockEditor';
 import { TablePaginationContext } from './TablePaginationContext';
@@ -496,6 +497,7 @@ export function PublicationDocumentCanvas({
     let measuring = false;
     let queued = false;
     let pending = false;
+    let fontsPrepared = false;
     let structureVersion = 0;
     // Keep the last completed projection for unchanged block IDs. A newly
     // inserted paragraph temporarily follows its nearest preceding sheet.
@@ -820,7 +822,7 @@ export function PublicationDocumentCanvas({
       measureNotesChunk();
     };
     const schedule = () => {
-      if (cancelled) return;
+      if (cancelled || !fontsPrepared) return;
       // Do not repeatedly cancel an in-flight chunk or postpone the next frame
       // during typing. Finish this pass, then process accumulated edits.
       if (measuring) { pending = true; return; }
@@ -836,7 +838,6 @@ export function PublicationDocumentCanvas({
       frame = requestAnimationFrame(update);
     };
 
-    schedule();
     const resizeObserver = typeof ResizeObserver === 'undefined'
       ? null
       : new ResizeObserver(schedule);
@@ -889,8 +890,14 @@ export function PublicationDocumentCanvas({
       });
     }
 
+    const cancelFontPreparation = preparePublicationFonts(fonts, publicationFontRequests(style), () => {
+      fontsPrepared = true;
+      schedule();
+    });
+
     return () => {
       cancelled = true;
+      cancelFontPreparation();
       if (scheduleTimer !== null) clearTimeout(scheduleTimer);
       cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
