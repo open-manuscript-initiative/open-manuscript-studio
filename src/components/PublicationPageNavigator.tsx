@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { publicationPageNavigationCopy } from '../i18n/publicationPageNavigation';
@@ -16,6 +16,32 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
   const dragTargetId = useRef<string | null>(null);
   const dragCompleted = useRef(false);
   const navigatorRef = useRef<HTMLDivElement>(null);
+  const [visibleArtwork, setVisibleArtwork] = useState<ReadonlySet<string>>(() => new Set());
+  const pageIds = JSON.stringify(pages.map((item) => item.id));
+  const supportsViewportObservation = typeof IntersectionObserver !== 'undefined';
+  useEffect(() => {
+    const list = navigatorRef.current;
+    if (!list || !supportsViewportObservation) return;
+    const buttons = Array.from(list.querySelectorAll<HTMLElement>('[data-thumbnail-id]'));
+    const ids = new Set(buttons.map((button) => button.dataset.thumbnailId!));
+    let disposed = false;
+    // Keep all page buttons, labels and drag targets mounted; only the costly
+    // SVG line/graphic marks need to follow the scrolling viewport.
+    const observer = new IntersectionObserver((entries) => {
+      if (disposed) return;
+      setVisibleArtwork((previous) => {
+        const next = new Set([...previous].filter((id) => ids.has(id)));
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.thumbnailId;
+          if (!id) continue;
+          if (entry.isIntersecting) next.add(id); else next.delete(id);
+        }
+        return next.size === previous.size && [...next].every((id) => previous.has(id)) ? previous : next;
+      });
+    }, { root: list, rootMargin: '160px' });
+    buttons.forEach((button) => observer.observe(button));
+    return () => { disposed = true; observer.disconnect(); };
+  }, [pageIds, supportsViewportObservation]);
   const page = pages[selected] ?? pages[0];
   const selectedStyle = styles.some((style) => style.id === newStyle) ? newStyle : page?.styleId ?? styles[0]?.id ?? '';
   return <details className="publication-page-navigator" open>
@@ -25,6 +51,7 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
       {pages.map((item, index) => {
         const styleIndex = Math.max(0, styles.findIndex((style) => style.id === item.styleId));
         const name = styles[styleIndex]?.name ?? copy.defaultStyle;
+        const renderArtwork = !supportsViewportObservation || selected === index || index < 4 || visibleArtwork.has(item.id);
         return <button type="button" key={item.id} className="publication-page-thumbnail" data-thumbnail-page={index} data-thumbnail-id={item.id}
           data-thumbnail-style={item.styleId} aria-current={selected === index ? 'page' : undefined}
           aria-label={`${copy.page} ${item.number}: ${name}${item.label ? ` — ${item.label}` : ''}`}
@@ -80,7 +107,7 @@ export function PublicationPageNavigator({ pages, styles, selected, help, onSele
           }}>
           <svg viewBox={`0 0 ${item.width} ${item.height}`} aria-hidden="true" focusable="false">
             <rect width={item.width} height={item.height} fill={item.background ?? '#fff'} />
-            {item.marks.map((mark, n) => <rect key={n} x={mark.x} y={mark.y} width={mark.width} height={mark.height}
+            {renderArtwork && item.marks.map((mark, n) => <rect key={n} x={mark.x} y={mark.y} width={mark.width} height={mark.height}
               fill={mark.graphic ? '#b8cad2' : '#64748b'} opacity={mark.graphic ? 0.75 : 0.6}
               transform={mark.rotation ? `rotate(${mark.rotation} ${mark.x + mark.width / 2} ${mark.y + mark.height / 2})` : undefined} />)}
           </svg>
