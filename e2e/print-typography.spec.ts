@@ -175,3 +175,56 @@ test('frame justification and Hungarian hyphenation agree in preview and export'
   expect(result.hyphens).toBeGreaterThan(0); expect(result.hyphens).toBe(result.previewHyphens);
   expect(result.spacing).toBe(true);
 });
+
+test('title-only publication accepts typing and reaches an idle pagination state', async ({ page }) => {
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const current = useStudioStore.getState().manuscript;
+    useStudioStore.getState().loadManuscript({ ...current, title: 'Title', subtitle: '', motto: '', abstract: '', keywords: [],
+      sections: [{ id: 'empty-section', title: '', blocks: [{ id: 'empty-paragraph', type: 'paragraph', content: '' }] }],
+    });
+  });
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
+  const canvas = menu.locator('.publication-document-canvas');
+  const title = canvas.locator('textarea.publication-document-title');
+  await expect(title).toHaveValue('Title');
+  await title.press('End');
+  await title.pressSequentially(' only manuscript');
+  await expect(title).toHaveValue('Title only manuscript');
+  await expect.poll(() => page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    return useStudioStore.getState().manuscript.title;
+  })).toBe('Title only manuscript');
+  // Observe a quiet interval after typing; pagination must not keep triggering
+  // itself through the autosizing textarea's inline height writes.
+  await expect.poll(() => canvas.locator('.publication-document-content').evaluate(async (element) => {
+    let passes = 0;
+    const observer = new MutationObserver((records) => { passes += records.length; });
+    observer.observe(element, { attributes: true, attributeFilter: ['data-publication-measuring'] });
+    await new Promise<void>((resolve) => { setTimeout(resolve, 400); });
+    observer.disconnect();
+    return passes;
+  }), { timeout: 10_000 }).toBe(0);
+});
+
+test('initial publication layout exposes readiness without locking the manuscript', async ({ page }) => {
+  await installMockStudioApi(page); await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
+  const canvas = menu.locator('.publication-document-canvas');
+  await expect(canvas.locator('textarea.publication-document-title')).toBeEditable();
+  await expect(canvas).toHaveAttribute('data-publication-layout-ready', 'true');
+  await expect(canvas.locator('.publication-layout-preparing')).toHaveCount(0);
+  await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
+  await expect(canvas).not.toHaveAttribute('data-publication-layout-ready', /.+/);
+  await canvas.getByRole('button', { name: 'Print layout', exact: true }).click();
+  await expect(canvas).toHaveAttribute('data-publication-layout-ready', 'true');
+  await expect(canvas.locator('textarea.publication-document-title')).toBeEditable();
+});

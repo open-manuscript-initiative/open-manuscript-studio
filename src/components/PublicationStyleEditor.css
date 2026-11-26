@@ -2460,3 +2460,15 @@
   .publication-document-margin-boundary, .publication-document-alignment-guides,
   .publication-ruler-visibility-options, .publication-presentation-exit { display: none !important; }
 }
+
+.publication-document-canvas-status .publication-layout-preparing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.publication-layout-preparing progress {
+  inline-size: 3rem;
+  block-size: 0.5rem;
+  accent-color: currentColor;
+}

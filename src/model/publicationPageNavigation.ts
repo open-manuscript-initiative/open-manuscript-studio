@@ -33,3 +33,31 @@ export function placePublicationEmptyPage(collection: PublicationPageStyleCollec
   }
   return { ...collection, insertions: items };
 }
+
+/** Index the nearest valid block at or after each flow position in one pass. */
+export function publicationFlowAnchors(ids: readonly (string | undefined)[], valid: ReadonlySet<string>): (string | undefined)[] {
+  const anchors: (string | undefined)[] = new Array(ids.length);
+  let next: string | undefined;
+  for (let index = ids.length - 1; index >= 0; index -= 1) {
+    const id = ids[index];
+    if (id && valid.has(id)) next = id;
+    anchors[index] = next;
+  }
+  return anchors;
+}
+
+/** Fill note-only sheet boundaries with the next real anchor, or prior end. */
+export function fillPublicationThumbnailBoundaries(pages: PublicationBodyPageThumbnail[]): void {
+  const following: (string | undefined)[] = new Array(pages.length);
+  let next: string | undefined;
+  for (let index = pages.length - 1; index >= 0; index -= 1) {
+    following[index] = next;
+    next = pages[index]!.firstBlockId ?? next;
+  }
+  let previous: string | undefined;
+  for (const [index, page] of pages.entries()) {
+    page.firstBlockId ??= following[index] ?? previous;
+    page.lastBlockId ??= page.firstBlockId;
+    previous = page.lastBlockId ?? previous;
+  }
+}

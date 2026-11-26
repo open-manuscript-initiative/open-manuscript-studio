@@ -51,6 +51,53 @@ export interface PublicationPageMetrics {
 }
 
 /**
+ * Cache page geometry and the cumulative height of preceding sheets.
+ * Section-master changes can invalidate an earlier page after a later page
+ * was measured (for example, while reserving continued footnotes).
+ */
+export function createPublicationPageMetricsResolver(
+  geometryFor: (index: number, sectionId?: string, insertedStyleId?: string) => { height: number; bodyHeight: number; topMargin: number },
+  pageGap: number,
+  firstTopMargin: number,
+) {
+  const insertionStyles = new Map<number, string>();
+  const heights: number[] = [];
+  const prefix: number[] = [0];
+  const cache: ({ sectionId?: string } & PublicationPageMetrics)[] = [];
+  const sumBefore = (index: number) => {
+    while (prefix.length <= index) {
+      const preceding = prefix.length - 1;
+      prefix.push(prefix[preceding]! + (heights[preceding] ?? 0));
+    }
+    return prefix[index]!;
+  };
+  const metrics = (index: number, sectionId?: string, insertedStyleId?: string): PublicationPageMetrics => {
+    if (insertedStyleId !== undefined && insertionStyles.get(index) !== insertedStyleId) {
+      insertionStyles.set(index, insertedStyleId);
+      delete cache[index];
+    }
+    const cached = cache[index];
+    if (cached && cached.sectionId === sectionId) return cached;
+    const geometry = geometryFor(index, sectionId, insertionStyles.get(index));
+    const stride = geometry.height + pageGap;
+    if (heights[index] !== stride) {
+      heights[index] = stride;
+      if (prefix.length > index + 1) prefix.length = index + 1;
+    }
+    const measured = {
+      sectionId, bodyHeight: geometry.bodyHeight,
+      bodyTop: sumBefore(index) + geometry.topMargin - firstTopMargin,
+    };
+    // Preserve the old invalidation contract: later absolute positions must
+    // be recomputed after a changed section or inserted-page master.
+    if (cache.length > index) cache.length = index;
+    cache[index] = measured;
+    return measured;
+  };
+  return { metrics, insertionStyles };
+}
+
+/**
  * Maps the editor's continuous block flow onto screen pages.
  *
  * Pagination is deliberately presentation-only: no page breaks or cached page
@@ -69,14 +116,90 @@ export function paginatePublicationBlocks(
   if (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length))) {
     return paginateWithFootnotes(blocks, usablePageHeight, pageOverhead, footnotes);
   }
+  return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead);
+}
+
+interface FixedLayoutCheckpoint {
+  insertedSpace: number;
+  insertedInlineHeight: number;
+  lastOccupiedPage: number;
+  flowBreakCount: number;
+}
+
+interface FixedLayoutSnapshot {
+  blocks: readonly PublicationFlowBlock[];
+  bodyHeight: number;
+  chromeHeight: number;
+  checkpoints: FixedLayoutCheckpoint[];
+  layout: PublicationPageLayout;
+}
+
+function sameFixedBlock(left: PublicationFlowBlock, right: PublicationFlowBlock): boolean {
+  if (left === right) return true;
+  return left.top === right.top && left.height === right.height
+    && left.leadingHeight === right.leadingHeight && left.splittable === right.splittable
+    && left.keepWithNext === right.keepWithNext && left.keepTogether === right.keepTogether
+    && left.forcePageBreakBefore === right.forcePageBreakBefore
+    && (left.lines?.length ?? 0) === (right.lines?.length ?? 0)
+    && (left.lines ?? []).every((line, index) => {
+      const other = right.lines?.[index];
+      return other?.textOffset === line.textOffset && other.top === line.top && other.height === line.height;
+    });
+}
+
+/**
+ * One canvas owns one cache. Inputs and returned layouts are immutable
+ * snapshots. Variable page masters and footnotes still use full pagination:
+ * their carried state needs a different checkpoint contract.
+ */
+export function createIncrementalPublicationPaginator() {
+  let previous: FixedLayoutSnapshot | undefined;
+  return {
+    paginate(
+      blocks: readonly PublicationFlowBlock[],
+      usablePageHeight: number,
+      pageOverhead: number,
+      footnotes?: PublicationFootnotes,
+      pageMetrics?: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
+    ): PublicationPageLayout {
+      if (pageMetrics || (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length)))) {
+        previous = undefined;
+        return paginatePublicationBlocks(blocks, usablePageHeight, pageOverhead, footnotes, pageMetrics);
+      }
+      return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead, previous, (snapshot) => { previous = snapshot; });
+    },
+    clear() { previous = undefined; },
+  };
+}
+
+function paginateFixedPublicationBlocks(
+  blocks: readonly PublicationFlowBlock[],
+  usablePageHeight: number,
+  pageOverhead: number,
+  previous?: FixedLayoutSnapshot,
+  retain?: (snapshot: FixedLayoutSnapshot) => void,
+): PublicationPageLayout {
   const bodyHeight = positive(usablePageHeight, 1);
   const chromeHeight = nonNegative(pageOverhead);
-  let insertedSpace = 0;
-  let insertedInlineHeight = 0;
-  let lastOccupiedPage = 0;
-  const flowBreaks: PublicationFlowBreak[] = [];
+  let resume = 0;
+  if (previous && previous.bodyHeight === bodyHeight && previous.chromeHeight === chromeHeight) {
+    while (resume < blocks.length && resume < previous.blocks.length
+      && sameFixedBlock(blocks[resume]!, previous.blocks[resume]!)) resume += 1;
+    if (resume === blocks.length && resume === previous.blocks.length) return previous.layout;
+    // The preceding block may keep with the changed block, even when its own
+    // geometry is identical. Recompute it too, including append/delete cases.
+    resume = Math.max(0, resume - 1);
+  }
+  const checkpoint = resume > 0 ? previous?.checkpoints[resume - 1] : undefined;
+  let insertedSpace = checkpoint?.insertedSpace ?? 0;
+  let insertedInlineHeight = checkpoint?.insertedInlineHeight ?? 0;
+  let lastOccupiedPage = checkpoint?.lastOccupiedPage ?? 0;
+  const flowBreaks: PublicationFlowBreak[] = checkpoint ? previous!.layout.flowBreaks.slice(0, checkpoint.flowBreakCount) : [];
+  const placements: PublicationBlockPlacement[] = resume ? previous!.layout.placements.slice(0, resume) : [];
+  const checkpoints: FixedLayoutCheckpoint[] = resume ? previous!.checkpoints.slice(0, resume) : [];
 
-  const placements = blocks.map((block, index) => {
+  for (let index = resume; index < blocks.length; index += 1) {
+    const block = blocks[index]!;
     const naturalTop = nonNegative(block.top);
     const blockHeight = nonNegative(block.height);
     const nextBlock = blocks[index + 1];
@@ -188,14 +311,13 @@ export function paginatePublicationBlocks(
       lastOccupiedPage = Math.max(lastOccupiedPage, occupiedPage);
     }
 
-    return placement;
-  });
+    placements.push(placement);
+    if (retain) checkpoints.push({ insertedSpace, insertedInlineHeight, lastOccupiedPage, flowBreakCount: flowBreaks.length });
+  }
 
-  return {
-    pageCount: Math.max(1, lastOccupiedPage + 1),
-    placements,
-    flowBreaks,
-  };
+  const layout = { pageCount: Math.max(1, lastOccupiedPage + 1), placements, flowBreaks };
+  retain?.({ blocks, bodyHeight, chromeHeight, checkpoints, layout });
+  return layout;
 }
 
 /** Variable-height page masters share the same measured-line/footnote model as
@@ -207,6 +329,7 @@ function paginateStyledPages(
 ): PublicationPageLayout {
   const pageSectionIds: (string | undefined)[] = [];
   const pageNotes: PublicationPageNote[][] = [];
+  const pageNoteHeights: number[] = [];
   const placements: PublicationBlockPlacement[] = [], flowBreaks: PublicationFlowBreak[] = [];
   const insertedPages: NonNullable<PublicationPageLayout['insertedPages']> = [];
   const movedSections = new Set<string>();
@@ -229,7 +352,7 @@ function paginateStyledPages(
     while (pageSectionIds.length <= index) pageSectionIds.push(sectionId);
   };
   const reservation = (index: number) => pageNotes[index]?.length
-    ? separator + pageNotes[index]!.reduce((sum, fragment) => sum + fragment.height, 0) : 0;
+    ? separator + (pageNoteHeights[index] ?? 0) : 0;
   const capacity = (index: number) => Math.max(lineHeight, Math.floor((metrics(index, pageSectionIds[index]).bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
   for (let index = 0; index < units.length; index += 1) {
     const first = units[index]!;
@@ -254,11 +377,14 @@ function paginateStyledPages(
       && ((keepSection && units[index + group.length]!.keepSectionId === first.keepSectionId) || group.at(-1)!.keepNext)) group.push(units[index + group.length]!);
     if (group.at(-1)!.top + group.at(-1)!.height - first.top > metrics(page, pageSectionIds[page]).bodyHeight) group.splice(1);
     const groupNotes = () => [...new Set(group.flatMap((unit) => [...unit.noteIds]))].filter((id) => !seen.has(id) && notes?.heights.has(id));
-    const notesHeight = groupNotes().reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
-    if (group.length > 1 && group.at(-1)!.top + group.at(-1)!.height - first.top + Math.min(capacity(page), notesHeight) + (notesHeight ? separator : 0) > metrics(page, pageSectionIds[page]).bodyHeight - 2) group.splice(1);
+    let ids = groupNotes();
+    let newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
+    if (group.length > 1 && group.at(-1)!.top + group.at(-1)!.height - first.top + Math.min(capacity(page), newNoteHeight) + (newNoteHeight ? separator : 0) > metrics(page, pageSectionIds[page]).bodyHeight - 2) {
+      group.splice(1);
+      ids = groupNotes();
+      newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
+    }
     const last = group.at(-1)!, height = last.top + last.height - first.top;
-    const ids = groupNotes();
-    const newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes?.heights.get(id) ?? 0), 0);
     position += Math.max(0, first.top - naturalBottom);
     if (first.forceBreak && position > 0.5) advance();
     const reserved = () => newNoteHeight ? separator + Math.min(capacity(page), Math.max(0, reservation(page) - separator) + newNoteHeight) : reservation(page);
@@ -282,10 +408,10 @@ function paginateStyledPages(
       while (remaining > 0.01) {
         ensurePage(notePage, first.sectionId);
         const fragments = pageNotes[notePage] ??= [];
-        const used = fragments.reduce((sum, fragment) => sum + fragment.height, 0);
+        const used = pageNoteHeights[notePage] ?? 0;
         const following = notePage === page ? (ids.length - noteIndex - 1) * lineHeight : 0;
         const slice = Math.min(remaining, Math.max(0, capacity(notePage) - used - following));
-        if (slice > 0.01) { fragments.push({ id, offset, height: slice }); offset += slice; remaining -= slice; }
+        if (slice > 0.01) { fragments.push({ id, offset, height: slice }); pageNoteHeights[notePage] = used + slice; offset += slice; remaining -= slice; }
         notePage += 1;
       }
     }
@@ -449,6 +575,7 @@ function paginateWithFootnotes(
   const separator = nonNegative(notes.separatorHeight);
   const noteCapacity = Math.max(lineHeight, Math.floor((bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
   const pageNotes: PublicationPageNote[][] = [];
+  const pageNoteHeights: number[] = [];
   const seen = new Set<string>();
   const placements: PublicationBlockPlacement[] = [];
   const flowBreaks: PublicationFlowBreak[] = [];
@@ -466,10 +593,8 @@ function paginateWithFootnotes(
       keepNext: index === all.length - 1 && block.keepWithNext,
     }));
   });
-  const reserved = (page: number) => {
-    const fragments = pageNotes[page] ?? [];
-    return fragments.length ? separator + fragments.reduce((sum, fragment) => sum + fragment.height, 0) : 0;
-  };
+  const reserved = (page: number) => pageNotes[page]?.length
+    ? separator + (pageNoteHeights[page] ?? 0) : 0;
   let page = 0;
   let position = 0;
   let naturalBottom = 0;
@@ -525,13 +650,14 @@ function paginateWithFootnotes(
       let notePage = page;
       while (remaining > 0.01) {
         const fragments = pageNotes[notePage] ??= [];
-        const used = fragments.reduce((sum, fragment) => sum + fragment.height, 0);
+        const used = pageNoteHeights[notePage] ?? 0;
         // Leave at least one line for every other reference introduced here.
         const followingStarts = notePage === page ? (ids.length - noteIndex - 1) * lineHeight : 0;
         const available = Math.max(0, noteCapacity - used - followingStarts);
         const slice = Math.min(remaining, available);
         if (slice > 0.01) {
           fragments.push({ id, offset, height: slice });
+          pageNoteHeights[notePage] = used + slice;
           offset += slice;
           remaining -= slice;
         }

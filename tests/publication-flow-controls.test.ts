@@ -223,3 +223,29 @@ test('moving a study carries all descendants while notes, contributors and inser
     assert.ok(useStudioStore.getState().pendingChangeSet);
   } finally { useStudioStore.setState(prior); }
 });
+
+test('note-heavy pagination retains all note fragments and reservation limits in both layout modes', () => {
+  const heights = new Map(Array.from({ length: 300 }, (_, index) => ['note-' + index, (index % 11 + 1) * 5] as const));
+  const blocks: PublicationFlowBlock[] = Array.from({ length: 300 }, (_, index) => ({
+    sectionId: 'article', top: index * 12, height: 10,
+    noteIds: ['note-' + index, ...(index > 0 ? ['note-' + (index - 1)] : [])],
+  }));
+  for (const styled of [false, true]) {
+    for (const allowPageContinuation of [false, true]) {
+      const result = paginatePublicationBlocks(blocks, 100, 20,
+        { heights, lineHeight: 5, separatorHeight: 5, allowPageContinuation },
+        styled ? metrics : undefined);
+      const totals = new Map<string, number>();
+      for (const fragments of result.pageNotes ?? []) {
+        if (!fragments) continue;
+        assert.ok(fragments.reduce((sum, item) => sum + item.height, 0) <= 50.0001);
+        for (const fragment of fragments) {
+          assert.equal(fragment.offset, totals.get(fragment.id) ?? 0);
+          totals.set(fragment.id, fragment.offset + fragment.height);
+        }
+      }
+      assert.deepEqual(totals, heights);
+      assert.equal(result.placements.length, blocks.length);
+    }
+  }
+});
