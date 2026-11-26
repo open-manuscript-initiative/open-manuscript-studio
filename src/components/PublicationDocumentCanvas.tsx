@@ -71,6 +71,7 @@ import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
 import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
   coalescePublicationTextLines,
+  createPublicationPageMetricsResolver,
   paginatePublicationBlocks,
   publicationSectionFitWarnings,
   type PublicationPageLayout,
@@ -665,23 +666,13 @@ export function PublicationDocumentCanvas({
           return;
         }
         if (cancelled) return;
-        const metricPages: ReturnType<typeof canvasPageGeometry>[] = [];
-        const metricCache = new Map<number, { sectionId?: string; bodyHeight: number; bodyTop: number }>();
-        const insertionStyles = new Map<number, string>();
-        const metrics = (index: number, sectionId?: string, insertedStyleId?: string) => {
-          if (insertedStyleId !== undefined && insertionStyles.get(index) !== insertedStyleId) { insertionStyles.set(index, insertedStyleId); metricCache.delete(index); }
-          const cached = metricCache.get(index);
-          if (cached && cached.sectionId === sectionId) return cached;
-          const resolved = resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId, insertionStyles.get(index));
-          metricPages[index] = canvasPageGeometry(resolved, scale);
-          const previousHeight = metricPages.slice(0, index).reduce((sum, item) => sum + item.height + pageGap, 0);
-          const measured = { sectionId, bodyHeight: metricPages[index]!.bodyHeight, bodyTop: previousHeight + metricPages[index]!.topMargin - topMargin };
-          // A revised first content block can change a page's master. Future
-          // absolute positions must then be recomputed from that page onward.
-          for (const key of metricCache.keys()) if (key >= index) metricCache.delete(key);
-          metricCache.set(index, measured);
-          return measured;
-        };
+        const { metrics, insertionStyles } = createPublicationPageMetricsResolver(
+          (index, sectionId, insertedStyleId) => canvasPageGeometry(
+            resolvePublicationPageStyle(style, layoutSectionsRef.current, index, sectionId, insertedStyleId), scale,
+          ),
+          pageGap,
+          topMargin,
+        );
         const layout = paginatePublicationBlocks(
           measuredBlocks,
           usablePageHeight,
