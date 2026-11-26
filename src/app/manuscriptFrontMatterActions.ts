@@ -5,7 +5,6 @@ import {
   normalizeTitleMatter,
   type OmiTitleMatterField,
 } from '../model/frontMatter';
-import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
 import {
   getCurrentUser,
@@ -68,10 +67,11 @@ export function stageTitleMatterChange(
     );
 
     changed = true;
+    const { authors: _legacyAuthors, ...manuscriptWithoutLegacyAuthors } = state.manuscript;
     return {
       manuscript: {
-        ...state.manuscript,
-        ...extractManuscriptState(state.manuscript),
+        ...manuscriptWithoutLegacyAuthors,
+        tombstones: state.manuscript.tombstones ?? [],
         titleMatter,
         updatedAt: timestamp,
       },
@@ -97,7 +97,6 @@ function stageOptionalFrontMatterChange(
     if ((previousValue ?? '') === (nextValue ?? '')) return state;
 
     const timestamp = new Date().toISOString();
-    const portableState = extractManuscriptState(state.manuscript);
     const pendingChangeSet = stagePendingChanges(
       state.pendingChangeSet,
       {
@@ -118,10 +117,11 @@ function stageOptionalFrontMatterChange(
     );
 
     changed = true;
+    const { authors: _legacyAuthors, ...manuscriptWithoutLegacyAuthors } = state.manuscript;
     return {
       manuscript: {
-        ...state.manuscript,
-        ...portableState,
+        ...manuscriptWithoutLegacyAuthors,
+        tombstones: state.manuscript.tombstones ?? [],
         [field]: nextValue,
         updatedAt: timestamp,
       },
