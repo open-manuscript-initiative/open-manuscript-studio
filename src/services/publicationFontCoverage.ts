@@ -182,7 +182,7 @@ export async function checkLocalPublicationFontCoverage(occurrences: readonly Ch
       checked++;
     } catch { unreadable++; }
     // Allow the editor to remain responsive while a large inventory is read.
-    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    await new Promise<void>(resolve => { setTimeout(resolve, 0); });
   }
   return {
     status: remaining.size && unreadable ? 'partial' : 'complete',
