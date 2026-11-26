@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { OJS_ISSUE_ORIGIN, ojsIssueSectionLabels, suggestOjsIssueTemplate, safeOjsIssueTemplate } from '../src/model/ojsIssuePublication.ts';
 import { createBlankManuscript } from '../src/document/createBlankManuscript.ts';
 import { applyPublicationTemplate, getAppliedPublicationTemplate, PUBLICATION_TEMPLATE_EXTENSION } from '../src/model/publicationTemplates.ts';
 import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
@@ -683,4 +684,30 @@ test('legacy inferred overrides can be reset by property without changing unlink
   assert.equal(reset.cellFormats?.['0:0']?.horizontalAlign,'right');
   const unlinked={...legacy,publicationTableStyle:undefined};
   assert.equal(resetInheritedCellAppearance(unlinked,catalog,pos,pos,['backgroundColor']),unlinked);
+});
+
+test('OJS issue templates match the journal uniquely and do not reuse previous issue identifiers', () => {
+  const issue = createBlankManuscript({kind: 'volume', publicationKind: 'journal-issue', title: 'Review 2026/4',
+    titleMatter: { seriesTitle: 'History Review', issn: '1234-5679', publicationYear: '2026' }});
+  issue.extensions = { ...issue.extensions, [OJS_ISSUE_ORIGIN]: {
+    version: 1, issue: { printIssn: '1234-5679' }, context: { name: { en: 'History Review' } },
+    sections: [{ externalId: '2', title: { hu_HU: 'Tanulmányok', en: 'Articles' }, articles: [{ rootSectionId: 'study1' }] }],
+  }};
+  const template = builtinPublicationTemplates().find(item => item.kind === 'journal-issue')!;
+  const specific = { ...template, id: 'review', association: 'History Review', defaults: {
+    issn: '1234-5679', doi: '10.1234/previous', isbn: '978-0-306-40615-7', publicationYear: '2025', colophon: 'Editorial board' }};
+  assert.equal(suggestOjsIssueTemplate(issue, [template, specific])?.id, 'review');
+  assert.equal(suggestOjsIssueTemplate(issue, [specific, { ...specific, id: 'duplicate' }]), undefined);
+  assert.equal(suggestOjsIssueTemplate(issue, [template]), undefined);
+  assert.equal(suggestOjsIssueTemplate(issue, [{ ...specific, defaults: { issn: '2049-3630' } }]), undefined);
+  assert.deepEqual(ojsIssueSectionLabels(issue, 'hu').get('study1'), { id: '2', label: 'Tanulmányok' });
+  assert.equal(ojsIssueSectionLabels(issue, 'en').get('study1')?.label, 'Articles');
+  const safe = safeOjsIssueTemplate(issue, specific);
+  const applied = applyPublicationTemplate(issue, safe);
+  assert.equal(applied.titleMatter?.doi, undefined);
+  assert.equal(applied.titleMatter?.isbn, undefined);
+  assert.equal(applied.titleMatter?.publicationYear, '2026');
+  assert.equal(applied.titleMatter?.colophon, 'Editorial board');
+  assert.equal(specific.defaults.doi, '10.1234/previous');
+  assert.equal(safeOjsIssueTemplate(createBlankManuscript({kind: 'volume'}), specific), specific);
 });
