@@ -137,3 +137,19 @@ export function appendNewOjsStudies(document: OmiManuscript, launch: OjsIssueHan
     summary: 'Added new studies from OJS issue', timestamp, events,
   }));
 }
+
+/** Explicit metadata-only refresh: never replace manuscript text, layout, contributor identities or article provenance. */
+export function refreshOjsPublicationMatter(document: OmiManuscript, launch: OjsIssueHandoff): OmiManuscript {
+  if (!isSameOjsIssue(document, launch) || launch.issue.published !== false) throw new Error('Invalid OJS issue metadata refresh.');
+  const origin = originOf(document)!;
+  const incoming = launch.context.publicationMatter;
+  if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) throw new Error('OJS plugin does not provide publication matter metadata.');
+  if (canonical(origin.context.publicationMatter) === canonical(incoming)) return document;
+  const state = extractManuscriptState(document);
+  const nextOrigin = { ...origin, context: { ...origin.context, publicationMatter: structuredClone(incoming) } };
+  state.extensions = { ...state.extensions, [OJS_ISSUE_ORIGIN]: nextOrigin };
+  return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
+    summary: 'Refreshed OJS publication matter metadata', timestamp: new Date().toISOString(),
+    events: [{ operation: 'manuscript.snapshot.create', targetId: document.id, path: '/extensions/' + OJS_ISSUE_ORIGIN, previousValue: origin, nextValue: nextOrigin }],
+  }));
+}

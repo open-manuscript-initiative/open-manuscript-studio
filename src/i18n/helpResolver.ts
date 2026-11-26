@@ -1,3 +1,4 @@
+import { appendPublicationShortcodeHelp } from './helpPublicationShortcodes';
 import { appendHealthResearchHelp } from './helpHealthResearch';
 import { appendTranskribusHelp } from './helpTranskribus';
 import { appendMathematicsHelp } from './helpMathematics';
@@ -81,5 +82,5 @@ function consolidateModuleHelp(locale: string, copy: HelpCopy): HelpCopy {
 export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
   const current = buildLocalizedHelpCopy(locale);
   const english = locale === 'en' ? current : buildLocalizedHelpCopy('en');
-  return consolidateModuleHelp(locale, applyReturnedSupplementalOverlay(locale, 'help', current, english));
+  return appendPublicationShortcodeHelp(locale, consolidateModuleHelp(locale, applyReturnedSupplementalOverlay(locale, 'help', current, english)));
 }

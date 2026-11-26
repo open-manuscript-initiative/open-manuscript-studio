@@ -1,3 +1,4 @@
+import { normalizeRunningShortcodes, RUNNING_STUDY_FIELDS, runningStudyStringName, type RunningStudyField, type createRunningStudyFields } from '../model/publicationRunningShortcodes';
 import { publicationFirstPageNumber } from '../model/publicationSpreads';
 import type { OmiSection } from '../types/omi';
 import type { PublicationStyle, PublicationPublisherIdentity } from './publicationStyleExport';
@@ -6,7 +7,7 @@ import { cssStringLiteral } from './embeddedCss';
 
 /** Named pages and page-group selectors are consumed by the Vivliostyle PDF engine. */
 export function buildPublicationPageStylesCss(style: PublicationStyle, sections: readonly OmiSection[], title: string,
-  identity: PublicationPublisherIdentity, year: string, bodyPageOffset = 0): string {
+  identity: PublicationPublisherIdentity, year: string, bodyPageOffset = 0, studyFields?: ReturnType<typeof createRunningStudyFields>): string {
   if (!style.pageStyles) return '';
   const result: string[] = ['.omi-scholarly-article{page:omi_body}'];
   const seen = new Set<string>();
@@ -14,7 +15,7 @@ export function buildPublicationPageStylesCss(style: PublicationStyle, sections:
   const visit = (items: readonly OmiSection[]) => { for (const item of items) { if (seen.has(item.id)) continue; seen.add(item.id); all.push(item); visit(item.children ?? []); } };
   visit(sections);
   const sectionNames = new Map(style.pageStyles.sections.map((rule, index) => [rule.sectionId, `omi_section_${index}`]));
-  const baseValues = { articleTitle: title, shortArticleTitle: short(title), journalTitle: identity.journalTitle || style.name,
+  const baseValues = { ...studyFields?.fallback, articleTitle: title, shortArticleTitle: short(title), journalTitle: identity.journalTitle || style.name,
     volume: identity.issue.volume, issue: identity.issue.number, year: identity.issue.year || year };
   const header = (master: PublicationPageStyle, values: Record<string, string>, selector: string, dynamicSection = false) => {
     const h = master.runningHeaders;
@@ -22,7 +23,7 @@ export function buildPublicationPageStylesCss(style: PublicationStyle, sections:
     // CSS page sides follow the printed counter parity, including a non-1 start.
     return (['left', 'right'] as const).map((side) => {
       const fields = side === 'left' ? h.even : h.odd;
-      return `@page ${selector}:${side}{@top-left{content:${h.enabled ? content(fields.left, values, dynamicSection) : 'none'};${declarations}}@top-right{content:${h.enabled ? content(fields.right, values, dynamicSection) : 'none'};text-align:right;${declarations}}}`;
+      return `@page ${selector}:${side}{@top-left{content:${h.enabled ? content(fields.left, values, dynamicSection, !!studyFields?.bySection.size) : 'none'};${declarations}}@top-right{content:${h.enabled ? content(fields.right, values, dynamicSection, !!studyFields?.bySection.size) : 'none'};text-align:right;${declarations}}}`;
     }).join('\n');
   };
   const geometry = (master: PublicationPageStyle, selector: string) => {
@@ -39,7 +40,9 @@ export function buildPublicationPageStylesCss(style: PublicationStyle, sections:
     const name = owner ? sectionNames.get(owner.sectionId)! : 'omi_body';
     const selector = `.manuscript-section[data-omi-section-id=${cssStringLiteral(section.id)}]`;
     const direct = style.pageStyles.sections.find((item) => item.sectionId === section.id);
-    result.push(`${selector}{page:${name};string-set:omi_section_title ${cssStringLiteral(section.title)},omi_short_section_title ${cssStringLiteral(short(section.title))};${direct?.startNewPage ? 'break-before:page;' : ''}${direct?.keepTogether ? 'break-inside:avoid;' : ''}}`);
+    const studyValues = studyFields?.bySection.get(section.id);
+    const studyStrings = studyValues ? RUNNING_STUDY_FIELDS.map(key => `,${runningStudyStringName(key)} ${cssStringLiteral(studyValues[key])}`).join('') : '';
+    result.push(`${selector}{page:${name};string-set:omi_section_title ${cssStringLiteral(section.title)},omi_short_section_title ${cssStringLiteral(short(section.title))}${studyStrings};${direct?.startNewPage ? 'break-before:page;' : ''}${direct?.keepTogether ? 'break-inside:avoid;' : ''}}`);
     if (emitted.has(name)) continue;
     emitted.add(name);
     const master = resolvePublicationPageStyle({ ...style, pageStyles: { ...style.pageStyles, pages: [] } }, sections, 0, section.id);
@@ -77,13 +80,14 @@ export function buildPublicationPageStylesCss(style: PublicationStyle, sections:
   return result.join('\n');
 }
 function short(value: string) { const text = value.replace(/\s+/g, ' ').trim(); return text.length > 72 ? `${text.slice(0, 71).trimEnd()}…` : text; }
-function content(template: string, values: Record<string, string>, dynamicSection: boolean) {
-  const tokens = template.split(/(\{\{[a-zA-Z][a-zA-Z0-9]*\}\})/g).filter(Boolean);
+function content(template: string, values: Record<string, string>, dynamicSection: boolean, dynamicStudy: boolean) {
+  const tokens = normalizeRunningShortcodes(template).split(/(\{\{[a-zA-Z][a-zA-Z0-9-]*\}\})/g).filter(Boolean);
   const fragments = tokens.map((token) => {
-    const match = /^\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}$/.exec(token);
+    const match = /^\{\{([a-zA-Z][a-zA-Z0-9-]*)\}\}$/.exec(token);
     if (!match) return cssStringLiteral(token);
     const key = match[1]!;
     if (key === 'pageNumber') return 'counter(page)';
+    if (dynamicStudy && RUNNING_STUDY_FIELDS.includes(key as RunningStudyField)) return `string(${runningStudyStringName(key as RunningStudyField)}, first)`;
     if (dynamicSection && key === 'sectionTitle') return 'string(omi_section_title, first)';
     if (dynamicSection && key === 'shortSectionTitle') return 'string(omi_short_section_title, first)';
     return cssStringLiteral(Object.hasOwn(values, key) ? values[key]! : '');

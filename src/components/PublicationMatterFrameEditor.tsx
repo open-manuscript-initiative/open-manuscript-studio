@@ -15,6 +15,7 @@ import { frameClipPath, frameShapeSvg } from '../services/publicationFrameShapes
 import { getAssetPayload } from '../services/assetRepository';
 import { MatterNumber } from './PublicationMatterControls';
 import { MatterRichText, matterPreviewHtml } from './PublicationMatterRichText';
+import { resolvePublicationMatterText } from '../model/publicationShortcodes';
 
 interface Drag { kind: 'move' | 'resize' | 'image-move' | 'image-resize' | 'point'; frame: PublicationMatterFrame; point: number; x: number; y: number; pixelsPerMm: number }
 export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl, onChange, readOnly, unit, createFrame, guides, trimWidthMm }: {
@@ -25,6 +26,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
   const pageCopy = getPublicationMatterCopy(locale);
   const copy = getPublicationFramesCopy(locale), labels = getPublicationMatterFramesCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
+  const [showResolved, setShowResolved] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [editImage, setEditImage] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
@@ -168,16 +170,17 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
     {error ? <p role="alert">{error}</p> : null}
     {overflow ? <p role="status">{labels.overflow}</p> : null}
     <div ref={setToolbarHost} />
+      <label><input type="checkbox" checked={showResolved} onChange={event => setShowResolved(event.target.checked)} />{locale === 'hu' ? 'Adatmezők előnézete' : locale === 'de' ? 'Datenfeldvorschau' : 'Preview metadata fields'}</label>
     <div ref={paper} lang={manuscript.locale} className={`omi-publication-matter-paper${sheet ? ' omi-cover-sheet-paper' : ''}`} data-cover-sheet={sheet ? page.kind : undefined} style={previewStyle}>
       {imageUrl ? <img src={imageUrl} alt={page.image?.alt ?? ''} style={{ objectFit: page.image?.fit }} /> : null}
-      <div className="omi-matter-base-text">{!selected && !readOnly ? <MatterRichText key="base" content={page.content} onChange={(content) => onChange({ content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={page.content} />}</div>
+      <div className="omi-matter-base-text">{!selected && !readOnly && !showResolved ? <MatterRichText key="base" content={page.content} onChange={(content) => onChange({ content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={resolvePublicationMatterText(page.content, manuscript).content} />}</div>
       {frames.map((frame, index) => <Fragment key={frame.id}><div className={`omi-matter-frame${selected?.id === frame.id ? ' is-selected' : ''}`} data-matter-frame-id={frame.id} data-frame-kind={frame.kind}
         style={{ ...matterFrameBoxStyle(frame, widthMm, heightMm), zIndex: index + 2 }} tabIndex={readOnly ? undefined : 0} aria-label={frame.name || `${copy.frame} ${index + 1}`}
         onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); choose(frame.id); } }}
         onPointerDown={(event) => { event.stopPropagation(); if (selected?.id !== frame.id) choose(frame.id); }}>
         <div className="omi-matter-frame-outline" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, { ...frame.style, strokeWidthMm: 0 }) }} />
         <div lang={frame.style.language || manuscript.locale} className={`omi-matter-frame-content${frame.kind === 'text' ? ' omi-matter-frame-text' : ''}`} style={{ clipPath: frameClipPath(frame), ...(frame.kind === 'text' ? { display: 'flex', flexDirection: 'column', justifyContent: { top: 'flex-start', center: 'center', bottom: 'flex-end' }[frame.vertical ?? 'top'], padding: `${frame.style.paddingMm * scale}mm`, fontFamily: frame.style.fontFamily, fontSize: `${frame.style.fontSizePt * scale}pt`, lineHeight: `${frame.style.lineHeightPt * scale}pt`, color: frame.style.color, fontWeight: frame.style.fontWeight, fontStyle: frame.style.fontStyle, textAlign: frame.style.alignment, hyphens: frame.style.hyphenation === false ? 'none' : 'auto' } : {}) }}>
-          {frame.kind === 'text' ? selected?.id === frame.id && !readOnly ? <MatterRichText label={labels.frameText} content={frame.content!} onChange={(content) => patchFrame(frame.id, { content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={frame.content!} />
+          {frame.kind === 'text' ? selected?.id === frame.id && !readOnly && !showResolved ? <MatterRichText label={labels.frameText} content={frame.content!} onChange={(content) => patchFrame(frame.id, { content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={resolvePublicationMatterText(frame.content!, manuscript, frame.style.language || undefined).content} />
             : frame.image ? <div className="omi-matter-frame-image" style={matterImageStyle(frame)} {...pointer} onPointerDown={(event) => { if (selected?.id === frame.id && editImage) start(event, frame, 'image-move'); }}><MatterAssetImage manuscriptId={manuscript.id} assetId={frame.image.assetId} alt={frame.image.alt} fit={frame.image.fit} />{selected?.id === frame.id && editImage && !readOnly ? <button type="button" className="omi-matter-frame-resize" aria-label={copy.resizeGraphic} {...pointer} onPointerDown={(event) => start(event, frame, 'image-resize')}>↘</button> : null}</div> : <span>{labels.emptyImage}</span>}
         </div>
         {frame.style.strokeWidthMm > 0 ? <div className="omi-matter-frame-outline" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, { ...frame.style, fill: 'none' }) }} /> : null}

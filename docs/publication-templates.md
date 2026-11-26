@@ -28,3 +28,46 @@ A saját sablonok az eszköz IndexedDB-tárában maradnak meg. Új sablon menthe
 A **Sablon exportálása** egy `.omi-template.json` fájlt készít a borítóképekkel együtt. A **Sablon importálása** ezt ellenőrzés után új példányként menti el. A képek méretét, típusát, hivatkozásait és SHA-256 ellenőrzőösszegét is ellenőrzi a program. A hordozható sablon legfeljebb 24 MiB lehet. Hiányzó kép vagy sikertelen mentés esetén a művelet hibával megáll.
 
 Az alkalmazott formátum önálló pillanatképként bekerül a célkiadvány `.omi` adataiba. A sablon későbbi módosítása vagy törlése nem változtatja meg a már elkészült kiadványokat. A további tipográfiai szerkesztés a kiadvány saját formátumát frissíti; a HTML/PDF és IDML kiadványexport is ezt a mentett formátumot használja.
+
+## Címnegyed – dinamikus adatmezők (shortcode-ok)
+
+Nyissa meg: Publikálás → Kiadványszerkesztő → Borítók és címnegyed. Válasszon oldalt vagy szövegkeretet, helyezze el a kurzort, majd válassza az Adatmező beszúrása menüt. A shortcode kézzel is beírható. Egy kódon belül ne váltson formázást. Az Adatmezők előnézete a behelyettesített szöveget mutatja; kikapcsolásával a kódok szerkeszthetők.
+
+| Shortcode | Tartalom |
+| --- | --- |
+| `[omi:imprint]` | Impresszum (kolofon vagy kiadó/cím/kapcsolattartó, copyright és elérhető azonosítók) |
+| `[omi:editorial-board]` | Szerkesztőbizottság – natív nyilvános névsor szerepkörönként |
+| `[omi:authors]` | A kiadvány szerzői |
+| `[omi:contents]` | Tartalomjegyzék: tanulmányok szerzői és címei |
+| `[omi:journal]` | Folyóirat vagy sorozat neve |
+| `[omi:publisher]` | Kiadó |
+| `[omi:address]` | Postacím vagy kiadási hely |
+| `[omi:contact]` | Kapcsolattartó neve |
+| `[omi:title]` | Kiadvány címe |
+| `[omi:volume]` | Évfolyam vagy kötet |
+| `[omi:number]` | Lapszám |
+| `[omi:year]` | Kiadás éve |
+| `[omi:issn]` | Nyomtatott ISSN |
+| `[omi:eissn]` | Elektronikus ISSN |
+| `[omi:isbn]` | ISBN |
+| `[omi:doi]` | DOI |
+
+Mentse a formátumot kiadványsablonként: a kódok megmaradnak, és az aktuális kiadvány adataira oldódnak fel az előnézetben, valamint a HTML/PDF-kimenetben.
+
+Már importált lapszámot nyisson meg ismét az OJS-ből, majd válassza az Impresszum és szerkesztőbizottság frissítése műveletet. A szöveg és a tördelés megmarad. A natív OJS-névsorhoz kompatibilis plugin szükséges; egyedi szerkesztőbizottsági bővítményhez további illesztés kellhet.
+
+A hiányzó vagy ismeretlen mező kódja látható marad, és exportálási hibajelzést eredményez. Ellenőrizze a PDF-et és a keretek túlcsordulását. A tartalomjegyzék szerzőket és címeket tartalmaz, oldalszámokat nem. Az IDML, DOCX és ODT shortcode-feloldása még nem igazolt.
+
+```text
+IMPRESSZUM
+[omi:imprint]
+
+Szerkesztőbizottság
+[omi:editorial-board]
+
+[omi:journal] [omi:volume]/[omi:number] ([omi:year])
+```
+
+### Többnyelvű címnegyed
+
+A `[omi:journal:hu]` és `[omi:journal:en]`, illetve a `[omi:editorial-board:hu]` és `[omi:editorial-board:en]` egymás mellett is használható. A nyelvi utótag a sablon része; hiányában a keret, majd a dokumentum nyelve érvényes. A hiányzó OJS-nyelvi változatot nem fordítjuk le automatikusan. A megfelelő adatokat az OJS-ben kell kitölteni, majd a lapszám impresszumát frissíteni.

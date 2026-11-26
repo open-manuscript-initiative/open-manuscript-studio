@@ -1,3 +1,4 @@
+import { createRunningStudyFields, normalizeRunningShortcodes } from '../model/publicationRunningShortcodes';
 import { HeaderNoteInsertButton } from './HeaderNoteInsertButton';
 import { PublicationPageNavigator } from './PublicationPageNavigator';
 import { createPortal } from 'react-dom';
@@ -1029,6 +1030,7 @@ export function PublicationDocumentCanvas({
     manuscript.sections,
     scale,
   );
+  const runningStudyFields = useMemo(() => createRunningStudyFields(manuscript), [manuscript]);
   const runningHeaderValues = {
     articleTitle: manuscript.title,
     shortArticleTitle: shorten(manuscript.title, 72),
@@ -1273,7 +1275,7 @@ export function PublicationDocumentCanvas({
               const header = pageNumber % 2 === 0 ? resolved.runningHeaders.even : resolved.runningHeaders.odd;
               const showRunningHeader = resolved.runningHeaders.enabled && (!geometry.firstSectionPage || resolved.showFirstPage);
               const headerSection = manuscript.sections.find((section) => section.id === (resolved.headerSectionId ?? geometry.sectionId));
-              const headerValues = { ...runningHeaderValues, sectionTitle: headerSection?.title ?? '', shortSectionTitle: shorten(headerSection?.title ?? '', 72), pageNumber: String(pageNumber) };
+              const headerValues = { ...runningHeaderValues, ...(runningStudyFields.bySection.get(geometry.sectionId ?? '') ?? runningStudyFields.fallback), sectionTitle: headerSection?.title ?? '', shortSectionTitle: shorten(headerSection?.title ?? '', 72), pageNumber: String(pageNumber) };
 
               return (
                 <div
@@ -1607,8 +1609,8 @@ function fillRunningHeaderTemplate(
   template: string,
   values: Record<string, string>,
 ): string {
-  return template
-    .replace(/\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g, (_match, key: string) => Object.hasOwn(values, key) ? values[key]! : '')
+  return normalizeRunningShortcodes(template)
+    .replace(/\{\{([a-zA-Z][a-zA-Z0-9-]*)\}\}/g, (_match, key: string) => Object.hasOwn(values, key) ? values[key]! : '')
     .replace(/\s*\/\s*(?=\()/g, ' ')
     .replace(/\(\s*\)/g, '')
     .replace(/\s{2,}/g, ' ')

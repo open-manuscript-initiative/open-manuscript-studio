@@ -129,3 +129,7 @@ a nem megadott értékek a környező jegyzet betűformázását követik. Itt a
 Az **Öröklés a hivatkozási beállításokból** visszaállítja a publikációs profil
 beállítását. Ezek a módosítások a megjelenítést érintik, a hivatkozási rekordok
 és a jegyzetek eredeti szövege megmarad.
+
+## Tanulmány- és oldalfüggő shortcode-ok
+
+Az **Oldalstílusok és szakaszfejlécek** páros és páratlan élőfejmezőiben használható: `[omi:article-doi]` (tanulmány DOI-ja), `[omi:article-title]` (címe), `[omi:short-article-title]` (rövidített címe), `[omi:article-authors]` (szerzői), `[omi:page-number]` (nyomtatott oldalszám). Az alszakasz a befoglaló tanulmány adatait kapja. A lapszám DOI-ja nem helyettesíti a tanulmány DOI-ját. Példa: páros bal `[omi:page-number]`, páros jobb `[omi:article-authors]`, páratlan bal `[omi:short-article-title]`, páratlan jobb `[omi:page-number]`. Egy oldalon több tanulmány esetén az oldal szakaszkörnyezete számít; egyértelmű élőfejhez kezdjen minden tanulmányt új oldalon. A mezők a belív futó fejlécében használhatók, nem a borítóban; a folyamatos HTML nem tartalmaz fizikai élőfejet. Ellenőrizze a végleges PDF-et. A fejlesztés nem oszt ki DOI-t és nem alakítja át a láblécet.

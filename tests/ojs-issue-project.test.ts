@@ -1,14 +1,17 @@
+import { createRunningStudyFields, normalizeRunningShortcodes } from '../src/model/publicationRunningShortcodes.ts';
+import { withPrintRunningHeader, clonePublicationStyleTemplate } from '../src/services/publicationStyleExport.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue } from '../src/integrations/ojs/reimportOjsIssue.ts';
+import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue, refreshOjsPublicationMatter } from '../src/integrations/ojs/reimportOjsIssue.ts';
 import { createJournalIssueFromOjsHandoff, OJS_ISSUE_ORIGIN, type OjsIssueHandoff } from '../src/integrations/ojs/importOjsIssue.ts';
 import { getDocumentStructureProfile } from '../src/model/documentProfile.ts';
-import { getPublicationMatter } from '../src/model/publicationMatter.ts';
+import { createPublicationMatter, getPublicationMatter, PUBLICATION_MATTER_EXTENSION } from '../src/model/publicationMatter.ts';
 import { getParentSectionId } from '../src/model/sectionStructure.ts';
 import { projectIssueStudyForExport } from '../src/model/issueStudyExport.ts';
 import { getIssueStudyCitationMetadata } from '../src/model/issueStudyCitationMetadata.ts';
 import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { renderJatsArticle } from '../src/services/exportJats.ts';
+import { publicationShortcodeValues, resolvePublicationShortcodes, resolvePublicationMatterText } from '../src/model/publicationShortcodes.ts';
 
 function fixture(): OjsIssueHandoff {
   const article = (id: string, title: string, sequence: number) => ({
@@ -170,4 +173,95 @@ test('issue HTML displays public authors under the correct study, not at issue l
   const article = projectIssueStudyForExport(issue, roots[0]!.id);
   assert.match(renderHtmlArticle(article).html, /FirstAuthor/);
   assert.doesNotMatch(renderHtmlArticle(article).html, /SecondAuthor/);
+});
+
+test('publication matter shortcodes expand current issue metadata and public authors without mutating template', () => {
+  const input = fixture();
+  input.context.publicationMatter = { publisher: { hu: 'Kiadó & Társai' }, address: 'Sárospatak', editorialBoard: [{ role: 'Főszerkesztő', members: [{ name: 'Public Editor', email: 'private@example.test' }] }] };
+  input.sections[0]!.articles[0]!.contributors = [{ name: { given: 'Ada', family: 'FirstAuthor' }, email: 'private-author@example.test' }];
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '[omi:imprint] / [omi:editorial-board] / [omi:authors]', marks: [{ type: 'bold' }] }] }] });
+  const values = publicationShortcodeValues(issue);
+  const resolved = resolvePublicationShortcodes(content, values);
+  assert.deepEqual(resolved.missing, []);
+  assert.match(resolved.content, /Public Editor/);
+  assert.match(resolved.content, /FirstAuthor/);
+  assert.match(resolved.content, /hardBreak/);
+  assert.doesNotMatch(resolved.content, /private@|private-author/);
+  const matter = createPublicationMatter(issue);
+  const page = matter.pages.find(item => item.kind === 'imprint-page')!;
+  page.enabled = true; page.content = content;
+  issue.extensions = { ...issue.extensions, [PUBLICATION_MATTER_EXTENSION]: matter };
+  const html = renderHtmlArticle(issue).html;
+  assert.match(html, /Kiadó &amp; Társai/);
+  assert.match(html, /Public Editor/);
+  assert.match(page.content, /\[omi:imprint\]/);
+  assert.deepEqual(resolvePublicationShortcodes(content.replace('[omi:authors]', '[omi:unknown]'), values).missing, ['unknown']);
+});
+
+test('refreshes only OJS imprint and masthead metadata on a previously imported issue', () => {
+  const input = fixture();
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const incoming = fixture();
+  incoming.context.publicationMatter = { publisher: 'New publisher' };
+  const next = refreshOjsPublicationMatter(issue, incoming);
+  assert.equal(publicationShortcodeValues(next).publisher, 'New publisher');
+  assert.deepEqual(next.sections, issue.sections);
+  assert.deepEqual(next.contributions, issue.contributions);
+  assert.equal(next.id, issue.id);
+  assert.equal(next.revisionHistory.revisions.length, issue.revisionHistory.revisions.length + 1);
+  assert.equal(refreshOjsPublicationMatter(next, incoming), next);
+  assert.throws(() => refreshOjsPublicationMatter(next, { ...incoming, installation: { installationId: 'other' } }));
+});
+
+test('bilingual title matter resolves locale variants independently of document language', () => {
+  const input = fixture();
+  input.context.name = { hu_HU: 'Folyóirat', en_US: 'Journal' };
+  input.context.publicationMatter = { publisher: { hu: 'Kiadó', en: 'Publisher' }, editorialBoard: [{ role: { hu: 'Főszerkesztő', en_US: 'Editor-in-chief' }, members: [{ name: 'Editor Name', affiliation: { hu: 'Egyetem', en: 'University' } }] }] };
+  const article = input.sections[0]!.articles[0]!;
+  article.submission = { ...article.submission, title: { hu: 'Első tanulmány', en: 'First study' } };
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const rich = (text: string) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
+  const result = resolvePublicationMatterText(rich('[omi:journal:hu] / [omi:journal:en] / [omi:editorial-board:en_US] / [omi:publisher:de]'), issue);
+  const nodes = JSON.parse(result.content).content[0].content;
+  assert.equal(nodes.slice(0, 3).map((node: { text?: string }) => node.text ?? '').join(''), 'Folyóirat / Journal');
+  assert.match(result.content, /Editor-in-chief/);
+  assert.match(result.content, /University/);
+  assert.doesNotMatch(result.content, /Főszerkesztő|Egyetem/);
+  assert.deepEqual(result.missing, ['publisher:de']);
+  assert.match(resolvePublicationMatterText(rich('[omi:journal]'), issue, 'en').content, /Journal/);
+  assert.match(resolvePublicationMatterText(rich('[omi:issn:en]'), issue).content, /1234-5679/);
+  const matter = createPublicationMatter(issue);
+  const page = matter.pages.find(item => item.kind === 'imprint-page')!;
+  page.enabled = true; page.content = rich('[omi:editorial-board:hu] / [omi:editorial-board:en]');
+  issue.extensions = { ...issue.extensions, [PUBLICATION_MATTER_EXTENSION]: matter };
+  const html = renderHtmlArticle(issue).html;
+  assert.match(html, /Főszerkesztő/);
+  assert.match(html, /Editor-in-chief/);
+  assert.match(page.content, /\[omi:editorial-board:en\]/);
+});
+
+test('running fields use the current study DOI and real page counter', () => {
+  const input = fixture();
+  input.issue.doi = '10.1234/issue';
+  for (const [index, section] of input.sections.entries()) {
+    const article = section.articles[0]!;
+    article.submission = { ...article.submission, publicationExternalId: article.publicationExternalId, citationMetadata: { doi: '10.1234/article.' + index } };
+  }
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const roots = issue.sections.filter(section => !getParentSectionId(section));
+  const fields = createRunningStudyFields(issue);
+  assert.equal(fields.bySection.get(roots[0]!.id)?.['article-doi'], '10.1234/article.0');
+  assert.equal(fields.bySection.get(roots[1]!.id)?.['article-doi'], '10.1234/article.1');
+  assert.equal(fields.fallback['article-doi'], '');
+  assert.equal(normalizeRunningShortcodes('[omi:page-number]'), '{{pageNumber}}');
+  const style = clonePublicationStyleTemplate();
+  style.runningHeaders.enabled = true;
+  style.runningHeaders.odd.left = '[omi:article-doi]';
+  style.runningHeaders.odd.right = '[omi:page-number]';
+  const html = withPrintRunningHeader(renderHtmlArticle(issue).html, issue, style);
+  assert.match(html, /string\(omi_running_article_doi, first\)/);
+  assert.match(html, /omi_running_article_doi "10\.1234\/article\.0"/);
+  assert.match(html, /omi_running_article_doi "10\.1234\/article\.1"/);
+  assert.match(html, /counter\(page\)/);
 });
