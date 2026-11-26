@@ -22,8 +22,8 @@ export interface ApprovedIssuePdfSet {
   origin: string;
   outputs: readonly ReviewedIssuePdfArtifact[];
 }
-export function IssuePdfRangeReviewPanel({ style, active, onApproved }: {
-  style: PublicationStyle; active: boolean; onApproved?: (set: ApprovedIssuePdfSet | null) => void;
+export function IssuePdfRangeReviewPanel({ style, active, onApproved, onBusyChange }: {
+  style: PublicationStyle; active: boolean; onApproved?: (set: ApprovedIssuePdfSet | null) => void; onBusyChange?: (busy: boolean) => void;
 }) {
   const { locale } = useTranslation();
   const copy = labels[locale as keyof typeof labels] ?? labels.en;
@@ -51,7 +51,7 @@ export function IssuePdfRangeReviewPanel({ style, active, onApproved }: {
   }
   async function prepare() {
     if (lock.current || !latest.current.active) return;
-    lock.current = true;
+    lock.current = true; onBusyChange?.(true);
     setBusy('prepare'); setError(''); setPlan(undefined); setRows([]); setOutputs([]); onApproved?.(null);
     try {
       await externalizeActiveManuscriptAssets();
@@ -64,11 +64,11 @@ export function IssuePdfRangeReviewPanel({ style, active, onApproved }: {
       setOrigin(server);
       setPlan(result); setRows(createIssuePdfReviewRows(result.proposals));
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { lock.current = false; setBusy(null); }
+    finally { lock.current = false; setBusy(null); onBusyChange?.(false); }
   }
   async function extract() {
     if (lock.current || !plan || !valid) return;
-    lock.current = true;
+    lock.current = true; onBusyChange?.(true);
     setBusy('extract'); setError(''); setOutputs([]); onApproved?.(null);
     try {
       assertCurrent(plan, origin);
@@ -82,7 +82,7 @@ export function IssuePdfRangeReviewPanel({ style, active, onApproved }: {
       setOutputs(result);
       onApproved?.({ plan, origin, outputs: result });
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
-    finally { lock.current = false; setBusy(null); }
+    finally { lock.current = false; setBusy(null); onBusyChange?.(false); }
   }
   function save(blob: Blob, fileName: string) {
     if (!plan || lock.current) return;
