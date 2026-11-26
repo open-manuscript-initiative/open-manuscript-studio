@@ -188,6 +188,30 @@ test('panel placement also works with the keyboard and can return to selection f
 });
 
 
+test('authoring font family picker changes selected text and restores the inherited font', async ({ page }) => {
+  const { editor, toolbar } = await openToolbar(page);
+  await toolbar.getByRole('button', { name: 'Character formatting', exact: true }).click();
+  const panel = toolbar.locator('.omi-direct-formatting');
+  const family = panel.getByRole('combobox', { name: 'Font family', exact: true });
+  await expect(family.locator('option[value="Arial"]')).toHaveText('Arial');
+  await family.selectOption('Arial');
+  const formatted = editor.locator('[data-omi-source-font="Arial"]');
+  await expect(formatted).toHaveText('Select these words');
+  await expect(formatted).toHaveCSS('font-family', /Arial/);
+  await expect(family).toHaveValue('Arial');
+  await family.selectOption('Times New Roman');
+  await expect(editor.locator('[data-omi-source-font="Times New Roman"]')).toHaveText('Select these words');
+  await expect(editor.locator('[data-omi-source-font="Arial"]')).toHaveCount(0);
+  const custom = panel.getByRole('textbox', { name: 'Font family', exact: true });
+  await custom.fill('Publisher Serif');
+  await panel.getByRole('button', { name: 'Apply: Font family', exact: true }).click();
+  await expect(editor.locator('[data-omi-source-font="Publisher Serif"]')).toHaveText('Select these words');
+  await expect(family).toHaveValue('Publisher Serif');
+  await panel.getByRole('button', { name: 'Reset: Font family', exact: true }).click();
+  await expect(editor.locator('[data-omi-source-font]')).toHaveCount(0);
+  await expect(editor).toContainText('Select these words to format them.');
+});
+
 test('shared character and paragraph icon panels edit independent properties and restore inherited formatting', async ({ page }) => {
   const { editor, toolbar } = await openToolbar(page);
   const character = toolbar.getByRole('button', { name: 'Character formatting', exact: true });
