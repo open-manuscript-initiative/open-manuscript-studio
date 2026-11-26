@@ -25,7 +25,7 @@ function record(value: unknown): Record<string, unknown> | undefined {
 }
 function scalar(value: unknown): string | undefined {
   const text = typeof value === 'string' ? value.trim() : typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
-  return text && text.length <= 512 && !/[\u0000-\u001f\u007f]/u.test(text) ? text : undefined;
+  return text && text.length <= 512 && ![...text].some(ch => ch.charCodeAt(0) < 32 || ch.charCodeAt(0) === 127) ? text : undefined;
 }
 function localized(value: unknown, locale: string): string | undefined {
   const map = record(value);
