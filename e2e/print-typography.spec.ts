@@ -206,7 +206,7 @@ test('title-only publication accepts typing and reaches an idle pagination state
     let passes = 0;
     const observer = new MutationObserver((records) => { passes += records.length; });
     observer.observe(element, { attributes: true, attributeFilter: ['data-publication-measuring'] });
-    await new Promise<void>((resolve) => setTimeout(resolve, 400));
+    await new Promise<void>((resolve) => { setTimeout(resolve, 400); });
     observer.disconnect();
     return passes;
   }), { timeout: 10_000 }).toBe(0);
