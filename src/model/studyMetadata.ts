@@ -12,6 +12,8 @@ export interface OmiStudyMetadata {
   abstracts?: Partial<Record<OmiLocale, string>>;
   keywordsByLocale?: Partial<Record<OmiLocale, string[]>>;
   scholarlyMetadata?: OmiScholarlyMetadata;
+  /** Explicit bibliography-only records assigned to this study. */
+  bibliographyAdditionalRecordIds?: string[];
   source?: {
     format: 'omi';
     manuscriptId: string;

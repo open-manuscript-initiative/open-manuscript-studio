@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createIssueProgressTicket, updateIssueProgress, finishIssueProgress, readIssueProgress } from '../server/src/integrations/ojs/issueImportProgress.ts';
 import { validateOjsLaunchTarget } from '../server/src/integrations/ojs/issueLaunchBoundary.ts';
 import { createOjsIssueHandoff, consumeOjsIssueHandoff } from '../server/src/integrations/ojs/issueHandoffStore.ts';
 import type { LaunchClaims } from '../server/src/integrations/ojs/launchVerifier.ts';
@@ -54,4 +55,27 @@ test('pending issue handoffs have a count limit and release capacity on consume'
   } finally {
     tokens.forEach(consumeOjsIssueHandoff);
   }
+});
+
+test('issue progress exposes only real milestones and handoff after success', () => {
+  const ticket = createIssueProgressTicket();
+  assert.match(ticket, /^[A-Za-z0-9_-]{43}$/);
+  assert.equal(readIssueProgress('unknown'), undefined);
+  assert.deepEqual(readIssueProgress(ticket), { state: 'running', progress: { phase: 'manifest', completed: 0, total: null } });
+  updateIssueProgress(ticket, { phase: 'download', completed: 1, total: 3, title: 'Second article' });
+  assert.deepEqual(readIssueProgress(ticket), { state: 'running', progress: { phase: 'download', completed: 1, total: 3, title: 'Second article' } });
+  updateIssueProgress(ticket, { phase: 'finalize', completed: 3, total: 3 });
+  finishIssueProgress(ticket, 'handoff');
+  assert.deepEqual(readIssueProgress(ticket), { state: 'ready', progress: { phase: 'finalize', completed: 3, total: 3 }, handoffToken: 'handoff' });
+  finishIssueProgress(ticket);
+  assert.equal(readIssueProgress(ticket)?.state, 'ready');
+});
+
+test('failed import never discloses a partial handoff', () => {
+  const ticket = createIssueProgressTicket();
+  updateIssueProgress(ticket, { phase: 'convert', completed: 0, total: 2, title: 'Broken manuscript' });
+  finishIssueProgress(ticket);
+  assert.deepEqual(readIssueProgress(ticket), { state: 'failed', progress: { phase: 'convert', completed: 0, total: 2, title: 'Broken manuscript' } });
+  finishIssueProgress(ticket, 'should-not-appear');
+  assert.equal(readIssueProgress(ticket)?.state, 'failed');
 });

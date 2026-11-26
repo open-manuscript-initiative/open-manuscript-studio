@@ -34,3 +34,20 @@ test('published editorial API snapshot is generated from current transport DTOs'
     false,
   );
 });
+
+
+test('printed page contract rejects unconfirmed changes, foreign receipts and invalid pagination', async () => {
+  const { ojsIssuePagesRequest, validateOjsIssuePagesResponse } = await import('../server/dist/contracts/ojsIssuePagesContract.js');
+  const identity = { installationId: 'journal', contextId: 1, issueId: 4, submissionId: 12, publicationId: 13 };
+  const input = { ...identity, action: 'apply', firstPrintedPage: 101, lastPrintedPage: 118, expectedWorkflowToken: 'a'.repeat(64), confirmed: true };
+  const snapshot = { ...identity, protocol: 'omi-issue-page-range/1', pages: '101-118', workflowToken: 'b'.repeat(64), published: false };
+  const receipt = { ...snapshot, previousPages: null, previousWorkflowToken: input.expectedWorkflowToken, unchanged: false };
+  assert.equal(ojsIssuePagesRequest.safeParse(input).success, true);
+  assert.equal(ojsIssuePagesRequest.safeParse({ ...input, confirmed: false }).success, false);
+  assert.equal(ojsIssuePagesRequest.safeParse({ ...input, firstPrintedPage: 119 }).success, false);
+  assert.equal(ojsIssuePagesRequest.safeParse({ ...input, firstPhysicalPage: 3 }).success, false);
+  assert.doesNotThrow(() => validateOjsIssuePagesResponse(input, { snapshot, receipt }));
+  assert.throws(() => validateOjsIssuePagesResponse(input, { snapshot, receipt: { ...receipt, publicationId: 99 } }));
+  assert.throws(() => validateOjsIssuePagesResponse(input, { snapshot, receipt: { ...receipt, previousWorkflowToken: 'c'.repeat(64) } }));
+  assert.throws(() => validateOjsIssuePagesResponse(input, { snapshot, receipt: { ...receipt, unchanged: true } }));
+});

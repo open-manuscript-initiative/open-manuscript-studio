@@ -1,3 +1,4 @@
+import type { IssueTransferProgress } from './issueImportProgress.js';
 import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { applyDirectFormattingHeadingInference } from './docxDirectHeading.js';
 import { applyInlineSemantics } from './docxInlineSemantics.js';
@@ -433,6 +434,7 @@ export async function loadOjsIssueImportData(
   payload: string,
   signature: string,
   installationBaseUrl: string,
+  report: (progress: IssueTransferProgress) => void = () => {},
 ): Promise<OjsIssueImportData> {
   requireAnyScope(claims, ['issue.import.read']);
   const expectedIssue = issueId(claims.issue?.externalId);
@@ -449,6 +451,7 @@ export async function loadOjsIssueImportData(
     const body = await readBoundedIssueBody(response, MAX_ISSUE_JSON_BYTES);
     return { data: issueObject(JSON.parse(body.toString('utf8'))), finalUrl: new URL(response.url) };
   };
+  report({ phase: 'manifest', completed: 0, total: null });
   const manifest = await fetchIssueJson(manifestOperation, apiUrl(claims, manifestOperation));
   const issue = issueObject(manifest.data.issue);
   const context = issueObject(manifest.data.context);
@@ -456,6 +459,13 @@ export async function loadOjsIssueImportData(
     throw new Error('OJS returned a different or published issue.');
   }
   if (!Array.isArray(manifest.data.sections)) throw new Error('OJS issue sections are missing.');
+  const total = manifest.data.sections.reduce((sum: number, value: unknown) => {
+    const section = issueObject(value);
+    if (!Array.isArray(section.articles)) throw new Error('OJS issue articles are missing.');
+    return sum + section.articles.length;
+  }, 0);
+  if (total > MAX_ISSUE_ARTICLES) throw new Error('OJS issue exceeds the 100 article import limit.');
+  report({ phase: 'manifest', completed: 0, total });
   const sections: OjsIssueSection[] = [];
   const seenSections = new Set<string>();
   const seenArticles = new Set<string>();
@@ -487,6 +497,14 @@ export async function loadOjsIssueImportData(
       seenArticles.add(submissionExternalId);
       if (++count > MAX_ISSUE_ARTICLES) throw new Error('OJS issue exceeds the 100 article import limit.');
       if (Date.now() >= claims.exp * 1000) throw new Error('OJS issue assertion expired during import.');
+      const rawTitle = article.submission && typeof article.submission === 'object' ? (article.submission as Record<string, unknown>).title : undefined;
+      const primaryLocale = article.submission && typeof article.submission === 'object' ? (article.submission as Record<string, unknown>).primaryLocale : undefined;
+      const titles = rawTitle && typeof rawTitle === 'object' && !Array.isArray(rawTitle) ? rawTitle as Record<string, unknown> : {};
+      const candidateTitle = (typeof primaryLocale === 'string' ? titles[primaryLocale] : undefined) ??
+        (typeof rawTitle === 'string' ? rawTitle : Object.values(titles).find(value => typeof value === 'string' && value.trim()));
+      const title = typeof candidateTitle === 'string' && candidateTitle.trim() ? candidateTitle.trim().slice(0, 512) : submissionExternalId;
+      const articleProgress = (phase: IssueTransferProgress['phase'], completed = count - 1) => report({ phase, completed, total, title });
+      articleProgress('metadata');
       const operation = `issue-import/articles/${submissionExternalId}`;
       const articleResponse = await fetchIssueJson(operation,
         siblingOperationUrl(manifest.finalUrl, manifestOperation, operation));
@@ -505,6 +523,7 @@ export async function loadOjsIssueImportData(
       const fileId = issueId(candidate.externalId);
       if (Number(candidate.size || 0) > MAX_SOURCE_FILE_BYTES) throw new Error(`OJS article ${submissionExternalId} exceeds the source size limit.`);
       const fileOperation = `${operation}/files/${fileId}/content`;
+      articleProgress('download');
       const sourceResponse = await fetchWithExplicitRedirects(fileOperation,
         siblingOperationUrl(manifest.finalUrl, manifestOperation, fileOperation),
         authorization, trustedOrigin, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
@@ -513,6 +532,7 @@ export async function loadOjsIssueImportData(
         throw new Error(`OJS article ${submissionExternalId} source returned HTTP ${sourceResponse.status}.`);
       }
       const bytes = await readBoundedIssueBody(sourceResponse, MAX_SOURCE_FILE_BYTES);
+      articleProgress('convert');
       const sourceDocument = convertOjsSource(bytes, { ...candidate, externalId: fileId });
       const result: OjsIssueArticle = {
         submissionExternalId, publicationExternalId, sequence: articleSequence, submission,
@@ -521,8 +541,10 @@ export async function loadOjsIssueImportData(
       };
       addSize(result);
       resultSection.articles.push(result);
+      articleProgress('article-complete', count);
     }
     sections.push(resultSection);
   }
+  report({ phase: 'finalize', completed: count, total });
   return { context, issue, sections };
 }

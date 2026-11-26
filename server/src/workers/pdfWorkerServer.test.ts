@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { encodeIssuePdfSlice, decodeIssuePdfSlice, MAX_ISSUE_PDF_PAGES } from '../services/issuePdfSlice.js';
+import { encodeIssuePdfSlice, decodeIssuePdfSlice, parseIssuePageText, MAX_ISSUE_PDF_PAGES } from '../services/issuePdfSlice.js';
 import { createPdfWorkerServer } from './pdfWorkerServer.js';
 import { configuredPdfWorkerSocket, dispatchPdfWorkerTask } from '../security/pdfWorkerTransport.js';
 
@@ -99,4 +99,30 @@ test('PDF slice requests travel through the same isolated Unix socket', async (t
   });
   const result = await dispatchPdfWorkerTask('slice', encodeIssuePdfSlice(Buffer.from('%PDF-issue'), 2, 3), 'owner-1', socket, 3000);
   assert.equal(result.toString(), '%PDF-article');
+});
+
+
+test('physical page text preserves blank sheets and refuses inconsistent counts', () => {
+  assert.deepEqual(parseIssuePageText('cover\f\farticle\f', 3), ['cover', '', 'article']);
+  assert.deepEqual(parseIssuePageText('\f', 1), ['']);
+  assert.throws(() => parseIssuePageText('one\f', 2));
+  assert.throws(() => parseIssuePageText('one\ftwo\f', 1));
+});
+
+test('page evidence travels over the isolated worker socket', async (t) => {
+  if (process.platform === 'win32') return t.skip('AF_UNIX worker test requires Unix');
+  const directory = await mkdtemp(join(tmpdir(), 'omi-page-text-'));
+  const socket = join(directory, 'worker.sock');
+  const server = createPdfWorkerServer(async (kind, input) => {
+    assert.equal(kind, 'page-text');
+    assert.equal(input.toString(), '%PDF-issue');
+    return Buffer.from(JSON.stringify({ pageCount: 2, pages: ['', 'Article'] }));
+  });
+  await new Promise<void>((resolve) => { server.listen(socket, resolve); });
+  t.after(async () => {
+    await new Promise<void>((resolve) => { server.close(() => resolve()); });
+    await rm(directory, { recursive: true, force: true });
+  });
+  const output = await dispatchPdfWorkerTask('page-text', Buffer.from('%PDF-issue'), 'owner-1', socket, 3000);
+  assert.deepEqual(JSON.parse(output.toString()), { pageCount: 2, pages: ['', 'Article'] });
 });

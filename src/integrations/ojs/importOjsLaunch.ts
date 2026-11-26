@@ -39,6 +39,9 @@ interface OjsContributor {
 
 interface OjsSubmission {
   externalId?: string;
+  publicationExternalId?: string;
+  /** Planned-issue editorial projection; not a publication confirmation. */
+  citationMetadata?: { doi?: string | null; pages?: string | null };
   primaryLocale?: string;
   title?: OjsLocalizedValue;
   subtitle?: OjsLocalizedValue;

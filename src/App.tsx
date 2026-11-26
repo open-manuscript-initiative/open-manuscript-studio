@@ -47,7 +47,9 @@ import {
 import {
   createManuscriptFromOjsLaunch,
 } from './integrations/ojs/importOjsLaunchLocalized';
-import { createJournalIssueFromOjsHandoff, fetchOjsIssueHandoff, type OjsIssueHandoff, OJS_ISSUE_ORIGIN } from './integrations/ojs/importOjsIssue';
+import { createJournalIssueFromOjsHandoff, fetchOjsIssueHandoff, type OjsIssueHandoff } from './integrations/ojs/importOjsIssue';
+import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue, type OjsIssueReview } from './integrations/ojs/reimportOjsIssue';
+import { OjsIssueReimportReview } from './components/OjsIssueReimportReview';
 import { MobileLayout } from './mobile/navigation/MobileLayout';
 import { isMobileStudio } from './mobile/platform/platform';
 import { connectAndroidDocumentOpening } from './services/androidDocumentOpening';
@@ -70,7 +72,8 @@ type AuthView = 'login' | 'register';
 type ExternalImportState =
   | { status: 'idle'; message?: undefined }
   | { status: 'loading'; message?: undefined }
-  | { status: 'error'; message: string };
+  | { status: 'error'; message: string }
+  | { status: 'issue-review'; review: OjsIssueReview; launch: OjsIssueHandoff; manuscriptId: string };
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
 type AssignmentAwareLaunch = OjsLaunchPayload & {
@@ -276,15 +279,13 @@ function StudioApplication() {
           }
           const launch = await request;
           if (cancelled) return;
+          const tabs = documentSessions.getSnapshot().tabs.filter(tab => isSameOjsIssue(tab.manuscript, launch));
+          if (tabs.length > 1) throw new Error('Multiple copies of this OJS issue are open. Close the duplicates and launch again.');
+          if (tabs.length === 1) documentSessions.activate(tabs[0]!.id);
           const current = useStudioStore.getState();
-          const origin = current.manuscript.extensions?.[OJS_ISSUE_ORIGIN] as {
-            installationId?: string; context?: { externalId?: string }; issue?: { externalId?: string };
-          } | undefined;
-          // Do not overwrite edits to the same currently open issue on reimport.
-          if (!(current.hasOpenDocument && origin &&
-            origin.installationId === launch.installation?.installationId &&
-            origin.context?.externalId === launch.context?.externalId &&
-            origin.issue?.externalId === launch.issue?.externalId)) {
+          const existing = current.hasOpenDocument && isSameOjsIssue(current.manuscript, launch);
+          const review = existing ? compareOjsIssue(current.manuscript, launch) : null;
+          if (!existing) {
             const manuscript = createJournalIssueFromOjsHandoff(launch, issueImportLocale.current);
             if (current.hasOpenDocument) current.checkpoint('manual');
             clearDocumentClosedState();
@@ -297,7 +298,7 @@ function StudioApplication() {
           issueHandoffRequests.current.delete(issueToken);
           url.searchParams.delete('omiOjsIssueLaunch');
           window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
-          setExternalImportState({ status: 'idle' });
+          setExternalImportState(review ? { status: 'issue-review', review, launch, manuscriptId: current.manuscript.id } : { status: 'idle' });
           return;
         }
         if (ompHandoffToken) {
@@ -397,7 +398,7 @@ function StudioApplication() {
     return () => {
       cancelled = true;
     };
-  }, [loadManuscript, reviewMode]);
+  }, [loadManuscript, reviewMode, documentSessions]);
 
   useEffect(() => {
     if (reviewMode || !isNativeStudio()) return;
@@ -468,6 +469,25 @@ function StudioApplication() {
         />
       </main>
     );
+  }
+
+  if (externalImportState.status === 'issue-review') {
+    const { review, launch, manuscriptId } = externalImportState;
+    return <OjsIssueReimportReview review={review} locale={locale}
+      onKeep={() => setExternalImportState({ status: 'idle' })}
+      onAdd={() => {
+        try {
+          const current = useStudioStore.getState();
+          if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active issue changed. Launch it again from OJS.');
+          current.checkpoint('manual');
+          const base = useStudioStore.getState();
+          const next = appendNewOjsStudies(base.manuscript, launch);
+          if (next !== base.manuscript) useStudioStore.setState({ manuscript: next, pendingChangeSet: null });
+          setExternalImportState({ status: 'idle' });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      }} />;
   }
 
   if (externalImportState.status === 'loading') {

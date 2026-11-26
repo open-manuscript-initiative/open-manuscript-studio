@@ -82,3 +82,23 @@ export async function sliceRenderedIssuePdf(
   }
   return artifact;
 }
+
+
+/** Physical pages of the exact PDF supplied by the caller, including empty pages. */
+export async function inspectRenderedIssuePages(pdf: Blob): Promise<string[]> {
+  if (!pdf.size || pdf.size > 96 * 1024 * 1024) throw new Error('Invalid rendered issue PDF.');
+  const headers = new Headers({ Accept: 'application/json', 'Content-Type': 'application/pdf' });
+  if (isTauri()) {
+    headers.set('X-OMI-Native-Client', '1');
+    const token = globalThis.localStorage?.getItem(NATIVE_SESSION_KEY);
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+  const response = await fetch(`${getStudioApiBaseUrl()}/api/publication/inspect/pdf-pages`, {
+    method: 'POST', credentials: 'include', cache: 'no-store', headers, body: pdf,
+  });
+  if (!response.ok) throw await pdfRenderError(response);
+  const result = await response.json() as { pageCount?: unknown; pages?: unknown };
+  if (!Array.isArray(result.pages) || !result.pages.length || result.pages.length > 2000 ||
+      result.pageCount !== result.pages.length || !result.pages.every(page => typeof page === 'string')) throw new Error('Invalid PDF page evidence.');
+  return result.pages as string[];
+}

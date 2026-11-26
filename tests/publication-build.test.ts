@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { buildIssuePdfSlice } from '../src/services/issuePdfSliceBuild.ts';
+import { sha256HexSync } from '../src/model/stateDigest.ts';
 
 import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
 import {
@@ -218,4 +220,31 @@ test('serializes a portable sidecar manifest with a predictable filename', () =>
   const serialized = serializePublicationBuildManifest(build);
   assert.equal(serialized.endsWith('\n'), true);
   assert.deepEqual(JSON.parse(serialized), build);
+});
+
+
+test('extracted PDF provenance binds exact parent build, committed issue and approved physical range', () => {
+  const source = createVersionedTestManuscript();
+  const profile = resolvePublicationProfile(source);
+  const parentBytes = new TextEncoder().encode('%PDF-1.7\nissue\n%%EOF');
+  const parentBuild = createPublicationBuildManifest({
+    manuscript: source, profile, artifact: parentBytes,
+    output: { format: 'pdf-print', mediaType: 'application/pdf', fileName: 'issue.pdf' },
+    generator: GENERATOR,
+  });
+  const bytes = new TextEncoder().encode('%PDF-1.7\narticle\n%%EOF');
+  const input = { source, profile, parentBuild, layoutKey: 'a'.repeat(64),
+    rootSectionId: source.sections[0]!.id, firstPage: 3, lastPage: 7, pageCount: 20,
+    bytes, fileName: 'study-1.pdf', applicationVersion: '1.0.0' };
+  const result = buildIssuePdfSlice(input);
+  assert.equal(result.derivation.parentBuildId, parentBuild.id);
+  assert.equal(result.derivation.parentPdfSha256, sha256HexSync(parentBytes));
+  assert.equal(result.build.manuscript.revisionId, source.headRevisionId);
+  assert.equal(result.build.rendererInput?.digest.value, sha256HexSync(new TextEncoder().encode(result.derivationText)));
+  assert.equal(verifyPublicationBuildArtifact(result.build, bytes), true);
+  assert.notEqual(result.build.id, buildIssuePdfSlice({ ...input, firstPage: 4 }).build.id);
+  assert.throws(() => buildIssuePdfSlice({ ...input, lastPage: 21 }));
+  assert.throws(() => buildIssuePdfSlice({ ...input, rootSectionId: 'unknown' }));
+  assert.throws(() => buildIssuePdfSlice({ ...input, bytes: new TextEncoder().encode('invalid') }));
+  assert.throws(() => buildIssuePdfSlice({ ...input, profile: { ...profile, description: 'Changed' } }));
 });

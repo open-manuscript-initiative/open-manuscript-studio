@@ -2,6 +2,7 @@ import { createBlankManuscript } from '../../document/createBlankManuscript';
 import { ensureManuscriptRevisionStateDigests } from '../../model/revisionIntegrity';
 import { mergeOmiDocumentAsStudy } from '../../model/studyImport';
 import { createInitialVersioningEnvelope, extractManuscriptState } from '../../model/versioning';
+import { sha256HexSync } from '../../model/stateDigest';
 import type { OmiManuscript } from '../../types/omi';
 import { createManuscriptFromOjsLaunch } from './importOjsLaunchLocalized';
 import type { OjsLaunchPayload } from './importOjsLaunch';
@@ -9,7 +10,7 @@ import type { OjsLaunchPayload } from './importOjsLaunch';
 export const OJS_ISSUE_ORIGIN = 'org.openmanuscript.ojs.issue';
 
 type Data = Record<string, unknown>;
-interface IssueArticle extends Pick<OjsLaunchPayload, 'submission' | 'contributors' | 'sourceDocument'> {
+export interface IssueArticle extends Pick<OjsLaunchPayload, 'submission' | 'contributors' | 'sourceDocument'> {
   submissionExternalId: string;
   publicationExternalId: string;
   sequence: number;
@@ -77,7 +78,7 @@ export function createJournalIssueFromOjsHandoff(launch: OjsIssueHandoff, locale
   const seenSections = new Set<string>();
   const seenArticles = new Set<string>();
   const origins: Array<{ externalId: string; title: Record<string, unknown>; sequence: number;
-    articles: Array<{ rootSectionId: string; submissionExternalId: string; publicationExternalId: string; sequence: number; sourceFileExternalId?: string; submission: unknown }> }> = [];
+    articles: Array<{ rootSectionId: string; submissionExternalId: string; publicationExternalId: string; sequence: number; sourceFileExternalId?: string; sourceFingerprint?: string; submission: unknown }> }> = [];
   const importedAt = blank.createdAt;
   for (const section of launch.sections) {
     if (!id(section?.externalId) || seenSections.has(section.externalId) ||
@@ -101,7 +102,7 @@ export function createJournalIssueFromOjsHandoff(launch: OjsIssueHandoff, locale
       state = merged.state;
       origin.articles.push({ rootSectionId: merged.rootSectionId,
         submissionExternalId: article.submissionExternalId, publicationExternalId: article.publicationExternalId,
-        sequence: article.sequence, sourceFileExternalId: article.sourceDocument.fileExternalId,
+        sequence: article.sequence, sourceFileExternalId: article.sourceDocument.fileExternalId, sourceFingerprint: fingerprintOjsArticle(article),
         submission: structuredClone(article.submission) });
     }
     origins.push(origin);
@@ -120,4 +121,17 @@ export function createJournalIssueFromOjsHandoff(launch: OjsIssueHandoff, locale
     ...state,
     ...createInitialVersioningEnvelope(state, { summary: 'Imported planned OJS journal issue', timestamp: importedAt, completeness: 'complete' }),
   });
+}
+
+/** Stable over JSON object key order; includes the actual converted source and metadata. */
+export function fingerprintOjsArticle(article: IssueArticle): string {
+  const sort = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(sort);
+    if (record(value)) return Object.fromEntries(Object.keys(value).sort().map(key => [key, sort(value[key])]));
+    return value;
+  };
+  return sha256HexSync(new TextEncoder().encode(JSON.stringify(sort({
+    publicationExternalId: article.publicationExternalId, submission: article.submission,
+    contributors: article.contributors, sourceDocument: article.sourceDocument,
+  }))));
 }

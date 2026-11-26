@@ -4,6 +4,7 @@ import express from '../server/node_modules/express/index.js';
 
 let calls = 0;
 let failureCode = null;
+const pageInspectionCalls = [];
 
 class TestPdfError extends Error {
   constructor(code, message) {
@@ -41,6 +42,19 @@ mock.module(
           renderer: 'vivliostyle-cli',
           rendererVersion: '11.0.4',
         };
+      },
+    },
+  },
+);
+
+mock.module(
+  new URL('../server/dist/security/pdfWorkerTransport.js', import.meta.url).href,
+  {
+    namedExports: {
+      configuredPdfWorkerSocket: () => '/test/pdf-worker.sock',
+      dispatchPdfWorkerTask: async (task, input, owner) => {
+        pageInspectionCalls.push({ task, input, owner });
+        return Buffer.from(JSON.stringify({ pageCount: 1, pages: ['Article'] }));
       },
     },
   },
@@ -127,6 +141,39 @@ test('PDF artifact API enforces authentication, input and renderer semantics', a
     assert.equal(result.status, 400);
     assert.equal(result.body.error.code, 'PDF_INPUT_UNSAFE');
     failureCode = null;
+  });
+
+  await t.test('issue PDF inspection rejects non-binary bodies and invalid signatures before dispatch', async () => {
+    const inspect = (body, mediaType, user = 'editor') => originalFetch(
+      `http://127.0.0.1:${server.address().port}/publication/inspect/pdf-pages`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': mediaType, ...(user ? { 'x-test-user': user } : {}) },
+        body,
+      },
+    );
+    const valid = Buffer.from('%PDF-1.7\n%%EOF\n');
+    assert.equal((await inspect(valid, 'application/pdf', null)).status, 401);
+    for (const [body, type] of [
+      [JSON.stringify(['%PDF-1.7']), 'application/json'],
+      [JSON.stringify({ type: 'Buffer', data: [37, 80, 68, 70, 45] }), 'application/json'],
+      ['%PDF-1.7', 'text/plain'],
+      ['%PDF', 'application/pdf'],
+      [Buffer.from([0xa5, 0x50, 0x44, 0x46, 0x2d]), 'application/pdf'],
+      ['', 'application/pdf'],
+    ]) {
+      const result = await inspect(body, type);
+      assert.equal(result.status, 400);
+      assert.equal((await result.json()).error.code, 'INVALID_ISSUE_PDF');
+    }
+    assert.equal(pageInspectionCalls.length, 0);
+    const result = await inspect(valid, 'application/pdf');
+    assert.equal(result.status, 200);
+    assert.deepEqual(await result.json(), { pageCount: 1, pages: ['Article'] });
+    assert.equal(pageInspectionCalls.length, 1);
+    assert.equal(pageInspectionCalls[0].task, 'page-text');
+    assert.equal(pageInspectionCalls[0].owner, 'editor');
+    assert.deepEqual(pageInspectionCalls[0].input, valid);
   });
 
   await t.test('maps render failure to HTTP 422', async () => {
