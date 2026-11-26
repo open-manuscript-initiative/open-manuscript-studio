@@ -45,9 +45,7 @@ export function projectIssueStudyForExport(issue: OmiManuscript, rootSectionId: 
   }
   const publicIssue = publicPublicationManuscript(issue);
   const sections = structuredClone(publicIssue.sections.filter(section => sectionIds.has(section.id)));
-  // Do not duplicate the article title in the body: remove only the synthetic
-  // imported heading when it is the entire root body and no reference targets it.
-  // Keep the root identity and all headings otherwise.
+  // Keep the complete current subtree, including headings that may be reference targets.
   const annotations = publicIssue.annotations.filter(note => blockIds.has(note.targetBlockId));
   const strings = new Set<string>();
   collectStrings(sections, strings);
@@ -70,8 +68,9 @@ export function projectIssueStudyForExport(issue: OmiManuscript, rootSectionId: 
   additional.forEach(id => recordIds.add(id));
   const bibliographicRecords = (issue.bibliographicRecords ?? []).filter(record => recordIds.has(record.id));
   if (bibliographicRecords.length !== recordIds.size) throw new Error('Unresolved study bibliographic record.');
+  const manuscriptId = crypto.randomUUID();
   const contributions = issue.contributions.filter(item => sectionIds.has(item.targetId) && item.visibility === 'public')
-    .map(item => ({ ...item, targetId: item.targetId === rootSectionId ? rootSectionId : item.targetId }));
+    .map(item => ({ ...item, targetId: item.targetId === rootSectionId ? manuscriptId : item.targetId }));
   const agentIds = new Set(contributions.map(item => item.agentId));
   // Never include unrelated reviewers or issue-level contributors.
   const agents = issue.agents.filter(agent => agentIds.has(agent.id));
@@ -79,7 +78,7 @@ export function projectIssueStudyForExport(issue: OmiManuscript, rootSectionId: 
   const semanticFields = (issue.semanticFields ?? []).filter(field => field.scope === 'section' && field.sectionId && sectionIds.has(field.sectionId))
     .map(field => field.sectionId === rootSectionId ? { ...field, scope: 'manuscript' as const, sectionId: undefined } : field);
   const state: OmiManuscriptState = {
-    schema: issue.schema, id: rootSectionId, version: issue.version, identityModelVersion: issue.identityModelVersion,
+    schema: issue.schema, id: manuscriptId, version: issue.version, identityModelVersion: issue.identityModelVersion,
     locale: meta.locale, title: root.title || meta.title, subtitle: meta.subtitle, abstract: meta.abstract,
     keywords: meta.keywords ?? [], abstracts: meta.abstracts, keywordsByLocale: meta.keywordsByLocale,
     metadata: meta.scholarlyMetadata, documentStructure: createDocumentStructureProfile('study'),
