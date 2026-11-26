@@ -77,6 +77,9 @@ export function projectIssueStudyCitationMetadata(
     throw new Error('Article citation metadata belongs to another publication.');
   }
   const citation = record(submission.citationMetadata);
+  if (citation && submission.publicationExternalId !== String(target.publicationId)) {
+    throw new Error('Article DOI metadata lacks an exact publication identity.');
+  }
   const year = scalar(issue.year);
   const issueDoi = doi(issue.doi);
   const articleDoi = doi(citation?.doi);
