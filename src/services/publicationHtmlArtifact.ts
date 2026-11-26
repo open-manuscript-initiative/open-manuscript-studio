@@ -35,6 +35,7 @@ export function publicationHtmlFileName(
 export async function buildPublicationHtmlArtifact(
   manuscript: OmiManuscript,
   profile: OmiPublicationProfile = resolvePublicationProfile(manuscript),
+  assetOwnerId = manuscript.id,
 ): Promise<string> {
   if (getDocumentStructureProfile(manuscript).kind !== 'study') {
     throw new Error(
@@ -52,7 +53,7 @@ export async function buildPublicationHtmlArtifact(
     );
   }
 
-  return inlinePublicationArtifactImages(result.html, manuscript);
+  return inlinePublicationArtifactImages(result.html, manuscript, undefined, false, assetOwnerId);
 }
 
 /** Validate only referenced resources and inline exact registered bytes; never fetch remotely. */
@@ -61,6 +62,7 @@ export async function inlinePublicationArtifactImages(
   manuscript: OmiManuscript,
   maxBytes = 8 * 1024 * 1024,
   allowSvg = false,
+  assetOwnerId = manuscript.id,
 ): Promise<string> {
   let html = input;
   for (const asset of manuscript.assets ?? []) {
@@ -69,7 +71,7 @@ export async function inlinePublicationArtifactImages(
     if (![ 'image/png','image/jpeg','image/gif','image/webp', ...(allowSvg ? ['image/svg+xml'] : []) ].includes(asset.mediaType)) {
       throw new Error(`Unsupported publication image: ${asset.id}`);
     }
-    const bytes = await getAssetPayload(manuscript.id, asset.id);
+    const bytes = await getAssetPayload(assetOwnerId, asset.id);
     if (!bytes || bytes.byteLength !== asset.size || (await sha256Hex(bytes)) !== asset.checksum.value.toLowerCase()) {
       throw new Error(`Image integrity check failed: ${asset.id}`);
     }
