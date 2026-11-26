@@ -1,3 +1,8 @@
+import type { OmiPublicationBuild } from '../model/publicationBuild';
+import type { OmiPublicationProfile } from '../model/publicationProfile';
+import { createPublicationBuildManifest } from './publicationBuildManifest';
+import { buildIssuePdfSlice, type IssuePdfSliceDerivation } from './issuePdfSliceBuild';
+import { BUILD_INFO } from '../version';
 import type { OmiManuscript } from '../types/omi';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import { partitionManuscriptStudies } from '../model/sectionStructure';
@@ -10,6 +15,8 @@ import { inspectRenderedIssuePages, renderPdfArtifact, sliceRenderedIssuePdf } f
 
 export interface IssuePdfRangePlan {
   readonly pdf: Blob;
+  readonly parentBuild: OmiPublicationBuild;
+  readonly profile: OmiPublicationProfile;
   readonly source: OmiManuscript;
   readonly layoutKey: string;
   readonly renderer: string;
@@ -61,16 +68,31 @@ export async function prepareIssuePdfRangePlan(
   if (!anchors.length) throw new Error('No studies to export.');
   const rendered = await renderPdfArtifact(rendererInput, pdfFileName(source, 'print'));
   const pages = await inspectRenderedIssuePages(rendered.blob);
-  return { pdf: rendered.blob, source, layoutKey: publicationLayoutKey(snapshot),
+  const parentBuild = createPublicationBuildManifest({
+    manuscript: source, profile, artifact: new Uint8Array(await rendered.blob.arrayBuffer()),
+    rendererInput: { value: rendererInput, mediaType: 'text/html;charset=utf-8' },
+    output: { format: 'pdf-print', mediaType: 'application/pdf', fileName: pdfFileName(source, 'print') },
+    generator: { applicationVersion: BUILD_INFO.version, renderer: rendered.renderer, rendererVersion: rendered.rendererVersion },
+  });
+  return { pdf: rendered.blob, parentBuild, profile, source, layoutKey: publicationLayoutKey(snapshot),
     renderer: rendered.renderer, rendererVersion: rendered.rendererVersion,
     pageCount: pages.length, proposals: proposeIssuePdfRanges(pages, anchors) };
+}
+
+export interface ReviewedIssuePdfArtifact {
+  rootSectionId: string;
+  pdf: Blob;
+  fileName: string;
+  build: OmiPublicationBuild;
+  derivation: IssuePdfSliceDerivation;
+  derivationText: string;
 }
 
 export async function extractReviewedIssuePdfRanges(
   plan: IssuePdfRangePlan,
   ranges: readonly { rootSectionId: string; firstPage: number; lastPage: number }[],
   options: { confirmed: true; currentSource: () => OmiManuscript; currentLayoutKey: () => string },
-): Promise<{ rootSectionId: string; pdf: Blob }[]> {
+): Promise<ReviewedIssuePdfArtifact[]> {
   const assertCurrent = () => {
     if (options.confirmed !== true || options.currentSource() !== plan.source || options.currentLayoutKey() !== plan.layoutKey) {
       throw new Error('Confirm the ranges for the current unchanged issue and layout.');
@@ -78,12 +100,20 @@ export async function extractReviewedIssuePdfRanges(
   };
   assertCurrent();
   validateReviewedIssueRanges(plan.pageCount, plan.proposals.map(item => item.rootSectionId), ranges);
-  const result: { rootSectionId: string; pdf: Blob }[] = [];
+  const result: ReviewedIssuePdfArtifact[] = [];
   for (const range of ranges) {
     assertCurrent();
     const pdf = await sliceRenderedIssuePdf(plan.pdf, range.firstPage, range.lastPage);
     assertCurrent();
-    result.push({ rootSectionId: range.rootSectionId, pdf });
+    const fileName = `study-${result.length + 1}.pdf`;
+    const evidence = buildIssuePdfSlice({
+      source: plan.source, profile: plan.profile, parentBuild: plan.parentBuild, layoutKey: plan.layoutKey,
+      rootSectionId: range.rootSectionId, firstPage: range.firstPage, lastPage: range.lastPage,
+      pageCount: plan.pageCount, bytes: new Uint8Array(await pdf.arrayBuffer()), fileName,
+      applicationVersion: BUILD_INFO.version,
+    });
+    assertCurrent();
+    result.push({ rootSectionId: range.rootSectionId, pdf, fileName, ...evidence });
   }
   return result;
 }
