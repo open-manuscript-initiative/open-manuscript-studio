@@ -58,6 +58,7 @@ import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
   buildPublicationTextRoleCss,
+  publicationAuthorFontOverrideCss,
   publicationNoteCitationRules,
   resolvePublicationParagraphStyle,
   type PublicationStyle,
@@ -951,7 +952,8 @@ export function PublicationDocumentCanvas({
     style,
     scale,
     viewMode,
-  ) + '\n' + buildPublicationTextRoleCss(style, viewMode, manuscript.locale, `#${canvasId}`, scale);
+  ) + '\n' + buildPublicationTextRoleCss(style, viewMode, manuscript.locale, `#${canvasId}`, scale)
+    + '\n' + publicationAuthorFontOverrideCss(style, `#${canvasId}`);
   const sectionLayoutCss = buildLiveSectionLayoutCss(
     canvasId,
     manuscript.sections,
