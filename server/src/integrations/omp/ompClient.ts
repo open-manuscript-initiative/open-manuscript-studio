@@ -6,6 +6,7 @@ import { applyNoteIntegrity } from '../ojs/docxNoteIntegrity.js';
 import { applyReferenceSemantics } from '../ojs/docxReferences.js';
 import { parseDocxSource, type OjsSourceDocument } from '../ojs/docxSource.js';
 import { applyStructuredContent } from '../ojs/docxStructuredContent.js';
+import type { VolumeTransferProgress } from './volumeImportProgress.js';
 import { planOmpVolumeImport } from './volumeImportBoundary.js';
 import type { OmpLaunchClaims } from './launchVerifier.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
@@ -285,6 +286,7 @@ async function boundedVolumeBody(response: Response, limit: number): Promise<Buf
 
 export async function loadOmpVolumeImportData(
   claims: OmpLaunchClaims, payload: string, signature: string, installationBaseUrl: string,
+  report: (progress: VolumeTransferProgress) => void = () => {},
 ) {
   if (!claims.apiBaseUrl) throw new Error('Missing OMP volume API.');
   const trusted = await assertTrustedIntegrationUrl(claims.apiBaseUrl, installationBaseUrl);
@@ -298,18 +300,28 @@ export async function loadOmpVolumeImportData(
     }
     return boundedVolumeBody(response, limit);
   };
+  report({ phase: 'manifest', completed: 0, total: null });
   const manifestBytes = await fetchSource('volume-import/manifest', 'application/json', 8 * 1024 * 1024);
   const plan = planOmpVolumeImport(JSON.parse(manifestBytes.toString('utf8')), claims);
   const sources: Array<{ chapterExternalId: string | null; sourceDocument: OjsSourceDocument }> = [];
   let downloaded = 0;
   let converted = Buffer.byteLength(JSON.stringify(plan));
+  const total = plan.candidates.length;
+  report({ phase: 'metadata', completed: 0, total });
   const budget = 64 * 1024 * 1024;
   const convertedBudget = 32 * 1024 * 1024;
   for (const candidate of plan.candidates) {
     const limit = Math.min(32 * 1024 * 1024, budget - downloaded);
     if (limit <= 0 || Number(candidate.size ?? 0) > limit) throw new Error('OMP volume download budget exceeded.');
+    const item = candidate.chapterExternalId === null ? plan.volume : plan.chapters.find(chapter => chapter.externalId === candidate.chapterExternalId);
+    const rawTitle = item?.title;
+    const title = typeof rawTitle === 'string' ? rawTitle : rawTitle && typeof rawTitle === 'object'
+      ? Object.values(rawTitle).find(value => typeof value === 'string' && value.trim()) : undefined;
+    const label = typeof title === 'string' ? { title: title.slice(0, 512) } : {};
+    report({ phase: 'download', completed: sources.length, total, ...label });
     const bytes = await fetchSource(candidate.contentPath, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', limit);
     downloaded += bytes.length;
+    report({ phase: 'convert', completed: sources.length, total, ...label });
     const parsed = parseDocxSource(bytes, candidate.externalId,
       typeof candidate.name === 'string' ? candidate.name : `volume-${candidate.externalId}.docx`,
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
@@ -323,7 +335,9 @@ export async function loadOmpVolumeImportData(
     converted += Buffer.byteLength(JSON.stringify(result));
     if (converted > convertedBudget) throw new Error('OMP converted volume exceeds import budget.');
     sources.push(result);
+    report({ phase: 'article-complete', completed: sources.length, total, ...label });
   }
+  report({ phase: 'finalize', completed: sources.length, total });
   const { candidates: _candidates, ...metadata } = plan;
   return { ...metadata, sources };
 }

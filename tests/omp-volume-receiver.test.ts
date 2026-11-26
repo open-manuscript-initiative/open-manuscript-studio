@@ -61,3 +61,21 @@ test('volume handoff is single use', () => {
   assert.deepEqual(JSON.parse(consumeOmpVolumeHandoff(token)!), { volume: '3' });
   assert.equal(consumeOmpVolumeHandoff(token), undefined);
 });
+
+import { createVolumeProgressTicket, updateVolumeProgress, finishVolumeProgress, readVolumeProgress } from '../server/src/integrations/omp/volumeImportProgress.ts';
+import { readIssueProgress } from '../server/src/integrations/ojs/issueImportProgress.ts';
+
+test('volume progress is isolated and exposes a handoff only on successful completion', () => {
+  const token = createVolumeProgressTicket();
+  assert.equal(readIssueProgress(token), undefined);
+  assert.deepEqual(readVolumeProgress(token), { state: 'running', progress: { phase: 'manifest', completed: 0, total: null } });
+  updateVolumeProgress(token, { phase: 'convert', completed: 0, total: 2 });
+  finishVolumeProgress(token);
+  assert.equal(readVolumeProgress(token)?.state, 'failed');
+  finishVolumeProgress(token, 'must-not-leak');
+  assert.equal(readVolumeProgress(token)?.state, 'failed');
+  const ready = createVolumeProgressTicket();
+  updateVolumeProgress(ready, { phase: 'finalize', completed: 2, total: 2 });
+  finishVolumeProgress(ready, 'handoff');
+  assert.deepEqual(readVolumeProgress(ready), { state: 'ready', progress: { phase: 'finalize', completed: 2, total: 2 }, handoffToken: 'handoff' });
+});

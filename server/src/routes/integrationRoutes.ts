@@ -7,6 +7,7 @@ import {
   loadOmpVolumeImportData,
   loadOmpPlatformCapabilities,
 } from '../integrations/omp/ompClient.js';
+import { createVolumeProgressTicket, updateVolumeProgress, finishVolumeProgress, readVolumeProgress } from '../integrations/omp/volumeImportProgress.js';
 import { createOmpVolumeHandoff, consumeOmpVolumeHandoff } from '../integrations/omp/volumeHandoffStore.js';
 import { verifyOmpLaunch } from '../integrations/omp/launchVerifier.js';
 import { createPendingAuthorOmpNativeContext } from '../integrations/omp/nativeContext.js';
@@ -39,16 +40,36 @@ integrationRouter.get('/omp/volume-launch', async (request, response) => {
   activeVolumeImports += 1;
   try {
     const verified = await verifyOmpLaunch(payload, signature, 'volume');
-    const data = await loadOmpVolumeImportData(verified.claims, payload, signature, verified.installation.baseUrl);
-    const token = createOmpVolumeHandoff({ protocol: 'omi-integration/1', profile: 'omi-integration/1/omp',
-      kind: 'volume', installation: verified.installation, ...data });
-    response.redirect(302, `/?omiOmpVolumeLaunch=${encodeURIComponent(token)}`);
+    const progressToken = createVolumeProgressTicket();
+    response.redirect(302, `/#omiOmpVolumeProgress=${encodeURIComponent(progressToken)}`);
+    try {
+      const data = await loadOmpVolumeImportData(verified.claims, payload, signature, verified.installation.baseUrl,
+        progress => updateVolumeProgress(progressToken, progress));
+      const token = createOmpVolumeHandoff({ protocol: 'omi-integration/1', profile: 'omi-integration/1/omp',
+        kind: 'volume', installation: verified.installation, ...data });
+      finishVolumeProgress(progressToken, token);
+    } catch {
+      finishVolumeProgress(progressToken);
+    }
   } catch {
-    response.status(400).json({ error: { code: 'OMP_VOLUME_IMPORT_FAILED',
+    if (!response.headersSent) response.status(400).json({ error: { code: 'OMP_VOLUME_IMPORT_FAILED',
       message: 'Unable to import the complete volume. Open it again in OMP.' } });
   } finally {
     activeVolumeImports -= 1;
   }
+});
+
+integrationRouter.get('/omp/volume-progress/:token', (request, response) => {
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  const token = typeof request.params.token === 'string' ? request.params.token : '';
+  const status = /^[A-Za-z0-9_-]{43}$/.test(token) ? readVolumeProgress(token) : undefined;
+  if (!status) {
+    response.status(410).json({ error: { code: 'OMP_VOLUME_PROGRESS_EXPIRED' } });
+    return;
+  }
+  response.status(200).json(status);
 });
 
 integrationRouter.get('/omp/volume-handoff/:token', (request, response) => {
