@@ -27,7 +27,7 @@ import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
 import { getPublicationCoverSheet } from '../model/publicationCoverSheet';
 import { getPublicationMatter, publicationMatterPages, type PublicationMatterPage } from '../model/publicationMatter';
-import { cssStringLiteral } from './embeddedCss';
+import { authorFontStyle, cssStringLiteral } from './embeddedCss';
 import {
   buildPublicationRenderingContext,
   type OmiPublicationRenderingContext,
@@ -1080,7 +1080,7 @@ function applyMarks(
       case 'omiSourceFont': {
         const family = (stringAttr(mark.attrs, 'family') ?? '').trim();
         return family && family.length <= 128
-          ? `<span data-omi-source-font="${escapeAttribute(family)}" style="${escapeAttribute('font-family:' + cssStringLiteral(family))}">${output}</span>`
+          ? `<span data-omi-source-font="${escapeAttribute(family)}" style="${escapeAttribute(authorFontStyle(family))}">${output}</span>`
           : output;
       }
       case 'omiLanguage': {
