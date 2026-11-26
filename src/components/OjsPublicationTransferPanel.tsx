@@ -30,6 +30,7 @@ import {
 } from '../services/styledPublicationArtifact';
 import type { OmiManuscript } from '../types/omi';
 import './OjsPublicationTransferPanel.css';
+import { IssuePdfRangeReviewPanel } from './IssuePdfRangeReviewPanel';
 
 interface Prepared {
   source: OmiManuscript;
@@ -226,7 +227,7 @@ export function OjsPublicationTransferPanel({
         {copy.style}: <strong>{style.name}</strong>
       </p>
       {!isStudy ? (
-        <p>{copy.studyOnly}</p>
+        <IssuePdfRangeReviewPanel key={manuscript.id} style={style} active={active} />
       ) : (
         <>
           {!connections.length ? <p>{copy.noConnection}</p> : null}
