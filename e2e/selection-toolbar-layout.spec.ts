@@ -303,6 +303,9 @@ test('saved author font survives a reversible publication font override', async 
     const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
     const { loadPublicationStyle, buildPublicationStyleCss } = await import('/src/services/publicationStyleExport.ts');
     const { stageAppliedPublicationStyle } = await import('/src/app/publicationTemplateActions.ts');
+    // A blank study has no title until the author supplies one. Portable OMI
+    // requires a non-empty title; exercise the real metadata action before saving.
+    useStudioStore.getState().setTitle('Author font round-trip');
     useStudioStore.getState().checkpoint('manual');
     const before = parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript));
     const style = loadPublicationStyle(before);
