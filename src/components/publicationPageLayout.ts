@@ -51,6 +51,53 @@ export interface PublicationPageMetrics {
 }
 
 /**
+ * Cache page geometry and the cumulative height of preceding sheets.
+ * Section-master changes can invalidate an earlier page after a later page
+ * was measured (for example, while reserving continued footnotes).
+ */
+export function createPublicationPageMetricsResolver(
+  geometryFor: (index: number, sectionId?: string, insertedStyleId?: string) => { height: number; bodyHeight: number; topMargin: number },
+  pageGap: number,
+  firstTopMargin: number,
+) {
+  const insertionStyles = new Map<number, string>();
+  const heights: number[] = [];
+  const prefix: number[] = [0];
+  const cache: ({ sectionId?: string } & PublicationPageMetrics)[] = [];
+  const sumBefore = (index: number) => {
+    while (prefix.length <= index) {
+      const preceding = prefix.length - 1;
+      prefix.push(prefix[preceding]! + (heights[preceding] ?? 0));
+    }
+    return prefix[index]!;
+  };
+  const metrics = (index: number, sectionId?: string, insertedStyleId?: string): PublicationPageMetrics => {
+    if (insertedStyleId !== undefined && insertionStyles.get(index) !== insertedStyleId) {
+      insertionStyles.set(index, insertedStyleId);
+      delete cache[index];
+    }
+    const cached = cache[index];
+    if (cached && cached.sectionId === sectionId) return cached;
+    const geometry = geometryFor(index, sectionId, insertionStyles.get(index));
+    const stride = geometry.height + pageGap;
+    if (heights[index] !== stride) {
+      heights[index] = stride;
+      if (prefix.length > index + 1) prefix.length = index + 1;
+    }
+    const measured = {
+      sectionId, bodyHeight: geometry.bodyHeight,
+      bodyTop: sumBefore(index) + geometry.topMargin - firstTopMargin,
+    };
+    // Preserve the old invalidation contract: later absolute positions must
+    // be recomputed after a changed section or inserted-page master.
+    if (cache.length > index) cache.length = index;
+    cache[index] = measured;
+    return measured;
+  };
+  return { metrics, insertionStyles };
+}
+
+/**
  * Maps the editor's continuous block flow onto screen pages.
  *
  * Pagination is deliberately presentation-only: no page breaks or cached page
