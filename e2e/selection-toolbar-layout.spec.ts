@@ -286,9 +286,9 @@ test('saved author font survives a reversible publication font override', async 
   expect(saved.restored).toBe(saved.before);
   expect(saved.enabled).toBe(true);
   expect(saved.disabled).toBe(false);
-  expect(saved.printCss).toContain('[data-omi-source-font] { font-family: inherit !important; }');
-  expect(saved.htmlCss).toContain('[data-omi-source-font] { font-family: inherit !important; }');
-  expect(saved.restoredCss).not.toContain('[data-omi-source-font] { font-family: inherit !important; }');
+  expect(saved.printCss).toContain('[data-omi-source-font] { font-family: var(--omi-publication-primary-font), var(--omi-author-font-family,');
+  expect(saved.htmlCss).toContain('[data-omi-source-font] { font-family: var(--omi-publication-primary-font), var(--omi-author-font-family,');
+  expect(saved.restoredCss).not.toContain('[data-omi-source-font] { font-family: var(--omi-publication-primary-font), var(--omi-author-font-family,');
 });
 
 test('shared character and paragraph icon panels edit independent properties and restore inherited formatting', async ({ page }) => {
