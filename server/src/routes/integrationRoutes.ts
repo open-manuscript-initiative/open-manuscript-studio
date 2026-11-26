@@ -13,6 +13,7 @@ import { issueOjsAssignmentGrant } from '../integrations/ojs/ojsAssignmentGrant.
 import { loadOjsAssignmentContext } from '../integrations/ojs/ojsAssignmentContext.js';
 import { loadOjsLaunchData, loadOjsIssueImportData } from '../integrations/ojs/ojsClient.js';
 import { createOjsIssueHandoff, consumeOjsIssueHandoff } from '../integrations/ojs/issueHandoffStore.js';
+import { createIssueProgressTicket, updateIssueProgress, finishIssueProgress, readIssueProgress } from '../integrations/ojs/issueImportProgress.js';
 import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
 import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
 
@@ -300,6 +301,19 @@ integrationRouter.get('/ojs/issue-handoff/:token', (request, response) => {
 let activeIssueImports = 0;
 const MAX_ACTIVE_ISSUE_IMPORTS = 2;
 
+integrationRouter.get('/ojs/issue-progress/:token', (request, response) => {
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  const token = typeof request.params.token === 'string' ? request.params.token : '';
+  const status = /^[A-Za-z0-9_-]{43}$/.test(token) ? readIssueProgress(token) : undefined;
+  if (!status) {
+    response.status(410).json({ error: { code: 'OJS_ISSUE_PROGRESS_EXPIRED' } });
+    return;
+  }
+  response.status(200).json(status);
+});
+
 integrationRouter.get('/ojs/issue-launch', async (request, response) => {
   response.setHeader('Cache-Control', 'no-store, max-age=0');
   response.setHeader('Referrer-Policy', 'no-referrer');
@@ -316,22 +330,32 @@ integrationRouter.get('/ojs/issue-launch', async (request, response) => {
   activeIssueImports += 1;
   try {
     const verified = await verifyOjsLaunch(payload, signature, 'issue');
-    const data = await loadOjsIssueImportData(verified.claims, payload, signature, verified.installation.baseUrl);
-    const token = createOjsIssueHandoff({
-      protocol: 'omi-integration/1',
-      profile: 'omi-integration/1/ojs',
-      kind: 'issue',
-      installation: verified.installation,
-      context: data.context,
-      actor: verified.claims.actor,
-      issue: data.issue,
-      sections: data.sections,
-    });
-    response.redirect(302, `/?omiOjsIssueLaunch=${encodeURIComponent(token)}`);
-  } catch (error) {
-    response.status(400).json({ error: {
+    const progressToken = createIssueProgressTicket();
+    // The browser receives only a random progress capability. The signed
+    // OJS credentials remain in this bounded server-side task.
+    response.redirect(302, `/#omiOjsIssueProgress=${encodeURIComponent(progressToken)}`);
+    try {
+      const data = await loadOjsIssueImportData(verified.claims, payload, signature, verified.installation.baseUrl,
+        progress => updateIssueProgress(progressToken, progress));
+      const token = createOjsIssueHandoff({
+        protocol: 'omi-integration/1',
+        profile: 'omi-integration/1/ojs',
+        kind: 'issue',
+        installation: verified.installation,
+        context: data.context,
+        actor: verified.claims.actor,
+        issue: data.issue,
+        sections: data.sections,
+      });
+      finishIssueProgress(progressToken, token);
+    } catch {
+      // No partial issue or upstream credentials are exposed on failure.
+      finishIssueProgress(progressToken);
+    }
+  } catch {
+    if (!response.headersSent) response.status(400).json({ error: {
       code: 'OJS_ISSUE_IMPORT_FAILED',
-      message: error instanceof Error ? error.message : 'OJS issue import failed.',
+      message: 'Unable to initialize the OJS issue import. Open the issue again in OJS.',
     } });
   } finally {
     activeIssueImports -= 1;
