@@ -104,6 +104,7 @@ interface NoteBodyCacheEntry {
 }
 
 interface PublicationPaginationState {
+  preparedManuscriptId?: string;
   pageCount: number;
   css: string;
   pageNotes: PublicationPageNote[][];
@@ -141,6 +142,7 @@ interface PublicationCanvasCopy {
   zoom: string;
   fit: string;
   pages: (count: number) => string;
+  preparing: string;
   page: (number: number) => string;
   title: string;
   subtitle: string;
@@ -249,6 +251,7 @@ export function PublicationDocumentCanvas({
   const pageGap = Math.max(28, bleed * 2 + 12);
   const pageStride = pageHeight + pageGap;
   const pageCount = viewMode === 'print' ? pagination.pageCount : 1;
+  const initialLayoutPending = viewMode === 'print' && pagination.preparedManuscriptId !== manuscriptId;
   const usablePageHeight = Math.max(
     80,
     pageHeight - topMargin - bottomMargin,
@@ -473,7 +476,8 @@ export function PublicationDocumentCanvas({
   useLayoutEffect(() => {
     if (viewMode !== 'print') {
       setPagination((current) => (
-        current.pageCount === 1
+        current.preparedManuscriptId === undefined
+          && current.pageCount === 1
           && current.css === ''
           && current.pageNotes.length === 0
           && current.flowBreaks.length === 0
@@ -803,7 +807,8 @@ export function PublicationDocumentCanvas({
         updateProvisionalProjection();
         pageCountChange.current?.(manuscriptId, layout.pageCount);
         setPagination((current) => (
-          current.pageCount === layout.pageCount
+          current.preparedManuscriptId === manuscriptId
+            && current.pageCount === layout.pageCount
             && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
             && JSON.stringify(current.pageSectionIds) === JSON.stringify(layout.pageSectionIds)
             && JSON.stringify(current.insertedPages) === JSON.stringify(layout.insertedPages)
@@ -812,7 +817,7 @@ export function PublicationDocumentCanvas({
             && current.css === css
             && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
             ? current
-            : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds, insertedPages: layout.insertedPages, sectionWarnings, thumbnails }
+            : { preparedManuscriptId: manuscriptId, pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [], pageSectionIds: layout.pageSectionIds, insertedPages: layout.insertedPages, sectionWarnings, thumbnails }
         ));
         finish();
       };
@@ -1104,6 +1109,7 @@ export function PublicationDocumentCanvas({
     <section
       id={canvasId}
       className={`publication-document-canvas publication-document-canvas--${viewMode}${previewOnly ? ' publication-document-canvas--preview' : ''}${presentation ? ' publication-document-canvas--presentation' : ''}`}
+      data-publication-layout-ready={viewMode === 'print' ? String(!initialLayoutPending) : undefined}
       data-layout-checker-target={navigationTarget ? 'true' : undefined}
       data-layout-checker-section={navigationTarget?.sectionId}
       aria-labelledby="publication-document-canvas-title"
@@ -1140,7 +1146,9 @@ export function PublicationDocumentCanvas({
           </div>
           {viewMode === 'print' ? (
             <>
-              <span aria-live="polite">{copy.pages(pageCount)}</span>
+              <span role="status" className={initialLayoutPending ? "publication-layout-preparing" : undefined}>
+                {initialLayoutPending ? <><progress aria-label={copy.preparing} /> {copy.preparing}</> : copy.pages(pageCount)}
+              </span>
               <label>
                 <span>{copy.zoom}</span>
                 <select
@@ -1837,6 +1845,7 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
       zoom: 'Nagyítás',
       fit: 'Oldalszélesség',
       pages: (count) => `${count} becsült oldal`,
+      preparing: 'Kiadvány előkészítése…',
       page: (number) => `${number}. oldal`,
       title: 'Dokumentum címe',
       subtitle: 'Alcím',
@@ -1859,6 +1868,7 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
       zoom: 'Zoom',
       fit: 'Seitenbreite',
       pages: (count) => `${count} geschätzte Seite${count === 1 ? '' : 'n'}`,
+      preparing: 'Publikation wird vorbereitet…',
       page: (number) => `Seite ${number}`,
       title: 'Dokumenttitel',
       subtitle: 'Untertitel',
@@ -1880,6 +1890,7 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
     zoom: 'Zoom',
     fit: 'Fit width',
     pages: (count) => `${count} estimated page${count === 1 ? '' : 's'}`,
+    preparing: 'Preparing publication…',
     page: (number) => `Page ${number}`,
     title: 'Document title',
     subtitle: 'Subtitle',
