@@ -46,6 +46,8 @@ const publicationArtifactSchema = z.object({
   build: z.record(z.string(), z.unknown()).optional(),
   confirmed: z.literal(true).optional(),
   expectedWorkflowToken: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+  expectedIssueId: z.number().int().positive().optional(),
+  expectedInstallationId: z.string().min(1).max(255).optional(),
 });
 
 directSubmissionRouter.post('/integrations/connections/:connectionId/publication-artifact', requireSession, async (request: AuthenticatedRequest, response) => {
@@ -58,6 +60,11 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
   }
 
   const data = body.data;
+  if (data.expectedIssueId !== undefined && (!data.expectedInstallationId || !data.publicationId ||
+      (data.action === 'transfer' && !data.expectedWorkflowToken))) {
+    response.status(400).json({ error: { message: 'An exact installation, issue, publication and inspected workflow token are required for issue transfer.' } });
+    return;
+  }
   if (
     data.action === 'transfer' &&
     (
@@ -98,6 +105,10 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       return;
     }
 
+    if (data.expectedIssueId !== undefined && connection.providerId !== 'ojs') {
+      response.status(400).json({ error: { message: 'Planned issue transfer requires an OJS connection.' } });
+      return;
+    }
     const platform = connection.providerId === 'omp' ? 'OMP' : 'OJS';
     const baseUrl = (
       await assertTrustedIntegrationUrl(configuredBase, configuredBase)
@@ -134,6 +145,11 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       );
     }
 
+    if (data.expectedIssueId !== undefined && (result.issueId !== data.expectedIssueId ||
+        result.publicationId !== data.publicationId ||
+        (data.action === 'inspect' && result.installationId !== data.expectedInstallationId))) {
+      throw new Error('OJS returned a different or unsupported issue transfer target. Update the OJS integration plugin and inspect again.');
+    }
     response.json(
       data.action === 'inspect' ? { target: result } : { receipt: result },
     );
