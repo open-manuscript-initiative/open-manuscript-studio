@@ -164,3 +164,32 @@ test('frame thumbnails carry their style and objects through moves, navigation, 
   await navigator.getByRole('button', { name: 'Delete page', exact: true }).click();
   await expect(pages).toHaveCount(2);
 });
+
+test('thumbnail navigation keeps distant page buttons while deferring their SVG marks', async ({ page }) => {
+  test.setTimeout(90_000);
+  const editor = await setup(page);
+  await editor.getByRole('button', { name: 'Frames and page styles', exact: true }).click();
+  await page.evaluate(async () => {
+    const { createDefaultFlowFrameLayout } = await import('/src/model/publicationAutoFlow.ts');
+    const { insertFramePage } = await import('/src/model/publicationFramePages.ts');
+    const { stageFrameLayout } = await import('/src/app/publicationFrameActions.ts');
+    let layout = createDefaultFlowFrameLayout();
+    layout.stories[0]!.autoContinue = false;
+    for (let index = 1; index < 24; index += 1) layout = insertFramePage(layout, index - 1, 'frame-page-style-default', 'viewport-page-' + index);
+    stageFrameLayout(layout);
+  });
+  const list = editor.locator('.omi-frame-editor .publication-page-thumbnails');
+  const pages = list.locator('[data-thumbnail-page]');
+  await expect(pages).toHaveCount(24);
+  // Use a small scrollport so this assertion is independent of desktop width.
+  await list.evaluate((element) => {
+    Object.assign((element as HTMLElement).style, { height: '150px', maxHeight: '150px', overflowY: 'auto', flexDirection: 'column' });
+    element.scrollTop = 0;
+  });
+  await expect(pages.last()).toHaveAttribute('data-thumbnail-artwork', 'false');
+  await pages.last().scrollIntoViewIfNeeded();
+  await expect(pages.last()).toHaveAttribute('data-thumbnail-artwork', 'true');
+  await pages.last().click();
+  await expect(pages.last()).toHaveAttribute('aria-current', 'page');
+  await expect(pages).toHaveCount(24);
+});
