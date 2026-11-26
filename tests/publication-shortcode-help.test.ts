@@ -5,7 +5,7 @@ import { getPublicationShortcodeHelp, appendPublicationShortcodeHelp } from '../
 import { getHelpCopy } from '../src/i18n/help.ts';
 
 test('publication shortcode help lists every supported field and is idempotent', () => {
-  for (const locale of ['en','hu','de','fr','it','es','nl','pl','unknown']) {
+  for (const locale of ['bg','cs','da','de','el','en','es','et','fi','fr','ga','hr','hu','it','lt','lv','mt','nl','pl','pt','ro','sk','sl','sv','unknown']) {
     const help = getPublicationShortcodeHelp(locale);
     assert.deepEqual(help.fields.map(field => field.key), [...PUBLICATION_SHORTCODES]);
     assert.ok(help.fields.every(field => field.label));

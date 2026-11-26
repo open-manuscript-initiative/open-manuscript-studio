@@ -225,6 +225,422 @@ const copy = {
       "ISBN",
       "DOI"
     ]
+  },
+  "bg": {
+    "title": "Динамични полета в заглавните страници",
+    "body": "Отворете редактора на публикации, изберете страница или текстова рамка и вмъкнете поле за метаданни. Запазете еднакво форматиране на кода.",
+    "insert": "Вмъкване на поле",
+    "tips": [
+      "Кодовете остават в шаблона. За обновяване на издателските данни отворете броя от OJS отново. Проверете HTML/PDF."
+    ],
+    "fields": [
+      "Издателски данни",
+      "Редакционна колегия",
+      "Автори",
+      "Съдържание",
+      "Списание",
+      "Издател",
+      "Адрес",
+      "Контакт",
+      "Заглавие",
+      "Том",
+      "Брой",
+      "Година",
+      "Печатен ISSN",
+      "Електронен ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "cs": {
+    "title": "Dynamická pole titulních stran",
+    "body": "Otevřete editor publikace, vyberte titulní stranu nebo textový rámeček a vložte pole metadat. Celý kód musí mít stejné formátování.",
+    "insert": "Vložit pole metadat",
+    "tips": [
+      "Kódy zůstávají v šabloně. Pro aktualizaci tiráže otevřete číslo znovu z OJS. Zkontrolujte HTML/PDF."
+    ],
+    "fields": [
+      "Tiráž",
+      "Redakční rada",
+      "Autoři",
+      "Obsah",
+      "Časopis",
+      "Vydavatel",
+      "Adresa",
+      "Kontakt",
+      "Název",
+      "Ročník",
+      "Číslo",
+      "Rok",
+      "Tištěné ISSN",
+      "Elektronické ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "da": {
+    "title": "Dynamiske felter i forværket",
+    "body": "Åbn publikationseditoren, vælg en titelside eller tekstramme, og indsæt et metadatafelt. Hele koden skal have samme formatering.",
+    "insert": "Indsæt metadatafelt",
+    "tips": [
+      "Koderne bevares i skabelonen. Åbn nummeret igen fra OJS for at opdatere kolofonen. Kontrollér HTML/PDF."
+    ],
+    "fields": [
+      "Kolofon",
+      "Redaktionsråd",
+      "Forfattere",
+      "Indhold",
+      "Tidsskrift",
+      "Forlag",
+      "Adresse",
+      "Kontakt",
+      "Titel",
+      "Bind",
+      "Nummer",
+      "År",
+      "Trykt ISSN",
+      "Elektronisk ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "el": {
+    "title": "Δυναμικά πεδία προκαταρκτικών σελίδων",
+    "body": "Ανοίξτε τον επεξεργαστή έκδοσης, επιλέξτε σελίδα τίτλου ή πλαίσιο κειμένου και εισαγάγετε πεδίο μεταδεδομένων με ενιαία μορφοποίηση.",
+    "insert": "Εισαγωγή πεδίου",
+    "tips": [
+      "Οι κωδικοί παραμένουν στο πρότυπο. Ανοίξτε ξανά το τεύχος από το OJS για ενημέρωση των στοιχείων έκδοσης. Ελέγξτε το HTML/PDF."
+    ],
+    "fields": [
+      "Στοιχεία έκδοσης",
+      "Συντακτική επιτροπή",
+      "Συγγραφείς",
+      "Περιεχόμενα",
+      "Περιοδικό",
+      "Εκδότης",
+      "Διεύθυνση",
+      "Επικοινωνία",
+      "Τίτλος",
+      "Τόμος",
+      "Τεύχος",
+      "Έτος",
+      "Έντυπο ISSN",
+      "Ηλεκτρονικό ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "et": {
+    "title": "Tiitellehtede dünaamilised väljad",
+    "body": "Avage väljaande redaktor, valige tiitelleht või tekstiraam ja lisage metaandmeväli. Kogu kood peab olema ühesuguse vorminguga.",
+    "insert": "Lisa metaandmeväli",
+    "tips": [
+      "Koodid jäävad malli. Impressumi uuendamiseks avage number uuesti OJS-ist. Kontrollige HTML/PDF-i."
+    ],
+    "fields": [
+      "Impressum",
+      "Toimetuskolleegium",
+      "Autorid",
+      "Sisukord",
+      "Ajakiri",
+      "Kirjastaja",
+      "Aadress",
+      "Kontakt",
+      "Pealkiri",
+      "Köide",
+      "Number",
+      "Aasta",
+      "Trükitud ISSN",
+      "Elektrooniline ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "fi": {
+    "title": "Alkulehtien dynaamiset kentät",
+    "body": "Avaa julkaisueditori, valitse nimiösivu tai tekstikehys ja lisää metatietokenttä. Käytä koko koodissa samaa muotoilua.",
+    "insert": "Lisää metatietokenttä",
+    "tips": [
+      "Koodit säilyvät mallissa. Päivitä julkaisutiedot avaamalla numero uudelleen OJS:stä. Tarkista HTML/PDF."
+    ],
+    "fields": [
+      "Julkaisutiedot",
+      "Toimituskunta",
+      "Tekijät",
+      "Sisällys",
+      "Lehti",
+      "Kustantaja",
+      "Osoite",
+      "Yhteyshenkilö",
+      "Otsikko",
+      "Vuosikerta",
+      "Numero",
+      "Vuosi",
+      "Painettu ISSN",
+      "Sähköinen ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "ga": {
+    "title": "Réimsí dinimiciúla sna réamhleathanaigh",
+    "body": "Oscail eagarthóir an fhoilseacháin, roghnaigh leathanach teidil nó fráma téacs agus ionsáigh réimse meiteashonraí le formáidiú aonfhoirmeach.",
+    "insert": "Ionsáigh réimse",
+    "tips": [
+      "Fanann na cóid sa teimpléad. Athoscail an t-eagrán ó OJS chun sonraí foilsitheoireachta a nuashonrú. Seiceáil HTML/PDF."
+    ],
+    "fields": [
+      "Sonraí foilsitheoireachta",
+      "Bord eagarthóireachta",
+      "Údair",
+      "Clár ábhair",
+      "Iris",
+      "Foilsitheoir",
+      "Seoladh",
+      "Teagmhálaí",
+      "Teideal",
+      "Imleabhar",
+      "Eagrán",
+      "Bliain",
+      "ISSN clóite",
+      "ISSN leictreonach",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "hr": {
+    "title": "Dinamička polja naslovnih stranica",
+    "body": "Otvorite uređivač publikacije, odaberite naslovnu stranicu ili tekstni okvir i umetnite polje metapodataka. Cijeli kod treba imati jednako oblikovanje.",
+    "insert": "Umetni polje metapodataka",
+    "tips": [
+      "Kodovi ostaju u predlošku. Ponovno otvorite broj iz OJS-a za osvježavanje impresuma. Provjerite HTML/PDF."
+    ],
+    "fields": [
+      "Impresum",
+      "Uredništvo",
+      "Autori",
+      "Sadržaj",
+      "Časopis",
+      "Nakladnik",
+      "Adresa",
+      "Kontakt",
+      "Naslov",
+      "Svezak",
+      "Broj",
+      "Godina",
+      "Tiskani ISSN",
+      "Elektronički ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "lt": {
+    "title": "Dinaminiai antraštinių puslapių laukai",
+    "body": "Atverkite leidinio redaktorių, pasirinkite antraštinį puslapį arba teksto rėmelį ir įterpkite metaduomenų lauką. Visam kodui taikykite vienodą formatavimą.",
+    "insert": "Įterpti lauką",
+    "tips": [
+      "Kodai išlieka šablone. Leidybos informacijai atnaujinti iš naujo atverkite numerį iš OJS. Patikrinkite HTML/PDF."
+    ],
+    "fields": [
+      "Leidybos informacija",
+      "Redakcinė kolegija",
+      "Autoriai",
+      "Turinys",
+      "Žurnalas",
+      "Leidėjas",
+      "Adresas",
+      "Kontaktas",
+      "Antraštė",
+      "Tomas",
+      "Numeris",
+      "Metai",
+      "Spausdintas ISSN",
+      "Elektroninis ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "lv": {
+    "title": "Titullapu dinamiskie lauki",
+    "body": "Atveriet publikācijas redaktoru, izvēlieties titullapu vai teksta rāmi un ievietojiet metadatu lauku. Visam kodam jābūt vienādi formatētam.",
+    "insert": "Ievietot metadatu lauku",
+    "tips": [
+      "Kodi saglabājas veidnē. Lai atjaunotu izdevuma ziņas, atveriet numuru no OJS vēlreiz. Pārbaudiet HTML/PDF."
+    ],
+    "fields": [
+      "Izdevuma ziņas",
+      "Redkolēģija",
+      "Autori",
+      "Saturs",
+      "Žurnāls",
+      "Izdevējs",
+      "Adrese",
+      "Kontaktpersona",
+      "Nosaukums",
+      "Sējums",
+      "Numurs",
+      "Gads",
+      "Drukātais ISSN",
+      "Elektroniskais ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "mt": {
+    "title": "Oqsma dinamiċi fil-paġni preliminari",
+    "body": "Iftaħ l-editur tal-pubblikazzjoni, agħżel paġna tat-titlu jew qafas tat-test u daħħal qasam tal-metadata. Żomm l-istess ifformattjar fil-kodiċi kollu.",
+    "insert": "Daħħal qasam",
+    "tips": [
+      "Il-kodiċijiet jibqgħu fil-mudell. Erġa’ iftaħ il-ħarġa minn OJS biex taġġorna d-dettalji tal-pubblikazzjoni. Iċċekkja HTML/PDF."
+    ],
+    "fields": [
+      "Dettalji tal-pubblikazzjoni",
+      "Bord editorjali",
+      "Awturi",
+      "Werrej",
+      "Ġurnal",
+      "Pubblikatur",
+      "Indirizz",
+      "Kuntatt",
+      "Titlu",
+      "Volum",
+      "Ħarġa",
+      "Sena",
+      "ISSN stampat",
+      "ISSN elettroniku",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "pt": {
+    "title": "Campos dinâmicos nas páginas preliminares",
+    "body": "Abra o editor de publicação, selecione uma página de rosto ou caixa de texto e insira um campo de metadados. Mantenha a formatação uniforme no código.",
+    "insert": "Inserir campo de metadados",
+    "tips": [
+      "Os códigos permanecem no modelo. Reabra o número no OJS para atualizar a ficha editorial. Verifique HTML/PDF."
+    ],
+    "fields": [
+      "Ficha editorial",
+      "Conselho editorial",
+      "Autores",
+      "Índice",
+      "Revista",
+      "Editora",
+      "Endereço",
+      "Contacto",
+      "Título",
+      "Volume",
+      "Número",
+      "Ano",
+      "ISSN impresso",
+      "ISSN eletrónico",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "ro": {
+    "title": "Câmpuri dinamice în paginile preliminare",
+    "body": "Deschideți editorul publicației, selectați o pagină de titlu sau un cadru de text și introduceți un câmp de metadate. Păstrați formatarea uniformă a codului.",
+    "insert": "Inserează câmp",
+    "tips": [
+      "Codurile rămân în șablon. Redeschideți numărul din OJS pentru a actualiza caseta editorială. Verificați HTML/PDF."
+    ],
+    "fields": [
+      "Casetă editorială",
+      "Colegiu editorial",
+      "Autori",
+      "Cuprins",
+      "Revistă",
+      "Editură",
+      "Adresă",
+      "Contact",
+      "Titlu",
+      "Volum",
+      "Număr",
+      "An",
+      "ISSN tipărit",
+      "ISSN electronic",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "sk": {
+    "title": "Dynamické polia titulných strán",
+    "body": "Otvorte editor publikácie, vyberte titulnú stranu alebo textový rám a vložte pole metadát. Celý kód musí mať rovnaké formátovanie.",
+    "insert": "Vložiť pole metadát",
+    "tips": [
+      "Kódy zostávajú v šablóne. Pre aktualizáciu tiráže otvorte číslo znova z OJS. Skontrolujte HTML/PDF."
+    ],
+    "fields": [
+      "Tiráž",
+      "Redakčná rada",
+      "Autori",
+      "Obsah",
+      "Časopis",
+      "Vydavateľ",
+      "Adresa",
+      "Kontakt",
+      "Názov",
+      "Ročník",
+      "Číslo",
+      "Rok",
+      "Tlačené ISSN",
+      "Elektronické ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "sl": {
+    "title": "Dinamična polja naslovnih strani",
+    "body": "Odprite urejevalnik publikacije, izberite naslovno stran ali besedilni okvir in vstavite polje metapodatkov. Celotna koda naj bo enotno oblikovana.",
+    "insert": "Vstavi polje metapodatkov",
+    "tips": [
+      "Kode ostanejo v predlogi. Za osvežitev impresuma znova odprite številko iz OJS. Preverite HTML/PDF."
+    ],
+    "fields": [
+      "Impresum",
+      "Uredniški odbor",
+      "Avtorji",
+      "Kazalo",
+      "Revija",
+      "Založnik",
+      "Naslov sedeža",
+      "Kontakt",
+      "Naslov",
+      "Letnik",
+      "Številka",
+      "Leto",
+      "Tiskani ISSN",
+      "Elektronski ISSN",
+      "ISBN",
+      "DOI"
+    ]
+  },
+  "sv": {
+    "title": "Dynamiska fält på försättssidor",
+    "body": "Öppna publikationsredigeraren, välj en titelsida eller textram och infoga ett metadatafält. Behåll enhetlig formatering i hela koden.",
+    "insert": "Infoga metadatafält",
+    "tips": [
+      "Koderna sparas i mallen. Öppna numret igen från OJS för att uppdatera kolofonen. Kontrollera HTML/PDF."
+    ],
+    "fields": [
+      "Kolofon",
+      "Redaktionsråd",
+      "Författare",
+      "Innehåll",
+      "Tidskrift",
+      "Förlag",
+      "Adress",
+      "Kontakt",
+      "Titel",
+      "Volym",
+      "Nummer",
+      "År",
+      "Tryckt ISSN",
+      "Elektroniskt ISSN",
+      "ISBN",
+      "DOI"
+    ]
   }
 } as const;
 
@@ -236,14 +652,57 @@ const languageTips = {
   "it": "Il suffisso seleziona la lingua: [omi:journal:hu], [omi:editorial-board:en]. Le traduzioni OJS mancanti non sono sostituite né generate automaticamente.",
   "es": "El sufijo selecciona el idioma: [omi:journal:hu], [omi:editorial-board:en]. No se sustituyen ni generan automáticamente traducciones OJS ausentes.",
   "nl": "Het achtervoegsel kiest de taal: [omi:journal:hu], [omi:editorial-board:en]. Ontbrekende OJS-vertalingen worden niet vervangen of automatisch gegenereerd.",
-  "pl": "Przyrostek wybiera język: [omi:journal:hu], [omi:editorial-board:en]. Brakujące tłumaczenia OJS nie są zastępowane ani generowane automatycznie."
+  "pl": "Przyrostek wybiera język: [omi:journal:hu], [omi:editorial-board:en]. Brakujące tłumaczenia OJS nie są zastępowane ani generowane automatycznie.",
+  "bg": "Суфиксът избира езика. Липсващите преводи не се създават автоматично. [omi:journal:hu], [omi:editorial-board:en].",
+  "cs": "Přípona vybírá jazyk. Chybějící překlady se automaticky nevytvářejí. [omi:journal:hu], [omi:editorial-board:en].",
+  "da": "Suffikset vælger sprog. Manglende oversættelser genereres ikke automatisk. [omi:journal:hu], [omi:editorial-board:en].",
+  "el": "Το επίθημα επιλέγει γλώσσα. Οι μεταφράσεις που λείπουν δεν δημιουργούνται αυτόματα. [omi:journal:hu], [omi:editorial-board:en].",
+  "et": "Järelliide valib keele. Puuduvaid tõlkeid automaatselt ei looda. [omi:journal:hu], [omi:editorial-board:en].",
+  "fi": "Kieliliite valitsee kielen. Puuttuvia käännöksiä ei luoda automaattisesti. [omi:journal:hu], [omi:editorial-board:en].",
+  "ga": "Roghnaíonn an iarmhír an teanga. Ní chruthaítear aistriúcháin go huathoibríoch. [omi:journal:hu], [omi:editorial-board:en].",
+  "hr": "Sufiks određuje jezik. Prijevodi koji nedostaju ne stvaraju se automatski. [omi:journal:hu], [omi:editorial-board:en].",
+  "lt": "Priesaga parenka kalbą. Trūkstami vertimai automatiškai nekuriami. [omi:journal:hu], [omi:editorial-board:en].",
+  "lv": "Piedēklis nosaka valodu. Trūkstoši tulkojumi netiek automātiski veidoti. [omi:journal:hu], [omi:editorial-board:en].",
+  "mt": "Is-suffiss jagħżel il-lingwa. Traduzzjonijiet neqsin ma jinħolqux awtomatikament. [omi:journal:hu], [omi:editorial-board:en].",
+  "pt": "O sufixo escolhe o idioma. As traduções em falta não são geradas automaticamente. [omi:journal:hu], [omi:editorial-board:en].",
+  "ro": "Sufixul selectează limba. Traducerile lipsă nu sunt generate automat. [omi:journal:hu], [omi:editorial-board:en].",
+  "sk": "Prípona určuje jazyk. Chýbajúce preklady sa nevytvárajú automaticky. [omi:journal:hu], [omi:editorial-board:en].",
+  "sl": "Pripona določa jezik. Manjkajoči prevodi se ne ustvarjajo samodejno. [omi:journal:hu], [omi:editorial-board:en].",
+  "sv": "Suffixet väljer språk. Saknade översättningar skapas inte automatiskt. [omi:journal:hu], [omi:editorial-board:en]."
+} as const;
+
+const runningTips = {
+  "en": "Running headers use the study and printed page context, not cover metadata.",
+  "hu": "A futó fejlécek a tanulmány és a nyomtatott oldal adatait használják, nem a borítóét.",
+  "de": "Kolumnentitel verwenden Beitragsdaten und gedruckte Seitenzahlen, keine Umschlagdaten.",
+  "fr": "Les titres courants utilisent les données de l’article et de la page imprimée.",
+  "it": "Le testatine usano i dati del contributo e della pagina stampata.",
+  "es": "Los encabezados corrientes usan los datos del artículo y de la página impresa.",
+  "nl": "Lopende koppen gebruiken de gegevens van het artikel en de gedrukte pagina.",
+  "pl": "Żywe paginy korzystają z danych artykułu i strony drukowanej.",
+  "bg": "Колонтитули на статията и номера на страницата",
+  "cs": "Živá záhlaví článku a číslo stránky",
+  "da": "Løbende sidehoveder og sidetal",
+  "el": "Κεφαλίδες άρθρου και αριθμός σελίδας",
+  "et": "Jooksvad päised ja leheküljenumber",
+  "fi": "Juoksevat ylätunnisteet ja sivunumero",
+  "ga": "Ceanntásca reatha agus uimhir leathanaigh",
+  "hr": "Tekuća zaglavlja i broj stranice",
+  "lt": "Puslapių antraštės ir puslapio numeris",
+  "lv": "Lappušu galvenes un numuri",
+  "mt": "Intestaturi u numri tal-paġni",
+  "pt": "Cabeçalhos correntes e número de página",
+  "ro": "Anteturi curente și numărul paginii",
+  "sk": "Živé hlavičky a číslo strany",
+  "sl": "Tekoče glave in številka strani",
+  "sv": "Löpande sidhuvuden och sidnummer"
 } as const;
 
 export function getPublicationShortcodeHelp(locale: string) {
   const language = locale.toLowerCase().split(/[-_]/)[0] as keyof typeof copy;
   const text = copy[language] ?? copy.en;
   const fields = PUBLICATION_SHORTCODES.map((key, index) => ({ key, label: text.fields[index] }));
-  const runningTip = language === 'hu' ? 'Oldalstílusok és szakaszfejlécek: [omi:article-doi], [omi:article-title], [omi:short-article-title], [omi:article-authors], [omi:page-number]. A belív élőfejében a tanulmány és a nyomtatott oldal adatait használják; nem borítómezők.' : language === 'de' ? 'Kolumnentitel: [omi:article-doi], [omi:article-title], [omi:short-article-title], [omi:article-authors], [omi:page-number]. Nur im Seitenkopf des Inhalts.' : 'Running headers: [omi:article-doi], [omi:article-title], [omi:short-article-title], [omi:article-authors], [omi:page-number]. These use the study and printed page context, not cover metadata.';
+  const runningTip = (runningTips[language] ?? runningTips.en) + ' [omi:article-doi], [omi:article-title], [omi:short-article-title], [omi:article-authors], [omi:page-number].';
   const topic: HelpTopic = { title: text.title, body: text.body, tips: [...text.tips, runningTip, languageTips[language] ?? languageTips.en, ...fields.map(field => '[omi:' + field.key + '] — ' + field.label)] };
   return { topic, fields, insert: text.insert };
 }

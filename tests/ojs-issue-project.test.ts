@@ -223,7 +223,8 @@ test('bilingual title matter resolves locale variants independently of document 
   const issue = createJournalIssueFromOjsHandoff(input, 'hu');
   const rich = (text: string) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
   const result = resolvePublicationMatterText(rich('[omi:journal:hu] / [omi:journal:en] / [omi:editorial-board:en_US] / [omi:publisher:de]'), issue);
-  assert.match(result.content, /Folyóirat \/ Journal/);
+  const nodes = JSON.parse(result.content).content[0].content;
+  assert.equal(nodes.slice(0, 3).map((node: { text?: string }) => node.text ?? '').join(''), 'Folyóirat / Journal');
   assert.match(result.content, /Editor-in-chief/);
   assert.match(result.content, /University/);
   assert.doesNotMatch(result.content, /Főszerkesztő|Egyetem/);
