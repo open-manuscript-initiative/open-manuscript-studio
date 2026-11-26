@@ -1,3 +1,11 @@
+## 1.0.0-rc.5 — 2026-11-26 (candidate builds; public release not yet approved)
+
+- Include the merged OJS planned-issue import, progress, non-destructive reimport, native project assembly and publication workflow (#1083, #1088), plus prior optimization work.
+- Review physical PDF page ranges, export article PDF/HTML/JATS Article Authoring, stage confirmed exact-target transfers, and separately write reviewed printed page metadata. Article DOI import requires OJS plugin 1.9.1; real editorial acceptance remains pending.
+- Align npm, Cargo and Tauri at **1.0.0-rc.5**; Windows **1.0.4.0**, Android direct code and workflow offset **2000**, iOS **1.0.0 / 30**. Verify actual store counters before uploading.
+- Preserve Draft specifications, OMI-SPEC-320@0.3.0, exact-SHA evidence, all 14 manual receipts and explicit owner Go/No-Go. No automatic publication or stable release promotion.
+- See [RC5 packaging and release gates](docs/release/1.0.0-rc.5.md).
+
 ## 1.0.0-rc.4 — 2026-11-25 (candidate builds; public release not yet approved)
 
 - Package the merged November formatting, publication and interoperability work, formatted note hover/focus previews (#1041), and memory-backed long manuscript projections with adaptive shared cache budgets (#1043, including #1042).
