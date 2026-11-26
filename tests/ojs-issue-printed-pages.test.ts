@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createPrintedPageReviewRow, reviewedPrintedPageRanges, preparePrintedPageBatch } from '../src/app/ojsIssuePrintedPageActions.ts';
-import type { OjsIssuePageReceipt } from '../src/model/ojsIssuePrintedPages.ts';
-import { printedPageLabel, prepareIssuePageWrite, validatePrintedIssueRanges, pageIdentity } from '../src/model/ojsIssuePrintedPages.ts';
-import type { OjsIssuePageSnapshot } from '../src/model/ojsIssuePrintedPages.ts';
+import { printedPageLabel, prepareIssuePageWrite, validatePrintedIssueRanges, pageIdentity, type OjsIssuePageReceipt, type OjsIssuePageSnapshot } from '../src/model/ojsIssuePrintedPages.ts';
 
 const target = { rootSectionId: 'a', title: 'Article', installationId: 'journal', contextId: 1, issueId: 4, submissionId: 12, publicationId: 13 };
 const snapshot: OjsIssuePageSnapshot = { ...pageIdentity(target), protocol: 'omi-issue-page-range/1', pages: null, workflowToken: 'a'.repeat(64), published: false };

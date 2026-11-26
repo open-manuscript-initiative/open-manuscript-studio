@@ -1,12 +1,11 @@
 import type { OmiPublicationBuild } from '../model/publicationBuild';
-import type { OmiPublicationProfile } from '../model/publicationProfile';
+import { resolvePublicationProfile, type OmiPublicationProfile } from '../model/publicationProfile';
 import { createPublicationBuildManifest } from './publicationBuildManifest';
 import { buildIssuePdfSlice, type IssuePdfSliceDerivation } from './issuePdfSliceBuild';
 import { BUILD_INFO } from '../version';
 import type { OmiManuscript } from '../types/omi';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import { partitionManuscriptStudies } from '../model/sectionStructure';
-import { resolvePublicationProfile } from '../model/publicationProfile';
 import { normalizeIssuePdfText, proposeIssuePdfRanges, validateReviewedIssueRanges, type IssuePdfStudyAnchors, type IssuePdfRangeProposal } from '../model/issuePdfPageRanges';
 import { applyPdfInteractionMode, pdfFileName } from './exportPdf';
 import { renderStyleBasedHtml } from './publicationStyleExport';
