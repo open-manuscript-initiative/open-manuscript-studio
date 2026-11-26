@@ -322,7 +322,7 @@ export function PublicationDocumentCanvas({
       style.paragraphStyles.defaultStyleId,
     ],
   );
-  const paginationDebounceMs = !facingPages && (document.content?.length ?? 0) > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
+  const paginationDebounceMs = (document.content?.length ?? 0) > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
     ? LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS
     : 0;
   const contributors = useMemo(
@@ -860,6 +860,11 @@ export function PublicationDocumentCanvas({
               ? record.target
               : record.target.parentElement;
             if (target?.closest('.omi-publication-flow-break')) continue;
+            // Auto-growing front-matter fields temporarily reset their height to
+            // measure scrollHeight. ResizeObserver handles actual geometry changes;
+            // treating these intermediate style writes as edits causes reflow loops.
+            if (record.attributeName === 'style'
+              && target?.matches('.publication-document-front-matter textarea')) continue;
             const changedNodes = [...record.addedNodes, ...record.removedNodes];
             if (changedNodes.length > 0 && changedNodes.every((node) => (
               node instanceof HTMLElement && node.matches('.omi-publication-flow-break')
@@ -1268,6 +1273,7 @@ export function PublicationDocumentCanvas({
             <header className="publication-document-front-matter">
               <AutoGrowPublicationField
                 className="publication-document-title"
+                layoutKey={paragraphStyleCss}
                 value={manuscript.title}
                 ariaLabel={copy.title}
                 placeholder={copy.title}
@@ -1275,6 +1281,7 @@ export function PublicationDocumentCanvas({
               />
               <AutoGrowPublicationField
                 className="publication-document-subtitle"
+                layoutKey={paragraphStyleCss}
                 value={manuscript.subtitle ?? ''}
                 ariaLabel={copy.subtitle}
                 placeholder={copy.subtitle}
@@ -1306,6 +1313,7 @@ export function PublicationDocumentCanvas({
               ) : null}
               <AutoGrowPublicationField
                 className="publication-document-motto"
+                layoutKey={paragraphStyleCss}
                 value={manuscript.motto ?? ''}
                 ariaLabel={copy.motto}
                 placeholder={copy.motto}
@@ -1313,6 +1321,7 @@ export function PublicationDocumentCanvas({
               />
               <AutoGrowPublicationField
                 className="publication-document-abstract"
+                layoutKey={paragraphStyleCss}
                 value={manuscript.abstract ?? ''}
                 ariaLabel={copy.abstract}
                 placeholder={copy.abstract}
@@ -1436,12 +1445,14 @@ export function PublicationDocumentCanvas({
 
 function AutoGrowPublicationField({
   className,
+  layoutKey,
   value,
   ariaLabel,
   placeholder,
   onChange,
 }: {
   className: string;
+  layoutKey: string;
   value: string;
   ariaLabel: string;
   placeholder: string;
@@ -1453,9 +1464,30 @@ function AutoGrowPublicationField({
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
-    element.style.height = 'auto';
-    element.style.height = `${element.scrollHeight}px`;
-  });
+    resizePublicationField(element);
+  }, [value, layoutKey, previewOnly]);
+
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    // A height change must not trigger another measurement. Only width changes
+    // (wrapping) or newly loaded fonts require measuring an unchanged value.
+    let width = element.clientWidth;
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+      const nextWidth = element.clientWidth;
+      if (nextWidth === width) return;
+      width = nextWidth;
+      resizePublicationField(element);
+    });
+    observer?.observe(element);
+    const fonts = element.ownerDocument.fonts;
+    const onFontsLoaded = () => resizePublicationField(element);
+    fonts?.addEventListener('loadingdone', onFontsLoaded);
+    return () => {
+      observer?.disconnect();
+      fonts?.removeEventListener('loadingdone', onFontsLoaded);
+    };
+  }, [previewOnly]);
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>): void {
     onChange(event.target.value.replace(/[\r\n]+/g, ' '));
@@ -1477,6 +1509,11 @@ function AutoGrowPublicationField({
       }}
     />
   );
+}
+
+function resizePublicationField(element: HTMLTextAreaElement): void {
+  element.style.height = 'auto';
+  element.style.height = `${element.scrollHeight}px`;
 }
 
 function parseZoom(value: string): PublicationZoom {
