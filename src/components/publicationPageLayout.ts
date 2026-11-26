@@ -55,6 +55,13 @@ export interface PublicationPageMetrics {
  * Section-master changes can invalidate an earlier page after a later page
  * was measured (for example, while reserving continued footnotes).
  */
+export interface PublicationPageMetricsSnapshot {
+  insertionStyles: Map<number, string>;
+  heights: number[];
+  prefix: number[];
+  cache: ({ sectionId?: string } & PublicationPageMetrics)[];
+}
+
 export function createPublicationPageMetricsResolver(
   geometryFor: (index: number, sectionId?: string, insertedStyleId?: string) => { height: number; bodyHeight: number; topMargin: number },
   pageGap: number,
@@ -94,7 +101,16 @@ export function createPublicationPageMetricsResolver(
     cache[index] = measured;
     return measured;
   };
-  return { metrics, insertionStyles };
+  const snapshot = (): PublicationPageMetricsSnapshot => ({
+    insertionStyles: new Map(insertionStyles), heights: heights.slice(), prefix: prefix.slice(), cache: cache.slice(),
+  });
+  const restore = (saved: PublicationPageMetricsSnapshot) => {
+    insertionStyles.clear(); for (const [index, style] of saved.insertionStyles) insertionStyles.set(index, style);
+    heights.length = saved.heights.length; heights.fill(0); saved.heights.forEach((value, index) => { heights[index] = value; });
+    prefix.length = 0; for (const value of saved.prefix) prefix.push(value);
+    cache.length = 0; cache.length = saved.cache.length; saved.cache.forEach((value, index) => { cache[index] = value; });
+  };
+  return { metrics, insertionStyles, snapshot, restore };
 }
 
 /**
@@ -147,13 +163,51 @@ function sameFixedBlock(left: PublicationFlowBlock, right: PublicationFlowBlock)
     });
 }
 
+function sameOrdered<T>(left: readonly T[] | undefined, right: readonly T[] | undefined, equal: (a: T, b: T) => boolean): boolean {
+  return (left?.length ?? 0) === (right?.length ?? 0) && (left ?? []).every((item, index) => equal(item, right![index]!));
+}
+
+function sameComplexBlock(left: PublicationFlowBlock, right: PublicationFlowBlock): boolean {
+  return sameFixedBlock(left, right) && left.sectionId === right.sectionId
+    && left.keepSectionTogether === right.keepSectionTogether && left.keepSectionId === right.keepSectionId
+    && sameOrdered(left.noteIds, right.noteIds, (a, b) => a === b)
+    && sameOrdered(left.lines, right.lines, (a, b) => sameOrdered(a.noteIds, b.noteIds, (x, y) => x === y))
+    && sameOrdered(left.insertedPagesBefore, right.insertedPagesBefore, (a, b) => a.id === b.id && a.styleId === b.styleId)
+    && sameOrdered(left.insertedPagesAfter, right.insertedPagesAfter, (a, b) => a.id === b.id && a.styleId === b.styleId);
+}
+
+function sameFootnoteGeometry(left: PublicationFootnotes | undefined, right: PublicationFootnotes | undefined): boolean {
+  if (!left || !right) return left === right;
+  return left.lineHeight === right.lineHeight && left.separatorHeight === right.separatorHeight
+    && left.allowPageContinuation === right.allowPageContinuation && left.heights.size === right.heights.size
+    && [...left.heights].every(([id, height]) => right.heights.get(id) === height);
+}
+
+interface ComplexLayoutSnapshot {
+  blocks: readonly PublicationFlowBlock[];
+  bodyHeight: number;
+  pageOverhead: number;
+  footnotes?: PublicationFootnotes;
+  geometryKey?: object;
+  metricsState?: PublicationPageMetricsSnapshot;
+  layout: PublicationPageLayout;
+}
+
+export interface PublicationPreparedMetrics {
+  /** Identifies all inputs affecting page geometry, stable for one canvas effect. */
+  key: object;
+  snapshot: () => PublicationPageMetricsSnapshot;
+  restore: (snapshot: PublicationPageMetricsSnapshot) => void;
+}
+
 /**
  * One canvas owns one cache. Inputs and returned layouts are immutable
- * snapshots. Variable page masters and footnotes still use full pagination:
- * their carried state needs a different checkpoint contract.
+ * snapshots. Complex pages can reuse a complete result only when every
+ * measured layout input matches and the prepared metrics state can be restored.
  */
 export function createIncrementalPublicationPaginator() {
   let previous: FixedLayoutSnapshot | undefined;
+  let complex: ComplexLayoutSnapshot | undefined;
   return {
     paginate(
       blocks: readonly PublicationFlowBlock[],
@@ -161,14 +215,29 @@ export function createIncrementalPublicationPaginator() {
       pageOverhead: number,
       footnotes?: PublicationFootnotes,
       pageMetrics?: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
+      preparedMetrics?: PublicationPreparedMetrics,
     ): PublicationPageLayout {
       if (pageMetrics || (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length)))) {
         previous = undefined;
-        return paginatePublicationBlocks(blocks, usablePageHeight, pageOverhead, footnotes, pageMetrics);
+        const canCache = !pageMetrics || !!preparedMetrics;
+        if (canCache && complex && complex.geometryKey === (pageMetrics ? preparedMetrics?.key : undefined)
+          && complex.bodyHeight === usablePageHeight && complex.pageOverhead === pageOverhead
+          && sameFootnoteGeometry(complex.footnotes, footnotes)
+          && sameOrdered(complex.blocks, blocks, sameComplexBlock)) {
+          if (complex.metricsState) preparedMetrics?.restore(complex.metricsState);
+          return complex.layout;
+        }
+        const layout = paginatePublicationBlocks(blocks, usablePageHeight, pageOverhead, footnotes, pageMetrics);
+        complex = canCache ? { blocks, bodyHeight: usablePageHeight, pageOverhead,
+          footnotes: footnotes ? { ...footnotes, heights: new Map(footnotes.heights) } : undefined,
+          geometryKey: pageMetrics ? preparedMetrics?.key : undefined,
+          metricsState: pageMetrics ? preparedMetrics?.snapshot() : undefined, layout } : undefined;
+        return layout;
       }
+      complex = undefined;
       return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead, previous, (snapshot) => { previous = snapshot; });
     },
-    clear() { previous = undefined; },
+    clear() { previous = undefined; complex = undefined; },
   };
 }
 
