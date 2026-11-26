@@ -196,7 +196,11 @@ export function PublicationDocumentCanvas({
   const layoutSectionsRef = useRef(manuscript.sections);
   layoutSectionsRef.current = manuscript.sections;
   const sectionLayoutKey = publicationSectionLayoutKey(manuscript.sections);
-  const preparedPageStyles = useMemo(() => createPublicationPageStyleResolver(style, layoutSectionsRef.current), [style, sectionLayoutKey]);
+  // The snapshot key identifies the hierarchy used by this prepared resolver.
+  const preparedPageStyles = useMemo(() => ({
+    ...createPublicationPageStyleResolver(style, layoutSectionsRef.current),
+    sectionLayoutKey,
+  }), [style, sectionLayoutKey]);
   const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
   const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
   const [stageWidth, setStageWidth] = useState(0);
