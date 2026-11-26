@@ -50,6 +50,7 @@ export function createPublicationPaginationWorkerClient(
     return worker;
   };
   return {
+    get available() { return !disabled; },
     async paginate(blocks: readonly PublicationFlowBlock[], footnotes: PublicationFootnotes, budgetBytes?: number): Promise<PublicationPaginationResult | null> {
       const port = ensure();
       if (!port || pending) return null;
