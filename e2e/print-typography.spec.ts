@@ -228,3 +228,32 @@ test('initial publication layout exposes readiness without locking the manuscrip
   await expect(canvas).toHaveAttribute('data-publication-layout-ready', 'true');
   await expect(canvas.locator('textarea.publication-document-title')).toBeEditable();
 });
+
+test('publication local input preserves text through page view changes and paragraph splitting', async ({ page }) => {
+  await installMockStudioApi(page); await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const current = useStudioStore.getState().manuscript;
+    useStudioStore.getState().loadManuscript({ ...current, title: 'Echo fixture', sections: [{ id: 'echo-s', title: '', blocks: [{ id: 'echo-p', type: 'paragraph', content: 'Original' }] }] });
+  });
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
+  const canvas = menu.locator('.publication-document-canvas');
+  const first = canvas.locator('.omi-continuous-tiptap-editor [data-block-id="echo-p"]');
+  await first.click(); await page.keyboard.press('End');
+  await page.keyboard.type(' edited');
+  await expect(first).toContainText('Original edited');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Second paragraph');
+  await expect(canvas.locator('.omi-continuous-tiptap-editor')).toContainText('Second paragraph');
+  await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
+  await canvas.getByRole('button', { name: 'Print layout', exact: true }).click();
+  await expect(canvas.locator('.omi-continuous-tiptap-editor')).toContainText('Original edited');
+  await expect(canvas.locator('.omi-continuous-tiptap-editor')).toContainText('Second paragraph');
+  await expect.poll(() => page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    return useStudioStore.getState().manuscript.sections.flatMap((section) => section.blocks).length;
+  })).toBe(2);
+});
