@@ -4,6 +4,9 @@ import { walkManuscriptStructure } from './manuscriptTreeTraversal';
 import { publicPublicationManuscript } from './publicationAnnotations';
 import { createInitialVersioningEnvelope } from './versioning';
 import { ensureManuscriptRevisionStateDigests } from './revisionIntegrity';
+import { ISSUE_STUDY_CITATION, projectIssueStudyCitationMetadata } from './issueStudyCitationMetadata';
+import type { PrintedPageRange } from './ojsIssuePrintedPages';
+import { sha256HexSync } from './stateDigest';
 import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 
 /** Collect exact structured identifiers, including note/table rich-text JSON. */
@@ -24,6 +27,8 @@ function collectStrings(value: unknown, result: Set<string>): void {
 export interface IssueStudyExportOptions {
   /** Uncited bibliography records require an explicit article assignment. */
   additionalBibliographyRecordIds?: readonly string[];
+  /** Explicitly reviewed printed labels, never physical PDF indices. */
+  reviewedPrintedPages?: PrintedPageRange;
 }
 
 /** A fresh standalone export snapshot, not a mutation or a copy of issue history. */
@@ -69,7 +74,10 @@ export function projectIssueStudyForExport(issue: OmiManuscript, rootSectionId: 
   additional.forEach(id => recordIds.add(id));
   const bibliographicRecords = (issue.bibliographicRecords ?? []).filter(record => recordIds.has(record.id));
   if (bibliographicRecords.length !== recordIds.size) throw new Error('Unresolved study bibliographic record.');
-  const manuscriptId = crypto.randomUUID();
+  const digest = sha256HexSync(new TextEncoder().encode(JSON.stringify(['omi-issue-study/1', issue.id, rootSectionId])));
+  // Stable across repeated exports: preserve logical OJS galley identity.
+  const manuscriptId = digest.slice(0, 8) + '-' + digest.slice(8, 12) + '-8' + digest.slice(13, 16) + '-a' + digest.slice(17, 20) + '-' + digest.slice(20, 32);
+  const citationMetadata = projectIssueStudyCitationMetadata(issue, rootSectionId, meta.locale, options.reviewedPrintedPages);
   const contributions = issue.contributions.filter(item => sectionIds.has(item.targetId) && item.visibility === 'public')
     .map(item => ({ ...item, targetId: item.targetId === rootSectionId ? manuscriptId : item.targetId }));
   const agentIds = new Set(contributions.map(item => item.agentId));
@@ -88,6 +96,7 @@ export function projectIssueStudyForExport(issue: OmiManuscript, rootSectionId: 
     embeddedPublicationProfile: issue.embeddedPublicationProfile,
     agents, contributions, sections, annotations, citations, citationClusters, bibliographicRecords,
     bibliographyAdditionalRecordIds: additional, sourceAttributions, crossReferences, namedAnchors, assets, semanticFields,
+    extensions: citationMetadata ? { [ISSUE_STUDY_CITATION]: citationMetadata } : undefined,
     tombstones: [], createdAt: issue.createdAt, updatedAt: issue.updatedAt,
   };
   const cloned = structuredClone(state);
