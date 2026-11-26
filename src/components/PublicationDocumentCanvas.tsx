@@ -12,7 +12,7 @@ import type { PublicationLayoutIssue, PublicationLayoutIssueReporter } from '../
 import { renderPublicationNoteBody, type PublicationNoteBody } from '../services/publicationNoteBody';
 import { PublicationPreviewContext, usePublicationPreview } from './PublicationPreviewContext';
 import type { JSONContent } from '@tiptap/core';
-import { createTextProjectionCache } from '../model/derivedMemoryCache';
+import { createTextProjectionCache, editorMemoryPool } from '../model/derivedMemoryCache';
 import { FileCode2, FileText } from 'lucide-react';
 import {
   useEffect,
@@ -548,6 +548,12 @@ export function PublicationDocumentCanvas({
     const measuredWidths = new WeakMap<HTMLElement, number>();
     const dirtyBlocks = new WeakSet<HTMLElement>();
     let measuredNotes = new WeakMap<HTMLElement, number>();
+    const visibilityChanged = () => {
+      if (content.ownerDocument.visibilityState !== 'hidden') return;
+      paginator.clear();
+      worker?.clearCache();
+    };
+    content.ownerDocument.addEventListener('visibilitychange', visibilityChanged);
     const finish = () => {
       measuring = false;
       if (pending && !cancelled) { pending = false; schedule(); }
@@ -700,6 +706,9 @@ export function PublicationDocumentCanvas({
         );
         const footnotes = { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight,
           allowPageContinuation: noteStyle.footnoteContinueOnNextPage !== false };
+        const cacheBudget = content.ownerDocument.visibilityState === 'hidden' ? 0 : Math.max(0,
+          Math.min(16 * 1024 * 1024, Math.floor(editorMemoryPool.budgetBytes / 8), editorMemoryPool.budgetBytes - editorMemoryPool.estimatedBytes));
+        paginator.setBudget(cacheBudget);
         const localLayout = () => paginator.paginate(measuredBlocks, usablePageHeight, pageOverhead, footnotes,
           style.pageStyles ? metrics : undefined,
           style.pageStyles ? { key: preparedPageStyles, snapshot, restore } : undefined);
@@ -847,12 +856,13 @@ export function PublicationDocumentCanvas({
         // DOM measurement stays on the main thread; only numeric pagination
         // for larger publications is delegated to the persistent worker.
         if (worker && measuredBlocks.length > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT) {
-          void worker.paginate(measuredBlocks, footnotes).then(result => {
+          paginator.clear();
+          void worker.paginate(measuredBlocks, footnotes, cacheBudget).then(result => {
             if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
             if (result) { restore(result.metricsState); publishLayout(result.layout); }
             else publishLayout(localLayout());
           });
-        } else publishLayout(localLayout());
+        } else { worker?.clearCache(); publishLayout(localLayout()); }
       };
 
       measureNotesChunk();
@@ -939,6 +949,7 @@ export function PublicationDocumentCanvas({
     return () => {
       cancelled = true;
       worker?.close();
+      content.ownerDocument.removeEventListener('visibilitychange', visibilityChanged);
       cancelFontPreparation();
       if (scheduleTimer !== null) clearTimeout(scheduleTimer);
       cancelAnimationFrame(frame);
