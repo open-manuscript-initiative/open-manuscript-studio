@@ -42,6 +42,8 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
   const [result, setResult] = useState<IssueBatchResult>();
   const [needsReview, setNeedsReview] = useState(false);
   const lock = useRef(false);
+  const pdfLock = useRef(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const latest = useRef({ style, active, connection, connections, pdf });
   latest.current = { style, active, connection, connections, pdf };
   const layoutKey = () => publicationLayoutKey({ style: latest.current.style, identity: loadPublicationPublisherIdentity() });
@@ -68,14 +70,14 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
     setInspected(previous => previous ? { ...previous, rows: previous.rows.map(row => row.target.rootSectionId === id ? update(row) : row) } : previous);
   }
   async function inspect() {
-    if (lock.current || !connection || needsReview) return;
+    if (lock.current || pdfLock.current || !connection || needsReview) return;
     lock.current = true; setBusy(true); setError(''); invalidate(); setInspected(undefined);
     try {
       // Existing approved PDFs are tied to a committed snapshot. Avoid creating
       // another revision just to inspect destinations.
       if (!pdfCurrent) {
         await externalizeActiveManuscriptAssets();
-        if (useStudioStore.getState().manuscript.id !== manuscript.id) throw new Error(copy.stale);
+        if (!latest.current.active || latest.current.connection !== connection || getStudioApiBaseUrl() !== origin || useStudioStore.getState().manuscript.id !== manuscript.id) throw new Error(copy.stale);
         useStudioStore.getState().checkpoint('export');
       }
       const source = useStudioStore.getState().manuscript;
@@ -97,7 +99,7 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
     finally { lock.current = false; setBusy(false); }
   }
   async function prepare() {
-    if (lock.current || !inspectionCurrent || !canPrepare || needsReview) return;
+    if (lock.current || pdfLock.current || !inspectionCurrent || !canPrepare || needsReview) return;
     lock.current = true; setBusy(true); setError(''); invalidate();
     try {
       const source = manuscript, key = layoutKey();
@@ -115,7 +117,11 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
         source, layoutKey: key, connectionId: connection,
         currentSource: () => { assertCurrent(); return useStudioStore.getState().manuscript; },
         currentLayoutKey: layoutKey, currentConnectionId: () => latest.current.connection,
-        send: requestPublicationArtifact,
+        send: async (connectionId, request) => {
+          const response = await requestPublicationArtifact(connectionId, request);
+          if (request.action === 'inspect' && response.target?.workflowToken !== selected.find(row => row.target.submissionId === request.submissionId)?.remote.workflowToken) throw new Error(copy.stale);
+          return response;
+        },
         prepare: async (target, wanted) => {
           const outputs: PreparedPublicationArtifact[] = [];
           const textual = wanted.filter((format): format is 'html' | 'jats' => format !== 'pdf-print');
@@ -137,7 +143,7 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
     finally { lock.current = false; setBusy(false); }
   }
   async function transfer() {
-    if (lock.current || !prepared || !preparedCurrent || !confirmed || needsReview) return;
+    if (lock.current || pdfLock.current || !prepared || !preparedCurrent || !confirmed || needsReview) return;
     lock.current = true; setBusy(true); setError(''); setConfirmed(false);
     try {
       const outcome = await prepared.batch.execute(true);
@@ -152,6 +158,9 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
   return <section className="ojs-issue-workspace" aria-label={copy.title}>
     <h4>{copy.title}</h4><p>{copy.help}</p><p>{copy.excluded}</p>
     <fieldset disabled={busy || needsReview}>
+      <IssuePdfRangeReviewPanel style={style} active={active && !busy && !needsReview} onApproved={approvePdf} onBusyChange={value => { pdfLock.current = value; setPdfBusy(value); }} />
+    </fieldset>
+    <fieldset disabled={busy || pdfBusy || needsReview}>
       <label>{copy.connection}<select value={connection} onChange={event => {
         latest.current.connection = event.target.value; setConnection(event.target.value); setInspected(undefined); invalidate();
       }}><option value="">{copy.choose}</option>{connections.map(item => <option key={item.id} value={item.id}>{item.displayName ?? item.connectionKey}</option>)}</select></label>
@@ -173,7 +182,6 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
             onChange={event => changeRow(row.target.rootSectionId, old => ({ ...old, formats: event.target.checked ? [...old.formats, format] : old.formats.filter(item => item !== format) }))} /> {names[format]}
         </label>)}</div>
       </article>)}
-      <IssuePdfRangeReviewPanel style={style} active={active && !busy && !needsReview} onApproved={approvePdf} />
       {selected.some(row => row.formats.includes('pdf-print')) && !pdfCurrent ? <p>{copy.pdfHelp}</p> : null}
       <button type="button" disabled={!canPrepare} onClick={() => void prepare()}>{copy.prepare}</button>
       {prepared ? <>
