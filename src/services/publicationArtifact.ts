@@ -134,6 +134,7 @@ export function publicationArtifactFormatAvailableForDocument(
 export async function preparePublicationArtifact(
   manuscript: OmiManuscript,
   format: PublicationArtifactFormat,
+  options: { assetOwnerId?: string } = {},
 ): Promise<PreparedPublicationArtifact> {
   if (!publicationArtifactFormatAvailableForDocument(manuscript, format)) {
     throw new Error(
@@ -144,7 +145,7 @@ export async function preparePublicationArtifact(
   const profile = resolvePublicationProfile(manuscript);
 
   if (format === 'html') {
-    const html = await buildPublicationHtmlArtifact(manuscript, profile);
+    const html = await buildPublicationHtmlArtifact(manuscript, profile, options.assetOwnerId);
     const bytes = new TextEncoder().encode(html);
     const fileName = publicationHtmlFileName(manuscript);
     const mediaType = 'text/html;charset=utf-8';
