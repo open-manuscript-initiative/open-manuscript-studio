@@ -14,14 +14,15 @@ import { publicationLayoutKey } from '../services/styledPublicationArtifact';
 import { saveExportBlob } from '../services/exportFileDelivery';
 import type { OmiManuscript } from '../types/omi';
 import { IssuePdfRangeReviewPanel, type ApprovedIssuePdfSet } from './IssuePdfRangeReviewPanel';
+import { OjsIssuePrintedPagePanel } from './OjsIssuePrintedPagePanel';
 import './OjsIssuePublicationWorkspace.css';
 
 const formats: readonly IssueBatchFormat[] = ['pdf-print', 'html', 'jats'];
 const names: Record<IssueBatchFormat, string> = { 'pdf-print': 'PDF', html: 'HTML', jats: 'JATS XML' };
 const translations = {
-  hu: { title: 'Teljes lapszám átadása az OJS-be', help: 'Válassza ki a kapcsolatot, ellenőrizze a tanulmányokat, majd jelölje ki az átadandó formátumokat. A művelet nem publikálja a lapszámot.', connection: 'OJS-kapcsolat', choose: 'Válasszon', inspect: 'OJS-célpontok ellenőrzése', language: 'Nyelv', genre: 'Fájltípus', select: 'Kiválasztott formátumok', pdfHelp: 'PDF-átadáshoz előbb ellenőrizze és készítse el a tanulmányok PDF-jeit.', prepare: 'Kijelölt fájlok előkészítése', ready: 'Előkészített fájlok', save: 'Mentés ellenőrzéshez', confirm: 'Ellenőriztem a fájlokat és az OJS-célpontokat. Jóváhagyom a visszatöltést.', transfer: 'Visszatöltés az OJS-be', busy: 'Feldolgozás folyamatban…', stale: 'A lapszám, az oldaltartomány vagy a kapcsolat megváltozott. Ellenőrizze újra.', noTargets: 'Nincs eredeti OJS-bejegyzéshez kapcsolt tanulmány.', success: 'Minden kijelölt fájl átvitele igazolt.', partial: 'Az átvitel megállt. A már igazolt fájlok megmaradnak az OJS-ben.', uncertain: 'Az utolsó fájl állapota bizonytalan. Ellenőrizze az OJS-ben, mielőtt újra megpróbálná.', reviewed: 'Ellenőriztem az OJS-ben az előző átvitel eredményét.', receipts: 'Igazolt átvitelek', missing: 'Válasszon legalább egy formátumot, nyelvet és fájltípust.', noConnection: 'Nincs engedélyezett OJS-kapcsolat.', excluded: 'A nem OJS-hez kapcsolt tanulmányok nem tölthetők vissza.' },
-  en: { title: 'Transfer complete issue to OJS', help: 'Choose the connection, inspect articles and select the formats to transfer. This does not publish the issue.', connection: 'OJS connection', choose: 'Choose', inspect: 'Inspect OJS targets', language: 'Language', genre: 'File component', select: 'Selected formats', pdfHelp: 'For PDF transfer, first review the physical ranges and build the study PDFs.', prepare: 'Prepare selected files', ready: 'Prepared files', save: 'Save for review', confirm: 'I reviewed the files and OJS destinations. I approve transfer.', transfer: 'Transfer to OJS', busy: 'Processing…', stale: 'The issue, page range or connection changed. Inspect again.', noTargets: 'No studies linked to original OJS records.', success: 'All selected files have confirmed receipts.', partial: 'Transfer stopped. Confirmed files remain in OJS.', uncertain: 'The last file outcome is uncertain. Inspect OJS before retrying.', reviewed: 'I checked the previous transfer result in OJS.', receipts: 'Confirmed transfers', missing: 'Select at least one format, language and file component.', noConnection: 'No enabled OJS connection.', excluded: 'Studies without OJS links cannot be transferred.' },
-  de: { title: 'Gesamte Ausgabe an OJS übertragen', help: 'Wählen Sie die Verbindung, prüfen Sie die Beiträge und wählen Sie die Formate. Die Ausgabe wird nicht veröffentlicht.', connection: 'OJS-Verbindung', choose: 'Auswählen', inspect: 'OJS-Ziele prüfen', language: 'Sprache', genre: 'Dateikomponente', select: 'Ausgewählte Formate', pdfHelp: 'Für PDF-Übertragung zuerst Seitenbereiche prüfen und Beitrags-PDFs erstellen.', prepare: 'Ausgewählte Dateien vorbereiten', ready: 'Vorbereitete Dateien', save: 'Zur Prüfung speichern', confirm: 'Dateien und OJS-Ziele geprüft. Übertragung bestätigen.', transfer: 'An OJS übertragen', busy: 'Verarbeitung läuft…', stale: 'Ausgabe, Seitenbereich oder Verbindung geändert. Erneut prüfen.', noTargets: 'Keine Beiträge mit ursprünglichen OJS-Einträgen verknüpft.', success: 'Alle ausgewählten Dateien wurden bestätigt.', partial: 'Übertragung gestoppt. Bestätigte Dateien bleiben in OJS.', uncertain: 'Status der letzten Datei unklar. Vor erneutem Versuch OJS prüfen.', reviewed: 'Vorheriges Übertragungsergebnis in OJS geprüft.', receipts: 'Bestätigte Übertragungen', missing: 'Mindestens ein Format, Sprache und Dateikomponente wählen.', noConnection: 'Keine aktivierte OJS-Verbindung.', excluded: 'Beiträge ohne OJS-Verknüpfung können nicht übertragen werden.' },
+  hu: { title: 'Teljes lapszám átadása az OJS-be', help: 'Válassza ki a kapcsolatot, ellenőrizze a tanulmányokat, majd jelölje ki az átadandó formátumokat. A művelet nem publikálja a lapszámot.', connection: 'OJS-kapcsolat', choose: 'Válasszon', inspect: 'OJS-célpontok ellenőrzése', language: 'Nyelv', genre: 'Fájltípus', select: 'Kiválasztott formátumok', pdfHelp: 'PDF-átadáshoz előbb ellenőrizze és készítse el a tanulmányok PDF-jeit.', prepare: 'Kijelölt fájlok előkészítése', ready: 'Előkészített fájlok', save: 'Mentés ellenőrzéshez', confirm: 'Ellenőriztem a fájlokat és az OJS-célpontokat. Jóváhagyom a visszatöltést.', transfer: 'Visszatöltés az OJS-be', busy: 'Feldolgozás folyamatban…', stale: 'A lapszám, az oldaltartomány vagy a kapcsolat megváltozott. Ellenőrizze újra.', noTargets: 'Nincs eredeti OJS-bejegyzéshez kapcsolt tanulmány.', success: 'Minden kijelölt fájl átvitele igazolt.', partial: 'Az átvitel megállt. A már igazolt fájlok megmaradnak az OJS-ben.', uncertain: 'Az utolsó művelet eredménye bizonytalan. Ellenőrizze az OJS-ben, mielőtt újra megpróbálná.', reviewed: 'Ellenőriztem az OJS-ben az előző átvitel eredményét.', receipts: 'Igazolt átvitelek', missing: 'Válasszon legalább egy formátumot, nyelvet és fájltípust.', noConnection: 'Nincs engedélyezett OJS-kapcsolat.', excluded: 'A nem OJS-hez kapcsolt tanulmányok nem tölthetők vissza.' },
+  en: { title: 'Transfer complete issue to OJS', help: 'Choose the connection, inspect articles and select the formats to transfer. This does not publish the issue.', connection: 'OJS connection', choose: 'Choose', inspect: 'Inspect OJS targets', language: 'Language', genre: 'File component', select: 'Selected formats', pdfHelp: 'For PDF transfer, first review the physical ranges and build the study PDFs.', prepare: 'Prepare selected files', ready: 'Prepared files', save: 'Save for review', confirm: 'I reviewed the files and OJS destinations. I approve transfer.', transfer: 'Transfer to OJS', busy: 'Processing…', stale: 'The issue, page range or connection changed. Inspect again.', noTargets: 'No studies linked to original OJS records.', success: 'All selected files have confirmed receipts.', partial: 'Transfer stopped. Confirmed files remain in OJS.', uncertain: 'The last operation outcome is uncertain. Inspect OJS before retrying.', reviewed: 'I checked the previous transfer result in OJS.', receipts: 'Confirmed transfers', missing: 'Select at least one format, language and file component.', noConnection: 'No enabled OJS connection.', excluded: 'Studies without OJS links cannot be transferred.' },
+  de: { title: 'Gesamte Ausgabe an OJS übertragen', help: 'Wählen Sie die Verbindung, prüfen Sie die Beiträge und wählen Sie die Formate. Die Ausgabe wird nicht veröffentlicht.', connection: 'OJS-Verbindung', choose: 'Auswählen', inspect: 'OJS-Ziele prüfen', language: 'Sprache', genre: 'Dateikomponente', select: 'Ausgewählte Formate', pdfHelp: 'Für PDF-Übertragung zuerst Seitenbereiche prüfen und Beitrags-PDFs erstellen.', prepare: 'Ausgewählte Dateien vorbereiten', ready: 'Vorbereitete Dateien', save: 'Zur Prüfung speichern', confirm: 'Dateien und OJS-Ziele geprüft. Übertragung bestätigen.', transfer: 'An OJS übertragen', busy: 'Verarbeitung läuft…', stale: 'Ausgabe, Seitenbereich oder Verbindung geändert. Erneut prüfen.', noTargets: 'Keine Beiträge mit ursprünglichen OJS-Einträgen verknüpft.', success: 'Alle ausgewählten Dateien wurden bestätigt.', partial: 'Übertragung gestoppt. Bestätigte Dateien bleiben in OJS.', uncertain: 'Ergebnis des letzten Vorgangs unklar. Vor erneutem Versuch OJS prüfen.', reviewed: 'Vorheriges Übertragungsergebnis in OJS geprüft.', receipts: 'Bestätigte Übertragungen', missing: 'Mindestens ein Format, Sprache und Dateikomponente wählen.', noConnection: 'Keine aktivierte OJS-Verbindung.', excluded: 'Beiträge ohne OJS-Verknüpfung können nicht übertragen werden.' },
 } as const;
 
 interface Row { target: OjsIssueTransferTarget; remote: PublicationArtifactTarget; formats: IssueBatchFormat[]; locale: string; genre: string }
@@ -43,6 +44,9 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
   const [needsReview, setNeedsReview] = useState(false);
   const lock = useRef(false);
   const pdfLock = useRef(false);
+  const pageLock = useRef(false);
+  const [pageBusy, setPageBusy] = useState(false);
+  const [fileEpoch, setFileEpoch] = useState(0);
   const [pdfBusy, setPdfBusy] = useState(false);
   const latest = useRef({ style, active, connection, connections, pdf });
   latest.current = { style, active, connection, connections, pdf };
@@ -70,7 +74,7 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
     setInspected(previous => previous ? { ...previous, rows: previous.rows.map(row => row.target.rootSectionId === id ? update(row) : row) } : previous);
   }
   async function inspect() {
-    if (lock.current || pdfLock.current || !connection || needsReview) return;
+    if (lock.current || pdfLock.current || pageLock.current || !connection || needsReview) return;
     lock.current = true; setBusy(true); setError(''); invalidate(); setInspected(undefined);
     try {
       // Existing approved PDFs are tied to a committed snapshot. Avoid creating
@@ -99,7 +103,7 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
     finally { lock.current = false; setBusy(false); }
   }
   async function prepare() {
-    if (lock.current || pdfLock.current || !inspectionCurrent || !canPrepare || needsReview) return;
+    if (lock.current || pdfLock.current || pageLock.current || !inspectionCurrent || !canPrepare || needsReview) return;
     lock.current = true; setBusy(true); setError(''); invalidate();
     try {
       const source = manuscript, key = layoutKey();
@@ -143,9 +147,10 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
     finally { lock.current = false; setBusy(false); }
   }
   async function transfer() {
-    if (lock.current || pdfLock.current || !prepared || !preparedCurrent || !confirmed || needsReview) return;
+    if (lock.current || pdfLock.current || pageLock.current || !prepared || !preparedCurrent || !confirmed || needsReview) return;
     lock.current = true; setBusy(true); setError(''); setConfirmed(false);
     try {
+      setFileEpoch(previous => previous + 1);
       const outcome = await prepared.batch.execute(true);
       setResult(previous => ({ ...outcome, receipts: [...(previous?.receipts ?? []), ...outcome.receipts] }));
       if (outcome.failed) setNeedsReview(true);
@@ -157,10 +162,10 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
   };
   return <section className="ojs-issue-workspace" aria-label={copy.title}>
     <h4>{copy.title}</h4><p>{copy.help}</p><p>{copy.excluded}</p>
-    <fieldset disabled={busy || needsReview}>
-      <IssuePdfRangeReviewPanel style={style} active={active && !busy && !needsReview} onApproved={approvePdf} onBusyChange={value => { pdfLock.current = value; setPdfBusy(value); }} />
+    <fieldset disabled={busy || pageBusy || needsReview}>
+      <IssuePdfRangeReviewPanel style={style} active={active && !busy && !pageBusy && !needsReview} onApproved={approvePdf} onBusyChange={value => { pdfLock.current = value; setPdfBusy(value); }} />
     </fieldset>
-    <fieldset disabled={busy || pdfBusy || needsReview}>
+    <fieldset disabled={busy || pdfBusy || pageBusy || needsReview}>
       <label>{copy.connection}<select value={connection} onChange={event => {
         latest.current.connection = event.target.value; setConnection(event.target.value); setInspected(undefined); invalidate();
       }}><option value="">{copy.choose}</option>{connections.map(item => <option key={item.id} value={item.id}>{item.displayName ?? item.connectionKey}</option>)}</select></label>
@@ -198,6 +203,17 @@ export function OjsIssuePublicationWorkspace({ style, active, connections }: { s
         <button type="button" disabled={!confirmed || !preparedCurrent} onClick={() => void transfer()}>{copy.transfer}</button>
       </> : null}
     </fieldset>
+    <OjsIssuePrintedPagePanel
+      connection={connections.some(item => item.id === connection && item.enabled) ? connection : ''}
+      active={active}
+      disabled={busy || pdfBusy || needsReview || !!prepared}
+      layoutKey={layoutKey() + ':' + fileEpoch}
+      onBusyChange={value => {
+        pageLock.current = value; setPageBusy(value);
+        if (value) { invalidate(); setInspected(undefined); }
+      }}
+      onReviewRequired={() => setNeedsReview(true)}
+    />
     {busy ? <p role="status">{copy.busy}</p> : null}
     {error ? <p role="alert">{error}</p> : null}
     {result ? <div role="status"><p>{result.failed ? copy.partial : copy.success}</p>
