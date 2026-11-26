@@ -180,7 +180,7 @@ export async function prepareOjsIssueBatch(
               receipt.submissionId !== item.request.submissionId || receipt.publicationId !== item.request.publicationId ||
               receipt.issueId !== item.request.expectedIssueId || receipt.format !== item.request.format ||
               receipt.sha256 !== item.request.build.output.digest.value || receipt.buildId !== item.request.build.id ||
-              receipt.mediaType !== item.request.mediaType || receipt.provenanceVerified !== true || receipt.published !== false ||
+              receipt.mediaType !== mediaType(item.file.format) || receipt.artifactFileName !== item.request.fileName || receipt.provenanceVerified !== true || receipt.published !== false ||
               !Number.isSafeInteger(receipt.galleyId) || receipt.galleyId! < 1 ||
               !Number.isSafeInteger(receipt.submissionFileId) || receipt.submissionFileId < 1) {
             throw new Error('OJS did not return a matching receipt. Inspect before retrying.');
