@@ -183,6 +183,109 @@ function sameFootnoteGeometry(left: PublicationFootnotes | undefined, right: Pub
     && [...left.heights].every(([id, height]) => right.heights.get(id) === height);
 }
 
+interface ComplexPaginationCheckpoint {
+  blockIndex: number;
+  page: number;
+  position: number;
+  naturalBottom: number;
+  inlineHeight: number;
+  previousDelta: number;
+  pageNotes: PublicationPageNote[][];
+  pageNoteHeights: number[];
+  seen: Set<string>;
+  placements: PublicationBlockPlacement[];
+  flowBreaks: PublicationFlowBreak[];
+  pageSectionIds?: (string | undefined)[];
+  insertedPages?: NonNullable<PublicationPageLayout['insertedPages']>;
+  movedSections?: Set<string>;
+  metricsState?: PublicationPageMetricsSnapshot;
+}
+
+interface ComplexPaginationResume {
+  checkpoint?: ComplexPaginationCheckpoint;
+  retain: ComplexPaginationCheckpoint[];
+  preparedMetrics?: PublicationPreparedMetrics;
+  bytes: number;
+}
+
+const MAX_COMPLEX_CHECKPOINTS = 3;
+const MAX_COMPLEX_CHECKPOINT_BYTES = 8 * 1024 * 1024;
+
+function checkpointBytes(checkpoint: ComplexPaginationCheckpoint): number {
+  // Conservative estimate of copied references, containers, and metric entries.
+  return 512 + checkpoint.placements.length * 16 + checkpoint.flowBreaks.length * 16
+    + checkpoint.pageNoteHeights.length * 16 + checkpoint.seen.size * 96
+    + checkpoint.pageNotes.reduce((sum, fragments) => sum + 64 + fragments.length * 16, 0)
+    + (checkpoint.pageSectionIds?.length ?? 0) * 16 + (checkpoint.insertedPages?.length ?? 0) * 16
+    + (checkpoint.movedSections?.size ?? 0) * 96
+    + (checkpoint.metricsState ? (checkpoint.metricsState.heights.length + checkpoint.metricsState.prefix.length
+      + checkpoint.metricsState.cache.length) * 24 + checkpoint.metricsState.insertionStyles.size * 96 : 0);
+}
+
+function firstKeepSectionIndexes(blocks: readonly PublicationFlowBlock[]): Map<string | undefined, number> {
+  const first = new Map<string | undefined, number>();
+  blocks.forEach((block, index) => {
+    const id = block.keepSectionId ?? block.sectionId;
+    if (block.keepSectionTogether && !first.has(id)) first.set(id, index);
+  });
+  return first;
+}
+
+function safeComplexBoundary(blocks: readonly PublicationFlowBlock[], index: number, keepSections?: ReadonlyMap<string | undefined, number>): boolean {
+  if (index <= 0 || index > blocks.length || blocks[index - 1]?.keepWithNext) return false;
+  if (!keepSections || index === blocks.length) return true;
+  const next = blocks[index]!;
+  // A keep-section group that started earlier must not look across the checkpoint.
+  return (keepSections.get(next.keepSectionId ?? next.sectionId) ?? Infinity) >= index;
+}
+
+function sameNotePolicy(a?: PublicationFootnotes, b?: PublicationFootnotes): boolean {
+  return !a || !b ? a === b : a.lineHeight === b.lineHeight
+    && a.separatorHeight === b.separatorHeight && a.allowPageContinuation === b.allowPageContinuation;
+}
+
+function unchangedComplexPrefix(previous: ComplexLayoutSnapshot, blocks: readonly PublicationFlowBlock[], notes?: PublicationFootnotes): number {
+  if (!sameNotePolicy(previous.footnotes, notes)) return 0;
+  const equalNote = (id: string) => previous.footnotes?.heights.get(id) === notes?.heights.get(id)
+    && previous.footnotes?.heights.has(id) === notes?.heights.has(id);
+  let index = 0;
+  while (index < blocks.length && index < previous.blocks.length) {
+    const block = blocks[index]!;
+    if (!sameComplexBlock(previous.blocks[index]!, block)
+      || block.noteIds?.some(id => !equalNote(id))
+      || block.lines?.some(line => line.noteIds?.some(id => !equalNote(id)))) break;
+    index += 1;
+  }
+  return index;
+}
+
+function complexResume(previous: ComplexLayoutSnapshot | undefined, blocks: readonly PublicationFlowBlock[],
+  notes: PublicationFootnotes | undefined, preparedMetrics?: PublicationPreparedMetrics): ComplexPaginationResume {
+  const prefix = previous ? unchangedComplexPrefix(previous, blocks, notes) : 0;
+  const keepSections = preparedMetrics ? firstKeepSectionIndexes(blocks) : undefined;
+  const retain = (previous?.checkpoints ?? []).filter(cp => cp.blockIndex <= prefix
+    && safeComplexBoundary(blocks, cp.blockIndex, keepSections));
+  return { checkpoint: retain.at(-1), retain, preparedMetrics, bytes: retain.reduce((sum, cp) => sum + checkpointBytes(cp), 0) };
+}
+
+function wantsComplexCheckpoint(resume: ComplexPaginationResume | undefined, blocks: readonly PublicationFlowBlock[],
+  index: number, keepSections?: ReadonlyMap<string | undefined, number>): boolean {
+  return !!resume && blocks.length >= 96 && resume.retain.length < MAX_COMPLEX_CHECKPOINTS
+    && resume.bytes < MAX_COMPLEX_CHECKPOINT_BYTES && index < blocks.length
+    && index >= Math.ceil(blocks.length * (resume.retain.length + 1) / (MAX_COMPLEX_CHECKPOINTS + 1))
+    && safeComplexBoundary(blocks, index, keepSections);
+}
+
+function retainComplexCheckpoint(resume: ComplexPaginationResume, checkpoint: ComplexPaginationCheckpoint) {
+  const bytes = checkpointBytes(checkpoint);
+  if (resume.bytes + bytes > MAX_COMPLEX_CHECKPOINT_BYTES) {
+    resume.bytes = MAX_COMPLEX_CHECKPOINT_BYTES;
+    return;
+  }
+  resume.retain.push(checkpoint);
+  resume.bytes += bytes;
+}
+
 interface ComplexLayoutSnapshot {
   blocks: readonly PublicationFlowBlock[];
   bodyHeight: number;
@@ -190,6 +293,7 @@ interface ComplexLayoutSnapshot {
   footnotes?: PublicationFootnotes;
   geometryKey?: object;
   metricsState?: PublicationPageMetricsSnapshot;
+  checkpoints: ComplexPaginationCheckpoint[];
   layout: PublicationPageLayout;
 }
 
@@ -227,11 +331,15 @@ export function createIncrementalPublicationPaginator() {
           if (complex.metricsState) preparedMetrics?.restore(complex.metricsState);
           return complex.layout;
         }
-        const layout = paginatePublicationBlocks(blocks, usablePageHeight, pageOverhead, footnotes, pageMetrics);
+        const compatible = canCache && complex && complex.geometryKey === (pageMetrics ? preparedMetrics?.key : undefined)
+          && complex.bodyHeight === usablePageHeight && complex.pageOverhead === pageOverhead ? complex : undefined;
+        const resume = canCache ? complexResume(compatible, blocks, footnotes, preparedMetrics) : undefined;
+        const layout = pageMetrics ? paginateStyledPages(blocks, pageMetrics, footnotes, resume)
+          : paginateWithFootnotes(blocks, usablePageHeight, pageOverhead, footnotes!, resume);
         complex = canCache ? { blocks, bodyHeight: usablePageHeight, pageOverhead,
           footnotes: footnotes ? { ...footnotes, heights: new Map(footnotes.heights) } : undefined,
           geometryKey: pageMetrics ? preparedMetrics?.key : undefined,
-          metricsState: pageMetrics ? preparedMetrics?.snapshot() : undefined, layout } : undefined;
+          metricsState: pageMetrics ? preparedMetrics?.snapshot() : undefined, checkpoints: resume?.retain ?? [], layout } : undefined;
         return layout;
       }
       complex = undefined;
@@ -395,16 +503,23 @@ function paginateStyledPages(
   blocks: readonly PublicationFlowBlock[],
   metrics: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
   notes?: PublicationFootnotes,
+  resume?: ComplexPaginationResume,
 ): PublicationPageLayout {
-  const pageSectionIds: (string | undefined)[] = [];
-  const pageNotes: PublicationPageNote[][] = [];
-  const pageNoteHeights: number[] = [];
-  const placements: PublicationBlockPlacement[] = [], flowBreaks: PublicationFlowBreak[] = [];
-  const insertedPages: NonNullable<PublicationPageLayout['insertedPages']> = [];
-  const movedSections = new Set<string>();
-  const seen = new Set<string>();
+  const checkpoint = resume?.checkpoint;
+  if (checkpoint?.metricsState) resume?.preparedMetrics?.restore(checkpoint.metricsState);
+  const startBlock = checkpoint?.blockIndex ?? 0;
+  const keepSections = resume ? firstKeepSectionIndexes(blocks) : undefined;
+  const pageSectionIds = checkpoint?.pageSectionIds?.slice() ?? [];
+  const pageNotes = checkpoint?.pageNotes.map(fragments => fragments.slice()) ?? [];
+  const pageNoteHeights = checkpoint?.pageNoteHeights.slice() ?? [];
+  const placements = checkpoint?.placements.slice() ?? [];
+  const flowBreaks = checkpoint?.flowBreaks.slice() ?? [];
+  const insertedPages = checkpoint?.insertedPages?.slice() ?? [];
+  const movedSections = new Set(checkpoint?.movedSections);
+  const seen = new Set(checkpoint?.seen);
   const lineHeight = positive(notes?.lineHeight ?? 1, 1), separator = nonNegative(notes?.separatorHeight ?? 0);
-  const units = blocks.flatMap((block, blockIndex) => {
+  const units = blocks.slice(startBlock).flatMap((block, localIndex) => {
+    const blockIndex = startBlock + localIndex;
     const lines = normalizeLines(block.lines, block.height);
     const split = block.splittable && !block.keepTogether && lines.length;
     return (split ? lines : [{ top: 0, height: block.height, textOffset: 0, noteIds: block.noteIds }]).map((line, index, all) => ({
@@ -416,7 +531,8 @@ function paginateStyledPages(
       keepSectionId: block.keepSectionId ?? block.sectionId,
     }));
   });
-  let page = 0, position = 0, naturalBottom = 0, inlineHeight = 0, previousDelta = 0;
+  let page = checkpoint?.page ?? 0, position = checkpoint?.position ?? 0, naturalBottom = checkpoint?.naturalBottom ?? 0;
+  let inlineHeight = checkpoint?.inlineHeight ?? 0, previousDelta = checkpoint?.previousDelta ?? 0;
   const ensurePage = (index: number, sectionId?: string) => {
     while (pageSectionIds.length <= index) pageSectionIds.push(sectionId);
   };
@@ -425,6 +541,12 @@ function paginateStyledPages(
   const capacity = (index: number) => Math.max(lineHeight, Math.floor((metrics(index, pageSectionIds[index]).bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
   for (let index = 0; index < units.length; index += 1) {
     const first = units[index]!;
+    if (resume && first.first && first.blockIndex > startBlock && wantsComplexCheckpoint(resume, blocks, first.blockIndex, keepSections)) {
+      retainComplexCheckpoint(resume, { blockIndex: first.blockIndex, page, position, naturalBottom, inlineHeight, previousDelta,
+        pageNotes: pageNotes.map(fragments => fragments.slice()), pageNoteHeights: pageNoteHeights.slice(), seen: new Set(seen),
+        placements: placements.slice(), flowBreaks: flowBreaks.slice(), pageSectionIds: pageSectionIds.slice(),
+        insertedPages: insertedPages.slice(), movedSections: new Set(movedSections), metricsState: resume.preparedMetrics?.snapshot() });
+    }
     ensurePage(page, first.sectionId);
     if (position <= 0.5 && !pageNotes[page]?.length) pageSectionIds[page] = first.sectionId;
     const advance = () => { page += 1; position = 0; ensurePage(page, first.sectionId); };
@@ -438,8 +560,11 @@ function paginateStyledPages(
         advance();
       }
     }
-    const sectionStart = first.sectionId !== undefined && (index === 0 || units[index - 1]?.sectionId !== first.sectionId);
-    const keepSection = (index === 0 || units[index - 1]?.keepSectionId !== first.keepSectionId) && blocks[first.blockIndex]!.keepSectionTogether;
+    const previousSectionId = index > 0 ? units[index - 1]?.sectionId : blocks[startBlock - 1]?.sectionId;
+    const previousKeepSectionId = index > 0 ? units[index - 1]?.keepSectionId : blocks[startBlock - 1]?.keepSectionId ?? blocks[startBlock - 1]?.sectionId;
+    const atBeginning = index === 0 && startBlock === 0;
+    const sectionStart = first.sectionId !== undefined && (atBeginning || previousSectionId !== first.sectionId);
+    const keepSection = (atBeginning || previousKeepSectionId !== first.keepSectionId) && blocks[first.blockIndex]!.keepSectionTogether;
     const group = [first];
     while (units[index + group.length] && !units[index + group.length]!.forceBreak && !units[index + group.length]!.insertedPagesBefore?.length
       && !group.at(-1)!.insertedPagesAfter?.length
@@ -634,7 +759,10 @@ function paginateWithFootnotes(
   usablePageHeight: number,
   pageOverhead: number,
   notes: PublicationFootnotes,
+  resume?: ComplexPaginationResume,
 ): PublicationPageLayout {
+  const checkpoint = resume?.checkpoint;
+  const startBlock = checkpoint?.blockIndex ?? 0;
   const bodyHeight = positive(usablePageHeight, 1);
   const stride = bodyHeight + nonNegative(pageOverhead);
   // offsetTop is integer-rounded while DOM ranges and CSS spacers are fractional.
@@ -643,12 +771,13 @@ function paginateWithFootnotes(
   const lineHeight = positive(notes.lineHeight, 1);
   const separator = nonNegative(notes.separatorHeight);
   const noteCapacity = Math.max(lineHeight, Math.floor((bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
-  const pageNotes: PublicationPageNote[][] = [];
-  const pageNoteHeights: number[] = [];
-  const seen = new Set<string>();
-  const placements: PublicationBlockPlacement[] = [];
-  const flowBreaks: PublicationFlowBreak[] = [];
-  const units = blocks.flatMap((block, blockIndex) => {
+  const pageNotes = checkpoint?.pageNotes.map(fragments => fragments.slice()) ?? [];
+  const pageNoteHeights = checkpoint?.pageNoteHeights.slice() ?? [];
+  const seen = new Set(checkpoint?.seen);
+  const placements = checkpoint?.placements.slice() ?? [];
+  const flowBreaks = checkpoint?.flowBreaks.slice() ?? [];
+  const units = blocks.slice(startBlock).flatMap((block, localIndex) => {
+    const blockIndex = startBlock + localIndex;
     const lines = normalizeLines(block.lines, block.height);
     const split = block.splittable && !block.keepTogether && lines.length;
     return (split ? lines : [{ top: 0, height: block.height, textOffset: 0, noteIds: block.noteIds }]).map((line, index, all) => ({
@@ -664,14 +793,19 @@ function paginateWithFootnotes(
   });
   const reserved = (page: number) => pageNotes[page]?.length
     ? separator + (pageNoteHeights[page] ?? 0) : 0;
-  let page = 0;
-  let position = 0;
-  let naturalBottom = 0;
-  let inlineHeight = 0;
-  let previousDelta = 0;
+  let page = checkpoint?.page ?? 0;
+  let position = checkpoint?.position ?? 0;
+  let naturalBottom = checkpoint?.naturalBottom ?? 0;
+  let inlineHeight = checkpoint?.inlineHeight ?? 0;
+  let previousDelta = checkpoint?.previousDelta ?? 0;
 
   for (let index = 0; index < units.length; index += 1) {
     const first = units[index]!;
+    if (resume && first.first && first.blockIndex > startBlock && wantsComplexCheckpoint(resume, blocks, first.blockIndex)) {
+      retainComplexCheckpoint(resume, { blockIndex: first.blockIndex, page, position, naturalBottom, inlineHeight, previousDelta,
+        pageNotes: pageNotes.map(fragments => fragments.slice()), pageNoteHeights: pageNoteHeights.slice(), seen: new Set(seen),
+        placements: placements.slice(), flowBreaks: flowBreaks.slice() });
+    }
     const group = [first];
     while (group[group.length - 1]!.keepNext && units[index + group.length]) {
       group.push(units[index + group.length]!);
