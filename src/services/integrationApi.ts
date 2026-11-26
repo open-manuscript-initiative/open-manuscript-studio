@@ -523,7 +523,7 @@ export async function requestOjsIssuePages(
   connectionId: string, input: import('../model/ojsIssuePrintedPages').OjsIssuePageRequest,
 ): Promise<import('../model/ojsIssuePrintedPages').OjsIssuePageResponse> {
   const response = await studioApiFetch(
-    `/api/integrations/connections/${encodeURIComponent(connectionId)}/issue-page-range`, {
+    `/api/v1/integrations/connections/${encodeURIComponent(connectionId)}/issue-page-range`, {
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: integrationHeaders({ Accept: 'application/json', 'Content-Type': 'application/json' }),
       body: JSON.stringify(input),
