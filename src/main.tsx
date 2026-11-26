@@ -58,7 +58,8 @@ import './styles/ui-density.css';
 import './styles/desktop-form-layout.css';
 import './styles/menu-appearance.css';
 
-restorePendingExternalLaunchToLocation();
+const issueProgressToken = getOjsIssueProgressToken();
+if (!issueProgressToken) restorePendingExternalLaunchToLocation();
 initializeMenuAppearancePreferences();
 initializeEditorMemoryPreferences();
 initializeRevisionIntegrity();
@@ -102,7 +103,6 @@ async function bootstrap(): Promise<void> {
     console.warn('Studio session restore could not complete.', error);
   });
 
-  const issueProgressToken = getOjsIssueProgressToken();
   ReactDOM.createRoot(
     document.getElementById('root') as HTMLElement
   ).render(
