@@ -17,7 +17,14 @@ const labels = {
   de: { title: 'Einzelne Beitrags-PDFs', help: 'Erstellen Sie das endgültige PDF der Ausgabe. Laden Sie es herunter und prüfen Sie die erste und letzte physische Seite jedes Beitrags einschließlich Anmerkungen, Bildern und Literatur. Dies sind keine gedruckten Seitenzahlen.', prepare: 'Ausgabe rendern und prüfen', preparing: 'PDF wird vorbereitet…', download: 'Gesamtes PDF zur Prüfung herunterladen', pages: 'Physische Seitenzahl', first: 'Erste PDF-Seite', last: 'Letzte PDF-Seite', review: 'Gesamten Beitrag geprüft', uncertain: 'Manuelle Prüfung erforderlich', proposed: 'Vorgeschlagener Bereich', extract: 'Bestätigte Beitrags-PDFs erstellen', extracting: 'PDFs werden extrahiert…', stale: 'Dokument, Stil oder Server wurde geändert. PDF erneut erstellen.', invalid: 'Alle gültigen, geordneten und überschneidungsfreien Bereiche bestätigen.', ready: 'Einzelne PDFs sind bereit.', save: 'PDF herunterladen' },
 } as const;
 
-export function IssuePdfRangeReviewPanel({ style, active }: { style: PublicationStyle; active: boolean }) {
+export interface ApprovedIssuePdfSet {
+  plan: IssuePdfRangePlan;
+  origin: string;
+  outputs: readonly ReviewedIssuePdfArtifact[];
+}
+export function IssuePdfRangeReviewPanel({ style, active, onApproved }: {
+  style: PublicationStyle; active: boolean; onApproved?: (set: ApprovedIssuePdfSet | null) => void;
+}) {
   const { locale } = useTranslation();
   const copy = labels[locale as keyof typeof labels] ?? labels.en;
   const manuscript = useStudioStore(state => state.manuscript);
@@ -45,7 +52,7 @@ export function IssuePdfRangeReviewPanel({ style, active }: { style: Publication
   async function prepare() {
     if (lock.current || !latest.current.active) return;
     lock.current = true;
-    setBusy('prepare'); setError(''); setPlan(undefined); setRows([]); setOutputs([]);
+    setBusy('prepare'); setError(''); setPlan(undefined); setRows([]); setOutputs([]); onApproved?.(null);
     try {
       await externalizeActiveManuscriptAssets();
       useStudioStore.getState().checkpoint('export');
@@ -62,7 +69,7 @@ export function IssuePdfRangeReviewPanel({ style, active }: { style: Publication
   async function extract() {
     if (lock.current || !plan || !valid) return;
     lock.current = true;
-    setBusy('extract'); setError(''); setOutputs([]);
+    setBusy('extract'); setError(''); setOutputs([]); onApproved?.(null);
     try {
       assertCurrent(plan, origin);
       const ranges = reviewedIssuePdfRanges(plan.pageCount, plan.proposals.map(item => item.rootSectionId), rows);
@@ -73,6 +80,7 @@ export function IssuePdfRangeReviewPanel({ style, active }: { style: Publication
       });
       assertCurrent(plan, origin);
       setOutputs(result);
+      onApproved?.({ plan, origin, outputs: result });
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
     finally { lock.current = false; setBusy(null); }
   }
@@ -89,10 +97,10 @@ export function IssuePdfRangeReviewPanel({ style, active }: { style: Publication
   const auditLabel = locale === 'hu' ? 'Eredetigazolás' : locale === 'de' ? 'Herkunftsnachweis' : 'Build provenance';
   const derivationLabel = locale === 'hu' ? 'Oldalkivágási adatok' : locale === 'de' ? 'Seitenauszug-Nachweis' : 'Page extraction evidence';
   const edit = (id: string, field: 'first' | 'last', value: string) => {
-    setRows(previous => editIssuePdfReviewRow(previous, id, field, value)); setOutputs([]);
+    setRows(previous => editIssuePdfReviewRow(previous, id, field, value)); setOutputs([]); onApproved?.(null);
   };
   const confirm = (id: string, value: boolean) => {
-    setRows(previous => previous.map(row => row.rootSectionId === id ? { ...row, reviewed: value } : row)); setOutputs([]);
+    setRows(previous => previous.map(row => row.rootSectionId === id ? { ...row, reviewed: value } : row)); setOutputs([]); onApproved?.(null);
   };
   return <section hidden={!active} className="issue-pdf-review" aria-label={copy.title}>
     <h4>{copy.title}</h4>
