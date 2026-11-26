@@ -69,14 +69,90 @@ export function paginatePublicationBlocks(
   if (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length))) {
     return paginateWithFootnotes(blocks, usablePageHeight, pageOverhead, footnotes);
   }
+  return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead);
+}
+
+interface FixedLayoutCheckpoint {
+  insertedSpace: number;
+  insertedInlineHeight: number;
+  lastOccupiedPage: number;
+  flowBreakCount: number;
+}
+
+interface FixedLayoutSnapshot {
+  blocks: readonly PublicationFlowBlock[];
+  bodyHeight: number;
+  chromeHeight: number;
+  checkpoints: FixedLayoutCheckpoint[];
+  layout: PublicationPageLayout;
+}
+
+function sameFixedBlock(left: PublicationFlowBlock, right: PublicationFlowBlock): boolean {
+  if (left === right) return true;
+  return left.top === right.top && left.height === right.height
+    && left.leadingHeight === right.leadingHeight && left.splittable === right.splittable
+    && left.keepWithNext === right.keepWithNext && left.keepTogether === right.keepTogether
+    && left.forcePageBreakBefore === right.forcePageBreakBefore
+    && (left.lines?.length ?? 0) === (right.lines?.length ?? 0)
+    && (left.lines ?? []).every((line, index) => {
+      const other = right.lines?.[index];
+      return other?.textOffset === line.textOffset && other.top === line.top && other.height === line.height;
+    });
+}
+
+/**
+ * One canvas owns one cache. Inputs and returned layouts are immutable
+ * snapshots. Variable page masters and footnotes still use full pagination:
+ * their carried state needs a different checkpoint contract.
+ */
+export function createIncrementalPublicationPaginator() {
+  let previous: FixedLayoutSnapshot | undefined;
+  return {
+    paginate(
+      blocks: readonly PublicationFlowBlock[],
+      usablePageHeight: number,
+      pageOverhead: number,
+      footnotes?: PublicationFootnotes,
+      pageMetrics?: (index: number, sectionId?: string, insertedStyleId?: string) => PublicationPageMetrics,
+    ): PublicationPageLayout {
+      if (pageMetrics || (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length)))) {
+        previous = undefined;
+        return paginatePublicationBlocks(blocks, usablePageHeight, pageOverhead, footnotes, pageMetrics);
+      }
+      return paginateFixedPublicationBlocks(blocks, usablePageHeight, pageOverhead, previous, (snapshot) => { previous = snapshot; });
+    },
+    clear() { previous = undefined; },
+  };
+}
+
+function paginateFixedPublicationBlocks(
+  blocks: readonly PublicationFlowBlock[],
+  usablePageHeight: number,
+  pageOverhead: number,
+  previous?: FixedLayoutSnapshot,
+  retain?: (snapshot: FixedLayoutSnapshot) => void,
+): PublicationPageLayout {
   const bodyHeight = positive(usablePageHeight, 1);
   const chromeHeight = nonNegative(pageOverhead);
-  let insertedSpace = 0;
-  let insertedInlineHeight = 0;
-  let lastOccupiedPage = 0;
-  const flowBreaks: PublicationFlowBreak[] = [];
+  let resume = 0;
+  if (previous && previous.bodyHeight === bodyHeight && previous.chromeHeight === chromeHeight) {
+    while (resume < blocks.length && resume < previous.blocks.length
+      && sameFixedBlock(blocks[resume]!, previous.blocks[resume]!)) resume += 1;
+    if (resume === blocks.length && resume === previous.blocks.length) return previous.layout;
+    // The preceding block may keep with the changed block, even when its own
+    // geometry is identical. Recompute it too, including append/delete cases.
+    resume = Math.max(0, resume - 1);
+  }
+  const checkpoint = resume > 0 ? previous?.checkpoints[resume - 1] : undefined;
+  let insertedSpace = checkpoint?.insertedSpace ?? 0;
+  let insertedInlineHeight = checkpoint?.insertedInlineHeight ?? 0;
+  let lastOccupiedPage = checkpoint?.lastOccupiedPage ?? 0;
+  const flowBreaks: PublicationFlowBreak[] = checkpoint ? previous!.layout.flowBreaks.slice(0, checkpoint.flowBreakCount) : [];
+  const placements: PublicationBlockPlacement[] = resume ? previous!.layout.placements.slice(0, resume) : [];
+  const checkpoints: FixedLayoutCheckpoint[] = resume ? previous!.checkpoints.slice(0, resume) : [];
 
-  const placements = blocks.map((block, index) => {
+  for (let index = resume; index < blocks.length; index += 1) {
+    const block = blocks[index]!;
     const naturalTop = nonNegative(block.top);
     const blockHeight = nonNegative(block.height);
     const nextBlock = blocks[index + 1];
@@ -188,14 +264,13 @@ export function paginatePublicationBlocks(
       lastOccupiedPage = Math.max(lastOccupiedPage, occupiedPage);
     }
 
-    return placement;
-  });
+    placements.push(placement);
+    if (retain) checkpoints.push({ insertedSpace, insertedInlineHeight, lastOccupiedPage, flowBreakCount: flowBreaks.length });
+  }
 
-  return {
-    pageCount: Math.max(1, lastOccupiedPage + 1),
-    placements,
-    flowBreaks,
-  };
+  const layout = { pageCount: Math.max(1, lastOccupiedPage + 1), placements, flowBreaks };
+  retain?.({ blocks, bodyHeight, chromeHeight, checkpoints, layout });
+  return layout;
 }
 
 /** Variable-height page masters share the same measured-line/footnote model as
