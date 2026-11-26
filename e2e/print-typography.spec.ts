@@ -175,3 +175,20 @@ test('frame justification and Hungarian hyphenation agree in preview and export'
   expect(result.hyphens).toBeGreaterThan(0); expect(result.hyphens).toBe(result.previewHyphens);
   expect(result.spacing).toBe(true);
 });
+
+test('initial publication layout exposes readiness without locking the manuscript', async ({ page }) => {
+  await installMockStudioApi(page); await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
+  const canvas = menu.locator('.publication-document-canvas');
+  await expect(canvas.locator('textarea.publication-document-title')).toBeEditable();
+  await expect(canvas).toHaveAttribute('data-publication-layout-ready', 'true');
+  await expect(canvas.locator('.publication-layout-preparing')).toHaveCount(0);
+  await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
+  await expect(canvas).not.toHaveAttribute('data-publication-layout-ready', /.+/);
+  await canvas.getByRole('button', { name: 'Print layout', exact: true }).click();
+  await expect(canvas).toHaveAttribute('data-publication-layout-ready', 'true');
+  await expect(canvas.locator('textarea.publication-document-title')).toBeEditable();
+});
