@@ -3,7 +3,7 @@ import test from 'node:test';
 import { createFrameLayout, flowFrameStories, FRAME_LAYOUT_EXTENSION, linkFrames, unlinkFrames, updateFrameStoryText, validateFrameLayout, RECTANGLE_POINTS, type PublicationFrame } from '../src/model/publicationFrames.ts';
 import { paginateAutomaticFrameLayout, createDefaultFlowFrameLayout } from '../src/model/publicationAutoFlow.ts';
 import { framePageStyle, withFramePages } from '../src/model/publicationFramePages.ts';
-import { paginatePublicationBlocks, publicationSectionFitWarnings, type PublicationFlowBlock } from '../src/components/publicationPageLayout.ts';
+import { paginatePublicationBlocks, publicationSectionFitWarnings, createIncrementalPublicationPaginator, createPublicationPageMetricsResolver, type PublicationFlowBlock } from '../src/components/publicationPageLayout.ts';
 import { capturePublicationPageStyle, resolvePublicationPageStyle, validatePublicationPageStyles, withoutPublicationPageAssignments } from '../src/model/publicationPageStyles.ts';
 import { clonePublicationStyleTemplate, clonePublicationPublisherTemplate, renderStyleBasedHtml, withInsertedPublicationPages } from '../src/services/publicationStyleExport.ts';
 import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
@@ -248,4 +248,55 @@ test('note-heavy pagination retains all note fragments and reservation limits in
       assert.equal(result.placements.length, blocks.length);
     }
   }
+});
+
+test('complex pagination reuses only equivalent measured layouts and restores inserted page geometry', () => {
+  const paginator = createIncrementalPublicationPaginator();
+  const key = {};
+  const blocks: PublicationFlowBlock[] = Array.from({ length: 300 }, (_, index) => ({
+    sectionId: index < 150 ? 'a' : 'b', top: index * 18, height: 15,
+    noteIds: index % 10 === 0 ? ['n' + index] : [],
+    insertedPagesBefore: index === 150 ? [{ id: 'blank', styleId: 'plate' }] : undefined,
+  }));
+  const heights = new Map(Array.from({ length: 30 }, (_, i) => ['n' + i * 10, 70] as const));
+  const geometry = (index: number, sectionId?: string, insertedStyleId?: string) => ({
+    height: insertedStyleId === 'plate' ? 180 : sectionId === 'a' ? 120 : 140,
+    bodyHeight: insertedStyleId === 'plate' ? 140 : sectionId === 'a' ? 80 : 100,
+    topMargin: 20 + index % 2,
+  });
+  const notes = { heights, lineHeight: 5, separatorHeight: 5 };
+  const run = (input: PublicationFlowBlock[], identity = key) => {
+    const resolver = createPublicationPageMetricsResolver(geometry, 10, 20);
+    const layout = paginator.paginate(input, 80, 40, notes, resolver.metrics, { key: identity, snapshot: resolver.snapshot, restore: resolver.restore });
+    return { layout, state: resolver.snapshot(), resolver };
+  };
+  const first = run(blocks);
+  const second = run(structuredClone(blocks));
+  assert.strictEqual(second.layout, first.layout);
+  assert.deepEqual(second.state, first.state);
+  const inserted = second.layout.insertedPages![0]!;
+  assert.equal(second.resolver.insertionStyles.get(inserted.pageIndex), 'plate');
+  const expected = (input: PublicationFlowBlock[]) => paginatePublicationBlocks(input, 80, 40, notes, createPublicationPageMetricsResolver(geometry, 10, 20).metrics);
+  heights.set('n0', 100);
+  const changedNote = run(blocks);
+  assert.notStrictEqual(changedNote.layout, first.layout);
+  assert.deepEqual(changedNote.layout, expected(blocks));
+  const changed = structuredClone(blocks);
+  changed[150]!.insertedPagesBefore = [{ id: 'new', styleId: '' }];
+  assert.deepEqual(run(changed).layout, expected(changed));
+  assert.notStrictEqual(run(changed, {}).layout, run(changed).layout);
+  paginator.clear();
+  assert.deepEqual(run(blocks).layout, expected(blocks));
+});
+
+test('fixed geometry footnotes can reuse an unchanged layout, but never a changed note anchor', () => {
+  const paginator = createIncrementalPublicationPaginator();
+  const blocks: PublicationFlowBlock[] = [{ top: 0, height: 15, noteIds: ['a'] }, { top: 15, height: 20 }];
+  const notes = { heights: new Map([['a', 60]]), lineHeight: 5, separatorHeight: 5 };
+  const original = paginator.paginate(blocks, 100, 20, notes);
+  assert.strictEqual(paginator.paginate(structuredClone(blocks), 100, 20, notes), original);
+  const changed = [{ ...blocks[0]!, noteIds: [] }, { ...blocks[1]!, noteIds: ['a'] }];
+  const next = paginator.paginate(changed, 100, 20, notes);
+  assert.notStrictEqual(next, original);
+  assert.deepEqual(next, paginatePublicationBlocks(changed, 100, 20, notes));
 });
