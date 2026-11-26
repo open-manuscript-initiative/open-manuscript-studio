@@ -312,7 +312,7 @@ integrationRouter.get('/ojs/issue-launch', async (request, response) => {
       profile: 'omi-integration/1/ojs',
       kind: 'issue',
       installation: verified.installation,
-      context: verified.claims.context,
+      context: data.context,
       actor: verified.claims.actor,
       issue: data.issue,
       sections: data.sections,
