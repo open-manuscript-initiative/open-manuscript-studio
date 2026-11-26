@@ -517,3 +517,18 @@ export async function getEditorialConnectorCapabilities(connectionId: string): P
   if (!response.ok) throw new Error(result.error?.message ?? 'Editorial capability lookup failed.');
   return result;
 }
+
+
+export async function requestOjsIssuePages(
+  connectionId: string, input: import('../model/ojsIssuePrintedPages').OjsIssuePageRequest,
+): Promise<import('../model/ojsIssuePrintedPages').OjsIssuePageResponse> {
+  const response = await studioApiFetch(
+    `/api/integrations/connections/${encodeURIComponent(connectionId)}/issue-page-range`, {
+      method: 'POST', credentials: 'include', cache: 'no-store',
+      headers: integrationHeaders({ Accept: 'application/json', 'Content-Type': 'application/json' }),
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) throw new Error((await readErrorMessage(response)) ?? `OJS page range request failed: HTTP ${response.status}.`);
+  return parseJsonResponse<import('../model/ojsIssuePrintedPages').OjsIssuePageResponse>(response);
+}
