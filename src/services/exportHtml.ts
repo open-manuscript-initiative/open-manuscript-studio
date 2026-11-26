@@ -12,6 +12,7 @@ import { tableCellFormat, tableCellTextStyle, tableColumnWidths, tableMergeLayou
 import { TABLE_LAYOUT_CSS } from './tableLayoutCss';
 import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
+import { getIssueStudyCitationMetadata } from '../model/issueStudyCitationMetadata';
 import {
   collectCrossReferenceTargets,
   formatCrossReferenceLabel,
@@ -202,6 +203,7 @@ export function renderHtmlArticle(
     stateDigest
       ? `  <meta name="omi-state-digest-sha256" content="${escapeAttribute(stateDigest)}">`
       : '',
+    ...renderIssueCitationMeta(manuscript),
     `  <title>${escapeHtml(title)}</title>`,
     '  <style>',
     indent(renderProfileCss(profile), 2),
@@ -1364,4 +1366,22 @@ function fileStem(manuscript: Pick<OmiManuscript, 'title' | 'id'>): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 72);
   return title || manuscript.id || 'manuscript';
+}
+
+
+/** Planned issue identity is not an actual publication date. */
+function renderIssueCitationMeta(manuscript: OmiManuscript): string[] {
+  const metadata = getIssueStudyCitationMetadata(manuscript);
+  if (!metadata) return [];
+  const pairs: [string, string | undefined][] = [
+    ['citation_title', manuscript.title], ['citation_journal_title', metadata.journalTitle],
+    ['citation_doi', metadata.articleDoi], ['citation_issn', metadata.printIssn],
+    ['citation_issn', metadata.onlineIssn], ['citation_volume', metadata.volume],
+    ['citation_issue', metadata.issue], ['citation_firstpage', metadata.firstPage],
+    ['citation_lastpage', metadata.lastPage], ['omi-issue-doi', metadata.issueDoi],
+    ['omi-planned-publication-year', metadata.year], ['omi-publication-status', metadata.status],
+    ['omi-journal-print-issn', metadata.printIssn], ['omi-journal-online-issn', metadata.onlineIssn],
+    ['omi-journal-section', metadata.sectionTitle],
+  ];
+  return pairs.flatMap(([name, value]) => value ? [`  <meta name="${name}" content="${escapeAttribute(value)}">`] : []);
 }
