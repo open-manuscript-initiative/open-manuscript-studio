@@ -2,6 +2,7 @@ import { refreshPublicationTables, renamePublicationTablePreset, renamePublicati
 import { useStudioStore } from './useStudioStore';
 import { getAppliedPublicationTemplate, PUBLICATION_TEMPLATE_EXTENSION, type PublicationTemplate } from '../model/publicationTemplates';
 import { prepareTemplatedPublication } from '../services/publicationTemplates';
+import { safeOjsIssueTemplate } from '../model/ojsIssuePublication';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
 import type { PublicationStyle } from '../services/publicationStyleExport';
@@ -11,7 +12,7 @@ let checkpointTimer: ReturnType<typeof setTimeout> | undefined;
 
 export async function stagePublicationTemplate(template: PublicationTemplate): Promise<PublicationStyle> {
   const original = useStudioStore.getState().manuscript;
-  const next = await prepareTemplatedPublication(extractManuscriptState(original), template);
+  const next = await prepareTemplatedPublication(extractManuscriptState(original), safeOjsIssueTemplate(original, template));
   if (useStudioStore.getState().manuscript !== original) throw new Error('The document changed while preparing its template. Try again.');
   useStudioStore.getState().checkpoint('manual');
   stageTemplateState(next, 'Applied publication template');

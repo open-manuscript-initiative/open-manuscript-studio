@@ -11,7 +11,8 @@ import { createPendingAuthorOmpNativeContext } from '../integrations/omp/nativeC
 import { createOjsHandoff, consumeOjsHandoff } from '../integrations/ojs/handoffStore.js';
 import { issueOjsAssignmentGrant } from '../integrations/ojs/ojsAssignmentGrant.js';
 import { loadOjsAssignmentContext } from '../integrations/ojs/ojsAssignmentContext.js';
-import { loadOjsLaunchData } from '../integrations/ojs/ojsClient.js';
+import { loadOjsLaunchData, loadOjsIssueImportData } from '../integrations/ojs/ojsClient.js';
+import { createOjsIssueHandoff, consumeOjsIssueHandoff } from '../integrations/ojs/issueHandoffStore.js';
 import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
 import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
 
@@ -273,3 +274,66 @@ integrationRouter.get(
     }
   },
 );
+
+integrationRouter.get('/ojs/issue-handoff/:token', (request, response) => {
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  const token = typeof request.params.token === 'string' ? request.params.token : '';
+  const handoff = consumeOjsIssueHandoff(token);
+  if (!handoff) {
+    response.status(410).json({ error: { code: 'OJS_ISSUE_HANDOFF_EXPIRED', message: 'The issue handoff is invalid, expired, or already used.' } });
+    return;
+  }
+  let parsedHandoff: unknown;
+  try {
+    parsedHandoff = JSON.parse(handoff);
+  } catch {
+    response.status(500).json({
+      error: { code: 'OJS_ISSUE_HANDOFF_INVALID', message: 'The stored issue handoff payload is invalid.' },
+    });
+    return;
+  }
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  response.status(200).json(parsedHandoff);
+});
+
+let activeIssueImports = 0;
+const MAX_ACTIVE_ISSUE_IMPORTS = 2;
+
+integrationRouter.get('/ojs/issue-launch', async (request, response) => {
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  const payload = typeof request.query.payload === 'string' ? request.query.payload : '';
+  const signature = typeof request.query.signature === 'string' ? request.query.signature : '';
+  if (!payload || !signature) {
+    response.status(400).json({ error: { code: 'MISSING_LAUNCH_ASSERTION', message: 'The issue launch payload and signature are required.' } });
+    return;
+  }
+  if (activeIssueImports >= MAX_ACTIVE_ISSUE_IMPORTS) {
+    response.status(503).json({ error: { code: 'OJS_ISSUE_IMPORT_BUSY', message: 'Too many active issue imports. Retry from OJS.' } });
+    return;
+  }
+  activeIssueImports += 1;
+  try {
+    const verified = await verifyOjsLaunch(payload, signature, 'issue');
+    const data = await loadOjsIssueImportData(verified.claims, payload, signature, verified.installation.baseUrl);
+    const token = createOjsIssueHandoff({
+      protocol: 'omi-integration/1',
+      profile: 'omi-integration/1/ojs',
+      kind: 'issue',
+      installation: verified.installation,
+      context: data.context,
+      actor: verified.claims.actor,
+      issue: data.issue,
+      sections: data.sections,
+    });
+    response.redirect(302, `/?omiOjsIssueLaunch=${encodeURIComponent(token)}`);
+  } catch (error) {
+    response.status(400).json({ error: {
+      code: 'OJS_ISSUE_IMPORT_FAILED',
+      message: error instanceof Error ? error.message : 'OJS issue import failed.',
+    } });
+  } finally {
+    activeIssueImports -= 1;
+  }
+});

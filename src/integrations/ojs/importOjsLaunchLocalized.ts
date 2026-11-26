@@ -51,6 +51,7 @@ interface ExtendedSourceDocument extends Record<string, unknown> {
 
 export function createManuscriptFromOjsLaunch(
   launch: OjsLaunchPayload,
+  options: { includeSourceNotice?: boolean } = {},
 ): OmiManuscript | null {
   // Citation atoms are zero-width semantic objects. Convert them temporarily
   // to their visible labels so the base importer can retain paragraph text;
@@ -110,7 +111,7 @@ export function createManuscriptFromOjsLaunch(
     .filter(Boolean).join(' · ');
   return {
     ...manuscript,
-    sections: attachImportedDocumentSource(
+    sections: options.includeSourceNotice === false ? manuscript.sections : attachImportedDocumentSource(
       manuscript.sections, source, importedDocumentSourceLabel(primaryLocale),
     ),
     locale: primaryLocale,

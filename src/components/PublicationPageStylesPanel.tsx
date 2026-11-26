@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react';
+import { useStudioStore } from '../app/useStudioStore';
+import { ojsIssueSectionLabels } from '../model/ojsIssuePublication';
 import { stageMoveSectionSibling } from '../app/sectionActions';
 import { partitionManuscriptStudies } from '../model/sectionStructure';
 import { storedContentText } from '../model/proofing';
@@ -27,6 +29,8 @@ export function PublicationPageStylesPanel({ style, sections, locale, selectedSe
   const visit = (items: OmiSection[]) => { for (const item of items) { if (availableSections.some((s) => s.id === item.id)) continue; availableSections.push(item); visit(item.children ?? []); } };
   visit(sections);
   const studies = partitionManuscriptStudies(sections);
+  const extensions = useStudioStore((state) => state.manuscript.extensions);
+  const issueLabels = ojsIssueSectionLabels({ extensions }, locale);
   const anchors = availableSections.flatMap((item) => item.blocks.map((block) => ({ id: block.id,
     label: `${item.title || paginationCopy.untitled}: ${storedContentText(block.content).slice(0, 64) || block.type}` })));
   const anchor = anchors.find((item) => item.id === anchorId) ?? anchors.find((item) => availableSections.find((s) => s.id === sectionId)?.blocks.some((block) => block.id === item.id)) ?? anchors[0];
@@ -66,8 +70,8 @@ export function PublicationPageStylesPanel({ style, sections, locale, selectedSe
   return <div className="publication-page-styles-panel">
     {error ? <p role="alert">{error}</p> : null}
     {checker}
-    {studies.length > 1 ? <fieldset><legend>{paginationCopy.studies}</legend><ol className="publication-study-order">{studies.map((study, index) => <li key={study.rootSectionId} data-study-order-id={study.rootSectionId}>
-      <span>{availableSections.find((item) => item.id === study.rootSectionId)?.title || paginationCopy.untitled}</span>
+    {(studies.length > 1 || (studies.length === 1 && issueLabels.size > 0)) ? <fieldset><legend>{paginationCopy.studies}</legend><ol className="publication-study-order">{studies.map((study, index) => <li key={study.rootSectionId} data-study-order-id={study.rootSectionId}>
+      <span>{issueLabels.get(study.rootSectionId) ? <><strong>{issueLabels.get(study.rootSectionId)?.label}</strong><br /></> : null}{availableSections.find((item) => item.id === study.rootSectionId)?.title || paginationCopy.untitled}</span>
       <button type="button" disabled={index === 0} aria-label={`${paginationCopy.up}: ${index + 1}`} onClick={() => stageMoveSectionSibling(study.rootSectionId, -1)}>{paginationCopy.up}</button>
       <button type="button" disabled={index === studies.length - 1} aria-label={`${paginationCopy.down}: ${index + 1}`} onClick={() => stageMoveSectionSibling(study.rootSectionId, 1)}>{paginationCopy.down}</button>
     </li>)}</ol></fieldset> : null}

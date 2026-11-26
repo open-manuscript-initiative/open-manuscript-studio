@@ -57,6 +57,9 @@ export interface PublicationArtifactTarget {
   submissionId: number;
   publicationId: number;
   title: string;
+  issueId?: number | null;
+  installationId?: string;
+  contextId?: number;
   locales: string[];
   genres: { id: number; label: string }[];
   formats: PublicationArtifactFormatCapability[];
@@ -75,6 +78,7 @@ export interface PublicationArtifactReceipt {
   protocol: 'omi-publication-artifact/1';
   submissionId: number;
   publicationId: number;
+  issueId?: number | null;
   format: PublicationArtifactFormat;
   mediaType: string;
   artifactFileName: string;
@@ -94,9 +98,12 @@ export interface PublicationArtifactReceipt {
 export type PublicationArtifactRequest = {
   manuscriptId: string;
   submissionId: number;
+  expectedIssueId?: number;
+  expectedInstallationId?: string;
 } & (
   | {
       action: 'inspect';
+      publicationId?: number;
     }
   | {
       action: 'transfer';
