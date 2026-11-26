@@ -8,9 +8,13 @@ test('facing pages keep continued paragraphs, table rows and footnotes editable 
   await page.setViewportSize({ width: 1440, height: 2800 });
   await installMockStudioApi(page); await signInToStudio(page);
   await page.getByRole('button', { name: /^New OMI study/ }).click();
-  await page.evaluate(async () => {
+  // Retain a browser-side handle to the already loaded modules. Do not start
+  // new dynamic imports while Chromium is under pagination/editing memory pressure.
+  const persistence = await page.evaluateHandle(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-    const { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY } = await import('/src/services/publicationStyleExport.ts');
+    const { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY, loadPublicationStyle } = await import('/src/services/publicationStyleExport.ts');
+    const { serializeOmiJson } = await import('/src/services/exportOmi.ts');
+    const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
     const { createNoteAnnotation } = await import('/src/model/notes.ts');
     const { createTableBlock } = await import('/src/model/visualBlocks.ts');
     const style = clonePublicationStyleTemplate();
@@ -28,6 +32,13 @@ test('facing pages keep continued paragraphs, table rows and footnotes editable 
     ] }], annotations: Array.from({ length: 3 }, (_, i) => createNoteAnnotation({
       id: `n-${i}`, anchorId: `a-${i}`, targetBlockId: `p-${i}`, body: `Note ${i}. ` + 'A footnote on its reference page. '.repeat(5),
     })) });
+    return {
+      hasEdit: () => useStudioStore.getState().manuscript.sections.some(section => section.blocks.some(block => block.content.includes('EDITED'))),
+      roundTrip: () => {
+        useStudioStore.getState().checkpoint('manual');
+        return loadPublicationStyle(parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript))).page;
+      },
+    };
   });
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
@@ -85,19 +96,10 @@ test('facing pages keep continued paragraphs, table rows and footnotes editable 
   const continuation = canvas.locator('.omi-publication-spread-continuation').first();
   await expect(continuation).toBeVisible();
   await continuation.click(); await page.keyboard.type('EDITED ');
-  await expect.poll(() => page.evaluate(async () => {
-    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-    return useStudioStore.getState().manuscript.sections.some((s) => s.blocks.some((b) => b.content.includes('EDITED')));
-  })).toBe(true);
+  await expect.poll(() => persistence.evaluate(api => api.hasEdit())).toBe(true);
   await expect.poll(audit).toEqual([]);
-  const saved = await page.evaluate(async () => {
-    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-    const { serializeOmiJson } = await import('/src/services/exportOmi.ts');
-    const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
-    const { loadPublicationStyle } = await import('/src/services/publicationStyleExport.ts');
-    useStudioStore.getState().checkpoint('manual');
-    return loadPublicationStyle(parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript))).page;
-  });
+  const saved = await persistence.evaluate(api => api.roundTrip());
+  await persistence.dispose();
   expect(saved.facingPages).toBe(true); expect(saved.pageNumberStart).toBe(3);
   await pageSettings.click(); await editor.getByRole('checkbox', { name: 'Facing pages', exact: true }).uncheck(); await pageSettings.click();
   await expect(paper).toHaveCount(0);
