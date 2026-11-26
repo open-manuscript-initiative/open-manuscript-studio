@@ -150,6 +150,6 @@ export function refreshOjsPublicationMatter(document: OmiManuscript, launch: Ojs
   state.extensions = { ...state.extensions, [OJS_ISSUE_ORIGIN]: nextOrigin };
   return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
     summary: 'Refreshed OJS publication matter metadata', timestamp: new Date().toISOString(),
-    events: [{ operation: 'manuscript.extension.set' as CreateChangeEventInput['operation'], targetId: document.id, path: '/extensions/' + OJS_ISSUE_ORIGIN, previousValue: origin, nextValue: nextOrigin }],
+    events: [{ operation: 'manuscript.snapshot.create', targetId: document.id, path: '/extensions/' + OJS_ISSUE_ORIGIN, previousValue: origin, nextValue: nextOrigin }],
   }));
 }

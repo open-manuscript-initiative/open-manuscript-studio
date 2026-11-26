@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue } from '../src/integrations/ojs/reimportOjsIssue.ts';
+import { appendNewOjsStudies, compareOjsIssue, isSameOjsIssue, refreshOjsPublicationMatter } from '../src/integrations/ojs/reimportOjsIssue.ts';
 import { createJournalIssueFromOjsHandoff, OJS_ISSUE_ORIGIN, type OjsIssueHandoff } from '../src/integrations/ojs/importOjsIssue.ts';
 import { getDocumentStructureProfile } from '../src/model/documentProfile.ts';
 import { getPublicationMatter } from '../src/model/publicationMatter.ts';
@@ -196,4 +196,19 @@ test('publication matter shortcodes expand current issue metadata and public aut
   assert.match(html, /Public Editor/);
   assert.match(page.content, /\[omi:imprint\]/);
   assert.deepEqual(resolvePublicationShortcodes(content.replace('[omi:authors]', '[omi:unknown]'), values).missing, ['unknown']);
+});
+
+test('refreshes only OJS imprint and masthead metadata on a previously imported issue', () => {
+  const input = fixture();
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const incoming = fixture();
+  incoming.context.publicationMatter = { publisher: 'New publisher' };
+  const next = refreshOjsPublicationMatter(issue, incoming);
+  assert.equal(publicationShortcodeValues(next).publisher, 'New publisher');
+  assert.deepEqual(next.sections, issue.sections);
+  assert.deepEqual(next.contributions, issue.contributions);
+  assert.equal(next.id, issue.id);
+  assert.equal(next.revisionHistory.revisions.length, issue.revisionHistory.revisions.length + 1);
+  assert.equal(refreshOjsPublicationMatter(next, incoming), next);
+  assert.throws(() => refreshOjsPublicationMatter(next, { ...incoming, installation: { installationId: 'other' } }));
 });
