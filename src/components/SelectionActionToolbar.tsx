@@ -42,7 +42,7 @@ const clipboardLabels: Record<string, { cut: string; copy: string }> = {
   de: { cut: 'Ausschneiden', copy: 'Kopieren' },
 };
 
-type TextTableDelimiterMode = 'auto' | 'tab' | 'semicolon' | 'comma' | 'custom';
+type TextTableDelimiterMode = 'auto' | 'tab' | 'semicolon' | 'comma' | 'space' | 'custom';
 
 const textTableLabels: Record<string, {
   delimiter: string;
@@ -50,6 +50,7 @@ const textTableLabels: Record<string, {
   tab: string;
   semicolon: string;
   comma: string;
+  space: string;
   custom: string;
   customCharacter: string;
 }> = {
@@ -59,6 +60,7 @@ const textTableLabels: Record<string, {
     tab: 'Tab',
     semicolon: 'Semicolon',
     comma: 'Comma',
+    space: 'Space',
     custom: 'Custom',
     customCharacter: 'Custom separator',
   },
@@ -68,6 +70,7 @@ const textTableLabels: Record<string, {
     tab: 'Tabulátor',
     semicolon: 'Pontosvessző',
     comma: 'Vessző',
+    space: 'Szóköz',
     custom: 'Egyéni',
     customCharacter: 'Egyéni elválasztó',
   },
@@ -77,6 +80,7 @@ const textTableLabels: Record<string, {
     tab: 'Tabulator',
     semicolon: 'Semikolon',
     comma: 'Komma',
+    space: 'Leerzeichen',
     custom: 'Benutzerdefiniert',
     customCharacter: 'Benutzerdefiniertes Trennzeichen',
   },
@@ -211,6 +215,7 @@ export function SelectionActionToolbar({
             <option value="tab">{textTableCopy.tab}</option>
             <option value="semicolon">{textTableCopy.semicolon}</option>
             <option value="comma">{textTableCopy.comma}</option>
+            <option value="space">{textTableCopy.space}</option>
             <option value="custom">{textTableCopy.custom}</option>
           </select>
           {textTableDelimiterMode === 'custom' ? (
@@ -225,7 +230,7 @@ export function SelectionActionToolbar({
           <button
             type="button"
             onMouseDown={preserveSelection}
-            disabled={textTableDelimiterMode === 'custom' && !customTextTableDelimiter}
+            disabled={textTableDelimiterMode === 'custom' && (customTextTableDelimiter.length !== 1 || /[\r\n"]/.test(customTextTableDelimiter))}
             onClick={() =>
               onTextToTable(resolveTextTableDelimiter(
                 textTableDelimiterMode,
@@ -255,6 +260,7 @@ function resolveTextTableDelimiter(
     case 'tab': return '\t';
     case 'semicolon': return ';';
     case 'comma': return ',';
+    case 'space': return ' ';
     case 'custom': return customDelimiter || undefined;
     case 'auto':
     default:

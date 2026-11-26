@@ -604,6 +604,15 @@ test('InDesign-like paragraph styles inherit, assign, and feed print CSS', () =>
   assert.match(documentCanvas, /:not\(\[data-paragraph-style-id\]\)/);
 });
 
+test('publication style list applies an assignable style and HTML reports the active paragraph', () => {
+  assert.match(styleEditor, /onClick=\{\(\) => \{\s*setActiveParagraphStyleId\(definition\.id\);\s*if \(paragraphStyleAssignable[^\n]+\) \{\s*assignParagraphStyle\(definition\.id\);/);
+  assert.match(styleEditor, /setBlockParagraphStyle\(selectedParagraphBlock\.id, storedStyleId\)/);
+  assert.match(documentCanvas, /<PublicationHtmlSectionsEditor[\s\S]*?onProofingSelection=\{onProofingSelection\}/);
+  assert.match(htmlSectionsEditor, /onProofingSelection=\{onProofingSelection\}\s+reportProofingSelectionOnlyWhenFocused/);
+  const blockEditorSource = readFileSync(new URL('../src/components/BlockEditor.tsx', import.meta.url), 'utf8');
+  assert.match(blockEditorSource, /!reportProofingSelectionOnlyWhenFocused \|\| editor\.isFocused/);
+});
+
 test('print hyphenation selects lazy language modules from BCP 47 tags', () => {
   assert.equal(resolvePrintHyphenationModule('hu-HU'), 'hu');
   assert.equal(resolvePrintHyphenationModule('en-GB'), 'en-gb');
@@ -894,4 +903,14 @@ test('full line geometry leaves space for a footnote at a page boundary', () => 
   ], 60, 20, { heights: new Map([['note', 20]]), lineHeight: 10, separatorHeight: 5 });
   assert.equal(layout.flowBreaks[0]?.textOffset, 6);
   assert.equal(layout.pageNotes?.[1]?.[0]?.id, 'note');
+});
+
+test('live facing-page pagination retains stable block projections and coalesces updates', () => {
+  assert.ok(documentCanvas.includes('publicationEditorBlockSelector(child, index)'));
+  assert.ok(documentCanvas.includes('element.dataset.blockId'));
+  assert.ok(documentCanvas.includes('if (measuring) { pending = true; return; }'));
+  assert.ok(documentCanvas.includes('if (queued) return;'));
+  assert.ok(documentCanvas.includes('if (structureChanged) { structureVersion += 1; updateProvisionalProjection(); }'));
+  assert.ok(documentCanvas.includes('!facingPages && (document.content?.length ?? 0)'));
+  assert.ok(documentCanvas.includes('measuredNotes.delete(measuredNote)'));
 });

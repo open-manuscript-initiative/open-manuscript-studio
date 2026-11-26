@@ -61,6 +61,9 @@ export function VisualInsertPanel({
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
   const [busy, setBusy] = useState(false);
+  const [drawTableOpen, setDrawTableOpen] = useState(false);
+  const [gridSize, setGridSize] = useState({ rows: 2, columns: 2 });
+  const drawLabel = ({hu:'Táblázat rajzolása',de:'Tabelle zeichnen',fr:'Dessiner un tableau',it:'Disegna tabella',es:'Dibujar tabla',nl:'Tabel tekenen',pl:'Rysuj tabelę'} as Record<string,string>)[locale] ?? 'Draw table';
   const [error, setError] = useState<string | null>(null);
   const [idmlImported,setIdmlImported]=useState(false);
   const [idmlPartial,setIdmlPartial]=useState(false);
@@ -223,6 +226,12 @@ export function VisualInsertPanel({
     }
   }
 
+  function insertDrawnTable(rows: number, columns: number): void {
+    const block = createTableBlock(Array.from({ length: rows }, () => Array<string>(columns).fill('')), { headerRows: 0 });
+    if (block.visual?.kind === 'table') block.visual = applyDefaultPublicationTableStyle(block.visual, getAppliedPublicationTemplate(manuscript)?.style.tableStyles);
+    if (insert([block])) setDrawTableOpen(false);
+  }
+
   const palette = (
     <>
       <div className="omi-visual-insert-actions">
@@ -239,6 +248,7 @@ export function VisualInsertPanel({
           <Table2 size={17} aria-hidden="true" />
           {copy.table}
         </button>
+        <button type="button" aria-expanded={drawTableOpen} onClick={() => setDrawTableOpen(open => !open)}><Table2 size={17} aria-hidden="true" />{drawLabel}</button>
         <button type="button" onClick={() => insert([createChartBlock()])}>
           <BarChart3 size={17} aria-hidden="true" />
           {copy.chart}
@@ -249,6 +259,18 @@ export function VisualInsertPanel({
         </button>
       </div>
 
+      {drawTableOpen ? <div aria-label={drawLabel} role="group" style={{ maxWidth: '100%', padding: '0.5rem' }}>
+        <div aria-live="polite" style={{ marginBottom: '0.5rem' }}>{gridSize.columns} × {gridSize.rows}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 1fr))', gap: '3px', maxWidth: '320px' }} onPointerLeave={() => setGridSize({ rows: 2, columns: 2 })}>
+          {Array.from({ length: 64 }, (_, index) => {
+            const rows = Math.floor(index / 8) + 1, columns = index % 8 + 1;
+            return <button key={index} type="button" aria-label={`${columns} × ${rows}`} title={`${columns} × ${rows}`}
+              onPointerEnter={() => setGridSize({ rows, columns })} onFocus={() => setGridSize({ rows, columns })}
+              onClick={() => insertDrawnTable(rows, columns)}
+              style={{ aspectRatio: '1', minWidth: 0, padding: 0, border: '1px solid currentColor', borderRadius: '2px', background: rows <= gridSize.rows && columns <= gridSize.columns ? '#60a5fa' : 'transparent' }} />;
+          })}
+        </div>
+      </div> : null}
       <div className="omi-visual-format-hint"><strong>{listCopy.title}</strong></div>
       <div className="omi-visual-insert-actions">
         <button type="button" onClick={() => insertGeneratedList('toc')}>

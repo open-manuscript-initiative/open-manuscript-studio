@@ -103,3 +103,43 @@ test('facing pages keep continued paragraphs, table rows and footnotes editable 
   await expect(paper).toHaveCount(0);
   await expect(canvas.locator('.omi-publication-spread-continuation')).toHaveCount(0);
 });
+
+test('new paragraphs on the first right-hand page retain a valid projection during editing', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await installMockStudioApi(page); await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { clonePublicationStyleTemplate, PUBLICATION_STYLE_STORAGE_KEY } = await import('/src/services/publicationStyleExport.ts');
+    const style = clonePublicationStyleTemplate();
+    style.page.facingPages = true; style.page.pageNumberStart = 1;
+    localStorage.setItem(PUBLICATION_STYLE_STORAGE_KEY, JSON.stringify(style));
+    const current = useStudioStore.getState().manuscript;
+    useStudioStore.getState().loadManuscript({ ...current, title: 'Live layout', sections: [{ id: 's', title: '', blocks: Array.from({ length: 45 }, (_, i) => ({ id: 'live-' + i, type: 'paragraph', content: 'Short paragraph ' + i })) }] });
+  });
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
+  const canvas = menu.locator('.publication-document-canvas');
+  await expect(canvas.locator('.publication-document-paper--spreads')).toBeVisible();
+  const first = canvas.locator('.omi-continuous-tiptap-editor > [data-block-id="live-0"]');
+  await expect(first).toBeVisible();
+  const onFirstSheet = () => canvas.evaluate(root => {
+    const sheet = root.querySelector('.publication-document-page-guide[data-page-number="1"]')?.getBoundingClientRect();
+    const first = root.querySelector('.omi-continuous-tiptap-editor > [data-block-id="live-0"]');
+    if (!sheet || !first) return false;
+    return [first, first.nextElementSibling].every(el => {
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.left >= sheet.left - 1 && rect.right <= sheet.right + 1;
+    });
+  });
+  await expect.poll(onFirstSheet).toBe(true);
+  await first.click();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
+  await page.keyboard.insertText('New live paragraph');
+  await expect(canvas.locator('.omi-continuous-tiptap-editor > p').filter({ hasText: 'New live paragraph' })).toBeVisible();
+  await expect.poll(onFirstSheet).toBe(true);
+  await expect(canvas.locator('.omi-continuous-tiptap-editor > p').filter({ hasText: 'New live paragraph' })).toHaveAttribute('data-block-id', /.+/);
+});
