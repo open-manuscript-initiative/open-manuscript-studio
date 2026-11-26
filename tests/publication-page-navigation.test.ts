@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { publicationPageStyleLetter, placePublicationEmptyPage, type PublicationBodyPageThumbnail } from '../src/model/publicationPageNavigation.ts';
+import { publicationFlowAnchors, fillPublicationThumbnailBoundaries, publicationPageStyleLetter, placePublicationEmptyPage, type PublicationBodyPageThumbnail } from '../src/model/publicationPageNavigation.ts';
 import { createFrameLayout, FRAME_LAYOUT_EXTENSION, getFrameLayout, RECTANGLE_POINTS, validateFrameLayout } from '../src/model/publicationFrames.ts';
 import { defaultFramePageStyle, insertFramePage, moveFramePage, withFramePages } from '../src/model/publicationFramePages.ts';
 import { clonePublicationStyleTemplate, withInsertedPublicationPages } from '../src/services/publicationStyleExport.ts';
@@ -111,4 +111,36 @@ test('thumbnail study moves preserve descendants, annotations and stable block i
     assert.equal(useStudioStore.getState().manuscript.sections[3]!.blocks[0]!.id, 'child-body');
     assert.ok(useStudioStore.getState().pendingChangeSet);
   } finally { useStudioStore.setState(original); }
+});
+
+test('flow anchors match forward search without scanning each suffix', () => {
+  const ids = [undefined, 'missing', 'a', undefined, 'b', 'missing'];
+  const valid = new Set(['a', 'b']);
+  assert.deepEqual(publicationFlowAnchors(ids, valid), ['a', 'a', 'a', 'b', 'b', undefined]);
+  const large = Array.from({ length: 10000 }, (_, index) => index === 9999 ? 'last' : undefined);
+  let lookups = 0;
+  const counted = new class extends Set<string> {
+    override has(value: string) { lookups += 1; return super.has(value); }
+  }(['last']);
+  assert.ok(publicationFlowAnchors(large, counted).every((id) => id === 'last'));
+  assert.equal(lookups, 1);
+});
+
+test('note-only thumbnail boundary fill preserves next-anchor preference and trailing fallback', () => {
+  const input: PublicationBodyPageThumbnail[] = Array.from({ length: 1000 }, (_, index) => ({
+    ...thumbnail, id: String(index), number: index + 1, firstBlockId: undefined, lastBlockId: undefined,
+  }));
+  input[100]!.firstBlockId = 'a'; input[100]!.lastBlockId = 'a-end';
+  input[500]!.firstBlockId = 'b'; input[500]!.lastBlockId = 'b-end';
+  const expected = structuredClone(input);
+  expected.forEach((item, index) => {
+    item.firstBlockId ??= expected.slice(index + 1).find((next) => next.firstBlockId)?.firstBlockId
+      ?? expected.slice(0, index).reverse().find((previous) => previous.lastBlockId)?.lastBlockId;
+    item.lastBlockId ??= item.firstBlockId;
+  });
+  fillPublicationThumbnailBoundaries(input);
+  assert.deepEqual(input, expected);
+  assert.equal(input[0]!.firstBlockId, 'a');
+  assert.equal(input[101]!.firstBlockId, 'b');
+  assert.equal(input[999]!.lastBlockId, 'b-end');
 });
