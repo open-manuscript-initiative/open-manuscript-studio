@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { screenImageBudget, screenImageRendition, screenRenditionSize } from '../src/services/screenImageRendition.ts';
 
-import { coalescePublicationTextLines, paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
+import { coalescePublicationTextLines, paginatePublicationBlocks, createIncrementalPublicationPaginator, type PublicationFlowBlock } from '../src/components/publicationPageLayout.ts';
 import {
   resolvePublicationParagraphStyle,
   type PublicationParagraphStyleCollection,
@@ -436,7 +436,7 @@ test('screen pagination presents separate Word-like sheets without storing page 
     { pageIndex: 1, translateY: 90 },
     { pageIndex: 1, translateY: 90 },
   ]);
-  assert.match(documentCanvas, /paginatePublicationBlocks/);
+  assert.match(documentCanvas, /paginator\.paginate/);
   assert.match(documentCanvas, /<PublicationSectionRuler/);
   assert.match(sectionRuler, /publication-document-ruler/);
   assert.match(sectionRuler, /stageSectionLayoutChange/);
@@ -913,4 +913,40 @@ test('live facing-page pagination retains stable block projections and coalesces
   assert.ok(documentCanvas.includes('if (structureChanged) { structureVersion += 1; updateProvisionalProjection(); }'));
   assert.ok(documentCanvas.includes('!facingPages && (document.content?.length ?? 0)'));
   assert.ok(documentCanvas.includes('measuredNotes.delete(measuredNote)'));
+});
+
+test('incremental fixed-page pagination matches full layout for edits, insertions and deletions', () => {
+  const paginator = createIncrementalPublicationPaginator();
+  const blocks: PublicationFlowBlock[] = Array.from({ length: 1000 }, (_, index) => ({
+    top: index * 24, height: 24,
+    splittable: index % 5 !== 0,
+    keepWithNext: index % 13 === 0,
+    keepTogether: index % 17 === 0,
+    forcePageBreakBefore: index % 41 === 0,
+    lines: [{ top: 0, height: 12, textOffset: 0 }, { top: 12, height: 12, textOffset: 12 }],
+  }));
+  const first = paginator.paginate(blocks, 100, 20);
+  assert.deepEqual(first, paginatePublicationBlocks(blocks, 100, 20));
+  assert.strictEqual(paginator.paginate(structuredClone(blocks), 100, 20), first);
+  const changed = blocks.map((block, index) => index === 800 ? { ...block, height: 48 } : index > 800 ? { ...block, top: block.top + 24 } : block);
+  const second = paginator.paginate(changed, 100, 20);
+  assert.deepEqual(second, paginatePublicationBlocks(changed, 100, 20));
+  assert.strictEqual(second.placements[798], first.placements[798]);
+  assert.notStrictEqual(second.placements[799], first.placements[799]);
+  for (const next of [changed.slice(0, 500), [...changed, { top: 24024, height: 30 }], changed.slice(1), [], blocks]) {
+    assert.deepEqual(paginator.paginate(next, 100, 20), paginatePublicationBlocks(next, 100, 20));
+  }
+  assert.deepEqual(paginator.paginate(blocks, 140, 30), paginatePublicationBlocks(blocks, 140, 30));
+  paginator.clear();
+  assert.notStrictEqual(paginator.paginate(blocks, 140, 30), first);
+});
+
+test('incremental paginator conservatively falls back for footnotes and variable masters', () => {
+  const paginator = createIncrementalPublicationPaginator();
+  const blocks: PublicationFlowBlock[] = [{ top: 0, height: 20 }, { top: 20, height: 20, noteIds: ['note'] }];
+  const notes = { heights: new Map([['note', 100]]), lineHeight: 10, separatorHeight: 5 };
+  const metrics = (index: number) => ({ bodyHeight: index % 2 ? 90 : 100, bodyTop: index * 120 });
+  assert.deepEqual(paginator.paginate(blocks, 100, 20, notes), paginatePublicationBlocks(blocks, 100, 20, notes));
+  assert.deepEqual(paginator.paginate(blocks, 100, 20, notes, metrics), paginatePublicationBlocks(blocks, 100, 20, notes, metrics));
+  assert.deepEqual(paginator.paginate(blocks, 100, 20), paginatePublicationBlocks(blocks, 100, 20));
 });
