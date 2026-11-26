@@ -4,9 +4,9 @@ The Validation view includes experimental OMI-SPEC-350 capability disclosures an
 
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
-> **Current status:** `1.0.0-rc.4` · release-candidate source preparation, not a public release; distribution requires exact-build acceptance and owner approval.
+> **Current status:** `1.0.0-rc.5` · release-candidate source preparation, not a public release; distribution requires exact-build acceptance and owner approval.
 >
-> This candidate includes the November 25 formatting and import/export work, formatted note previews (#1041), and adaptive editor caching (#1043, incorporating #1042). Device memory and latency measurements remain pending. Specifications remain Draft and the portable format stays at `OMI-SPEC-320@0.3.0`. See [the RC4 preparation notes](docs/release/1.0.0-rc.4.md) for package identities and release gates.
+> This candidate includes the complete OJS planned-issue import and publication workflow (#1083, #1088), and prior formatting and caching work. Use OJS plugin 1.9.1 for article DOI metadata; live editorial acceptance and device measurements remain pending. Specifications remain Draft and the portable format stays at `OMI-SPEC-320@0.3.0`. See [RC5 preparation notes](docs/release/1.0.0-rc.5.md) for package identities and release gates.
 
 - Web Studio: https://studio.openmanuscript.org
 - Project website and specifications: https://openmanuscript.org
