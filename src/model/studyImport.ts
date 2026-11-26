@@ -78,7 +78,13 @@ export function mergeOmiDocumentAsStudy(
     id: rootSectionId,
     title,
     blocks: [createSectionHeadingBlock(title, 1, nextId())],
-    studyMetadata: studyMetadata(source, title, options),
+    studyMetadata: {
+      ...studyMetadata(source, title, options),
+      bibliographyAdditionalRecordIds: (source.bibliographyAdditionalRecordIds ?? []).flatMap(id => {
+        const mapped = idMap.get(id);
+        return mapped ? [mapped] : [];
+      }),
+    },
   };
 
   if (remapped.sections.length === 0) {
