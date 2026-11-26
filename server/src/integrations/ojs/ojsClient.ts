@@ -366,6 +366,7 @@ export async function loadOjsLaunchData(
 export interface OjsIssueArticle extends OjsLaunchData {
   submissionExternalId: string;
   publicationExternalId: string;
+  sequence: number;
   sourceDocument: OjsSourceDocument;
 }
 
@@ -377,6 +378,7 @@ export interface OjsIssueSection {
 }
 
 export interface OjsIssueImportData {
+  context: Record<string, unknown>;
   issue: Record<string, unknown>;
   sections: OjsIssueSection[];
 }
@@ -458,7 +460,7 @@ export async function loadOjsIssueImportData(
   const seenSections = new Set<string>();
   const seenArticles = new Set<string>();
   let count = 0;
-  let outputBytes = Buffer.byteLength(JSON.stringify(issue), 'utf8');
+  let outputBytes = Buffer.byteLength(JSON.stringify({ issue, context }), 'utf8');
   const addSize = (value: unknown) => {
     outputBytes += Buffer.byteLength(JSON.stringify(value), 'utf8');
     if (outputBytes > MAX_ISSUE_HANDOFF_BYTES) throw new Error('OJS issue exceeds the 32 MB converted import limit.');
@@ -479,6 +481,8 @@ export async function loadOjsIssueImportData(
       const article = issueObject(articleValue);
       const submissionExternalId = issueId(article.submissionExternalId);
       const publicationExternalId = issueId(article.publicationExternalId);
+      const articleSequence = article.sequence;
+      if (typeof articleSequence !== 'number' || !Number.isFinite(articleSequence)) throw new Error('Invalid OJS article order.');
       if (seenArticles.has(submissionExternalId)) throw new Error('Duplicate OJS article.');
       seenArticles.add(submissionExternalId);
       if (++count > MAX_ISSUE_ARTICLES) throw new Error('OJS issue exceeds the 100 article import limit.');
@@ -511,7 +515,7 @@ export async function loadOjsIssueImportData(
       const bytes = await readBoundedIssueBody(sourceResponse, MAX_SOURCE_FILE_BYTES);
       const sourceDocument = convertOjsSource(bytes, { ...candidate, externalId: fileId });
       const result: OjsIssueArticle = {
-        submissionExternalId, publicationExternalId, submission,
+        submissionExternalId, publicationExternalId, sequence: articleSequence, submission,
         contributors: articleResponse.data.contributors,
         files, sourceDocument,
       };
@@ -520,5 +524,5 @@ export async function loadOjsIssueImportData(
     }
     sections.push(resultSection);
   }
-  return { issue, sections };
+  return { context, issue, sections };
 }
