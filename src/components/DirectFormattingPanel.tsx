@@ -4,7 +4,7 @@ import type { Editor } from '@tiptap/core';
 import { EyeOff, Unlink, RotateCcw, PaintBucket, Square, ArrowRightToLine, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, IndentIncrease, IndentDecrease, List, ListOrdered, Pilcrow, Baseline, CaseUpper, Highlighter, LetterText, Palette, RemoveFormatting, Strikethrough, Type, Underline } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { PUBLICATION_FONT_SIZE_PRESETS } from './PublicationPointInput';
-import { fallbackSystemFontFamilies } from '../services/systemFonts';
+import { fallbackSystemFontFamilies, queryInstalledSystemFonts, supportsLocalFontAccess } from '../services/systemFonts';
 import { normalizeParagraphValue, paragraphBorders, paragraphTabs, BORDER_SIDES, type ParagraphFormat, type ParagraphBorder, type ParagraphTab } from '../model/directParagraphFormatting';
 import { DIRECT_FORMATS, normalizeDirectValue, normalizeUnderlineStyle, type DirectFormat } from '../model/directFormatting';
 import { getRichTextCopy } from '../i18n/richText';
@@ -15,6 +15,24 @@ import type { SupportedLocale } from '../i18n/types';
 const AUTHORING_FONT_FAMILIES = fallbackSystemFontFamilies()
   .map(({ family }) => family)
   .filter(family => !['system-ui', 'sans-serif', 'serif', 'monospace'].includes(family));
+
+// Keep a successful, explicitly requested catalog in memory across toolbar
+// remounts. Do not persist or transmit the user's installed-font inventory.
+let authoringLocalFonts: string[] = [];
+const SYSTEM_FONT_LABELS: Record<string, readonly [string, string, string, string, string]> = {
+  en: ['Load system fonts', 'Refresh system fonts', 'Reading fonts…', 'System font access is unavailable', 'Could not read system fonts'],
+  hu: ['Rendszerbetűtípusok betöltése', 'Rendszerbetűtípusok frissítése', 'Betűtípusok betöltése…', 'A rendszerbetűtípusok lekérdezése nem érhető el', 'A rendszerbetűtípusok nem olvashatók be'],
+  de: ['Systemschriften laden', 'Systemschriften aktualisieren', 'Schriften werden geladen…', 'Systemschriftzugriff nicht verfügbar', 'Systemschriften konnten nicht gelesen werden'],
+  fr: ['Charger les polices système', 'Actualiser les polices système', 'Lecture des polices…', 'Accès aux polices système indisponible', 'Impossible de lire les polices système'],
+  it: ['Carica i caratteri di sistema', 'Aggiorna i caratteri di sistema', 'Lettura dei caratteri…', 'Accesso ai caratteri di sistema non disponibile', 'Impossibile leggere i caratteri di sistema'],
+  es: ['Cargar fuentes del sistema', 'Actualizar fuentes del sistema', 'Leyendo fuentes…', 'Acceso a fuentes del sistema no disponible', 'No se pudieron leer las fuentes del sistema'],
+  nl: ['Systeemlettertypen laden', 'Systeemlettertypen vernieuwen', 'Lettertypen laden…', 'Toegang tot systeemlettertypen niet beschikbaar', 'Lettertypen konden niet worden gelezen'],
+  pl: ['Wczytaj czcionki systemowe', 'Odśwież czcionki systemowe', 'Wczytywanie czcionek…', 'Dostęp do czcionek systemowych niedostępny', 'Nie można odczytać czcionek systemowych'],
+};
+function normalizeAuthoringFont(value: string): string | undefined {
+  const family = value.trim();
+  return family && family.length <= 128 && Array.from(family).every(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127 && !';{}<>'.includes(c)) ? family : undefined;
+}
 
 type Labels = readonly string[];
 const LABELS: Record<string, Labels> = {
@@ -55,11 +73,12 @@ function applyMark(editor: Editor, name: string, attrs: Record<string, unknown> 
   else chain.unsetMark(name).run();
 }
 
-function FormatField({ editor, name, paragraph = false, attribute = 'value', label, icon, copy, reset, mixed, kind = 'text', choices, defaultValue, normalize }: {
+function FormatField({ editor, name, paragraph = false, attribute = 'value', label, icon, copy, reset, mixed, kind = 'text', choices, defaultValue, normalize, availableFonts = AUTHORING_FONT_FAMILIES }: {
   editor: Editor; name: string; paragraph?: boolean; attribute?: string; label: string; icon: ReactNode;
   copy: ReturnType<typeof getRichTextCopy>; reset: string; mixed: string;
   kind?: 'text' | 'number' | 'color'; choices?: { value: string; label: string }[];
   defaultValue?: string; normalize: (value: string) => unknown;
+  availableFonts?: readonly string[];
 }) {
   const current = paragraph ? selectedParagraphValue(editor, name) : selectedValue(editor, name, attribute);
   const [draft, setDraft] = useState(current.value || defaultValue || '');
@@ -68,7 +87,7 @@ function FormatField({ editor, name, paragraph = false, attribute = 'value', lab
   const value = editing ? draft : current.value || (choices ? '' : defaultValue || '');
   const normalized = normalize(value);
   const fontFamilies = name === 'omiSourceFont'
-    ? [...new Set([...AUTHORING_FONT_FAMILIES, ...(current.value ? [current.value] : [])])]
+    ? [...new Set([...availableFonts, ...(current.value ? [current.value] : [])])]
     : [];
   const applyValue = (next: string, restoreFocus: boolean) => {
     const nextValue = normalize(next);
@@ -208,6 +227,26 @@ export function DirectFormattingPanel({ editor, locale }: { editor: Editor; loca
   const advanced = ADVANCED_CHARACTER_LABELS[locale] ?? ADVANCED_CHARACTER_LABELS.en!;
   const copy = getRichTextCopy(locale);
   const common = { editor, copy, reset: l[19]!, mixed: l[20]! };
+  const [localFonts, setLocalFonts] = useState(() => authoringLocalFonts);
+  const [fontStatus, setFontStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const fontCopy = SYSTEM_FONT_LABELS[locale] ?? SYSTEM_FONT_LABELS.en!;
+  const localFontAccess = supportsLocalFontAccess();
+  const availableFonts = [...new Map([...localFonts, ...AUTHORING_FONT_FAMILIES]
+    .map(family => [family.toLocaleLowerCase(), family] as const)).values()]
+    .sort((a, b) => a.localeCompare(b, locale, { sensitivity: 'base' }));
+  async function loadLocalFonts() {
+    if (!localFontAccess || fontStatus === 'loading') return;
+    setFontStatus('loading');
+    try {
+      const catalog = await queryInstalledSystemFonts();
+      authoringLocalFonts = catalog.map(item => normalizeAuthoringFont(item.family))
+        .filter((family): family is string => family !== undefined);
+      setLocalFonts(authoringLocalFonts);
+      setFontStatus('idle');
+    } catch {
+      setFontStatus('error');
+    }
+  }
   const field = (name: DirectFormat, index: number, icon: ReactNode, kind: 'number' | 'color' = 'number', defaultValue = '') =>
     <FormatField key={name} {...common} name={name} label={l[index]!} icon={icon} kind={kind} defaultValue={defaultValue} normalize={v => normalizeDirectValue(name, v)} />;
   const toggle = (name: DirectFormat, index: number | string, icon: ReactNode) => {
@@ -227,7 +266,14 @@ export function DirectFormattingPanel({ editor, locale }: { editor: Editor; loca
     <div className="omi-direct-format-fields">
       <SourceStyleControls editor={editor} locale={locale} kind="character"/>
       <FormatField {...common} name="omiSourceFont" attribute="family" label={l[1]!} icon={<Type size={16} aria-hidden="true" />}
-        normalize={v => { const value = v.trim(); return value && value.length <= 128 && Array.from(value).every(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127 && !';{}<>'.includes(c)) ? value : undefined; }} />
+        availableFonts={availableFonts} normalize={normalizeAuthoringFont} />
+      <div>
+        <button type="button" disabled={!localFontAccess || fontStatus === 'loading'}
+          onMouseDown={event => event.preventDefault()} onClick={() => void loadLocalFonts()}>
+          {fontStatus === 'loading' ? fontCopy[2] : localFonts.length ? fontCopy[1] : fontCopy[0]}
+        </button>
+        {!localFontAccess || fontStatus === 'error' ? <small role="status">{!localFontAccess ? fontCopy[3] : fontCopy[4]}</small> : null}
+      </div>
       {field('omiFontSize', 2, <LetterText size={16} aria-hidden="true" />, 'number', '12')}
       {field('omiTextColor', 3, <Palette size={16} aria-hidden="true" />, 'color', '#000000')}
       {field('omiCharacterBackground', 4, <Palette size={16} aria-hidden="true" />, 'color', '#ffffff')}
