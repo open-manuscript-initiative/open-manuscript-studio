@@ -37,6 +37,7 @@ export interface VolumePlan {
   context: Data;
   volume: Data;
   doi: string | null;
+  publicationMatter?: Data;
   workType: 'authored-work' | 'edited-volume';
   chapters: Data[];
   contributors: Data[];
@@ -89,5 +90,6 @@ export function planOmpVolumeImport(value: unknown, claims: OmpLaunchClaims): Vo
   const candidates = mode === 'chapters' ? separate.filter((source): source is VolumeCandidate => source !== undefined) : full ? [full] : [];
   if (!candidates.length) throw new Error('OMP volume has no complete manuscript or complete set of chapter sources.');
   return { context, volume, doi: typeof manifest.doi === 'string' ? manifest.doi : null, workType: manifest.workType,
+    ...(manifest.publicationMatter === undefined ? {} : { publicationMatter: object(manifest.publicationMatter) }),
     chapters, contributors: manifest.contributors.map(object), mode, candidates };
 }

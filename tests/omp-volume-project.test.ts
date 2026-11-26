@@ -56,3 +56,22 @@ test('mixed, incomplete and unknown chapter sources fail atomically', () => {
   assert.throws(() => createVolumeFromOmpHandoff({ ...input, sources: [...input.sources, { ...input.sources[0]!, chapterExternalId: null }] }, 'hu'));
   assert.throws(() => createVolumeFromOmpHandoff({ ...input, chapters: [{ ...input.chapters[0]!, contributorExternalIds: ['999'] }, input.chapters[1]!] }, 'hu'));
 });
+
+import { publicationShortcodeValues } from '../src/model/publicationShortcodes.ts';
+test('volume publication matter keeps distinct print and electronic identifiers and localized series', () => {
+  const input = fixture();
+  input.publicationMatter = { publisher: 'Kiadó', pressName: { hu: 'Kiadó', en: 'Press' }, publicationPlace: 'Sárospatak',
+    series: { title: { hu: 'Sorozat', en: 'Series' }, position: 5, printIssn: '1234-5679', onlineIssn: '2049-3630' },
+    formats: [{ physical: true, identifiers: [{ type: '15', value: '978-963-000-000-1' }] },
+      { physical: false, identifiers: [{ type: '15', value: '9789630000025' }] }] };
+  const volume = createVolumeFromOmpHandoff(input, 'hu');
+  assert.equal(volume.titleMatter?.isbn, '9789630000001');
+  assert.equal(volume.titleMatter?.electronicIsbn, '9789630000025');
+  assert.equal(volume.titleMatter?.seriesTitle, 'Sorozat');
+  assert.equal(publicationShortcodeValues(volume, 'en').series, 'Series');
+  assert.equal(publicationShortcodeValues(volume)['electronic-isbn'], '9789630000025');
+  assert.equal(publicationShortcodeValues(volume)['series-number'], '5');
+  (input.publicationMatter.formats as unknown[]).push({ physical: false, identifiers: [{ type: '15', value: '9789630000032' }] });
+  const ambiguous = createVolumeFromOmpHandoff(input, 'hu');
+  assert.ok(!ambiguous.titleMatter?.electronicIsbn);
+});

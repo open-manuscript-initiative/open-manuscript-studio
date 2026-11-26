@@ -26,6 +26,7 @@ export interface OmpVolumeHandoff {
   context: Data;
   volume: Submission & Data & { externalId: string; publicationExternalId: string };
   doi: string | null;
+  publicationMatter?: Data;
   workType: 'authored-work' | 'edited-volume';
   chapters: VolumeChapter[];
   contributors: Contributor[];
@@ -44,6 +45,24 @@ function localized(value: unknown, locale: string): string {
 }
 function localMap(value: unknown, locale: string): Data {
   return record(value) ? value : text(value) ? { [locale]: text(value) } : {};
+}
+/** Keep distinct format identifiers; do not guess an edition when ambiguous. */
+function volumeTitleMatter(launch: OmpVolumeHandoff, locale: string) {
+  const matter = record(launch.publicationMatter) ? launch.publicationMatter : {};
+  const series = record(matter.series) ? matter.series : {};
+  const formats = Array.isArray(matter.formats) ? matter.formats.filter(record) : [];
+  const isbnFor = (physical: boolean): string => {
+    const identifiers = formats.filter(format => format.physical === physical).flatMap(format =>
+      Array.isArray(format.identifiers) ? format.identifiers.filter(record) : []);
+    const values = (code: string) => [...new Set(identifiers.filter(item => item.type === code)
+      .map(item => text(item.value).replace(/[\s-]/g, '').toUpperCase())
+      .filter(value => code === '15' ? /^97[89]\d{10}$/.test(value) : /^\d{9}[\dX]$/.test(value)))];
+    const thirteen = values('15'), ten = values('02');
+    return thirteen.length === 1 ? thirteen[0]! : thirteen.length === 0 && ten.length === 1 ? ten[0]! : '';
+  };
+  return { doi: text(launch.doi), publisherName: localized(matter.publisher, locale) || localized(matter.pressName, locale),
+    publicationPlace: localized(matter.publicationPlace, locale), seriesTitle: localized(series.title, locale),
+    issn: text(series.printIssn), eissn: text(series.onlineIssn), isbn: isbnFor(true), electronicIsbn: isbnFor(false) };
 }
 export async function fetchOmpVolumeHandoff(token: string): Promise<OmpVolumeHandoff> {
   const response = await fetch(`/integrations/omp/volume-handoff/${encodeURIComponent(token)}`, {
@@ -117,7 +136,7 @@ export function createVolumeFromOmpHandoff(launch: OmpVolumeHandoff, fallbackLoc
     throw new Error('Incomplete or mixed OMP volume sources.');
   }
   const blank = createBlankManuscript({ kind: 'volume', volumeKind: launch.workType === 'authored-work' ? 'monograph' : 'edited-volume',
-    publicationKind: 'volume', locale, title, titleMatter: { doi: text(launch.doi) } });
+    publicationKind: 'volume', locale, title, titleMatter: volumeTitleMatter(launch, locale) });
   const volumeContributors = launch.workType === 'edited-volume' && launch.mode === 'chapters'
     ? launch.contributors.filter(contributor => contributor.isEditor) : launch.contributors;
   const book = importedSource(launch, { ...launch.volume, primaryLocale: locale }, sourceByChapter.get(null), volumeContributors);
@@ -170,6 +189,7 @@ export function createVolumeFromOmpHandoff(launch: OmpVolumeHandoff, fallbackLoc
       contextExternalId: launch.context.externalId, submissionExternalId: launch.volume.externalId,
       publicationExternalId: launch.volume.publicationExternalId, workType: launch.workType, mode: launch.mode,
       context: structuredClone(launch.context), volume: structuredClone(launch.volume),
+      publicationMatter: structuredClone(launch.publicationMatter ?? {}),
       chapters: structuredClone(chapters), contributors: structuredClone(launch.contributors),
       mappings, fullSourceFileExternalId: sourceByChapter.get(null)?.fileExternalId, importedAt: blank.createdAt },
   } };
