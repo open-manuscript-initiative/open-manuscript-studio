@@ -9,7 +9,7 @@ import { projectIssueStudyForExport } from '../src/model/issueStudyExport.ts';
 import { getIssueStudyCitationMetadata } from '../src/model/issueStudyCitationMetadata.ts';
 import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { renderJatsArticle } from '../src/services/exportJats.ts';
-import { publicationShortcodeValues, resolvePublicationShortcodes } from '../src/model/publicationShortcodes.ts';
+import { publicationShortcodeValues, resolvePublicationShortcodes, resolvePublicationMatterText } from '../src/model/publicationShortcodes.ts';
 import { createPublicationMatter, PUBLICATION_MATTER_EXTENSION } from '../src/model/publicationMatter.ts';
 
 function fixture(): OjsIssueHandoff {
@@ -211,4 +211,30 @@ test('refreshes only OJS imprint and masthead metadata on a previously imported 
   assert.equal(next.revisionHistory.revisions.length, issue.revisionHistory.revisions.length + 1);
   assert.equal(refreshOjsPublicationMatter(next, incoming), next);
   assert.throws(() => refreshOjsPublicationMatter(next, { ...incoming, installation: { installationId: 'other' } }));
+});
+
+test('bilingual title matter resolves locale variants independently of document language', () => {
+  const input = fixture();
+  input.context.name = { hu_HU: 'Folyóirat', en_US: 'Journal' };
+  input.context.publicationMatter = { publisher: { hu: 'Kiadó', en: 'Publisher' }, editorialBoard: [{ role: { hu: 'Főszerkesztő', en_US: 'Editor-in-chief' }, members: [{ name: 'Editor Name', affiliation: { hu: 'Egyetem', en: 'University' } }] }] };
+  const article = input.sections[0]!.articles[0]!;
+  article.submission = { ...article.submission, title: { hu: 'Első tanulmány', en: 'First study' } };
+  const issue = createJournalIssueFromOjsHandoff(input, 'hu');
+  const rich = (text: string) => JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
+  const result = resolvePublicationMatterText(rich('[omi:journal:hu] / [omi:journal:en] / [omi:editorial-board:en_US] / [omi:publisher:de]'), issue);
+  assert.match(result.content, /Folyóirat \/ Journal/);
+  assert.match(result.content, /Editor-in-chief/);
+  assert.match(result.content, /University/);
+  assert.doesNotMatch(result.content, /Főszerkesztő|Egyetem/);
+  assert.deepEqual(result.missing, ['publisher:de']);
+  assert.match(resolvePublicationMatterText(rich('[omi:journal]'), issue, 'en').content, /Journal/);
+  assert.match(resolvePublicationMatterText(rich('[omi:issn:en]'), issue).content, /1234-5679/);
+  const matter = createPublicationMatter(issue);
+  const page = matter.pages.find(item => item.kind === 'imprint-page')!;
+  page.enabled = true; page.content = rich('[omi:editorial-board:hu] / [omi:editorial-board:en]');
+  issue.extensions = { ...issue.extensions, [PUBLICATION_MATTER_EXTENSION]: matter };
+  const html = renderHtmlArticle(issue).html;
+  assert.match(html, /Főszerkesztő/);
+  assert.match(html, /Editor-in-chief/);
+  assert.match(page.content, /\[omi:editorial-board:en\]/);
 });

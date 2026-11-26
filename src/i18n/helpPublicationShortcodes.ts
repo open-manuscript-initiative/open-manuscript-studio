@@ -228,11 +228,22 @@ const copy = {
   }
 } as const;
 
+const languageTips = {
+  "hu": "A kiadvány vagy keret nyelvét felülírhatja a kód nyelvi utótagja: [omi:journal:hu], [omi:editorial-board:en]. A hiányzó OJS-fordítást nem helyettesíti más nyelvű mezővel és nem fordítja le automatikusan. Az azonosítók és a szerzők rögzített nevei közösek; a szerkesztőségi nyilvános névváltozatokat használja, ha elérhetők.",
+  "en": "Override the publication or frame language with a suffix: [omi:journal:hu], [omi:editorial-board:en]. Missing OJS translations are not replaced by another language or generated automatically. Identifiers and recorded author names are shared; public editorial name variants are used when available.",
+  "de": "Die Publikations- oder Rahmensprache lässt sich per Suffix überschreiben: [omi:journal:hu], [omi:editorial-board:en]. Fehlende OJS-Übersetzungen werden nicht durch andere Sprachen ersetzt oder automatisch erzeugt. Kennungen und erfasste Autorennamen bleiben gemeinsam; öffentliche Namensvarianten der Redaktion werden verwendet, sofern verfügbar.",
+  "fr": "Le suffixe choisit la langue : [omi:journal:hu], [omi:editorial-board:en]. Les traductions OJS manquantes ne sont ni remplacées ni générées automatiquement.",
+  "it": "Il suffisso seleziona la lingua: [omi:journal:hu], [omi:editorial-board:en]. Le traduzioni OJS mancanti non sono sostituite né generate automaticamente.",
+  "es": "El sufijo selecciona el idioma: [omi:journal:hu], [omi:editorial-board:en]. No se sustituyen ni generan automáticamente traducciones OJS ausentes.",
+  "nl": "Het achtervoegsel kiest de taal: [omi:journal:hu], [omi:editorial-board:en]. Ontbrekende OJS-vertalingen worden niet vervangen of automatisch gegenereerd.",
+  "pl": "Przyrostek wybiera język: [omi:journal:hu], [omi:editorial-board:en]. Brakujące tłumaczenia OJS nie są zastępowane ani generowane automatycznie."
+} as const;
+
 export function getPublicationShortcodeHelp(locale: string) {
   const language = locale.toLowerCase().split(/[-_]/)[0] as keyof typeof copy;
   const text = copy[language] ?? copy.en;
   const fields = PUBLICATION_SHORTCODES.map((key, index) => ({ key, label: text.fields[index] }));
-  const topic: HelpTopic = { title: text.title, body: text.body, tips: [...text.tips, ...fields.map(field => '[omi:' + field.key + '] — ' + field.label)] };
+  const topic: HelpTopic = { title: text.title, body: text.body, tips: [...text.tips, languageTips[language] ?? languageTips.en, ...fields.map(field => '[omi:' + field.key + '] — ' + field.label)] };
   return { topic, fields, insert: text.insert };
 }
 

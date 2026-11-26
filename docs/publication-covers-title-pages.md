@@ -153,3 +153,7 @@ Editorial board
 
 [omi:journal] [omi:volume]/[omi:number] ([omi:year])
 ```
+
+### Multilingual publication matter
+
+Use `[omi:journal:hu]`, `[omi:journal:en]`, `[omi:editorial-board:hu]` and `[omi:editorial-board:en]` in the same frame or separate frames. The field language selector inserts the suffix; without a suffix a frame's configured language takes priority, then the document language. OJS language maps preserve regional keys such as `hu_HU` and `en_US`. Explicit language selection does not fall back to another language for a localized map. Missing fields remain visible with an export diagnostic. Scalar shared data and recorded author names remain unchanged; public editorial name variants are preferred when present. Refresh the OJS snapshot after adding translations there. No automatic translation.

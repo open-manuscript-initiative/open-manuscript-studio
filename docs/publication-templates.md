@@ -67,3 +67,7 @@ Szerkesztőbizottság
 
 [omi:journal] [omi:volume]/[omi:number] ([omi:year])
 ```
+
+### Többnyelvű címnegyed
+
+A `[omi:journal:hu]` és `[omi:journal:en]`, illetve a `[omi:editorial-board:hu]` és `[omi:editorial-board:en]` egymás mellett is használható. A nyelvi utótag a sablon része; hiányában a keret, majd a dokumentum nyelve érvényes. A hiányzó OJS-nyelvi változatot nem fordítjuk le automatikusan. A megfelelő adatokat az OJS-ben kell kitölteni, majd a lapszám impresszumát frissíteni.

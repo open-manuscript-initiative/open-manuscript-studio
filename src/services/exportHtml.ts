@@ -28,7 +28,7 @@ import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
 import { getPublicationCoverSheet } from '../model/publicationCoverSheet';
 import { getPublicationMatter, publicationMatterPages, type PublicationMatterPage } from '../model/publicationMatter';
-import { publicationShortcodeValues, resolvePublicationShortcodes } from '../model/publicationShortcodes';
+import { resolvePublicationMatterText } from '../model/publicationShortcodes';
 import { authorFontStyle, cssStringLiteral } from './embeddedCss';
 import {
   buildPublicationRenderingContext,
@@ -751,8 +751,8 @@ function renderPublicationCoverSheets(model: NonNullable<ReturnType<typeof getPu
   }).join('');
 }
 
-function renderMatterShortcodes(content: string, targetId: string, state: RenderState): string {
-  const resolved = resolvePublicationShortcodes(content, publicationShortcodeValues(state.manuscript));
+function renderMatterShortcodes(content: string, targetId: string, state: RenderState, locale?: string): string {
+  const resolved = resolvePublicationMatterText(content, state.manuscript, locale);
   for (const key of resolved.missing) state.diagnostics.push({ code: 'publication-matter-shortcode-missing', severity: 'error', message: 'Missing publication metadata: ' + key, targetId });
   return renderJsonNode(JSON.parse(resolved.content) as JsonNode, state);
 }
@@ -778,7 +778,7 @@ function renderPublicationMatterFrame(frame: PublicationMatterFrame, index: numb
   const inline = (style: object) => Object.entries(style).map(([key, value]) => `${key.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}:${value}`).join(';');
   const box = inline({ ...matterFrameBoxStyle(frame, width, height), zIndex: index + 2 });
   let content = '';
-  if (frame.kind === 'text') content = renderMatterShortcodes(frame.content!, frame.id, state);
+  if (frame.kind === 'text') content = renderMatterShortcodes(frame.content!, frame.id, state, frame.style.language || undefined);
   else if (frame.image) {
     const asset = state.assetMap.get(frame.image.assetId);
     if (!asset || !['image/png', 'image/jpeg', 'image/webp'].includes(asset.mediaType)) {

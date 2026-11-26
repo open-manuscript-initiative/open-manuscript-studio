@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { generateHTML } from '@tiptap/core';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
@@ -40,12 +40,19 @@ export function MatterRichText({ content, onChange, readOnly, toolbarHost, label
   }, [editor, content]);
   const shortcodeHelp = getPublicationShortcodeHelp(locale);
   const shortcodeLabel = shortcodeHelp.insert;
+  const [fieldLocale, setFieldLocale] = useState('');
+  const languageLabel = locale === 'hu' ? 'Adatmező nyelve' : locale === 'de' ? 'Sprache des Datenfelds' : 'Metadata field language';
+  const defaultLabel = locale === 'hu' ? 'Kiadvány / keret nyelve' : locale === 'de' ? 'Publikations- / Rahmensprache' : 'Publication / frame language';
   const toolbar = editor && !readOnly ? <div className="omi-publication-matter-format" role="group" aria-label={format.toolbar}>
     {[format.bold, format.italic, format.underline, format.smallCaps, format.superscript, format.subscript].map((label, index) => <button type="button" key={label} title={label} aria-label={label} aria-pressed={active?.[index] ?? false}
       onMouseDown={(event) => event.preventDefault()} onClick={() => editor.chain().focus().toggleMark(marks[index]!).run()}>{['B', 'I', 'U', 'Aa', 'x²', 'x₂'][index]}</button>)}
+    <select aria-label={languageLabel} value={fieldLocale} onChange={event => setFieldLocale(event.target.value)}>
+      <option value="">{defaultLabel}</option>
+      {['hu','en','de','fr','it','es','nl','pl'].map(language => <option key={language} value={language}>{language}</option>)}
+    </select>
     <select aria-label={shortcodeLabel} value="" onChange={(event) => {
       const key = event.target.value;
-      if (key) editor.chain().focus().insertContent('[omi:' + key + ']').run();
+      if (key) editor.chain().focus().insertContent('[omi:' + key + (fieldLocale ? ':' + fieldLocale : '') + ']').run();
     }}>
       <option value="">{shortcodeLabel}</option>
       {shortcodeHelp.fields.map(({ key, label }) => <option key={key} value={key}>{label + ' — [omi:' + key + ']'}</option>)}
