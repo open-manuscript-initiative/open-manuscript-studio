@@ -3,10 +3,11 @@ import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { createIssuePdfReviewRows, editIssuePdfReviewRow, reviewedIssuePdfRanges, type IssuePdfReviewRow } from '../model/issuePdfReview';
-import { prepareIssuePdfRangePlan, extractReviewedIssuePdfRanges, type IssuePdfRangePlan } from '../services/issuePdfRangePlanning';
+import { prepareIssuePdfRangePlan, extractReviewedIssuePdfRanges, type IssuePdfRangePlan, type ReviewedIssuePdfArtifact } from '../services/issuePdfRangePlanning';
 import { loadPublicationPublisherIdentity, type PublicationStyle } from '../services/publicationStyleExport';
 import { publicationLayoutKey } from '../services/styledPublicationArtifact';
-import { downloadBlobInBrowser } from '../services/browserBlobDownload';
+import { saveExportBlob } from '../services/exportFileDelivery';
+import { serializePublicationBuildManifest, publicationBuildManifestFileName } from '../services/publicationBuildManifest';
 import { getStudioApiBaseUrl } from '../services/studioServer';
 import './IssuePdfRangeReviewPanel.css';
 
@@ -26,7 +27,7 @@ export function IssuePdfRangeReviewPanel({ style, active }: { style: Publication
   const [plan, setPlan] = useState<IssuePdfRangePlan>();
   const [origin, setOrigin] = useState('');
   const [rows, setRows] = useState<IssuePdfReviewRow[]>([]);
-  const [outputs, setOutputs] = useState<{ rootSectionId: string; pdf: Blob }[]>([]);
+  const [outputs, setOutputs] = useState<ReviewedIssuePdfArtifact[]>([]);
   const [busy, setBusy] = useState<'prepare' | 'extract' | null>(null);
   const lock = useRef(false);
   const [error, setError] = useState('');
@@ -75,6 +76,18 @@ export function IssuePdfRangeReviewPanel({ style, active }: { style: Publication
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
     finally { lock.current = false; setBusy(null); }
   }
+  function save(blob: Blob, fileName: string) {
+    if (!plan || lock.current) return;
+    try {
+      assertCurrent(plan, origin);
+      void saveExportBlob(blob, fileName).catch(cause => setError(cause instanceof Error ? cause.message : String(cause)));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+  }
+  function saveJson(value: string, name: string) {
+    save(new Blob([value], { type: 'application/json' }), name);
+  }
+  const auditLabel = locale === 'hu' ? 'Eredetigazolás' : locale === 'de' ? 'Herkunftsnachweis' : 'Build provenance';
+  const derivationLabel = locale === 'hu' ? 'Oldalkivágási adatok' : locale === 'de' ? 'Seitenauszug-Nachweis' : 'Page extraction evidence';
   const edit = (id: string, field: 'first' | 'last', value: string) => {
     setRows(previous => editIssuePdfReviewRow(previous, id, field, value)); setOutputs([]);
   };
@@ -88,7 +101,8 @@ export function IssuePdfRangeReviewPanel({ style, active }: { style: Publication
     {plan && !current ? <p role="alert">{copy.stale}</p> : null}
     {plan && current ? <>
       <p>{copy.pages}: {plan.pageCount}</p>
-      <button type="button" disabled={busy !== null} onClick={() => downloadBlobInBrowser(plan.pdf, 'issue-review.pdf')}>{copy.download}</button>
+      <button type="button" disabled={busy !== null} onClick={() => save(plan.pdf, plan.parentBuild.output.fileName)}>{copy.download}</button>
+      <button type="button" disabled={busy !== null} onClick={() => saveJson(serializePublicationBuildManifest(plan.parentBuild), publicationBuildManifestFileName(plan.parentBuild.output.fileName))}>{auditLabel}: {plan.parentBuild.output.fileName}</button>
       <fieldset disabled={busy !== null}>
         {plan.proposals.map((proposal, index) => {
           const row = rows[index];
@@ -109,7 +123,11 @@ export function IssuePdfRangeReviewPanel({ style, active }: { style: Publication
       {!valid ? <p>{copy.invalid}</p> : null}
       <button type="button" disabled={!valid || busy !== null} onClick={() => void extract()}>{busy === 'extract' ? copy.extracting : copy.extract}</button>
       {outputs.length ? <div role="status"><p>{copy.ready}</p>{outputs.map((output, index) =>
-        <div key={output.rootSectionId}><button type="button" disabled={busy !== null} onClick={() => downloadBlobInBrowser(output.pdf, `study-${index + 1}.pdf`)}>{copy.save}: {plan.proposals[index]?.title}</button></div>
+        <div key={output.rootSectionId}>
+          <button type="button" disabled={busy !== null} onClick={() => save(output.pdf, output.fileName)}>{copy.save}: {plan.proposals[index]?.title}</button>
+          <button type="button" disabled={busy !== null} onClick={() => saveJson(serializePublicationBuildManifest(output.build), publicationBuildManifestFileName(output.fileName))}>{auditLabel}: {output.fileName}</button>
+          <button type="button" disabled={busy !== null} onClick={() => saveJson(output.derivationText, output.fileName + '.omi-derivation.json')}>{derivationLabel}: {output.fileName}</button>
+        </div>
       )}</div> : null}
     </> : null}
     {error ? <p role="alert">{error}</p> : null}
