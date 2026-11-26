@@ -10,7 +10,8 @@ import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 function collectStrings(value: unknown, result: Set<string>): void {
   if (typeof value === 'string') {
     result.add(value);
-    if (/^[\s]*[{\[]/.test(value)) {
+    const trimmed = value.trimStart();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
       try { collectStrings(JSON.parse(value), result); } catch { /* legacy text */ }
     }
   } else if (Array.isArray(value)) {
