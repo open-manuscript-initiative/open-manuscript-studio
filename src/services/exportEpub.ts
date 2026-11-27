@@ -70,7 +70,7 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
       for (const attribute of Array.from(element.attributes)) {
         const key = attribute.name.toLowerCase();
         if (key.startsWith('on') || ['srcset', 'action', 'formaction', 'xml:base', 'http-equiv'].includes(key) ||
-            (key === 'style' && !/^[a-zA-Z0-9 .,:;#%+\-]*$/.test(attribute.value))) {
+            (key === 'style' && !/^[a-zA-Z0-9 .,:;#%+-]*$/.test(attribute.value))) {
           element.removeAttribute(attribute.name);
         }
         if (key === 'href' && !/^(?:#[A-Za-z0-9_.:-]+$|styles\.css$|https?:\/\/|mailto:)/i.test(attribute.value))
