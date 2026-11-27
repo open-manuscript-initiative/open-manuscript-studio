@@ -1,3 +1,4 @@
+import { validateOmpMetadataResponse, type OmpMetadataRequest } from '../contracts/ompMetadataContract.js';
 import { validateOmpChapterPagesResponse, type OmpChapterPagesRequest } from '../contracts/ompChapterPagesContract.js';
 import { validateOjsIssuePagesResponse, type OjsIssuePagesRequest } from '../contracts/ojsIssuePagesContract.js';
 import { findEditorialConnection } from '../repositories/editorialConnectorRepository.js';
@@ -168,4 +169,16 @@ export async function reconcileOmpChapterPages(userId: string, connectionId: str
   const raw = await client.remote('POST', 'omi-integration/chapter-page-range', input);
   try { return validateOmpChapterPagesResponse(input, raw); }
   catch { throw new RemoteError(502, 'OMP returned an incompatible page range response. Inspect the destination before retrying.'); }
+}
+
+export async function reconcileOmpVolumeMetadata(userId: string, connectionId: string, input: OmpMetadataRequest) {
+  const client = await connection(userId, connectionId);
+  if (client.provider !== 'omp') throw new RemoteError(409, 'Volume metadata requires an OMP connection.');
+  const available = record(await client.remote('GET', 'omi-integration'));
+  if (available.protocol !== 'omi-integration/1' || available.profile !== 'omi-integration/1/omp' ||
+      !Array.isArray(available.capabilities) || !available.capabilities.includes('editor.metadata.reconcile'))
+    throw new RemoteError(409, 'Update the OMP integration plugin to enable volume metadata reconciliation.');
+  const raw = await client.remote('POST', 'omi-integration/metadata', input);
+  try { return validateOmpMetadataResponse(input, raw); }
+  catch { throw new RemoteError(502, 'OMP returned an incompatible metadata response. Inspect the native destination before retrying.'); }
 }

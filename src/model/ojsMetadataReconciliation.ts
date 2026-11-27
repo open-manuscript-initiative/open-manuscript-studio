@@ -1,3 +1,4 @@
+import type { OmpMetadataSnapshot } from '../../server/src/contracts/ompMetadataContract';
 import { normalizeLocale } from './scholarlyMetadata';
 import type { OmiManuscriptState } from '../types/omi';
 import type {
@@ -75,7 +76,7 @@ export function localMetadataValue(
   }
 }
 export function remoteMetadataValue(
-  snapshot: OjsMetadataSnapshot,
+  snapshot: OjsMetadataSnapshot | OmpMetadataSnapshot,
   locale: string,
   field: OjsPullMetadataField,
 ): MetadataValue {
@@ -104,12 +105,12 @@ function mergeLocale<T>(
 /** Pure selective import. Never replace contributors, identifiers, content or unrelated locale values. */
 export function importOjsMetadata(
   state: OmiManuscriptState,
-  snapshot: OjsMetadataSnapshot,
+  snapshot: OjsMetadataSnapshot | OmpMetadataSnapshot,
   locale: string,
   fields: OjsPullMetadataField[],
 ): OmiManuscriptState {
   if (!snapshot.locales.includes(locale))
-    throw new Error('Select an exact OJS metadata locale.');
+    throw new Error('Select an exact native metadata locale.');
   if (!fields.length) throw new Error('Select at least one metadata field.');
   const next = { ...state };
   const language = normalizeLocale(locale);
@@ -124,9 +125,9 @@ export function importOjsMetadata(
       );
     const value = remoteMetadataValue(snapshot, locale, field);
     if (value === undefined)
-      throw new Error('OJS has no value for the selected field and language.');
+      throw new Error('The native publication has no value for the selected field and language.');
     if (field === 'keywords') {
-      if (!Array.isArray(value)) throw new Error('Invalid OJS keywords.');
+      if (!Array.isArray(value)) throw new Error('Invalid native keywords.');
       next.keywordsByLocale = mergeLocale(
         {
           [normalizeLocale(state.locale)]: [...state.keywords],
@@ -137,7 +138,7 @@ export function importOjsMetadata(
       );
       if (primary) next.keywords = [...value];
     } else if (field === 'abstract') {
-      if (typeof value !== 'string') throw new Error('Invalid OJS abstract.');
+      if (typeof value !== 'string') throw new Error('Invalid native abstract.');
       next.abstracts = mergeLocale(
         {
           [normalizeLocale(state.locale)]: state.abstract ?? '',
@@ -148,7 +149,7 @@ export function importOjsMetadata(
       );
       if (primary) next.abstract = value;
     } else if (field === 'title' || field === 'subtitle') {
-      if (typeof value !== 'string') throw new Error('Invalid OJS title.');
+      if (typeof value !== 'string') throw new Error('Invalid native title.');
       next[field] = value;
     } else if (field === 'copyrightYear') {
       if (typeof value !== 'number' || !Number.isInteger(value) || value < 1)
@@ -175,14 +176,14 @@ export function importOjsMetadata(
 }
 export function exportOjsMetadata(
   state: OmiManuscriptState,
-  snapshot: OjsMetadataSnapshot,
+  snapshot: OjsMetadataSnapshot | OmpMetadataSnapshot,
   locale: string,
   fields: OjsWritableMetadataField[],
 ): Partial<Record<'title' | 'subtitle' | 'abstract', string>> & {
   keywords?: string[];
 } {
   if (!snapshot.locales.includes(locale) || !fields.length)
-    throw new Error('Choose a supported OJS locale and metadata fields.');
+    throw new Error('Choose a supported native locale and metadata fields.');
   const result: Partial<Record<'title' | 'subtitle' | 'abstract', string>> & {
     keywords?: string[];
   } = {};
@@ -191,7 +192,7 @@ export function exportOjsMetadata(
       !snapshot.writableFields.includes(field) ||
       !canRepresentMetadataField(field, state, locale)
     )
-      throw new Error('OJS does not permit this metadata change.');
+      throw new Error('The native publication does not permit this metadata change.');
     const value = localMetadataValue(state, locale, field);
     if (field === 'keywords' && Array.isArray(value))
       result.keywords = [...value];
