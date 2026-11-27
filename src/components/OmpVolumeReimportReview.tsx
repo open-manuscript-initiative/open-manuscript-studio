@@ -33,14 +33,25 @@ const previewLabels = {
   nl: ['Vergelijken', 'Oorspronkelijke import', 'Lokale versie', 'Nieuwe OMP-versie', 'Niet beschikbaar', 'Fragment – niet de volledige tekst', 'Lokale versie behouden', 'Lokale versie goedgekeurd', 'Tekstvoorbeeld, geen volledige opmaakvergelijking.', 'Sluiten', 'Voorbeeld niet beschikbaar.'],
   pl: ['Porównaj', 'Pierwotny import', 'Wersja lokalna', 'Nowa wersja OMP', 'Niedostępne', 'Fragment – niepełny tekst', 'Zachowaj wersję lokalną', 'Wersja lokalna zatwierdzona', 'Podgląd tekstu, nie pełne porównanie formatowania.', 'Zamknij', 'Podgląd niedostępny.'],
 } as const;
-export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh, onAdd, onPreview, onKeepChapter }: {
+const acceptLabels = {
+  hu: ['Új OMP-változat elfogadása', 'A biztonságos automatikus csere feltételei nem teljesülnek. A helyi változat megmarad.'],
+  en: ['Accept new OMP version', 'Safe automatic replacement is unavailable. The local version is preserved.'],
+  de: ['Neue OMP-Fassung übernehmen', 'Sicherer automatischer Ersatz nicht möglich. Die lokale Fassung bleibt erhalten.'],
+  fr: ['Accepter la nouvelle version OMP', 'Remplacement automatique sûr indisponible. La version locale est conservée.'],
+  it: ['Accetta la nuova versione OMP', 'Sostituzione automatica sicura non disponibile. La versione locale è conservata.'],
+  es: ['Aceptar nueva versión OMP', 'Sustitución automática segura no disponible. Se conserva la versión local.'],
+  nl: ['Nieuwe OMP-versie accepteren', 'Veilige automatische vervanging niet beschikbaar. De lokale versie blijft behouden.'],
+  pl: ['Zaakceptuj nową wersję OMP', 'Bezpieczna automatyczna zamiana niedostępna. Wersja lokalna zostaje zachowana.'],
+} as const;
+export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh, onAdd, onPreview, onKeepChapter, onAcceptChapter }: {
   review: OmpVolumeReview; locale: string; onKeep: () => void; onRefresh: () => void; onAdd: () => void;
-  onPreview: (id: string) => OmpChapterPreview; onKeepChapter: (id: string) => void;
+  onPreview: (id: string) => OmpChapterPreview; onKeepChapter: (id: string) => void; onAcceptChapter: (id: string) => void;
 }) {
   const language = locale.split(/[-_]/)[0] as keyof typeof copy;
   const labels = copy[language] ?? copy.en;
   const additions = review.items.filter(item => item.status === 'new').length;
   const p = previewLabels[language] ?? previewLabels.en;
+  const accept = acceptLabels[language] ?? acceptLabels.en;
   const [selected, setSelected] = useState<{ id: string; preview: OmpChapterPreview } | null>(null);
   const [previewError, setPreviewError] = useState(false);
   const openPreview = (id: string) => {
@@ -67,6 +78,8 @@ export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh, onA
             {value?.truncated ? <p>{p[5]}</p> : null}
           </details>)}
         <button type="button" onClick={() => { onKeepChapter(selected.id); setSelected(null); }} disabled={!selected.preview.canKeepLocal}>{p[6]}</button>
+        <button type="button" disabled={!selected.preview.canAcceptIncoming} onClick={() => { onAcceptChapter(selected.id); setSelected(null); }}>{accept[0]}</button>
+        {!selected.preview.canAcceptIncoming ? <p role="status">{accept[1]}</p> : null}
         <button type="button" onClick={() => setSelected(null)}>{p[9]}</button>
       </section> : null}
       {additions > 0 ? <><button type="button" disabled={!review.canAppend} onClick={onAdd}>{addLabels[language] ?? addLabels.en} ({additions})</button>

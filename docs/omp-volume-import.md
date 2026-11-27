@@ -27,3 +27,7 @@ Explicitly add new native chapters at the end of the existing volume without cha
 ## Individual chapter review
 
 A changed mapped chapter can be compared as a bounded plain-text preview of its original imported revision (when still available), local text, and new OMP source. The preview is not a formatting or full scholarly-object diff. The editor can explicitly retain the local version, recorded as a versioned decision bound to the exact incoming chapter/source/contributor fingerprint; a later upstream change invalidates the decision. Source provenance is never advanced by retaining local text. Destructive replacement or cross-chapter anchor remapping is not yet enabled.
+
+## Safe acceptance of a changed chapter
+
+Explicitly accept a new upstream text version only when the original revision is available, the local chapter is unchanged, native chapter/contributor metadata and publication identity are unchanged, the incoming structure matches, and both text and external references pass a conservative safety boundary. Existing section/block IDs, chapter order, styles and prior revisions are retained. Notes, citations, anchors, complex objects and dependent layout data block this text-only replacement rather than risk data loss. Full scholarly-object remapping and arbitrary structural replacement remain separate work.

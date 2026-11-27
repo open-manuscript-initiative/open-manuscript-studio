@@ -1,6 +1,6 @@
 import { textFromAtomicBlock } from '../../model/atomicTextBlocks';
-import { partitionManuscriptStudies } from '../../model/sectionStructure';
-import type { OmiManuscriptState, OmiBlock, OmiManuscript } from '../../types/omi';
+import { getParentSectionId, partitionManuscriptStudies } from '../../model/sectionStructure';
+import type { OmiManuscriptState, OmiBlock, OmiSection, OmiManuscript } from '../../types/omi';
 import { mergeOmiDocumentAsStudy } from '../../model/studyImport';
 import { commitManuscriptRevision, extractManuscriptState, type CreateChangeEventInput } from '../../model/versioning';
 import { ensureManuscriptRevisionStateDigests } from '../../model/revisionIntegrity';
@@ -215,6 +215,7 @@ export interface OmpChapterPreview {
   sourceChanged: boolean | null;
   localTextChanged: boolean | null;
   canKeepLocal: boolean;
+  canAcceptIncoming: boolean;
 }
 function incomingChapterFingerprint(launch: OmpVolumeHandoff, id: string): string {
   const chapter = launch.chapters.find(item => item.externalId === id);
@@ -272,7 +273,8 @@ export function previewOmpChapter(document: OmiManuscript, launch: OmpVolumeHand
   const local = chapterText(document, root);
   return { original, local, incoming: chapterText(incoming), sourceChanged: sourceHash ? sourceHash !== fingerprint(source) : null,
     localTextChanged: original && !original.truncated && !local.truncated ? original.text !== local.text : null,
-    canKeepLocal: !review.publicationChanged && !review.representationChanged && previous.workType === launch.workType };
+    canKeepLocal: !review.publicationChanged && !review.representationChanged && previous.workType === launch.workType,
+    canAcceptIncoming: !!planOmpChapterReplacement(document, launch, id, incoming, baseline) };
 }
 
 /** Record an explicit editorial decision without claiming the new source was imported. */
@@ -291,5 +293,123 @@ export function keepLocalOmpChapter(document: OmiManuscript, launch: OmpVolumeHa
     summary: 'Kept local OMP chapter after review', timestamp,
     events: [{ operation: 'manuscript.snapshot.create', targetId: document.id,
       path: '/extensions/' + OMP_VOLUME_ORIGIN, previousValue: previous, nextValue: nextOrigin }],
+  }));
+}
+
+/** Deliberately small allowlist of text-only Tiptap nodes. Anchors, hyperlinks,
+ * media, arbitrary attributes and unknown extensions require a richer merge. */
+function safeTextBlock(block: OmiBlock): boolean {
+  if (!['paragraph', 'heading'].includes(block.type) || block.visual || block.children?.length) return false;
+  function safeNode(value: unknown): boolean {
+    const node = obj(value);
+    if (!['doc', 'paragraph', 'heading', 'text', 'hardBreak'].includes(str(node.type)) ||
+        Object.keys(node).some(key => !['type', 'text', 'content', 'attrs', 'marks'].includes(key))) return false;
+    if (node.attrs !== undefined && (node.type !== 'heading' ||
+        Object.keys(obj(node.attrs)).some(key => key !== 'level') ||
+        ![1, 2, 3, 4, 5, 6].includes(Number(obj(node.attrs).level)))) return false;
+    if (node.type === 'text' && typeof node.text !== 'string') return false;
+    if (node.marks !== undefined && (!Array.isArray(node.marks) || !node.marks.every(mark =>
+      ['bold', 'italic', 'underline', 'strike', 'subscript', 'superscript'].includes(str(obj(mark).type)) &&
+      Object.keys(obj(mark)).every(key => key === 'type')))) return false;
+    return node.content === undefined || (Array.isArray(node.content) && node.content.every(safeNode));
+  }
+  const raw = block.content.trimStart();
+  if (!raw.startsWith('{') && !raw.startsWith('[')) return true;
+  try { return safeNode(JSON.parse(raw)); } catch { return false; }
+}
+function chapterSections(state: OmiManuscriptState, root: string): OmiSection[] {
+  return partitionManuscriptStudies(state.sections).find(study => study.rootSectionId === root)?.sections ?? [];
+}
+function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHandoff, id: string,
+  incoming: OmiManuscript, baseline: OmiManuscriptState | undefined): OmiSection[] | null {
+  const previous = origin(document, launch);
+  if (!baseline || previous.publicationExternalId !== launch.volume.publicationExternalId ||
+      previous.mode !== 'chapters' || launch.mode !== 'chapters' || previous.workType !== launch.workType) return null;
+  const mapping = rows(previous.mappings).find(entry => entry.chapterExternalId === id);
+  const chapter = launch.chapters.find(entry => entry.externalId === id);
+  const oldChapter = rows(previous.chapters).find(entry => entry.externalId === id);
+  const source = launch.sources.find(entry => entry.chapterExternalId === id)?.sourceDocument;
+  const root = str(mapping?.rootSectionId);
+  if (!root || !chapter || !oldChapter || !source || !mapping?.sourceFingerprint ||
+      mapping.sourceFingerprint === fingerprint(source) || fingerprint(chapter) !== fingerprint(oldChapter)) return null;
+  const contributorIds = new Set(chapter.contributorExternalIds);
+  const contributors = launch.contributors.filter(person => contributorIds.has(person.externalId ?? ''));
+  const previousContributorHash = mapping.contributorFingerprint ?? fingerprint(rows(previous.contributors).filter(person => contributorIds.has(str(person.externalId))));
+  if (previousContributorHash !== fingerprint(contributors)) return null;
+  const local = chapterSections(document, root);
+  const original = chapterSections(baseline, root);
+  if (!local.length || fingerprint(local) !== fingerprint(original) ||
+      local.some(section => section.blocks.some(block => !safeTextBlock(block)))) return null;
+  // Existing object identities must remain stable. Reject any external references
+  // to the chapter's blocks or sections, including IDs inside serialized JSON,
+  // print corrections, notes, citations, bookmarks, proofing and layout data.
+  const ids = new Set(local.flatMap(section => [section.id, ...section.blocks.map(block => block.id)]));
+  const outside = extractManuscriptState(document);
+  outside.sections = outside.sections.filter(section => !ids.has(section.id));
+  outside.contributions = outside.contributions.filter(item => !ids.has(item.targetId));
+  outside.extensions = { ...outside.extensions };
+  delete outside.extensions[OMP_VOLUME_ORIGIN];
+  const external = JSON.stringify(outside);
+  if ([...ids].some(key => external.includes(key))) return null;
+  // Incoming scholarly objects are not silently discarded by this text-only
+  // replacement path. More complex sources remain review-only.
+  if ([incoming.annotations, incoming.citations, incoming.citationClusters, incoming.crossReferences,
+       incoming.bibliographicRecords, incoming.sourceAttributions, incoming.assets, incoming.namedAnchors,
+       incoming.semanticFields, incoming.computedFields, incoming.indexDefinitions, incoming.indexEntries,
+       incoming.generatedIndexes, incoming.proofing?.changes, incoming.publicationCorrections]
+      .some(items => items?.length)) return null;
+  const projected = mergeOmiDocumentAsStudy(extractManuscriptState(document), extractManuscriptState(incoming),
+    { importedAt: document.updatedAt }).importedSections;
+  if (projected.length !== local.length) return null;
+  const replacements: OmiSection[] = [];
+  for (let index = 0; index < local.length; index++) {
+    const old = local[index]!, next = projected[index]!;
+    const oldParent = getParentSectionId(old), newParent = getParentSectionId(next);
+    if (local.findIndex(item => item.id === oldParent) !== projected.findIndex(item => item.id === newParent) ||
+        old.blocks.length !== next.blocks.length ||
+        next.blocks.some((block, j) => block.type !== old.blocks[j]?.type || !safeTextBlock(block))) return null;
+    replacements.push({ ...old, title: next.title,
+      blocks: old.blocks.map((block, j) => ({ ...block, content: next.blocks[j]!.content })) });
+  }
+  return replacements;
+}
+
+/** Explicit source adoption for verified unchanged, anchor-free text chapters.
+ * Retains every local section/block ID and the previous revision. */
+export function acceptIncomingOmpChapter(document: OmiManuscript, launch: OmpVolumeHandoff, id: string): OmiManuscript {
+  const previous = origin(document, launch);
+  const review = compareOmpVolume(document, launch);
+  const chapter = launch.chapters.find(item => item.externalId === id);
+  const source = launch.sources.find(item => item.chapterExternalId === id)?.sourceDocument;
+  const mapping = rows(previous.mappings).find(item => item.chapterExternalId === id);
+  if (!chapter || !source || !mapping || review.items.find(item => item.id === id)?.status !== 'changed') throw new Error('No changed OMP chapter.');
+  const root = str(mapping.rootSectionId);
+  const baseline = document.revisionHistory.revisions.find(revision => {
+    const snapshot = revision.snapshot.state;
+    const historic = rows(obj(snapshot.extensions?.[OMP_VOLUME_ORIGIN]).mappings).find(item => item.chapterExternalId === id);
+    return historic?.sourceFingerprint === mapping.sourceFingerprint && historic?.rootSectionId === root && snapshot.sections.some(section => section.id === root);
+  })?.snapshot.state;
+  const incoming = importedSource(launch, { externalId: id, primaryLocale: document.locale,
+    title: localMap(chapter.title, document.locale), subtitle: localMap(chapter.subtitle, document.locale),
+    abstract: localMap(chapter.abstract, document.locale) }, source,
+    launch.contributors.filter(person => chapter.contributorExternalIds.includes(person.externalId ?? '')));
+  const replacements = planOmpChapterReplacement(document, launch, id, incoming, baseline);
+  if (!replacements) throw new Error('Automatic replacement would risk local edits or scholarly object integrity.');
+  const state = extractManuscriptState(document);
+  const updated = new Map(replacements.map(section => [section.id, section]));
+  state.sections = state.sections.map(section => updated.get(section.id) ?? section);
+  const timestamp = new Date().toISOString();
+  const decisions = obj(previous.chapterReviewDecisions);
+  const nextOrigin = { ...previous,
+    mappings: rows(previous.mappings).map(item => item.chapterExternalId === id ? { ...item,
+      sourceFileExternalId: source.fileExternalId, sourceFingerprint: fingerprint(source) } : item),
+    chapterReviewDecisions: { ...decisions, [id]: { action: 'accept-incoming', incomingFingerprint: incomingChapterFingerprint(launch, id), reviewedAt: timestamp } } };
+  state.extensions = { ...state.extensions, [OMP_VOLUME_ORIGIN]: nextOrigin };
+  return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
+    summary: 'Accepted new OMP chapter text', timestamp,
+    events: [{ operation: 'manuscript.snapshot.create', targetId: document.id,
+      path: '/sections', previousValue: chapterSections(document, root), nextValue: replacements },
+      { operation: 'manuscript.snapshot.create', targetId: document.id,
+        path: '/extensions/' + OMP_VOLUME_ORIGIN, previousValue: previous, nextValue: nextOrigin }],
   }));
 }

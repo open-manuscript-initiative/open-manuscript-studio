@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createVolumeFromOmpHandoff, OMP_VOLUME_ORIGIN, type OmpVolumeHandoff } from '../src/integrations/omp/importOmpVolume.ts';
-import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter, previewOmpChapter, keepLocalOmpChapter } from '../src/integrations/omp/reimportOmpVolume.ts';
+import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter, previewOmpChapter, keepLocalOmpChapter, acceptIncomingOmpChapter } from '../src/integrations/omp/reimportOmpVolume.ts';
 const fixture = (): OmpVolumeHandoff => ({
   protocol: 'omi-integration/1', profile: 'omi-integration/1/omp', kind: 'volume', installation: { installationId: 'press' },
   context: { externalId: '1' }, volume: { externalId: '2', publicationExternalId: '3', title: { hu: 'Kötet' } },
@@ -93,4 +93,31 @@ test('chapter review distinguishes the imported snapshot, local edit and new OMP
   assert.equal(keepLocalOmpChapter(next, launch, '4'), next);
   launch.sources[0]!.sourceDocument.paragraphs![0]!.text = 'Another update';
   assert.equal(compareOmpVolume(next, launch).items[0]?.reviewedLocal, undefined);
+});
+
+test('accept upstream text for an unchanged plain-text chapter, preserving section and block IDs', () => {
+  const launch = fixture(), doc = createVolumeFromOmpHandoff(launch, 'hu');
+  launch.sources[0]!.sourceDocument.paragraphs![0]!.text = 'Updated upstream';
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, true);
+  const next = acceptIncomingOmpChapter(doc, launch, '4');
+  assert.deepEqual(next.sections.map(section => section.id), doc.sections.map(section => section.id));
+  assert.deepEqual(next.sections.flatMap(section => section.blocks.map(block => block.id)), doc.sections.flatMap(section => section.blocks.map(block => block.id)));
+  assert.match(JSON.stringify(next.sections), /Updated upstream/);
+  assert.match(JSON.stringify(doc.sections), /Original/);
+  assert.equal(compareOmpVolume(next, launch).items[0]?.status, 'unchanged');
+  assert.equal(next.revisionHistory.revisions.length, doc.revisionHistory.revisions.length + 1);
+});
+test('reject replacement if the chapter has local edits, dependent notes or a different structure', () => {
+  const launch = fixture(), doc = createVolumeFromOmpHandoff(launch, 'hu');
+  launch.sources[0]!.sourceDocument.paragraphs![0]!.text = 'Updated upstream';
+  const edited = structuredClone(doc);
+  edited.sections[0]!.title = 'Local change';
+  assert.equal(previewOmpChapter(edited, launch, '4').canAcceptIncoming, false);
+  assert.throws(() => acceptIncomingOmpChapter(edited, launch, '4'));
+  const anchored = structuredClone(doc);
+  anchored.annotations.push({ id: 'note-1', type: 'note', targetBlockId: doc.sections[0]!.blocks[0]!.id, body: 'Local note', renderingHint: 'footnote' });
+  assert.equal(previewOmpChapter(anchored, launch, '4').canAcceptIncoming, false);
+  assert.throws(() => acceptIncomingOmpChapter(anchored, launch, '4'));
+  launch.sources[0]!.sourceDocument.paragraphs!.push({ text: 'Additional paragraph' });
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, false);
 });
