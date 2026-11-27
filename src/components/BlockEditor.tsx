@@ -528,6 +528,39 @@ function BlockEditorComponent({
     },
   });
 
+  // Warm immutable projections after opening or replacing a document, without changing editor state.
+  useEffect(() => {
+    if (!editor || !continuous || suspendExternalUpdates) return;
+    let timer: number | undefined;
+    let doc = editor.state.doc;
+    let cursor = 0;
+    const cancel = () => { if (timer !== undefined) window.clearTimeout(timer); timer = undefined; };
+    const run = () => {
+      timer = undefined;
+      if (editor.isDestroyed || document.visibilityState === 'hidden' || editor.state.doc !== doc) return;
+      const next = snapshotCache.current.warmSlice(doc, cursor);
+      if (next !== undefined) { cursor = next; timer = window.setTimeout(run, 16); }
+    };
+    const schedule = () => {
+      cancel();
+      if (document.visibilityState === 'hidden' || editor.isDestroyed) return;
+      doc = editor.state.doc;
+      cursor = 0;
+      timer = window.setTimeout(run, 100);
+    };
+    const transaction = () => { if (editor.state.doc !== doc) schedule(); };
+    editor.on('transaction', transaction);
+    document.addEventListener('visibilitychange', schedule);
+    window.addEventListener('pageshow', schedule);
+    schedule();
+    return () => {
+      cancel();
+      editor.off('transaction', transaction);
+      document.removeEventListener('visibilitychange', schedule);
+      window.removeEventListener('pageshow', schedule);
+    };
+  }, [editor, continuous, suspendExternalUpdates]);
+
   const proofreading = useEditorProofreading(
     editor,
     blockId,
