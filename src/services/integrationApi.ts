@@ -510,7 +510,7 @@ export async function requestOjsMetadata(connectionId: string, input: import('./
   return result;
 }
 
-/** Common editorial capability projection. Unsupported OMP features remain false. */
+/** Common capability projection; each provider uses its own typed editorial routes. */
 export async function getEditorialConnectorCapabilities(connectionId: string): Promise<import('../../server/src/contracts/editorialConnectorContract').EditorialConnectorCapabilities> {
   const response = await studioApiFetch(`/api/v1/integrations/connections/${encodeURIComponent(connectionId)}/editorial-capabilities`);
   const result = await response.json();
@@ -555,4 +555,14 @@ export async function requestOmpVolumeMetadata(connectionId: string, input: impo
   });
   if (!response.ok) throw new Error((await readErrorMessage(response)) ?? `OMP metadata request failed: HTTP ${response.status}.`);
   return parseJsonResponse<import('../../server/src/contracts/ompMetadataContract').OmpMetadataResponse>(response);
+}
+
+export async function requestOmpEditorialWorkflow(connectionId: string, input: { submissionId: number }): Promise<import('../../server/src/contracts/ompWorkflowContract').OmpWorkflowInspectionResponse> {
+  const response = await studioApiFetch(`/api/v1/integrations/connections/${encodeURIComponent(connectionId)}/omp-workflow-status`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: integrationHeaders({ Accept: 'application/json', 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) throw new Error((await readErrorMessage(response)) ?? `OMP workflow request failed: HTTP ${response.status}.`);
+  return parseJsonResponse<import('../../server/src/contracts/ompWorkflowContract').OmpWorkflowInspectionResponse>(response);
 }

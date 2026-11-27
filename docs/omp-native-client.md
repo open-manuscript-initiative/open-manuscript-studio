@@ -84,6 +84,14 @@ stage, the requested round is the latest round, and the round contains a native
 decision permitting an author revision. Studio cannot bypass these checks by
 altering the stored external identifiers.
 
+## Editorial volume metadata (Preview)
+
+The personal-connection editorial adapter is separate from signed author/reviewer bootstrap and service writeback. It uses the current user's saved native OMP API credential, discovers the exact `omi-integration/1/omp` profile and authorizes each native operation independently. The browser receives no API key or installation secret.
+
+`/api/v1/integrations/connections/:connectionId/omp-workflow-status` validates the OMP-specific read-only series/work-type projection. `omp-metadata` binds the imported installation, press, submission and publication for selected-language metadata comparison and confirmed writes. OJS editorial routes reject OMP connections. Older OMP plugins without the named capability remain unsupported for these actions.
+
+See [volume metadata reconciliation](omp-volume-metadata-reconciliation.md) for the API contracts, browser behavior and evidence limitations. Native production acceptance remains pending; this adapter does not change OMP's Preview support tier or native publishing authority.
+
 ## Backward compatibility
 
 OMP plugin 1.4.x continues to support the pre-existing launch and reviewer

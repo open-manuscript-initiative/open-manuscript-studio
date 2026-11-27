@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import { ompMetadataRequest, ompMetadataResponse } from './ompMetadataContract.js';
+import { ompWorkflowInspectionResponse } from './ompWorkflowContract.js';
+import { ompChapterPagesRequest, ompChapterPagesResponse } from './ompChapterPagesContract.js';
+import { ojsIssuePagesRequest, ojsIssuePagesResponse } from './ojsIssuePagesContract.js';
 import {
   productionCommandSchema,
   productionResponseSchema,
@@ -135,6 +139,34 @@ export function editorialOpenApi() {
             'OJS profile only. Inspect before apply; exact publicationId/locale/expectedStateToken and confirmed are required. Only selected fields are written. An unknown remote outcome requires reinspection; no automatic replay or distributed transaction is claimed.',
         },
       },
+      [`${connector}/omp-workflow-status`]: {
+        parameters: [parameter('connectionId')],
+        post: {
+          ...operation('inspectOmpEditorialWorkflow', 'OmpWorkflowResponse', 'WorkflowRequest'),
+          description: 'OMP profile only. Read-only native press workflow; submission-scoped editorial permission is revalidated by OMP. No editorial decisions are written.',
+        },
+      },
+      [`${connector}/omp-metadata`]: {
+        parameters: [parameter('connectionId')],
+        post: {
+          ...operation('reconcileOmpVolumeMetadata', 'OmpMetadataResponse', 'OmpMetadataRequest'),
+          description: 'OMP profile only. Exact installation/press/submission/current publication identity is required for inspect and apply. Confirm selected language and title/subtitle/abstract/keyword fields with expectedStateToken. Validate the bound receipt; uncertain outcomes require native reinspection with no automatic replay. Series, identifiers, contributors, chapters and publication decisions remain native authority.',
+        },
+      },
+      [`${connector}/chapter-page-range`]: {
+        parameters: [parameter('connectionId')],
+        post: {
+          ...operation('reconcileOmpChapterPages', 'OmpChapterPagesResponse', 'OmpChapterPagesRequest'),
+          description: 'OMP profile only. Inspect exact chapter identity before confirmed printed page-range writeback with expectedWorkflowToken. Native production permission and unpublished state remain required. No physical-screen page indices or publication approval.',
+        },
+      },
+      [`${connector}/issue-page-range`]: {
+        parameters: [parameter('connectionId')],
+        post: {
+          ...operation('reconcileOjsIssuePages', 'OjsIssuePagesResponse', 'OjsIssuePagesRequest'),
+          description: 'OJS profile only. Inspect exact issue/article/publication identity before confirmed printed page-range writeback with expectedWorkflowToken; native permission and unpublished state remain required.',
+        },
+      },
     },
     components: {
       securitySchemes: {
@@ -148,6 +180,13 @@ export function editorialOpenApi() {
           ProductionTasks: productionTasksSchema,
           MetadataRequest: ojsMetadataRequest,
           MetadataResponse: ojsMetadataResponse,
+          OmpMetadataRequest: ompMetadataRequest,
+          OmpMetadataResponse: ompMetadataResponse,
+          OmpWorkflowResponse: ompWorkflowInspectionResponse,
+          OmpChapterPagesRequest: ompChapterPagesRequest,
+          OmpChapterPagesResponse: ompChapterPagesResponse,
+          OjsIssuePagesRequest: ojsIssuePagesRequest,
+          OjsIssuePagesResponse: ojsIssuePagesResponse,
           WorkflowRequest: workflowInspectionRequest,
           WorkflowResponse: workflowInspectionResponse,
           EditorialCapabilities: editorialCapabilitiesSchema,
