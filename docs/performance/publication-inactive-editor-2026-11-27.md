@@ -4,6 +4,8 @@ Follow-up to [the initial publication performance review](publication-review-202
 
 The [front-matter follow-up](publication-front-matter-2026-11-27.md) addresses the large-document title latency observed here. The measurements below remain historical evidence of the inactive-editor change.
 
+The later [note-line correction](publication-note-line-2026-11-27.md) fixes the separately recorded `note-5` failure. The measurements and original test statuses in this report remain historical evidence.
+
 ## Behavior and scope
 
 - An editable publication canvas owns a runtime activity registration. Multiple registrations and repeated mount/cleanup are safe; no document lock or schema field is added.
