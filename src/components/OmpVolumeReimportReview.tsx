@@ -11,10 +11,23 @@ const copy = {
   pl: ['Porównaj tom OMP', 'Lokalny tekst i układ pozostają bez zmian. Zmiany rozdziałów wymagają osobnej kontroli.', 'Zmieniła się wersja publikacji lub struktura źródła.', 'Zmieniły się metadane tomu lub współtwórców.', 'Zmieniły się metadane wydawcy lub serii.', 'Konflikt lokalnych metadanych', 'Odśwież dane wydawcy i serii', 'Otwórz istniejący tom', 'Nowy', 'Zmieniony', 'Bez zmian', 'Nie można zweryfikować', 'Usunięty z OMP', 'Usunięty lokalnie'],
 } as const;
 const index = { new: 8, changed: 9, unchanged: 10, unknown: 11, removed: 12, 'locally-removed': 13 } as const;
-export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh }: {
-  review: OmpVolumeReview; locale: string; onKeep: () => void; onRefresh: () => void;
+const addLabels = { hu: 'Új fejezetek hozzáadása', en: 'Add new chapters', de: 'Neue Kapitel hinzufügen',
+  fr: 'Ajouter les nouveaux chapitres', it: 'Aggiungi nuovi capitoli', es: 'Añadir capítulos nuevos',
+  nl: 'Nieuwe hoofdstukken toevoegen', pl: 'Dodaj nowe rozdziały' } as const;
+const blockedLabels = { hu: 'Az új fejezetekhez azonos publikációverzió és ellenőrzött szerzőazonosítók szükségesek.',
+  en: 'New chapters require the same publication version and verified contributor identities.',
+  de: 'Neue Kapitel benötigen dieselbe Publikationsversion und geprüfte Personenidentitäten.',
+  fr: 'Les nouveaux chapitres nécessitent la même version et des identités vérifiées.',
+  it: 'I nuovi capitoli richiedono la stessa versione e identità verificate.',
+  es: 'Los capítulos nuevos requieren la misma versión e identidades verificadas.',
+  nl: 'Nieuwe hoofdstukken vereisen dezelfde versie en geverifieerde identiteiten.',
+  pl: 'Nowe rozdziały wymagają tej samej wersji i zweryfikowanych tożsamości.' } as const;
+export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh, onAdd }: {
+  review: OmpVolumeReview; locale: string; onKeep: () => void; onRefresh: () => void; onAdd: () => void;
 }) {
-  const labels = copy[locale.split(/[-_]/)[0] as keyof typeof copy] ?? copy.en;
+  const language = locale.split(/[-_]/)[0] as keyof typeof copy;
+  const labels = copy[language] ?? copy.en;
+  const additions = review.items.filter(item => item.status === 'new').length;
   return <main className="auth-page">
     <section className="auth-card" style={{ maxWidth: '42rem', width: '100%', maxHeight: '90dvh', overflowY: 'auto' }}>
       <h1>{labels[0]}</h1><p>{labels[1]}</p>
@@ -23,6 +36,8 @@ export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh }: {
       {review.matterChanged ? <p role="status">{labels[4]}</p> : null}
       {review.matterConflicts.length ? <p role="alert">{labels[5]}</p> : null}
       <ul>{review.items.map(item => <li key={item.id}><strong>{labels[index[item.status]]}</strong>: {item.title}</li>)}</ul>
+      {additions > 0 ? <><button type="button" disabled={!review.canAppend} onClick={onAdd}>{addLabels[language] ?? addLabels.en} ({additions})</button>
+        {!review.canAppend ? <p role="status">{blockedLabels[language] ?? blockedLabels.en}</p> : null}</> : null}
       {review.matterChanged ? <button type="button" disabled={review.publicationChanged || review.representationChanged || !!review.matterConflicts.length} onClick={onRefresh}>{labels[6]}</button> : null}
       <button type="button" onClick={onKeep}>{labels[7]}</button>
     </section>

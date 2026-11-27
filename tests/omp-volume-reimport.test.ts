@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createVolumeFromOmpHandoff, OMP_VOLUME_ORIGIN, type OmpVolumeHandoff } from '../src/integrations/omp/importOmpVolume.ts';
-import { compareOmpVolume, refreshOmpPublicationMatter } from '../src/integrations/omp/reimportOmpVolume.ts';
+import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter } from '../src/integrations/omp/reimportOmpVolume.ts';
 const fixture = (): OmpVolumeHandoff => ({
   protocol: 'omi-integration/1', profile: 'omi-integration/1/omp', kind: 'volume', installation: { installationId: 'press' },
   context: { externalId: '1' }, volume: { externalId: '2', publicationExternalId: '3', title: { hu: 'Kötet' } },
@@ -41,4 +41,36 @@ test('legacy fingerprint is unknown and publication version change blocks refres
   launch.volume.publicationExternalId = '6'; launch.chapters[0]!.publicationExternalId = '6';
   assert.equal(compareOmpVolume(doc, launch).publicationChanged, true);
   assert.throws(() => refreshOmpPublicationMatter(doc, launch));
+});
+
+test('append only new chapters and reuse native contributor identity without rewriting old text', () => {
+  const launch = fixture();
+  launch.contributors = [{ externalId: '8', name: { given: 'Ada', family: 'Author' } }];
+  launch.chapters[0]!.contributorExternalIds = ['8'];
+  const doc = createVolumeFromOmpHandoff(launch, 'hu');
+  doc.sections[0]!.title = 'Local edited title';
+  const oldSections = structuredClone(doc.sections);
+  launch.chapters.push({ ...launch.chapters[0]!, externalId: '6', sequence: 2, title: { hu: 'Új fejezet' } });
+  launch.sources.push({ chapterExternalId: '6', sourceDocument: { kind: 'docx', fileExternalId: '7', paragraphs: [{ text: 'New body' }] } });
+  assert.equal(compareOmpVolume(doc, launch).canAppend, true);
+  const next = appendNewOmpChapters(doc, launch);
+  assert.deepEqual(next.sections.slice(0, oldSections.length), oldSections);
+  assert.equal(next.agents.length, 1);
+  assert.equal(next.contributions.length, 2);
+  assert.equal(next.contributions[0]!.agentId, next.contributions[1]!.agentId);
+  assert.equal(compareOmpVolume(next, launch).items.find(item => item.id === '6')?.status, 'unchanged');
+  assert.equal(appendNewOmpChapters(next, launch), next);
+  assert.equal(next.revisionHistory.revisions.length, doc.revisionHistory.revisions.length + 1);
+});
+test('legacy contributor identities and cross-version additions fail closed', () => {
+  const launch = fixture();
+  launch.contributors = [{ externalId: '8', name: { given: 'Ada', family: 'Author' } }];
+  launch.chapters[0]!.contributorExternalIds = ['8'];
+  const doc = createVolumeFromOmpHandoff(launch, 'hu');
+  const origin = doc.extensions?.[OMP_VOLUME_ORIGIN] as Record<string, unknown>;
+  delete origin.contributorMappings;
+  launch.chapters.push({ ...launch.chapters[0]!, externalId: '6', sequence: 2 });
+  launch.sources.push({ chapterExternalId: '6', sourceDocument: { kind: 'docx', fileExternalId: '7', paragraphs: [{ text: 'New' }] } });
+  assert.equal(compareOmpVolume(doc, launch).canAppend, false);
+  assert.throws(() => appendNewOmpChapters(doc, launch));
 });

@@ -19,3 +19,7 @@ The optional OMP publication matter snapshot is retained with the imported origi
 ## Reimport review
 
 A repeated launch of an already open volume selects its existing tab and compares upstream source fingerprints, chapter identities and metadata. Existing text, layout, chapter order and identities are never overwritten. Older imports without source fingerprints are reported as not verifiable. Publisher and series metadata can be refreshed explicitly only for the same publication and representation, with field-level local conflict detection. New/changed/removed chapters are listed for review; chapter insertion, replacement, cross-version lineage resolution and persistent saved-document discovery remain future work.
+
+## Additive chapter reconciliation
+
+Explicitly add new native chapters at the end of the existing volume without changing local content, order or layout. New imports persist exact native contributor-to-agent mappings; additions reuse verified local identities and preserve chapter-specific source/contributor fingerprints. Older volumes without identity mappings block additions involving existing contributors instead of guessing. Publication version or work-type/representation changes also block additions. Replacements and persistent saved-volume lookup remain separate work.

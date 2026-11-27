@@ -1,7 +1,8 @@
 import type { OmiManuscript } from '../../types/omi';
-import { commitManuscriptRevision, extractManuscriptState } from '../../model/versioning';
+import { mergeOmiDocumentAsStudy } from '../../model/studyImport';
+import { commitManuscriptRevision, extractManuscriptState, type CreateChangeEventInput } from '../../model/versioning';
 import { ensureManuscriptRevisionStateDigests } from '../../model/revisionIntegrity';
-import { fingerprintOmpVolumeSource as fingerprint, isSameOmpVolume, OMP_VOLUME_ORIGIN, volumeTitleMatter, type OmpVolumeHandoff } from './importOmpVolume';
+import { fingerprintOmpVolumeSource as fingerprint, importedSource, localMap, isSameOmpVolume, OMP_VOLUME_ORIGIN, volumeTitleMatter, type OmpVolumeHandoff } from './importOmpVolume';
 
 type Data = Record<string, unknown>;
 type Status = 'new' | 'changed' | 'unchanged' | 'unknown' | 'removed' | 'locally-removed';
@@ -12,6 +13,7 @@ export interface OmpVolumeReview {
   metadataChanged: boolean;
   matterChanged: boolean;
   matterConflicts: string[];
+  canAppend: boolean;
 }
 const obj = (value: unknown): Data => value && typeof value === 'object' && !Array.isArray(value) ? value as Data : {};
 const rows = (value: unknown): Data[] => Array.isArray(value) ? value.map(obj) : [];
@@ -66,7 +68,7 @@ export function compareOmpVolume(document: OmiManuscript, launch: OmpVolumeHando
     const old = oldChapters.get(id), mapping = oldMappings.get(id);
     const contributorIds = new Set(chapter.contributorExternalIds);
     const metadataChanged = !!old && (fingerprint(old) !== fingerprint(chapter) ||
-      fingerprint(previousContributors.filter(person => contributorIds.has(str(person.externalId))) ) !==
+      (mapping?.contributorFingerprint ?? fingerprint(previousContributors.filter(person => contributorIds.has(str(person.externalId))))) !==
       fingerprint(launch.contributors.filter(person => contributorIds.has(str(person.externalId)))));
     const changed = metadataChanged || publicationChanged || (mapping && source &&
       (mapping.sourceFileExternalId !== source.fileExternalId ||
@@ -85,7 +87,16 @@ export function compareOmpVolume(document: OmiManuscript, launch: OmpVolumeHando
     items.unshift({ id: 'book', title: title(launch.volume.title, document.locale, document.title), status });
   }
   const matter = matterDiff(document, launch, previous);
-  return { items, publicationChanged, representationChanged,
+  const additions = new Set(items.filter(item => item.status === 'new').map(item => item.id));
+  const localAgents = new Set(document.agents.map(agent => agent.id));
+  const identities = obj(previous.contributorMappings);
+  const priorIds = new Set(previousContributors.map(person => str(person.externalId)));
+  // Older volumes without explicit mappings must not guess which person is
+  // which. New contributors remain safe; shared legacy contributors do not.
+  const canAppend = !publicationChanged && !representationChanged && previous.workType === launch.workType &&
+    launch.mode === 'chapters' && additions.size > 0 && launch.chapters.filter(chapter => additions.has(chapter.externalId))
+      .every(chapter => chapter.contributorExternalIds.every(id => !priorIds.has(id) || localAgents.has(str(identities[id]))));
+  return { items, publicationChanged, representationChanged, canAppend,
     metadataChanged: fingerprint(previous.volume) !== fingerprint(launch.volume) || fingerprint(previous.contributors) !== fingerprint(launch.contributors),
     matterChanged: matter.changed, matterConflicts: matter.conflicts };
 }
@@ -106,5 +117,87 @@ export function refreshOmpPublicationMatter(document: OmiManuscript, launch: Omp
     summary: 'Refreshed OMP publication matter metadata', timestamp: new Date().toISOString(),
     events: [{ operation: 'manuscript.snapshot.create', targetId: document.id, path: '/extensions/' + OMP_VOLUME_ORIGIN,
       previousValue: previous, nextValue: nextOrigin }],
+  }));
+}
+
+/** Explicit additive update: preserve existing chapter content, local order,
+ * layout and agent records. Never insert a locally deleted chapter again. */
+export function appendNewOmpChapters(document: OmiManuscript, launch: OmpVolumeHandoff): OmiManuscript {
+  const previous = origin(document, launch);
+  const review = compareOmpVolume(document, launch);
+  const additions = new Set(review.items.filter(item => item.status === 'new').map(item => item.id));
+  if (!additions.size) return document;
+  if (!review.canAppend) throw new Error('OMP chapter additions require the same publication and verified contributor identities.');
+  const identities = { ...obj(previous.contributorMappings) };
+  const priorChapters = rows(previous.chapters);
+  const priorMappings = rows(previous.mappings);
+  const priorContributors = rows(previous.contributors);
+  const contributorMap = new Map(launch.contributors.map(person => [person.externalId, person]));
+  if (contributorMap.size !== launch.contributors.length || launch.contributors.some(person => !/^[1-9][0-9]*$/.test(person.externalId ?? ''))) {
+    throw new Error('Invalid OMP contributors.');
+  }
+  let state = extractManuscriptState(document);
+  const timestamp = new Date().toISOString();
+  const events: CreateChangeEventInput[] = [];
+  const chapters = launch.chapters.filter(chapter => additions.has(chapter.externalId))
+    .sort((a, b) => a.sequence - b.sequence || Number(a.externalId) - Number(b.externalId));
+  const mappings: Data[] = [];
+  const usedContributorIds = new Set<string>();
+  const fileIds = new Set(priorMappings.map(mapping => str(mapping.sourceFileExternalId)).filter(Boolean));
+  for (const chapter of chapters) {
+    const source = launch.sources.find(item => item.chapterExternalId === chapter.externalId)?.sourceDocument;
+    if (!source || !/^[1-9][0-9]*$/.test(source.fileExternalId ?? '') || fileIds.has(source.fileExternalId!) ||
+        !Number.isFinite(chapter.sequence) || !title(chapter.title, document.locale, '')) throw new Error('Invalid new OMP chapter source.');
+    fileIds.add(source.fileExternalId!);
+    const contributors = [...new Set(chapter.contributorExternalIds)].map(id => {
+      const contributor = contributorMap.get(id);
+      if (!contributor) throw new Error('Missing OMP chapter contributor.');
+      usedContributorIds.add(id);
+      return contributor;
+    });
+    const imported = importedSource(launch, { externalId: chapter.externalId, primaryLocale: document.locale,
+      title: localMap(chapter.title, document.locale), subtitle: localMap(chapter.subtitle, document.locale),
+      abstract: localMap(chapter.abstract, document.locale) }, source, contributors);
+    const start = state.sections.length;
+    const merged = mergeOmiDocumentAsStudy(state, extractManuscriptState(imported), { importedAt: timestamp });
+    const replacements = new Map<string, string>();
+    contributors.forEach((person, index) => {
+      const agent = imported.agents[index];
+      const mapped = agent && merged.idMap.get(agent.id);
+      const external = person.externalId!;
+      if (!mapped) throw new Error('Missing imported OMP contributor identity.');
+      const existing = str(identities[external]);
+      if (existing) {
+        if (!state.agents.some(item => item.id === existing)) throw new Error('Local OMP contributor was removed.');
+        replacements.set(mapped, existing);
+      } else identities[external] = mapped;
+    });
+    const newAgents = merged.importedAgents.filter(agent => !replacements.has(agent.id));
+    const newContributions = merged.importedContributions.map(item => ({ ...item, agentId: replacements.get(item.agentId) ?? item.agentId }));
+    const newAnnotationIds = new Set(merged.state.annotations.slice(state.annotations.length).map(item => item.id));
+    state = { ...merged.state, agents: [...state.agents, ...newAgents],
+      contributions: [...state.contributions, ...newContributions],
+      annotations: merged.state.annotations.map(item => newAnnotationIds.has(item.id) && item.creatorAgentId && replacements.has(item.creatorAgentId)
+        ? { ...item, creatorAgentId: replacements.get(item.creatorAgentId)! } : item) };
+    mappings.push({ chapterExternalId: chapter.externalId, rootSectionId: merged.rootSectionId,
+      sourceFileExternalId: source.fileExternalId, sourceFingerprint: fingerprint(source),
+      contributorFingerprint: fingerprint(launch.contributors.filter(person => chapter.contributorExternalIds.includes(person.externalId ?? ''))) });
+    events.push(...merged.importedSections.map((item, index): CreateChangeEventInput => ({
+      operation: 'section.create', targetId: item.id, path: '/sections/' + (start + index), nextValue: item,
+    })), ...newAgents.map((item): CreateChangeEventInput => ({
+      operation: 'agent.create', targetId: item.id, path: '/agents/-', nextValue: item,
+    })), ...newContributions.map((item): CreateChangeEventInput => ({
+      operation: 'contribution.update', targetId: item.id, path: '/contributions/-', nextValue: item,
+    })));
+  }
+  const known = new Set(priorContributors.map(person => str(person.externalId)));
+  const nextOrigin = { ...previous, chapters: [...priorChapters, ...structuredClone(chapters)],
+    mappings: [...priorMappings, ...mappings], contributorMappings: identities,
+    contributors: [...priorContributors, ...structuredClone(launch.contributors.filter(person => usedContributorIds.has(person.externalId ?? '') && !known.has(person.externalId ?? '')))] };
+  state.extensions = { ...state.extensions, [OMP_VOLUME_ORIGIN]: nextOrigin };
+  events.push({ operation: 'manuscript.snapshot.create', targetId: document.id, path: '/extensions/' + OMP_VOLUME_ORIGIN,
+    previousValue: previous, nextValue: nextOrigin });
+  return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
+    summary: 'Added new chapters from OMP volume', timestamp, events,
   }));
 }

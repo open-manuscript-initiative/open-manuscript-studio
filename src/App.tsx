@@ -40,7 +40,7 @@ import {
   type OmpNativeAuthorContext,
 } from './integrations/omp/importOmpLaunch';
 import { createVolumeFromOmpHandoff, fetchOmpVolumeHandoff, isSameOmpVolume, type OmpVolumeHandoff } from './integrations/omp/importOmpVolume';
-import { compareOmpVolume, refreshOmpPublicationMatter, type OmpVolumeReview } from './integrations/omp/reimportOmpVolume';
+import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter, type OmpVolumeReview } from './integrations/omp/reimportOmpVolume';
 import { OmpVolumeReimportReview } from './components/OmpVolumeReimportReview';
 import {
   clearOjsLaunchPayload,
@@ -518,6 +518,19 @@ function StudioApplication() {
   if (externalImportState.status === 'volume-review') {
     const { review, launch, manuscriptId } = externalImportState;
     return <OmpVolumeReimportReview review={review} locale={locale}
+      onAdd={() => {
+        try {
+          const current = useStudioStore.getState();
+          if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active volume changed.');
+          current.checkpoint('manual');
+          const base = useStudioStore.getState();
+          const next = appendNewOmpChapters(base.manuscript, launch);
+          if (next !== base.manuscript) useStudioStore.setState({ manuscript: next, pendingChangeSet: null });
+          setExternalImportState({ status: 'idle' });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      }}
       onKeep={() => setExternalImportState({ status: 'idle' })}
       onRefresh={() => {
         try {
