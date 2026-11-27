@@ -1,3 +1,4 @@
+import type { OmpMetadataSnapshot } from '../../server/src/contracts/ompMetadataContract';
 import { importOjsMetadata } from '../model/ojsMetadataReconciliation';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
@@ -10,7 +11,7 @@ import type {
 
 export function applyOjsMetadataImport(
   expected: OmiManuscript,
-  snapshot: OjsMetadataSnapshot,
+  snapshot: OjsMetadataSnapshot | OmpMetadataSnapshot,
   locale: string,
   fields: OjsPullMetadataField[],
 ): void {
@@ -42,7 +43,7 @@ export function applyOjsMetadataImport(
       manuscript: { ...state.manuscript, ...next, updatedAt: timestamp },
       pendingChangeSet: stagePendingChanges(state.pendingChangeSet, {
         baseRevisionId: state.manuscript.headRevisionId,
-        summary: 'Imported selected OJS publication metadata',
+        summary: `Imported selected ${snapshot.authority} publication metadata`,
         events: changedKeys.map((key) => ({
           operation: 'manuscript.structure.set' as const,
           targetId: state.manuscript.id,
