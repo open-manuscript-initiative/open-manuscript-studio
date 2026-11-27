@@ -3,6 +3,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildPdfWorkerEnvironment } from '../security/pdfWorkerEnvironment.js';
+import { executeEpubCheck } from '../services/epubCheckExecutor.js';
+import { MAX_EPUB_CHECK_BYTES } from '../security/pdfWorkerTransport.js';
 import { runPdfSubprocess } from '../security/pdfSubprocess.js';
 import { executeIssuePdfSlice, executeIssuePdfPageText, MAX_ISSUE_PDF_BYTES, MAX_ISSUE_PAGE_TEXT_BYTES } from '../services/issuePdfSlice.js';
 import { renderVivliostylePdfLocally } from '../services/vivliostylePdfRenderer.js';
@@ -13,10 +15,11 @@ const MAX_LAYOUT_BYTES = 128 * 1024 * 1024;
 const MAX_RENDER_PDF_BYTES = 96 * 1024 * 1024;
 const MAX_CONCURRENT = 2;
 const MAX_PER_OWNER = 1;
-export type PdfWorkerOperation = 'import' | 'render' | 'slice' | 'page-text';
+export type PdfWorkerOperation = 'import' | 'render' | 'slice' | 'page-text' | 'epub-check';
 export type PdfJobExecutor = (kind: PdfWorkerOperation, bytes: Buffer) => Promise<Buffer>;
 
 export async function executePdfWorkerJob(kind: PdfWorkerOperation, bytes: Buffer): Promise<Buffer> {
+  if (kind === 'epub-check') return executeEpubCheck(bytes);
   if (kind === 'slice') return executeIssuePdfSlice(bytes);
   if (kind === 'page-text') return executeIssuePdfPageText(bytes);
   if (kind === 'render') {
@@ -65,7 +68,7 @@ export function createPdfWorkerServer(execute: PdfJobExecutor = executePdfWorker
       ? 'import'
       : request.method === 'POST' && request.url === '/v1/render'
         ? 'render'
-        : request.method === 'POST' && request.url === '/v1/slice' ? 'slice' : request.method === 'POST' && request.url === '/v1/page-text' ? 'page-text' : null;
+        : request.method === 'POST' && request.url === '/v1/slice' ? 'slice' : request.method === 'POST' && request.url === '/v1/page-text' ? 'page-text' : request.method === 'POST' && request.url === '/v1/epub-check' ? 'epub-check' : null;
     if (!kind) { response.writeHead(404).end(); return; }
 
     const owner = request.headers['x-omi-pdf-user'];
@@ -73,7 +76,7 @@ export function createPdfWorkerServer(execute: PdfJobExecutor = executePdfWorker
       response.writeHead(400).end('Invalid worker owner.'); return;
     }
     const lengthHeader = request.headers['content-length'];
-    const maxInput = kind === 'import' ? MAX_IMPORT_BYTES : kind === 'slice' ? MAX_ISSUE_PDF_BYTES + 8 : kind === 'page-text' ? MAX_ISSUE_PDF_BYTES : MAX_RENDER_BYTES;
+    const maxInput = kind === 'epub-check' ? MAX_EPUB_CHECK_BYTES : kind === 'import' ? MAX_IMPORT_BYTES : kind === 'slice' ? MAX_ISSUE_PDF_BYTES + 8 : kind === 'page-text' ? MAX_ISSUE_PDF_BYTES : MAX_RENDER_BYTES;
     const length = typeof lengthHeader === 'string' ? Number(lengthHeader) : Number.NaN;
     if (!Number.isSafeInteger(length) || length < 1 || length > maxInput || request.headers['transfer-encoding']) {
       response.writeHead(413).end('Invalid worker input length.'); return;
@@ -95,7 +98,7 @@ export function createPdfWorkerServer(execute: PdfJobExecutor = executePdfWorker
       }
       if (total !== length) throw new Error('Incomplete PDF worker request.');
       const output = await execute(kind, Buffer.concat(parts, total));
-      const maxOutput = kind === 'import' ? MAX_LAYOUT_BYTES : kind === 'page-text' ? MAX_ISSUE_PAGE_TEXT_BYTES : MAX_RENDER_PDF_BYTES;
+      const maxOutput = kind === 'epub-check' ? 4096 : kind === 'import' ? MAX_LAYOUT_BYTES : kind === 'page-text' ? MAX_ISSUE_PAGE_TEXT_BYTES : MAX_RENDER_PDF_BYTES;
       if (!Buffer.isBuffer(output) || !output.length || output.byteLength > maxOutput) {
         throw new Error('Invalid PDF worker output.');
       }

@@ -1,4 +1,5 @@
 import { nativeClient, RemoteError } from '../integrations/publishing/nativePublishingClient.js';
+import { decodeEpubCheckInput, validateEpubForPublication } from '../services/epubCheckGate.js';
 import { editorialConnectorRouter } from './editorialConnectorRoutes.js';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -137,6 +138,21 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       return;
     }
 
+    if (data.action === 'transfer' && data.format === 'epub') {
+      let bytes: Buffer;
+      try { bytes = decodeEpubCheckInput(data.artifactBase64!, record(record(data.build?.output).digest).value); }
+      catch { response.status(422).json({ error: { message: 'EPUB bytes do not match the publication build.' } }); return; }
+      try {
+        const checked = await validateEpubForPublication(bytes, request.authUserId!);
+        if (!checked.valid) {
+          response.status(422).json({ error: { message: 'EPUBCheck rejected the publication. Correct errors/warnings before transfer.', codes: checked.codes } });
+          return;
+        }
+      } catch {
+        response.status(503).json({ error: { message: 'The isolated EPUBCheck validator is unavailable. No EPUB was transferred.' } });
+        return;
+      }
+    }
     const result = record(
       await nativeClient(baseUrl, credential.apiKey)(
         'POST',
