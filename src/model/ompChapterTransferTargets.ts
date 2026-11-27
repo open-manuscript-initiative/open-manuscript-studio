@@ -1,3 +1,4 @@
+import { readOmpVolumeOrigin } from './ompVolumeOrigin';
 import type { OmiManuscriptState } from '../types/omi';
 import { partitionManuscriptStudies } from './sectionStructure';
 export interface OmpChapterTransferTarget {
@@ -15,7 +16,7 @@ function identifier(value: unknown): number {
 }
 /** No inferred mappings for a single complete manuscript. Only exact chapter provenance. */
 export function listOmpChapterTransferTargets(state: OmiManuscriptState): OmpChapterTransferTarget[] {
-  const raw = state.extensions?.['org.openmanuscript.omp.volume'];
+  const raw = readOmpVolumeOrigin(state);
   if (!raw) return [];
   const origin = object(raw);
   if (origin.version !== 1 || typeof origin.installationId !== 'string' || !origin.installationId.trim() ||

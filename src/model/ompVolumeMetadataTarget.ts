@@ -1,6 +1,7 @@
+import { readOmpVolumeOrigin } from './ompVolumeOrigin';
 import type { OmiManuscriptState } from '../types/omi';
 export function ompVolumeMetadataTarget(state: OmiManuscriptState) {
-  const raw = state.extensions?.['org.openmanuscript.omp.volume'];
+  const raw = readOmpVolumeOrigin(state);
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const origin = raw as Record<string, unknown>;
   const id = (value: unknown) => typeof value === 'string' && /^[1-9][0-9]*$/.test(value) && Number.isSafeInteger(Number(value)) ? Number(value) : undefined;

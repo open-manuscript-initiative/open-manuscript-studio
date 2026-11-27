@@ -42,6 +42,11 @@ import {
 import { createVolumeFromOmpHandoff, fetchOmpVolumeHandoff, isSameOmpVolume, type OmpVolumeHandoff } from './integrations/omp/importOmpVolume';
 import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter, previewOmpChapter, keepLocalOmpChapter, acceptIncomingOmpChapter, type OmpVolumeReview } from './integrations/omp/reimportOmpVolume';
 import { OmpVolumeReimportReview } from './components/OmpVolumeReimportReview';
+import { OmpSavedVolumeChoice } from './components/OmpSavedVolumeChoice';
+import { validateSavedOmpVolume } from './integrations/omp/savedOmpVolume';
+import { inspectOmiContainer } from './services/omiContainerImport';
+import { applyOmiContainerImportPlan } from './app/omiContainerImportActions';
+import { getCurrentUser, useAuthStore } from './store/authStore';
 import {
   clearOjsLaunchPayload,
   readOjsLaunchPayload,
@@ -77,6 +82,7 @@ type ExternalImportState =
   | { status: 'loading'; message?: undefined }
   | { status: 'error'; message: string }
   | { status: 'issue-review'; review: OjsIssueReview; launch: OjsIssueHandoff; manuscriptId: string }
+  | { status: 'volume-choice'; launch: OmpVolumeHandoff; userId: string }
   | { status: 'volume-review'; review: OmpVolumeReview; launch: OmpVolumeHandoff; manuscriptId: string };
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
@@ -303,15 +309,9 @@ function StudioApplication() {
             setExternalImportState({ status: 'volume-review', review, launch, manuscriptId: current.manuscript.id });
             return;
           }
-          const manuscript = createVolumeFromOmpHandoff(launch, issueImportLocale.current);
-          if (current.hasOpenDocument) current.checkpoint('manual');
-          clearDocumentClosedState();
-          setOjsContributors([]);
-          setExternalWorkflowContext(null);
-          setOjsAssignment(null);
-          setOmpAuthorAssignment(null);
-          loadManuscript(manuscript);
-          setExternalImportState({ status: 'idle' });
+          const userId = getCurrentUser(useAuthStore.getState())?.id;
+          if (!userId) throw new Error('No active account.');
+          setExternalImportState({ status: 'volume-choice', launch, userId });
           return;
         }
         if (issueToken) {
@@ -513,6 +513,66 @@ function StudioApplication() {
         />
       </main>
     );
+  }
+
+  if (externalImportState.status === 'volume-choice') {
+    const { launch, userId } = externalImportState;
+    const resetContext = () => {
+      setOjsContributors([]);
+      setExternalWorkflowContext(null);
+      setOjsAssignment(null);
+      setOmpAuthorAssignment(null);
+    };
+    return <OmpSavedVolumeChoice locale={locale}
+      onCancel={() => setExternalImportState({ status: 'idle' })}
+      onNew={() => {
+        try {
+          if (getCurrentUser(useAuthStore.getState())?.id !== userId) throw new Error('The account changed.');
+          if (documentSessions.getSnapshot().tabs.some(tab => isSameOmpVolume(tab.manuscript, launch)))
+            throw new Error('A copy of this OMP volume is already open.');
+          const manuscript = createVolumeFromOmpHandoff(launch, issueImportLocale.current);
+          const current = useStudioStore.getState();
+          if (current.hasOpenDocument) current.checkpoint('manual');
+          clearDocumentClosedState();
+          resetContext();
+          loadManuscript(manuscript);
+          setExternalImportState({ status: 'idle' });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      }}
+      onRestore={async (bytes, expectedId) => {
+        const initial = useStudioStore.getState();
+        if (getCurrentUser(useAuthStore.getState())?.id !== userId) throw new Error('The account changed.');
+        const plan = await inspectOmiContainer(bytes);
+        const open = () => documentSessions.getSnapshot().tabs.map(tab => tab.manuscript);
+        const document = validateSavedOmpVolume(plan, launch, open(), expectedId);
+        const check = () => {
+          const current = useStudioStore.getState();
+          if (getCurrentUser(useAuthStore.getState())?.id !== userId ||
+              current.manuscript !== initial.manuscript || current.hasOpenDocument !== initial.hasOpenDocument ||
+              open().some(item => item.id === document.id || isSameOmpVolume(item, launch)) ||
+              (current.hasOpenDocument && (current.manuscript.id === document.id || isSameOmpVolume(current.manuscript, launch))))
+            throw new Error('The account or active workspace changed during restore.');
+        };
+        check();
+        // Preserve the outgoing document and reject any intervening workspace changes.
+        if (initial.hasOpenDocument) initial.checkpoint('manual');
+        const checkpointed = useStudioStore.getState();
+        const guard = () => {
+          const current = useStudioStore.getState();
+          if (getCurrentUser(useAuthStore.getState())?.id !== userId ||
+              current.manuscript !== checkpointed.manuscript || current.hasOpenDocument !== checkpointed.hasOpenDocument ||
+              open().some(item => item.id === document.id || isSameOmpVolume(item, launch)))
+            throw new Error('The account or active workspace changed during restore.');
+        };
+        await applyOmiContainerImportPlan(plan, guard);
+        const current = useStudioStore.getState().manuscript;
+        if (current.id !== document.id || getCurrentUser(useAuthStore.getState())?.id !== userId)
+          throw new Error('The restored volume is no longer active.');
+        resetContext();
+        setExternalImportState({ status: 'volume-review', review: compareOmpVolume(current, launch), launch, manuscriptId: current.id });
+      }} />;
   }
 
   if (externalImportState.status === 'volume-review') {

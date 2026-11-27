@@ -41,7 +41,7 @@ async function openVolumePanel(page: Page, options: { unsupported?: boolean; sta
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     const state = useStudioStore.getState();
     state.loadManuscript({ ...state.manuscript, title: 'Local volume', locale: 'en',
-      extensions: { ...state.manuscript.extensions, 'org.openmanuscript.omp.volume': {
+      extensions: { ...state.manuscript.extensions, 'urn:omi:studio:omp-volume-origin:1': {
         version: 1, mode: 'chapters', installationId: 'press-installation',
         contextExternalId: '1', submissionExternalId: '12', publicationExternalId: '13',
       } } });

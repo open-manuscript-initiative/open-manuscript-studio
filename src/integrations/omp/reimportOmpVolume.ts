@@ -1,3 +1,4 @@
+import { LEGACY_OMP_VOLUME_ORIGIN, OMP_VOLUME_ORIGIN, ompVolumeOriginKey, readOmpVolumeOrigin } from '../../model/ompVolumeOrigin';
 import { collectCrossReferenceAnchors } from '../../model/crossReferences';
 import { textFromAtomicBlock } from '../../model/atomicTextBlocks';
 import { getParentSectionId, partitionManuscriptStudies } from '../../model/sectionStructure';
@@ -5,7 +6,7 @@ import type { OmiManuscriptState, OmiBlock, OmiSection, OmiAnnotation, OmiBiblio
 import { mergeOmiDocumentAsStudy } from '../../model/studyImport';
 import { commitManuscriptRevision, extractManuscriptState, type CreateChangeEventInput } from '../../model/versioning';
 import { ensureManuscriptRevisionStateDigests } from '../../model/revisionIntegrity';
-import { fingerprintOmpVolumeSource as fingerprint, importedSource, localMap, isSameOmpVolume, OMP_VOLUME_ORIGIN, volumeTitleMatter, type OmpVolumeHandoff } from './importOmpVolume';
+import { fingerprintOmpVolumeSource as fingerprint, importedSource, localMap, isSameOmpVolume, volumeTitleMatter, type OmpVolumeHandoff } from './importOmpVolume';
 
 type Data = Record<string, unknown>;
 type Status = 'new' | 'changed' | 'unchanged' | 'unknown' | 'removed' | 'locally-removed';
@@ -29,7 +30,7 @@ const matterKeys = ['publisherName', 'publicationPlace', 'seriesTitle', 'issn', 
 function origin(document: OmiManuscript, launch: OmpVolumeHandoff): Data {
   if (!isSameOmpVolume(document, launch) || launch.protocol !== 'omi-integration/1' ||
       launch.profile !== 'omi-integration/1/omp' || launch.kind !== 'volume') throw new Error('Invalid OMP volume reimport.');
-  return obj(document.extensions?.[OMP_VOLUME_ORIGIN]);
+  return obj(readOmpVolumeOrigin(document));
 }
 function matterDiff(document: OmiManuscript, launch: OmpVolumeHandoff, previous: Data) {
   if (!launch.publicationMatter) return { changed: false, conflicts: [], next: {} as Partial<ReturnType<typeof volumeTitleMatter>> };
@@ -118,10 +119,10 @@ export function refreshOmpPublicationMatter(document: OmiManuscript, launch: Omp
   const state = extractManuscriptState(document);
   const nextOrigin = { ...previous, publicationMatter: structuredClone(launch.publicationMatter) };
   state.titleMatter = { ...state.titleMatter, ...matter.next };
-  state.extensions = { ...state.extensions, [OMP_VOLUME_ORIGIN]: nextOrigin };
+  state.extensions = { ...state.extensions, [ompVolumeOriginKey(document)]: nextOrigin };
   return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
     summary: 'Refreshed OMP publication matter metadata', timestamp: new Date().toISOString(),
-    events: [{ operation: 'manuscript.snapshot.create', targetId: document.id, path: '/extensions/' + OMP_VOLUME_ORIGIN,
+    events: [{ operation: 'manuscript.snapshot.create', targetId: document.id, path: '/extensions/' + ompVolumeOriginKey(document),
       previousValue: previous, nextValue: nextOrigin }],
   }));
 }
@@ -200,8 +201,8 @@ export function appendNewOmpChapters(document: OmiManuscript, launch: OmpVolumeH
   const nextOrigin = { ...previous, chapters: [...priorChapters, ...structuredClone(chapters)],
     mappings: [...priorMappings, ...mappings], contributorMappings: identities,
     contributors: [...priorContributors, ...structuredClone(launch.contributors.filter(person => usedContributorIds.has(person.externalId ?? '') && !known.has(person.externalId ?? '')))] };
-  state.extensions = { ...state.extensions, [OMP_VOLUME_ORIGIN]: nextOrigin };
-  events.push({ operation: 'manuscript.snapshot.create', targetId: document.id, path: '/extensions/' + OMP_VOLUME_ORIGIN,
+  state.extensions = { ...state.extensions, [ompVolumeOriginKey(document)]: nextOrigin };
+  events.push({ operation: 'manuscript.snapshot.create', targetId: document.id, path: '/extensions/' + ompVolumeOriginKey(document),
     previousValue: previous, nextValue: nextOrigin });
   return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
     summary: 'Added new chapters from OMP volume', timestamp, events,
@@ -267,7 +268,7 @@ export function previewOmpChapter(document: OmiManuscript, launch: OmpVolumeHand
   const sourceHash = str(mapping?.sourceFingerprint);
   const baseline = sourceHash ? document.revisionHistory.revisions.find(revision => {
     const snapshot = revision.snapshot.state;
-    const historic = rows(obj(snapshot.extensions?.[OMP_VOLUME_ORIGIN]).mappings).find(entry => entry.chapterExternalId === id);
+    const historic = rows(obj(readOmpVolumeOrigin(snapshot)).mappings).find(entry => entry.chapterExternalId === id);
     return historic?.sourceFingerprint === sourceHash && historic.rootSectionId === root && snapshot.sections.some(section => section.id === root);
   })?.snapshot.state : undefined;
   const original = baseline ? chapterText(baseline, root) : null;
@@ -289,11 +290,11 @@ export function keepLocalOmpChapter(document: OmiManuscript, launch: OmpVolumeHa
   const nextOrigin = { ...previous, chapterReviewDecisions: { ...decisions,
     [id]: { action: 'keep-local', incomingFingerprint, reviewedAt: timestamp } } };
   const state = extractManuscriptState(document);
-  state.extensions = { ...state.extensions, [OMP_VOLUME_ORIGIN]: nextOrigin };
+  state.extensions = { ...state.extensions, [ompVolumeOriginKey(document)]: nextOrigin };
   return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
     summary: 'Kept local OMP chapter after review', timestamp,
     events: [{ operation: 'manuscript.snapshot.create', targetId: document.id,
-      path: '/extensions/' + OMP_VOLUME_ORIGIN, previousValue: previous, nextValue: nextOrigin }],
+      path: '/extensions/' + ompVolumeOriginKey(document), previousValue: previous, nextValue: nextOrigin }],
   }));
 }
 
@@ -458,6 +459,7 @@ function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHan
   outside.contributions = outside.contributions.filter(item => !ids.has(item.targetId));
   outside.extensions = { ...outside.extensions };
   delete outside.extensions[OMP_VOLUME_ORIGIN];
+  delete outside.extensions[LEGACY_OMP_VOLUME_ORIGIN];
   const external = JSON.stringify(outside);
   if ([...ids, ...noteIds, ...citationIds].some(key => external.includes(key))) return null;
   // Incoming scholarly objects are not silently discarded by this text-only
@@ -576,7 +578,7 @@ export function acceptIncomingOmpChapter(document: OmiManuscript, launch: OmpVol
   const root = str(mapping.rootSectionId);
   const baseline = document.revisionHistory.revisions.find(revision => {
     const snapshot = revision.snapshot.state;
-    const historic = rows(obj(snapshot.extensions?.[OMP_VOLUME_ORIGIN]).mappings).find(item => item.chapterExternalId === id);
+    const historic = rows(obj(readOmpVolumeOrigin(snapshot)).mappings).find(item => item.chapterExternalId === id);
     return historic?.sourceFingerprint === mapping.sourceFingerprint && historic?.rootSectionId === root && snapshot.sections.some(section => section.id === root);
   })?.snapshot.state;
   const incoming = importedSource(launch, { externalId: id, primaryLocale: document.locale,
@@ -595,13 +597,13 @@ export function acceptIncomingOmpChapter(document: OmiManuscript, launch: OmpVol
     mappings: rows(previous.mappings).map(item => item.chapterExternalId === id ? { ...item,
       sourceFileExternalId: source.fileExternalId, sourceFingerprint: fingerprint(source) } : item),
     chapterReviewDecisions: { ...decisions, [id]: { action: 'accept-incoming', incomingFingerprint: incomingChapterFingerprint(launch, id), reviewedAt: timestamp } } };
-  state.extensions = { ...state.extensions, [OMP_VOLUME_ORIGIN]: nextOrigin };
+  state.extensions = { ...state.extensions, [ompVolumeOriginKey(document)]: nextOrigin };
   return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
     summary: 'Accepted new OMP chapter text', timestamp,
     events: [{ operation: 'manuscript.snapshot.create', targetId: document.id,
       path: '/sections', previousValue: chapterSections(document, root), nextValue: replacements.sections },
       { operation: 'manuscript.snapshot.create', targetId: document.id, path: '/annotations', previousValue: document.annotations, nextValue: replacements.annotations },
       { operation: 'manuscript.snapshot.create', targetId: document.id,
-        path: '/extensions/' + OMP_VOLUME_ORIGIN, previousValue: previous, nextValue: nextOrigin }],
+        path: '/extensions/' + ompVolumeOriginKey(document), previousValue: previous, nextValue: nextOrigin }],
   }));
 }

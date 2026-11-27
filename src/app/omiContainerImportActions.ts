@@ -10,6 +10,7 @@ import type { OmiContainerImportPlan } from '../services/omiContainerImport';
  */
 export async function applyOmiContainerImportPlan(
   plan: OmiContainerImportPlan,
+  assertCurrent: () => void = () => {},
 ): Promise<string> {
   if (!plan.validForImport || !plan.manuscript) {
     throw new Error('The OMI package has not passed integrity verification.');
@@ -19,9 +20,11 @@ export async function applyOmiContainerImportPlan(
   assertNoInvalidRevisionStateDigests(manuscript);
 
   for (const asset of plan.assets) {
+    assertCurrent();
     await putAssetPayload(manuscript.id, asset.metadata.id, asset.bytes);
   }
 
+  assertCurrent();
   useStudioStore.getState().loadManuscript(manuscript);
   const loaded = useStudioStore.getState().manuscript;
   if (

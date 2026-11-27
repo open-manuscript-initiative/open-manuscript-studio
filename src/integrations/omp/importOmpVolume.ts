@@ -9,7 +9,8 @@ import { createManuscriptFromOjsLaunch } from '../ojs/importOjsLaunchLocalized';
 import type { OjsSourceDocument } from '../ojs/importOjsLaunch';
 import { createManuscriptFromOmpLaunch, type OmpLaunchPayload } from './importOmpLaunch';
 
-export const OMP_VOLUME_ORIGIN = 'org.openmanuscript.omp.volume';
+import { OMP_VOLUME_ORIGIN, readOmpVolumeOrigin } from '../../model/ompVolumeOrigin';
+export { OMP_VOLUME_ORIGIN } from '../../model/ompVolumeOrigin';
 type Data = Record<string, unknown>;
 type Contributor = NonNullable<OmpLaunchPayload['contributors']>[number];
 type Submission = NonNullable<OmpLaunchPayload['submission']>;
@@ -82,7 +83,7 @@ export async function fetchOmpVolumeHandoff(token: string): Promise<OmpVolumeHan
   return await response.json() as OmpVolumeHandoff;
 }
 export function isSameOmpVolume(manuscript: OmiManuscriptState, launch: OmpVolumeHandoff): boolean {
-  const origin = manuscript.extensions?.[OMP_VOLUME_ORIGIN];
+  const origin = readOmpVolumeOrigin(manuscript);
   return record(origin) && origin.installationId === launch.installation?.installationId
     && origin.contextExternalId === launch.context?.externalId
     && origin.submissionExternalId === launch.volume?.externalId;
