@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
@@ -157,12 +157,22 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
 });
 
 test('live pages place each footnote below its anchor and reflow after zoom and editing', async ({ page }) => {
+  await checkPageFootnotes(page);
+});
+
+test('raised note markers remain on the page of their owning text line', async ({ page }) => {
+  await checkPageFootnotes(page, true);
+});
+
+async function checkPageFootnotes(page: Page, raisedMarkers = false) {
   // This stress fixture paginates 18 note-heavy blocks and audits every text line against footnote areas.
   // Hosted CI can need more than the suite-wide 45-second timeout when other browser tests run concurrently.
   test.setTimeout(90_000);
   await installMockStudioApi(page);
   await signInToStudio(page);
   await page.getByRole('button', { name: /^New OMI study/ }).click();
+  // Cover font-engine differences that raise the marker into the preceding line.
+  if (raisedMarkers) await page.addStyleTag({ content: '.publication-document-canvas .omi-note { position: relative; top: -2px; }' });
   await page.evaluate(async () => {
     const { useStudioStore } = await import('/src/app/useStudioStore.ts');
     const { createNoteAnnotation } = await import('/src/model/notes.ts');
@@ -266,4 +276,4 @@ test('live pages place each footnote below its anchor and reflow after zoom and 
   await expect(canvas.locator('[data-note-continuation] .omi-publication-note-body em').first()).toContainText('A note belonging');
   await canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true }).click();
   await expect(canvas.locator('.publication-document-html-notes u')).toHaveText('Footnote 1. ');
-});
+}
