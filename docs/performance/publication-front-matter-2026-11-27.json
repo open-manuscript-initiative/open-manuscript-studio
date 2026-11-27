@@ -1,0 +1,1605 @@
+{
+  "date": "2026-11-27",
+  "runtimeSources": {
+    "before": "847e3d418af38e707868c1981088f9efc58dbafc",
+    "after": "23fcc7383bc0993c16a4e4a7a0c88bb5a1652026"
+  },
+  "environment": {
+    "os": "Linux x86_64",
+    "cpu": "AMD EPYC 9V74 shared execution host",
+    "node": "24.22.3",
+    "chromiumExecutableVersion": "158.0.8127.0",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "server": "Vite development server",
+    "workers": 1,
+    "retries": 0,
+    "typedCharacters": 30,
+    "requestedKeyDelayMs": 20
+  },
+  "limitations": [
+    "One fresh run per workload/version; baseline title ran first, then the six patched workloads. Not a statistically reliable speedup guarantee.",
+    "Only the 1000-block title workload has a fresh paired baseline in this report; earlier body measurements remain in the previous report.",
+    "Two animation frames are a paint proxy, not display timing; driver overhead and initial pagination can overlap the samples.",
+    "Synthetic paragraph counts are not physical page counts or representative note-heavy manuscripts.",
+    "The actual Linux Chromium executable differs from the emulated Desktop Chrome user agent recorded in raw data.",
+    "Production builds, Android/WebView latency and process memory/PSS were not measured.",
+    "The native CPU and scroll-height diagnostic was separately instrumented; its costs are not interchangeable with input latency.",
+    "A known initial note-5 placement audit still fails in this alternative Chromium environment; its assertion and normal CI gate are unchanged."
+  ],
+  "beforeTitle": {
+    "workload": {
+      "blocks": 1000,
+      "facing": true,
+      "input": "title"
+    },
+    "openToCaretMs": 14251.400000000373,
+    "browser": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "domNodes": 39098,
+      "jsHeapBytes": 109000000
+    },
+    "doubleAnimationFrameLatencyMs": {
+      "median": 953.2000000001863,
+      "p95": 1108.5,
+      "max": 1200.5,
+      "samples": [
+        849.1000000000931,
+        858.3999999999069,
+        889.6000000000931,
+        1011.2999999998137,
+        1200.5,
+        830.5,
+        961.7000000001863,
+        903.8999999999069,
+        988,
+        1047.5,
+        967.1000000000931,
+        914.3999999999069,
+        1072.8999999999069,
+        1108.5,
+        937.1999999997206,
+        1016.7999999998137,
+        991.8999999999069,
+        911.8999999999069,
+        1032.4000000003725,
+        915.1000000000931,
+        895.3999999999069,
+        975.2000000001863,
+        904.8999999999069,
+        990.7999999998137,
+        871.8000000002794,
+        884,
+        993.5,
+        1031.3999999999069,
+        940.3999999999069,
+        953.2000000001863
+      ]
+    },
+    "longTasks": {
+      "count": 85,
+      "totalMs": 41840,
+      "durations": [
+        716,
+        122,
+        564,
+        554,
+        548,
+        615,
+        59,
+        588,
+        678,
+        59,
+        714,
+        629,
+        58,
+        641,
+        846,
+        570,
+        551,
+        681,
+        623,
+        623,
+        637,
+        635,
+        691,
+        89,
+        709,
+        685,
+        59,
+        605,
+        702,
+        58,
+        613,
+        602,
+        57,
+        777,
+        618,
+        54,
+        685,
+        767,
+        54,
+        626,
+        640,
+        55,
+        715,
+        604,
+        585,
+        754,
+        64,
+        587,
+        644,
+        51,
+        707,
+        667,
+        55,
+        607,
+        677,
+        59,
+        604,
+        604,
+        50,
+        586,
+        743,
+        593,
+        674,
+        151,
+        613,
+        644,
+        57,
+        581,
+        598,
+        600,
+        586,
+        61,
+        694,
+        578,
+        65,
+        655,
+        680,
+        55,
+        636,
+        612,
+        57,
+        649,
+        598,
+        598,
+        585
+      ]
+    },
+    "testStatus": "passed"
+  },
+  "after": [
+    {
+      "workload": {
+        "blocks": 0,
+        "facing": false,
+        "input": "title"
+      },
+      "openToCaretMs": 295.20000000018626,
+      "browser": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "domNodes": 99,
+        "jsHeapBytes": 81400000
+      },
+      "doubleAnimationFrameLatencyMs": {
+        "median": 30.799999999813735,
+        "p95": 72.20000000018626,
+        "max": 75.5,
+        "samples": [
+          75.5,
+          72.20000000018626,
+          54.3000000002794,
+          49.1999999997206,
+          44,
+          17.799999999813735,
+          32.3000000002794,
+          29.199999999720603,
+          30.59999999962747,
+          30.799999999813735,
+          19.09999999962747,
+          15.700000000186265,
+          18,
+          32.799999999813735,
+          33.799999999813735,
+          34.200000000186265,
+          26.899999999906868,
+          25.299999999813735,
+          29.300000000279397,
+          26.399999999906868,
+          16.899999999906868,
+          16.199999999720603,
+          20.799999999813735,
+          52.89999999990687,
+          50.6999999997206,
+          60.3000000002794,
+          50.09999999962747,
+          36.10000000009313,
+          17.800000000279397,
+          32.89999999990687
+        ]
+      },
+      "longTasks": {
+        "count": 3,
+        "totalMs": 173,
+        "durations": [
+          60,
+          63,
+          50
+        ]
+      },
+      "testStatus": "passed"
+    },
+    {
+      "workload": {
+        "blocks": 100,
+        "facing": false,
+        "input": "body"
+      },
+      "openToCaretMs": 1459,
+      "browser": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "domNodes": 4021,
+        "jsHeapBytes": 109000000
+      },
+      "doubleAnimationFrameLatencyMs": {
+        "median": 80.59999999962747,
+        "p95": 102.90000000037253,
+        "max": 112.89999999990687,
+        "samples": [
+          112.89999999990687,
+          99.89999999990687,
+          86,
+          88,
+          85.29999999981374,
+          85,
+          73.70000000018626,
+          56.59999999962747,
+          52.09999999962747,
+          85.39999999990687,
+          83.60000000009313,
+          95.10000000009313,
+          78.90000000037253,
+          75.8000000002794,
+          50.799999999813735,
+          54,
+          80.59999999962747,
+          82.89999999990687,
+          88.79999999981374,
+          84.89999999990687,
+          74.10000000009313,
+          52.90000000037253,
+          51.10000000009313,
+          102.90000000037253,
+          82.5,
+          77.1999999997206,
+          83.89999999990687,
+          73,
+          47.5,
+          46.200000000186265
+        ]
+      },
+      "longTasks": {
+        "count": 40,
+        "totalMs": 2242,
+        "durations": [
+          56,
+          72,
+          61,
+          58,
+          50,
+          53,
+          50,
+          50,
+          50,
+          53,
+          51,
+          50,
+          56,
+          50,
+          55,
+          56,
+          55,
+          63,
+          56,
+          54,
+          55,
+          57,
+          57,
+          55,
+          55,
+          55,
+          58,
+          57,
+          58,
+          55,
+          58,
+          59,
+          59,
+          55,
+          57,
+          56,
+          59,
+          57,
+          69,
+          52
+        ]
+      },
+      "testStatus": "passed"
+    },
+    {
+      "workload": {
+        "blocks": 400,
+        "facing": false,
+        "input": "body"
+      },
+      "openToCaretMs": 2446,
+      "browser": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "domNodes": 15753,
+        "jsHeapBytes": 123000000
+      },
+      "doubleAnimationFrameLatencyMs": {
+        "median": 163.5,
+        "p95": 249,
+        "max": 7442.399999999907,
+        "samples": [
+          123.60000000009313,
+          100.5,
+          108.3000000002794,
+          118.70000000018626,
+          110.20000000018626,
+          91.79999999981374,
+          81.89999999990687,
+          78.70000000018626,
+          78.6999999997206,
+          86,
+          113,
+          7442.399999999907,
+          220.60000000009313,
+          214.3000000002794,
+          249,
+          228.70000000018626,
+          222.39999999990687,
+          213.10000000009313,
+          203.10000000009313,
+          173.29999999981374,
+          175.5,
+          163.89999999990687,
+          164.39999999990687,
+          163.5,
+          166.39999999990687,
+          157,
+          164.70000000018626,
+          159.10000000009313,
+          155.59999999962747,
+          168.1999999997206
+        ]
+      },
+      "longTasks": {
+        "count": 69,
+        "totalMs": 17216,
+        "durations": [
+          101,
+          78,
+          85,
+          85,
+          84,
+          74,
+          65,
+          61,
+          62,
+          81,
+          102,
+          7243,
+          198,
+          208,
+          98,
+          275,
+          212,
+          86,
+          233,
+          227,
+          100,
+          260,
+          236,
+          95,
+          248,
+          237,
+          94,
+          239,
+          245,
+          88,
+          232,
+          226,
+          102,
+          183,
+          175,
+          63,
+          184,
+          197,
+          69,
+          178,
+          188,
+          62,
+          176,
+          168,
+          60,
+          175,
+          169,
+          65,
+          173,
+          171,
+          55,
+          184,
+          173,
+          57,
+          176,
+          225,
+          58,
+          174,
+          59,
+          200,
+          171,
+          56,
+          173,
+          171,
+          54,
+          190,
+          180,
+          172,
+          172
+        ]
+      },
+      "testStatus": "passed"
+    },
+    {
+      "workload": {
+        "blocks": 400,
+        "facing": true,
+        "input": "body"
+      },
+      "openToCaretMs": 2220.5999999996275,
+      "browser": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "domNodes": 16704,
+        "jsHeapBytes": 116000000
+      },
+      "doubleAnimationFrameLatencyMs": {
+        "median": 113.79999999981374,
+        "p95": 285.90000000037253,
+        "max": 17002.100000000093,
+        "samples": [
+          114.70000000018626,
+          107.60000000009313,
+          102.39999999990687,
+          111.09999999962747,
+          102.59999999962747,
+          95.5,
+          88.8000000002794,
+          80.29999999981374,
+          81.5,
+          86.59999999962747,
+          77.3000000002794,
+          114.29999999981374,
+          112.5,
+          113.79999999981374,
+          95.89999999990687,
+          99.5,
+          72,
+          17002.100000000093,
+          285.90000000037253,
+          238.5,
+          255.10000000009313,
+          185.60000000009313,
+          204.8000000002794,
+          183.5,
+          172.20000000018626,
+          169.39999999990687,
+          204.10000000009313,
+          179.3000000002794,
+          191.5,
+          208.20000000018626
+        ]
+      },
+      "longTasks": {
+        "count": 58,
+        "totalMs": 25495,
+        "durations": [
+          102,
+          82,
+          80,
+          81,
+          79,
+          78,
+          68,
+          61,
+          62,
+          64,
+          56,
+          91,
+          83,
+          86,
+          86,
+          95,
+          68,
+          16745,
+          254,
+          243,
+          108,
+          350,
+          286,
+          93,
+          264,
+          266,
+          132,
+          211,
+          204,
+          64,
+          216,
+          214,
+          74,
+          229,
+          249,
+          66,
+          204,
+          217,
+          60,
+          205,
+          210,
+          56,
+          209,
+          246,
+          72,
+          224,
+          205,
+          63,
+          204,
+          230,
+          69,
+          247,
+          239,
+          88,
+          214,
+          222,
+          202,
+          219
+        ]
+      },
+      "testStatus": "passed"
+    },
+    {
+      "workload": {
+        "blocks": 1000,
+        "facing": true,
+        "input": "body"
+      },
+      "openToCaretMs": 5766.299999999814,
+      "browser": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "domNodes": 39098,
+        "jsHeapBytes": 254000000
+      },
+      "doubleAnimationFrameLatencyMs": {
+        "median": 102.09999999962747,
+        "p95": 145.5,
+        "max": 146,
+        "samples": [
+          146,
+          114.89999999990687,
+          101.20000000018626,
+          99.6999999997206,
+          93.60000000009313,
+          102.09999999962747,
+          105.3000000002794,
+          129.70000000018626,
+          145.5,
+          119.5,
+          74.89999999990687,
+          78.8000000002794,
+          69.20000000018626,
+          77.5,
+          128.60000000009313,
+          114.89999999990687,
+          106.89999999990687,
+          107.5,
+          94.89999999990687,
+          77.1999999997206,
+          80.10000000009313,
+          77.10000000009313,
+          120.8000000002794,
+          116.09999999962747,
+          116.5,
+          124.6999999997206,
+          113.8000000002794,
+          83.60000000009313,
+          82,
+          79.6999999997206
+        ]
+      },
+      "longTasks": {
+        "count": 30,
+        "totalMs": 2743,
+        "durations": [
+          124,
+          100,
+          89,
+          83,
+          63,
+          91,
+          94,
+          98,
+          133,
+          114,
+          69,
+          73,
+          64,
+          65,
+          115,
+          105,
+          97,
+          97,
+          89,
+          71,
+          75,
+          72,
+          111,
+          105,
+          105,
+          109,
+          104,
+          78,
+          76,
+          74
+        ]
+      },
+      "testStatus": "passed"
+    },
+    {
+      "workload": {
+        "blocks": 1000,
+        "facing": true,
+        "input": "title"
+      },
+      "openToCaretMs": 5684.100000000093,
+      "browser": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.7922.34 Safari/537.36",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "domNodes": 39098,
+        "jsHeapBytes": 239000000
+      },
+      "doubleAnimationFrameLatencyMs": {
+        "median": 94.59999999962747,
+        "p95": 181.10000000009313,
+        "max": 208.5,
+        "samples": [
+          89.70000000018626,
+          82.10000000009313,
+          88.89999999990687,
+          89.5,
+          106.39999999990687,
+          92.10000000009313,
+          97.60000000009313,
+          87.70000000018626,
+          94.59999999962747,
+          65.90000000037253,
+          67.10000000009313,
+          71.20000000018626,
+          69.29999999981374,
+          69.90000000037253,
+          73.89999999990687,
+          133.60000000009313,
+          125,
+          113.89999999990687,
+          131.20000000018626,
+          137.8000000002794,
+          89,
+          102,
+          91.5,
+          103.8000000002794,
+          166,
+          142.1999999997206,
+          181.10000000009313,
+          166.29999999981374,
+          176.60000000009313,
+          208.5
+        ]
+      },
+      "longTasks": {
+        "count": 25,
+        "totalMs": 2310,
+        "durations": [
+          62,
+          54,
+          60,
+          60,
+          77,
+          65,
+          65,
+          61,
+          73,
+          52,
+          104,
+          98,
+          87,
+          103,
+          115,
+          66,
+          79,
+          81,
+          74,
+          139,
+          115,
+          146,
+          138,
+          155,
+          181
+        ]
+      },
+      "testStatus": "passed"
+    }
+  ],
+  "verification": {
+    "unitTestsPassed": 98,
+    "typecheck": "passed",
+    "changedFileLint": "passed",
+    "whitespace": "passed",
+    "initialInvestigation": {
+      "stats": {
+        "startTime": "2026-11-27T15:17:15.859Z",
+        "duration": 74455.83899999999,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "front-matter input measures body layout only when geometry changes (single)",
+          "status": "failed",
+          "errors": [
+            "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 0\nReceived: 543\n\n  69 |       const sameLineReads = await probe.evaluate(value => value.state.reads);\n  70 |       await testInfo.attach('front-matter-observer.json', { body: JSON.stringify(await probe.evaluate(value => value.state)), contentType: 'application/json' });\n> 71 |       expect(sameLineReads).toBe(0);\n     |                             ^\n  72 |       expect(await page.evaluate(async () => {\n  73 |         const { useStudioStore } = await import('/src/app/useStudioStore.ts');\n  74 |         const { serializeOmiJson } = await import('/src/services/exportOmi.ts');\n    at /workspace/scratch/7c581e8c0a28/studio/e2e/publication-front-matter-layout.spec.ts:71:29"
+          ]
+        },
+        {
+          "title": "front-matter input measures body layout only when geometry changes (facing)",
+          "status": "failed",
+          "errors": [
+            "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 300\nReceived:   38.700000000186265\n\nCall Log:\n- Timeout 7500ms exceeded while waiting on the predicate\n\n  66 |       // Allow the observer and scheduled frames to drain before checking work.\n  67 |       await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));\n> 68 |       await expect.poll(() => probe.evaluate(value => value.quiet())).toBeGreaterThan(300);\n     |                                                                       ^\n  69 |       const sameLineReads = await probe.evaluate(value => value.state.reads);\n  70 |       await testInfo.attach('front-matter-observer.json', { body: JSON.stringify(await probe.evaluate(value => value.state)), contentType: 'application/json' });\n  71 |       expect(sameLineReads).toBe(0);\n    at /workspace/scratch/7c581e8c0a28/studio/e2e/publication-front-matter-layout.spec.ts:68:71"
+          ]
+        }
+      ]
+    },
+    "initialObserverData": [
+      {
+        "title": "front-matter input measures body layout only when geometry changes (single)",
+        "attachment": "front-matter-observer.json",
+        "data": {
+          "reads": 543,
+          "lastRead": 34549.5,
+          "mutations": [
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            }
+          ],
+          "originalSections": null
+        }
+      }
+    ],
+    "frontMatterRegression": {
+      "cases": [
+        {
+          "title": "front-matter input measures body layout only when geometry changes (single)",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "front-matter input measures body layout only when geometry changes (facing)",
+          "status": "passed",
+          "errors": []
+        }
+      ]
+    },
+    "afterObserverData": [
+      {
+        "title": "front-matter input measures body layout only when geometry changes (single)",
+        "attachment": "front-matter-observer.json",
+        "data": {
+          "reads": 0,
+          "lastRead": 15206.900000000373,
+          "mutations": [
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            }
+          ]
+        }
+      },
+      {
+        "title": "front-matter input measures body layout only when geometry changes (facing)",
+        "attachment": "front-matter-observer.json",
+        "data": {
+          "reads": 0,
+          "lastRead": 16002.700000000186,
+          "mutations": [
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "childList",
+              "name": "TEXTAREA",
+              "attribute": null
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            },
+            {
+              "type": "attributes",
+              "name": "TEXTAREA",
+              "attribute": "style"
+            }
+          ]
+        }
+      }
+    ],
+    "relatedPublicationRegressions": {
+      "stats": {
+        "startTime": "2026-11-27T15:33:39.279Z",
+        "duration": 120134.516,
+        "expected": 6,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "the full-screen menu opens the publication editor",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "HTML5 visual editing is responsive and preserves changes when returning to print",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "live pages place each footnote below its anchor and reflow after zoom and editing",
+          "status": "failed",
+          "errors": [
+            "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 3\n\n- Array []\n+ Array [\n+   \"note-5\",\n+ ]\n\nCall Log:\n- Timeout 7500ms exceeded while waiting on the predicate\n\n  227 |     return failures;\n  228 |   });\n> 229 |   await expect.poll(audit).toEqual([]);\n      |                            ^\n  230 |   const measuredNote = canvas.locator('.publication-page-footnotes--measure [data-publication-note-id=\"note-0\"]');\n  231 |   const printedNote = canvas.locator('[data-footnote-page] [data-publication-note-id=\"note-0\"]');\n  232 |   await expect(measuredNote.locator('strong')).toHaveText('Footnote 1. ');\n    at /workspace/scratch/7c581e8c0a28/studio/e2e/publication-editor.spec.ts:229:28"
+          ]
+        },
+        {
+          "title": "front-matter input measures body layout only when geometry changes (single)",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "front-matter input measures body layout only when geometry changes (facing)",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "facing pages keep continued paragraphs, table rows and footnotes editable on their sheets",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "new paragraphs on the first right-hand page retain a valid projection during editing",
+          "status": "passed",
+          "errors": []
+        }
+      ]
+    },
+    "coordinateInvariance": {
+      "test": {
+        "stats": {
+          "startTime": "2026-11-27T15:38:01.786Z",
+          "duration": 35544.807,
+          "expected": 1,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "cases": [
+          {
+            "title": "facing pages keep continued paragraphs, table rows and footnotes editable on their sheets",
+            "status": "passed",
+            "errors": []
+          }
+        ]
+      },
+      "observations": [
+        {
+          "title": "facing pages keep continued paragraphs, table rows and footnotes editable on their sheets",
+          "attachment": "measurement-invariance.json",
+          "data": {
+            "retainedCount": 9734,
+            "clearedCount": 9734,
+            "maxDelta": 3.0517578125e-05,
+            "differences": []
+          }
+        }
+      ]
+    },
+    "counterScope": {
+      "initial": "Body bounding-box reads while the old measurement flag was set.",
+      "after": "All body-block bounding-box reads, a stricter counter, after layout readiness and a quiet interval."
+    },
+    "beforeBenchmark": {
+      "stats": {
+        "startTime": "2026-11-27T15:24:17.979Z",
+        "duration": 75865.80799999999,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "publication input benchmark: 1000 blocks, facing pages, title",
+          "status": "passed",
+          "errors": []
+        }
+      ]
+    },
+    "afterBenchmark": {
+      "stats": {
+        "startTime": "2026-11-27T15:40:12.897Z",
+        "duration": 111718.231,
+        "expected": 6,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "publication input benchmark: 0 blocks, single pages, title",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "publication input benchmark: 100 blocks, single pages, body",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "publication input benchmark: 400 blocks, single pages, body",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "publication input benchmark: 400 blocks, facing pages, body",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "publication input benchmark: 1000 blocks, facing pages, body",
+          "status": "passed",
+          "errors": []
+        },
+        {
+          "title": "publication input benchmark: 1000 blocks, facing pages, title",
+          "status": "passed",
+          "errors": []
+        }
+      ]
+    },
+    "separateProfile": {
+      "runtime": "847e3d418af38e707868c1981088f9efc58dbafc",
+      "workload": "1000-block facing-page title, 10 typed characters, native CPU and scroll-height getter instrumentation",
+      "boundingBoxSelfTimeInMeasureBlocksChunkMs": 5706.6,
+      "scrollHeightObservations": [
+        {
+          "title": "publication input benchmark: 1000 blocks, facing pages, title",
+          "attachment": "scroll-height.json",
+          "data": [
+            {
+              "value": 22,
+              "ms": 0.5,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.5,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.4000000001396984,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.30000000004656613,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.39999999990686774,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.5,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.39999999990686774,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.39999999990686774,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.5,
+              "name": "publication-document-title"
+            },
+            {
+              "value": 22,
+              "ms": 0.6000000000931323,
+              "name": "publication-document-title"
+            }
+          ]
+        }
+      ],
+      "note": "Other native program/rendering time is not assigned to this function. This instrumented diagnostic is separate from timing acceptance."
+    },
+    "previousHeadCi": {
+      "commit": "847e3d418af38e707868c1981088f9efc58dbafc",
+      "mainCi": "passed",
+      "nativePlatforms": "passed after targeted ARM macOS DMG packaging retry",
+      "scope": "Does not validate the new runtime commit; new-head checks pending publication."
+    }
+  }
+}

@@ -2,6 +2,8 @@
 
 Follow-up to [the initial publication performance review](publication-review-2026-11-27.md), implemented in PR #1098. The canonical OMI manuscript continues to update synchronously during publication editing; the inactive author view no longer rebuilds its document for every publication character.
 
+The [front-matter follow-up](publication-front-matter-2026-11-27.md) addresses the large-document title latency observed here. The measurements below remain historical evidence of the inactive-editor change.
+
 ## Behavior and scope
 
 - An editable publication canvas owns a runtime activity registration. Multiple registrations and repeated mount/cleanup are safe; no document lock or schema field is added.

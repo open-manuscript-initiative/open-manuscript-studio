@@ -255,3 +255,20 @@ deferred serialization/synchronization.
 The [implementation evidence](performance/publication-inactive-editor-2026-11-27.md)
 records lifecycle, save, selection and undo coverage plus comparative synthetic
 performance workloads. Main-thread publication layout remains a separate target.
+
+## Phase 4c — invalidate front matter by geometry
+
+Controlled textarea value changes also mutate their default-value text nodes.
+Treating those mutations as layout edits caused complete body measurements even
+when the title or other front-matter field stayed on the same line. Ignore
+mutations inside those controls and observe the front-matter header dimensions
+instead. Real wrapping/growth/shrinkage continues to repaginate; canonical input
+and saving stay synchronous. Keep top-level sheet translations during measurement:
+layout offsets and block-relative line/anchor geometry are invariant under those
+translations. Neutralize only existing inline spacers/continuations, avoiding a
+whole-document style invalidation for every measurement chunk.
+
+[Evidence and regression coverage](performance/publication-front-matter-2026-11-27.md)
+include both page arrangements, all four fields, OMI serialization, body fidelity,
+and title growth/shrinkage, plus a fresh long-document title comparison. Full
+body measurement after a real geometry change remains a further target.
