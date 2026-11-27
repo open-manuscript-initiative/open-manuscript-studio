@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { Editor } from '@tiptap/core';
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
 const viewports: { width: number; height: number; nativePreview?: boolean }[] = [
@@ -86,3 +87,49 @@ for (const viewport of viewports) {
     await expect(menu.locator('.publication-document-canvas')).toBeVisible();
   });
 }
+
+test('large volume cover transitions suspend the body editor and preserve its instance and edits', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error' && /Maximum update depth|Cannot update a component/.test(message.text())) errors.push(message.text());
+  });
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { createDocumentStructureProfile } = await import('/src/model/documentProfile.ts');
+    const state = useStudioStore.getState();
+    state.loadManuscript({ ...state.manuscript, documentStructure: createDocumentStructureProfile('volume'),
+      sections: [{ id: 'cover-body', title: 'Body',
+        blocks: Array.from({ length: 320 }, (_, index) => ({ id: 'cover-body-' + index, type: 'paragraph' as const,
+          content: 'Body paragraph ' + index + ' — ' + 'Scholarly text. '.repeat(12) })) }] });
+  });
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Publication editor', exact: true }).click();
+  const body = menu.locator('.publication-document-canvas .omi-continuous-tiptap-editor');
+  await expect(body).toBeVisible();
+  const handle = await body.evaluateHandle(element => ({ element, editor: (element as HTMLElement & { editor: Editor }).editor }));
+  const target = body.locator('[data-block-id="cover-body-0"]');
+  await target.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' EDITED');
+  await expect(target).toContainText('EDITED');
+  for (let cycle = 0; cycle < 2; cycle++) {
+    await menu.getByRole('tab', { name: 'Covers and title pages', exact: true }).click();
+    const matter = menu.locator('.omi-publication-matter-editor');
+    await expect(matter.locator('.omi-publication-matter-paper')).toBeInViewport({ ratio: .95 });
+    expect(await handle.evaluate(({ editor }) => editor.isEditable)).toBe(false);
+    await matter.getByRole('tab', { name: 'Title page', exact: true }).click();
+    await expect(matter.locator('.omi-publication-matter-paper')).toBeInViewport({ ratio: .95 });
+    await menu.getByRole('tab', { name: 'Publication content', exact: true }).click();
+    await expect(body).toBeVisible();
+    await expect(target).toContainText('EDITED');
+    expect(await handle.evaluate(({ editor, element }) => editor.isEditable && editor.view.dom === element && element.isConnected)).toBe(true);
+  }
+  expect(errors).toEqual([]);
+  await handle.dispose();
+});

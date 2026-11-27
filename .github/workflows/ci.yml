@@ -114,7 +114,7 @@ jobs:
         run: npx playwright install chromium
 
       - name: Verify publication and selection regressions without retries
-        run: npx playwright test e2e/menu-selection.spec.ts e2e/inactive-author-editor.spec.ts e2e/publication-front-matter-layout.spec.ts e2e/publication-editor.spec.ts e2e/publication-spreads.spec.ts e2e/publication-templates.spec.ts e2e/publication-flow-controls.spec.ts e2e/publication-frames.spec.ts e2e/publication-page-styles.spec.ts e2e/publication-page-navigation.spec.ts e2e/selection-toolbar-layout.spec.ts e2e/formatting-import-edit.spec.ts --project=desktop-chromium --workers=1 --retries=0
+        run: npx playwright test e2e/menu-selection.spec.ts e2e/inactive-author-editor.spec.ts e2e/publication-front-matter-layout.spec.ts e2e/publication-cover-workspace.spec.ts e2e/publication-editor.spec.ts e2e/publication-spreads.spec.ts e2e/publication-templates.spec.ts e2e/publication-flow-controls.spec.ts e2e/publication-frames.spec.ts e2e/publication-page-styles.spec.ts e2e/publication-page-navigation.spec.ts e2e/selection-toolbar-layout.spec.ts e2e/formatting-import-edit.spec.ts --project=desktop-chromium --workers=1 --retries=0
 
       - name: Verify paragraph style and hyphenation regressions without retries
         run: npx playwright test e2e/publication-paragraph-formatting.spec.ts --project=desktop-chromium --workers=1 --retries=0

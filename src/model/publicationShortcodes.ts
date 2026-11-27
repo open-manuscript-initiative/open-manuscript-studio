@@ -120,6 +120,9 @@ export function resolvePublicationShortcodes(content: string, values: Record<Cod
 
 /** Shared resolution for editor preview and export; explicit per-token locale wins over frame locale. */
 export function resolvePublicationMatterText(content: string, state: OmiManuscriptState, frameLocale?: string) {
+  // Most cover frames contain ordinary text. Do not traverse a whole volume's
+  // authors, chapter structure and metadata for each frame without shortcodes.
+  if (!content.includes('[omi:')) return { content, missing: [] as string[] };
   const cache = new Map<string, Record<Code, string>>();
   const forLanguage = (locale: string) => {
     const cached = cache.get(locale);
