@@ -1,6 +1,6 @@
 import { textFromAtomicBlock } from '../../model/atomicTextBlocks';
 import { getParentSectionId, partitionManuscriptStudies } from '../../model/sectionStructure';
-import type { OmiManuscriptState, OmiBlock, OmiSection, OmiManuscript } from '../../types/omi';
+import type { OmiManuscriptState, OmiBlock, OmiSection, OmiAnnotation, OmiManuscript } from '../../types/omi';
 import { mergeOmiDocumentAsStudy } from '../../model/studyImport';
 import { commitManuscriptRevision, extractManuscriptState, type CreateChangeEventInput } from '../../model/versioning';
 import { ensureManuscriptRevisionStateDigests } from '../../model/revisionIntegrity';
@@ -298,10 +298,16 @@ export function keepLocalOmpChapter(document: OmiManuscript, launch: OmpVolumeHa
 
 /** Deliberately small allowlist of text-only Tiptap nodes. Anchors, hyperlinks,
  * media, arbitrary attributes and unknown extensions require a richer merge. */
-function safeTextBlock(block: OmiBlock): boolean {
+function safeTextBlock(block: OmiBlock, allowNotes = false): boolean {
   if (!['paragraph', 'heading'].includes(block.type) || block.visual || block.children?.length) return false;
   function safeNode(value: unknown): boolean {
     const node = obj(value);
+    if (allowNotes && node.type === 'omiNote') {
+      const attrs = obj(node.attrs);
+      return Object.keys(node).every(key => key === 'type' || key === 'attrs') &&
+        Object.keys(attrs).every(key => ['noteId', 'anchorId', 'label', 'noteType'].includes(key)) &&
+        !!str(attrs.noteId) && !!str(attrs.anchorId) && ['footnote', 'endnote'].includes(str(attrs.noteType));
+    }
     if (!['doc', 'paragraph', 'heading', 'text', 'hardBreak'].includes(str(node.type)) ||
         Object.keys(node).some(key => !['type', 'text', 'content', 'attrs', 'marks'].includes(key))) return false;
     if (node.attrs !== undefined && (node.type !== 'heading' ||
@@ -320,8 +326,39 @@ function safeTextBlock(block: OmiBlock): boolean {
 function chapterSections(state: OmiManuscriptState, root: string): OmiSection[] {
   return partitionManuscriptStudies(state.sections).find(study => study.rootSectionId === root)?.sections ?? [];
 }
+type NoteWithBody = OmiAnnotation & { bodyContent?: string };
+interface ChapterReplacementPlan { sections: OmiSection[]; annotations: OmiAnnotation[] }
+function noteMarkers(block: OmiBlock): Data[] {
+  const markers: Data[] = [];
+  const visit = (value: unknown) => {
+    const node = obj(value);
+    if (node.type === 'omiNote') markers.push(obj(node.attrs));
+    if (Array.isArray(node.content)) node.content.forEach(visit);
+  };
+  try { visit(JSON.parse(block.content)); } catch { /* legacy text */ }
+  return markers;
+}
+function remapNoteMarkers(block: OmiBlock, map: Map<string, string>): string {
+  if (!noteMarkers(block).length) return block.content;
+  const visit = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(visit);
+    if (typeof value === 'string') return map.get(value) ?? value;
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, visit(item)]));
+    return value;
+  };
+  return JSON.stringify(visit(JSON.parse(block.content)));
+}
+function noteStructure(note: NoteWithBody): Data {
+  const { id: _id, anchorId: _anchor, targetBlockId: _target, body: _body, bodyContent: _rich,
+    createdAt: _created, modifiedAt: _modified, ...other } = note;
+  return other;
+}
+function safeNoteBody(note: NoteWithBody): boolean {
+  return typeof note.body === 'string' && (!note.bodyContent ||
+    safeTextBlock({ id: note.id, type: 'paragraph', content: note.bodyContent }));
+}
 function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHandoff, id: string,
-  incoming: OmiManuscript, baseline: OmiManuscriptState | undefined): OmiSection[] | null {
+  incoming: OmiManuscript, baseline: OmiManuscriptState | undefined): ChapterReplacementPlan | null {
   const previous = origin(document, launch);
   if (!baseline || previous.publicationExternalId !== launch.volume.publicationExternalId ||
       previous.mode !== 'chapters' || launch.mode !== 'chapters' || previous.workType !== launch.workType) return null;
@@ -339,42 +376,80 @@ function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHan
   const local = chapterSections(document, root);
   const original = chapterSections(baseline, root);
   if (!local.length || fingerprint(local) !== fingerprint(original) ||
-      local.some(section => section.blocks.some(block => !safeTextBlock(block)))) return null;
+      local.some(section => section.blocks.some(block => !safeTextBlock(block, true)))) return null;
   // Existing object identities must remain stable. Reject any external references
   // to the chapter's blocks or sections, including IDs inside serialized JSON,
   // print corrections, notes, citations, bookmarks, proofing and layout data.
   const ids = new Set(local.flatMap(section => [section.id, ...section.blocks.map(block => block.id)]));
+  const localNotes = document.annotations.filter(note => ids.has(note.targetBlockId));
+  const baselineNotes = baseline.annotations.filter(note => ids.has(note.targetBlockId));
+  if (fingerprint(localNotes) !== fingerprint(baselineNotes) || localNotes.some(note => note.type !== 'note' ||
+      !['footnote', 'endnote'].includes(note.noteKind ?? '') || !note.anchorId || !safeNoteBody(note))) return null;
+  const noteIds = new Set(localNotes.flatMap(note => [note.id, note.anchorId!]));
   const outside = extractManuscriptState(document);
+  outside.annotations = outside.annotations.filter(note => !ids.has(note.targetBlockId));
   outside.sections = outside.sections.filter(section => !ids.has(section.id));
   outside.contributions = outside.contributions.filter(item => !ids.has(item.targetId));
   outside.extensions = { ...outside.extensions };
   delete outside.extensions[OMP_VOLUME_ORIGIN];
   const external = JSON.stringify(outside);
-  if ([...ids].some(key => external.includes(key))) return null;
+  if ([...ids, ...noteIds].some(key => external.includes(key))) return null;
   // Incoming scholarly objects are not silently discarded by this text-only
   // replacement path. More complex sources remain review-only.
-  if ([incoming.annotations, incoming.citations, incoming.citationClusters, incoming.crossReferences,
+  if ([incoming.citations, incoming.citationClusters, incoming.crossReferences,
        incoming.bibliographicRecords, incoming.sourceAttributions, incoming.assets, incoming.namedAnchors,
        incoming.semanticFields, incoming.computedFields, incoming.indexDefinitions, incoming.indexEntries,
        incoming.generatedIndexes, incoming.proofing?.changes, incoming.publicationCorrections]
       .some(items => items?.length)) return null;
-  const projected = mergeOmiDocumentAsStudy(extractManuscriptState(document), extractManuscriptState(incoming),
-    { importedAt: document.updatedAt }).importedSections;
-  if (projected.length !== local.length) return null;
+  if (incoming.annotations.some(note => note.type !== 'note' || !['footnote', 'endnote'].includes(note.noteKind ?? '') ||
+      !note.anchorId || !safeNoteBody(note))) return null;
+  const merged = mergeOmiDocumentAsStudy(extractManuscriptState(document), extractManuscriptState(incoming),
+    { importedAt: document.updatedAt });
+  const projected = merged.importedSections;
+  const incomingNotes = merged.state.annotations.slice(document.annotations.length);
+  if (projected.length !== local.length || incomingNotes.length !== localNotes.length) return null;
   const replacements: OmiSection[] = [];
+  const noteUpdates = new Map<string, OmiAnnotation>();
+  const usedIncoming = new Set<string>();
   for (let index = 0; index < local.length; index++) {
     const old = local[index]!, next = projected[index]!;
     const oldParent = getParentSectionId(old), newParent = getParentSectionId(next);
     if (local.findIndex(item => item.id === oldParent) !== projected.findIndex(item => item.id === newParent) ||
         old.blocks.length !== next.blocks.length ||
-        next.blocks.some((block, j) => block.type !== old.blocks[j]?.type || !safeTextBlock(block))) return null;
-    replacements.push({ ...old, title: next.title,
-      blocks: old.blocks.map((block, j) => ({ ...block, content: next.blocks[j]!.content })) });
+        next.blocks.some((block, j) => block.type !== old.blocks[j]?.type || !safeTextBlock(block, true))) return null;
+    const blocks: OmiBlock[] = [];
+    for (let j = 0; j < old.blocks.length; j++) {
+      const oldBlock = old.blocks[j]!, newBlock = next.blocks[j]!;
+      const oldMarkers = noteMarkers(oldBlock), newMarkers = noteMarkers(newBlock);
+      if (oldMarkers.length !== newMarkers.length) return null;
+      const markerMap = new Map<string, string>();
+      for (let k = 0; k < oldMarkers.length; k++) {
+        const oldMarker = oldMarkers[k]!, newMarker = newMarkers[k]!;
+        const oldNote = localNotes.find(note => note.id === oldMarker.noteId && note.anchorId === oldMarker.anchorId && note.targetBlockId === oldBlock.id);
+        const newNote = incomingNotes.find(note => note.id === newMarker.noteId && note.anchorId === newMarker.anchorId && note.targetBlockId === newBlock.id);
+        if (!oldNote || !newNote || noteUpdates.has(oldNote.id) || usedIncoming.has(newNote.id) ||
+            fingerprint(noteStructure(oldNote)) !== fingerprint(noteStructure(newNote))) return null;
+        markerMap.set(newNote.id, oldNote.id);
+        markerMap.set(newNote.anchorId!, oldNote.anchorId!);
+        usedIncoming.add(newNote.id);
+        const updated: NoteWithBody = { ...oldNote, body: newNote.body };
+        const richBody = (newNote as NoteWithBody).bodyContent;
+        if (richBody !== undefined) updated.bodyContent = richBody; else delete updated.bodyContent;
+        noteUpdates.set(oldNote.id, updated);
+      }
+      // The entire marker-bearing block must match after restoring identities.
+      // Even a shifted marker or changed adjacent text requires manual review.
+      const content = remapNoteMarkers(newBlock, markerMap);
+      if (oldMarkers.length && fingerprint(JSON.parse(oldBlock.content)) !== fingerprint(JSON.parse(content))) return null;
+      blocks.push({ ...oldBlock, content: oldMarkers.length ? oldBlock.content : content });
+    }
+    replacements.push({ ...old, title: next.title, blocks });
   }
-  return replacements;
+  if (noteUpdates.size !== localNotes.length || usedIncoming.size !== incomingNotes.length) return null;
+  return { sections: replacements, annotations: document.annotations.map(note => noteUpdates.get(note.id) ?? note) };
 }
 
-/** Explicit source adoption for verified unchanged, anchor-free text chapters.
+/** Explicit source adoption for verified unchanged text and stable note anchors.
  * Retains every local section/block ID and the previous revision. */
 export function acceptIncomingOmpChapter(document: OmiManuscript, launch: OmpVolumeHandoff, id: string): OmiManuscript {
   const previous = origin(document, launch);
@@ -396,8 +471,9 @@ export function acceptIncomingOmpChapter(document: OmiManuscript, launch: OmpVol
   const replacements = planOmpChapterReplacement(document, launch, id, incoming, baseline);
   if (!replacements) throw new Error('Automatic replacement would risk local edits or scholarly object integrity.');
   const state = extractManuscriptState(document);
-  const updated = new Map(replacements.map(section => [section.id, section]));
+  const updated = new Map(replacements.sections.map(section => [section.id, section]));
   state.sections = state.sections.map(section => updated.get(section.id) ?? section);
+  state.annotations = replacements.annotations;
   const timestamp = new Date().toISOString();
   const decisions = obj(previous.chapterReviewDecisions);
   const nextOrigin = { ...previous,
@@ -408,7 +484,8 @@ export function acceptIncomingOmpChapter(document: OmiManuscript, launch: OmpVol
   return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
     summary: 'Accepted new OMP chapter text', timestamp,
     events: [{ operation: 'manuscript.snapshot.create', targetId: document.id,
-      path: '/sections', previousValue: chapterSections(document, root), nextValue: replacements },
+      path: '/sections', previousValue: chapterSections(document, root), nextValue: replacements.sections },
+      { operation: 'manuscript.snapshot.create', targetId: document.id, path: '/annotations', previousValue: document.annotations, nextValue: replacements.annotations },
       { operation: 'manuscript.snapshot.create', targetId: document.id,
         path: '/extensions/' + OMP_VOLUME_ORIGIN, previousValue: previous, nextValue: nextOrigin }],
   }));

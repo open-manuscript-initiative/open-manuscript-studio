@@ -121,3 +121,37 @@ test('reject replacement if the chapter has local edits, dependent notes or a di
   launch.sources[0]!.sourceDocument.paragraphs!.push({ text: 'Additional paragraph' });
   assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, false);
 });
+
+test('accept revised note body with identical inline marker, retaining native annotation and anchor IDs', () => {
+  const launch = fixture();
+  const source = launch.sources[0]!.sourceDocument;
+  source.paragraphs = [{ text: 'Note bearing paragraph.', inline: [
+    { kind: 'text', text: 'Note bearing paragraph.' }, { kind: 'footnoteReference', footnoteId: '1' },
+  ] }, { text: 'Ordinary paragraph.' }];
+  source.footnotes = [{ id: '1', text: 'Original note.' }];
+  const doc = createVolumeFromOmpHandoff(launch, 'hu');
+  assert.equal(doc.annotations.length, 1);
+  source.footnotes[0]!.text = 'New note.';
+  source.paragraphs[1]!.text = 'Updated ordinary paragraph.';
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, true);
+  const next = acceptIncomingOmpChapter(doc, launch, '4');
+  assert.equal(next.annotations[0]?.id, doc.annotations[0]?.id);
+  assert.equal(next.annotations[0]?.anchorId, doc.annotations[0]?.anchorId);
+  assert.equal(next.annotations[0]?.targetBlockId, doc.annotations[0]?.targetBlockId);
+  assert.equal(next.annotations[0]?.body, 'New note.');
+  assert.match(JSON.stringify(next.sections), /Updated ordinary paragraph/);
+  assert.equal(doc.annotations[0]?.body, 'Original note.');
+  assert.equal(compareOmpVolume(next, launch).items[0]?.status, 'unchanged');
+});
+test('reject locally edited notes and moved note markers', () => {
+  const launch = fixture(), source = launch.sources[0]!.sourceDocument;
+  source.paragraphs = [{ text: 'Text.', inline: [{ kind: 'text', text: 'Text.' }, { kind: 'footnoteReference', footnoteId: '1' }] }];
+  source.footnotes = [{ id: '1', text: 'Original note.' }];
+  const doc = createVolumeFromOmpHandoff(launch, 'hu');
+  source.footnotes[0]!.text = 'New note.';
+  const local = structuredClone(doc);
+  local.annotations[0]!.body = 'Local note.';
+  assert.equal(previewOmpChapter(local, launch, '4').canAcceptIncoming, false);
+  source.paragraphs[0]!.inline = [{ kind: 'footnoteReference', footnoteId: '1' }, { kind: 'text', text: 'Text.' }];
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, false);
+});

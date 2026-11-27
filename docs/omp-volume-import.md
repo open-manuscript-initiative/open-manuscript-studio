@@ -31,3 +31,7 @@ A changed mapped chapter can be compared as a bounded plain-text preview of its 
 ## Safe acceptance of a changed chapter
 
 Explicitly accept a new upstream text version only when the original revision is available, the local chapter is unchanged, native chapter/contributor metadata and publication identity are unchanged, the incoming structure matches, and both text and external references pass a conservative safety boundary. Existing section/block IDs, chapter order, styles and prior revisions are retained. Notes, citations, anchors, complex objects and dependent layout data block this text-only replacement rather than risk data loss. Full scholarly-object remapping and arbitrary structural replacement remain separate work.
+
+### Stable footnotes and endnotes
+
+The conservative replacement path now also permits existing footnote/endnote body changes, including supported rich-text marks, when the original local annotation and marker-bearing block are unchanged, every incoming note maps bijectively to its original marker and target, and no other scholarly object refers to the affected identifiers. Original note IDs, anchor IDs and block IDs are retained. Marker movement, newly added/deleted notes, local note edits, citation-bearing note bodies, graphics and unresolved reference graphs remain review-only.
