@@ -1,3 +1,4 @@
+import { readOmpVolumeOrigin } from './ompVolumeOrigin';
 import type { OmiManuscriptState } from '../types/omi';
 import { collectPublicationContributors } from './publicationRendering';
 import { partitionManuscriptStudies } from './sectionStructure';
@@ -21,7 +22,7 @@ function localized(value: unknown, locale: string, strict = false): string {
 }
 export function publicationShortcodeValues(state: OmiManuscriptState, requestedLocale?: string): Record<Code, string> {
   const origin = record(state.extensions?.['org.openmanuscript.ojs.issue']);
-  const ompOrigin = record(state.extensions?.['org.openmanuscript.omp.volume']);
+  const ompOrigin = record(readOmpVolumeOrigin(state));
   const ompMatter = record(ompOrigin.publicationMatter), ompSeries = record(ompMatter.series);
   const context = record(origin.context), issue = record(origin.issue), snapshot = record(context.publicationMatter);
   const meta = state.titleMatter, locale = requestedLocale || state.locale;

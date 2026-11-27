@@ -90,7 +90,9 @@ test('saved OMP volume recovery preserves the original ID and revision, includin
   const restored = validateSavedOmpVolume(plan, next, [], original.id);
   assert.equal(restored.id, original.id);
   assert.equal(restored.headRevisionId, original.headRevisionId);
-  assert.deepEqual(restored.sections, original.sections);
+  assert.deepEqual(restored.sections, JSON.parse(JSON.stringify(original.sections)));
+  assert.ok(restored.extensions?.[OMP_VOLUME_ORIGIN]);
+  assert.match(OMP_VOLUME_ORIGIN, /^urn:/);
   assert.throws(() => validateSavedOmpVolume(plan, input, [], 'wrong-id'));
   assert.throws(() => validateSavedOmpVolume(plan, { ...input, installation: { installationId: 'other-press' } }, []));
   assert.throws(() => validateSavedOmpVolume(plan, { ...input, context: { externalId: '7' } }, []));
@@ -98,4 +100,16 @@ test('saved OMP volume recovery preserves the original ID and revision, includin
   assert.throws(() => validateSavedOmpVolume(plan, input, [original]));
   assert.throws(() => validateSavedOmpVolume(plan, input, [createVolumeFromOmpHandoff(input, 'hu')]));
   assert.throws(() => validateSavedOmpVolume({ ...plan, validForImport: false }, input, []));
+});
+
+import { LEGACY_OMP_VOLUME_ORIGIN, readOmpVolumeOrigin } from '../src/model/ompVolumeOrigin.ts';
+test('legacy in-memory OMP origin remains readable without rewriting history; dual origins are rejected', () => {
+  const input = fixture();
+  const current = createVolumeFromOmpHandoff(input, 'hu');
+  const legacy: typeof current = { ...current, extensions: { ...current.extensions, [LEGACY_OMP_VOLUME_ORIGIN]: current.extensions?.[OMP_VOLUME_ORIGIN] } };
+  assert.equal(readOmpVolumeOrigin(legacy), undefined);
+  assert.equal(isSameOmpVolume(legacy, input), false);
+  delete legacy.extensions?.[OMP_VOLUME_ORIGIN];
+  assert.equal(isSameOmpVolume(legacy, input), true);
+  assert.equal(legacy.revisionHistory, current.revisionHistory);
 });

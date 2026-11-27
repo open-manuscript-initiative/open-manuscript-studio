@@ -78,3 +78,7 @@ title or overwrite saved files. Use the existing save/backup workflow to persist
 your revised volume. The normal import integrity and asset restoration paths
 remain in use. Unit coverage is in `tests/omp-volume-project.test.ts`; browser
 and native device acceptance remain required.
+
+### Canonical extension identity
+
+New imports use `urn:omi:studio:omp-volume-origin:1`, satisfying the OMI-SPEC-320 URI-key rule. All volume readers use the shared key resolver. Already-open legacy volumes with the non-URI key remain readable and retain their original history; this change does not silently rewrite signed/digested historical states. Legacy nonconforming documents still need an explicit history-aware migration before canonical export. Dual-key records are rejected as ambiguous. The package round-trip regression must pass without weakening the schema.
