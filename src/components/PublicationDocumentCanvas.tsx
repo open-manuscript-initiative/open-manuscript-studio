@@ -597,6 +597,7 @@ export function PublicationDocumentCanvas({
       const measuredBlocks: PublicationFlowBlock[] = [];
       let flowIndex = 0;
       let existingFlowBreakHeight = 0;
+      const hasInlineProjection = content.querySelector('.omi-publication-flow-break, .omi-publication-spread-continuation') !== null;
 
       const measureBlocksChunk = () => {
         if (cancelled || version !== structureVersion || !content.getClientRects().length) { finish(); return; }
@@ -604,11 +605,11 @@ export function PublicationDocumentCanvas({
         // This React-owned ancestor is outside ProseMirror's observed DOM.
         // Touching a paragraph/node-view style would make ProseMirror reparse
         // and recreate it, restarting measurement and losing active controls.
-        // Measure natural flow, without the previous pass's page spacers or
-        // spread projection. Subtracting spacer heights cannot undo wrapping
-        // at an obsolete break after zooming or editing. Restore before yielding
-        // so the unpaginated document is never painted.
-        content.dataset.publicationMeasuring = 'true';
+        // Inline page spacers can change wrapping and must be hidden. Top-level
+        // translations stay: offsets ignore them, and line/anchor coordinates
+        // are relative to their translated block. Avoid invalidating every block
+        // between chunks, particularly before the first projection even exists.
+        if (hasInlineProjection) content.dataset.publicationMeasuring = 'true';
         try {
           while (flowIndex < flow.length
             && (flowIndex === 0 || performance.now() - startedAt < 8)) {
@@ -691,7 +692,7 @@ export function PublicationDocumentCanvas({
             flowIndex += 1;
           }
         } finally {
-          delete content.dataset.publicationMeasuring;
+          if (hasInlineProjection) delete content.dataset.publicationMeasuring;
         }
 
         if (flowIndex < flow.length) {
@@ -890,6 +891,8 @@ export function PublicationDocumentCanvas({
       ? null
       : new ResizeObserver(schedule);
     resizeObserver?.observe(content);
+    const frontMatter = content.querySelector('.publication-document-front-matter');
+    if (frontMatter) resizeObserver?.observe(frontMatter);
     if (noteMeasureRef.current) resizeObserver?.observe(noteMeasureRef.current);
     const fonts = content.ownerDocument.fonts;
     const fontsLoaded = () => {
@@ -909,11 +912,10 @@ export function PublicationDocumentCanvas({
               ? record.target
               : record.target.parentElement;
             if (target?.closest('.omi-publication-flow-break')) continue;
-            // Auto-growing front-matter fields temporarily reset their height to
-            // measure scrollHeight. ResizeObserver handles actual geometry changes;
-            // treating these intermediate style writes as edits causes reflow loops.
-            if (record.attributeName === 'style'
-              && target?.matches('.publication-document-front-matter textarea')) continue;
+            // React updates a controlled textarea's default-value text node too.
+            // Only its geometry affects pagination: observe the front-matter box
+            // for wrapping/height changes, not value text or intermediate styles.
+            if (target?.closest('.publication-document-front-matter textarea')) continue;
             const changedNodes = [...record.addedNodes, ...record.removedNodes];
             if (changedNodes.length > 0 && changedNodes.every((node) => (
               node instanceof HTMLElement && node.matches('.omi-publication-flow-break')

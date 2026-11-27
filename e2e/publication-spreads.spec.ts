@@ -3,7 +3,7 @@ import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
 test.use({ launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } });
 
-test('facing pages keep continued paragraphs, table rows and footnotes editable on their sheets', async ({ page }) => {
+test('facing pages keep continued paragraphs, table rows and footnotes editable on their sheets', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 2800 });
   await installMockStudioApi(page); await signInToStudio(page);
@@ -66,6 +66,59 @@ test('facing pages keep continued paragraphs, table rows and footnotes editable 
     return failures;
   });
   await expect.poll(audit).toEqual([]);
+  // Geometry used by pagination is invariant under a block's sheet translation.
+  // Compare the optimized read with the former translate:none oracle, including
+  // text lines, table rows and note anchors, while inline continuations are neutral.
+  const invariant = await canvas.evaluate(root => {
+    const content = root.querySelector<HTMLElement>('.publication-document-content')!;
+    const flow = [content.querySelector('.publication-document-front-matter')!,
+      ...content.querySelector('.omi-continuous-tiptap-editor')!.children] as HTMLElement[];
+    const sample = () => {
+      const values: { label: string; value: number }[] = [];
+      for (const block of flow) {
+        const box = block.getBoundingClientRect();
+        const id = block.dataset.blockId ?? 'front';
+        const add = (name: string, numbers: number[]) => numbers.forEach((value, index) => values.push({ label: `${id}:${name}:${index}`, value }));
+        add('block', [block.offsetTop, box.width, box.height]);
+        let line = 0;
+        const record = (rect: DOMRect) => {
+          if (rect.width < 0.1 || rect.height < 0.1) return;
+          add(`rect-${line++}`, [rect.top - box.top, rect.left - box.left, rect.width, rect.height]);
+        };
+        for (const node of block.querySelectorAll('tr,[data-omi-note]')) record(node.getBoundingClientRect());
+        const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+          if (walker.currentNode.parentElement?.closest('[contenteditable="false"]')) continue;
+          const range = document.createRange(); range.selectNodeContents(walker.currentNode);
+          for (const rect of range.getClientRects()) record(rect);
+        }
+      }
+      return values;
+    };
+    const oracle = document.createElement('style');
+    oracle.textContent = `#${CSS.escape(root.id)} .publication-document-content[data-publication-measuring] > .publication-document-front-matter, #${CSS.escape(root.id)} .publication-document-content[data-publication-measuring] .omi-continuous-tiptap-editor > * { translate:none !important; }`;
+    const previous = content.dataset.publicationMeasuring;
+    try {
+      content.dataset.publicationMeasuring = 'true';
+      const retained = sample(); root.appendChild(oracle); const cleared = sample();
+      let maxDelta = 0;
+      const differences: unknown[] = [];
+      for (let index = 0; index < retained.length; index++) {
+        const delta = Math.abs(retained[index]!.value - (cleared[index]?.value ?? Infinity));
+        maxDelta = Math.max(maxDelta, delta);
+        if (delta > 0.05 && differences.length < 8) differences.push({ retained: retained[index], cleared: cleared[index] });
+      }
+      return { retainedCount: retained.length, clearedCount: cleared.length, maxDelta, differences };
+    } finally {
+      oracle.remove();
+      if (previous === undefined) delete content.dataset.publicationMeasuring;
+      else content.dataset.publicationMeasuring = previous;
+    }
+  });
+  await testInfo.attach('measurement-invariance.json', { body: JSON.stringify(invariant), contentType: 'application/json' });
+  expect(invariant.retainedCount).toBeGreaterThan(100);
+  expect(invariant.retainedCount).toBe(invariant.clearedCount);
+  expect(invariant.maxDelta).toBeLessThan(0.05);
   const continuation = canvas.locator('.omi-publication-spread-continuation').first();
   await expect(continuation).toBeVisible();
   await continuation.click(); await page.keyboard.type('EDITED ');
