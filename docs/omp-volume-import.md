@@ -15,3 +15,7 @@ The launch redirects immediately to a random OMP-only progress ticket in the URL
 ## Press, series and format identifiers
 
 The optional OMP publication matter snapshot is retained with the imported origin. Publisher, place, localized series title, print and online ISSN and unambiguous physical/digital ISBNs populate native book front matter. Multiple ISBNs in a format group are kept in the snapshot instead of choosing an arbitrary edition. Shortcodes [omi:electronic-isbn], [omi:series], [omi:series-number] and [omi:press] complement existing publisher, ISBN and DOI codes; original chapter titles supply requested-language contents when available. Missing translations remain unresolved.
+
+## Reimport review
+
+A repeated launch of an already open volume selects its existing tab and compares upstream source fingerprints, chapter identities and metadata. Existing text, layout, chapter order and identities are never overwritten. Older imports without source fingerprints are reported as not verifiable. Publisher and series metadata can be refreshed explicitly only for the same publication and representation, with field-level local conflict detection. New/changed/removed chapters are listed for review; chapter insertion, replacement, cross-version lineage resolution and persistent saved-document discovery remain future work.
