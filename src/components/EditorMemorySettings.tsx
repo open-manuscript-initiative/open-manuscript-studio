@@ -13,16 +13,29 @@ const labels = {
   nl: ['Editorgeheugen', 'Alleen afgeleide cachegegevens worden beïnvloed; manuscript en ongedaangeschiedenis blijven behouden. De waarden zijn schattingen, niet het totale RAM-gebruik.', 'Geheugenmodus', 'Zuinig', 'Gebalanceerd', 'Prestaties', 'Geschatte cache', 'Cachebudget', 'Apparaat-RAM (gemeld)', 'Beschikbaar RAM (gemeld)', 'Cache wissen', 'Niet beschikbaar'],
   pl: ['Pamięć edytora', 'Zmiany dotyczą tylko danych pochodnych w pamięci podręcznej; rękopis i historia cofania pozostają nienaruszone. Wartości są szacunkowe, nie oznaczają całkowitego użycia RAM.', 'Tryb pamięci', 'Oszczędny', 'Zrównoważony', 'Wydajność', 'Szacowana pamięć podręczna', 'Limit pamięci podręcznej', 'RAM urządzenia (zgłoszona)', 'Dostępna RAM (zgłoszona)', 'Wyczyść pamięć podręczną', 'Niedostępne'],
 } as const;
+const metricLabels = {
+  en: ['Cached entries', 'Cache hit rate'],
+  hu: ['Gyorsítótár-bejegyzések', 'Gyorsítótár-találati arány'],
+  de: ['Cache-Einträge', 'Cache-Trefferquote'],
+  fr: ['Entrées en cache', 'Taux de succès du cache'],
+  it: ['Voci in cache', 'Percentuale di hit della cache'],
+  es: ['Entradas en caché', 'Tasa de aciertos de caché'],
+  nl: ['Cache-items', 'Cachetrefferpercentage'],
+  pl: ['Wpisy w pamięci podręcznej', 'Współczynnik trafień pamięci podręcznej'],
+} as const;
 const modes: CacheMode[] = ['economy', 'balanced', 'performance'];
 
 export function EditorMemorySettings() {
   const { locale } = useTranslation();
   const language = locale.toLowerCase().split(/[-_]/)[0] as keyof typeof labels;
   const copy = labels[language] ?? labels.en;
+  const metrics = metricLabels[language] ?? metricLabels.en;
   const [mode, setMode] = useState(getEditorCacheMode);
   const [diagnostics, setDiagnostics] = useState(getEditorCacheDiagnostics);
   const formatter = new Intl.NumberFormat(locale.replace('_', '-'), { maximumFractionDigits: 1 });
-  const formatMiB = (value: number | undefined) => value === undefined ? copy[11] : formatter.format(value) + ' MiB';
+  const formatMiB = (value: number | undefined) => value === undefined ? copy[11] : value > 0 && value < 0.1 ? formatter.format(value * 1024) + ' KiB' : formatter.format(value) + ' MiB';
+  const lookups = diagnostics.hits + diagnostics.misses;
+  const hitRate = lookups ? new Intl.NumberFormat(locale.replace('_', '-'), { style: 'percent', maximumFractionDigits: 1 }).format(diagnostics.hits / lookups) : '—';
   useEffect(() => {
     const timer = window.setInterval(() => setDiagnostics(getEditorCacheDiagnostics()), 1500);
     return () => window.clearInterval(timer);
@@ -42,6 +55,8 @@ export function EditorMemorySettings() {
       </label>
       <dl>
         <dt>{copy[6]}</dt><dd>{formatMiB(diagnostics.estimatedMiB)}</dd>
+        <dt>{metrics[0]}</dt><dd>{formatter.format(diagnostics.entries)}</dd>
+        <dt>{metrics[1]}</dt><dd>{hitRate}</dd>
         <dt>{copy[7]}</dt><dd>{formatMiB(diagnostics.budgetMiB)}</dd>
         <dt>{copy[8]}</dt><dd>{formatMiB(diagnostics.ramGiB === undefined ? undefined : diagnostics.ramGiB * 1024)}</dd>
         <dt>{copy[9]}</dt><dd>{formatMiB(diagnostics.availableMiB)}</dd>

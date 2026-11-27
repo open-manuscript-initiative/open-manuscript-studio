@@ -20,7 +20,8 @@ export function setEditorCacheMode(value: CacheMode): void {
 }
 export function getEditorCacheDiagnostics() {
   return { mode, ramGiB, availableMiB, budgetMiB: editorMemoryPool.budgetBytes / MIB,
-    estimatedMiB: editorMemoryPool.estimatedBytes / MIB, entries: editorMemoryPool.size };
+    estimatedMiB: editorMemoryPool.estimatedBytes / MIB, entries: editorMemoryPool.size,
+    hits: editorMemoryPool.hits, misses: editorMemoryPool.misses };
 }
 async function refreshAndroidMemory(): Promise<void> {
   if (hidden || refreshing || getStudioPlatform() !== 'android') return;

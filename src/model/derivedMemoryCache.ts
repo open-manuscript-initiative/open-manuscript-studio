@@ -20,6 +20,10 @@ export class DerivedMemoryPool {
   private nextId = 0;
   private used = 0;
   private limit = 64 * MIB;
+  private hitCount = 0;
+  private missCount = 0;
+  get hits(): number { return this.hitCount; }
+  get misses(): number { return this.missCount; }
   get estimatedBytes(): number { return this.used; }
   get budgetBytes(): number { return this.limit; }
   get size(): number { return this.tickets.size; }
@@ -31,6 +35,8 @@ export class DerivedMemoryPool {
     this.entries = new WeakMap();
     this.tickets.clear();
     this.used = 0;
+    this.hitCount = 0;
+    this.missCount = 0;
   }
   private evict(id: number): void {
     const ticket = this.tickets.get(id);
@@ -48,9 +54,14 @@ export class DerivedMemoryPool {
     const first = this.tickets.keys().next();
     if (!first.done) this.evict(first.value);
   }
-  get<K extends object, V>(slot: symbol, key: K): V | undefined {
+  get<K extends object, V>(slot: symbol, key: K, track = true): V | undefined {
     const entry = this.entries.get(key)?.get(slot);
-    if (!entry) return undefined;
+    if (!entry) {
+      if (track) this.missCount++;
+      return undefined;
+    }
+    if (!track) return entry.value as V;
+    this.hitCount++;
     const ticket = this.tickets.get(entry.id);
     if (ticket) {
       this.tickets.delete(entry.id);
@@ -75,7 +86,7 @@ export class DerivedMemoryPool {
 }
 export const editorMemoryPool = new DerivedMemoryPool();
 export interface DerivedCache<K extends object, V> {
-  get(key: K): V | undefined;
+  get(key: K, track?: boolean): V | undefined;
   set(key: K, value: V): void;
 }
 export function createDerivedCache<K extends object, V>(
@@ -84,7 +95,7 @@ export function createDerivedCache<K extends object, V>(
 ): DerivedCache<K, V> {
   const slot = Symbol();
   return {
-    get: (key) => pool.get<K, V>(slot, key),
+    get: (key, track) => pool.get<K, V>(slot, key, track),
     set: (key, value) => pool.set(slot, key, value, estimate(value)),
   };
 }

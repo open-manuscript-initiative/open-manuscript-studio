@@ -336,3 +336,36 @@ test('shared derived cache obeys budget, LRU, oversize and pressure without alte
   assert.equal(cacheBudgetMiB(8, true, 'performance', 240), 0);
   assert.equal(cacheBudgetMiB(8, true, 'performance', 512), 32);
 });
+
+
+test('opening a continuous document warms bounded projections without synthetic cache hits', () => {
+  const schema = new Schema({ nodes: {
+    doc: { content: 'paragraph+' }, paragraph: { content: 'text*' }, text: {},
+  } });
+  const doc = schema.node('doc', null, Array.from({ length: 40 }, (_, index) =>
+    schema.node('paragraph', null, schema.text('Paragraph ' + index))));
+  const pool = new DerivedMemoryPool();
+  pool.setBudget(MIB);
+  const cache = new ContinuousSnapshotCache(pool);
+  assert.equal(cache.warmSlice(doc, 0, 16), 16);
+  assert.equal(pool.size, 16);
+  assert.equal(pool.hits, 0);
+  assert.equal(pool.misses, 0);
+  assert.equal(cache.warmSlice(doc, 16, 16), 32);
+  assert.equal(cache.warmSlice(doc, 32, 16), undefined);
+  assert.equal(pool.size, 40);
+  assert.equal(cache.snapshot(doc).serialized, JSON.stringify(doc.toJSON()));
+  assert.equal(pool.hits, 40);
+  assert.equal(pool.misses, 0);
+  pool.clear();
+  pool.setBudget(2048);
+  const existing = createDerivedCache<object, string>(() => 1024, pool);
+  const key = {};
+  existing.set(key, 'keep');
+  cache.warmSlice(doc);
+  assert.ok(pool.estimatedBytes <= 1536);
+  assert.equal(existing.get(key), 'keep');
+  pool.setBudget(0);
+  assert.equal(cache.warmSlice(doc), undefined);
+  assert.equal(pool.size, 0);
+});
