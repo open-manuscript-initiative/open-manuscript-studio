@@ -82,7 +82,7 @@ type ExternalImportState =
   | { status: 'loading'; message?: undefined }
   | { status: 'error'; message: string }
   | { status: 'issue-review'; review: OjsIssueReview; launch: OjsIssueHandoff; manuscriptId: string }
-  | { status: 'volume-choice'; launch: OmpVolumeHandoff }
+  | { status: 'volume-choice'; launch: OmpVolumeHandoff; userId: string }
   | { status: 'volume-review'; review: OmpVolumeReview; launch: OmpVolumeHandoff; manuscriptId: string };
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
@@ -309,7 +309,9 @@ function StudioApplication() {
             setExternalImportState({ status: 'volume-review', review, launch, manuscriptId: current.manuscript.id });
             return;
           }
-          setExternalImportState({ status: 'volume-choice', launch });
+          const userId = getCurrentUser(useAuthStore.getState())?.id;
+          if (!userId) throw new Error('No active account.');
+          setExternalImportState({ status: 'volume-choice', launch, userId });
           return;
         }
         if (issueToken) {
@@ -514,7 +516,7 @@ function StudioApplication() {
   }
 
   if (externalImportState.status === 'volume-choice') {
-    const { launch } = externalImportState;
+    const { launch, userId } = externalImportState;
     const resetContext = () => {
       setOjsContributors([]);
       setExternalWorkflowContext(null);
@@ -525,6 +527,7 @@ function StudioApplication() {
       onCancel={() => setExternalImportState({ status: 'idle' })}
       onNew={() => {
         try {
+          if (getCurrentUser(useAuthStore.getState())?.id !== userId) throw new Error('The account changed.');
           if (documentSessions.getSnapshot().tabs.some(tab => isSameOmpVolume(tab.manuscript, launch)))
             throw new Error('A copy of this OMP volume is already open.');
           const manuscript = createVolumeFromOmpHandoff(launch, issueImportLocale.current);
@@ -539,9 +542,8 @@ function StudioApplication() {
         }
       }}
       onRestore={async (bytes, expectedId) => {
-        const userId = getCurrentUser(useAuthStore.getState())?.id;
         const initial = useStudioStore.getState();
-        if (!userId) throw new Error('No active account.');
+        if (getCurrentUser(useAuthStore.getState())?.id !== userId) throw new Error('The account changed.');
         const plan = await inspectOmiContainer(bytes);
         const open = () => documentSessions.getSnapshot().tabs.map(tab => tab.manuscript);
         const document = validateSavedOmpVolume(plan, launch, open(), expectedId);
