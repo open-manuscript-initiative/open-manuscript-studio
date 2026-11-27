@@ -70,7 +70,7 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
       for (const attribute of Array.from(element.attributes)) {
         const key = attribute.name.toLowerCase();
         if (key.startsWith('on') || ['srcset', 'action', 'formaction', 'xml:base', 'http-equiv'].includes(key) ||
-            (key === 'style' && /(?:url\s*\(|expression\s*\(|@|\\)/i.test(attribute.value))) {
+            (key === 'style' && !/^[a-zA-Z0-9 .,:;#%+\-]*$/.test(attribute.value))) {
           element.removeAttribute(attribute.name);
         }
         if (key === 'href' && !/^(?:#[A-Za-z0-9_.:-]+$|styles\.css$|https?:\/\/|mailto:)/i.test(attribute.value))
@@ -99,8 +99,9 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
     sharedProjection = true;
     // Retain relationship diagnostics where the OMI semantic model itself
     // cannot be reconstructed, and visual diagnostics for unverified objects.
-    semanticLosses = semanticLosses.filter(loss => loss.code !== 'note-not-preserved' ||
-      !xhtml.includes('id="note-' + htmlIdentifier(loss.targetId) + '"'));
+    semanticLosses = semanticLosses.map(loss => loss.code === 'note-not-preserved' &&
+      xhtml.includes('id="note-' + htmlIdentifier(loss.targetId) + '"') ?
+      { ...loss, code: 'note-role-projected-as-endnote', message: 'EPUB preserves the public note body and hyperlink, but projects the original note role into a reflowable note list; native OMI note identity and role are not round-trippable.' } : loss);
     if (visualLosses.size) semanticLosses.push({ code: 'epub-image-unavailable', severity: 'warning',
       targetId: manuscript.id, message: 'EPUB omitted an image not available as an embedded raster. Restore its asset before export.' });
   } catch {
