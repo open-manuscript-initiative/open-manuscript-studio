@@ -27,7 +27,11 @@ const copy = {
       "Print ISSN",
       "Electronic ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Electronic ISBN",
+      "Series title",
+      "Series number",
+      "Press"
     ]
   },
   "hu": {
@@ -55,7 +59,11 @@ const copy = {
       "Nyomtatott ISSN",
       "Elektronikus ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektronikus ISBN",
+      "Sorozat címe",
+      "Sorozatszám",
+      "Kiadó"
     ]
   },
   "de": {
@@ -83,7 +91,11 @@ const copy = {
       "Druck-ISSN",
       "Elektronische ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektronische ISBN",
+      "Reihentitel",
+      "Bandnummer der Reihe",
+      "Verlag"
     ]
   },
   "fr": {
@@ -111,7 +123,11 @@ const copy = {
       "ISSN imprimé",
       "ISSN électronique",
       "ISBN",
-      "DOI"
+      "DOI",
+      "ISBN électronique",
+      "Titre de la collection",
+      "Numéro de la collection",
+      "Maison d’édition"
     ]
   },
   "it": {
@@ -139,7 +155,11 @@ const copy = {
       "ISSN cartaceo",
       "ISSN elettronico",
       "ISBN",
-      "DOI"
+      "DOI",
+      "ISBN elettronico",
+      "Titolo della collana",
+      "Numero della collana",
+      "Casa editrice"
     ]
   },
   "es": {
@@ -167,7 +187,11 @@ const copy = {
       "ISSN impreso",
       "ISSN electrónico",
       "ISBN",
-      "DOI"
+      "DOI",
+      "ISBN electrónico",
+      "Título de la colección",
+      "Número de la colección",
+      "Editorial"
     ]
   },
   "nl": {
@@ -195,7 +219,11 @@ const copy = {
       "ISSN gedrukt",
       "ISSN elektronisch",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektronisch ISBN",
+      "Reekstitel",
+      "Reeksnummer",
+      "Uitgeverij"
     ]
   },
   "pl": {
@@ -223,7 +251,11 @@ const copy = {
       "ISSN drukowany",
       "ISSN elektroniczny",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektroniczny ISBN",
+      "Tytuł serii",
+      "Numer w serii",
+      "Wydawnictwo"
     ]
   },
   "bg": {
@@ -249,7 +281,11 @@ const copy = {
       "Печатен ISSN",
       "Електронен ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Електронен ISBN",
+      "Заглавие на поредицата",
+      "Номер в поредицата",
+      "Издателство"
     ]
   },
   "cs": {
@@ -275,7 +311,11 @@ const copy = {
       "Tištěné ISSN",
       "Elektronické ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektronické ISBN",
+      "Název edice",
+      "Číslo v edici",
+      "Nakladatelství"
     ]
   },
   "da": {
@@ -301,7 +341,11 @@ const copy = {
       "Trykt ISSN",
       "Elektronisk ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektronisk ISBN",
+      "Serietitel",
+      "Serienummer",
+      "Forlag"
     ]
   },
   "el": {
@@ -327,7 +371,11 @@ const copy = {
       "Έντυπο ISSN",
       "Ηλεκτρονικό ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Ηλεκτρονικό ISBN",
+      "Τίτλος σειράς",
+      "Αριθμός σειράς",
+      "Εκδοτικός οίκος"
     ]
   },
   "et": {
@@ -353,7 +401,11 @@ const copy = {
       "Trükitud ISSN",
       "Elektrooniline ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektrooniline ISBN",
+      "Sarja pealkiri",
+      "Sarja number",
+      "Kirjastus"
     ]
   },
   "fi": {
@@ -379,7 +431,11 @@ const copy = {
       "Painettu ISSN",
       "Sähköinen ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Sähköinen ISBN",
+      "Sarjan nimi",
+      "Sarjan numero",
+      "Kustantamo"
     ]
   },
   "ga": {
@@ -405,7 +461,11 @@ const copy = {
       "ISSN clóite",
       "ISSN leictreonach",
       "ISBN",
-      "DOI"
+      "DOI",
+      "ISBN leictreonach",
+      "Teideal na sraithe",
+      "Uimhir sa tsraith",
+      "Teach foilsitheoireachta"
     ]
   },
   "hr": {
@@ -431,7 +491,11 @@ const copy = {
       "Tiskani ISSN",
       "Elektronički ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektronički ISBN",
+      "Naslov niza",
+      "Broj u nizu",
+      "Izdavačka kuća"
     ]
   },
   "lt": {
@@ -457,7 +521,11 @@ const copy = {
       "Spausdintas ISSN",
       "Elektroninis ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektroninis ISBN",
+      "Serijos pavadinimas",
+      "Serijos numeris",
+      "Leidykla"
     ]
   },
   "lv": {
@@ -483,7 +551,11 @@ const copy = {
       "Drukātais ISSN",
       "Elektroniskais ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektroniskais ISBN",
+      "Sērijas nosaukums",
+      "Sērijas numurs",
+      "Izdevniecība"
     ]
   },
   "mt": {
@@ -509,7 +581,11 @@ const copy = {
       "ISSN stampat",
       "ISSN elettroniku",
       "ISBN",
-      "DOI"
+      "DOI",
+      "ISBN elettroniku",
+      "Titlu tas-sensiela",
+      "Numru fis-sensiela",
+      "Dar tal-pubblikazzjoni"
     ]
   },
   "pt": {
@@ -535,7 +611,11 @@ const copy = {
       "ISSN impresso",
       "ISSN eletrónico",
       "ISBN",
-      "DOI"
+      "DOI",
+      "ISBN eletrónico",
+      "Título da coleção",
+      "Número da coleção",
+      "Editora"
     ]
   },
   "ro": {
@@ -561,7 +641,11 @@ const copy = {
       "ISSN tipărit",
       "ISSN electronic",
       "ISBN",
-      "DOI"
+      "DOI",
+      "ISBN electronic",
+      "Titlul colecției",
+      "Numărul în colecție",
+      "Editură"
     ]
   },
   "sk": {
@@ -587,7 +671,11 @@ const copy = {
       "Tlačené ISSN",
       "Elektronické ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektronické ISBN",
+      "Názov edície",
+      "Číslo v edícii",
+      "Vydavateľstvo"
     ]
   },
   "sl": {
@@ -613,7 +701,11 @@ const copy = {
       "Tiskani ISSN",
       "Elektronski ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektronski ISBN",
+      "Naslov zbirke",
+      "Številka v zbirki",
+      "Založba"
     ]
   },
   "sv": {
@@ -639,7 +731,11 @@ const copy = {
       "Tryckt ISSN",
       "Elektroniskt ISSN",
       "ISBN",
-      "DOI"
+      "DOI",
+      "Elektroniskt ISBN",
+      "Serietitel",
+      "Serienummer",
+      "Förlag"
     ]
   }
 } as const;

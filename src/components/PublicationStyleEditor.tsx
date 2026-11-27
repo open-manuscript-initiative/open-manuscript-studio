@@ -937,7 +937,7 @@ function PublicationStyleEditorWorkspace() {
         </div>
       ) : null}
       {previewOnly && !matterToolsOpen ? <p className="publication-mobile-preview-note">{getVisualElementsCopy(locale).mobilePreviewNote}</p> : null}
-      {previewOnly ? (
+      {previewOnly && !matterToolsOpen ? (
         <button
           type="button"
           className="studio-menu-secondary-action"
