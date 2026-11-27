@@ -715,6 +715,21 @@ export function publicationSectionFitWarnings(blocks: readonly PublicationFlowBl
 }
 
 
+/** A superscript marker's top can intrude into the preceding text line's box.
+ * Its lower edge locates the line that owns the marker, including table rows.
+ */
+export function findPublicationNoteLine(
+  lines: readonly PublicationFlowLine[],
+  markerBottom: number,
+): PublicationFlowLine | undefined {
+  const distance = (line: PublicationFlowLine) => Math.max(
+    line.top - markerBottom, markerBottom - line.top - line.height, 0,
+  );
+  return lines.reduce<PublicationFlowLine | undefined>((nearest, line) => (
+    !nearest || distance(line) < distance(nearest) ? line : nearest
+  ), undefined);
+}
+
 /**
  * A DOM Range is a glyph/run box, not a typographic line box. Different
  * inline fonts and superscripts can return several rectangles for one line.

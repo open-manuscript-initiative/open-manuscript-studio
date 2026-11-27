@@ -1,0 +1,1931 @@
+{
+  "date": "2026-11-27",
+  "runtimeSources": {
+    "before": "596f5259c929dd7a2bec72bc216aa4e14069288b",
+    "after": "36e5d616a22fde2618e8fff707849a2cc0bf1e8e"
+  },
+  "environment": {
+    "os": "Linux x86_64",
+    "node": "24.22.3",
+    "chromiumExecutableVersion": "158.0.8127.0",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "server": "Vite development server",
+    "workers": 1,
+    "retries": 0
+  },
+  "initialGeometry": {
+    "noteCount": 18,
+    "pageIndexConvention": "zero-based, single-page arrangement",
+    "beforeFailures": [
+      "note-5"
+    ],
+    "afterFailures": [],
+    "before": [
+      {
+        "id": "note-0",
+        "marker": {
+          "top": 359.859375,
+          "bottom": 371.953125,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 189.1875,
+          "bottom": 398.1875,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 0,
+        "areas": [
+          {
+            "page": "0",
+            "box": {
+              "top": 779.90625,
+              "bottom": 839.03125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 59.125
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 360.515625,
+                "bottom": 379.515625,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-1",
+        "marker": {
+          "top": 569.2393798828125,
+          "bottom": 581.3331298828125,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 398.5675048828125,
+          "bottom": 607.5675048828125,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 0,
+        "areas": [
+          {
+            "page": "0",
+            "box": {
+              "top": 779.90625,
+              "bottom": 839.03125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 59.125
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 569.8956298828125,
+                "bottom": 588.8956298828125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-2",
+        "marker": {
+          "top": 1022.03125,
+          "bottom": 1034.125,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 607.9375,
+          "bottom": 1060.359375,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 452.421875
+        },
+        "inferredPage": 1,
+        "areas": [
+          {
+            "page": "1",
+            "box": {
+              "top": 1664.875,
+              "bottom": 1774.125,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 109.25
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 1022.6875,
+                "bottom": 1041.6875,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-3",
+        "marker": {
+          "top": 1231.4112548828125,
+          "bottom": 1243.5050048828125,
+          "left": 896.3150024414062,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 1060.7393798828125,
+          "bottom": 1269.7393798828125,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 1,
+        "areas": [
+          {
+            "page": "1",
+            "box": {
+              "top": 1664.875,
+              "bottom": 1774.125,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 109.25
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 1232.0675048828125,
+                "bottom": 1251.0675048828125,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-4",
+        "marker": {
+          "top": 1440.78125,
+          "bottom": 1452.875,
+          "left": 896.3150024414062,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 1270.109375,
+          "bottom": 1479.109375,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 1,
+        "areas": [
+          {
+            "page": "1",
+            "box": {
+              "top": 1664.875,
+              "bottom": 1774.125,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 109.25
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 1441.4375,
+                "bottom": 1460.4375,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-5",
+        "marker": {
+          "top": 1937.9267578125,
+          "bottom": 1950.0205078125,
+          "left": 896.3150024414062,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 1479.4893798828125,
+          "bottom": 1976.2548828125,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 496.7655029296875
+        },
+        "inferredPage": 2,
+        "areas": [
+          {
+            "page": "1",
+            "box": {
+              "top": 1664.875,
+              "bottom": 1774.125,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 109.25
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 1938.5830078125,
+                "bottom": 1957.5830078125,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-6",
+        "marker": {
+          "top": 2147.296875,
+          "bottom": 2159.390625,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 1976.625,
+          "bottom": 2185.625,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 2,
+        "areas": [
+          {
+            "page": "2",
+            "box": {
+              "top": 2625.015625,
+              "bottom": 2709.203125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 2147.953125,
+                "bottom": 2166.953125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-7",
+        "marker": {
+          "top": 2356.296875,
+          "bottom": 2368.390625,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 2185.625,
+          "bottom": 2394.625,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 2,
+        "areas": [
+          {
+            "page": "2",
+            "box": {
+              "top": 2625.015625,
+              "bottom": 2709.203125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 2356.953125,
+                "bottom": 2375.953125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-8",
+        "marker": {
+          "top": 2565.6767578125,
+          "bottom": 2577.7705078125,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 2395.0048828125,
+          "bottom": 2604.0048828125,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 2,
+        "areas": [
+          {
+            "page": "2",
+            "box": {
+              "top": 2625.015625,
+              "bottom": 2709.203125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 2566.3330078125,
+                "bottom": 2585.3330078125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-9",
+        "marker": {
+          "top": 3043.52685546875,
+          "bottom": 3055.62060546875,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 2872.85498046875,
+          "bottom": 3081.85498046875,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 3,
+        "areas": [
+          {
+            "page": "3",
+            "box": {
+              "top": 3560.109375,
+              "bottom": 3644.296875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 3044.18310546875,
+                "bottom": 3063.18310546875,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-10",
+        "marker": {
+          "top": 3252.89697265625,
+          "bottom": 3264.99072265625,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 3082.22509765625,
+          "bottom": 3291.22509765625,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 3,
+        "areas": [
+          {
+            "page": "3",
+            "box": {
+              "top": 3560.109375,
+              "bottom": 3644.296875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 3253.55322265625,
+                "bottom": 3272.55322265625,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-11",
+        "marker": {
+          "top": 3462.27685546875,
+          "bottom": 3474.37060546875,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 3291.60498046875,
+          "bottom": 3500.60498046875,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 3,
+        "areas": [
+          {
+            "page": "3",
+            "box": {
+              "top": 3560.109375,
+              "bottom": 3644.296875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 3462.93310546875,
+                "bottom": 3481.93310546875,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-12",
+        "marker": {
+          "top": 3940.74072265625,
+          "bottom": 3952.83447265625,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 3500.97509765625,
+          "bottom": 3979.06884765625,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 478.09375
+        },
+        "inferredPage": 4,
+        "areas": [
+          {
+            "page": "4",
+            "box": {
+              "top": 4495.1875,
+              "bottom": 4579.375,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 3941.39697265625,
+                "bottom": 3960.39697265625,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-13",
+        "marker": {
+          "top": 4150.12060546875,
+          "bottom": 4162.21435546875,
+          "left": 903.875,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 3979.44873046875,
+          "bottom": 4188.44873046875,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 4,
+        "areas": [
+          {
+            "page": "4",
+            "box": {
+              "top": 4495.1875,
+              "bottom": 4579.375,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 4150.77685546875,
+                "bottom": 4169.77685546875,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-14",
+        "marker": {
+          "top": 4359.49072265625,
+          "bottom": 4371.58447265625,
+          "left": 903.875,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 4188.81884765625,
+          "bottom": 4397.81884765625,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 4,
+        "areas": [
+          {
+            "page": "4",
+            "box": {
+              "top": 4495.1875,
+              "bottom": 4579.375,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 4360.14697265625,
+                "bottom": 4379.14697265625,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-15",
+        "marker": {
+          "top": 4837.96435546875,
+          "bottom": 4850.05810546875,
+          "left": 903.875,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 4398.19873046875,
+          "bottom": 4876.29248046875,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 478.09375
+        },
+        "inferredPage": 5,
+        "areas": [
+          {
+            "page": "5",
+            "box": {
+              "top": 5455.34375,
+              "bottom": 5514.46875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 59.125
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 4838.62060546875,
+                "bottom": 4857.62060546875,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-16",
+        "marker": {
+          "top": 5047.33447265625,
+          "bottom": 5059.42822265625,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 4876.66259765625,
+          "bottom": 5085.66259765625,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 5,
+        "areas": [
+          {
+            "page": "5",
+            "box": {
+              "top": 5455.34375,
+              "bottom": 5514.46875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 59.125
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 5047.99072265625,
+                "bottom": 5066.99072265625,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-17",
+        "marker": {
+          "top": 5697.13623046875,
+          "bottom": 5709.22998046875,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 5086.04248046875,
+          "bottom": 5735.46435546875,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 649.421875
+        },
+        "inferredPage": 6,
+        "areas": [
+          {
+            "page": "6",
+            "box": {
+              "top": 6026.96875,
+              "bottom": 6449.5625,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 422.59375
+            }
+          },
+          {
+            "page": "7",
+            "box": {
+              "top": 6974.59375,
+              "bottom": 7384.65625,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 410.0625
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 5697.79248046875,
+                "bottom": 5716.79248046875,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "after": [
+      {
+        "id": "note-0",
+        "marker": {
+          "top": 359.859375,
+          "bottom": 371.953125,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 189.1875,
+          "bottom": 398.1875,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 0,
+        "areas": [
+          {
+            "page": "0",
+            "box": {
+              "top": 779.90625,
+              "bottom": 839.03125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 59.125
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 360.515625,
+                "bottom": 379.515625,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-1",
+        "marker": {
+          "top": 569.2393798828125,
+          "bottom": 581.3331298828125,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 398.5675048828125,
+          "bottom": 607.5675048828125,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 0,
+        "areas": [
+          {
+            "page": "0",
+            "box": {
+              "top": 779.90625,
+              "bottom": 839.03125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 59.125
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 569.8956298828125,
+                "bottom": 588.8956298828125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-2",
+        "marker": {
+          "top": 1022.03125,
+          "bottom": 1034.125,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 607.9375,
+          "bottom": 1060.359375,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 452.421875
+        },
+        "inferredPage": 1,
+        "areas": [
+          {
+            "page": "1",
+            "box": {
+              "top": 1689.9375,
+              "bottom": 1774.125,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 1022.6875,
+                "bottom": 1041.6875,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-3",
+        "marker": {
+          "top": 1231.4112548828125,
+          "bottom": 1243.5050048828125,
+          "left": 896.3150024414062,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 1060.7393798828125,
+          "bottom": 1269.7393798828125,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 1,
+        "areas": [
+          {
+            "page": "1",
+            "box": {
+              "top": 1689.9375,
+              "bottom": 1774.125,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 1232.0675048828125,
+                "bottom": 1251.0675048828125,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-4",
+        "marker": {
+          "top": 1440.78125,
+          "bottom": 1452.875,
+          "left": 896.3150024414062,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 1270.109375,
+          "bottom": 1479.109375,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 1,
+        "areas": [
+          {
+            "page": "1",
+            "box": {
+              "top": 1689.9375,
+              "bottom": 1774.125,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 1441.4375,
+                "bottom": 1460.4375,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-5",
+        "marker": {
+          "top": 1937.9267578125,
+          "bottom": 1950.0205078125,
+          "left": 896.3150024414062,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 1479.4893798828125,
+          "bottom": 1976.2548828125,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 496.7655029296875
+        },
+        "inferredPage": 2,
+        "areas": [
+          {
+            "page": "2",
+            "box": {
+              "top": 2599.953125,
+              "bottom": 2709.203125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 109.25
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 1938.5830078125,
+                "bottom": 1957.5830078125,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-6",
+        "marker": {
+          "top": 2147.296875,
+          "bottom": 2159.390625,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 1976.625,
+          "bottom": 2185.625,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 2,
+        "areas": [
+          {
+            "page": "2",
+            "box": {
+              "top": 2599.953125,
+              "bottom": 2709.203125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 109.25
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 2147.953125,
+                "bottom": 2166.953125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-7",
+        "marker": {
+          "top": 2356.296875,
+          "bottom": 2368.390625,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 2185.625,
+          "bottom": 2394.625,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 2,
+        "areas": [
+          {
+            "page": "2",
+            "box": {
+              "top": 2599.953125,
+              "bottom": 2709.203125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 109.25
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 2356.953125,
+                "bottom": 2375.953125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-8",
+        "marker": {
+          "top": 2565.6767578125,
+          "bottom": 2577.7705078125,
+          "left": 903.875,
+          "width": 24.53125,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 2395.0048828125,
+          "bottom": 2891.4736328125,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 496.46875
+        },
+        "inferredPage": 2,
+        "areas": [
+          {
+            "page": "2",
+            "box": {
+              "top": 2599.953125,
+              "bottom": 2709.203125,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 109.25
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 2566.3330078125,
+                "bottom": 2585.3330078125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-9",
+        "marker": {
+          "top": 3062.515625,
+          "bottom": 3074.609375,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 2891.84375,
+          "bottom": 3100.84375,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 3,
+        "areas": [
+          {
+            "page": "3",
+            "box": {
+              "top": 3560.109375,
+              "bottom": 3644.296875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 3063.171875,
+                "bottom": 3082.171875,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-10",
+        "marker": {
+          "top": 3271.8955078125,
+          "bottom": 3283.9892578125,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 3101.2236328125,
+          "bottom": 3310.2236328125,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 3,
+        "areas": [
+          {
+            "page": "3",
+            "box": {
+              "top": 3560.109375,
+              "bottom": 3644.296875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 3272.5517578125,
+                "bottom": 3291.5517578125,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-11",
+        "marker": {
+          "top": 3481.265625,
+          "bottom": 3493.359375,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 3310.59375,
+          "bottom": 3519.59375,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 3,
+        "areas": [
+          {
+            "page": "3",
+            "box": {
+              "top": 3560.109375,
+              "bottom": 3644.296875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 3481.921875,
+                "bottom": 3500.921875,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-12",
+        "marker": {
+          "top": 3959.7392578125,
+          "bottom": 3971.8330078125,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 3519.9736328125,
+          "bottom": 3998.0673828125,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 478.09375
+        },
+        "inferredPage": 4,
+        "areas": [
+          {
+            "page": "4",
+            "box": {
+              "top": 4495.1875,
+              "bottom": 4579.375,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 3960.3955078125,
+                "bottom": 3979.3955078125,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-13",
+        "marker": {
+          "top": 4169.109375,
+          "bottom": 4181.203125,
+          "left": 903.875,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 3998.4375,
+          "bottom": 4207.4375,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 4,
+        "areas": [
+          {
+            "page": "4",
+            "box": {
+              "top": 4495.1875,
+              "bottom": 4579.375,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 4169.765625,
+                "bottom": 4188.765625,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-14",
+        "marker": {
+          "top": 4378.4892578125,
+          "bottom": 4390.5830078125,
+          "left": 903.875,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 4207.8173828125,
+          "bottom": 4416.8173828125,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 4,
+        "areas": [
+          {
+            "page": "4",
+            "box": {
+              "top": 4495.1875,
+              "bottom": 4579.375,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 84.1875
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 4379.1455078125,
+                "bottom": 4398.1455078125,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-15",
+        "marker": {
+          "top": 4856.953125,
+          "bottom": 4869.046875,
+          "left": 903.875,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 4417.1875,
+          "bottom": 4895.28125,
+          "left": 536.328125,
+          "width": 430.859375,
+          "height": 478.09375
+        },
+        "inferredPage": 5,
+        "areas": [
+          {
+            "page": "5",
+            "box": {
+              "top": 5455.34375,
+              "bottom": 5514.46875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 59.125
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 4857.609375,
+                "bottom": 4876.609375,
+                "left": 899.4375,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-16",
+        "marker": {
+          "top": 5066.3330078125,
+          "bottom": 5078.4267578125,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 4895.6611328125,
+          "bottom": 5104.6611328125,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 209
+        },
+        "inferredPage": 5,
+        "areas": [
+          {
+            "page": "5",
+            "box": {
+              "top": 5455.34375,
+              "bottom": 5514.46875,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 59.125
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 5066.9892578125,
+                "bottom": 5085.9892578125,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "note-17",
+        "marker": {
+          "top": 5677.796875,
+          "bottom": 5689.890625,
+          "left": 896.3150024414062,
+          "width": 30.171875,
+          "height": 12.09375
+        },
+        "paragraph": {
+          "top": 5105.03125,
+          "bottom": 5716.125,
+          "left": 528.7681274414062,
+          "width": 430.859375,
+          "height": 611.09375
+        },
+        "inferredPage": 6,
+        "areas": [
+          {
+            "page": "6",
+            "box": {
+              "top": 6026.96875,
+              "bottom": 6449.5625,
+              "left": 536.328125,
+              "width": 430.859375,
+              "height": 422.59375
+            }
+          },
+          {
+            "page": "7",
+            "box": {
+              "top": 6974.59375,
+              "bottom": 7384.65625,
+              "left": 528.78125,
+              "width": 430.859375,
+              "height": 410.0625
+            }
+          }
+        ],
+        "caretBefore": [],
+        "caretAfter": [],
+        "letters": [
+          {
+            "where": "previous",
+            "text": " ",
+            "rects": [
+              {
+                "top": 5678.453125,
+                "bottom": 5697.453125,
+                "left": 891.8775024414062,
+                "width": 3.640625,
+                "height": 19
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "measuredLineDiagnostic": {
+    "noteId": "note-5",
+    "frames": [
+      {
+        "top": 150.046875,
+        "bottom": 162.140625,
+        "removedSpace": 0,
+        "markerHeight": 12.09375,
+        "blockHeight": 186.046875,
+        "chosen": 8,
+        "lines": [
+          {
+            "textOffset": 0,
+            "top": 0,
+            "height": 19
+          },
+          {
+            "textOffset": 61,
+            "top": 14.671875,
+            "height": 19
+          },
+          {
+            "textOffset": 124,
+            "top": 31.34375,
+            "height": 19
+          },
+          {
+            "textOffset": 179,
+            "top": 48.015625,
+            "height": 19
+          },
+          {
+            "textOffset": 240,
+            "top": 64.6875,
+            "height": 19
+          },
+          {
+            "textOffset": 302,
+            "top": 81.359375,
+            "height": 19
+          },
+          {
+            "textOffset": 364,
+            "top": 98.03125,
+            "height": 19
+          },
+          {
+            "textOffset": 425,
+            "top": 114.703125,
+            "height": 19
+          },
+          {
+            "textOffset": 487,
+            "top": 131.375,
+            "height": 19
+          },
+          {
+            "textOffset": 549,
+            "top": 150.703125,
+            "height": 19
+          },
+          {
+            "textOffset": 606,
+            "top": 167.375,
+            "height": 19
+          }
+        ]
+      },
+      {
+        "top": 150.046875,
+        "bottom": 162.140625,
+        "removedSpace": 0,
+        "markerHeight": 12.09375,
+        "blockHeight": 186.046875,
+        "chosen": 8,
+        "lines": [
+          {
+            "textOffset": 0,
+            "top": 0,
+            "height": 19
+          },
+          {
+            "textOffset": 61,
+            "top": 14.671875,
+            "height": 19
+          },
+          {
+            "textOffset": 124,
+            "top": 31.34375,
+            "height": 19
+          },
+          {
+            "textOffset": 179,
+            "top": 48.015625,
+            "height": 19
+          },
+          {
+            "textOffset": 240,
+            "top": 64.6875,
+            "height": 19
+          },
+          {
+            "textOffset": 302,
+            "top": 81.359375,
+            "height": 19
+          },
+          {
+            "textOffset": 364,
+            "top": 98.03125,
+            "height": 19
+          },
+          {
+            "textOffset": 425,
+            "top": 114.703125,
+            "height": 19
+          },
+          {
+            "textOffset": 487,
+            "top": 131.375,
+            "height": 19
+          },
+          {
+            "textOffset": 549,
+            "top": 150.703125,
+            "height": 19
+          },
+          {
+            "textOffset": 606,
+            "top": 167.375,
+            "height": 19
+          }
+        ]
+      }
+    ],
+    "note": "Temporary baseline-only instrumentation captured marker bounds and selected measured line; no instrumentation remains in application source."
+  },
+  "verification": {
+    "targetedUnitTestsPassed": 117,
+    "newNoteLineTests": 4,
+    "typecheck": "passed",
+    "changedFileLint": "passed",
+    "patchWhitespace": "passed",
+    "browserCases": [
+      {
+        "name": "the full-screen menu opens the publication editor",
+        "status": "passed"
+      },
+      {
+        "name": "HTML5 visual editing is responsive and preserves changes when returning to print",
+        "status": "passed"
+      },
+      {
+        "name": "live pages place each footnote below its anchor and reflow after zoom and editing",
+        "status": "passed"
+      },
+      {
+        "name": "raised note markers remain on the page of their owning text line",
+        "status": "passed"
+      },
+      {
+        "name": "section headers and individual page masters reflow, persist and feed PDF output",
+        "status": "passed"
+      },
+      {
+        "name": "facing pages keep continued paragraphs, table rows and footnotes editable on their sheets",
+        "status": "passed"
+      },
+      {
+        "name": "new paragraphs on the first right-hand page retain a valid projection during editing",
+        "status": "passed"
+      }
+    ],
+    "browserRunStats": {
+      "startTime": "2026-11-27T16:29:18.125Z",
+      "duration": 86982.12999999999,
+      "expected": 7,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "initialGeometryAfter": "passed all 18 note/page checks; diagnostic stops after the initial audit",
+    "fullNoteFixtureCoverage": "Default and relatively raised markers (-2 CSS px), formatting-only note edit, 50/100/75/100 percent zoom, body insertion, long-note continuation and HTML switch"
+  },
+  "scope": [
+    "Synthetic regression fixture and recorded native geometry; not a new production or Android acceptance run.",
+    "Full live-editor footnote assertions are retained and pass, including every body text line clearing footnote areas.",
+    "The lower-edge mapping reuses the existing marker bounding rectangle and nearest measured-line policy; no additional DOM reads are introduced."
+  ]
+}

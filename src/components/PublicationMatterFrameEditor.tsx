@@ -18,9 +18,9 @@ import { MatterRichText, matterPreviewHtml } from './PublicationMatterRichText';
 import { resolvePublicationMatterText } from '../model/publicationShortcodes';
 
 interface Drag { kind: 'move' | 'resize' | 'image-move' | 'image-resize' | 'point'; frame: PublicationMatterFrame; point: number; x: number; y: number; pixelsPerMm: number }
-export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl, onChange, readOnly, unit, createFrame, guides, trimWidthMm }: {
+export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl, onChange, readOnly, unit, createFrame, guides, trimWidthMm, settings }: {
   page: PublicationMatterPage; widthMm: number; heightMm: number; imageUrl: string; onChange(patch: Partial<PublicationMatterPage>): void; readOnly: boolean; unit: PublicationMeasurementUnit;
-  createFrame?(kind: 'text' | 'graphic'): PublicationMatterFrame; guides?: ReactNode; trimWidthMm?: number;
+  createFrame?(kind: 'text' | 'graphic'): PublicationMatterFrame; guides?: ReactNode; trimWidthMm?: number; settings?: ReactNode;
 }) {
   const { locale } = useTranslation();
   const pageCopy = getPublicationMatterCopy(locale);
@@ -31,8 +31,15 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
   const [editImage, setEditImage] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [toolbarHost, setToolbarHost] = useState<HTMLDivElement | null>(null);
+  const inspector = useRef<HTMLElement>(null);
   const paper = useRef<HTMLDivElement>(null), drag = useRef<Drag | null>(null);
-  const [scale, setScale] = useState(.6);
+  const stage = useRef<HTMLDivElement>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [zoom, setZoom] = useState<'fit' | number>('fit');
+  const naturalWidth = widthMm * 96 / 25.4, naturalHeight = heightMm * 96 / 25.4;
+  const scale = zoom === 'fit'
+    ? Math.max(.01, Math.min(1, (viewport.width || naturalWidth) / naturalWidth, (viewport.height || naturalHeight) / naturalHeight))
+    : zoom / 100;
   const [overflow, setOverflow] = useState(false);
   const frames = page.frames ?? [];
   const sheet = isPublicationCoverSheet(page.kind);
@@ -41,11 +48,22 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
   const selectedIndex = frames.findIndex((frame) => frame.id === selectedId);
   const graphic = selected?.kind === 'graphic' ? frameGraphicTransform(selected) : undefined;
   useEffect(() => {
-    if (!paper.current) return;
-    const measure = () => { if (paper.current) setScale(paper.current.clientWidth / (widthMm * 96 / 25.4)); };
-    const observer = new ResizeObserver(measure); observer.observe(paper.current); measure();
-    return () => observer.disconnect();
-  }, [widthMm]);
+    const node = stage.current;
+    if (!node) return;
+    let scheduled = 0;
+    const measure = () => {
+      const css = getComputedStyle(node);
+      const width = Math.max(0, node.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight) - 2);
+      const height = Math.max(0, node.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom) - 2);
+      setViewport(current => current.width === width && current.height === height ? current : { width, height });
+    };
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(scheduled);
+      scheduled = requestAnimationFrame(measure);
+    });
+    observer.observe(node); measure();
+    return () => { observer.disconnect(); cancelAnimationFrame(scheduled); };
+  }, []);
   useEffect(() => {
     const node = paper.current;
     if (!node) return;
@@ -55,6 +73,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
     document.fonts?.addEventListener('loadingdone', check); check();
     return () => { observer.disconnect(); mutation.disconnect(); document.fonts?.removeEventListener('loadingdone', check); };
   }, [page, scale]);
+  useEffect(() => { inspector.current?.scrollTo({ top: 0 }); }, [selectedId]);
   function choose(id: string) { setSelectedId(id); setEditImage(false); }
   function patchFrame(id: string, patch: Partial<PublicationMatterFrame>) {
     if (!readOnly) onChange({ frames: frames.map((frame) => frame.id === id ? { ...frame, ...patch } : frame) });
@@ -115,7 +134,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
     }
   }
   const pointer = { onPointerMove: move, onPointerUp: () => { drag.current = null; }, onPointerCancel: () => { drag.current = null; }, onLostPointerCapture: () => { drag.current = null; } };
-  const previewStyle: CSSProperties = { ...(widthMm < 60 ? { width: `min(100%, ${widthMm / heightMm * 800}px)` } : {}), background: page.appearance.background, color: page.appearance.color, aspectRatio: `${widthMm}/${heightMm}`,
+  const previewStyle: CSSProperties = { width: naturalWidth * scale, background: page.appearance.background, color: page.appearance.color, aspectRatio: `${widthMm}/${heightMm}`,
     ...(frames.length || sheet ? { height: heightMm * 96 / 25.4 * scale, overflow: 'hidden' } : {}),
     padding: page.appearance.paddingMm * 96 / 25.4 * scale, fontFamily: page.appearance.fontFamily,
     fontSize: `${page.appearance.fontSizePt * scale}pt`, textAlign: page.appearance.alignment, hyphens: 'auto',
@@ -124,74 +143,87 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
     onPasteCapture={(event) => { const file = Array.from(event.clipboardData.files).find((item) => item.type.startsWith('image/')); if (!readOnly && selected?.kind === 'graphic' && file) { event.preventDefault(); void upload(file); } }}
     onDragOver={(event) => { if (!readOnly && selected?.kind === 'graphic') event.preventDefault(); }}
     onDrop={(event) => { const file = Array.from(event.dataTransfer.files).find((item) => item.type.startsWith('image/')); if (!readOnly && selected?.kind === 'graphic' && file) { event.preventDefault(); void upload(file); } }}>
-    <h3>{labels.title}</h3><p>{labels.help}</p>
-    <div className="omi-matter-frame-actions">
-      <button type="button" disabled={readOnly || frames.length >= limitFrames} onClick={() => add('text')}>{copy.addText}</button>
-      <button type="button" disabled={readOnly || frames.length >= limitFrames} onClick={() => add('graphic')}>{copy.addGraphic}</button>
-      <label>{copy.selectFrame}<select aria-label={copy.selectFrame} value={selected?.id ?? ''} onChange={(event) => choose(event.target.value)}><option value="">{labels.base}</option>{frames.map((frame, index) => <option key={frame.id} value={frame.id}>{frame.name || `${copy.frame} ${index + 1}`}</option>)}</select></label>
-    </div>
-    {selected ? <fieldset className="omi-matter-frame-settings" disabled={readOnly}>
-      <legend>{copy.frame}</legend>
-      <label>{copy.name}<input value={selected.name} maxLength={256} onChange={(event) => patchFrame(selected.id, { name: event.target.value })} /></label>
-      {(['xMm', 'yMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber unit={key === 'rotation' ? undefined : unit} key={key} label={[copy.x, copy.y, copy.width, copy.height, copy.rotation][index]!} value={selected[key]} min={key === 'rotation' ? -360 : key.endsWith('Mm') && !key.startsWith('width') && !key.startsWith('height') ? -2000 : 1} max={key === 'rotation' ? 360 : sheet && (key === 'xMm' || key === 'widthMm') ? 4000 : 2000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { [key]: value })} />)}
-      <label>{copy.shape}<select aria-label={copy.shape} value={selected.shape} onChange={(event) => patchFrame(selected.id, { shape: event.target.value as PublicationMatterFrame['shape'] })}><option value="rectangle">{copy.rectangle}</option><option value="ellipse">{copy.ellipse}</option><option value="polygon">{copy.polygon}</option></select></label>
-      {selected.shape === 'polygon' ? <div><button type="button" disabled={selected.points.length >= 32} onClick={() => patchFrame(selected.id, { points: [...selected.points, { x: 50, y: 50 }] })}>{copy.addPoint}</button><button type="button" disabled={selected.points.length <= 3} onClick={() => patchFrame(selected.id, { points: selected.points.slice(0, -1) })}>{copy.removePoint}</button></div> : null}
-      <label>{labels.transparent}<input type="checkbox" checked={selected.style.fill === 'none'} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, fill: event.target.checked ? 'none' : '#ffffff' } })} /></label>
-      {(['fill', 'stroke', 'color'] as const).map((key) => <label key={key}>{copy[key]}<input type="color" value={selected.style[key] === 'none' ? '#ffffff' : selected.style[key]} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, [key]: event.target.value } })} /></label>)}
-      <MatterNumber unit={unit} label={copy.strokeWidth} value={selected.style.strokeWidthMm} min={0} max={20} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, strokeWidthMm: value } })} />
-      {selected.kind === 'text' ? <>
-        <label>{pageCopy.vertical}<select aria-label={pageCopy.vertical} value={selected.vertical ?? 'top'} onChange={(event) => patchFrame(selected.id, { vertical: event.target.value as 'top' | 'center' | 'bottom' })}><option value="top">{pageCopy.top}</option><option value="center">{pageCopy.middle}</option><option value="bottom">{pageCopy.bottom}</option></select></label>
-        <label>{copy.font}<input value={selected.style.fontFamily} maxLength={128} onChange={(event) => { if (event.target.value.trim()) patchFrame(selected.id, { style: { ...selected.style, fontFamily: event.target.value } }); }} /></label>
-        {(['fontSizePt', 'lineHeightPt'] as const).map((key, index) => <PublicationPointInput key={key} leading={key === 'lineHeightPt'} label={[copy.size, copy.leading][index]!} value={selected.style[key]} min={6} max={key === 'fontSizePt' ? 120 : 240} disabled={readOnly} onChange={(value) => patchFrame(selected.id, { style: { ...selected.style, [key]: value } })} />)}
-        <MatterNumber unit={unit} label={copy.padding} value={selected.style.paddingMm} min={0} max={60} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, paddingMm: value } })} />
-        <label>{copy.alignment}<select aria-label={copy.alignment} value={selected.style.alignment} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, alignment: event.target.value as 'left' | 'center' | 'right' | 'justify' } })}>{(['left', 'center', 'right', 'justify'] as const).map((value) => <option key={value} value={value}>{copy[value]}</option>)}</select></label>
-      </> : <>
-        <label>{labels.image}<input type="file" disabled={busy} accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ''; }} /></label>
-        <p>{labels.paste}</p>
-        {selected.image ? <>
-          <label>{pageCopy.alt}<input maxLength={10000} value={selected.image.alt} onChange={(event) => patchFrame(selected.id, { image: { ...selected.image!, alt: event.target.value } })} /></label>
-          <button type="button" onClick={() => { patchFrame(selected.id, { image: undefined, graphicTransform: undefined }); setEditImage(false); }}>{pageCopy.removeImage}</button>
-          <button type="button" aria-pressed={editImage} onClick={() => setEditImage(!editImage)}>{editImage ? labels.editFrame : labels.editImage}</button>
-          <label>{copy.keepAspectRatio}<input type="checkbox" checked={graphic!.keepAspectRatio} onChange={(event) => patchFrame(selected.id, { graphicTransform: { ...graphic!, keepAspectRatio: event.target.checked } })} /></label>
-          {(['offsetXMm', 'offsetYMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber unit={key === 'rotation' ? undefined : unit} key={key} label={[copy.graphicX, copy.graphicY, copy.graphicWidth, copy.graphicHeight, copy.graphicRotation][index]!} value={graphic![key]} min={key === 'rotation' ? -360 : key.startsWith('offset') ? -20000 : .000001} max={key === 'rotation' ? 360 : 20000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { graphicTransform: key === 'widthMm' || key === 'heightMm' ? resizePublicationMatterImage(graphic!, key, value) : { ...graphic!, [key]: value } })} />)}
-          <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'contain') })}>{copy.resetGraphic}</button>
-          <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'cover') })}>{copy.fillFrame}</button>
-        </> : null}
-      </>}
-      <label>{labels.layer}<select aria-label={labels.layer} value={selectedIndex} onChange={(event) => reorder(Number(event.target.value))}>{Array.from({ length: frames.length }, (_, index) => <option key={index} value={index}>{index + 1}</option>)}</select></label>
-      <div className="omi-matter-frame-layer-actions" role="group" aria-label={labels.order}>
-        <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(frames.length - 1)}>{labels.front}</button>
-        <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(selectedIndex + 1)}>{labels.forward}</button>
-        <button type="button" disabled={selectedIndex === 0} onClick={() => reorder(selectedIndex - 1)}>{labels.backward}</button>
-        <button type="button" disabled={selectedIndex === 0} onClick={() => reorder(0)}>{labels.back}</button>
+    <aside ref={inspector} className="omi-matter-inspector" aria-label={pageCopy.title}>
+      {selected ? <fieldset className="omi-matter-frame-settings" disabled={readOnly}>
+        <legend>{copy.frame}</legend>
+        <label>{copy.name}<input value={selected.name} maxLength={256} onChange={(event) => patchFrame(selected.id, { name: event.target.value })} /></label>
+        {(['xMm', 'yMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber unit={key === 'rotation' ? undefined : unit} key={key} label={[copy.x, copy.y, copy.width, copy.height, copy.rotation][index]!} value={selected[key]} min={key === 'rotation' ? -360 : key.endsWith('Mm') && !key.startsWith('width') && !key.startsWith('height') ? -2000 : 1} max={key === 'rotation' ? 360 : sheet && (key === 'xMm' || key === 'widthMm') ? 4000 : 2000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { [key]: value })} />)}
+        <label>{copy.shape}<select aria-label={copy.shape} value={selected.shape} onChange={(event) => patchFrame(selected.id, { shape: event.target.value as PublicationMatterFrame['shape'] })}><option value="rectangle">{copy.rectangle}</option><option value="ellipse">{copy.ellipse}</option><option value="polygon">{copy.polygon}</option></select></label>
+        {selected.shape === 'polygon' ? <div><button type="button" disabled={selected.points.length >= 32} onClick={() => patchFrame(selected.id, { points: [...selected.points, { x: 50, y: 50 }] })}>{copy.addPoint}</button><button type="button" disabled={selected.points.length <= 3} onClick={() => patchFrame(selected.id, { points: selected.points.slice(0, -1) })}>{copy.removePoint}</button></div> : null}
+        <label>{labels.transparent}<input type="checkbox" checked={selected.style.fill === 'none'} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, fill: event.target.checked ? 'none' : '#ffffff' } })} /></label>
+        {(['fill', 'stroke', 'color'] as const).map((key) => <label key={key}>{copy[key]}<input type="color" value={selected.style[key] === 'none' ? '#ffffff' : selected.style[key]} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, [key]: event.target.value } })} /></label>)}
+        <MatterNumber unit={unit} label={copy.strokeWidth} value={selected.style.strokeWidthMm} min={0} max={20} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, strokeWidthMm: value } })} />
+        {selected.kind === 'text' ? <>
+          <label>{pageCopy.vertical}<select aria-label={pageCopy.vertical} value={selected.vertical ?? 'top'} onChange={(event) => patchFrame(selected.id, { vertical: event.target.value as 'top' | 'center' | 'bottom' })}><option value="top">{pageCopy.top}</option><option value="center">{pageCopy.middle}</option><option value="bottom">{pageCopy.bottom}</option></select></label>
+          <label>{copy.font}<input value={selected.style.fontFamily} maxLength={128} onChange={(event) => { if (event.target.value.trim()) patchFrame(selected.id, { style: { ...selected.style, fontFamily: event.target.value } }); }} /></label>
+          {(['fontSizePt', 'lineHeightPt'] as const).map((key, index) => <PublicationPointInput key={key} leading={key === 'lineHeightPt'} label={[copy.size, copy.leading][index]!} value={selected.style[key]} min={6} max={key === 'fontSizePt' ? 120 : 240} disabled={readOnly} onChange={(value) => patchFrame(selected.id, { style: { ...selected.style, [key]: value } })} />)}
+          <MatterNumber unit={unit} label={copy.padding} value={selected.style.paddingMm} min={0} max={60} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { style: { ...selected.style, paddingMm: value } })} />
+          <label>{copy.alignment}<select aria-label={copy.alignment} value={selected.style.alignment} onChange={(event) => patchFrame(selected.id, { style: { ...selected.style, alignment: event.target.value as 'left' | 'center' | 'right' | 'justify' } })}>{(['left', 'center', 'right', 'justify'] as const).map((value) => <option key={value} value={value}>{copy[value]}</option>)}</select></label>
+        </> : <>
+          <label>{labels.image}<input type="file" disabled={busy} accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ''; }} /></label>
+          <p>{labels.paste}</p>
+          {selected.image ? <>
+            <label>{pageCopy.alt}<input maxLength={10000} value={selected.image.alt} onChange={(event) => patchFrame(selected.id, { image: { ...selected.image!, alt: event.target.value } })} /></label>
+            <button type="button" onClick={() => { patchFrame(selected.id, { image: undefined, graphicTransform: undefined }); setEditImage(false); }}>{pageCopy.removeImage}</button>
+            <button type="button" aria-pressed={editImage} onClick={() => setEditImage(!editImage)}>{editImage ? labels.editFrame : labels.editImage}</button>
+            <label>{copy.keepAspectRatio}<input type="checkbox" checked={graphic!.keepAspectRatio} onChange={(event) => patchFrame(selected.id, { graphicTransform: { ...graphic!, keepAspectRatio: event.target.checked } })} /></label>
+            {(['offsetXMm', 'offsetYMm', 'widthMm', 'heightMm', 'rotation'] as const).map((key, index) => <MatterNumber unit={key === 'rotation' ? undefined : unit} key={key} label={[copy.graphicX, copy.graphicY, copy.graphicWidth, copy.graphicHeight, copy.graphicRotation][index]!} value={graphic![key]} min={key === 'rotation' ? -360 : key.startsWith('offset') ? -20000 : .000001} max={key === 'rotation' ? 360 : 20000} disabled={readOnly} onCommit={(value) => patchFrame(selected.id, { graphicTransform: key === 'widthMm' || key === 'heightMm' ? resizePublicationMatterImage(graphic!, key, value) : { ...graphic!, [key]: value } })} />)}
+            <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'contain') })}>{copy.resetGraphic}</button>
+            <button type="button" onClick={() => patchFrame(selected.id, { graphicTransform: fitPublicationMatterImage(selected, 'cover') })}>{copy.fillFrame}</button>
+          </> : null}
+        </>}
+        <label>{labels.layer}<select aria-label={labels.layer} value={selectedIndex} onChange={(event) => reorder(Number(event.target.value))}>{Array.from({ length: frames.length }, (_, index) => <option key={index} value={index}>{index + 1}</option>)}</select></label>
+        <div className="omi-matter-frame-layer-actions" role="group" aria-label={labels.order}>
+          <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(frames.length - 1)}>{labels.front}</button>
+          <button type="button" disabled={selectedIndex === frames.length - 1} onClick={() => reorder(selectedIndex + 1)}>{labels.forward}</button>
+          <button type="button" disabled={selectedIndex === 0} onClick={() => reorder(selectedIndex - 1)}>{labels.backward}</button>
+          <button type="button" disabled={selectedIndex === 0} onClick={() => reorder(0)}>{labels.back}</button>
+        </div>
+        <button type="button" onClick={() => { onChange({ frames: frames.filter((frame) => frame.id !== selected.id) }); choose(''); }}>{copy.deleteFrame}</button>
+      </fieldset> : null}
+      {settings}
+    </aside>
+    <div className="omi-matter-canvas">
+      <div className="omi-matter-canvas-toolbar">
+        <div className="omi-matter-frame-actions">
+          <button type="button" disabled={readOnly || frames.length >= limitFrames} onClick={() => add('text')}>{copy.addText}</button>
+          <button type="button" disabled={readOnly || frames.length >= limitFrames} onClick={() => add('graphic')}>{copy.addGraphic}</button>
+          <label>{copy.selectFrame}<select aria-label={copy.selectFrame} value={selected?.id ?? ''} onChange={(event) => choose(event.target.value)}><option value="">{labels.base}</option>{frames.map((frame, index) => <option key={frame.id} value={frame.id}>{frame.name || `${copy.frame} ${index + 1}`}</option>)}</select></label>
+        </div>
+        {error ? <p role="alert">{error}</p> : null}
+        {overflow ? <p role="status">{labels.overflow}</p> : null}
+        <label className="omi-matter-zoom">{pageCopy.zoom}<select aria-label={pageCopy.zoom} value={zoom}
+          onChange={event => setZoom(event.target.value === 'fit' ? 'fit' : Number(event.target.value))}>
+          <option value="fit">{pageCopy.fitPage}</option>
+          {[50, 75, 100, 125, 150, 200].map(value => <option key={value} value={value}>{value}%</option>)}
+        </select></label>
+        <label className="omi-matter-preview-toggle"><input type="checkbox" checked={showResolved} onChange={event => setShowResolved(event.target.checked)} />{locale === 'hu' ? 'Adatmezők előnézete' : locale === 'de' ? 'Datenfeldvorschau' : 'Preview metadata fields'}</label>
       </div>
-      <button type="button" onClick={() => { onChange({ frames: frames.filter((frame) => frame.id !== selected.id) }); choose(''); }}>{copy.deleteFrame}</button>
-    </fieldset> : null}
-    {error ? <p role="alert">{error}</p> : null}
-    {overflow ? <p role="status">{labels.overflow}</p> : null}
-    <div ref={setToolbarHost} />
-      <label><input type="checkbox" checked={showResolved} onChange={event => setShowResolved(event.target.checked)} />{locale === 'hu' ? 'Adatmezők előnézete' : locale === 'de' ? 'Datenfeldvorschau' : 'Preview metadata fields'}</label>
-    <div ref={paper} lang={manuscript.locale} className={`omi-publication-matter-paper${sheet ? ' omi-cover-sheet-paper' : ''}`} data-cover-sheet={sheet ? page.kind : undefined} style={previewStyle}>
-      {imageUrl ? <img src={imageUrl} alt={page.image?.alt ?? ''} style={{ objectFit: page.image?.fit }} /> : null}
-      <div className="omi-matter-base-text">{!selected && !readOnly && !showResolved ? <MatterRichText key="base" content={page.content} onChange={(content) => onChange({ content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={resolvePublicationMatterText(page.content, manuscript).content} />}</div>
-      {frames.map((frame, index) => <Fragment key={frame.id}><div className={`omi-matter-frame${selected?.id === frame.id ? ' is-selected' : ''}`} data-matter-frame-id={frame.id} data-frame-kind={frame.kind}
-        style={{ ...matterFrameBoxStyle(frame, widthMm, heightMm), zIndex: index + 2 }} tabIndex={readOnly ? undefined : 0} aria-label={frame.name || `${copy.frame} ${index + 1}`}
-        onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); choose(frame.id); } }}
-        onPointerDown={(event) => { event.stopPropagation(); if (selected?.id !== frame.id) choose(frame.id); }}>
-        <div className="omi-matter-frame-outline" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, { ...frame.style, strokeWidthMm: 0 }) }} />
-        <div lang={frame.style.language || manuscript.locale} className={`omi-matter-frame-content${frame.kind === 'text' ? ' omi-matter-frame-text' : ''}`} style={{ clipPath: frameClipPath(frame), ...(frame.kind === 'text' ? { display: 'flex', flexDirection: 'column', justifyContent: { top: 'flex-start', center: 'center', bottom: 'flex-end' }[frame.vertical ?? 'top'], padding: `${frame.style.paddingMm * scale}mm`, fontFamily: frame.style.fontFamily, fontSize: `${frame.style.fontSizePt * scale}pt`, lineHeight: `${frame.style.lineHeightPt * scale}pt`, color: frame.style.color, fontWeight: frame.style.fontWeight, fontStyle: frame.style.fontStyle, textAlign: frame.style.alignment, hyphens: frame.style.hyphenation === false ? 'none' : 'auto' } : {}) }}>
-          {frame.kind === 'text' ? selected?.id === frame.id && !readOnly && !showResolved ? <MatterRichText label={labels.frameText} content={frame.content!} onChange={(content) => patchFrame(frame.id, { content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={resolvePublicationMatterText(frame.content!, manuscript, frame.style.language || undefined).content} />
-            : frame.image ? <div className="omi-matter-frame-image" style={matterImageStyle(frame)} {...pointer} onPointerDown={(event) => { if (selected?.id === frame.id && editImage) start(event, frame, 'image-move'); }}><MatterAssetImage manuscriptId={manuscript.id} assetId={frame.image.assetId} alt={frame.image.alt} fit={frame.image.fit} />{selected?.id === frame.id && editImage && !readOnly ? <button type="button" className="omi-matter-frame-resize" aria-label={copy.resizeGraphic} {...pointer} onPointerDown={(event) => start(event, frame, 'image-resize')}>↘</button> : null}</div> : <span>{labels.emptyImage}</span>}
+      <div ref={setToolbarHost} className="omi-matter-format-toolbar" />
+      <div ref={stage} className="omi-matter-canvas-stage" tabIndex={0} role="region" aria-label={labels.title}>
+        <div ref={paper} lang={manuscript.locale} className={`omi-publication-matter-paper${sheet ? ' omi-cover-sheet-paper' : ''}`} data-cover-sheet={sheet ? page.kind : undefined} style={previewStyle}>
+          {imageUrl ? <img src={imageUrl} alt={page.image?.alt ?? ''} style={{ objectFit: page.image?.fit }} /> : null}
+          <div className="omi-matter-base-text">{!selected && !readOnly && !showResolved ? <MatterRichText key="base" content={page.content} onChange={(content) => onChange({ content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={resolvePublicationMatterText(page.content, manuscript).content} />}</div>
+          {frames.map((frame, index) => <Fragment key={frame.id}><div className={`omi-matter-frame${selected?.id === frame.id ? ' is-selected' : ''}`} data-matter-frame-id={frame.id} data-frame-kind={frame.kind}
+            style={{ ...matterFrameBoxStyle(frame, widthMm, heightMm), zIndex: index + 2 }} tabIndex={readOnly ? undefined : 0} aria-label={frame.name || `${copy.frame} ${index + 1}`}
+            onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); choose(frame.id); } }}
+            onPointerDown={(event) => { event.stopPropagation(); if (selected?.id !== frame.id) choose(frame.id); }}>
+            <div className="omi-matter-frame-outline" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, { ...frame.style, strokeWidthMm: 0 }) }} />
+            <div lang={frame.style.language || manuscript.locale} className={`omi-matter-frame-content${frame.kind === 'text' ? ' omi-matter-frame-text' : ''}`} style={{ clipPath: frameClipPath(frame), ...(frame.kind === 'text' ? { display: 'flex', flexDirection: 'column', justifyContent: { top: 'flex-start', center: 'center', bottom: 'flex-end' }[frame.vertical ?? 'top'], padding: `${frame.style.paddingMm * scale}mm`, fontFamily: frame.style.fontFamily, fontSize: `${frame.style.fontSizePt * scale}pt`, lineHeight: `${frame.style.lineHeightPt * scale}pt`, color: frame.style.color, fontWeight: frame.style.fontWeight, fontStyle: frame.style.fontStyle, textAlign: frame.style.alignment, hyphens: frame.style.hyphenation === false ? 'none' : 'auto' } : {}) }}>
+              {frame.kind === 'text' ? selected?.id === frame.id && !readOnly && !showResolved ? <MatterRichText label={labels.frameText} content={frame.content!} onChange={(content) => patchFrame(frame.id, { content })} readOnly={readOnly} toolbarHost={toolbarHost} /> : <MatterPreview content={resolvePublicationMatterText(frame.content!, manuscript, frame.style.language || undefined).content} />
+                : frame.image ? <div className="omi-matter-frame-image" style={matterImageStyle(frame)} {...pointer} onPointerDown={(event) => { if (selected?.id === frame.id && editImage) start(event, frame, 'image-move'); }}><MatterAssetImage manuscriptId={manuscript.id} assetId={frame.image.assetId} alt={frame.image.alt} fit={frame.image.fit} />{selected?.id === frame.id && editImage && !readOnly ? <button type="button" className="omi-matter-frame-resize" aria-label={copy.resizeGraphic} {...pointer} onPointerDown={(event) => start(event, frame, 'image-resize')}>↘</button> : null}</div> : <span>{labels.emptyImage}</span>}
+            </div>
+            {frame.style.strokeWidthMm > 0 ? <div className="omi-matter-frame-outline" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, { ...frame.style, fill: 'none' }) }} /> : null}
+            </div>
+            {selected?.id === frame.id && !readOnly ? <div className="omi-matter-frame-selection" data-matter-frame-selection-id={frame.id} style={{ ...matterFrameBoxStyle(frame, widthMm, heightMm), zIndex: 10000 }}>
+              <button type="button" className="omi-matter-frame-move" aria-label={labels.move} {...pointer} onPointerDown={(event) => start(event, frame, 'move')}>↔</button>
+              <button type="button" className="omi-matter-frame-resize" aria-label={labels.resize} {...pointer} onPointerDown={(event) => start(event, frame, 'resize')}>↘</button>
+              {frame.shape === 'polygon' ? frame.points.map((point, i) => <button type="button" key={i} className="omi-matter-frame-point" aria-label={`${copy.points} ${i + 1}`} style={{ left: `${point.x}%`, top: `${point.y}%` }} {...pointer} onPointerDown={(event) => start(event, frame, 'point', i)} />) : null}
+            </div> : null}
+          </Fragment>)}
+          {guides}
         </div>
-        {frame.style.strokeWidthMm > 0 ? <div className="omi-matter-frame-outline" dangerouslySetInnerHTML={{ __html: frameShapeSvg(frame, { ...frame.style, fill: 'none' }) }} /> : null}
-        </div>
-        {selected?.id === frame.id && !readOnly ? <div className="omi-matter-frame-selection" data-matter-frame-selection-id={frame.id} style={{ ...matterFrameBoxStyle(frame, widthMm, heightMm), zIndex: 10000 }}>
-          <button type="button" className="omi-matter-frame-move" aria-label={labels.move} {...pointer} onPointerDown={(event) => start(event, frame, 'move')}>↔</button>
-          <button type="button" className="omi-matter-frame-resize" aria-label={labels.resize} {...pointer} onPointerDown={(event) => start(event, frame, 'resize')}>↘</button>
-          {frame.shape === 'polygon' ? frame.points.map((point, i) => <button type="button" key={i} className="omi-matter-frame-point" aria-label={`${copy.points} ${i + 1}`} style={{ left: `${point.x}%`, top: `${point.y}%` }} {...pointer} onPointerDown={(event) => start(event, frame, 'point', i)} />) : null}
-        </div> : null}
-      </Fragment>)}
-      {guides}
+      </div>
     </div>
   </section>;
 }

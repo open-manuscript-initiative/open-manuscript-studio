@@ -2,6 +2,8 @@
 
 Follow-up to [inactive editor synchronization](publication-inactive-editor-2026-11-27.md). This change addresses repeated layout measurement while editing a title, subtitle, motto or abstract whose displayed dimensions stay unchanged. Canonical OMI updates and checkpoint/export behavior remain immediate.
 
+The later [note-line correction](publication-note-line-2026-11-27.md) fixes the separately recorded `note-5` failure. The measurements and original test statuses in this report remain historical evidence.
+
 ## Cause and correction
 
 React updates the default-value text node of a controlled textarea as its value changes. The publication MutationObserver treated those child-list changes as document layout edits and scheduled a complete body measurement pass even when the textarea occupied the same space. Its existing filter ignored only textarea style writes.

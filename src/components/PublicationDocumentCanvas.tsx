@@ -79,6 +79,7 @@ import { publicationWorkerSections } from './publicationPaginationEngine';
 import { createPublicationPaginationWorkerClient } from './publicationPaginationWorkerClient';
 import {
   coalescePublicationTextLines,
+  findPublicationNoteLine,
   createPublicationPageMetricsResolver,
   createIncrementalPublicationPaginator,
   publicationSectionFitWarnings,
@@ -654,11 +655,8 @@ export function PublicationDocumentCanvas({
               const removedSpace = flowBreaks
                 .filter((spacer) => spacer.top < rect.top - 0.5)
                 .reduce((sum, spacer) => sum + spacer.height, 0);
-              const top = rect.top - elementRect.top - removedSpace;
-              const distance = (candidate: PublicationFlowLine) => Math.max(candidate.top - top, top - candidate.top - candidate.height, 0);
-              const line = lines.reduce<PublicationFlowLine | undefined>((nearest, candidate) => (
-                !nearest || distance(candidate) < distance(nearest) ? candidate : nearest
-              ), undefined);
+              const bottom = rect.bottom - elementRect.top - removedSpace;
+              const line = findPublicationNoteLine(lines, bottom);
               if (line) line.noteIds = [...(line.noteIds ?? []), anchor.dataset.noteId!];
             }
             const paragraphStyle = paragraphStyleFor(element.dataset.paragraphStyleId);

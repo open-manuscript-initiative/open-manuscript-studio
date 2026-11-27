@@ -1,3 +1,9 @@
+## Unreleased — Scrollable, compact cover workspace
+
+- Keep desktop cover and title-page settings in an independently scrollable side panel, fixing clipping inside the publication editor's fixed-height shell.
+- Fit the whole cover to the available width and height by default; offer percentage zoom with document scrolling while preserving saved physical dimensions.
+- Show the cover above bounded settings on narrow screens, collapse spine/paper controls, and reduce duplicated headings, guidance and surrounding spacing.
+
 ## 1.0.0-rc.5 — 2026-11-26 (candidate builds; public release not yet approved)
 
 - Include the merged OJS planned-issue import, progress, non-destructive reimport, native project assembly and publication workflow (#1083, #1088), plus prior optimization work.

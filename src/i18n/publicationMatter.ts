@@ -2,6 +2,7 @@ import type { PublicationMatterPageKind } from '../model/publicationMatter';
 
 const labels = {
   hu: {
+    zoom: 'Nagyítás', fitPage: 'Teljes oldal',
     sheetHelp: 'A borító egyetlen ív. A szaggatott hajtásvonalakon a szöveg és a kép is átnyúlhat; a segédvonalak nem kerülnek az exportba.', sheetSize: 'Borítóív mérete', frameArea: 'Új keret helye', wholeSheet: 'Teljes borítóív',
     title: 'Borító és címnegyed', description: 'A kiadvány önálló oldalai, a tanulmányoktól elkülönítve. A bekapcsolt oldalak a HTML- és PDF-kiadás elejére vagy végére kerülnek.',
     spineWidth: 'Gerinc szélessége (mm)', spineHelp: 'A gerinc bekapcsolásakor a külső hátsó borító, a gerinc és a külső első borító egy közös borítóíven kerül a HTML/PDF-kiadásba. A gerinc szövegkeretei külön forgathatók.',
@@ -17,6 +18,7 @@ const labels = {
       'inside-back-cover': 'III. Hátsó borító – belső', 'back-cover': 'IV. Hátsó borító – külső', spine: 'Gerinc', 'cover-outside': 'Borító – külső oldal', 'cover-inside': 'Borító – belső oldal' },
   },
   en: {
+    zoom: 'Zoom', fitPage: 'Fit page',
     sheetHelp: 'The cover is one sheet. Text and images may cross the dashed fold lines; guides are omitted from export.', sheetSize: 'Cover sheet size', frameArea: 'New frame placement', wholeSheet: 'Whole cover sheet',
     title: 'Covers and title pages', description: 'Independent publication pages, separate from individual studies. Enabled pages appear before or after the content in HTML and PDF publication output.',
     spineWidth: 'Spine width (mm)', spineHelp: 'Enabling the spine combines the outside back cover, spine and outside front cover into one cover spread in HTML/PDF output. Spine text frames can be rotated independently.',
@@ -32,6 +34,7 @@ const labels = {
       'inside-back-cover': 'III. Back cover – inside', 'back-cover': 'IV. Back cover – outside', spine: 'Spine', 'cover-outside': 'Cover – outside', 'cover-inside': 'Cover – inside' },
   },
   de: {
+    zoom: 'Zoom', fitPage: 'Ganze Seite',
     sheetHelp: 'Der Umschlag ist ein Bogen. Text und Bilder dürfen die gestrichelten Falzlinien überqueren; Hilfslinien werden nicht exportiert.', sheetSize: 'Umschlagbogengröße', frameArea: 'Position neuer Rahmen', wholeSheet: 'Ganzer Umschlagbogen',
     title: 'Umschlag und Titelei', description: 'Eigenständige Publikationsseiten, getrennt von den einzelnen Beiträgen. Aktivierte Seiten erscheinen vor oder nach dem Inhalt in der HTML- und PDF-Ausgabe.',
     spineWidth: 'Rückenbreite (mm)', spineHelp: 'Bei aktiviertem Rücken bilden hinterer Umschlag, Rücken und vorderer Umschlag eine gemeinsame Außenseite in der HTML/PDF-Ausgabe. Textrahmen auf dem Rücken sind frei drehbar.',

@@ -39,12 +39,18 @@ test('inactive author view coalesces publication edits, preserves selection/hist
   });
   const author = await prepare(page);
   await expect(author).toBeVisible();
-  const saved = await author.evaluateHandle(element => {
+  // Load the portable-format modules before editing and keep their functions rooted
+  // in the browser handle. The later checkpoint assertion must not await a lazy
+  // module import while the publication editor is processing layout changes.
+  const saved = await author.evaluateHandle(async element => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const { serializeOmiJson } = await import('/src/services/exportOmi.ts');
+    const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
     const editor = (element as HTMLElement & { editor: Editor }).editor;
     let start = 0;
     editor.state.doc.forEach((node, offset) => { if (node.attrs.omiBlockId === 'source-90') start = offset + 1; });
     editor.commands.setTextSelection({ from: start, to: start + 9 });
-    const state = { editor, element, changed: 0, replacements: 0 };
+    const state = { editor, element, changed: 0, replacements: 0, useStudioStore, serializeOmiJson, parseOmiJson };
     editor.on('transaction', ({ transaction }) => {
       if (!transaction.docChanged) return;
       state.changed++;
@@ -65,10 +71,7 @@ test('inactive author view coalesces publication edits, preserves selection/hist
   await expect(target).not.toContainText('EDITED');
   await page.keyboard.press('Control+Shift+z');
   await expect(target).toContainText('EDITED');
-  const persisted = await page.evaluate(async () => {
-    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
-    const { serializeOmiJson } = await import('/src/services/exportOmi.ts');
-    const { parseOmiJson } = await import('/src/services/omiPortableFormat.ts');
+  const persisted = await saved.evaluate(({ useStudioStore, serializeOmiJson, parseOmiJson }) => {
     useStudioStore.getState().checkpoint('manual');
     return parseOmiJson(serializeOmiJson(useStudioStore.getState().manuscript)).sections[0].blocks[0].content;
   });

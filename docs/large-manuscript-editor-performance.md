@@ -272,3 +272,12 @@ whole-document style invalidation for every measurement chunk.
 include both page arrangements, all four fields, OMI serialization, body fidelity,
 and title growth/shrinkage, plus a fresh long-document title comparison. Full
 body measurement after a real geometry change remains a further target.
+
+## Phase 4d — superscript note line ownership
+
+A raised marker's upper edge can overlap the preceding measured text line. Use
+its lower edge to associate the footnote with its owning line before pagination.
+This preserves the existing distance fallback and reuses the bounding rectangle
+already collected. [Evidence](performance/publication-note-line-2026-11-27.md)
+records the formerly failing note/page boundary and passing default/raised-marker,
+zoom, formatting, continuation, table, page-style and HTML regression checks.
