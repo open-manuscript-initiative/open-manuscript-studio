@@ -233,3 +233,25 @@ The [2026-11-27 review](performance/publication-review-2026-11-27.md) records th
 repaired benchmark, one-run before/after measurements and the remaining inactive
 editor and main-thread DOM work. Its results are diagnostic evidence, not a
 production or Android acceptance claim.
+
+## Phase 4b — defer inactive author view synchronization
+
+An editable publication canvas registers its lifetime with a reference-counted
+runtime activity store. The mounted author view becomes inert and skips document
+serialization, external `setContent`, focus registration and proofing work while
+that canvas is active. Closing it or switching to mobile preview releases the
+registration. The canonical OMI model and saving still update with every active
+publication edit.
+
+On return, the existing author editor synchronizes once before paint. Its text or
+node selection follows stable block identities through document changes; missing
+destinations use a bounded valid selection. History boundaries separate the
+aggregate external refresh from edits before and after it. Editability changes
+must not emit stale content. Active-view synchronization stays passive, and
+unchanged proofing selections do not repeatedly invalidate the publication UI.
+Live Yjs editors retain their synchronization bridge and deliberately bypass
+deferred serialization/synchronization.
+
+The [implementation evidence](performance/publication-inactive-editor-2026-11-27.md)
+records lifecycle, save, selection and undo coverage plus comparative synthetic
+performance workloads. Main-thread publication layout remains a separate target.

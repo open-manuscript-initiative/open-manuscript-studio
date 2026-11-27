@@ -2,6 +2,8 @@
 
 The recent changes produce a measurable improvement in the synthetic desktop diagnostic. They do not yet make large-document publication editing consistently responsive. No runtime performance patch is included in this review; the accompanying change repairs the measurement harness and adds a missing long-document title workload.
 
+The [follow-up implementation and measurements](publication-inactive-editor-2026-11-27.md) address inactive author-view synchronization in PR #1098. The historical measurements and findings below describe the runtime before that follow-up.
+
 ## Scope and environment
 
 Reviewed the adaptive projection/cache work (#1042/#1043), facing-page stabilization integrated by #1049, and publication batches #1061 and #1070. Runtime comparison:
