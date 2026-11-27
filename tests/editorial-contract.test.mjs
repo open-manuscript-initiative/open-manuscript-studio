@@ -22,6 +22,20 @@ test('published editorial API snapshot is generated from current transport DTOs'
       '/api/v1/integrations/connections/{connectionId}/editorial-capabilities'
     ],
   );
+  const connector = '/api/v1/integrations/connections/{connectionId}';
+  for (const [path, operationId, request, response] of [
+    ['omp-metadata', 'reconcileOmpVolumeMetadata', 'OmpMetadataRequest', 'OmpMetadataResponse'],
+    ['omp-workflow-status', 'inspectOmpEditorialWorkflow', 'WorkflowRequest', 'OmpWorkflowResponse'],
+    ['chapter-page-range', 'reconcileOmpChapterPages', 'OmpChapterPagesRequest', 'OmpChapterPagesResponse'],
+    ['issue-page-range', 'reconcileOjsIssuePages', 'OjsIssuePagesRequest', 'OjsIssuePagesResponse'],
+  ]) {
+    const operation = contract.paths[`${connector}/${path}`].post;
+    assert.equal(operation.operationId, operationId);
+    assert.equal(operation.requestBody.content['application/json'].schema.$ref, `#/components/schemas/${request}`);
+    assert.equal(operation.responses['200'].content['application/json'].schema.$ref, `#/components/schemas/${response}`);
+    assert.ok(contract.components.schemas[request]);
+    assert.ok(contract.components.schemas[response]);
+  }
   assert.equal(
     productionCommandSchema.safeParse({ command: { type: 'READY' } }).success,
     false,

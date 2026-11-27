@@ -1,3 +1,4 @@
+import { ompMetadataRequest } from '../contracts/ompMetadataContract.js';
 import { Router } from 'express';
 import { z } from 'zod';
 import {
@@ -14,6 +15,8 @@ import {
   reconcileEditorialMetadata,
   reconcileOjsIssuePages,
   reconcileOmpChapterPages,
+  reconcileOmpVolumeMetadata,
+  inspectOmpEditorialWorkflow,
 } from '../services/editorialConnectorService.js';
 import { RemoteError } from '../integrations/publishing/nativePublishingClient.js';
 import {
@@ -100,4 +103,14 @@ editorialConnectorRouter.post(
   versionedEditorialBoundary(''),
   requireSession,
   handler((user, id, body) => reconcileOmpChapterPages(user, id, ompChapterPagesRequest.parse(body))),
+);
+
+editorialConnectorRouter.post(
+  `${prefix}/omp-metadata`, versionedEditorialBoundary(''), requireSession,
+  handler((user, id, body) => reconcileOmpVolumeMetadata(user, id, ompMetadataRequest.parse(body))),
+);
+
+editorialConnectorRouter.post(
+  `${prefix}/omp-workflow-status`, versionedEditorialBoundary(''), requireSession,
+  handler((user, id, body) => inspectOmpEditorialWorkflow(user, id, workflowInspectionRequest.parse(body).submissionId)),
 );

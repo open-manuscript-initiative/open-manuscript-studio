@@ -12,7 +12,7 @@ export class RemoteError extends Error {
 export function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
   return async (method, path, body) => {
     if (
-      !/^(omi-integration(?:\/(?:submission-options|publication-artifact|metadata|workflow-status\?submissionId=\d+))?|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(
+      !/^(omi-integration(?:\/(?:submission-options|publication-artifact|metadata|chapter-page-range|issue-page-range|workflow-status\?submissionId=\d+))?|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(
         path,
       )
     ) {

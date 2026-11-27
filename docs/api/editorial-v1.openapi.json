@@ -898,6 +898,606 @@
         },
         "description": "OJS profile only. Inspect before apply; exact publicationId/locale/expectedStateToken and confirmed are required. Only selected fields are written. An unknown remote outcome requires reinspection; no automatic replay or distributed transaction is claimed."
       }
+    },
+    "/api/v1/integrations/connections/{connectionId}/omp-workflow-status": {
+      "parameters": [
+        {
+          "name": "connectionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "inspectOmpEditorialWorkflow",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmpWorkflowResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowRequest"
+              }
+            }
+          }
+        },
+        "description": "OMP profile only. Read-only native press workflow; submission-scoped editorial permission is revalidated by OMP. No editorial decisions are written."
+      }
+    },
+    "/api/v1/integrations/connections/{connectionId}/omp-metadata": {
+      "parameters": [
+        {
+          "name": "connectionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "reconcileOmpVolumeMetadata",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmpMetadataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmpMetadataRequest"
+              }
+            }
+          }
+        },
+        "description": "OMP profile only. Exact installation/press/submission/current publication identity is required for inspect and apply. Confirm selected language and title/subtitle/abstract/keyword fields with expectedStateToken. Validate the bound receipt; uncertain outcomes require native reinspection with no automatic replay. Series, identifiers, contributors, chapters and publication decisions remain native authority."
+      }
+    },
+    "/api/v1/integrations/connections/{connectionId}/chapter-page-range": {
+      "parameters": [
+        {
+          "name": "connectionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "reconcileOmpChapterPages",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OmpChapterPagesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmpChapterPagesRequest"
+              }
+            }
+          }
+        },
+        "description": "OMP profile only. Inspect exact chapter identity before confirmed printed page-range writeback with expectedWorkflowToken. Native production permission and unpublished state remain required. No physical-screen page indices or publication approval."
+      }
+    },
+    "/api/v1/integrations/connections/{connectionId}/issue-page-range": {
+      "parameters": [
+        {
+          "name": "connectionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "reconcileOjsIssuePages",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized projection. A workflow version is a CAS precondition, not a publication approval.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OjsIssuePagesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version/token or unsupported connector capability; inspect current state, never blind retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request denied or unavailable; no side effects on validation/authorization failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditorialError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OjsIssuePagesRequest"
+              }
+            }
+          }
+        },
+        "description": "OJS profile only. Inspect exact issue/article/publication identity before confirmed printed page-range writeback with expectedWorkflowToken; native permission and unpublished state remain required."
+      }
     }
   },
   "components": {
@@ -2216,6 +2816,1263 @@
               "locale",
               "fields",
               "previousStateToken",
+              "published"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "snapshot"
+        ],
+        "additionalProperties": false
+      },
+      "OmpMetadataRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "const": "inspect"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "action",
+              "submissionId",
+              "installationId",
+              "contextId",
+              "publicationId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "const": "apply"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "locale": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$"
+              },
+              "expectedStateToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "confirmed": {
+                "type": "boolean",
+                "const": true
+              },
+              "fields": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "subtitle": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "abstract": {
+                    "type": "string",
+                    "maxLength": 100000
+                  },
+                  "keywords": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "action",
+              "submissionId",
+              "publicationId",
+              "locale",
+              "expectedStateToken",
+              "confirmed",
+              "fields",
+              "installationId",
+              "contextId"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "OmpMetadataResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "const": "omi-omp-metadata/1"
+              },
+              "authority": {
+                "type": "string",
+                "const": "OMP"
+              },
+              "stateToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "workflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "stage": {
+                "type": "string"
+              },
+              "publicationStatus": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "locales": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32
+                }
+              },
+              "writableFields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "title",
+                    "subtitle",
+                    "abstract",
+                    "keywords"
+                  ]
+                }
+              },
+              "abstractRepresentation": {
+                "type": "string",
+                "const": "plain-text"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "subtitle": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "abstract": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "keywords": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    }
+                  },
+                  "doi": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "references": {
+                    "type": "string"
+                  },
+                  "datePublished": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "licenseUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "copyrightHolder": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "maxLength": 32
+                        },
+                        "additionalProperties": {
+                          "type": "string",
+                          "maxLength": 100000
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "copyrightYear": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "seriesId": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "seriesPosition": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "workType": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "subtitle",
+                  "abstract",
+                  "keywords",
+                  "doi",
+                  "references",
+                  "datePublished",
+                  "licenseUrl",
+                  "copyrightHolder",
+                  "copyrightYear",
+                  "seriesId",
+                  "seriesPosition",
+                  "workType"
+                ],
+                "additionalProperties": false
+              },
+              "contributors": {
+                "maxItems": 500,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "externalId": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "object",
+                      "properties": {
+                        "given": {
+                          "type": "string"
+                        },
+                        "family": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "given",
+                        "family"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "preferredPublicName": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "maxLength": 32
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "maxLength": 100000
+                      }
+                    },
+                    "affiliation": {
+                      "type": "string"
+                    },
+                    "affiliations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string",
+                              "maxLength": 32
+                            },
+                            "additionalProperties": {
+                              "type": "string",
+                              "maxLength": 100000
+                            }
+                          },
+                          "ror": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "ror"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "identifiers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "scheme": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "scheme",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "sequence": {
+                      "type": "number"
+                    },
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "includeInBrowse": {
+                      "type": "boolean"
+                    },
+                    "isEditor": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "externalId",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "protocol",
+              "authority",
+              "stateToken",
+              "workflowToken",
+              "submissionId",
+              "publicationId",
+              "stage",
+              "publicationStatus",
+              "locales",
+              "writableFields",
+              "abstractRepresentation",
+              "metadata",
+              "contributors",
+              "contextId"
+            ],
+            "additionalProperties": false
+          },
+          "receipt": {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "protocol": {
+                "type": "string",
+                "const": "omi-omp-metadata/1"
+              },
+              "locale": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "title",
+                    "subtitle",
+                    "abstract",
+                    "keywords"
+                  ]
+                }
+              },
+              "previousStateToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "stateToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "published": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "submissionId",
+              "publicationId",
+              "protocol",
+              "locale",
+              "fields",
+              "previousStateToken",
+              "stateToken",
+              "published"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "snapshot"
+        ],
+        "additionalProperties": false
+      },
+      "OmpWorkflowResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "protocol": {
+                "type": "string",
+                "const": "omi-omp-workflow/1"
+              },
+              "authority": {
+                "type": "string",
+                "const": "OMP"
+              },
+              "stateToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "stageId": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "stage": {
+                "type": "string"
+              },
+              "submissionStatus": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "publicationStatus": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "lastModified": {},
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "subtitle": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "abstract": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 32
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 100000
+                    }
+                  },
+                  "datePublished": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "licenseUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "copyrightHolder": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "maxLength": 32
+                        },
+                        "additionalProperties": {
+                          "type": "string",
+                          "maxLength": 100000
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "copyrightYear": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "seriesId": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "seriesPosition": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "workType": {
+                    "type": [
+                      "number",
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "subtitle",
+                  "abstract",
+                  "datePublished",
+                  "licenseUrl",
+                  "copyrightHolder",
+                  "copyrightYear",
+                  "seriesId",
+                  "seriesPosition",
+                  "workType"
+                ],
+                "additionalProperties": false
+              },
+              "editorialDecisionsWritable": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "protocol",
+              "authority",
+              "stateToken",
+              "submissionId",
+              "publicationId",
+              "stageId",
+              "stage",
+              "submissionStatus",
+              "publicationStatus",
+              "lastModified",
+              "metadata",
+              "editorialDecisionsWritable"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "snapshot"
+        ],
+        "additionalProperties": false
+      },
+      "OmpChapterPagesRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "chapterId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "action": {
+                "type": "string",
+                "const": "inspect"
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "chapterId",
+              "submissionId",
+              "publicationId",
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "chapterId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "action": {
+                "type": "string",
+                "const": "apply"
+              },
+              "firstPrintedPage": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 999999
+              },
+              "lastPrintedPage": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 999999
+              },
+              "expectedWorkflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "confirmed": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "chapterId",
+              "submissionId",
+              "publicationId",
+              "action",
+              "firstPrintedPage",
+              "lastPrintedPage",
+              "expectedWorkflowToken",
+              "confirmed"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "OmpChapterPagesResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "chapterId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "protocol": {
+                "type": "string",
+                "const": "omi-chapter-page-range/1"
+              },
+              "sourceChapterId": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "pages": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "workflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "published": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "chapterId",
+              "submissionId",
+              "publicationId",
+              "protocol",
+              "sourceChapterId",
+              "pages",
+              "workflowToken",
+              "published"
+            ],
+            "additionalProperties": false
+          },
+          "receipt": {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "chapterId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "protocol": {
+                "type": "string",
+                "const": "omi-chapter-page-range/1"
+              },
+              "previousPages": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "pages": {
+                "type": "string"
+              },
+              "previousWorkflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "workflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "unchanged": {
+                "type": "boolean"
+              },
+              "published": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "chapterId",
+              "submissionId",
+              "publicationId",
+              "protocol",
+              "previousPages",
+              "pages",
+              "previousWorkflowToken",
+              "workflowToken",
+              "unchanged",
+              "published"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "snapshot"
+        ],
+        "additionalProperties": false
+      },
+      "OjsIssuePagesRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "issueId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "action": {
+                "type": "string",
+                "const": "inspect"
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "issueId",
+              "submissionId",
+              "publicationId",
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "issueId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "action": {
+                "type": "string",
+                "const": "apply"
+              },
+              "firstPrintedPage": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 999999
+              },
+              "lastPrintedPage": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 999999
+              },
+              "expectedWorkflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "confirmed": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "issueId",
+              "submissionId",
+              "publicationId",
+              "action",
+              "firstPrintedPage",
+              "lastPrintedPage",
+              "expectedWorkflowToken",
+              "confirmed"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "OjsIssuePagesResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "issueId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "protocol": {
+                "type": "string",
+                "const": "omi-issue-page-range/1"
+              },
+              "pages": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "workflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "published": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "issueId",
+              "submissionId",
+              "publicationId",
+              "protocol",
+              "pages",
+              "workflowToken",
+              "published"
+            ],
+            "additionalProperties": false
+          },
+          "receipt": {
+            "type": "object",
+            "properties": {
+              "installationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contextId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "issueId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "submissionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "publicationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "protocol": {
+                "type": "string",
+                "const": "omi-issue-page-range/1"
+              },
+              "previousPages": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "pages": {
+                "type": "string"
+              },
+              "previousWorkflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "workflowToken": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "unchanged": {
+                "type": "boolean"
+              },
+              "published": {
+                "type": "boolean",
+                "const": false
+              }
+            },
+            "required": [
+              "installationId",
+              "contextId",
+              "issueId",
+              "submissionId",
+              "publicationId",
+              "protocol",
+              "previousPages",
+              "pages",
+              "previousWorkflowToken",
+              "workflowToken",
+              "unchanged",
               "published"
             ],
             "additionalProperties": false
