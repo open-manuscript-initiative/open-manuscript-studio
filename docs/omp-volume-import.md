@@ -15,3 +15,43 @@ The launch redirects immediately to a random OMP-only progress ticket in the URL
 ## Press, series and format identifiers
 
 The optional OMP publication matter snapshot is retained with the imported origin. Publisher, place, localized series title, print and online ISSN and unambiguous physical/digital ISBNs populate native book front matter. Multiple ISBNs in a format group are kept in the snapshot instead of choosing an arbitrary edition. Shortcodes [omi:electronic-isbn], [omi:series], [omi:series-number] and [omi:press] complement existing publisher, ISBN and DOI codes; original chapter titles supply requested-language contents when available. Missing translations remain unresolved.
+
+## Reimport review
+
+A repeated launch of an already open volume selects its existing tab and compares upstream source fingerprints, chapter identities and metadata. Existing text, layout, chapter order and identities are never overwritten. Older imports without source fingerprints are reported as not verifiable. Publisher and series metadata can be refreshed explicitly only for the same publication and representation, with field-level local conflict detection. New/changed/removed chapters are listed for review; chapter insertion, replacement, cross-version lineage resolution and persistent saved-document discovery remain future work.
+
+## Additive chapter reconciliation
+
+Explicitly add new native chapters at the end of the existing volume without changing local content, order or layout. New imports persist exact native contributor-to-agent mappings; additions reuse verified local identities and preserve chapter-specific source/contributor fingerprints. Older volumes without identity mappings block additions involving existing contributors instead of guessing. Publication version or work-type/representation changes also block additions. Replacements and persistent saved-volume lookup remain separate work.
+
+## Individual chapter review
+
+A changed mapped chapter can be compared as a bounded plain-text preview of its original imported revision (when still available), local text, and new OMP source. The preview is not a formatting or full scholarly-object diff. The editor can explicitly retain the local version, recorded as a versioned decision bound to the exact incoming chapter/source/contributor fingerprint; a later upstream change invalidates the decision. Source provenance is never advanced by retaining local text. Destructive replacement or cross-chapter anchor remapping is not yet enabled.
+
+## Safe acceptance of a changed chapter
+
+Explicitly accept a new upstream text version only when the original revision is available, the local chapter is unchanged, native chapter/contributor metadata and publication identity are unchanged, the incoming structure matches, and both text and external references pass a conservative safety boundary. Existing section/block IDs, chapter order, styles and prior revisions are retained. Notes, citations, anchors, complex objects and dependent layout data block this text-only replacement rather than risk data loss. Full scholarly-object remapping and arbitrary structural replacement remain separate work.
+
+### Stable footnotes and endnotes
+
+The conservative replacement path now also permits existing footnote/endnote body changes, including supported rich-text marks, when the original local annotation and marker-bearing block are unchanged, every incoming note maps bijectively to its original marker and target, and no other scholarly object refers to the affected identifiers. Original note IDs, anchor IDs and block IDs are retained. Marker movement, newly added/deleted notes, local note edits, citation-bearing note bodies, graphics and unresolved reference graphs remain review-only.
+
+### Stable bibliographic citation graphs
+
+For chapter revisions, unchanged inline citation clusters, citation semantics and bibliographic records can be matched bijectively against the original import. Generated incoming IDs are mapped back to the existing marker IDs; original citations, clusters and library records remain intact. Only independent paragraphs and already supported note bodies may change. Changed citation targets, bibliographic metadata, marker positions, local reference edits, unassigned records, cross-references and graphical objects remain blocked rather than guessed.
+
+### Unchanged native visuals and inbound cross-references
+
+The conservative chapter replacement can retain identical embedded raster images, simple text-cell tables and charts at their existing positions, with original object identifiers and data intact. An inbound semantic cross-reference from another chapter to an identical table or chart is retained only if its unique source marker and target kind can be verified. Any changed visual data, asset-backed object, complex table, unresolved marker, Word field or internal/outbound cross-reference remains review-only. No graphical object is automatically replaced or re-identified.
+
+## Chapter printed-page connector
+
+The Studio editorial API now supports exact OMP chapter page-range inspection and confirmed writeback via a personal OMP publishing connection. Requests and receipts bind the press, submission, publication and chapter identities; the client also checks the original source-chapter identity. The model uses only explicit mapped chapter roots, permits adjacent chapters to share a printed boundary page, and rejects reversed or mixed-publication ranges. PDF physical page indices are never silently converted to printed labels. UI review tied to a rendered layout is a subsequent step.
+
+### Printed page review in the publication artifact workspace
+
+Imported OMP volumes receive a chapter page review panel. It renders a full PDF using the saved publication style, displays physical page proposals and offers the exact rendered file for verification. Printed page inputs start empty and require explicit per-chapter and batch confirmation. The panel checks the current document, saved layout, server and connection before every operation, inspects all destinations again before applying, and validates each receipt. Partial or uncertain writes halt the batch and require a native OMP check before retry. Unmapped chapters and complete-manuscript imports do not acquire guessed targets. This is manual printed-label confirmation, not automatic folio extraction; native browser E2E remains required.
+
+### EPUB scholarly rendering
+
+The EPUB exporter now attempts the existing public scholarly HTML renderer as a reflowable XHTML projection. It retains visible note bodies and internal note links, citation labels and links, rich inline formatting, native table markup, hierarchical navigation, and embedded raster images packaged as manifest resources. It does not promise lossless OMI round-tripping. Unsupported SVG/MathML and missing external or asset-backed images remain limitations; the legacy fallback is explicitly diagnosed. The richer package requires extending the strict OMP receiver before native transfer is enabled. EPUBCheck and browser/native integration tests remain to be run.

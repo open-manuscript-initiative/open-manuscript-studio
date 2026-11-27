@@ -120,8 +120,12 @@ export const coreRelationshipCases = [
       const raw = 'text' in output ? output.text : zipText(output.bytes, 'EPUB/article.xhtml');
       const text = format === 'LaTeX' ? raw.replace(/\\_/g, '_') : raw;
       assert.ok(text.includes('DATA_TABLE_CAPTION')); assert.ok(!/\\footnote\s*\{/.test(text));
-      if (format === 'EPUB') { assert.ok(!text.includes('FOOT_BODY')); assert.ok(!text.includes('END_BODY')); }
-      else { assert.ok(text.includes('FOOT_BODY')); assert.ok(text.includes('END_BODY')); }
+      assert.ok(text.includes('FOOT_BODY')); assert.ok(text.includes('END_BODY'));
+      if (format === 'EPUB') {
+        assert.ok(text.includes('href="#note-foot"'));
+        assert.ok(text.includes('epub:type="noteref"'));
+        assert.ok(!notices.some(item => item.includes('epub-semantic-projection-fallback')));
+      }
       assert.deepEqual(source, before);
     },
   })),

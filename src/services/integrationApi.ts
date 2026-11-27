@@ -532,3 +532,17 @@ export async function requestOjsIssuePages(
   if (!response.ok) throw new Error((await readErrorMessage(response)) ?? `OJS page range request failed: HTTP ${response.status}.`);
   return parseJsonResponse<import('../model/ojsIssuePrintedPages').OjsIssuePageResponse>(response);
 }
+
+export async function requestOmpChapterPages(
+  connectionId: string, input: import('../model/ompChapterPrintedPages').OmpChapterPageRequest,
+): Promise<import('../model/ompChapterPrintedPages').OmpChapterPageResponse> {
+  const response = await studioApiFetch(
+    `/api/v1/integrations/connections/${encodeURIComponent(connectionId)}/chapter-page-range`, {
+      method: 'POST', credentials: 'include', cache: 'no-store',
+      headers: integrationHeaders({ Accept: 'application/json', 'Content-Type': 'application/json' }),
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) throw new Error((await readErrorMessage(response)) ?? `OMP page range request failed: HTTP ${response.status}.`);
+  return parseJsonResponse<import('../model/ompChapterPrintedPages').OmpChapterPageResponse>(response);
+}

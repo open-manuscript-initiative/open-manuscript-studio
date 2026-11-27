@@ -1,4 +1,5 @@
 import { nativeClient, RemoteError } from '../integrations/publishing/nativePublishingClient.js';
+import { decodeEpubCheckInput, validateEpubForPublication } from '../services/epubCheckGate.js';
 import { editorialConnectorRouter } from './editorialConnectorRoutes.js';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -31,6 +32,7 @@ const publicationArtifactFormatSchema = z.enum([
   'jats',
   'pdf-print',
   'pdf-interactive',
+  'epub',
 ]);
 const publicationArtifactSchema = z.object({
   action: z.enum(['inspect', 'transfer']),
@@ -109,6 +111,15 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       response.status(400).json({ error: { message: 'Planned issue transfer requires an OJS connection.' } });
       return;
     }
+    if (data.format === 'epub' && connection.providerId !== 'omp') {
+      response.status(400).json({ error: { message: 'EPUB proof transfer requires an OMP connection.' } });
+      return;
+    }
+    if (data.action === 'transfer' && data.format === 'epub' &&
+        (data.mediaType !== 'application/epub+zip' || !data.fileName?.toLowerCase().endsWith('.epub'))) {
+      response.status(400).json({ error: { message: 'Invalid EPUB artifact media type or filename.' } });
+      return;
+    }
     const platform = connection.providerId === 'omp' ? 'OMP' : 'OJS';
     const baseUrl = (
       await assertTrustedIntegrationUrl(configuredBase, configuredBase)
@@ -127,6 +138,21 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       return;
     }
 
+    if (data.action === 'transfer' && data.format === 'epub') {
+      let bytes: Buffer;
+      try { bytes = decodeEpubCheckInput(data.artifactBase64!, record(record(data.build?.output).digest).value); }
+      catch { response.status(422).json({ error: { message: 'EPUB bytes do not match the publication build.' } }); return; }
+      try {
+        const checked = await validateEpubForPublication(bytes, request.authUserId!);
+        if (!checked.valid) {
+          response.status(422).json({ error: { message: 'EPUBCheck rejected the publication. Correct errors/warnings before transfer.', codes: checked.codes } });
+          return;
+        }
+      } catch {
+        response.status(503).json({ error: { message: 'The isolated EPUBCheck validator is unavailable. No EPUB was transferred.' } });
+        return;
+      }
+    }
     const result = record(
       await nativeClient(baseUrl, credential.apiKey)(
         'POST',
@@ -149,6 +175,13 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
         result.publicationId !== data.publicationId ||
         (data.action === 'inspect' && result.installationId !== data.expectedInstallationId))) {
       throw new Error('OJS returned a different or unsupported issue transfer target. Update the OJS integration plugin and inspect again.');
+    }
+    if (data.action === 'transfer' && data.format === 'epub' &&
+        (result.publicationId !== data.publicationId || result.format !== 'epub' ||
+          result.mediaType !== 'application/epub+zip' || result.provenanceVerified !== true ||
+          result.published !== false || result.buildId !== data.build?.id ||
+          result.sha256 !== record(record(data.build?.output).digest).value)) {
+      throw new Error('OMP returned an incompatible EPUB proof receipt; inspect the destination before retrying.');
     }
     response.json(
       data.action === 'inspect' ? { target: result } : { receipt: result },

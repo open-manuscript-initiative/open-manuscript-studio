@@ -40,6 +40,8 @@ import {
   type OmpNativeAuthorContext,
 } from './integrations/omp/importOmpLaunch';
 import { createVolumeFromOmpHandoff, fetchOmpVolumeHandoff, isSameOmpVolume, type OmpVolumeHandoff } from './integrations/omp/importOmpVolume';
+import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter, previewOmpChapter, keepLocalOmpChapter, acceptIncomingOmpChapter, type OmpVolumeReview } from './integrations/omp/reimportOmpVolume';
+import { OmpVolumeReimportReview } from './components/OmpVolumeReimportReview';
 import {
   clearOjsLaunchPayload,
   readOjsLaunchPayload,
@@ -74,7 +76,8 @@ type ExternalImportState =
   | { status: 'idle'; message?: undefined }
   | { status: 'loading'; message?: undefined }
   | { status: 'error'; message: string }
-  | { status: 'issue-review'; review: OjsIssueReview; launch: OjsIssueHandoff; manuscriptId: string };
+  | { status: 'issue-review'; review: OjsIssueReview; launch: OjsIssueHandoff; manuscriptId: string }
+  | { status: 'volume-review'; review: OmpVolumeReview; launch: OmpVolumeHandoff; manuscriptId: string };
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
 type AssignmentAwareLaunch = OjsLaunchPayload & {
@@ -283,13 +286,23 @@ function StudioApplication() {
           }
           const launch = await request;
           if (cancelled) return;
+          const tabs = documentSessions.getSnapshot().tabs.filter(tab => isSameOmpVolume(tab.manuscript, launch));
+          if (tabs.length > 1) throw new Error('Multiple copies of this OMP volume are open.');
+          if (tabs.length === 1) documentSessions.activate(tabs[0]!.id);
           const current = useStudioStore.getState();
-          const existing = (current.hasOpenDocument && isSameOmpVolume(current.manuscript, launch))
-            || documentSessions.getSnapshot().tabs.some(tab => isSameOmpVolume(tab.manuscript, launch));
+          const existing = current.hasOpenDocument && isSameOmpVolume(current.manuscript, launch);
           volumeHandoffRequests.current.delete(volumeToken);
           url.searchParams.delete('omiOmpVolumeLaunch');
           window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
-          if (existing) throw new Error('This OMP volume is already open. Existing edits are preserved.');
+          if (existing) {
+            const review = compareOmpVolume(current.manuscript, launch);
+            setOjsContributors([]);
+            setExternalWorkflowContext(null);
+            setOjsAssignment(null);
+            setOmpAuthorAssignment(null);
+            setExternalImportState({ status: 'volume-review', review, launch, manuscriptId: current.manuscript.id });
+            return;
+          }
           const manuscript = createVolumeFromOmpHandoff(launch, issueImportLocale.current);
           if (current.hasOpenDocument) current.checkpoint('manual');
           clearDocumentClosedState();
@@ -502,6 +515,68 @@ function StudioApplication() {
     );
   }
 
+  if (externalImportState.status === 'volume-review') {
+    const { review, launch, manuscriptId } = externalImportState;
+    return <OmpVolumeReimportReview review={review} locale={locale}
+      onPreview={id => {
+        const current = useStudioStore.getState();
+        if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active volume changed.');
+        return previewOmpChapter(current.manuscript, launch, id);
+      }}
+      onAcceptChapter={id => {
+        try {
+          const current = useStudioStore.getState();
+          if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active volume changed.');
+          current.checkpoint('manual');
+          const base = useStudioStore.getState();
+          const next = acceptIncomingOmpChapter(base.manuscript, launch, id);
+          if (next !== base.manuscript) useStudioStore.setState({ manuscript: next, pendingChangeSet: null });
+          setExternalImportState({ status: 'volume-review', review: compareOmpVolume(next, launch), launch, manuscriptId });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      }}
+      onKeepChapter={id => {
+        try {
+          const current = useStudioStore.getState();
+          if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active volume changed.');
+          current.checkpoint('manual');
+          const base = useStudioStore.getState();
+          const next = keepLocalOmpChapter(base.manuscript, launch, id);
+          if (next !== base.manuscript) useStudioStore.setState({ manuscript: next, pendingChangeSet: null });
+          setExternalImportState({ status: 'volume-review', review: compareOmpVolume(next, launch), launch, manuscriptId });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      }}
+      onAdd={() => {
+        try {
+          const current = useStudioStore.getState();
+          if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active volume changed.');
+          current.checkpoint('manual');
+          const base = useStudioStore.getState();
+          const next = appendNewOmpChapters(base.manuscript, launch);
+          if (next !== base.manuscript) useStudioStore.setState({ manuscript: next, pendingChangeSet: null });
+          setExternalImportState({ status: 'idle' });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      }}
+      onKeep={() => setExternalImportState({ status: 'idle' })}
+      onRefresh={() => {
+        try {
+          const current = useStudioStore.getState();
+          if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active volume changed.');
+          current.checkpoint('manual');
+          const base = useStudioStore.getState();
+          const next = refreshOmpPublicationMatter(base.manuscript, launch);
+          if (next !== base.manuscript) useStudioStore.setState({ manuscript: next, pendingChangeSet: null });
+          setExternalImportState({ status: 'idle' });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      }} />;
+  }
   if (externalImportState.status === 'issue-review') {
     const { review, launch, manuscriptId } = externalImportState;
     return <OjsIssueReimportReview review={review} locale={locale}

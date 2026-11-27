@@ -1,3 +1,4 @@
+import { buildEpubPublicationExport, OMI_EPUB_PUBLICATION_RENDERER_VERSION } from './exportEpub';
 import type { OmiPublicationBuild } from '../model/publicationBuild';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import { resolvePublicationProfile } from '../model/publicationProfile';
@@ -33,7 +34,8 @@ export type PublicationArtifactFormat =
   | 'html'
   | 'jats'
   | 'pdf-print'
-  | 'pdf-interactive';
+  | 'pdf-interactive'
+  | 'epub';
 
 export interface PublicationArtifactFormatCapability {
   id: PublicationArtifactFormat;
@@ -128,6 +130,7 @@ export interface PreparedPublicationArtifact {
   artifactBase64: string;
   build: OmiPublicationBuild;
   previewText?: string;
+  warnings?: string[];
 }
 
 export function publicationArtifactFormatAvailableForDocument(
@@ -135,7 +138,7 @@ export function publicationArtifactFormatAvailableForDocument(
   format: PublicationArtifactFormat,
 ): boolean {
   if (getDocumentStructureProfile(manuscript).kind === 'study') return true;
-  return format === 'pdf-print' || format === 'pdf-interactive';
+  return format === 'pdf-print' || format === 'pdf-interactive' || format === 'epub';
 }
 
 export async function preparePublicationArtifact(
@@ -145,11 +148,21 @@ export async function preparePublicationArtifact(
 ): Promise<PreparedPublicationArtifact> {
   if (!publicationArtifactFormatAvailableForDocument(manuscript, format)) {
     throw new Error(
-      'HTML and JATS publication-artifact transfer currently require a standalone study. Use print or interactive PDF for an OMI volume.',
+      'HTML and JATS publication-artifact transfer currently require a standalone study. Use PDF or EPUB for an OMI volume.',
     );
   }
 
   const profile = resolvePublicationProfile(manuscript);
+
+  if (format === 'epub') {
+    const result = await buildEpubPublicationExport(manuscript, options.assetOwnerId);
+    const mediaType = 'application/epub+zip';
+    return { format, mediaType, fileName: result.fileName, bytes: result.bytes,
+      artifactBase64: bytesToBase64(result.bytes), warnings: result.warnings,
+      build: createBuild({ manuscript, profile, bytes: result.bytes, format, mediaType,
+        fileName: result.fileName, renderer: 'open-manuscript-studio-epub',
+        rendererVersion: OMI_EPUB_PUBLICATION_RENDERER_VERSION }) };
+  }
 
   if (format === 'html') {
     const html = await buildPublicationHtmlArtifact(manuscript, profile, options.assetOwnerId);

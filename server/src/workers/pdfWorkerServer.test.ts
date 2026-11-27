@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { decodeEpubCheckInput, parseEpubCheckReceipt } from '../services/epubCheckGate.js';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -125,4 +127,31 @@ test('page evidence travels over the isolated worker socket', async (t) => {
   });
   const output = await dispatchPdfWorkerTask('page-text', Buffer.from('%PDF-issue'), 'owner-1', socket, 3000);
   assert.deepEqual(JSON.parse(output.toString()), { pageCount: 2, pages: ['', 'Article'] });
+});
+
+test('EPUBCheck receipt binds exact bytes and refuses malformed or mismatched results', () => {
+  const bytes = Buffer.from([0x50, 0x4b, 3, 4, 1, 2]);
+  const digest = createHash('sha256').update(bytes).digest('hex');
+  assert.deepEqual(decodeEpubCheckInput(bytes.toString('base64'), digest), bytes);
+  assert.throws(() => decodeEpubCheckInput(bytes.toString('base64'), '0'.repeat(64)));
+  const receipt = { protocol: 'omi-epubcheck/1', version: '5.3.0', sha256: digest, valid: true, codes: [] };
+  assert.equal(parseEpubCheckReceipt(receipt, digest).valid, true);
+  assert.throws(() => parseEpubCheckReceipt({ ...receipt, sha256: '0'.repeat(64) }, digest));
+  assert.throws(() => parseEpubCheckReceipt({ ...receipt, version: '4.2.6' }, digest));
+});
+test('EPUBCheck dispatch uses the same isolated admission gate', async (t) => {
+  if (process.platform === 'win32') return t.skip('Unix socket required');
+  const directory = await mkdtemp(join(tmpdir(), 'omi-epub-worker-'));
+  const socket = join(directory, 'worker.sock');
+  const bytes = Buffer.from([0x50, 0x4b, 3, 4, 1]);
+  const digest = createHash('sha256').update(bytes).digest('hex');
+  const server = createPdfWorkerServer(async (kind, input) => {
+    assert.equal(kind, 'epub-check');
+    assert.deepEqual(input, bytes);
+    return Buffer.from(JSON.stringify({ protocol: 'omi-epubcheck/1', version: '5.3.0', sha256: digest, valid: true, codes: [] }));
+  });
+  await new Promise<void>(resolve => { server.listen(socket, resolve); });
+  t.after(async () => { await new Promise<void>(resolve => { server.close(() => resolve()); }); await rm(directory, { recursive: true, force: true }); });
+  const output = await dispatchPdfWorkerTask('epub-check', bytes, 'owner-1', socket, 2000);
+  assert.equal(parseEpubCheckReceipt(JSON.parse(output.toString()), digest).valid, true);
 });

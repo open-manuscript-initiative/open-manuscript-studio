@@ -1,3 +1,4 @@
+import { sha256HexSync } from '../../model/stateDigest';
 import { createBlankManuscript } from '../../document/createBlankManuscript';
 import { ensureManuscriptRevisionStateDigests } from '../../model/revisionIntegrity';
 import { mergeOmiDocumentAsStudy } from '../../model/studyImport';
@@ -43,11 +44,11 @@ function localized(value: unknown, locale: string): string {
   return text(value[locale]) || text(Object.entries(value).find(([key]) => key.toLowerCase().split(/[-_]/)[0] === language)?.[1])
     || Object.values(value).map(text).find(Boolean) || '';
 }
-function localMap(value: unknown, locale: string): Data {
+export function localMap(value: unknown, locale: string): Data {
   return record(value) ? value : text(value) ? { [locale]: text(value) } : {};
 }
 /** Keep distinct format identifiers; do not guess an edition when ambiguous. */
-function volumeTitleMatter(launch: OmpVolumeHandoff, locale: string) {
+export function volumeTitleMatter(launch: OmpVolumeHandoff, locale: string) {
   const matter = record(launch.publicationMatter) ? launch.publicationMatter : {};
   const series = record(matter.series) ? matter.series : {};
   const formats = Array.isArray(matter.formats) ? matter.formats.filter(record) : [];
@@ -64,6 +65,15 @@ function volumeTitleMatter(launch: OmpVolumeHandoff, locale: string) {
     publicationPlace: localized(matter.publicationPlace, locale), seriesTitle: localized(series.title, locale),
     issn: text(series.printIssn), eissn: text(series.onlineIssn), isbn: isbnFor(true), electronicIsbn: isbnFor(false) };
 }
+/** Compare upstream source content, not the locally edited manuscript. */
+export function fingerprintOmpVolumeSource(value: unknown): string {
+  const canonical = (item: unknown): unknown => {
+    if (Array.isArray(item)) return item.map(canonical);
+    if (record(item)) return Object.fromEntries(Object.keys(item).sort().map(key => [key, canonical(item[key])]));
+    return item;
+  };
+  return sha256HexSync(new TextEncoder().encode(JSON.stringify(canonical(value))));
+}
 export async function fetchOmpVolumeHandoff(token: string): Promise<OmpVolumeHandoff> {
   const response = await fetch(`/integrations/omp/volume-handoff/${encodeURIComponent(token)}`, {
     method: 'GET', headers: { Accept: 'application/json' }, cache: 'no-store', credentials: 'same-origin',
@@ -77,7 +87,7 @@ export function isSameOmpVolume(manuscript: OmiManuscriptState, launch: OmpVolum
     && origin.contextExternalId === launch.context?.externalId
     && origin.submissionExternalId === launch.volume?.externalId;
 }
-function importedSource(launch: OmpVolumeHandoff, submission: Submission, sourceDocument: OjsSourceDocument | undefined,
+export function importedSource(launch: OmpVolumeHandoff, submission: Submission, sourceDocument: OjsSourceDocument | undefined,
   contributors: Contributor[]): OmiManuscript {
   const locale = submission.primaryLocale || 'en';
   // Reuse rich DOCX conversion but retain native OMP contributor roles.
@@ -145,18 +155,18 @@ export function createVolumeFromOmpHandoff(launch: OmpVolumeHandoff, fallbackLoc
     abstracts: book.abstracts, keywordsByLocale: book.keywordsByLocale,
     agents: book.agents, contributions: book.contributions.map(item => ({ ...item, targetId: blank.id })),
   };
-  const mappings: Array<{ chapterExternalId: string; rootSectionId: string; sourceFileExternalId?: string }> = [];
+  const mappings: Array<{ chapterExternalId: string; rootSectionId: string; sourceFileExternalId?: string; sourceFingerprint?: string; contributorFingerprint?: string }> = [];
+  const sharedAgents = new Map<string, string>();
+  volumeContributors.forEach((contributor, index) => {
+    const agent = book.agents[index];
+    if (contributor.externalId && agent) sharedAgents.set(contributor.externalId, agent.id);
+  });
   if (launch.mode === 'full-manuscript') {
     // Keep the native DOCX hierarchy. Do not guess chapter boundaries.
     state = { ...extractManuscriptState(book), id: blank.id, createdAt: blank.createdAt, updatedAt: blank.updatedAt,
       title, locale, titleMatter: blank.titleMatter, documentStructure: blank.documentStructure,
       contributions: book.contributions.map(item => ({ ...item, targetId: blank.id })), extensions: blank.extensions };
   } else {
-    const sharedAgents = new Map<string, string>();
-    volumeContributors.forEach((contributor, index) => {
-      const agent = book.agents[index];
-      if (contributor.externalId && agent) sharedAgents.set(contributor.externalId, agent.id);
-    });
     for (const chapter of chapters) {
       const source = sourceByChapter.get(chapter.externalId)!;
       const chapterContributors = [...new Set(chapter.contributorExternalIds)].map(key => contributorMap.get(key)!);
@@ -180,7 +190,7 @@ export function createVolumeFromOmpHandoff(launch: OmpVolumeHandoff, fallbackLoc
         contributions: state.contributions.map(item => ({ ...item, agentId: replacements.get(item.agentId) ?? item.agentId })),
         annotations: state.annotations.map(item => item.creatorAgentId && replacements.has(item.creatorAgentId)
           ? { ...item, creatorAgentId: replacements.get(item.creatorAgentId)! } : item) };
-      mappings.push({ chapterExternalId: chapter.externalId, rootSectionId: merged.rootSectionId, sourceFileExternalId: source.fileExternalId });
+      mappings.push({ chapterExternalId: chapter.externalId, rootSectionId: merged.rootSectionId, sourceFileExternalId: source.fileExternalId, sourceFingerprint: fingerprintOmpVolumeSource(source), contributorFingerprint: fingerprintOmpVolumeSource(launch.contributors.filter(person => chapter.contributorExternalIds.includes(person.externalId ?? ''))) });
     }
   }
   state = { ...state, extensions: { ...state.extensions,
@@ -191,7 +201,9 @@ export function createVolumeFromOmpHandoff(launch: OmpVolumeHandoff, fallbackLoc
       context: structuredClone(launch.context), volume: structuredClone(launch.volume),
       publicationMatter: structuredClone(launch.publicationMatter ?? {}),
       chapters: structuredClone(chapters), contributors: structuredClone(launch.contributors),
-      mappings, fullSourceFileExternalId: sourceByChapter.get(null)?.fileExternalId, importedAt: blank.createdAt },
+      mappings, contributorMappings: Object.fromEntries(sharedAgents), fullSourceFileExternalId: sourceByChapter.get(null)?.fileExternalId,
+      fullSourceFingerprint: sourceByChapter.has(null) ? fingerprintOmpVolumeSource(sourceByChapter.get(null)) : undefined,
+      importedAt: blank.createdAt },
   } };
   return ensureManuscriptRevisionStateDigests({ ...state,
     ...createInitialVersioningEnvelope(state, { summary: 'Imported OMP volume', timestamp: blank.createdAt, completeness: 'complete' }) });

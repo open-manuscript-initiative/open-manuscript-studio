@@ -1,3 +1,4 @@
+import { OmpChapterPrintedPagePanel } from './OmpChapterPrintedPagePanel';
 import { OjsWorkflowStatusPanel } from './OjsWorkflowStatusPanel';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -43,10 +44,11 @@ const commonText = {
     xmlPreview: 'JATS XML előnézet',
     unavailable: 'Nem elérhető ezen a telepítésen',
     documentUnavailable:
-      'Ehhez a dokumentumtípushoz jelenleg csak PDF artifact használható.',
+      'Ez a formátum nem támogatott ennél a dokumentumtípusnál vagy kapcsolatnál.',
     formats: {
       html: 'HTML',
       jats: 'JATS XML',
+      epub: 'EPUB 3',
       'pdf-print': 'PDF / nyomtatási',
       'pdf-interactive': 'PDF / interaktív',
     },
@@ -71,10 +73,11 @@ const commonText = {
     xmlPreview: 'JATS XML preview',
     unavailable: 'Unavailable on this installation',
     documentUnavailable:
-      'Only PDF artifacts are currently available for this document type.',
+      'This format is unavailable for this document type or connection.',
     formats: {
       html: 'HTML',
       jats: 'JATS XML',
+      epub: 'EPUB 3',
       'pdf-print': 'PDF / print',
       'pdf-interactive': 'PDF / interactive',
     },
@@ -103,10 +106,10 @@ function platformText(
       : 'Inspect destination and supported outputs',
     intro: hu
       ? isOmp
-        ? 'Validált HTML-, JATS- vagy PDF-kimenet átadása egy meglévő, még nem publikált OMP-előállítási változatba. Az OMP szerkesztői jóváhagyása és közzététele külön lépés marad.'
+        ? 'Validált HTML-, JATS-, PDF- vagy EPUB-kimenet átadása egy meglévő, még nem publikált OMP-előállítási változatba. Az OMP szerkesztői jóváhagyása és közzététele külön lépés marad.'
         : 'Validált HTML-, JATS- vagy PDF-kimenet átadása egy meglévő, még nem publikált OJS-cikk előállítási szakaszába. Az OJS szerkesztője ellenőrzi és teszi közzé a változatot.'
       : isOmp
-        ? 'Transfer validated HTML, JATS or PDF output to an existing unpublished OMP Production version. Native OMP approval and publication remain separate editorial steps.'
+        ? 'Transfer validated HTML, JATS, PDF or EPUB output to an existing unpublished OMP Production version. Native OMP approval and publication remain separate editorial steps.'
         : 'Transfer validated HTML, JATS or PDF output to an existing unpublished OJS article in Production. The OJS editor remains responsible for review and publication.',
     confirm: hu
       ? isOmp
@@ -218,6 +221,7 @@ function PublicationArtifactForm({
   );
   const formatAllowed =
     selectedCapability?.available === true &&
+    (format !== 'epub' || provider === 'omp') &&
     publicationArtifactFormatAvailableForDocument(manuscript, format);
 
   function invalidatePrepared(): void {
@@ -280,6 +284,7 @@ function PublicationArtifactForm({
       const available = result.target.formats.filter(
         (item) =>
           item.available &&
+          (item.id !== 'epub' || provider === 'omp') &&
           publicationArtifactFormatAvailableForDocument(
             manuscript,
             item.id,
@@ -473,6 +478,7 @@ function PublicationArtifactForm({
                 {target.formats.map((item) => {
                   const allowed =
                     item.available &&
+                    (item.id !== 'epub' || provider === 'omp') &&
                     publicationArtifactFormatAvailableForDocument(
                       manuscript,
                       item.id,
@@ -581,6 +587,7 @@ function PublicationArtifactForm({
                   />
                 ) : null}
 
+                {prepared.artifact.warnings?.length ? <ul role="status">{prepared.artifact.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul> : null}
                 {prepared.artifact.format === 'jats' &&
                 prepared.artifact.previewText ? (
                   <details>
@@ -643,6 +650,9 @@ function PublicationArtifactForm({
       ) : null}
 
       {error ? <p role="alert">{error}</p> : null}
+      {manuscript.extensions?.['org.openmanuscript.omp.volume'] ? <OmpChapterPrintedPagePanel
+        key={manuscript.id} connections={connections.filter(item => item.providerId === 'omp')}
+        disabled={busy !== null} /> : null}
     </section>
   );
 }
