@@ -1666,13 +1666,6 @@
   display: none !important;
 }
 
-.publication-document-content[data-publication-measuring] > .publication-document-front-matter,
-.publication-document-content[data-publication-measuring] > .publication-document-empty,
-.publication-document-content[data-publication-measuring] > .publication-document-notes,
-.publication-document-content[data-publication-measuring] .omi-continuous-tiptap-editor > * {
-  translate: none !important;
-}
-
 @media (max-width: 1100px) {
   .publication-style-grid {
     grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));

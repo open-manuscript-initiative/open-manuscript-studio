@@ -1,6 +1,7 @@
 import {
   memo,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -11,6 +12,8 @@ import {
   useEditor,
 } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
+import { closeHistory } from '@tiptap/pm/history';
+import { remapDeferredEditorSelection } from '../editor/deferredEditorSelection';
 import { collectChangedWorkspaceReferences } from '../editor/changedWorkspaceReferences';
 import StarterKit from '@tiptap/starter-kit';
 import Collaboration from '@tiptap/extension-collaboration';
@@ -114,6 +117,7 @@ interface BlockEditorProps {
   content: string;
   onUpdate: (blockId: string, content: string, document?: JSONContent) => void;
   editable?: boolean;
+  suspendExternalUpdates?: boolean;
   capabilities?: EditorCapabilities;
   manuscriptLanguage?: string;
   className?: string;
@@ -139,6 +143,7 @@ function BlockEditorComponent({
   content,
   onUpdate,
   editable = true,
+  suspendExternalUpdates = false,
   capabilities = getEditorCapabilities('author'),
   manuscriptLanguage,
   className,
@@ -181,6 +186,9 @@ function BlockEditorComponent({
   const [crossReferencePickerOpen, setCrossReferencePickerOpen] = useState(false);
   const [integrationAction, setIntegrationAction] = useState<'translate' | 'agent' | null>(null);
   const onUpdateRef = useRef(onUpdate);
+  const suspendedRef = useRef(suspendExternalUpdates);
+  const resumeSelectionRef = useRef(false);
+  const resumedContentRef = useRef<string | null>(null);
   const recentLocalContentRef = useRef(new RecentLocalEditorContentHistory());
   const snapshotCache = useRef(new ContinuousSnapshotCache());
   const initialContentRef = useRef<JSONContent | null>(null);
@@ -190,7 +198,7 @@ function BlockEditorComponent({
   const proofreadingSelectRef = useRef<(id: string | null) => void>(() => undefined);
   const activeBlockIdRef = useRef(blockId);
   const blockLabel = formatBlockType(blockType, t);
-  const effectiveEditable = editable && capabilities.editText;
+  const effectiveEditable = editable && capabilities.editText && !suspendExternalUpdates;
   const externalIntegrationsAllowed = effectiveEditable && capabilities.reconcileWorkspaceReferences;
   const editorStyle = {
     '--omi-editor-placeholder': JSON.stringify(t('editor.emptyParagraph')),
@@ -495,6 +503,7 @@ function BlockEditorComponent({
       },
     },
     onUpdate: ({ editor: currentEditor, transaction, appendedTransactions }) => {
+      if (suspendedRef.current) return;
       const snapshot = continuous ? snapshotCache.current.snapshot(currentEditor.state.doc) : undefined;
       const serializedContent = snapshot?.serialized ?? JSON.stringify(currentEditor.getJSON());
       recentLocalContentRef.current.record(serializedContent);
@@ -524,19 +533,20 @@ function BlockEditorComponent({
     blockId,
     manuscriptLanguage ?? manuscriptLocale,
     continuous ? resolveContinuousProofreadingScope : undefined,
-    proofingMode !== 'none',
+    proofingMode !== 'none' && !suspendExternalUpdates,
   );
   proofreadingSelectRef.current = proofreading.selectIssue;
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || suspendExternalUpdates) return;
     return continuous
       ? registerContinuousBlockEditor(editor)
       : registerBlockEditor(blockId, editor);
-  }, [blockId, continuous, editor]);
+  }, [blockId, continuous, editor, suspendExternalUpdates]);
 
   useEffect(() => {
-    if (!editor || !continuous) return;
+    if (!editor || !continuous || suspendExternalUpdates) return;
+    let reportedSelection: ProofingSelection | null | undefined;
     const syncActiveBlock = () => {
       const active = getTopLevelBlockFromResolvedPosition(
         editor.state.selection.$from,
@@ -550,24 +560,35 @@ function BlockEditorComponent({
         useStudioStore.getState().selectSection(active.sectionId);
       }
       if (!reportProofingSelectionOnlyWhenFocused || editor.isFocused) {
-        onProofingSelectionRef.current?.(
-          resolveProofingSelection(editor, active.blockId),
-        );
+        const next = resolveProofingSelection(editor, active.blockId);
+        if (reportedSelection === undefined || (next === null
+          ? reportedSelection !== null
+          : !reportedSelection || next.blockId !== reportedSelection.blockId
+            || next.from !== reportedSelection.from || next.to !== reportedSelection.to
+            || next.text !== reportedSelection.text)) {
+          reportedSelection = next;
+          onProofingSelectionRef.current?.(next);
+        }
       }
+    };
+    const onFocus = () => {
+      // Another view can own the shared selection between focus events.
+      reportedSelection = undefined;
+      syncActiveBlock();
     };
     syncActiveBlock();
     // Tiptap emits a transaction for selection changes as well. Listening to
     // both transaction and selectionUpdate duplicated active-block work.
     editor.on('transaction', syncActiveBlock);
-    if (reportProofingSelectionOnlyWhenFocused) editor.on('focus', syncActiveBlock);
+    editor.on('focus', onFocus);
     return () => {
       editor.off('transaction', syncActiveBlock);
-      if (reportProofingSelectionOnlyWhenFocused) editor.off('focus', syncActiveBlock);
+      editor.off('focus', onFocus);
     };
-  }, [continuous, editor, reportProofingSelectionOnlyWhenFocused]);
+  }, [continuous, editor, reportProofingSelectionOnlyWhenFocused, suspendExternalUpdates]);
 
   useEffect(() => {
-    if (!editor || continuous || !onProofingSelectionRef.current) return;
+    if (!editor || continuous || !onProofingSelectionRef.current || suspendExternalUpdates) return;
     const syncSelection = () => {
       const { doc, selection } = editor.state;
       onProofingSelectionRef.current?.({
@@ -584,10 +605,10 @@ function BlockEditorComponent({
       editor.off('selectionUpdate', syncSelection);
       editor.off('transaction', syncSelection);
     };
-  }, [blockId, continuous, editor]);
+  }, [blockId, continuous, editor, suspendExternalUpdates]);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || suspendExternalUpdates) return;
     const changes = proofingMode === 'editor'
       ? proofingChanges ?? []
       : [];
@@ -612,14 +633,41 @@ function BlockEditorComponent({
     proofingMode,
     publicationCorrections,
     publicationFlowBreaks,
+    suspendExternalUpdates,
   ]);
 
-  useEffect(() => {
-    editor?.setEditable(effectiveEditable);
-  }, [effectiveEditable, editor]);
+  useLayoutEffect(() => {
+    suspendedRef.current = suspendExternalUpdates;
+    if (suspendExternalUpdates) {
+      resumeSelectionRef.current = true;
+      if (useFormattingStore.getState().target?.editor === editor)
+        useFormattingStore.setState({ target: null });
+    }
+    // Changing editability must not emit an update containing the stale view.
+    editor?.setEditable(effectiveEditable, false);
+  }, [effectiveEditable, editor, suspendExternalUpdates]);
+
+  useLayoutEffect(() => {
+    if (!editor || suspendExternalUpdates || !resumeSelectionRef.current) return;
+    resumeSelectionRef.current = false;
+    resumedContentRef.current = content;
+    const incomingDocument = parseStoredContent(content);
+    if (documentsAreEqual(editor.getJSON(), incomingDocument)) return;
+    recentLocalContentRef.current.clear();
+    const { doc, selection } = editor.state;
+    editor.view.dispatch(closeHistory(editor.state.tr));
+    editor.commands.setContent(incomingDocument, { emitUpdate: false });
+    editor.view.dispatch(closeHistory(editor.state.tr.setSelection(
+      remapDeferredEditorSelection(doc, selection, editor.state.doc),
+    )));
+  }, [content, editor, suspendExternalUpdates]);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || suspendExternalUpdates) return;
+    // Only resuming views need pre-paint synchronization; active updates stay passive.
+    const resumedContent = resumedContentRef.current;
+    resumedContentRef.current = null;
+    if (resumedContent === content) return;
     const recentLocalContent = recentLocalContentRef.current;
     if (recentLocalContent.has(content)) {
       recentLocalContent.acknowledge(content);
@@ -642,7 +690,7 @@ function BlockEditorComponent({
     }
 
     editor.commands.setContent(incomingDocument, { emitUpdate: false });
-  }, [content, editor]);
+  }, [content, editor, suspendExternalUpdates]);
 
   function closeSecondaryEditors(): void {
     setActiveNoteId(null);

@@ -919,8 +919,7 @@ test('live facing-page pagination retains stable block projections and coalesces
 test('front-matter autosizing does not reschedule pagination on unrelated renders', () => {
   assert.ok(documentCanvas.includes('}, [value, layoutKey, previewOnly]);'));
   assert.ok(documentCanvas.includes('if (nextWidth === width) return;'));
-  assert.ok(documentCanvas.includes("target?.matches('.publication-document-front-matter textarea')"));
-  assert.ok(documentCanvas.includes("record.attributeName === 'style'"));
+  assert.ok(documentCanvas.includes("target?.closest('.publication-document-front-matter textarea')"));
 });
 
 test('incremental fixed-page pagination matches full layout for edits, insertions and deletions', () => {

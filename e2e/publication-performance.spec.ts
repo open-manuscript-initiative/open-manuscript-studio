@@ -23,6 +23,11 @@ function percentile(samples: number[], fraction: number): number {
 for (const workload of workloads) {
   test(`publication input benchmark: ${workload.blocks} blocks, ${workload.facing ? 'facing' : 'single'} pages, ${workload.input}`, async ({ page }, testInfo) => {
     test.setTimeout(180_000);
+    const updateErrors: string[] = [];
+    page.on('console', message => {
+      if (message.type() === 'error' && /Maximum update depth|Cannot update a component/.test(message.text()))
+        updateErrors.push(message.text());
+    });
     await installMockStudioApi(page);
     await signInToStudio(page);
     await page.getByRole('button', { name: /^New OMI study/ }).click();
@@ -83,6 +88,7 @@ for (const workload of workloads) {
       await expect.poll(() => probe.evaluate((value) => value.samples.length), { timeout: 30_000 }).toBe(typed.length);
       if (editingTitle) await expect(target).toHaveValue('Benchmark' + typed);
       else await expect(target).toContainText(typed);
+      expect(updateErrors).toEqual([]);
       await probe.evaluate((value) => value.stop());
       const data = await probe.evaluate(({ samples, longTasks, supportedLongTasks }) => ({ samples, longTasks, supportedLongTasks }));
       const browser = await canvas.evaluate((element) => ({
