@@ -434,7 +434,7 @@ test('public exports omit private annotation bodies and anchors without changing
     const output = rawOutput.replace(/\\_/g, '_');
     assert.doesNotMatch(output, /PRIVATE_(?:HIDDEN|EDITOR|AUTHOR|ORIGIN)_BODY|author-declared:self-authored-outside-omi|omi:source-origin|PRIVATE_MARKER/, format);
     assert.match(output, /PUBLIC_TEXT/, format);
-    if (format !== 'epub') assert.match(output, /PUBLIC_NOTE_BODY/, format);
+    assert.match(output, /PUBLIC_NOTE_BODY/, format);
   }
   assert.equal(JSON.stringify(manuscript), before);
 });
@@ -471,4 +471,26 @@ test('nested publication projection removes all private note anchors without edi
     .map((note) => note.id), ['nested-public']);
   assert.doesNotMatch(JSON.stringify(projection), /PRIVATE_NESTED_BODY/);
   assert.equal(JSON.stringify(manuscript), original);
+});
+
+test('EPUB shared scholarly projection preserves public notes, formatting and nested navigation', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]!.blocks[0]!;
+  block.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+    { type: 'text', text: 'Italic phrase', marks: [{ type: 'italic' }] },
+    { type: 'omiNote', attrs: { noteId: 'public-note' } },
+  ] }] });
+  manuscript.annotations = [{ id: 'public-note', type: 'note', targetBlockId: block.id, noteKind: 'footnote',
+    body: 'Public scholarly note', renderingHint: 'footnote' }];
+  manuscript.sections[0]!.children = [{ id: 'nested-epub', title: 'Nested chapter', blocks: [{ id: 'nested-epub-body', type: 'paragraph', content: 'Nested body' }] }];
+  const result = buildEpubExport(manuscript), entries = readStoreZipEntries(result.bytes);
+  const xhtml = new TextDecoder().decode(entries.get('EPUB/article.xhtml'));
+  const nav = new TextDecoder().decode(entries.get('EPUB/nav.xhtml'));
+  assert.match(xhtml, /<em>Italic phrase<\/em>/);
+  assert.match(xhtml, /Public scholarly note/);
+  assert.match(xhtml, /href="#note-public-note"/);
+  assert.match(xhtml, /epub:type="noteref"/);
+  assert.match(nav, /article\.xhtml#sec-nested-epub/);
+  assert.ok(!result.semanticLosses.some(loss => loss.code === 'epub-semantic-projection-fallback'));
+  assert.ok(!result.semanticLosses.some(loss => loss.code === 'note-not-preserved' && loss.targetId === 'public-note'));
 });
