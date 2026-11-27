@@ -1,5 +1,6 @@
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { renderHtmlArticle } from './exportHtml';
+import { inlinePublicationArtifactImages } from './publicationHtmlArtifact';
 import { visualTextBoxText } from '../model/textBoxes';
 import { publicationSemanticLossDiagnostics, semanticLossWarnings, type PublicationSemanticLoss } from '../model/publicationSemanticLoss';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
@@ -17,7 +18,21 @@ export interface EpubExportResult {
   warnings: string[];
 }
 
-export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
+export const OMI_EPUB_PUBLICATION_RENDERER_VERSION = '0.2.0' as const;
+
+/** Resolve only referenced, integrity-checked portable images; no remote fetch. */
+export async function buildEpubPublicationExport(manuscript: OmiManuscript, assetOwnerId = manuscript.id): Promise<EpubExportResult> {
+  const rendered = renderHtmlArticle(manuscript, undefined, { publicationMatter: false });
+  if (!rendered.validForExport) throw new Error(rendered.diagnostics.filter(item => item.severity === 'error').map(item => item.message).join('\n'));
+  const html = await inlinePublicationArtifactImages(rendered.html, manuscript, 32 * 1024 * 1024, false, assetOwnerId);
+  const result = buildEpubExport(manuscript, { html });
+  const blocking = result.semanticLosses.filter(loss => ['epub-semantic-projection-fallback', 'epub-image-unavailable', 'epub-unsupported-content', 'note-not-preserved'].includes(loss.code));
+  if (blocking.length) throw new Error(blocking.map(loss => loss.message).join('\n'));
+  if (result.bytes.byteLength > 32 * 1024 * 1024) throw new Error('EPUB exceeds the 32 MiB publication transfer limit.');
+  return result;
+}
+
+export function buildEpubExport(manuscript: OmiManuscript, options: { html?: string } = {}): EpubExportResult {
   manuscript = publicPublicationManuscript(manuscript);
   let semanticLosses = publicationSemanticLossDiagnostics(manuscript, 'EPUB');
   const profile = resolvePublicationProfile(manuscript);
@@ -39,10 +54,11 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
   const extraManifest: string[] = [];
   try {
     const rendered = renderHtmlArticle(manuscript, profile, { publicationMatter: false });
-    const start = rendered.html.indexOf('<article class="omi-scholarly-article"');
-    const end = rendered.html.lastIndexOf('</article>');
+    const html = options.html ?? rendered.html;
+    const start = html.indexOf('<article class="omi-scholarly-article"');
+    const end = html.lastIndexOf('</article>');
     if (start < 0 || end < start) throw new Error('No scholarly HTML article.');
-    const fragment = rendered.html.slice(start, end + '</article>'.length)
+    const fragment = html.slice(start, end + '</article>'.length)
       .replace(/<(br|img|col|hr|wbr|source|input)\b([^<>]*?)\s*\/?>/gi, '<$1$2/>');
     const candidate = '<?xml version="1.0" encoding="UTF-8"?>' +
       '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="' +
@@ -54,11 +70,13 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
     // raster image bytes in this synchronous exporter.
     const nodes = Array.from(document.getElementsByTagName('*'));
     const visualLosses = new Set<string>();
+    let unsupportedContent = false;
     for (const element of nodes) {
       if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml' ||
           ['script', 'iframe', 'object', 'embed', 'form', 'style', 'audio', 'video', 'source', 'input'].includes(element.localName ?? '')) {
         const parent = element.parentNode;
         if (parent) {
+          unsupportedContent = true;
           if (element.localName === 'svg' || element.localName === 'math') {
             const placeholder = document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
             placeholder.appendChild(document.createTextNode('[Graphic]'));
@@ -102,6 +120,8 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
     semanticLosses = semanticLosses.map(loss => loss.code === 'note-not-preserved' &&
       xhtml.includes('id="note-' + htmlIdentifier(loss.targetId) + '"') ?
       { ...loss, code: 'note-role-projected-as-endnote', message: 'EPUB preserves the public note body and hyperlink, but projects the original note role into a reflowable note list; native OMI note identity and role are not round-trippable.' } : loss);
+    if (unsupportedContent) semanticLosses.push({ code: 'epub-unsupported-content', severity: 'warning',
+      targetId: manuscript.id, message: 'EPUB cannot preserve one or more non-XHTML graphics or active objects.' });
     if (visualLosses.size) semanticLosses.push({ code: 'epub-image-unavailable', severity: 'warning',
       targetId: manuscript.id, message: 'EPUB omitted an image not available as an embedded raster. Restore its asset before export.' });
   } catch {

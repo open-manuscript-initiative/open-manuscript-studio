@@ -31,6 +31,7 @@ const publicationArtifactFormatSchema = z.enum([
   'jats',
   'pdf-print',
   'pdf-interactive',
+  'epub',
 ]);
 const publicationArtifactSchema = z.object({
   action: z.enum(['inspect', 'transfer']),
@@ -109,6 +110,15 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       response.status(400).json({ error: { message: 'Planned issue transfer requires an OJS connection.' } });
       return;
     }
+    if (data.format === 'epub' && connection.providerId !== 'omp') {
+      response.status(400).json({ error: { message: 'EPUB proof transfer requires an OMP connection.' } });
+      return;
+    }
+    if (data.action === 'transfer' && data.format === 'epub' &&
+        (data.mediaType !== 'application/epub+zip' || !data.fileName?.toLowerCase().endsWith('.epub'))) {
+      response.status(400).json({ error: { message: 'Invalid EPUB artifact media type or filename.' } });
+      return;
+    }
     const platform = connection.providerId === 'omp' ? 'OMP' : 'OJS';
     const baseUrl = (
       await assertTrustedIntegrationUrl(configuredBase, configuredBase)
@@ -149,6 +159,13 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
         result.publicationId !== data.publicationId ||
         (data.action === 'inspect' && result.installationId !== data.expectedInstallationId))) {
       throw new Error('OJS returned a different or unsupported issue transfer target. Update the OJS integration plugin and inspect again.');
+    }
+    if (data.action === 'transfer' && data.format === 'epub' &&
+        (result.publicationId !== data.publicationId || result.format !== 'epub' ||
+          result.mediaType !== 'application/epub+zip' || result.provenanceVerified !== true ||
+          result.published !== false || result.buildId !== data.build?.id ||
+          result.sha256 !== record(record(data.build?.output).digest).value)) {
+      throw new Error('OMP returned an incompatible EPUB proof receipt; inspect the destination before retrying.');
     }
     response.json(
       data.action === 'inspect' ? { target: result } : { receipt: result },

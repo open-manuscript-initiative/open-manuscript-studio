@@ -64,7 +64,7 @@ test('publication artifact preparation rejects non-study HTML targets', async ()
   );
 });
 
-test('volume publication transfer exposes only PDF-capable Studio outputs', () => {
+test('volume publication transfer exposes PDF and EPUB outputs', () => {
   const manuscript = createCommittedHtmlStudy();
   manuscript.documentStructure = {
     ...manuscript.documentStructure!,
@@ -83,6 +83,7 @@ test('volume publication transfer exposes only PDF-capable Studio outputs', () =
     publicationArtifactFormatAvailableForDocument(manuscript, 'pdf-print'),
     true,
   );
+  assert.equal(publicationArtifactFormatAvailableForDocument(manuscript, 'epub'), true);
   assert.equal(
     publicationArtifactFormatAvailableForDocument(
       manuscript,
@@ -106,4 +107,16 @@ test('JATS direct transfer rejects package-local binary references', () => {
       ),
     /package-local binary assets/i,
   );
+});
+
+test('EPUB proof preparation carries exact publication build provenance', async () => {
+  const manuscript = createCommittedHtmlStudy();
+  const artifact = await preparePublicationArtifact(manuscript, 'epub');
+  assert.equal(artifact.format, 'epub');
+  assert.equal(artifact.mediaType, 'application/epub+zip');
+  assert.match(artifact.fileName, /\.epub$/);
+  assert.equal(artifact.build.output.format, 'epub');
+  assert.equal(artifact.build.output.byteLength, artifact.bytes.length);
+  assert.equal(artifact.build.manuscript.id, manuscript.id);
+  assert.deepEqual(Buffer.from(artifact.artifactBase64, 'base64'), Buffer.from(artifact.bytes));
 });

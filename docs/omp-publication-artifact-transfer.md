@@ -124,3 +124,7 @@ responses.
 
 A real OMP 3.5 Production-stage acceptance run remains the final
 installation-level release verification.
+
+## EPUB proof transfer
+
+The publication artifact workspace offers EPUB 3 only for an OMP connection whose plugin advertises it. A prepared EPUB is bound to the current manuscript build and its byte digest; source raster assets are resolved locally and verified before packaging. The transfer blocks missing images, omitted note bodies, unsupported active/graphic objects, and the legacy text-only fallback. Remaining format-projection warnings are shown before approval. The OMP receiver independently validates the archive and provenance and creates an unapproved proof. This is not yet an official EPUBCheck release gate. Custom printed title-matter pages are not reproduced as fixed-layout EPUB pages.
