@@ -21,18 +21,25 @@ export async function executeEpubCheck(bytes: Buffer): Promise<Buffer> {
     if (![0, 1].includes(result.exitCode)) throw new Error('EPUBCheck runtime failed.');
     const info = await stat(report);
     if (!info.isFile() || info.size < 1 || info.size > 4 * 1024 * 1024) throw new Error('Invalid EPUBCheck report.');
-    const parsed = JSON.parse(await readFile(report, 'utf8')) as { checker?: { version?: unknown }; messages?: unknown };
-    const version = parsed.checker?.version;
-    if (typeof version !== 'string' || !/^5\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$/.test(version) || !Array.isArray(parsed.messages))
-      throw new Error('Unsupported EPUBCheck report.');
-    // Only bounded codes; never return input text, file paths or raw subprocess logs.
-    const codes = [...new Set(parsed.messages.flatMap((entry: unknown) => {
-      if (!entry || typeof entry !== 'object') return [];
-      const message = entry as { ID?: unknown; id?: unknown };
-      const code = message.ID ?? message.id;
-      return typeof code === 'string' && /^[A-Z]{2,5}-[0-9]{3}[a-z]?$/.test(code) ? [code] : [];
-    }))].slice(0, 50);
-    return Buffer.from(JSON.stringify({ protocol: 'omi-epubcheck/1', version,
-      sha256: createHash('sha256').update(bytes).digest('hex'), valid: result.exitCode === 0, codes }));
+    return parseEpubCheckReport(JSON.parse(await readFile(report, 'utf8')), bytes, result.exitCode);
   } finally { await rm(directory, { recursive: true, force: true }); }
+}
+
+/** EPUBCheck 5.x serializes CheckerMetadata.checkerVersion, not version. */
+export function parseEpubCheckReport(raw: unknown, bytes: Buffer, exitCode: number): Buffer {
+  if (![0, 1].includes(exitCode)) throw new Error('EPUBCheck runtime failed.');
+  if (!raw || typeof raw !== 'object') throw new Error('Unsupported EPUBCheck report.');
+  const parsed = raw as { checker?: { checkerVersion?: unknown }; messages?: unknown };
+  const version = parsed.checker?.checkerVersion;
+  if (typeof version !== 'string' || !/^5\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$/.test(version) || !Array.isArray(parsed.messages))
+    throw new Error('Unsupported EPUBCheck report.');
+  // Only bounded codes; never return input text, file paths or raw subprocess logs.
+  const codes = [...new Set(parsed.messages.flatMap((entry: unknown) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const message = entry as { ID?: unknown; id?: unknown };
+    const code = message.ID ?? message.id;
+    return typeof code === 'string' && /^[A-Z]{2,5}-[0-9]{3}[a-z]?$/.test(code) ? [code] : [];
+  }))].slice(0, 50);
+  return Buffer.from(JSON.stringify({ protocol: 'omi-epubcheck/1', version,
+    sha256: createHash('sha256').update(bytes).digest('hex'), valid: exitCode === 0, codes }));
 }

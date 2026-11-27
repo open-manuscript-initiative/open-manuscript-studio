@@ -62,7 +62,7 @@ runuser -u "$omi_api_user" -- env \
   "$omi_node_bin/npm" --prefix server run build
 
 # Do not copy a stale or partial dist after a failed build.
-for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js services/issuePdfSlice.js \
+for file in workers/pdfWorkerServer.js services/epubCheckExecutor.js services/vivliostylePdfRenderer.js services/issuePdfSlice.js \
   security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js \
   security/pdfSubprocess.js; do
   test -s "server/dist/$file"
@@ -80,7 +80,7 @@ install -d -o root -g root -m 0755 /opt/omi-pdf-worker
 install -d -o root -g root -m 0755 /opt/omi-pdf-worker/{workers,services,security}
 printf '{"type":"module"}\n' > /opt/omi-pdf-worker/package.json
 chmod 0644 /opt/omi-pdf-worker/package.json
-for file in workers/pdfWorkerServer.js services/vivliostylePdfRenderer.js services/issuePdfSlice.js \
+for file in workers/pdfWorkerServer.js services/epubCheckExecutor.js services/vivliostylePdfRenderer.js services/issuePdfSlice.js \
   security/pdfWorkerEnvironment.js security/pdfWorkerTransport.js \
   security/pdfSubprocess.js; do
   install -o root -g root -m 0644 \
@@ -226,3 +226,7 @@ Install `qpdf` on the isolated worker host (`apt install qpdf` on Ubuntu/Debian)
 ## EPUBCheck extension
 
 For EPUB publication transfer, install an official verified EPUBCheck 5.x release with its complete library directory under root-owned `/opt/epubcheck` (entry point `/opt/epubcheck/epubcheck.jar`) and a supported Java runtime at `/usr/bin/java`. Extend both compiled-file verification and copying lists above with `services/epubCheckExecutor.js`. Reload the isolated worker after installing the reviewed build; run a valid and an invalid EPUB through the socket before enabling publication transfer. Do not weaken PrivateNetwork, the filesystem restrictions or resource limits. No fallback to the API process is allowed. Existing PDF operations remain unaffected when EPUBCheck is absent.
+
+### EPUBCheck 5.4 report schema
+
+The official JSON report exposes `checker.checkerVersion` and `messages[].ID`. A worker built against the incorrect `checker.version` field rejects all reports with HTTP 422. Rebuild and redeploy the corrected worker executor; do not relax sandbox settings. Retest both valid and invalid EPUBs through the actual socket.

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { parseEpubCheckReport } from '../services/epubCheckExecutor.js';
 import { decodeEpubCheckInput, parseEpubCheckReceipt } from '../services/epubCheckGate.js';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -154,4 +155,19 @@ test('EPUBCheck dispatch uses the same isolated admission gate', async (t) => {
   t.after(async () => { await new Promise<void>(resolve => { server.close(() => resolve()); }); await rm(directory, { recursive: true, force: true }); });
   const output = await dispatchPdfWorkerTask('epub-check', bytes, 'owner-1', socket, 2000);
   assert.equal(parseEpubCheckReceipt(JSON.parse(output.toString()), digest).valid, true);
+});
+
+
+test('EPUBCheck 5.4 JSON report uses checkerVersion and ID; invalid input cannot pass', () => {
+  const bytes = Buffer.from('synthetic EPUB');
+  const digest = createHash('sha256').update(bytes).digest('hex');
+  const report = { checker: { checkerVersion: '5.4.0', nFatal: 1, nError: 0, nWarning: 0 }, messages: [{ ID: 'PKG-002', severity: 'FATAL', message: 'private input' }] };
+  const invalid = parseEpubCheckReceipt(JSON.parse(parseEpubCheckReport(report, bytes, 1).toString()), digest);
+  assert.equal(invalid.valid, false);
+  assert.equal(invalid.version, '5.4.0');
+  assert.deepEqual(invalid.codes, ['PKG-002']);
+  const valid = parseEpubCheckReceipt(JSON.parse(parseEpubCheckReport({ checker: { checkerVersion: '5.4.0' }, messages: [] }, bytes, 0).toString()), digest);
+  assert.equal(valid.valid, true);
+  assert.throws(() => parseEpubCheckReport({ checker: { version: '5.4.0' }, messages: [] }, bytes, 0), /Unsupported/);
+  assert.throws(() => parseEpubCheckReport(report, bytes, 2), /runtime failed/);
 });
