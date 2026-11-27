@@ -50,3 +50,19 @@ export function validatePrintedChapterRanges(targets: readonly OmpChapterTransfe
     previous = range.lastPrintedPage;
   });
 }
+
+export interface OmpChapterPrintedReviewRow {
+  target: OmpChapterTransferTarget; snapshot: OmpChapterPageSnapshot;
+  first: string; last: string; reviewed: boolean;
+}
+/** Printed labels are manually verified against the rendered PDF, never inferred from physical indices. */
+export function reviewedOmpChapterRanges(rows: readonly OmpChapterPrintedReviewRow[]): (PrintedPageRange & { rootSectionId: string })[] {
+  const ranges = rows.map(row => {
+    assertPageSnapshot(row.target, row.snapshot);
+    if (!row.reviewed || !/^[1-9][0-9]{0,5}$/.test(row.first) || !/^[1-9][0-9]{0,5}$/.test(row.last))
+      throw new Error('Review the printed labels for every mapped OMP chapter.');
+    return { rootSectionId: row.target.rootSectionId, firstPrintedPage: Number(row.first), lastPrintedPage: Number(row.last) };
+  });
+  validatePrintedChapterRanges(rows.map(row => row.target), ranges);
+  return ranges;
+}

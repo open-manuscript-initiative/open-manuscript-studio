@@ -47,3 +47,7 @@ The conservative chapter replacement can retain identical embedded raster images
 ## Chapter printed-page connector
 
 The Studio editorial API now supports exact OMP chapter page-range inspection and confirmed writeback via a personal OMP publishing connection. Requests and receipts bind the press, submission, publication and chapter identities; the client also checks the original source-chapter identity. The model uses only explicit mapped chapter roots, permits adjacent chapters to share a printed boundary page, and rejects reversed or mixed-publication ranges. PDF physical page indices are never silently converted to printed labels. UI review tied to a rendered layout is a subsequent step.
+
+### Printed page review in the publication artifact workspace
+
+Imported OMP volumes receive a chapter page review panel. It renders a full PDF using the saved publication style, displays physical page proposals and offers the exact rendered file for verification. Printed page inputs start empty and require explicit per-chapter and batch confirmation. The panel checks the current document, saved layout, server and connection before every operation, inspects all destinations again before applying, and validates each receipt. Partial or uncertain writes halt the batch and require a native OMP check before retry. Unmapped chapters and complete-manuscript imports do not acquire guessed targets. This is manual printed-label confirmation, not automatic folio extraction; native browser E2E remains required.

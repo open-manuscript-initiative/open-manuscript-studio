@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { listOmpChapterTransferTargets } from '../src/model/ompChapterTransferTargets.ts';
-import { prepareChapterPageWrite, validatePrintedChapterRanges, type OmpChapterPageSnapshot } from '../src/model/ompChapterPrintedPages.ts';
+import { reviewedOmpChapterRanges, prepareChapterPageWrite, validatePrintedChapterRanges, type OmpChapterPageSnapshot } from '../src/model/ompChapterPrintedPages.ts';
 import { ompChapterPagesRequest, validateOmpChapterPagesResponse } from '../server/src/contracts/ompChapterPagesContract.ts';
 import { createVolumeFromOmpHandoff, type OmpVolumeHandoff } from '../src/integrations/omp/importOmpVolume.ts';
 const fixture = (): OmpVolumeHandoff => ({
@@ -36,4 +36,16 @@ test('chapter request and receipt are bound to exact target and stale token', ()
   assert.equal(validateOmpChapterPagesResponse(request, response).receipt?.pages, '12-15');
   assert.throws(() => validateOmpChapterPagesResponse(request, { ...response, receipt: { ...response.receipt, chapterId: 6 } }));
   assert.throws(() => prepareChapterPageWrite(target, { ...snapshot, sourceChapterId: 99 }, { firstPrintedPage: 12, lastPrintedPage: 15 }, true));
+});
+
+test('printed chapter labels require explicit review; physical proposals cannot authorize writes', () => {
+  const target = listOmpChapterTransferTargets(createVolumeFromOmpHandoff(fixture(), 'hu'))[0]!;
+  const snapshot: OmpChapterPageSnapshot = { installationId: target.installationId, contextId: target.contextId,
+    submissionId: target.submissionId, publicationId: target.publicationId, chapterId: target.chapterId,
+    sourceChapterId: target.sourceChapterId, protocol: 'omi-chapter-page-range/1', pages: '5-9', workflowToken: 'a'.repeat(64), published: false };
+  const row = { target, snapshot, first: '', last: '', reviewed: false };
+  assert.throws(() => reviewedOmpChapterRanges([row]));
+  assert.throws(() => reviewedOmpChapterRanges([{ ...row, first: '12', last: '15' }]));
+  assert.deepEqual(reviewedOmpChapterRanges([{ ...row, first: '12', last: '15', reviewed: true }]),
+    [{ rootSectionId: target.rootSectionId, firstPrintedPage: 12, lastPrintedPage: 15 }]);
 });
