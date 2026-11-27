@@ -4,8 +4,11 @@ import { createOmpHandoff, consumeOmpHandoff } from '../integrations/omp/handoff
 import {
   loadOmpAuthorContext,
   loadOmpLaunchData,
+  loadOmpVolumeImportData,
   loadOmpPlatformCapabilities,
 } from '../integrations/omp/ompClient.js';
+import { createVolumeProgressTicket, updateVolumeProgress, finishVolumeProgress, readVolumeProgress } from '../integrations/omp/volumeImportProgress.js';
+import { createOmpVolumeHandoff, consumeOmpVolumeHandoff } from '../integrations/omp/volumeHandoffStore.js';
 import { verifyOmpLaunch } from '../integrations/omp/launchVerifier.js';
 import { createPendingAuthorOmpNativeContext } from '../integrations/omp/nativeContext.js';
 import { createOjsHandoff, consumeOjsHandoff } from '../integrations/ojs/handoffStore.js';
@@ -18,6 +21,69 @@ import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
 import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
 
 export const integrationRouter = Router();
+
+let activeVolumeImports = 0;
+
+integrationRouter.get('/omp/volume-launch', async (request, response) => {
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  const payload = typeof request.query.payload === 'string' ? request.query.payload : '';
+  const signature = typeof request.query.signature === 'string' ? request.query.signature : '';
+  if (!payload || !signature || payload.length > 16384 || signature.length > 128) {
+    response.status(400).json({ error: { code: 'INVALID_OMP_VOLUME_ASSERTION' } });
+    return;
+  }
+  if (activeVolumeImports >= 2) {
+    response.status(503).json({ error: { code: 'OMP_VOLUME_IMPORT_BUSY' } });
+    return;
+  }
+  activeVolumeImports += 1;
+  try {
+    const verified = await verifyOmpLaunch(payload, signature, 'volume');
+    const progressToken = createVolumeProgressTicket();
+    response.redirect(302, `/#omiOmpVolumeProgress=${encodeURIComponent(progressToken)}`);
+    try {
+      const data = await loadOmpVolumeImportData(verified.claims, payload, signature, verified.installation.baseUrl,
+        progress => updateVolumeProgress(progressToken, progress));
+      const token = createOmpVolumeHandoff({ protocol: 'omi-integration/1', profile: 'omi-integration/1/omp',
+        kind: 'volume', installation: verified.installation, ...data });
+      finishVolumeProgress(progressToken, token);
+    } catch {
+      finishVolumeProgress(progressToken);
+    }
+  } catch {
+    if (!response.headersSent) response.status(400).json({ error: { code: 'OMP_VOLUME_IMPORT_FAILED',
+      message: 'Unable to import the complete volume. Open it again in OMP.' } });
+  } finally {
+    activeVolumeImports -= 1;
+  }
+});
+
+integrationRouter.get('/omp/volume-progress/:token', (request, response) => {
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  const token = typeof request.params.token === 'string' ? request.params.token : '';
+  const status = /^[A-Za-z0-9_-]{43}$/.test(token) ? readVolumeProgress(token) : undefined;
+  if (!status) {
+    response.status(410).json({ error: { code: 'OMP_VOLUME_PROGRESS_EXPIRED' } });
+    return;
+  }
+  response.status(200).json(status);
+});
+
+integrationRouter.get('/omp/volume-handoff/:token', (request, response) => {
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  const token = typeof request.params.token === 'string' ? request.params.token : '';
+  const handoff = /^[A-Za-z0-9_-]{43}$/.test(token) ? consumeOmpVolumeHandoff(token) : undefined;
+  if (!handoff) {
+    response.status(410).json({ error: { code: 'OMP_VOLUME_HANDOFF_EXPIRED' } });
+    return;
+  }
+  response.status(200).type('application/json').send(handoff);
+});
 
 integrationRouter.get('/omp/handoff/:token', (request, response) => {
   const token = typeof request.params.token === 'string' ? request.params.token : '';

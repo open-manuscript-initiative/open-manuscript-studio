@@ -4,7 +4,7 @@ import './i18n/registerViteLocaleLoaders';
 import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
-import { getOjsIssueProgressToken, OjsIssueImportProgress } from './components/OjsIssueImportProgress';
+import { getOjsIssueProgressToken, getOmpVolumeProgressToken, OjsIssueImportProgress } from './components/OjsIssueImportProgress';
 import { initializeLastSessionPersistence } from './app/lastSessionPersistence';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
 import {
@@ -59,7 +59,8 @@ import './styles/desktop-form-layout.css';
 import './styles/menu-appearance.css';
 
 const issueProgressToken = getOjsIssueProgressToken();
-if (!issueProgressToken) restorePendingExternalLaunchToLocation();
+const volumeProgressToken = getOmpVolumeProgressToken();
+if (!issueProgressToken && !volumeProgressToken) restorePendingExternalLaunchToLocation();
 initializeMenuAppearancePreferences();
 initializeEditorMemoryPreferences();
 initializeRevisionIntegrity();
@@ -108,7 +109,7 @@ async function bootstrap(): Promise<void> {
   ).render(
     <React.StrictMode>
       <I18nProvider>
-        {issueProgressToken ? <OjsIssueImportProgress token={issueProgressToken} /> : <App />}
+        {volumeProgressToken ? <OjsIssueImportProgress token={volumeProgressToken} platform="omp" /> : issueProgressToken ? <OjsIssueImportProgress token={issueProgressToken} /> : <App />}
       </I18nProvider>
     </React.StrictMode>
   );

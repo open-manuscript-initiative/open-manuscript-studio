@@ -1,0 +1,17 @@
+# OMP complete-volume receiver (server slice)
+
+The OMP plugin's dedicated volume assertion is accepted only by the volume verifier. The Studio checks exact scope, actor, press and current publication identity, trusted installation origin, signature, expiry and durable one-time launch nonce. The ordinary manuscript receiver rejects volume grants.
+
+The signed manifest is validated before fetching any source. Edited volumes prefer a complete ordered set of chapter files; authored works prefer a complete manuscript. If only one complete representation exists it is selected, never both. A partial chapter set with no whole manuscript fails without handoff. Chapter metadata remains available even for a full-manuscript source; no chapter boundaries are guessed.
+
+Downloads use the existing pinned OMP transport with same-origin redirects, 8 MiB manifest, 32 MiB per source and 64 MiB aggregate source limits. Converted handoff data is limited to 32 MiB; at most two simultaneous imports and eight pending handoffs are allowed. Source conversion reuses rich DOCX semantics including notes, references and tables. A separate ten-minute single-use handoff is issued only after complete conversion.
+
+The dedicated GET /integrations/omp/volume-launch endpoint redirects to the Studio with a one-time handoff token. The browser consumes it and atomically assembles a native volume or monograph. Separate chapters become editable studies with stable external identity mappings; shared contributors are unified by native author ID. Whole-book sources retain their DOCX hierarchy, with chapter metadata stored but no guessed boundary mapping. Open copies are not overwritten. Progress, persistent reimport reconciliation and native launch UI remain subsequent work. Native browser E2E and memory/large-volume testing remain required.
+
+## Import progress
+
+The launch redirects immediately to a random OMP-only progress ticket in the URL fragment. The UI polls a no-store status route and displays real completed source counts, download/conversion phases and localized labels (en, hu, de, fr, it, es, nl, pl). A whole book counts as one source rather than as its number of chapters. Only a complete import yields a one-time handoff. Login redirects preserve the volume handoff through the existing session storage mechanism. OJS progress tickets and OMP progress tickets are isolated. Browser E2E testing is still required before native launcher activation.
+
+## Press, series and format identifiers
+
+The optional OMP publication matter snapshot is retained with the imported origin. Publisher, place, localized series title, print and online ISSN and unambiguous physical/digital ISBNs populate native book front matter. Multiple ISBNs in a format group are kept in the snapshot instead of choosing an arbitrary edition. Shortcodes [omi:electronic-isbn], [omi:series], [omi:series-number] and [omi:press] complement existing publisher, ISBN and DOI codes; original chapter titles supply requested-language contents when available. Missing translations remain unresolved.

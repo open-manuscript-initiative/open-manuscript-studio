@@ -7,6 +7,7 @@ import {
   ExternalPlatform,
 } from '../../generated/prisma/client.js';
 
+import { validateOmpLaunchTarget } from './volumeImportBoundary.js';
 import { prisma } from '../../lib/prisma.js';
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
@@ -21,6 +22,7 @@ export interface OmpLaunchClaims {
     path?: string;
     name?: string;
   };
+  volume?: { submissionId?: string; publicationId?: string };
   submission?: {
     externalId?: string;
     type?: string;
@@ -36,7 +38,7 @@ export interface OmpLaunchClaims {
   actor?: {
     externalId?: string;
   };
-  actorMode?: 'editor' | 'author' | 'review';
+  actorMode?: 'editor' | 'author' | 'review' | 'volume';
   scope?: string[];
   iat: number;
   exp: number;
@@ -112,7 +114,8 @@ function validateClaimsShape(value: unknown): value is OmpLaunchClaims {
       claims.actorMode === undefined ||
       claims.actorMode === 'editor' ||
       claims.actorMode === 'author' ||
-      claims.actorMode === 'review'
+      claims.actorMode === 'review' ||
+      claims.actorMode === 'volume'
     ) &&
     (
       claims.scope === undefined ||
@@ -121,7 +124,7 @@ function validateClaimsShape(value: unknown): value is OmpLaunchClaims {
   );
 }
 
-export async function verifyOmpLaunch(payload: string, signature: string) {
+export async function verifyOmpLaunch(payload: string, signature: string, target: 'submission' | 'volume' = 'submission') {
   let claimsValue: unknown;
 
   try {
@@ -137,6 +140,7 @@ export async function verifyOmpLaunch(payload: string, signature: string) {
   }
 
   const claims = claimsValue;
+  validateOmpLaunchTarget(claims, target);
   if (claims.profile && claims.profile !== 'omi-integration/1/omp') {
     throw new Error('Unsupported OMP integration profile.');
   }

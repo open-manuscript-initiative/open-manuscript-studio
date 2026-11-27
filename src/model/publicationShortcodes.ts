@@ -3,7 +3,7 @@ import { collectPublicationContributors } from './publicationRendering';
 import { partitionManuscriptStudies } from './sectionStructure';
 import { getDocumentStructureProfile } from './documentProfile';
 
-export const PUBLICATION_SHORTCODES = ['imprint', 'editorial-board', 'authors', 'contents', 'journal', 'publisher', 'address', 'contact', 'title', 'volume', 'number', 'year', 'issn', 'eissn', 'isbn', 'doi'] as const;
+export const PUBLICATION_SHORTCODES = ['imprint', 'editorial-board', 'authors', 'contents', 'journal', 'publisher', 'address', 'contact', 'title', 'volume', 'number', 'year', 'issn', 'eissn', 'isbn', 'doi', 'electronic-isbn', 'series', 'series-number', 'press'] as const;
 type Code = typeof PUBLICATION_SHORTCODES[number];
 type Data = Record<string, unknown>;
 function record(value: unknown): Data {
@@ -21,6 +21,8 @@ function localized(value: unknown, locale: string, strict = false): string {
 }
 export function publicationShortcodeValues(state: OmiManuscriptState, requestedLocale?: string): Record<Code, string> {
   const origin = record(state.extensions?.['org.openmanuscript.ojs.issue']);
+  const ompOrigin = record(state.extensions?.['org.openmanuscript.omp.volume']);
+  const ompMatter = record(ompOrigin.publicationMatter), ompSeries = record(ompMatter.series);
   const context = record(origin.context), issue = record(origin.issue), snapshot = record(context.publicationMatter);
   const meta = state.titleMatter, locale = requestedLocale || state.locale;
   const strict = !!requestedLocale;
@@ -28,8 +30,8 @@ export function publicationShortcodeValues(state: OmiManuscriptState, requestedL
   const text = (value: unknown) => localized(value, locale, strict);
   const local = (value?: string) => !strict || sameLanguage ? value || '' : '';
   const journal = text(context.name) || local(meta?.seriesTitle);
-  const publisher = text(snapshot.publisher) || local(meta?.publisherName);
-  const address = text(snapshot.address) || local(meta?.publicationPlace);
+  const publisher = text(snapshot.publisher) || text(ompMatter.publisher) || text(ompMatter.pressName) || local(meta?.publisherName);
+  const address = text(snapshot.address) || text(ompMatter.publicationPlace) || local(meta?.publicationPlace);
   const contact = text(snapshot.contactName);
   let boardIncomplete = false;
   const board = Array.isArray(snapshot.editorialBoard) ? snapshot.editorialBoard.flatMap(value => {
@@ -53,6 +55,14 @@ export function publicationShortcodeValues(state: OmiManuscriptState, requestedL
     seenOrcids.add(person.orcid); return true;
   }).map(person => person.displayName).join('\n');
   const originalTitles = new Map<string, unknown>();
+  if (Array.isArray(ompOrigin.mappings) && Array.isArray(ompOrigin.chapters)) {
+    const chapters = ompOrigin.chapters.map(record);
+    for (const value of ompOrigin.mappings) {
+      const mapping = record(value);
+      const chapter = chapters.find(item => item.externalId === mapping.chapterExternalId);
+      if (typeof mapping.rootSectionId === 'string' && chapter) originalTitles.set(mapping.rootSectionId, chapter.title);
+    }
+  }
   if (Array.isArray(origin.sections)) for (const value of origin.sections) {
     const section = record(value);
     if (Array.isArray(section.articles)) for (const entry of section.articles) {
@@ -69,12 +79,14 @@ export function publicationShortcodeValues(state: OmiManuscriptState, requestedL
     return [names, title].filter(Boolean).join(' — ');
   }).join('\n');
   const issn = meta?.issn || text(issue.printIssn), eissn = meta?.eissn || text(issue.onlineIssn);
-  const doi = meta?.doi || text(issue.doi), isbn = meta?.isbn || '';
+  const doi = meta?.doi || text(issue.doi), isbn = meta?.isbn || '', electronicIsbn = meta?.electronicIsbn || '';
   return {
-    imprint: [local(meta?.colophon) || [publisher, address, contact].filter(Boolean).join('\n'), local(meta?.copyrightStatement), issn && 'ISSN ' + issn, eissn && 'eISSN ' + eissn, isbn && 'ISBN ' + isbn, doi && 'DOI ' + doi].filter(Boolean).join('\n'),
+    imprint: [local(meta?.colophon) || [publisher, address, contact].filter(Boolean).join('\n'), local(meta?.copyrightStatement), issn && 'ISSN ' + issn, eissn && 'eISSN ' + eissn, isbn && 'ISBN ' + isbn, electronicIsbn && 'eISBN ' + electronicIsbn, doi && 'DOI ' + doi].filter(Boolean).join('\n'),
     'editorial-board': boardIncomplete ? '' : board, authors, contents: contentsIncomplete ? '' : contents, journal, publisher, address, contact,
-    title: strict && !sameLanguage ? text(issue.title) || [journal, text(issue.identification)].filter(Boolean).join(' — ') : state.title, volume: text(issue.volume), number: text(issue.number),
+    title: strict && !sameLanguage ? text(record(ompOrigin.volume).title) || text(issue.title) || [journal, text(issue.identification)].filter(Boolean).join(' — ') : state.title, volume: text(issue.volume), number: text(issue.number),
     year: meta?.publicationYear || text(issue.year), issn, eissn, isbn, doi,
+    'electronic-isbn': electronicIsbn, series: text(ompSeries.title) || local(meta?.seriesTitle),
+    'series-number': text(ompSeries.position), press: text(ompMatter.pressName),
   };
 }
 interface RichNode { type?: string; text?: string; content?: RichNode[]; [key: string]: unknown }
