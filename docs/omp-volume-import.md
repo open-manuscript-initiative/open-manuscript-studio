@@ -43,3 +43,7 @@ For chapter revisions, unchanged inline citation clusters, citation semantics an
 ### Unchanged native visuals and inbound cross-references
 
 The conservative chapter replacement can retain identical embedded raster images, simple text-cell tables and charts at their existing positions, with original object identifiers and data intact. An inbound semantic cross-reference from another chapter to an identical table or chart is retained only if its unique source marker and target kind can be verified. Any changed visual data, asset-backed object, complex table, unresolved marker, Word field or internal/outbound cross-reference remains review-only. No graphical object is automatically replaced or re-identified.
+
+## Chapter printed-page connector
+
+The Studio editorial API now supports exact OMP chapter page-range inspection and confirmed writeback via a personal OMP publishing connection. Requests and receipts bind the press, submission, publication and chapter identities; the client also checks the original source-chapter identity. The model uses only explicit mapped chapter roots, permits adjacent chapters to share a printed boundary page, and rejects reversed or mixed-publication ranges. PDF physical page indices are never silently converted to printed labels. UI review tied to a rendered layout is a subsequent step.

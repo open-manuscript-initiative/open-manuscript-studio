@@ -4,6 +4,7 @@ import {
   requireSession,
   type AuthenticatedRequest,
 } from '../middleware/requireSession.js';
+import { ompChapterPagesRequest } from '../contracts/ompChapterPagesContract.js';
 import { ojsIssuePagesRequest } from '../contracts/ojsIssuePagesContract.js';
 import { ojsMetadataRequest } from '../contracts/ojsMetadataContract.js';
 import { workflowInspectionRequest } from '../contracts/editorialConnectorContract.js';
@@ -12,6 +13,7 @@ import {
   inspectEditorialWorkflow,
   reconcileEditorialMetadata,
   reconcileOjsIssuePages,
+  reconcileOmpChapterPages,
 } from '../services/editorialConnectorService.js';
 import { RemoteError } from '../integrations/publishing/nativePublishingClient.js';
 import {
@@ -91,4 +93,11 @@ editorialConnectorRouter.post(
   versionedEditorialBoundary(''),
   requireSession,
   handler((user, id, body) => reconcileOjsIssuePages(user, id, ojsIssuePagesRequest.parse(body))),
+);
+
+editorialConnectorRouter.post(
+  `${prefix}/chapter-page-range`,
+  versionedEditorialBoundary(''),
+  requireSession,
+  handler((user, id, body) => reconcileOmpChapterPages(user, id, ompChapterPagesRequest.parse(body))),
 );
