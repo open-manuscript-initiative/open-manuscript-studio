@@ -1,4 +1,5 @@
-import type { OmpVolumeReview } from '../integrations/omp/reimportOmpVolume';
+import { useState } from 'react';
+import type { OmpChapterPreview, OmpVolumeReview } from '../integrations/omp/reimportOmpVolume';
 
 const copy = {
   hu: ['OMP-kötet egyeztetése', 'A helyi kézirat és tördelés változatlan marad. A fejezetváltozásokat külön kell ellenőrizni.', 'A publikáció verziója vagy forrásfelépítése megváltozott.', 'A kötet vagy a szerzők metaadatai megváltoztak.', 'A kiadói vagy sorozati adatok megváltoztak.', 'Helyi metaadatütközés', 'Kiadói és sorozati adatok frissítése', 'Meglévő kötet megnyitása', 'Új', 'Módosult', 'Változatlan', 'Nem ellenőrizhető', 'OMP-ből eltávolítva', 'Helyben eltávolítva'],
@@ -22,12 +23,30 @@ const blockedLabels = { hu: 'Az új fejezetekhez azonos publikációverzió és 
   es: 'Los capítulos nuevos requieren la misma versión e identidades verificadas.',
   nl: 'Nieuwe hoofdstukken vereisen dezelfde versie en geverifieerde identiteiten.',
   pl: 'Nowe rozdziały wymagają tej samej wersji i zweryfikowanych tożsamości.' } as const;
-export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh, onAdd }: {
+const previewLabels = {
+  hu: ['Összehasonlítás', 'Eredeti import', 'Helyi változat', 'Új OMP-változat', 'Nem áll rendelkezésre', 'Részlet – a teljes szöveg nem látható', 'Helyi változat megtartása', 'Helyi változat jóváhagyva', 'Szöveges előnézet: nem teljes formázási összehasonlítás.', 'Bezárás', 'Az előnézet nem érhető el.'],
+  en: ['Compare', 'Original import', 'Local version', 'New OMP version', 'Unavailable', 'Excerpt – full text not shown', 'Keep local version', 'Local version approved', 'Text preview, not a full formatting comparison.', 'Close', 'Preview unavailable.'],
+  de: ['Vergleichen', 'Ursprünglicher Import', 'Lokale Fassung', 'Neue OMP-Fassung', 'Nicht verfügbar', 'Auszug – nicht der vollständige Text', 'Lokale Fassung behalten', 'Lokale Fassung bestätigt', 'Textvorschau, kein vollständiger Formatvergleich.', 'Schließen', 'Vorschau nicht verfügbar.'],
+  fr: ['Comparer', 'Import original', 'Version locale', 'Nouvelle version OMP', 'Indisponible', 'Extrait – texte incomplet', 'Conserver la version locale', 'Version locale validée', 'Aperçu textuel, sans comparaison complète de la mise en forme.', 'Fermer', 'Aperçu indisponible.'],
+  it: ['Confronta', 'Importazione originale', 'Versione locale', 'Nuova versione OMP', 'Non disponibile', 'Estratto – testo incompleto', 'Mantieni versione locale', 'Versione locale approvata', 'Anteprima testuale, non confronto completo della formattazione.', 'Chiudi', 'Anteprima non disponibile.'],
+  es: ['Comparar', 'Importación original', 'Versión local', 'Nueva versión OMP', 'No disponible', 'Extracto – texto incompleto', 'Conservar versión local', 'Versión local aprobada', 'Vista textual, no comparación completa del formato.', 'Cerrar', 'Vista no disponible.'],
+  nl: ['Vergelijken', 'Oorspronkelijke import', 'Lokale versie', 'Nieuwe OMP-versie', 'Niet beschikbaar', 'Fragment – niet de volledige tekst', 'Lokale versie behouden', 'Lokale versie goedgekeurd', 'Tekstvoorbeeld, geen volledige opmaakvergelijking.', 'Sluiten', 'Voorbeeld niet beschikbaar.'],
+  pl: ['Porównaj', 'Pierwotny import', 'Wersja lokalna', 'Nowa wersja OMP', 'Niedostępne', 'Fragment – niepełny tekst', 'Zachowaj wersję lokalną', 'Wersja lokalna zatwierdzona', 'Podgląd tekstu, nie pełne porównanie formatowania.', 'Zamknij', 'Podgląd niedostępny.'],
+} as const;
+export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh, onAdd, onPreview, onKeepChapter }: {
   review: OmpVolumeReview; locale: string; onKeep: () => void; onRefresh: () => void; onAdd: () => void;
+  onPreview: (id: string) => OmpChapterPreview; onKeepChapter: (id: string) => void;
 }) {
   const language = locale.split(/[-_]/)[0] as keyof typeof copy;
   const labels = copy[language] ?? copy.en;
   const additions = review.items.filter(item => item.status === 'new').length;
+  const p = previewLabels[language] ?? previewLabels.en;
+  const [selected, setSelected] = useState<{ id: string; preview: OmpChapterPreview } | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+  const openPreview = (id: string) => {
+    try { setSelected({ id, preview: onPreview(id) }); setPreviewError(false); }
+    catch { setSelected(null); setPreviewError(true); }
+  };
   return <main className="auth-page">
     <section className="auth-card" style={{ maxWidth: '42rem', width: '100%', maxHeight: '90dvh', overflowY: 'auto' }}>
       <h1>{labels[0]}</h1><p>{labels[1]}</p>
@@ -35,7 +54,21 @@ export function OmpVolumeReimportReview({ review, locale, onKeep, onRefresh, onA
       {review.metadataChanged ? <p role="status">{labels[3]}</p> : null}
       {review.matterChanged ? <p role="status">{labels[4]}</p> : null}
       {review.matterConflicts.length ? <p role="alert">{labels[5]}</p> : null}
-      <ul>{review.items.map(item => <li key={item.id}><strong>{labels[index[item.status]]}</strong>: {item.title}</li>)}</ul>
+      <ul>{review.items.map(item => <li key={item.id}><strong>{labels[index[item.status]]}</strong>: {item.title}
+        {item.reviewedLocal ? <span> — {p[7]}</span> : null}
+        {item.status === 'changed' && item.id !== 'book' && !review.representationChanged
+          ? <button type="button" onClick={() => openPreview(item.id)}>{p[0]}</button> : null}</li>)}</ul>
+      {previewError ? <p role="alert">{p[10]}</p> : null}
+      {selected ? <section aria-label={p[0]}>
+        <p>{p[8]}</p>
+        {([selected.preview.original, selected.preview.local, selected.preview.incoming] as const).map((value, index) =>
+          <details key={index} open><summary>{p[index + 1]}</summary>
+            <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: '14rem', overflowY: 'auto' }}>{value?.text ?? p[4]}</pre>
+            {value?.truncated ? <p>{p[5]}</p> : null}
+          </details>)}
+        <button type="button" onClick={() => { onKeepChapter(selected.id); setSelected(null); }} disabled={!selected.preview.canKeepLocal}>{p[6]}</button>
+        <button type="button" onClick={() => setSelected(null)}>{p[9]}</button>
+      </section> : null}
       {additions > 0 ? <><button type="button" disabled={!review.canAppend} onClick={onAdd}>{addLabels[language] ?? addLabels.en} ({additions})</button>
         {!review.canAppend ? <p role="status">{blockedLabels[language] ?? blockedLabels.en}</p> : null}</> : null}
       {review.matterChanged ? <button type="button" disabled={review.publicationChanged || review.representationChanged || !!review.matterConflicts.length} onClick={onRefresh}>{labels[6]}</button> : null}

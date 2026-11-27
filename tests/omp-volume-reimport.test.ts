@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createVolumeFromOmpHandoff, OMP_VOLUME_ORIGIN, type OmpVolumeHandoff } from '../src/integrations/omp/importOmpVolume.ts';
-import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter } from '../src/integrations/omp/reimportOmpVolume.ts';
+import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter, previewOmpChapter, keepLocalOmpChapter } from '../src/integrations/omp/reimportOmpVolume.ts';
 const fixture = (): OmpVolumeHandoff => ({
   protocol: 'omi-integration/1', profile: 'omi-integration/1/omp', kind: 'volume', installation: { installationId: 'press' },
   context: { externalId: '1' }, volume: { externalId: '2', publicationExternalId: '3', title: { hu: 'Kötet' } },
@@ -73,4 +73,24 @@ test('legacy contributor identities and cross-version additions fail closed', ()
   launch.sources.push({ chapterExternalId: '6', sourceDocument: { kind: 'docx', fileExternalId: '7', paragraphs: [{ text: 'New' }] } });
   assert.equal(compareOmpVolume(doc, launch).canAppend, false);
   assert.throws(() => appendNewOmpChapters(doc, launch));
+});
+
+test('chapter review distinguishes the imported snapshot, local edit and new OMP text', () => {
+  const launch = fixture(), doc = createVolumeFromOmpHandoff(launch, 'hu');
+  doc.sections[0]!.title = 'Local edit';
+  launch.sources[0]!.sourceDocument.paragraphs![0]!.text = 'Changed upstream';
+  const preview = previewOmpChapter(doc, launch, '4');
+  assert.match(preview.original?.text ?? '', /Original/);
+  assert.match(preview.local.text, /Local edit/);
+  assert.match(preview.incoming.text, /Changed upstream/);
+  assert.equal(preview.localTextChanged, true);
+  assert.equal(preview.sourceChanged, true);
+  const next = keepLocalOmpChapter(doc, launch, '4');
+  assert.deepEqual(next.sections, doc.sections);
+  assert.deepEqual(next.annotations, doc.annotations);
+  assert.equal(compareOmpVolume(next, launch).items[0]?.status, 'changed');
+  assert.equal(compareOmpVolume(next, launch).items[0]?.reviewedLocal, true);
+  assert.equal(keepLocalOmpChapter(next, launch, '4'), next);
+  launch.sources[0]!.sourceDocument.paragraphs![0]!.text = 'Another update';
+  assert.equal(compareOmpVolume(next, launch).items[0]?.reviewedLocal, undefined);
 });

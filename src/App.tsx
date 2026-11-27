@@ -40,7 +40,7 @@ import {
   type OmpNativeAuthorContext,
 } from './integrations/omp/importOmpLaunch';
 import { createVolumeFromOmpHandoff, fetchOmpVolumeHandoff, isSameOmpVolume, type OmpVolumeHandoff } from './integrations/omp/importOmpVolume';
-import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter, type OmpVolumeReview } from './integrations/omp/reimportOmpVolume';
+import { appendNewOmpChapters, compareOmpVolume, refreshOmpPublicationMatter, previewOmpChapter, keepLocalOmpChapter, type OmpVolumeReview } from './integrations/omp/reimportOmpVolume';
 import { OmpVolumeReimportReview } from './components/OmpVolumeReimportReview';
 import {
   clearOjsLaunchPayload,
@@ -518,6 +518,24 @@ function StudioApplication() {
   if (externalImportState.status === 'volume-review') {
     const { review, launch, manuscriptId } = externalImportState;
     return <OmpVolumeReimportReview review={review} locale={locale}
+      onPreview={id => {
+        const current = useStudioStore.getState();
+        if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active volume changed.');
+        return previewOmpChapter(current.manuscript, launch, id);
+      }}
+      onKeepChapter={id => {
+        try {
+          const current = useStudioStore.getState();
+          if (!current.hasOpenDocument || current.manuscript.id !== manuscriptId) throw new Error('The active volume changed.');
+          current.checkpoint('manual');
+          const base = useStudioStore.getState();
+          const next = keepLocalOmpChapter(base.manuscript, launch, id);
+          if (next !== base.manuscript) useStudioStore.setState({ manuscript: next, pendingChangeSet: null });
+          setExternalImportState({ status: 'volume-review', review: compareOmpVolume(next, launch), launch, manuscriptId });
+        } catch (error) {
+          setExternalImportState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+        }
+      }}
       onAdd={() => {
         try {
           const current = useStudioStore.getState();

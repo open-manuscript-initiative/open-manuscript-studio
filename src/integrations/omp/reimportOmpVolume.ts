@@ -1,4 +1,6 @@
-import type { OmiManuscript } from '../../types/omi';
+import { textFromAtomicBlock } from '../../model/atomicTextBlocks';
+import { partitionManuscriptStudies } from '../../model/sectionStructure';
+import type { OmiManuscriptState, OmiBlock, OmiManuscript } from '../../types/omi';
 import { mergeOmiDocumentAsStudy } from '../../model/studyImport';
 import { commitManuscriptRevision, extractManuscriptState, type CreateChangeEventInput } from '../../model/versioning';
 import { ensureManuscriptRevisionStateDigests } from '../../model/revisionIntegrity';
@@ -7,7 +9,7 @@ import { fingerprintOmpVolumeSource as fingerprint, importedSource, localMap, is
 type Data = Record<string, unknown>;
 type Status = 'new' | 'changed' | 'unchanged' | 'unknown' | 'removed' | 'locally-removed';
 export interface OmpVolumeReview {
-  items: Array<{ id: string; title: string; status: Status }>;
+  items: Array<{ id: string; title: string; status: Status; reviewedLocal?: boolean }>;
   publicationChanged: boolean;
   representationChanged: boolean;
   metadataChanged: boolean;
@@ -75,7 +77,10 @@ export function compareOmpVolume(document: OmiManuscript, launch: OmpVolumeHando
         (mapping.sourceFingerprint && mapping.sourceFingerprint !== fingerprint(source))));
     const status: Status = !old ? 'new' : mapping && !roots.has(str(mapping.rootSectionId)) ? 'locally-removed' :
       changed ? 'changed' : !representationChanged && mapping?.sourceFingerprint && source ? 'unchanged' : 'unknown';
-    items.push({ id, title: title(chapter.title, document.locale, id), status });
+    const decision = obj(obj(previous.chapterReviewDecisions)[id]);
+    const reviewedLocal = status === 'changed' && source && decision.action === 'keep-local' &&
+      decision.incomingFingerprint === incomingChapterFingerprint(launch, id);
+    items.push({ id, title: title(chapter.title, document.locale, id), status, ...(reviewedLocal ? { reviewedLocal: true } : {}) });
   }
   for (const [id, old] of oldChapters) if (!seen.has(id)) items.push({ id, title: title(old.title, document.locale, id), status: 'removed' });
   if (launch.mode === 'full-manuscript') {
@@ -199,5 +204,92 @@ export function appendNewOmpChapters(document: OmiManuscript, launch: OmpVolumeH
     previousValue: previous, nextValue: nextOrigin });
   return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
     summary: 'Added new chapters from OMP volume', timestamp, events,
+  }));
+}
+
+export interface OmpChapterPreviewText { text: string; truncated: boolean }
+export interface OmpChapterPreview {
+  original: OmpChapterPreviewText | null;
+  local: OmpChapterPreviewText;
+  incoming: OmpChapterPreviewText;
+  sourceChanged: boolean | null;
+  localTextChanged: boolean | null;
+  canKeepLocal: boolean;
+}
+function incomingChapterFingerprint(launch: OmpVolumeHandoff, id: string): string {
+  const chapter = launch.chapters.find(item => item.externalId === id);
+  const source = launch.sources.find(item => item.chapterExternalId === id)?.sourceDocument;
+  if (!chapter || !source) throw new Error('Missing OMP chapter.');
+  return fingerprint([chapter, source, launch.contributors.filter(person => chapter.contributorExternalIds.includes(person.externalId ?? ''))]);
+}
+const PREVIEW_LIMIT = 24000;
+function chapterText(state: OmiManuscriptState, rootSectionId?: string): OmpChapterPreviewText {
+  const sections = rootSectionId ? partitionManuscriptStudies(state.sections).find(item => item.rootSectionId === rootSectionId)?.sections ?? [] : state.sections;
+  const parts: string[] = [];
+  let length = 0, truncated = false;
+  const add = (value: string) => {
+    if (!value) return;
+    const remaining = PREVIEW_LIMIT - length;
+    if (value.length > remaining) truncated = true;
+    if (remaining > 0) { parts.push(value.slice(0, remaining)); length += Math.min(value.length, remaining) + 1; }
+  };
+  const blocks = new Set<string>();
+  const visit = (block: OmiBlock) => {
+    blocks.add(block.id);
+    add(textFromAtomicBlock(block.content));
+    block.children?.forEach(visit);
+  };
+  for (const section of sections) {
+    add(section.title);
+    section.blocks.forEach(visit);
+  }
+  for (const note of state.annotations) if (note.type === 'note' && blocks.has(note.targetBlockId)) add(textFromAtomicBlock(note.body));
+  return { text: parts.join('\n'), truncated };
+}
+/** Preview only; the historical import snapshot is not reconstructed from guesses.
+ * Plain text is intentionally not a rich-content merge or a formatting diff. */
+export function previewOmpChapter(document: OmiManuscript, launch: OmpVolumeHandoff, id: string): OmpChapterPreview {
+  const previous = origin(document, launch);
+  const review = compareOmpVolume(document, launch);
+  const item = review.items.find(entry => entry.id === id);
+  const mapping = rows(previous.mappings).find(entry => entry.chapterExternalId === id);
+  const chapter = launch.chapters.find(entry => entry.externalId === id);
+  const source = launch.sources.find(entry => entry.chapterExternalId === id)?.sourceDocument;
+  const root = str(mapping?.rootSectionId);
+  if (item?.status !== 'changed' || !root || !chapter || !source || launch.mode !== 'chapters' || previous.mode !== 'chapters' ||
+      !document.sections.some(section => section.id === root)) throw new Error('No comparable OMP chapter.');
+  const incoming = importedSource(launch, { externalId: id, primaryLocale: document.locale,
+    title: localMap(chapter.title, document.locale), subtitle: localMap(chapter.subtitle, document.locale),
+    abstract: localMap(chapter.abstract, document.locale) }, source,
+    launch.contributors.filter(person => chapter.contributorExternalIds.includes(person.externalId ?? '')));
+  const sourceHash = str(mapping?.sourceFingerprint);
+  const baseline = sourceHash ? document.revisionHistory.revisions.find(revision => {
+    const snapshot = revision.snapshot.state;
+    const historic = rows(obj(snapshot.extensions?.[OMP_VOLUME_ORIGIN]).mappings).find(entry => entry.chapterExternalId === id);
+    return historic?.sourceFingerprint === sourceHash && historic.rootSectionId === root && snapshot.sections.some(section => section.id === root);
+  })?.snapshot.state : undefined;
+  const original = baseline ? chapterText(baseline, root) : null;
+  const local = chapterText(document, root);
+  return { original, local, incoming: chapterText(incoming), sourceChanged: sourceHash ? sourceHash !== fingerprint(source) : null,
+    localTextChanged: original && !original.truncated && !local.truncated ? original.text !== local.text : null,
+    canKeepLocal: !review.publicationChanged && !review.representationChanged && previous.workType === launch.workType };
+}
+
+/** Record an explicit editorial decision without claiming the new source was imported. */
+export function keepLocalOmpChapter(document: OmiManuscript, launch: OmpVolumeHandoff, id: string): OmiManuscript {
+  const previous = origin(document, launch);
+  if (!previewOmpChapter(document, launch, id).canKeepLocal) throw new Error('Chapter review requires the same publication and representation.');
+  const decisions = obj(previous.chapterReviewDecisions);
+  const incomingFingerprint = incomingChapterFingerprint(launch, id);
+  if (obj(decisions[id]).incomingFingerprint === incomingFingerprint && obj(decisions[id]).action === 'keep-local') return document;
+  const timestamp = new Date().toISOString();
+  const nextOrigin = { ...previous, chapterReviewDecisions: { ...decisions,
+    [id]: { action: 'keep-local', incomingFingerprint, reviewedAt: timestamp } } };
+  const state = extractManuscriptState(document);
+  state.extensions = { ...state.extensions, [OMP_VOLUME_ORIGIN]: nextOrigin };
+  return ensureManuscriptRevisionStateDigests(commitManuscriptRevision(document, state, {
+    summary: 'Kept local OMP chapter after review', timestamp,
+    events: [{ operation: 'manuscript.snapshot.create', targetId: document.id,
+      path: '/extensions/' + OMP_VOLUME_ORIGIN, previousValue: previous, nextValue: nextOrigin }],
   }));
 }

@@ -23,3 +23,7 @@ A repeated launch of an already open volume selects its existing tab and compare
 ## Additive chapter reconciliation
 
 Explicitly add new native chapters at the end of the existing volume without changing local content, order or layout. New imports persist exact native contributor-to-agent mappings; additions reuse verified local identities and preserve chapter-specific source/contributor fingerprints. Older volumes without identity mappings block additions involving existing contributors instead of guessing. Publication version or work-type/representation changes also block additions. Replacements and persistent saved-volume lookup remain separate work.
+
+## Individual chapter review
+
+A changed mapped chapter can be compared as a bounded plain-text preview of its original imported revision (when still available), local text, and new OMP source. The preview is not a formatting or full scholarly-object diff. The editor can explicitly retain the local version, recorded as a versioned decision bound to the exact incoming chapter/source/contributor fingerprint; a later upstream change invalidates the decision. Source provenance is never advanced by retaining local text. Destructive replacement or cross-chapter anchor remapping is not yet enabled.
