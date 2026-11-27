@@ -18,7 +18,9 @@ function supportsProjection(doc: ProseMirrorNode): boolean {
  * revisions automatically. Never mutate the returned JSON projection. */
 export class ContinuousSnapshotCache {
   private readonly nodes: DerivedCache<ProseMirrorNode, CachedNode>;
-  constructor(private readonly pool = editorMemoryPool) {
+  private readonly pool: typeof editorMemoryPool;
+  constructor(pool = editorMemoryPool) {
+    this.pool = pool;
     this.nodes = createDerivedCache(estimateNode, pool);
   }
 
