@@ -180,3 +180,46 @@ test('preserve an unchanged citation graph and update an independent paragraph',
   (source.bibliographicRecords as Array<{ title: string }>)[0]!.title = 'Different reference';
   assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, false);
 });
+
+test('retain unchanged native image/table/chart blocks while updating independent text', () => {
+  const launch = fixture(), source = launch.sources[0]!.sourceDocument as unknown as Record<string, unknown>;
+  source.paragraphs = [{ text: 'Before visuals.' }, { text: 'Original body.' }];
+  source.structuredBlocks = [
+    { kind: 'image', src: 'data:image/png;base64,AAAA', mediaType: 'image/png', fileName: 'figure.png', afterText: 'Before visuals.' },
+    { kind: 'table', cells: [['A', 'B'], ['1', '2']], headerRows: 1, afterText: 'Before visuals.' },
+    { kind: 'chart', cells: [['A', 'B'], ['1', '2']], chartType: 'bar', afterText: 'Before visuals.' },
+  ];
+  const doc = createVolumeFromOmpHandoff(launch, 'hu');
+  const visuals = doc.sections.flatMap(section => section.blocks).filter(block => block.visual);
+  assert.equal(visuals.length, 3);
+  launch.sources[0]!.sourceDocument.paragraphs![1]!.text = 'Updated body.';
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, true);
+  const next = acceptIncomingOmpChapter(doc, launch, '4');
+  assert.deepEqual(next.sections.flatMap(section => section.blocks).filter(block => block.visual), visuals);
+  assert.match(JSON.stringify(next.sections), /Updated body/);
+  (source.structuredBlocks as Array<Record<string, unknown>>)[1]!.cells = [['Changed']];
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, false);
+});
+test('preserve a verified inbound cross-reference to an unchanged table from another chapter', () => {
+  const launch = fixture(), source = launch.sources[0]!.sourceDocument as unknown as Record<string, unknown>;
+  source.paragraphs = [{ text: 'Before table.' }, { text: 'Original body.' }];
+  source.structuredBlocks = [{ kind: 'table', cells: [['A']], afterText: 'Before table.' }];
+  launch.chapters.push({ ...launch.chapters[0]!, externalId: '6', sequence: 2, title: { hu: 'Other chapter' } });
+  launch.sources.push({ chapterExternalId: '6', sourceDocument: { kind: 'docx', fileExternalId: '7', paragraphs: [{ text: 'Other body.' }] } });
+  const doc = createVolumeFromOmpHandoff(launch, 'hu');
+  const table = doc.sections.flatMap(section => section.blocks).find(block => block.type === 'table')!;
+  const other = doc.sections.flatMap(section => section.blocks).find(block => block.content.includes('Other body.'))!;
+  assert.ok(table && other);
+  other.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+    { type: 'omiCrossReference', attrs: { crossReferenceId: 'xref-table', anchorId: 'anchor-table', label: 'Table 1' } },
+  ] }] });
+  doc.crossReferences = [{ id: 'xref-table', anchorId: 'anchor-table', sourceBlockId: other.id, targetId: table.id, targetKind: 'table', displayStyle: 'label-number' }];
+  launch.sources[0]!.sourceDocument.paragraphs![1]!.text = 'Updated body.';
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, true);
+  const next = acceptIncomingOmpChapter(doc, launch, '4');
+  assert.deepEqual(next.crossReferences, doc.crossReferences);
+  assert.deepEqual(next.sections.flatMap(section => section.blocks).find(block => block.id === table.id), table);
+  assert.equal(next.sections.flatMap(section => section.blocks).find(block => block.id === other.id)?.content, other.content);
+  other.content = 'Missing marker';
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, false);
+});

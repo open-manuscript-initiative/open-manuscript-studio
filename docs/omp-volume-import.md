@@ -39,3 +39,7 @@ The conservative replacement path now also permits existing footnote/endnote bod
 ### Stable bibliographic citation graphs
 
 For chapter revisions, unchanged inline citation clusters, citation semantics and bibliographic records can be matched bijectively against the original import. Generated incoming IDs are mapped back to the existing marker IDs; original citations, clusters and library records remain intact. Only independent paragraphs and already supported note bodies may change. Changed citation targets, bibliographic metadata, marker positions, local reference edits, unassigned records, cross-references and graphical objects remain blocked rather than guessed.
+
+### Unchanged native visuals and inbound cross-references
+
+The conservative chapter replacement can retain identical embedded raster images, simple text-cell tables and charts at their existing positions, with original object identifiers and data intact. An inbound semantic cross-reference from another chapter to an identical table or chart is retained only if its unique source marker and target kind can be verified. Any changed visual data, asset-backed object, complex table, unresolved marker, Word field or internal/outbound cross-reference remains review-only. No graphical object is automatically replaced or re-identified.

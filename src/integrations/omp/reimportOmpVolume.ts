@@ -1,3 +1,4 @@
+import { collectCrossReferenceAnchors } from '../../model/crossReferences';
 import { textFromAtomicBlock } from '../../model/atomicTextBlocks';
 import { getParentSectionId, partitionManuscriptStudies } from '../../model/sectionStructure';
 import type { OmiManuscriptState, OmiBlock, OmiSection, OmiAnnotation, OmiBibliographicRecord, OmiManuscript } from '../../types/omi';
@@ -330,6 +331,28 @@ function safeTextBlock(block: OmiBlock, allowNotes = false): boolean {
   if (!raw.startsWith('{') && !raw.startsWith('[')) return true;
   try { return safeNode(JSON.parse(raw)); } catch { return false; }
 }
+/** Native DOCX import currently emits these self-contained visuals.
+ * Preserve them verbatim; asset-backed and edited graphics remain review-only. */
+function preservedVisual(block: OmiBlock): boolean {
+  if (block.content !== '' || block.children?.length || !block.visual) return false;
+  const visual = obj(block.visual);
+  if (block.type !== visual.kind) return false;
+  if (visual.kind === 'image') return typeof visual.src === 'string' &&
+    /^data:image\/(png|jpeg|gif|webp|bmp|tiff);base64,/i.test(visual.src) &&
+    Object.keys(visual).every(key => ['kind', 'src', 'mediaType', 'fileName', 'alt'].includes(key));
+  if (visual.kind === 'table' || visual.kind === 'chart') {
+    const cells = visual.cells;
+    return Array.isArray(cells) && cells.every(row => Array.isArray(row) && row.every(cell => typeof cell === 'string')) &&
+      Object.keys(visual).every(key => (visual.kind === 'table' ? ['kind', 'cells', 'headerRows'] : ['kind', 'cells', 'chartType', 'title']).includes(key));
+  }
+  return false;
+}
+function sameVisual(a: OmiBlock, b: OmiBlock): boolean {
+  if (!preservedVisual(a) || !preservedVisual(b)) return false;
+  const { id: _a, ...old } = a;
+  const { id: _b, ...incoming } = b;
+  return fingerprint(old) === fingerprint(incoming);
+}
 function chapterSections(state: OmiManuscriptState, root: string): OmiSection[] {
   return partitionManuscriptStudies(state.sections).find(study => study.rootSectionId === root)?.sections ?? [];
 }
@@ -392,7 +415,7 @@ function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHan
   const local = chapterSections(document, root);
   const original = chapterSections(baseline, root);
   if (!local.length || fingerprint(local) !== fingerprint(original) ||
-      local.some(section => section.blocks.some(block => !safeTextBlock(block, true)))) return null;
+      local.some(section => section.blocks.some(block => !safeTextBlock(block, true) && !preservedVisual(block)))) return null;
   // Existing object identities must remain stable. Reject any external references
   // to the chapter's blocks or sections, including IDs inside serialized JSON,
   // print corrections, notes, citations, bookmarks, proofing and layout data.
@@ -412,7 +435,22 @@ function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHan
       fingerprint(localRecords) !== fingerprint((baseline.bibliographicRecords ?? []).filter(record => recordIds.has(record.id)))) return null;
   const citationIds = new Set([...localCitations.flatMap(citation => [citation.id, citation.anchorId]),
     ...localClusters.flatMap(cluster => [cluster.id, cluster.anchorId])]);
+  const localVisuals = new Map(local.flatMap(section => section.blocks.filter(preservedVisual).map(block => [block.id, block] as const)));
+  // An inbound reference from another chapter can safely remain attached to
+  // a verified identical visual. The actual marker must exist exactly once.
+  const inbound = (document.crossReferences ?? []).filter(ref => ids.has(ref.targetId) && !ids.has(ref.sourceBlockId));
+  const anchors = inbound.length ? collectCrossReferenceAnchors(document.sections) : [];
+  const preservedReferences = new Set<string>();
+  for (const ref of inbound) {
+    const target = localVisuals.get(ref.targetId);
+    if (!target || ref.targetKind !== target.type || ref.wordField ||
+        anchors.filter(anchor => anchor.crossReferenceId === ref.id && anchor.anchorId === ref.anchorId &&
+          anchor.sourceBlockId === ref.sourceBlockId).length !== 1 ||
+        anchors.filter(anchor => anchor.crossReferenceId === ref.id).length !== 1) return null;
+    preservedReferences.add(ref.id);
+  }
   const outside = extractManuscriptState(document);
+  outside.crossReferences = (outside.crossReferences ?? []).filter(ref => !preservedReferences.has(ref.id));
   outside.annotations = outside.annotations.filter(note => !ids.has(note.targetBlockId));
   outside.citations = outside.citations.filter(citation => !ids.has(citation.targetBlockId));
   outside.citationClusters = (outside.citationClusters ?? []).filter(cluster => !ids.has(cluster.targetBlockId));
@@ -451,10 +489,15 @@ function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHan
     const oldParent = getParentSectionId(old), newParent = getParentSectionId(next);
     if (local.findIndex(item => item.id === oldParent) !== projected.findIndex(item => item.id === newParent) ||
         old.blocks.length !== next.blocks.length ||
-        next.blocks.some((block, j) => block.type !== old.blocks[j]?.type || !safeTextBlock(block, true))) return null;
+        next.blocks.some((block, j) => block.type !== old.blocks[j]?.type || (!safeTextBlock(block, true) && !preservedVisual(block)))) return null;
     const blocks: OmiBlock[] = [];
     for (let j = 0; j < old.blocks.length; j++) {
       const oldBlock = old.blocks[j]!, newBlock = next.blocks[j]!;
+      if (oldBlock.visual || newBlock.visual) {
+        if (!sameVisual(oldBlock, newBlock)) return null;
+        blocks.push(oldBlock);
+        continue;
+      }
       const oldMarkers = noteMarkers(oldBlock), newMarkers = noteMarkers(newBlock);
       if (oldMarkers.length !== newMarkers.length) return null;
       const markerMap = new Map<string, string>();
