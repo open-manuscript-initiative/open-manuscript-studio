@@ -35,3 +35,7 @@ Explicitly accept a new upstream text version only when the original revision is
 ### Stable footnotes and endnotes
 
 The conservative replacement path now also permits existing footnote/endnote body changes, including supported rich-text marks, when the original local annotation and marker-bearing block are unchanged, every incoming note maps bijectively to its original marker and target, and no other scholarly object refers to the affected identifiers. Original note IDs, anchor IDs and block IDs are retained. Marker movement, newly added/deleted notes, local note edits, citation-bearing note bodies, graphics and unresolved reference graphs remain review-only.
+
+### Stable bibliographic citation graphs
+
+For chapter revisions, unchanged inline citation clusters, citation semantics and bibliographic records can be matched bijectively against the original import. Generated incoming IDs are mapped back to the existing marker IDs; original citations, clusters and library records remain intact. Only independent paragraphs and already supported note bodies may change. Changed citation targets, bibliographic metadata, marker positions, local reference edits, unassigned records, cross-references and graphical objects remain blocked rather than guessed.

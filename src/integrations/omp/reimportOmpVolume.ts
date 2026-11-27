@@ -1,6 +1,6 @@
 import { textFromAtomicBlock } from '../../model/atomicTextBlocks';
 import { getParentSectionId, partitionManuscriptStudies } from '../../model/sectionStructure';
-import type { OmiManuscriptState, OmiBlock, OmiSection, OmiAnnotation, OmiManuscript } from '../../types/omi';
+import type { OmiManuscriptState, OmiBlock, OmiSection, OmiAnnotation, OmiBibliographicRecord, OmiManuscript } from '../../types/omi';
 import { mergeOmiDocumentAsStudy } from '../../model/studyImport';
 import { commitManuscriptRevision, extractManuscriptState, type CreateChangeEventInput } from '../../model/versioning';
 import { ensureManuscriptRevisionStateDigests } from '../../model/revisionIntegrity';
@@ -302,6 +302,13 @@ function safeTextBlock(block: OmiBlock, allowNotes = false): boolean {
   if (!['paragraph', 'heading'].includes(block.type) || block.visual || block.children?.length) return false;
   function safeNode(value: unknown): boolean {
     const node = obj(value);
+    if (allowNotes && node.type === 'omiCitation') {
+      const attrs = obj(node.attrs);
+      return Object.keys(node).every(key => key === 'type' || key === 'attrs') &&
+        Object.keys(attrs).every(key => ['citationId', 'citationIds', 'clusterId', 'anchorId', 'label'].includes(key)) &&
+        !!str(attrs.citationId) && !!str(attrs.anchorId) && !!str(attrs.clusterId) &&
+        Array.isArray(attrs.citationIds) && attrs.citationIds.length > 0 && attrs.citationIds.every(id => !!str(id));
+    }
     if (allowNotes && node.type === 'omiNote') {
       const attrs = obj(node.attrs);
       return Object.keys(node).every(key => key === 'type' || key === 'attrs') &&
@@ -328,18 +335,18 @@ function chapterSections(state: OmiManuscriptState, root: string): OmiSection[] 
 }
 type NoteWithBody = OmiAnnotation & { bodyContent?: string };
 interface ChapterReplacementPlan { sections: OmiSection[]; annotations: OmiAnnotation[] }
-function noteMarkers(block: OmiBlock): Data[] {
+function noteMarkers(block: OmiBlock, type = 'omiNote'): Data[] {
   const markers: Data[] = [];
   const visit = (value: unknown) => {
     const node = obj(value);
-    if (node.type === 'omiNote') markers.push(obj(node.attrs));
+    if (node.type === type) markers.push(obj(node.attrs));
     if (Array.isArray(node.content)) node.content.forEach(visit);
   };
   try { visit(JSON.parse(block.content)); } catch { /* legacy text */ }
   return markers;
 }
 function remapNoteMarkers(block: OmiBlock, map: Map<string, string>): string {
-  if (!noteMarkers(block).length) return block.content;
+  if (!map.size) return block.content;
   const visit = (value: unknown): unknown => {
     if (Array.isArray(value)) return value.map(visit);
     if (typeof value === 'string') return map.get(value) ?? value;
@@ -356,6 +363,15 @@ function noteStructure(note: NoteWithBody): Data {
 function safeNoteBody(note: NoteWithBody): boolean {
   return typeof note.body === 'string' && (!note.bodyContent ||
     safeTextBlock({ id: note.id, type: 'paragraph', content: note.bodyContent }));
+}
+/** Compare bibliography semantics without the importer's generated IDs/timestamps. */
+function recordSignature(record: OmiBibliographicRecord): string {
+  const { id: _id, createdAt: _created, modifiedAt: _modified, contributors, ...rest } = record;
+  return fingerprint({ ...rest, contributors: contributors.map(({ id: _contributorId, ...person }) => person) });
+}
+function withoutImportTimes(value: Data): Data {
+  const { createdAt: _created, modifiedAt: _modified, ...rest } = value;
+  return rest;
 }
 function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHandoff, id: string,
   incoming: OmiManuscript, baseline: OmiManuscriptState | undefined): ChapterReplacementPlan | null {
@@ -386,18 +402,30 @@ function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHan
   if (fingerprint(localNotes) !== fingerprint(baselineNotes) || localNotes.some(note => note.type !== 'note' ||
       !['footnote', 'endnote'].includes(note.noteKind ?? '') || !note.anchorId || !safeNoteBody(note))) return null;
   const noteIds = new Set(localNotes.flatMap(note => [note.id, note.anchorId!]));
+  const localCitations = document.citations.filter(citation => ids.has(citation.targetBlockId));
+  const localClusters = (document.citationClusters ?? []).filter(cluster => ids.has(cluster.targetBlockId));
+  const recordIds = new Set(localCitations.map(citation => citation.target));
+  const localRecords = (document.bibliographicRecords ?? []).filter(record => recordIds.has(record.id));
+  if (localRecords.length !== recordIds.size ||
+      fingerprint(localCitations) !== fingerprint(baseline.citations.filter(citation => ids.has(citation.targetBlockId))) ||
+      fingerprint(localClusters) !== fingerprint((baseline.citationClusters ?? []).filter(cluster => ids.has(cluster.targetBlockId))) ||
+      fingerprint(localRecords) !== fingerprint((baseline.bibliographicRecords ?? []).filter(record => recordIds.has(record.id)))) return null;
+  const citationIds = new Set([...localCitations.flatMap(citation => [citation.id, citation.anchorId]),
+    ...localClusters.flatMap(cluster => [cluster.id, cluster.anchorId])]);
   const outside = extractManuscriptState(document);
   outside.annotations = outside.annotations.filter(note => !ids.has(note.targetBlockId));
+  outside.citations = outside.citations.filter(citation => !ids.has(citation.targetBlockId));
+  outside.citationClusters = (outside.citationClusters ?? []).filter(cluster => !ids.has(cluster.targetBlockId));
   outside.sections = outside.sections.filter(section => !ids.has(section.id));
   outside.contributions = outside.contributions.filter(item => !ids.has(item.targetId));
   outside.extensions = { ...outside.extensions };
   delete outside.extensions[OMP_VOLUME_ORIGIN];
   const external = JSON.stringify(outside);
-  if ([...ids, ...noteIds].some(key => external.includes(key))) return null;
+  if ([...ids, ...noteIds, ...citationIds].some(key => external.includes(key))) return null;
   // Incoming scholarly objects are not silently discarded by this text-only
   // replacement path. More complex sources remain review-only.
-  if ([incoming.citations, incoming.citationClusters, incoming.crossReferences,
-       incoming.bibliographicRecords, incoming.sourceAttributions, incoming.assets, incoming.namedAnchors,
+  if ([incoming.crossReferences,
+       incoming.sourceAttributions, incoming.assets, incoming.namedAnchors,
        incoming.semanticFields, incoming.computedFields, incoming.indexDefinitions, incoming.indexEntries,
        incoming.generatedIndexes, incoming.proofing?.changes, incoming.publicationCorrections]
       .some(items => items?.length)) return null;
@@ -407,6 +435,13 @@ function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHan
     { importedAt: document.updatedAt });
   const projected = merged.importedSections;
   const incomingNotes = merged.state.annotations.slice(document.annotations.length);
+  const newCitations = merged.state.citations.slice(document.citations.length);
+  const newClusters = (merged.state.citationClusters ?? []).slice((document.citationClusters ?? []).length);
+  const newRecords = (merged.state.bibliographicRecords ?? []).slice((document.bibliographicRecords ?? []).length);
+  if (newCitations.length !== localCitations.length || newClusters.length !== localClusters.length ||
+      newRecords.length !== localRecords.length) return null;
+  const usedCitations = new Set<string>(), usedClusters = new Set<string>();
+  const recordMap = new Map<string, string>();
   if (projected.length !== local.length || incomingNotes.length !== localNotes.length) return null;
   const replacements: OmiSection[] = [];
   const noteUpdates = new Map<string, OmiAnnotation>();
@@ -437,15 +472,52 @@ function planOmpChapterReplacement(document: OmiManuscript, launch: OmpVolumeHan
         if (richBody !== undefined) updated.bodyContent = richBody; else delete updated.bodyContent;
         noteUpdates.set(oldNote.id, updated);
       }
+      const oldCiteMarkers = noteMarkers(oldBlock, 'omiCitation'), newCiteMarkers = noteMarkers(newBlock, 'omiCitation');
+      if (oldCiteMarkers.length !== newCiteMarkers.length) return null;
+      for (let k = 0; k < oldCiteMarkers.length; k++) {
+        const oldMarker = oldCiteMarkers[k]!, newMarker = newCiteMarkers[k]!;
+        const oldCluster = localClusters.find(cluster => cluster.id === oldMarker.clusterId && cluster.anchorId === oldMarker.anchorId && cluster.targetBlockId === oldBlock.id);
+        const newCluster = newClusters.find(cluster => cluster.id === newMarker.clusterId && cluster.anchorId === newMarker.anchorId && cluster.targetBlockId === newBlock.id);
+        if (!oldCluster || !newCluster || usedClusters.has(newCluster.id) ||
+            oldCluster.citationIds.length !== newCluster.citationIds.length ||
+            fingerprint(oldMarker.citationIds) !== fingerprint(oldCluster.citationIds) ||
+            fingerprint(newMarker.citationIds) !== fingerprint(newCluster.citationIds) ||
+            oldMarker.citationId !== oldCluster.citationIds[0] || newMarker.citationId !== newCluster.citationIds[0]) return null;
+        usedClusters.add(newCluster.id);
+        markerMap.set(newCluster.id, oldCluster.id);
+        markerMap.set(newCluster.anchorId, oldCluster.anchorId);
+        for (let n = 0; n < oldCluster.citationIds.length; n++) {
+          const oldCitation = localCitations.find(citation => citation.id === oldCluster.citationIds[n] && citation.clusterId === oldCluster.id &&
+            citation.anchorId === oldCluster.anchorId && citation.targetBlockId === oldBlock.id);
+          const newCitation = newCitations.find(citation => citation.id === newCluster.citationIds[n] && citation.clusterId === newCluster.id &&
+            citation.anchorId === newCluster.anchorId && citation.targetBlockId === newBlock.id);
+          if (!oldCitation || !newCitation || usedCitations.has(newCitation.id)) return null;
+          const oldRecord = localRecords.find(record => record.id === oldCitation.target);
+          const newRecord = newRecords.find(record => record.id === newCitation.target);
+          if (!oldRecord || !newRecord || recordSignature(oldRecord) !== recordSignature(newRecord) ||
+              (recordMap.has(newRecord.id) && recordMap.get(newRecord.id) !== oldRecord.id) ||
+              (!recordMap.has(newRecord.id) && [...recordMap.values()].includes(oldRecord.id))) return null;
+          recordMap.set(newRecord.id, oldRecord.id);
+          const normalize = (value: typeof oldCitation) => {
+            const { id: _id, target: _target, anchorId: _anchor, targetBlockId: _block, clusterId: _cluster, ...rest } = value;
+            return fingerprint(withoutImportTimes(rest));
+          };
+          if (normalize(oldCitation) !== normalize(newCitation)) return null;
+          usedCitations.add(newCitation.id);
+          markerMap.set(newCitation.id, oldCitation.id);
+        }
+      }
       // The entire marker-bearing block must match after restoring identities.
       // Even a shifted marker or changed adjacent text requires manual review.
       const content = remapNoteMarkers(newBlock, markerMap);
-      if (oldMarkers.length && fingerprint(JSON.parse(oldBlock.content)) !== fingerprint(JSON.parse(content))) return null;
-      blocks.push({ ...oldBlock, content: oldMarkers.length ? oldBlock.content : content });
+      const anchored = oldMarkers.length > 0 || oldCiteMarkers.length > 0;
+      if (anchored && fingerprint(JSON.parse(oldBlock.content)) !== fingerprint(JSON.parse(content))) return null;
+      blocks.push({ ...oldBlock, content: anchored ? oldBlock.content : content });
     }
     replacements.push({ ...old, title: next.title, blocks });
   }
-  if (noteUpdates.size !== localNotes.length || usedIncoming.size !== incomingNotes.length) return null;
+  if (noteUpdates.size !== localNotes.length || usedIncoming.size !== incomingNotes.length ||
+      usedCitations.size !== newCitations.length || usedClusters.size !== newClusters.length || recordMap.size !== newRecords.length) return null;
   return { sections: replacements, annotations: document.annotations.map(note => noteUpdates.get(note.id) ?? note) };
 }
 

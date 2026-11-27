@@ -155,3 +155,28 @@ test('reject locally edited notes and moved note markers', () => {
   source.paragraphs[0]!.inline = [{ kind: 'footnoteReference', footnoteId: '1' }, { kind: 'text', text: 'Text.' }];
   assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, false);
 });
+
+test('preserve an unchanged citation graph and update an independent paragraph', () => {
+  const launch = fixture();
+  const source = launch.sources[0]!.sourceDocument as unknown as Record<string, unknown>;
+  source.paragraphs = [{ text: 'Reference [Author].', inline: [
+    { kind: 'text', text: 'Reference ' }, { kind: 'citationReference', sourceTags: ['A'], label: '[Author]' },
+    { kind: 'text', text: '.' },
+  ] }, { text: 'Ordinary paragraph.' }];
+  source.bibliographicRecords = [{ sourceTag: 'A', type: 'book', title: 'Reference work', contributors: [{ role: 'author', familyName: 'Author' }] }];
+  const doc = createVolumeFromOmpHandoff(launch, 'hu');
+  assert.equal(doc.citations.length, 1);
+  assert.equal(doc.citationClusters?.length, 1);
+  launch.sources[0]!.sourceDocument.paragraphs![1]!.text = 'Updated ordinary paragraph.';
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, true);
+  const next = acceptIncomingOmpChapter(doc, launch, '4');
+  assert.deepEqual(next.citations, doc.citations);
+  assert.deepEqual(next.citationClusters, doc.citationClusters);
+  assert.deepEqual(next.bibliographicRecords, doc.bibliographicRecords);
+  assert.match(JSON.stringify(next.sections), /Updated ordinary paragraph/);
+  const local = structuredClone(doc);
+  local.bibliographicRecords![0]!.title = 'Local correction';
+  assert.equal(previewOmpChapter(local, launch, '4').canAcceptIncoming, false);
+  (source.bibliographicRecords as Array<{ title: string }>)[0]!.title = 'Different reference';
+  assert.equal(previewOmpChapter(doc, launch, '4').canAcceptIncoming, false);
+});
