@@ -10,6 +10,14 @@ workspace remains editable on narrow screens and native mobile devices.
 The manuscript chapters/articles, citations, note numbering and structured title
 metadata remain separate from these publication pages.
 
+On desktop, page settings and the selected frame's properties occupy a compact
+side panel with its own scrollbar. The cover stays visible while that panel is
+scrolled. On narrow screens the cover appears above the scrollable settings.
+**Zoom → Fit page** fits the whole sheet to the available width and height;
+percentage zoom allows scrolling across enlarged artwork. Zoom changes only the
+editing view, preserving physical measurements and export geometry. Expand
+**Spine and paper** for binding settings and the shortcode help for guidance.
+
 The cover is one physical sheet with two independently editable faces. **Cover –
 outside** shows back cover / spine / front cover. **Cover – inside** shows inside
 front cover / binding area / inside back cover. Both use the same trim height and

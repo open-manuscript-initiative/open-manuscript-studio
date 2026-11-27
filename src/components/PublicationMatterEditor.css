@@ -1,9 +1,9 @@
-.omi-publication-matter-editor { padding: 1rem; color: var(--omi-academic-ink, #25282d); }
+.omi-publication-matter-editor { display:flex; flex:1 1 auto; flex-direction:column; width:100%; min-width:0; min-height:0; box-sizing:border-box; padding:.25rem; color:var(--omi-academic-ink, #25282d); }
 .omi-publication-matter-editor h2 { margin: 0 0 .5rem; font-size: 1.2rem; }
 .omi-publication-matter-editor p { line-height: 1.5; }
 .omi-publication-matter-editor label { display: grid; gap: .35rem; font-size: .875rem; }
 .omi-publication-matter-editor input:not([type=checkbox]), .omi-publication-matter-editor select { width: 100%; min-height: 2.5rem; box-sizing: border-box; padding: .4rem; border: 1px solid #c8c0b5; border-radius: .35rem; background: #fff; color: #25282d; font: inherit; }
-.omi-publication-matter-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0; }
+.omi-publication-matter-tabs { display:flex; flex:0 0 auto; flex-wrap:wrap; gap:.25rem; margin:0 0 .35rem; }
 .omi-publication-matter-tabs button, .omi-publication-matter-format button { min-height: 2.5rem; padding: .4rem .65rem; border: 1px solid #c8c0b5; border-radius: .35rem; background: #fff; color: #25282d; font: inherit; cursor: pointer; }
 .omi-publication-matter-tabs button[aria-selected=true], .omi-publication-matter-format button[aria-pressed=true] { background: #f6ecee; border-color: #6d2130; }
 .omi-publication-matter-editor .omi-publication-matter-include { display: flex; align-items: center; margin-block: .75rem; }
@@ -43,4 +43,59 @@
 .omi-cover-sheet-dimensions { font-variant-numeric:tabular-nums; }
 .omi-publication-spine-controls { min-inline-size:0; margin-block:1rem; }
 .omi-matter-frame-text > div { flex-shrink:0; }
+
+/* Keep settings beside the cover, with independent scroll areas all the way
+   through the fixed-height desktop workspace. */
+.omi-publication-matter-selected { display:flex; flex:1 1 auto; min-width:0; min-height:0; }
+.omi-matter-frames { display:grid; flex:1 1 auto; grid-template-columns:20rem minmax(0,1fr); min-width:0; min-height:0; overflow:hidden; border:1px solid #d4dce5; border-radius:.35rem; }
+.omi-matter-inspector { min-width:0; min-height:0; padding:.6rem; overflow:auto; scrollbar-width:thin; border-right:1px solid #d4dce5; background:#f8fafc; }
+.omi-matter-inspector > :first-child { margin-top:0; }
+.omi-matter-inspector :is(label,input,select,fieldset) { min-width:0; max-width:100%; }
+.omi-publication-matter-editor .omi-matter-inspector input:not([type=checkbox]) { width:100%; }
+.omi-matter-inspector p { margin:.45rem 0; font-size:.78rem; overflow-wrap:anywhere; }
+.omi-matter-inspector :is(.omi-publication-matter-settings,.omi-matter-frame-settings) { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; margin-block:.5rem; }
+.omi-matter-inspector .omi-publication-spine-controls { margin:.6rem 0; padding:.5rem; border:1px solid #c8c0b5; border-radius:.35rem; }
+.omi-matter-inspector .omi-publication-matter-include { margin-block:.4rem; }
+.omi-matter-inspector :is(button,summary) { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.omi-publication-matter-editor label:has(> input[type=checkbox]) { display:flex; align-items:center; gap:.4rem; }
+.omi-publication-matter-editor input[type=checkbox] { flex:0 0 auto; margin:0; }
+.omi-matter-inspector .omi-publication-matter-shortcode-help { margin-top:.65rem; font-size:.8rem; }
+.omi-matter-spine-panel { margin-block:.65rem; border-block:1px solid #d4dce5; }
+.omi-matter-spine-panel > summary { padding:.5rem 0; font-size:.85rem; font-weight:600; cursor:pointer; }
+.omi-matter-canvas { display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; }
+.omi-matter-canvas-toolbar { display:flex; flex:0 0 auto; align-items:center; flex-wrap:wrap; gap:.35rem .65rem; min-width:0; padding:.4rem .5rem; border-bottom:1px solid #d4dce5; background:#fff; }
+.omi-matter-canvas-toolbar .omi-matter-frame-actions { flex:1 1 auto; align-items:center; gap:.35rem; margin:0; }
+.omi-matter-frame-actions > label { flex:1 1 9rem; max-width:16rem; }
+.omi-matter-canvas-toolbar .omi-matter-preview-toggle { font-size:.78rem; }
+.omi-matter-format-toolbar { flex:0 0 auto; min-width:0; background:#fff; }
+.omi-matter-format-toolbar .omi-publication-matter-format { align-items:center; margin:0; padding:.35rem .5rem; border-bottom:1px solid #d4dce5; }
+.omi-matter-format-toolbar select { flex:1 1 10rem; width:auto; min-width:0; max-width:16rem; }
+.omi-matter-canvas-stage { flex:1 1 auto; min-width:0; min-height:0; padding:.75rem; overflow:auto; background:#e8ebef; -webkit-overflow-scrolling:touch; }
+.omi-matter-canvas-stage:focus-visible { outline:2px solid #275d70; outline-offset:-2px; }
+.omi-matter-canvas-stage .omi-publication-matter-paper { max-width:none; margin:0 auto; }
+
+@media (min-width:1151px) {
+  .omi-publication-matter-editor :is(input:not([type=checkbox]),select),
+  .omi-publication-matter-tabs button,
+  .omi-matter-frame-actions button,
+  .omi-publication-matter-format button,
+  .omi-matter-frame-settings button { min-height:2rem; padding:.25rem .4rem; font-size:.8rem; }
+}
+
+/* On narrow screens the cover comes first. The menu scrolls between it and a
+   bounded settings panel, rather than placing the cover below the whole form. */
+@media (max-width:1150px) {
+  .omi-publication-matter-editor { flex:0 0 auto; }
+  .omi-matter-frames { display:flex; flex-direction:column; overflow:visible; }
+  .omi-matter-canvas { order:0; flex:0 0 auto; height:clamp(18rem,60dvh,40rem); }
+  .omi-matter-inspector { order:1; max-height:min(55dvh,30rem); border-right:0; border-top:1px solid #d4dce5; }
+  .omi-matter-frame-actions > label { max-width:none; }
+  .omi-publication-matter-tabs { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:thin; }
+  .omi-publication-matter-tabs button { flex:0 0 auto; white-space:nowrap; }
+}
+
+.publication-style-editor--preview .omi-publication-matter-editor { flex:0 0 auto; }
+.publication-style-editor--preview .omi-matter-frames { display:flex; flex-direction:column; overflow:visible; }
+.publication-style-editor--preview .omi-matter-canvas { order:0; flex:0 0 auto; height:clamp(18rem,60dvh,40rem); }
+.publication-style-editor--preview .omi-matter-inspector { order:1; max-height:min(55dvh,30rem); border-right:0; border-top:1px solid #d4dce5; }
 @media print { .omi-cover-sheet-guides { display:none; } }

@@ -2006,7 +2006,7 @@
 .publication-workspace-tabs button { min-height:2.5rem; padding:.45rem .7rem; border:1px solid #c5bfb5; border-radius:.35rem; background:#fff; color:inherit; font:inherit; }
 .publication-workspace-tabs button[aria-selected="true"] { background:#f6ecee; border-color:#6d2130; }
 .publication-style-editor-layout[hidden] { display:none; }
-.publication-style-editor > .publication-matter-workspace { flex:1; min-height:0; overflow:auto; }
+.publication-style-editor-main > .publication-matter-workspace { display:flex; flex:1 1 auto; min-width:0; min-height:0; overflow:hidden; }
 
 .publication-frame-inspector-actions { gap:.6rem; flex-wrap:wrap; }
 .publication-frame-inspector-actions > label { display:flex; align-items:center; gap:.4rem; font-size:.85rem; }

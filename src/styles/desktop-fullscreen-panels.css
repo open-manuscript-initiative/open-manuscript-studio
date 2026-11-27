@@ -12,7 +12,15 @@
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  padding: clamp(.75rem, 1.6vw, 1.4rem);
+  padding: .35rem;
+}
+
+.studio-menu-content--publication-editor .publication-template-panel {
+  flex: 0 0 auto;
+  max-height: min(40dvh, 24rem);
+  margin-block: .25rem;
+  padding: .35rem .55rem;
+  overflow: auto;
 }
 
 

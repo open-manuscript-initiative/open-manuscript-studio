@@ -171,6 +171,7 @@ for (const width of [1440, 393]) {
     await expect(panel.locator('.omi-matter-rich-preview strong')).toHaveText('Framed title');
     await panel.getByRole('tab', { name: 'Cover – outside', exact: true }).click();
     await panel.getByRole('checkbox', { name: 'Include in publication' }).check();
+    await panel.locator('.omi-matter-spine-panel > summary').click();
     const spineWidth = panel.getByRole('spinbutton', { name: 'Spine width (mm)', exact: true });
     await spineWidth.fill('18'); await spineWidth.press('Tab');
     await panel.getByLabel('New frame placement', { exact: true }).selectOption('spine');
@@ -241,6 +242,7 @@ for (const width of [1440, 393]) {
     await units.selectOption('pc');
     await panel.getByRole('tab', { name: 'Cover – outside', exact: true }).click();
     await expect(units).toHaveValue('pc');
+    await panel.locator('.omi-matter-spine-panel > summary').click();
     const spine = panel.getByRole('spinbutton', { name: 'Spine width (pc)', exact: true });
     await spine.fill('3'); await spine.press('Tab');
     await units.selectOption('mm');
@@ -278,6 +280,7 @@ for (const width of [1440, 393]) {
     await include.check();
     await expect(panel.getByRole('tab', { name: 'Spine', exact: true })).toHaveCount(0);
     await panel.getByLabel('New frame placement', { exact: true }).selectOption('cover-outside');
+    await panel.locator('.omi-matter-spine-panel > summary').click();
     const livePages = panel.getByRole('checkbox', { name: 'Use publication editor page count', exact: true });
     const automatic = panel.getByRole('checkbox', { name: 'Calculate spine from page count and paper', exact: true });
     // The print layout is measured before hiding the mounted manuscript canvas.
