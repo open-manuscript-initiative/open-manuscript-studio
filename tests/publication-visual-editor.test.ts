@@ -815,7 +815,9 @@ test('fullscreen presentation uses screen graphics and disables manuscript edits
   assert.match(styleEditor, /exitFullscreen\(\)/);
   assert.match(styleEditor, /className="publication-presentation-exit"/);
   assert.match(documentCanvas, /<PublicationPreviewContext\.Provider value=\{previewOnly \|\| presentation\}>/);
-  assert.match(documentCanvas, /editable=\{!previewOnly && !presentation\}/);
+  assert.equal((documentCanvas.match(/editable=\{active && !previewOnly && !presentation\}/g) ?? []).length, 2);
+  assert.match(documentCanvas, /suspendExternalUpdates=\{!active\}/);
+  assert.match(styleEditor, /active=\{!matterToolsOpen\}/);
   assert.match(editorStyles, /\.publication-style-editor--presentation/);
 });
 
