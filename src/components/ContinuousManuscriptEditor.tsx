@@ -75,6 +75,7 @@ interface CollaborationSession {
 }
 
 interface StudyEditorProps {
+  suspended?: boolean;
   study: ManuscriptStudy;
   sectionNumbers: ReadonlyMap<string, string>;
   manuscriptLanguage: string;
@@ -103,12 +104,16 @@ function StudyEditor({
   contributorTitle,
   contributorDescription,
   collaboration,
+  suspended = false,
 }: StudyEditorProps) {
+  // A live Yjs editor remains a canonical synchronization bridge while hidden.
+  const suspendUpdates = suspended && !collaboration;
   const localProjectionRef = useRef<{
     sections: ReadonlyArray<ManuscriptStudy['sections'][number]>;
     content: string;
   } | null>(null);
   const serializedDocument = useMemo(() => {
+    if (suspendUpdates) return '';
     const localProjection = localProjectionRef.current;
     if (
       localProjection
@@ -120,7 +125,7 @@ function StudyEditor({
     return JSON.stringify(
       buildContinuousManuscriptDocument(study.sections, sectionNumbers),
     );
-  }, [sectionNumbers, study.sections]);
+  }, [sectionNumbers, study.sections, suspendUpdates]);
 
   const [projectionCache] = useState(() => createTextProjectionCache<JSONContent>());
   const updateDocument = useCallback((_documentId: string, content: string, snapshot?: JSONContent) => {
@@ -192,6 +197,7 @@ function StudyEditor({
         blockId={`omi-study-${study.rootSectionId}`}
         blockType="manuscript"
         content={serializedDocument}
+        suspendExternalUpdates={suspendUpdates}
         onUpdate={updateDocument}
         manuscriptLanguage={manuscriptLanguage}
         className="omi-continuous-document-editor"
@@ -291,7 +297,7 @@ function ProgressiveStudyEditor({
   );
 }
 
-export function ContinuousManuscriptEditor() {
+export function ContinuousManuscriptEditor({ suspended = false }: { suspended?: boolean }) {
   const { locale } = useTranslation();
   const collaborationCopy = getCollaborationPanelCopy(locale);
   const copy = getStudyEditorCopy(locale);
@@ -633,6 +639,7 @@ export function ContinuousManuscriptEditor() {
         return (
           <Fragment key={study.rootSectionId}>
             <ProgressiveStudyEditor
+              suspended={suspended}
               study={study}
               sectionNumbers={sectionNumbers}
               manuscriptLanguage={manuscript.locale}

@@ -1,4 +1,5 @@
 import { useStudioStore } from '../app/useStudioStore';
+import { useAuthoringViewSuspended } from '../editor/publicationEditorActivity';
 import { useTranslation } from '../i18n';
 import type { OjsLaunchPayload } from '../integrations/ojs/importOjsLaunch';
 import { ContinuousManuscriptEditor } from './ContinuousManuscriptEditor';
@@ -14,12 +15,15 @@ interface EditorPaneProps {
 
 export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
   const { t } = useTranslation();
+  const suspended = useAuthoringViewSuspended();
   const sectionCount = useStudioStore((state) => state.manuscript.sections.length);
 
   return (
     <section
       className="editor omi-studio-editor focus-editor omi-continuous-manuscript"
       aria-label={t('studio.editorAria')}
+      inert={suspended || undefined}
+      data-authoring-suspended={String(suspended)}
     >
       <section
         className="omi-writing-pane focus-writing-pane omi-document-canvas"
@@ -35,7 +39,7 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
               {sectionCount === 0 ? (
                 <p className="omi-empty-section">{t('studio.noSection')}</p>
               ) : null}
-              <ContinuousManuscriptEditor />
+              <ContinuousManuscriptEditor suspended={suspended} />
             </div>
           </div>
         </article>

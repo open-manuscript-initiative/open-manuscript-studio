@@ -1,4 +1,5 @@
 import { createRunningStudyFields, normalizeRunningShortcodes } from '../model/publicationRunningShortcodes';
+import { registerPublicationEditor } from '../editor/publicationEditorActivity';
 import { HeaderNoteInsertButton } from './HeaderNoteInsertButton';
 import { PublicationPageNavigator } from './PublicationPageNavigator';
 import { createPortal } from 'react-dom';
@@ -179,6 +180,7 @@ export function PublicationDocumentCanvas({
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
   const previewOnly = usePublicationPreview();
+  useLayoutEffect(() => previewOnly ? undefined : registerPublicationEditor(), [previewOnly]);
   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
   const pageCountChange = useRef(onPageCountChange); pageCountChange.current = onPageCountChange;
