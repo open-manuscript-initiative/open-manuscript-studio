@@ -75,3 +75,27 @@ test('volume publication matter keeps distinct print and electronic identifiers 
   const ambiguous = createVolumeFromOmpHandoff(input, 'hu');
   assert.ok(!ambiguous.titleMatter?.electronicIsbn);
 });
+
+import { validateSavedOmpVolume } from '../src/integrations/omp/savedOmpVolume.ts';
+import { buildOmiContainer } from '../src/services/omiContainer.ts';
+import { inspectOmiContainer } from '../src/services/omiContainerImport.ts';
+
+test('saved OMP volume recovery preserves the original ID and revision, including a newer native publication', async () => {
+  const input = fixture();
+  const original = createVolumeFromOmpHandoff(input, 'hu');
+  const packed = await buildOmiContainer(original);
+  const plan = await inspectOmiContainer(packed.bytes);
+  const next = { ...input, volume: { ...input.volume, publicationExternalId: '5' },
+    chapters: input.chapters.map(chapter => ({ ...chapter, publicationExternalId: '5' })) };
+  const restored = validateSavedOmpVolume(plan, next, [], original.id);
+  assert.equal(restored.id, original.id);
+  assert.equal(restored.headRevisionId, original.headRevisionId);
+  assert.deepEqual(restored.sections, original.sections);
+  assert.throws(() => validateSavedOmpVolume(plan, input, [], 'wrong-id'));
+  assert.throws(() => validateSavedOmpVolume(plan, { ...input, installation: { installationId: 'other-press' } }, []));
+  assert.throws(() => validateSavedOmpVolume(plan, { ...input, context: { externalId: '7' } }, []));
+  assert.throws(() => validateSavedOmpVolume(plan, { ...input, volume: { ...input.volume, externalId: '9' } }, []));
+  assert.throws(() => validateSavedOmpVolume(plan, input, [original]));
+  assert.throws(() => validateSavedOmpVolume(plan, input, [createVolumeFromOmpHandoff(input, 'hu')]));
+  assert.throws(() => validateSavedOmpVolume({ ...plan, validForImport: false }, input, []));
+});

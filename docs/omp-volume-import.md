@@ -55,3 +55,26 @@ Imported OMP volumes receive a chapter page review panel. It renders a full PDF 
 ### EPUB scholarly rendering
 
 The EPUB exporter now attempts the existing public scholarly HTML renderer as a reflowable XHTML projection. It retains visible note bodies and internal note links, citation labels and links, rich inline formatting, native table markup, hierarchical navigation, and embedded raster images packaged as manifest resources. It does not promise lossless OMI round-tripping. Unsupported SVG/MathML and missing external or asset-backed images remain limitations; the legacy fallback is explicitly diagnosed. The richer package requires extending the strict OMP receiver before native transfer is enabled. EPUBCheck and browser/native integration tests remain to be run.
+
+## Reopening a saved volume (explicit recovery)
+
+If no matching volume is currently open, Studio offers a choice before creating
+a new manuscript: select a local portable `.omi` package, explicitly select a
+cloud-saved document from the current account's existing profile links, or
+import a new copy. It downloads only the selected cloud document. Integrity,
+revision digests, profile manuscript ID and the exact OMP installation, press
+and submission identities are checked before loading any saved manuscript.
+A different publication version can be reviewed but is not silently merged.
+Already-open matching volumes continue through the existing comparison flow;
+a duplicate manuscript or volume is rejected. Account and workspace changes
+during restoration stop the restore before loading the manuscript.
+
+No new storage, server schema, automatic backup download or native file access
+is introduced. The selected package must be the complete portable OMI
+container; arbitrary JSON/native paths are not discovered. The profile list does
+not yet index OMP origin identifiers, so automatic matching across devices
+remains a separate step. This feature does not select the newest backup by
+title or overwrite saved files. Use the existing save/backup workflow to persist
+your revised volume. The normal import integrity and asset restoration paths
+remain in use. Unit coverage is in `tests/omp-volume-project.test.ts`; browser
+and native device acceptance remain required.
