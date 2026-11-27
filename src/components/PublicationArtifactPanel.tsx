@@ -1,3 +1,4 @@
+import { OmpVolumeMetadataPanel } from './OmpVolumeMetadataPanel';
 import { OmpChapterPrintedPagePanel } from './OmpChapterPrintedPagePanel';
 import { OjsWorkflowStatusPanel } from './OjsWorkflowStatusPanel';
 import { useEffect, useMemo, useState } from 'react';
@@ -650,6 +651,7 @@ function PublicationArtifactForm({
       ) : null}
 
       {error ? <p role="alert">{error}</p> : null}
+      {manuscript.extensions?.['org.openmanuscript.omp.volume'] ? <OmpVolumeMetadataPanel key={manuscript.id} connections={connections} disabled={busy !== null} /> : null}
       {manuscript.extensions?.['org.openmanuscript.omp.volume'] ? <OmpChapterPrintedPagePanel
         key={manuscript.id} connections={connections.filter(item => item.providerId === 'omp')}
         disabled={busy !== null} /> : null}
