@@ -205,9 +205,18 @@ OMI_PUBLICATION_BENCHMARK=1 npx playwright test e2e/publication-performance.spec
 
 The fixture is synthetic and contains no private manuscript data. It exercises
 a title-only manuscript and 100, 400 and 1,000 body blocks, including both
-single-page and facing-page rendering for the 400-block case. These are block
+single-page and facing-page rendering for the 400-block case, plus title editing
+while a 1,000-block facing-page document is open. These are block
 counts, not page counts. Each run types 30 characters at a 20 ms requested
 inter-key delay and checks that the text is present.
+
+The body target is a paragraph inside a contenteditable editor. After clicking
+it, send End through the keyboard rather than refocusing that non-focusable
+paragraph with `locator.press`. Assert the editable host remains focused before
+collecting samples. Otherwise the browser can send the entire input sequence to
+the page body, yielding zero valid latency samples. The large-document title
+case is necessary to exercise front-matter structural sharing; an empty title-only
+document cannot establish its benefit for a long manuscript.
 
 The Playwright report attaches JSON with open-to-caret time (including driver
 overhead), median/p95/maximum keydown-to-second-animation-frame latency (a
@@ -219,3 +228,8 @@ The harness uses source-module fixtures and the development server; it is a
 repeatable comparative diagnostic, not release-build evidence. Repeat on
 production WebView builds with device-side tracing and the representative
 publication workloads before setting release latency or memory budgets.
+
+The [2026-11-27 review](performance/publication-review-2026-11-27.md) records the
+repaired benchmark, one-run before/after measurements and the remaining inactive
+editor and main-thread DOM work. Its results are diagnostic evidence, not a
+production or Android acceptance claim.
