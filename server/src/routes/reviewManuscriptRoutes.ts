@@ -16,20 +16,15 @@ import {
 export const reviewManuscriptRouter = Router();
 
 reviewManuscriptRouter.use(requireSession);
+reviewManuscriptRouter.use((_request, response, next) => { response.setHeader('Cache-Control', 'no-store, private'); next(); });
 
-const blockSchema = z.object({
-  type: z.enum(['heading', 'paragraph', 'note']).default('paragraph'),
-  text: z.string().min(1).max(200_000),
-  level: z.number().int().min(1).max(6).optional(),
-});
-
+// The allow-listed service model validates blocks, inline formatting and annotations.
+// Do not strip tables, images or comments before that validation runs.
 const manuscriptSchema = z.object({
   title: z.string().min(1).max(500),
-  subtitle: z.string().max(500).optional(),
-  abstract: z.string().max(20_000).optional(),
-  keywords: z.array(z.string().max(200)).max(100).default([]),
-  blocks: z.array(blockSchema).max(20_000).default([]),
-}).strip();
+  blocks: z.array(z.unknown()).max(20_000),
+  annotations: z.array(z.unknown()).max(10_000).optional(),
+}).passthrough();
 
 reviewManuscriptRouter.put('/assignments/:assignmentId/manuscript', async (request: AuthenticatedRequest, response) => {
   try {
@@ -119,6 +114,9 @@ function sendError(response: Response, error: unknown, fallbackCode: string): vo
   if (name === 'AuthenticationError') {
     response.status(401).json({ error: { code: 'NOT_AUTHENTICATED', message } });
     return;
+  }
+  if (name === 'TranslationProfileRequiredError' || name === 'TranslationPairMismatchError') {
+    response.status(403).json({ error: { code: name === 'TranslationProfileRequiredError' ? 'TRANSLATION_PROFILE_REQUIRED' : 'TRANSLATION_PAIR_NOT_CONFIGURED', message } }); return;
   }
   if (name === 'ForbiddenError') {
     response.status(403).json({ error: { code: 'FORBIDDEN', message } });

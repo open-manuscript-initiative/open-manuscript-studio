@@ -1,3 +1,4 @@
+import { sanitizeReviewManuscript } from '../server/src/services/reviewManuscriptModel.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -216,17 +217,16 @@ test('review snapshots are an anonymous article-only projection', () => {
   assert.match(reviewSnapshotSource, /documentKind: 'article'/);
   assert.match(reviewSnapshotSource, /authorIdentity: 'hidden'/);
   assert.doesNotMatch(reviewSnapshotSource, /fileName: item\.fileName/);
-  assert.match(reviewManuscriptServiceSource, /documentKind: 'article'/);
-  assert.match(reviewManuscriptServiceSource, /authorIdentity: 'hidden'/);
-  assert.doesNotMatch(reviewManuscriptServiceSource, /fileName\?: string/);
   assert.match(reviewManuscriptServiceSource, /anonymityMode: 'DOUBLE_BLIND'/);
-  const sanitizerStart = reviewManuscriptServiceSource.indexOf('export function sanitizeReviewManuscript');
-  const sanitizerEnd = reviewManuscriptServiceSource.indexOf('function sanitizeCells', sanitizerStart);
-  const sanitizer = reviewManuscriptServiceSource.slice(sanitizerStart, sanitizerEnd);
-  assert.match(sanitizer, /documentKind: 'article'/);
-  assert.match(sanitizer, /authorIdentity: 'hidden'/);
-  assert.match(sanitizer, /bibliographicRecords: sanitizeBibliographicRecords\(record\.bibliographicRecords\)/);
-  assert.doesNotMatch(sanitizer, /record\.(?:annotations|sourceAttributions|fileName|authorIdentity)/);
+  const sanitized = sanitizeReviewManuscript({ title: 'Article', documentKind: 'book', authorIdentity: 'visible',
+    authors: [{ name: 'Hidden author' }], fileName: 'Hidden author.docx', sourceAttributions: [{ author: 'Hidden author' }],
+    blocks: [{ type: 'paragraph', text: 'Article text' }] });
+  assert.equal(sanitized.documentKind, 'article');
+  assert.equal(sanitized.authorIdentity, 'hidden');
+  assert.equal(sanitized.authors, undefined);
+  assert.equal('fileName' in sanitized, false);
+  assert.equal('sourceAttributions' in sanitized, false);
+  assert.deepEqual(sanitized.bibliographicRecords, []);
   assert.match(ojsVerifierSource, /REVIEWER_FORBIDDEN_SCOPES[\s\S]*'contributors\.read'/);
   assert.match(ojsClientSource, /const hasContributorScope = !reviewerMode/);
   assert.match(reviewModeSource, /manuscript: 'Cikk'/);

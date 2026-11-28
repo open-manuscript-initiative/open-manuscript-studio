@@ -1,3 +1,5 @@
+import { TranslationLanguagePairsField } from './TranslationLanguagePairsField';
+import type { TranslationLanguagePair } from '../model/user';
 import { AccountPrivacySection } from './AccountPrivacySection';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
@@ -28,6 +30,7 @@ import { WebPublishingSettings } from './WebPublishingSettings';
 import '../styles/account.css';
 
 type AccountFormState = {
+  translationLanguagePairs: TranslationLanguagePair[];
   workflowRole: WorkflowRole;
   fullName: string;
   orcid: string;
@@ -52,6 +55,7 @@ export function AccountPanel() {
   const [saved, setSaved] = useState(false);
   const [emailRevision, setEmailRevision] = useState(0);
   const [form, setForm] = useState<AccountFormState>({
+    translationLanguagePairs: [],
     workflowRole: 'general',
     fullName: '',
     orcid: '',
@@ -69,6 +73,7 @@ export function AccountPanel() {
   useEffect(() => {
     if (!user) return;
     setForm({
+      translationLanguagePairs: user.preferences.translationLanguagePairs ?? [],
       workflowRole: normalizeWorkflowRole(user.preferences.workflowRole),
       fullName: user.profile.fullName ?? '',
       orcid: user.profile.orcid ?? '',
@@ -89,6 +94,7 @@ export function AccountPanel() {
     setSaved(false);
     await update({
       workflowRole: form.workflowRole,
+      translationLanguagePairs: form.translationLanguagePairs,
       fullName: form.fullName,
       orcid: form.orcid || undefined,
       bio: form.bio || undefined,
@@ -212,6 +218,7 @@ export function AccountPanel() {
               </label>
 
               <h2>{labels.preferences}</h2>
+              <TranslationLanguagePairsField pairs={form.translationLanguagePairs} onChange={translationLanguagePairs => setForm({ ...form, translationLanguagePairs })} locale={locale} disabled={loading} />
               <label>
                 {roleCopy.preference}
                 <select

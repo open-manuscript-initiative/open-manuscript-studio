@@ -31,7 +31,10 @@ export interface ExternalIdentity {
   connectedAt: string;
 }
 
+export interface TranslationLanguagePair { sourceLanguage: string; targetLanguage: string; }
+
 export interface UserPreferences {
+  translationLanguagePairs?: TranslationLanguagePair[];
   workflowRole?: WorkflowRole;
   interfaceLanguage: LanguageCode;
   workingLanguages: LanguageCode[];
@@ -114,6 +117,7 @@ export interface CreateUserInput {
 }
 
 export interface UpdateUserProfileInput {
+  translationLanguagePairs?: TranslationLanguagePair[];
   workflowRole?: WorkflowRole;
   fullName?: string;
   affiliation?: string;

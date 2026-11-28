@@ -1,3 +1,6 @@
+import { readTranslationLanguagePairs } from '../services/translationAssignmentScope.js';
+import { prisma } from '../lib/prisma.js';
+import { assertReviewDocumentAccess } from '../services/reviewAccessPolicy.js';
 import { Router, type Response } from 'express';
 import { z } from 'zod';
 
@@ -6,7 +9,7 @@ import {
   saveOjsReviewFormResponses,
   validateOjsReviewFormComplete,
 } from '../integrations/ojs/reviewForm.js';
-import { writeBackSubmittedExternalReview } from '../integrations/ojs/reviewWriteback.js';
+import { writeBackSubmittedExternalReview, getOjsWritebackStatus } from '../integrations/ojs/reviewWriteback.js';
 import {
   uploadOmpReviewerRevision,
   writeBackSubmittedOmpReview,
@@ -58,6 +61,7 @@ const createAssignmentSchema = z.object({
   reviewerEmail: z.string().email(),
   reviewRound: z.number().int().min(1).max(99).default(1),
   assignmentType: assignmentTypeSchema.default('SCIENTIFIC_REVIEW'),
+  publicationLanguages: z.array(languageSchema).max(32).optional(),
   sourceLanguage: languageSchema.optional(),
   targetLanguage: languageSchema.optional(),
   anonymityMode: anonymityModeSchema.optional(),
@@ -131,6 +135,7 @@ peerReviewRouter.post(
         reviewerEmail: parsed.reviewerEmail,
         reviewRound: parsed.reviewRound,
         assignmentType: parsed.assignmentType,
+        ...(parsed.publicationLanguages ? { publicationLanguages: parsed.publicationLanguages } : {}),
         ...(parsed.sourceLanguage !== undefined ? { sourceLanguage: parsed.sourceLanguage } : {}),
         ...(parsed.targetLanguage !== undefined ? { targetLanguage: parsed.targetLanguage } : {}),
         ...(parsed.anonymityMode !== undefined ? { anonymityMode: parsed.anonymityMode } : {}),
@@ -141,6 +146,14 @@ peerReviewRouter.post(
     }
   },
 );
+
+peerReviewRouter.get('/translation-profile', async (request: AuthenticatedRequest, response) => {
+  try {
+    const userId = requireUserId(request), pairs = await readTranslationLanguagePairs(userId);
+    const count = !pairs.length ? await prisma.peerReviewAssignment.count({ where: { reviewerUserId: userId, assignmentType: 'TRANSLATION', status: { in: ['INVITED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED'] } } }) : 0;
+    response.setHeader('Cache-Control', 'no-store'); response.json({ pairs, setupRequired: !pairs.length && count > 0 });
+  } catch (error) { sendError(response, error, 'TRANSLATION_PROFILE_FAILED'); }
+});
 
 peerReviewRouter.get(
   '/workspaces/:workspaceId/assignments',
@@ -204,7 +217,8 @@ peerReviewRouter.get(
   async (request: AuthenticatedRequest, response) => {
     try {
       const assignmentId = parseId(request.params.assignmentId, 'review assignment');
-      await getReviewerAssignment(requireUserId(request), assignmentId);
+      const review = await getReviewerAssignment(requireUserId(request), assignmentId);
+      assertReviewDocumentAccess(review.assignmentType.toUpperCase(), review.status.toUpperCase());
       const reviewForm = await getOjsReviewFormContext(assignmentId);
       response.setHeader('Cache-Control', 'no-store, max-age=0');
       response.status(200).json({ reviewForm });
@@ -219,7 +233,8 @@ peerReviewRouter.put(
   async (request: AuthenticatedRequest, response) => {
     try {
       const assignmentId = parseId(request.params.assignmentId, 'review assignment');
-      await getReviewerAssignment(requireUserId(request), assignmentId);
+      const review = await getReviewerAssignment(requireUserId(request), assignmentId);
+      assertReviewDocumentAccess(review.assignmentType.toUpperCase(), review.status.toUpperCase(), true);
       const parsed = reviewFormResponsesSchema.parse(request.body ?? {});
       await saveOjsReviewFormResponses(assignmentId, parsed.responses);
       const reviewForm = await getOjsReviewFormContext(assignmentId);
@@ -320,6 +335,22 @@ peerReviewRouter.post(
   },
 );
 
+peerReviewRouter.get('/assigned/:assignmentId/writeback', async (request: AuthenticatedRequest, response) => {
+  try {
+    const userId = requireUserId(request), id = parseId(request.params.assignmentId, 'review assignment');
+    await getReviewerAssignment(userId, id);
+    response.setHeader('Cache-Control', 'no-store');
+    response.json({ externalWriteback: await getOjsWritebackStatus(id, userId) });
+  } catch (error) { sendError(response, error, 'REVIEW_WRITEBACK_STATUS_FAILED'); }
+});
+peerReviewRouter.post('/assigned/:assignmentId/writeback', async (request: AuthenticatedRequest, response) => {
+  try {
+    const userId = requireUserId(request), id = parseId(request.params.assignmentId, 'review assignment');
+    const review = await getReviewerAssignment(userId, id);
+    response.json({ review, externalWriteback: await writeBackSubmittedExternalReview(id, userId) });
+  } catch (error) { sendError(response, error, 'REVIEW_WRITEBACK_RETRY_FAILED'); }
+});
+
 peerReviewRouter.post(
   '/assignments/:assignmentId/complete',
   async (request: AuthenticatedRequest, response) => {
@@ -361,6 +392,9 @@ function sendError(response: Response, error: unknown, fallbackCode: string): vo
   if (name === 'AuthenticationError') {
     response.status(401).json({ error: { code: 'NOT_AUTHENTICATED', message } });
     return;
+  }
+  if (name === 'TranslationProfileRequiredError' || name === 'TranslationPairMismatchError') {
+    response.status(403).json({ error: { code: name === 'TranslationProfileRequiredError' ? 'TRANSLATION_PROFILE_REQUIRED' : 'TRANSLATION_PAIR_NOT_CONFIGURED', message } }); return;
   }
   if (name === 'ForbiddenError') {
     response.status(403).json({ error: { code: 'FORBIDDEN', message } });

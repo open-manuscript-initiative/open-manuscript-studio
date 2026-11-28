@@ -1,4 +1,10 @@
-import { createHash } from 'node:crypto';
+import { normalizePublicationLanguages, translationLanguage } from '../services/translationAssignmentPolicy.js';
+import { getActiveInstallationWithSecret } from '../integrations/externalInstallations.js';
+import { ojsWorkflowRequest } from '../integrations/ojs/workflowRequest.js';
+import { rememberOjsReviewWritebackEndpoint } from '../integrations/ojs/reviewWriteback.js';
+import { rememberOjsReviewForm, type OjsReviewFormDefinition } from '../integrations/ojs/reviewForm.js';
+import { parseOjsReviewRecommendations } from '../integrations/ojs/reviewRecommendationModel.js';
+import { randomUUID, createHash } from 'node:crypto';
 
 import type { Prisma } from '../generated/prisma/client.js';
 import { Router, type Response } from 'express';
@@ -25,8 +31,9 @@ const createSchema = z.object({
   reviewerEmail: z.string().email(),
   reviewerFullName: z.string().trim().min(1).max(200).optional(),
   assignmentType: z.enum(['SCIENTIFIC_REVIEW', 'LANGUAGE_REVIEW', 'TRANSLATION']),
-  sourceLanguage: z.string().trim().min(2).max(32).optional(),
-  targetLanguage: z.string().trim().min(2).max(32).optional(),
+  publicationLanguages: z.array(z.string().min(2).max(32)).max(32).optional(),
+  sourceLanguage: z.string().trim().min(2).max(32).transform(translationLanguage).optional(),
+  targetLanguage: z.string().trim().min(2).max(32).transform(translationLanguage).optional(),
   manuscript: z.unknown(),
 });
 
@@ -94,6 +101,20 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
       }
     }
 
+    if (!context.apiBaseUrl || !context.actorExternalId) throw new Error('Reopen the manuscript from OJS before assigning this task.');
+    const localAssignmentId = randomUUID();
+    const binding = await ojsWorkflowRequest(context.installationId, context.apiBaseUrl, 'workflow-assignment', {
+      assignmentId: localAssignmentId, submissionExternalId: context.manuscriptId,
+      editorExternalId: context.actorExternalId, reviewerEmail: parsed.reviewerEmail.trim().toLowerCase(),
+      assignmentType: parsed.assignmentType,
+      sourceLanguage: parsed.sourceLanguage, targetLanguage: parsed.targetLanguage,
+      ...(parsed.publicationLanguages ? { publicationLanguages: parsed.publicationLanguages } : {}),
+    });
+    if (typeof binding.externalAssignmentId !== 'string' || typeof binding.assignmentToken !== 'string' ||
+      typeof binding.reviewRound !== 'number') throw new Error('OJS did not return a valid assignment binding.');
+    const recommendations = parsed.assignmentType === 'SCIENTIFIC_REVIEW' ? parseOjsReviewRecommendations({ recommendationStorage: (binding.recommendations as Record<string, unknown> | undefined)?.storage,
+      options: (binding.recommendations as Record<string, unknown> | undefined)?.options,
+      selectedExternalId: (binding.recommendations as Record<string, unknown> | undefined)?.selectedExternalId }) : null;
     const reviewerEmail = parsed.reviewerEmail.trim().toLowerCase();
     let reviewer = await prisma.user.findUnique({
       where: { email: reviewerEmail },
@@ -140,26 +161,46 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
     const sequence = await prisma.peerReviewAssignment.count({
       where: { workspaceId, manuscriptId: context.manuscriptId, assignmentType: parsed.assignmentType },
     });
-    const manuscript = sanitizeReviewManuscript(parsed.manuscript);
+    const manuscript = sanitizeReviewManuscript(parsed.manuscript, parsed.assignmentType !== 'SCIENTIFIC_REVIEW');
     const manuscriptSnapshot = JSON.parse(JSON.stringify(manuscript)) as Prisma.InputJsonValue;
 
-    const assignment = await prisma.peerReviewAssignment.create({
+    const existing = await prisma.peerReviewAssignment.findUnique({ where: { externalInstallationId_externalAssignmentId: {
+      externalInstallationId: context.installationId, externalAssignmentId: binding.externalAssignmentId,
+    } } });
+    if (existing && (existing.reviewerUserId !== reviewer.id || existing.assignmentType !== parsed.assignmentType)) throw forbidden('This OJS task belongs to another Studio account or role.');
+    if (existing && !['SUBMITTED', 'COMPLETED'].includes(existing.status)) await prisma.peerReviewAssignment.update({ where: { id: existing.id }, data: {
+      assignedByUserId: request.authUserId ?? null, manuscriptSnapshot: existing.manuscriptSnapshot ?? manuscriptSnapshot,
+      ...(recommendations ? { externalRecommendationStorage: recommendations.storage, externalRecommendationOptions: recommendations.options as unknown as Prisma.InputJsonValue, externalRecommendationId: recommendations.selectedExternalId } : {}),
+    } });
+    const assignment = existing ?? await prisma.peerReviewAssignment.create({
       data: {
+        id: localAssignmentId,
         workspaceId,
+        externalInstallationId: context.installationId,
+        externalSubmissionId: context.manuscriptId,
+        externalAssignmentId: binding.externalAssignmentId,
         manuscriptId: context.manuscriptId,
         reviewerUserId: reviewer.id,
         assignedByUserId: request.authUserId ?? null,
         reviewerAlias: `${aliasBase} ${sequence + 1}`,
         assignmentType: parsed.assignmentType,
+        publicationLanguages: normalizePublicationLanguages(binding.publicationLanguages ?? []),
         sourceLanguage: parsed.sourceLanguage?.trim() || null,
         targetLanguage: parsed.targetLanguage?.trim() || null,
-        reviewRound: 1,
+        reviewRound: binding.reviewRound,
         anonymityMode: parsed.assignmentType === 'SCIENTIFIC_REVIEW' ? 'DOUBLE_BLIND' : 'OPEN',
         status: 'INVITED',
         manuscriptSnapshot,
+        ...(recommendations ? { externalRecommendationStorage: recommendations.storage, externalRecommendationOptions: recommendations.options as unknown as Prisma.InputJsonValue,
+          externalRecommendationId: recommendations.selectedExternalId } : {}),
       },
     });
 
+    const installation = await getActiveInstallationWithSecret(context.installationId);
+    if (!installation) throw new Error('The OJS installation is no longer active.');
+    await rememberOjsReviewWritebackEndpoint(assignment.id, context.apiBaseUrl, installation.baseUrl);
+    await prisma.$executeRaw`UPDATE ojs_review_writeback_contexts SET assignment_token = ${binding.assignmentToken} WHERE assignment_id = ${assignment.id}::uuid`;
+    if (parsed.assignmentType === 'SCIENTIFIC_REVIEW') await rememberOjsReviewForm(assignment.id, binding.reviewForm as OjsReviewFormDefinition | null ?? null);
     let invitationSent: boolean | undefined;
     if (reviewer.status === 'PENDING') {
       const invitation = await issueAssignmentInvitation({
@@ -193,6 +234,42 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
   } catch (error) {
     sendError(response, error, 'OJS_ASSIGNMENT_CREATE_FAILED');
   }
+});
+
+ojsAssignmentRouter.post('/ojs/assignments/:assignmentId/reconnect', async (request: AuthenticatedRequest, response) => {
+  try {
+    const { grant } = z.object({ grant: z.string().min(20) }).parse(request.body);
+    const context = await authorizeGrant(request, grant);
+    if (context.actorMode !== 'editor' || !context.apiBaseUrl || !context.actorExternalId) throw forbidden('Reopen the OJS manuscript as its editor.');
+    const assignmentId = z.string().uuid().parse(request.params.assignmentId);
+    const existing = await prisma.peerReviewAssignment.findFirst({ where: { id: assignmentId,
+      workspaceId: workspaceIdFor(context.installationId, context.contextId), manuscriptId: context.manuscriptId }, include: { reviewer: true } });
+    if (!existing) throw forbidden('The task does not belong to this OJS manuscript.');
+    const binding = await ojsWorkflowRequest(context.installationId, context.apiBaseUrl, 'workflow-assignment', {
+      assignmentId, submissionExternalId: context.manuscriptId, editorExternalId: context.actorExternalId,
+      reviewerEmail: existing.reviewer.email, assignmentType: existing.assignmentType,
+      sourceLanguage: existing.sourceLanguage, targetLanguage: existing.targetLanguage, expectedReviewRound: existing.reviewRound,
+    });
+    if (typeof binding.externalAssignmentId !== 'string' || typeof binding.assignmentToken !== 'string' || typeof binding.reviewRound !== 'number' || binding.reviewRound !== existing.reviewRound) throw new Error('The OJS round changed. Create a new task for the current round.');
+    const installation = await getActiveInstallationWithSecret(context.installationId);
+    if (!installation) throw new Error('The OJS installation is no longer active.');
+    const recommendations = existing.assignmentType === 'SCIENTIFIC_REVIEW' ? parseOjsReviewRecommendations({
+      recommendationStorage: (binding.recommendations as Record<string, unknown> | undefined)?.storage,
+      options: (binding.recommendations as Record<string, unknown> | undefined)?.options,
+      selectedExternalId: (binding.recommendations as Record<string, unknown> | undefined)?.selectedExternalId,
+    }) : null;
+    // Reconnecting the same task must not clear an existing success receipt.
+    await prisma.peerReviewAssignment.update({ where: { id: assignmentId }, data: {
+      externalInstallationId: context.installationId, externalSubmissionId: context.manuscriptId,
+      externalAssignmentId: binding.externalAssignmentId, reviewRound: binding.reviewRound, publicationLanguages: normalizePublicationLanguages(binding.publicationLanguages ?? []),
+      anonymityMode: existing.assignmentType === 'SCIENTIFIC_REVIEW' ? 'DOUBLE_BLIND' : 'OPEN',
+      ...(recommendations ? { externalRecommendationStorage: recommendations.storage, externalRecommendationOptions: recommendations.options as unknown as Prisma.InputJsonValue } : {}),
+    } });
+    await rememberOjsReviewWritebackEndpoint(assignmentId, context.apiBaseUrl, installation.baseUrl);
+    await prisma.$executeRaw`UPDATE ojs_review_writeback_contexts SET assignment_token = ${binding.assignmentToken} WHERE assignment_id = ${assignmentId}::uuid`;
+    if (existing.assignmentType === 'SCIENTIFIC_REVIEW') await rememberOjsReviewForm(assignmentId, binding.reviewForm as OjsReviewFormDefinition | null ?? null);
+    response.json({ reconnected: true });
+  } catch (error) { sendError(response, error, 'OJS_ASSIGNMENT_RECONNECT_FAILED'); }
 });
 
 async function authorizeGrant(request: AuthenticatedRequest, token: string) {

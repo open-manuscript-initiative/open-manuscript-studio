@@ -1,3 +1,5 @@
+import { sanitizeReviewManuscript } from '../../services/reviewManuscriptModel.js';
+import type { SourceReviewAnnotation } from './docxReviewAnnotations.js';
 import type { OjsLaunchData } from './ojsClient.js';
 import type { OjsStructuredBlock } from './docxStructureTypes.js';
 import type {
@@ -17,6 +19,8 @@ interface SourceParagraph {
 
 interface StructuredSourceDocument {
   paragraphs?: SourceParagraph[];
+  reviewAnnotations?: SourceReviewAnnotation[];
+  reviewSnapshot?: ReviewManuscriptSnapshot;
   structuredBlocks?: OjsStructuredBlock[];
   footnotes?: Array<{ text: string }>;
   endnotes?: Array<{ text: string }>;
@@ -62,6 +66,7 @@ export function createReviewSnapshotFromOjs(
   data: OjsLaunchData,
   options: ReviewSnapshotOptions = {},
 ): ReviewManuscriptSnapshot {
+  if (data.sourceDocument?.reviewSnapshot) return sanitizeReviewManuscript(data.sourceDocument.reviewSnapshot);
   const submission = asRecord(data.submission);
   const includeSubmissionMetadata = options.includeSubmissionMetadata !== false;
   const title = options.title?.trim()
@@ -206,11 +211,16 @@ export function createReviewSnapshotFromOjs(
   return {
     documentKind: 'article',
     authorIdentity: 'hidden',
+    annotations: (source?.reviewAnnotations ?? []).map(item => {
+      const index = blocks.findIndex(block => 'text' in block && item.paragraphText && normalize(block.text) === normalize(item.paragraphText));
+      return { ...item, type: 'comment' as const, visibility: 'editor_only' as const,
+        targetBlockId: `review-block-${Math.max(0, index)}`, anchorStatus: index < 0 ? 'unresolved' as const : 'resolved' as const };
+    }),
     title,
     ...(subtitle ? { subtitle } : {}),
     ...(abstract ? { abstract } : {}),
     keywords,
-    blocks,
+    blocks: blocks.map((block, index) => ({ ...block, id: `review-block-${index}` })),
     bibliographicRecords,
   };
 }

@@ -1,3 +1,5 @@
+import { normalizeTranslationLanguagePairs, type TranslationLanguagePair } from './translationAssignmentPolicy.js';
+import { readTranslationLanguagePairs } from '../repositories/translationProfileRepository.js';
 import {
   createHash,
   randomBytes,
@@ -31,6 +33,7 @@ export interface RegisterUserInput {
 }
 
 export interface UpdateUserInput {
+  translationLanguagePairs?: TranslationLanguagePair[];
   workflowRole?: WorkflowRolePreference;
   fullName?: string;
   country?: string | null;
@@ -229,6 +232,7 @@ export async function updateUserForSession(
   if (!session) return null;
 
   const data: {
+    translationLanguagePairs?: TranslationLanguagePair[];
     workflowRole?: WorkflowRolePreference;
     fullName?: string;
     country?: string | null;
@@ -246,6 +250,7 @@ export async function updateUserForSession(
     if (!fullName) throw new Error('The user name is required.');
     data.fullName = fullName;
   }
+  if (input.translationLanguagePairs !== undefined) data.translationLanguagePairs = normalizeTranslationLanguagePairs(input.translationLanguagePairs);
   if (input.workflowRole !== undefined) data.workflowRole = input.workflowRole;
   if (input.country !== undefined) {
     const country = cleanNullable(input.country)?.toUpperCase() ?? null;
@@ -268,7 +273,7 @@ export async function updateUserForSession(
 
   const user = await identityPrisma.user.update({
     where: { id: session.userId },
-    data,
+    data: { ...data, ...(data.translationLanguagePairs ? { translationLanguagePairs: JSON.parse(JSON.stringify(data.translationLanguagePairs)) } : {}) },
   });
   await ensureStudioPrincipal(toPrincipalSnapshot(user));
   return serializeUser(user);
@@ -383,6 +388,7 @@ async function serializeUser(user: {
       workflowRole: await readWorkflowRolePreference(user.id),
       interfaceLanguage: user.interfaceLanguage,
       workingLanguages: [],
+      translationLanguagePairs: await readTranslationLanguagePairs(user.id),
       ...(user.timeZone !== null ? { timeZone: user.timeZone } : {}),
     },
     identities: [],

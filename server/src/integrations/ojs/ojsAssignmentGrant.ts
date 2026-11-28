@@ -10,6 +10,8 @@ export interface OjsAssignmentGrantClaims {
   manuscriptId: string;
   actorEmail: string;
   actorMode: OjsAssignmentActorMode;
+  actorExternalId?: string;
+  apiBaseUrl?: string;
   exp: number;
 }
 
@@ -51,6 +53,8 @@ export function verifyOjsAssignmentGrant(token: string): OjsAssignmentGrantClaim
     manuscriptId: requiredText(record.manuscriptId),
     actorEmail: requiredText(record.actorEmail).toLowerCase(),
     actorMode,
+    ...(typeof record.actorExternalId === 'string' ? { actorExternalId: record.actorExternalId } : {}),
+    ...(typeof record.apiBaseUrl === 'string' ? { apiBaseUrl: record.apiBaseUrl } : {}),
     exp: typeof record.exp === 'number' ? record.exp : 0,
   };
   if (claims.exp <= Math.floor(Date.now() / 1000)) throw forbidden();

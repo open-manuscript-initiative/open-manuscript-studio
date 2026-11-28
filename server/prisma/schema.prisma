@@ -425,6 +425,7 @@ model PeerReviewAssignment {
   externalSubmissionId     String?               @map("external_submission_id") @db.VarChar(128)
   reviewerAlias            String                @map("reviewer_alias") @db.VarChar(64)
   assignmentType           ReviewAssignmentType  @default(SCIENTIFIC_REVIEW) @map("assignment_type")
+  publicationLanguages     String[]              @default([]) @map("publication_languages")
   sourceLanguage           String?               @map("source_language") @db.VarChar(32)
   targetLanguage           String?               @map("target_language") @db.VarChar(32)
   reviewRound              Int                   @default(1) @map("review_round")

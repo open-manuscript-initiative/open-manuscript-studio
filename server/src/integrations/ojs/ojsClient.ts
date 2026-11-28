@@ -1,3 +1,5 @@
+import { translationDocumentMatchesSourceLanguage } from '../../services/translationAssignmentPolicy.js';
+import { sanitizeReviewManuscript } from '../../services/reviewManuscriptModel.js';
 import type { IssueTransferProgress } from './issueImportProgress.js';
 import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { applyDirectFormattingHeadingInference } from './docxDirectHeading.js';
@@ -218,16 +220,21 @@ async function loadSourceDocument(
   authorization: string,
   trustedOrigin: string,
   reviewerMode: boolean,
+  preferredLanguage?: string,
 ): Promise<OjsSourceDocument | undefined> {
   const eligible = [...files]
     .filter((file) => isDocx(file) && file.externalId && file.contentPath)
-    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES);
+    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES)
+    .filter(file => translationDocumentMatchesSourceLanguage(file.name ?? '', preferredLanguage));
 
   const preferred = reviewerMode
     ? eligible.filter(isArticleTextSubmissionFile)
-    : eligible.filter(isArticleTextSubmissionFile);
+    : eligible.filter(file => [2, 9, 11, 15].includes(Number(file.stage)) && isArticleTextGenre(file));
   const candidate = (preferred.length > 0 ? preferred : reviewerMode ? eligible : preferred)
-    .sort(compareSourceFiles)[0];
+    .sort(reviewerMode ? compareSourceFiles : (a, b) => {
+      const date = (Date.parse(b.updatedAt ?? '') || 0) - (Date.parse(a.updatedAt ?? '') || 0);
+      return date || Number(b.externalId) - Number(a.externalId) || compareSourceFiles(a, b);
+    })[0];
 
   if (!candidate?.externalId || !candidate.contentPath) return undefined;
 
@@ -261,7 +268,20 @@ async function loadSourceDocument(
     throw new Error('The OJS DOCX source file exceeds the 25 MB import limit.');
   }
 
-  return convertOjsSource(bytes, { ...candidate, externalId: candidate.externalId });
+  const document = convertOjsSource(bytes, { ...candidate, externalId: candidate.externalId });
+  // The paired snapshot restores exact comment IDs, visibility, replies and resolution state.
+  const sidecar = files.find(file => file.name === candidate.name?.replace(/\.docx$/i, '.omi-review.json') && file.stage === candidate.stage && file.contentPath);
+  if (sidecar?.contentPath) {
+    const sidecarUrl = new URL(sidecar.contentPath.replace(/^\//, ''), apiBase);
+    const response = await fetchWithExplicitRedirects('review snapshot', sidecarUrl, authorization, trustedOrigin, 'application/json');
+    if (!response.ok) throw new Error(`OJS review snapshot failed with HTTP ${response.status}.`);
+    const raw = Buffer.from(await response.arrayBuffer());
+    if (raw.length > MAX_SOURCE_FILE_BYTES) throw new Error('The returned review snapshot exceeds the import limit.');
+    const envelope = JSON.parse(raw.toString('utf8')) as { protocol?: string; manuscript?: unknown };
+    if (envelope.protocol !== 'omi-review-revision/1') throw new Error('The returned review snapshot has an unsupported format.');
+    document.reviewSnapshot = sanitizeReviewManuscript(envelope.manuscript, !reviewerMode);
+  }
+  return document;
 }
 
 function convertOjsSource(bytes: Buffer, candidate: OjsFileDescriptor & { externalId: string }): OjsSourceDocument {
@@ -281,8 +301,10 @@ function convertOjsSource(bytes: Buffer, candidate: OjsFileDescriptor & { extern
 }
 
 function isArticleTextSubmissionFile(file: OjsFileDescriptor): boolean {
-  if (Number(file.stage) !== OJS_SUBMISSION_FILE_STAGE) return false;
+  return Number(file.stage) === OJS_SUBMISSION_FILE_STAGE && isArticleTextGenre(file);
+}
 
+function isArticleTextGenre(file: OjsFileDescriptor): boolean {
   const genreKey = (file.genreKey || '').trim().toUpperCase();
   if (genreKey) return genreKey === OJS_ARTICLE_TEXT_GENRE_KEY;
 
@@ -351,6 +373,7 @@ export async function loadOjsLaunchData(
     authorization,
     trustedOrigin,
     reviewerMode,
+    (submissionResult.data.submission as { primaryLocale?: string } | undefined)?.primaryLocale,
   );
 
   const result: OjsLaunchData = {

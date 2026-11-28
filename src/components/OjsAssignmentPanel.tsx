@@ -1,7 +1,9 @@
+import { translationTaskCopy, translationLanguage } from '../model/translationAssignmentProfile';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import {
+  reconnectOjsAssignment,
   createOjsAssignment,
   listOjsAssignments,
   type OjsAssignmentLaunchContext,
@@ -23,6 +25,9 @@ export function OjsAssignmentPanel({
   const [assignmentType, setAssignmentType] = useState<OjsAssignmentType>('scientific_review');
   const [sourceLanguage, setSourceLanguage] = useState('');
   const [targetLanguage, setTargetLanguage] = useState('');
+  const [publicationLanguages, setPublicationLanguages] = useState(context.publicationLanguages ?? []);
+  let canonicalTarget = '';
+  try { canonicalTarget = translationLanguage(targetLanguage); } catch { /* Still entering a language. */ }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -58,6 +63,7 @@ export function OjsAssignmentPanel({
         reviewerEmail,
         reviewerFullName: candidate?.fullName,
         assignmentType,
+        publicationLanguages,
         sourceLanguage: sourceLanguage || undefined,
         targetLanguage: targetLanguage || undefined,
       });
@@ -115,6 +121,9 @@ export function OjsAssignmentPanel({
               <>
                 <label><span>{copy.sourceLanguage}</span><input value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)} /></label>
                 <label><span>{copy.targetLanguage}</span><input value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} /></label>
+                <label><input type="checkbox" checked={Boolean(canonicalTarget && publicationLanguages.includes(canonicalTarget))} onChange={event => {
+                  try { const language = translationLanguage(targetLanguage); setPublicationLanguages(current => event.target.checked ? [...new Set([...current, language])] : current.filter(item => item !== language)); } catch { setError(copy.createError); }
+                }} disabled={!canonicalTarget || (context.publicationLanguages ?? []).includes(canonicalTarget)} />{translationTaskCopy(locale).fullTextLanguage}</label>
               </>
             ) : null}
           </div>
@@ -138,6 +147,13 @@ export function OjsAssignmentPanel({
                     {assignment.accountStatus === 'pending' ? ` · ${copy.registrationPending}` : ''}
                   </small>
                 </span>
+                {actorMode === 'editor' ? <button disabled={busy} onClick={() => {
+                  setBusy(true); setError(''); setNotice('');
+                  void reconnectOjsAssignment(context.grant, assignment.id)
+                    .then(() => setNotice(locale === 'hu' ? 'Az OJS-kapcsolat helyreállt. A közreműködő újrapróbálhatja a visszaküldést.' : locale === 'de' ? 'OJS-Verbindung wiederhergestellt. Die Übertragung kann erneut versucht werden.' : 'OJS connection restored. The participant can retry returning the task.'))
+                    .catch(caught => setError(caught instanceof Error ? caught.message : copy.createError))
+                    .finally(() => setBusy(false));
+                }}>{locale === 'hu' ? 'OJS-kapcsolat helyreállítása' : locale === 'de' ? 'OJS-Verbindung wiederherstellen' : 'Restore OJS connection'}</button> : null}
                 {assignment.assignmentType === 'translation' ? (
                   <code>{assignment.sourceLanguage ?? '?'} → {assignment.targetLanguage ?? '?'}</code>
                 ) : null}

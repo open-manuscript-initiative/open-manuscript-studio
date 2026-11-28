@@ -14,7 +14,7 @@ mock.module(new URL('../server/dist/lib/identityPrisma.js', import.meta.url).hre
   namedExports: { identityPrisma: {
     userSession: { findUnique: async () => hasSession ? { userId: user.id, expiresAt: new Date(Date.now() + 60_000), user } : null },
     user: {
-      findUnique: async () => ({ workflowRole: user.workflowRole }),
+      findUnique: async () => ({ workflowRole: user.workflowRole, translationLanguagePairs: user.translationLanguagePairs ?? [] }),
       update: async (input) => { updates.push(input); Object.assign(user, input.data); return user; },
     },
   } },
@@ -38,6 +38,15 @@ test('saved working role is returned on subsequent session reads and stays out o
   assert.equal(updates.at(-1).data.workflowRole, undefined);
   const reset = await updateUserForSession('session-token', { workflowRole: 'general' });
   assert.equal(reset.preferences.workflowRole, 'general');
+});
+
+test('directional translation pairs persist through profile and later session reads', async () => {
+  const input = [{ sourceLanguage: 'hu_HU', targetLanguage: 'en_GB' }, { sourceLanguage: 'hu', targetLanguage: 'de' }];
+  const expected = [{ sourceLanguage: 'hu', targetLanguage: 'en' }, { sourceLanguage: 'hu', targetLanguage: 'de' }];
+  assert.deepEqual((await updateUserForSession('session-token', { translationLanguagePairs: input })).preferences.translationLanguagePairs, expected);
+  assert.deepEqual((await getUserForSession('session-token')).preferences.translationLanguagePairs, expected);
+  await assert.rejects(updateUserForSession('session-token', { translationLanguagePairs: [{ sourceLanguage: 'en', targetLanguage: 'en_US' }] }));
+  assert.deepEqual((await updateUserForSession('session-token', { translationLanguagePairs: [] })).preferences.translationLanguagePairs, []);
 });
 
 test('missing sessions cannot change the profile preference', async () => {
