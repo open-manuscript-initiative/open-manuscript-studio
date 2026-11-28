@@ -640,6 +640,21 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
             $this->fail('The Studio review-form response was not written to PKP.');
         }
 
+        $assignment = Repo::reviewAssignment()->get($assignmentId, $submissionId);
+        if (!$assignment || !$assignment->getDateCompleted()) $this->fail('Scientific return did not complete the native assignment.');
+        $returnedFiles = Repo::submissionFile()->getCollector()
+            ->filterBySubmissionIds([$submissionId])
+            ->filterByFileStages([SubmissionFile::SUBMISSION_FILE_REVIEW_ATTACHMENT])
+            ->filterByAssoc(Application::ASSOC_TYPE_REVIEW_ASSIGNMENT, [$assignmentId])
+            ->getMany();
+        $names = [];
+        foreach ($returnedFiles as $file) {
+            $names[] = (string)$file->getData('name', self::LOCALE);
+            if ($this->platform === 'omp' && (string)$file->getData('chapterId') !== (string)$fixture['component']['assignedId']) $this->fail('Returned review files lost the assigned chapter association.');
+        }
+        sort($names);
+        if (count($names) !== 2 || !str_ends_with($names[0], '.docx') || $names[1] !== substr($names[0], 0, -5) . '.omi-review.json') $this->fail('The Word/structured review pair was missing or duplicated after retry.');
+
         $this->writeJson([
             'platform' => $this->platform,
             'reviewAssignmentId' => (string)$assignmentId,

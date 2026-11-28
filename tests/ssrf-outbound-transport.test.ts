@@ -91,7 +91,7 @@ test('all user-controlled PKP, publishing and AI outbound calls use pinned trans
   for (const path of [
     'server/src/integrations/ojs/ojsClient.ts',
     'server/src/integrations/omp/ompClient.ts',
-    'server/src/integrations/ojs/reviewWriteback.ts',
+    'server/src/integrations/ojs/workflowRequest.ts',
     'server/src/integrations/omp/nativeWriteback.ts',
     'server/src/integrations/ojs/reviewForm.ts',
     'server/src/integrations/omp/reviewForm.ts',
@@ -106,6 +106,13 @@ test('all user-controlled PKP, publishing and AI outbound calls use pinned trans
     assert.match(source, /fetchPinnedPublicUrl\(/, path);
     assert.doesNotMatch(source, /\bawait fetch\(/, path);
   }
+  // The common task return delegates to the signed transport above. Check the
+  // import and actual call instead of requiring a redundant socket implementation.
+  const writeback = readFileSync(new URL('../server/src/integrations/ojs/reviewWriteback.ts', import.meta.url), 'utf8');
+  assert.match(writeback, /import \{ ojsWorkflowRequest \} from ['"]\.\/workflowRequest\.js['"]/);
+  assert.match(writeback, /await ojsWorkflowRequest\(/);
+  assert.doesNotMatch(writeback, /\bfetch\(/);
+
   // The extracted transport owns socket pinning; callers must not reintroduce a direct fetch.
   for (const path of ['server/src/routes/directSubmissionRoutes.ts', 'server/src/services/editorialConnectorService.ts']) {
     const source = readFileSync(new URL('../' + path, import.meta.url), 'utf8');
