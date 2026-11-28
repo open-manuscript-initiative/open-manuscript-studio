@@ -47,7 +47,7 @@ import {
   newsletterPublishingRouter,
   webPublicationV1Router,
 } from './routes/newsletterPublishingRoutes.js';
-import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
+import { ojsAssignmentRouter, ompAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
 import { ompReviewRouter } from './routes/ompReviewRoutes.js';
 import { ompNativeRouter } from './routes/ompNativeRoutes.js';
@@ -188,6 +188,7 @@ app.use('/api/v1/reviews', peerReviewV1Router);
 app.use('/api/reviews', reviewManuscriptRouter);
 app.use('/api/reviews', editorReviewOverviewRouter);
 app.use('/api/reviews', ojsAssignmentRouter);
+app.use('/api/reviews', ompAssignmentRouter);
 app.use('/integrations/ojs/review', ojsReviewRouter);
 app.use('/integrations/omp/review', ompReviewRouter);
 app.use('/integrations/omp/native', ompNativeRouter);

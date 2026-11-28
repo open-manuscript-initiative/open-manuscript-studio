@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../i18n';
 import {
   reconnectOjsAssignment,
+  completeExternalAssignment,
   createOjsAssignment,
   listOjsAssignments,
   type OjsAssignmentLaunchContext,
@@ -19,7 +20,9 @@ export function OjsAssignmentPanel({
   context: OjsAssignmentLaunchContext;
 }) {
   const { locale } = useTranslation();
-  const copy = getCopy(locale);
+  const platform = context.platform ?? 'ojs';
+  const copy = Object.fromEntries(Object.entries(getCopy(locale)).map(([key, value]) => [key, value.replaceAll('OJS', platform.toUpperCase())])) as ReturnType<typeof getCopy>;
+  const platformText = (text: string) => text.replaceAll('OJS', platform.toUpperCase());
   const [assignments, setAssignments] = useState<OjsAssignmentSummary[]>([]);
   const [reviewerEmail, setReviewerEmail] = useState(context.candidates[0]?.email ?? '');
   const [assignmentType, setAssignmentType] = useState<OjsAssignmentType>('scientific_review');
@@ -41,7 +44,7 @@ export function OjsAssignmentPanel({
 
   useEffect(() => {
     let active = true;
-    void listOjsAssignments(context.grant)
+    void listOjsAssignments(context.grant, platform)
       .then((result) => {
         if (active) setAssignments(result.assignments);
       })
@@ -49,7 +52,7 @@ export function OjsAssignmentPanel({
         if (active) setError(caught instanceof Error ? caught.message : copy.loadError);
       });
     return () => { active = false; };
-  }, [context.grant, copy.loadError]);
+  }, [context.grant, platform, copy.loadError]);
 
   async function addAssignment(): Promise<void> {
     if (actorMode !== 'editor' || !reviewerEmail) return;
@@ -95,7 +98,7 @@ export function OjsAssignmentPanel({
       {actorMode === 'editor' ? (
         <section className="studio-settings-card">
           <div className="studio-settings-card-header">
-            <div><h4>{copy.add}</h4><p>{copy.ojsCandidates}</p></div>
+            <div><h4>{copy.add}</h4><p>{platformText(copy.ojsCandidates)}</p></div>
           </div>
           <div className="studio-manuscript-fields">
             <label>
@@ -147,13 +150,20 @@ export function OjsAssignmentPanel({
                     {assignment.accountStatus === 'pending' ? ` · ${copy.registrationPending}` : ''}
                   </small>
                 </span>
-                {actorMode === 'editor' ? <button disabled={busy} onClick={() => {
-                  setBusy(true); setError(''); setNotice('');
-                  void reconnectOjsAssignment(context.grant, assignment.id)
-                    .then(() => setNotice(locale === 'hu' ? 'Az OJS-kapcsolat helyreállt. A közreműködő újrapróbálhatja a visszaküldést.' : locale === 'de' ? 'OJS-Verbindung wiederhergestellt. Die Übertragung kann erneut versucht werden.' : 'OJS connection restored. The participant can retry returning the task.'))
+                {actorMode === 'editor' && assignment.status === 'submitted' && assignment.assignmentType !== 'scientific_review' ? <button disabled={busy} onClick={() => {
+                  setBusy(true); setError('');
+                  void completeExternalAssignment(context, assignment.id)
+                    .then(() => setAssignments(current => current.map(item => item.id === assignment.id ? { ...item, status: 'completed' } : item)))
                     .catch(caught => setError(caught instanceof Error ? caught.message : copy.createError))
                     .finally(() => setBusy(false));
-                }}>{locale === 'hu' ? 'OJS-kapcsolat helyreállítása' : locale === 'de' ? 'OJS-Verbindung wiederherstellen' : 'Restore OJS connection'}</button> : null}
+                }}>{locale === 'hu' ? 'Munka elfogadása és lezárása' : locale === 'de' ? 'Arbeit annehmen und abschließen' : 'Accept and complete work'}</button> : null}
+                {actorMode === 'editor' ? <button disabled={busy} onClick={() => {
+                  setBusy(true); setError(''); setNotice('');
+                  void reconnectOjsAssignment(context.grant, assignment.id, platform)
+                    .then(() => setNotice(platformText(locale === 'hu' ? 'Az OJS-kapcsolat helyreállt. A közreműködő újrapróbálhatja a visszaküldést.' : locale === 'de' ? 'OJS-Verbindung wiederhergestellt. Die Übertragung kann erneut versucht werden.' : 'OJS connection restored. The participant can retry returning the task.')))
+                    .catch(caught => setError(caught instanceof Error ? caught.message : copy.createError))
+                    .finally(() => setBusy(false));
+                }}>{platformText(locale === 'hu' ? 'OJS-kapcsolat helyreállítása' : locale === 'de' ? 'OJS-Verbindung wiederherstellen' : 'Restore OJS connection')}</button> : null}
                 {assignment.assignmentType === 'translation' ? (
                   <code>{assignment.sourceLanguage ?? '?'} → {assignment.targetLanguage ?? '?'}</code>
                 ) : null}

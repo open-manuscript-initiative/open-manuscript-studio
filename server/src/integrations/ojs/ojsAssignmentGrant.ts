@@ -5,6 +5,9 @@ import { env } from '../../config/env.js';
 export type OjsAssignmentActorMode = 'editor' | 'author';
 
 export interface OjsAssignmentGrantClaims {
+  platform?: 'ojs' | 'omp';
+  externalSubmissionId?: string;
+  componentExternalId?: string;
   installationId: string;
   contextId: string;
   manuscriptId: string;
@@ -26,7 +29,7 @@ export function issueOjsAssignmentGrant(
   return `${payload}.${sign(payload)}`;
 }
 
-export function verifyOjsAssignmentGrant(token: string): OjsAssignmentGrantClaims {
+export function verifyOjsAssignmentGrant(token: string, platform: 'ojs' | 'omp' = 'ojs'): OjsAssignmentGrantClaims {
   const [payload, signature, extra] = token.split('.');
   if (!payload || !signature || extra) throw forbidden();
 
@@ -44,10 +47,14 @@ export function verifyOjsAssignmentGrant(token: string): OjsAssignmentGrantClaim
   }
   if (!decoded || typeof decoded !== 'object' || Array.isArray(decoded)) throw forbidden();
   const record = decoded as Record<string, unknown>;
+  if ((record.platform ?? 'ojs') !== platform) throw forbidden();
   const actorMode = record.actorMode;
   if (actorMode !== 'editor' && actorMode !== 'author') throw forbidden();
 
   const claims: OjsAssignmentGrantClaims = {
+    platform,
+    ...(typeof record.externalSubmissionId === 'string' ? { externalSubmissionId: record.externalSubmissionId } : {}),
+    ...(typeof record.componentExternalId === 'string' ? { componentExternalId: record.componentExternalId } : {}),
     installationId: requiredText(record.installationId),
     contextId: requiredText(record.contextId),
     manuscriptId: requiredText(record.manuscriptId),

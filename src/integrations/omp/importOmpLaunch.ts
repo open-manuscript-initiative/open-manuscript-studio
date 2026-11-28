@@ -94,6 +94,7 @@ export interface OmpLaunchPayload {
   contributors?: OmpContributor[];
   files?: OmpFile[];
   sourceDocument?: OjsSourceDocument;
+  assignmentContext?: import('../../services/ojsAssignmentApi').OjsAssignmentLaunchContext | null;
   nativeContext?: OmpNativeAuthorContext | null;
   actor?: { externalId?: string } | null;
   actorMode?: 'editor' | 'author' | 'review' | null;

@@ -196,6 +196,19 @@ integrationRouter.get('/omp/launch', async (request, response) => {
       };
     }
 
+    const assignmentActorMode = verified.claims.actorMode === 'editor' || verified.claims.actorMode === 'author' ? verified.claims.actorMode : undefined;
+    const assignmentContext = assignmentActorMode ? await loadOjsAssignmentContext({ ...verified.claims, actorMode: assignmentActorMode }, payload, signature, verified.installation.baseUrl) : { candidates: [] };
+    const assignmentGrant = assignmentActorMode && submissionExternalId && verified.claims.context?.externalId && assignmentContext.actorEmail
+      ? issueOjsAssignmentGrant({ platform: 'omp', installationId: verified.installation.installationId,
+          contextId: verified.claims.context.externalId, manuscriptId: verified.claims.component?.externalId ?? submissionExternalId,
+          externalSubmissionId: submissionExternalId, ...(verified.claims.component?.externalId ? { componentExternalId: verified.claims.component.externalId } : {}),
+          actorEmail: assignmentContext.actorEmail, actorMode: assignmentActorMode, ...(actorExternalId ? { actorExternalId } : {}), ...(apiBaseUrl ? { apiBaseUrl } : {}) }) : undefined;
+    const assignmentSnapshot = assignmentGrant ? { ...createReviewSnapshotFromOjs(ompData, { includeAuthorIdentity: true }), authors: ompData.contributors.flatMap(item => {
+      const contributor = item as { name?: { given?: string; family?: string } };
+      const name = [contributor.name?.given, contributor.name?.family].filter(Boolean).join(' ');
+      return name ? [{ name }] : [];
+    }) } : undefined;
+
     const launchData = {
       protocol: 'omi-integration/1',
       profile: 'omi-integration/1/omp',
@@ -212,6 +225,7 @@ integrationRouter.get('/omp/launch', async (request, response) => {
       actorMode: verified.claims.actorMode ?? null,
       scope: verified.claims.scope ?? [],
       nativeContext,
+      assignmentContext: assignmentGrant ? { platform: 'omp', grant: assignmentGrant, candidates: assignmentActorMode === 'editor' ? assignmentContext.candidates : [], manuscript: assignmentSnapshot, publicationLanguages: (ompData.submission?.publicationLanguages as string[] | undefined) ?? [] } : null,
       expiresAt: new Date(verified.claims.exp * 1000).toISOString(),
     };
 
@@ -302,7 +316,7 @@ integrationRouter.get(
             ...(verified.claims.apiBaseUrl ? { apiBaseUrl: verified.claims.apiBaseUrl } : {}),
           })
         : undefined;
-      const reviewSnapshot = assignmentGrant ? { ...createReviewSnapshotFromOjs(ojsData), authors: ojsData.contributors.flatMap(item => {
+      const reviewSnapshot = assignmentGrant ? { ...createReviewSnapshotFromOjs(ojsData, { includeAuthorIdentity: true }), authors: ojsData.contributors.flatMap(item => {
         const contributor = item as { name?: { given?: string; family?: string } };
         const name = [contributor.name?.given, contributor.name?.family].filter(Boolean).join(' ');
         return name ? [{ name }] : [];

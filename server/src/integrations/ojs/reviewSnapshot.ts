@@ -39,6 +39,7 @@ interface BibliographyLocaleCopy {
 export interface ReviewSnapshotOptions {
   title?: string;
   includeSubmissionMetadata?: boolean;
+  includeAuthorIdentity?: boolean;
 }
 
 const bibliographyLocaleCopy: Record<ReviewDocumentLocale, BibliographyLocaleCopy> = {
@@ -66,7 +67,7 @@ export function createReviewSnapshotFromOjs(
   data: OjsLaunchData,
   options: ReviewSnapshotOptions = {},
 ): ReviewManuscriptSnapshot {
-  if (data.sourceDocument?.reviewSnapshot) return sanitizeReviewManuscript(data.sourceDocument.reviewSnapshot);
+  if (data.sourceDocument?.reviewSnapshot) return sanitizeReviewManuscript(data.sourceDocument.reviewSnapshot, options.includeAuthorIdentity === true);
   const submission = asRecord(data.submission);
   const includeSubmissionMetadata = options.includeSubmissionMetadata !== false;
   const title = options.title?.trim()

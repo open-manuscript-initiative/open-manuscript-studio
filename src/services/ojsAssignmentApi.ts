@@ -27,17 +27,18 @@ export interface OjsAssignmentSummary {
 }
 
 export interface OjsAssignmentLaunchContext {
+  platform?: 'ojs' | 'omp';
   grant: string;
   candidates: OjsAssignmentCandidate[];
   manuscript: unknown;
   publicationLanguages?: string[];
 }
 
-export async function listOjsAssignments(grant: string): Promise<{
+export async function listOjsAssignments(grant: string, platform: 'ojs' | 'omp' = 'ojs'): Promise<{
   actorMode: 'editor' | 'author';
   assignments: OjsAssignmentSummary[];
 }> {
-  const response = await fetch(`${getStudioApiBaseUrl()}/api/reviews/ojs/assignments?grant=${encodeURIComponent(grant)}`, {
+  const response = await fetch(`${getStudioApiBaseUrl()}/api/reviews/${platform}/assignments?grant=${encodeURIComponent(grant)}`, {
     credentials: 'include',
     headers: { Accept: 'application/json' },
   });
@@ -53,7 +54,7 @@ export async function createOjsAssignment(input: {
   sourceLanguage?: string;
   targetLanguage?: string;
 }): Promise<OjsAssignmentSummary> {
-  const response = await fetch(`${getStudioApiBaseUrl()}/api/reviews/ojs/assignments`, {
+  const response = await fetch(`${getStudioApiBaseUrl()}/api/reviews/${input.context.platform ?? 'ojs'}/assignments`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -84,9 +85,16 @@ async function readJson<T>(response: Response): Promise<T> {
   return data as T;
 }
 
-export async function reconnectOjsAssignment(grant: string, assignmentId: string): Promise<void> {
-  const response = await fetch(`${getStudioApiBaseUrl()}/api/reviews/ojs/assignments/${encodeURIComponent(assignmentId)}/reconnect`, {
+export async function reconnectOjsAssignment(grant: string, assignmentId: string, platform: 'ojs' | 'omp' = 'ojs'): Promise<void> {
+  const response = await fetch(`${getStudioApiBaseUrl()}/api/reviews/${platform}/assignments/${encodeURIComponent(assignmentId)}/reconnect`, {
     method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ grant }),
+  });
+  await readJson(response);
+}
+
+export async function completeExternalAssignment(context: OjsAssignmentLaunchContext, assignmentId: string): Promise<void> {
+  const response = await fetch(`${getStudioApiBaseUrl()}/api/reviews/${context.platform ?? 'ojs'}/assignments/${encodeURIComponent(assignmentId)}/complete`, {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ grant: context.grant }),
   });
   await readJson(response);
 }

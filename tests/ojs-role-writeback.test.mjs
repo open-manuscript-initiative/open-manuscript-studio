@@ -2,20 +2,21 @@ import test, { mock, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
-let assignment, receipt, error, payload, remoteFailure;
+let assignment, receipt, error, payload, remoteFailure, platform = 'OJS', assignmentToken = 'bound-token';
 const url = path => new URL(`../server/dist/${path}.js`, import.meta.url).href;
 mock.module(url('lib/prisma'), { namedExports: { prisma: {
   peerReviewAssignment: { findFirst: async ({ where }) => where.reviewerUserId === 'participant' ? assignment : null },
-  $queryRaw: async () => [{ api_base_url: 'https://ojs.example.org/index.php/j/api/v1/omi-integration', assignment_token: 'bound-token', receipt, last_error: error }],
+  $queryRaw: async () => [{ api_base_url: 'https://ojs.example.org/index.php/j/api/v1/omi-integration', assignment_token: assignmentToken, receipt, last_error: error }],
   $executeRaw: async (strings, ...values) => {
     if (strings.join('').includes('SET receipt')) { receipt = JSON.parse(values[0]); error = null; }
     else if (strings.join('').includes('SET last_error')) error = values[0];
     return 1;
   },
 } } });
-mock.module(url('integrations/externalInstallations'), { namedExports: { getActiveInstallationWithSecret: async () => ({ platform: 'OJS' }) } });
+mock.module(url('integrations/externalInstallations'), { namedExports: { getActiveInstallationWithSecret: async () => ({ platform }) } });
 mock.module(url('integrations/ojs/reviewForm'), { namedExports: { getOjsReviewFormContext: async () => ({ responses: [] }) } });
-mock.module(url('integrations/ojs/workflowRequest'), { namedExports: { ojsWorkflowRequest: async (_installation, _base, operation, input) => {
+mock.module(url('integrations/ojs/workflowRequest'), { namedExports: { ojsWorkflowRequest: async (_installation, _base, operation, input, expectedPlatform) => {
+  assert.equal(expectedPlatform, platform);
   assert.equal(operation, 'assignment-result');
   payload = input;
   if (remoteFailure) throw new Error('OJS HTTP 503');
@@ -26,9 +27,10 @@ mock.module(url('integrations/ojs/workflowRequest'), { namedExports: { ojsWorkfl
   };
 } } });
 mock.module(new URL('../server/dist/services/translationAssignmentScope.js', import.meta.url).href, { namedExports: { assertTranslationAssignmentScope: async () => {}, readTranslationLanguagePairs: async () => [{ sourceLanguage: 'hu', targetLanguage: 'en' }] } });
+mock.module(url('integrations/omp/nativeContext'), { namedExports: { getReviewerOmpNativeContext: async () => ({ componentExternalId: '6', externalActorId: '20', externalReviewRoundId: '5' }) } });
 const { writeBackSubmittedExternalReview, getOjsWritebackStatus } = await import(url('integrations/ojs/reviewWriteback'));
 beforeEach(() => {
-  receipt = null; error = null; payload = null; remoteFailure = false;
+  platform = 'OJS'; assignmentToken = 'bound-token'; receipt = null; error = null; payload = null; remoteFailure = false;
   assignment = { id: '11111111-1111-4111-8111-111111111111', workspaceId: 'ojs:test',
     externalInstallationId: 'installation', externalSubmissionId: '217', externalAssignmentId: '31',
     sourceLanguage: 'hu', targetLanguage: 'en', publicationLanguages: ['hu', 'en'], assignmentType: 'SCIENTIFIC_REVIEW', status: 'SUBMITTED', reviewRound: 2,
@@ -89,4 +91,40 @@ test('incomplete translated metadata cannot be returned to OJS', async () => {
   assignment.assignmentType = 'TRANSLATION'; assignment.reviewRevisionSnapshot.translation.keywords = [];
   assert.equal((await writeBackSubmittedExternalReview(assignment.id, 'participant')).status, 'failed');
   assert.equal(payload, null);
+});
+
+for (const role of ['SCIENTIFIC_REVIEW', 'LANGUAGE_REVIEW', 'TRANSLATION']) test(`OMP ${role} returns atomic documents and persisted transfer status`, async () => {
+  platform = 'OMP'; assignment.workspaceId = 'omp:test'; assignment.assignmentType = role;
+  assert.equal((await writeBackSubmittedExternalReview(assignment.id, 'participant')).status, 'synced');
+  assert.equal(payload.recommendation, '');
+  assert.equal(payload.files.length, 2);
+  const snapshot = JSON.parse(Buffer.from(payload.files[1].contentBase64, 'base64'));
+  assert.equal(snapshot.manuscript.annotations.length, 1);
+  assert.equal(snapshot.manuscript.authorIdentity, role === 'SCIENTIFIC_REVIEW' ? 'hidden' : 'visible');
+  assert.equal((await getOjsWritebackStatus(assignment.id, 'participant')).status, 'synced');
+  payload = null;
+  assert.equal((await writeBackSubmittedExternalReview(assignment.id, 'participant')).status, 'synced');
+  assert.equal(payload, null);
+});
+test('OMP metadata-only translation does not return the source body', async () => {
+  platform = 'OMP'; assignment.workspaceId = 'omp:test'; assignment.assignmentType = 'TRANSLATION';
+  assignment.publicationLanguages = ['hu']; assignment.reviewRevisionSnapshot.translation.documentCompleted = false;
+  assert.equal((await writeBackSubmittedExternalReview(assignment.id, 'participant')).status, 'synced');
+  assert.equal(payload.files.length, 0);
+});
+test('OMP failure can be retried and unbound legacy tasks remain visible', async () => {
+  platform = 'OMP'; assignment.workspaceId = 'omp:test'; remoteFailure = true;
+  assert.equal((await writeBackSubmittedExternalReview(assignment.id, 'participant')).status, 'failed');
+  assert.equal((await getOjsWritebackStatus(assignment.id, 'participant')).status, 'failed');
+  remoteFailure = false;
+  assert.equal((await writeBackSubmittedExternalReview(assignment.id, 'participant')).status, 'synced');
+  assignment.externalInstallationId = null;
+  assert.equal((await getOjsWritebackStatus(assignment.id, 'participant')).status, 'failed');
+});
+
+test('native OMP reviewer launch without an editor token returns its assigned chapter and native review round', async () => {
+  platform = 'OMP'; assignmentToken = null; assignment.workspaceId = 'omp:test';
+  assert.equal((await writeBackSubmittedExternalReview(assignment.id, 'participant')).status, 'synced');
+  assert.equal(payload.componentExternalId, '6'); assert.equal(payload.reviewRoundExternalId, '5');
+  assert.equal(payload.actorExternalId, '20'); assert.equal(payload.assignmentToken, null);
 });
