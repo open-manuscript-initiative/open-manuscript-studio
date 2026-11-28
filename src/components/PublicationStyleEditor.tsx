@@ -1574,6 +1574,7 @@ function PublicationStyleEditorWorkspace() {
       {matterToolsOpen ? <div id="publication-matter-workspace" className="publication-matter-workspace" role="tabpanel" aria-labelledby="publication-matter-tab"><PublicationMatterEditor widthMm={style.page.width} heightMm={style.page.height} bodyPageCount={bodyPageCount} /></div> : null}
       <div id="publication-content-workspace" className="publication-style-editor-layout" role={getDocumentStructureProfile(manuscript).kind === 'volume' ? 'tabpanel' : undefined} aria-labelledby={getDocumentStructureProfile(manuscript).kind === 'volume' ? 'publication-content-tab' : undefined} hidden={matterToolsOpen}>
         <PublicationDocumentCanvas
+          active={!matterToolsOpen}
           style={style}
           onStyleChange={setStyle}
           viewMode={documentViewMode}

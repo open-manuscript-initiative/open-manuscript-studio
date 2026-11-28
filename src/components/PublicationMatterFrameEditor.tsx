@@ -38,7 +38,9 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
   const [zoom, setZoom] = useState<'fit' | number>('fit');
   const naturalWidth = widthMm * 96 / 25.4, naturalHeight = heightMm * 96 / 25.4;
   const scale = zoom === 'fit'
-    ? Math.max(.01, Math.min(1, (viewport.width || naturalWidth) / naturalWidth, (viewport.height || naturalHeight) / naturalHeight))
+    ? viewport.width > 0 && viewport.height > 0
+      ? Math.max(.01, Math.min(1, viewport.width / naturalWidth, viewport.height / naturalHeight))
+      : .1
     : zoom / 100;
   const [overflow, setOverflow] = useState(false);
   const frames = page.frames ?? [];
@@ -55,24 +57,31 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
       const css = getComputedStyle(node);
       const width = Math.max(0, node.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight) - 2);
       const height = Math.max(0, node.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom) - 2);
-      setViewport(current => current.width === width && current.height === height ? current : { width, height });
+      if (width <= 0 || height <= 0) return;
+      setViewport(current => Math.abs(current.width - width) < 1 && Math.abs(current.height - height) < 1 ? current : { width, height });
     };
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(scheduled);
-      scheduled = requestAnimationFrame(measure);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+      if (!scheduled) scheduled = requestAnimationFrame(() => { scheduled = 0; measure(); });
     });
-    observer.observe(node); measure();
-    return () => { observer.disconnect(); cancelAnimationFrame(scheduled); };
+    observer?.observe(node); measure();
+    return () => { observer?.disconnect(); cancelAnimationFrame(scheduled); };
   }, []);
   useEffect(() => {
     const node = paper.current;
     if (!node) return;
-    const check = () => setOverflow(Array.from(node.querySelectorAll<HTMLElement>('.omi-matter-frame-text')).some((item) => item.scrollHeight > item.clientHeight + 1 || item.scrollWidth > item.clientWidth + 1));
-    const observer = new ResizeObserver(check); observer.observe(node);
-    const mutation = new MutationObserver(check); mutation.observe(node, { childList: true, subtree: true, characterData: true, attributes: true });
-    document.fonts?.addEventListener('loadingdone', check); check();
-    return () => { observer.disconnect(); mutation.disconnect(); document.fonts?.removeEventListener('loadingdone', check); };
-  }, [page, scale]);
+    let scheduled = 0;
+    const check = () => {
+      scheduled = 0;
+      if (!node.getClientRects().length) return;
+      const next = Array.from(node.querySelectorAll<HTMLElement>('.omi-matter-frame-text')).some((item) => item.scrollHeight > item.clientHeight + 1 || item.scrollWidth > item.clientWidth + 1);
+      setOverflow(current => current === next ? current : next);
+    };
+    const schedule = () => { if (!scheduled) scheduled = requestAnimationFrame(check); };
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule); observer?.observe(node);
+    const mutation = new MutationObserver(schedule); mutation.observe(node, { childList: true, subtree: true, characterData: true, attributes: true });
+    document.fonts?.addEventListener('loadingdone', schedule); schedule();
+    return () => { observer?.disconnect(); mutation.disconnect(); cancelAnimationFrame(scheduled); document.fonts?.removeEventListener('loadingdone', schedule); };
+  }, [page.kind]);
   useEffect(() => { inspector.current?.scrollTo({ top: 0 }); }, [selectedId]);
   function choose(id: string) { setSelectedId(id); setEditImage(false); }
   function patchFrame(id: string, patch: Partial<PublicationMatterFrame>) {
@@ -181,6 +190,7 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
         </div>
         <button type="button" onClick={() => { onChange({ frames: frames.filter((frame) => frame.id !== selected.id) }); choose(''); }}>{copy.deleteFrame}</button>
       </fieldset> : null}
+      {overflow ? <p role="status">{labels.overflow}</p> : null}
       {settings}
     </aside>
     <div className="omi-matter-canvas">
@@ -191,7 +201,6 @@ export function PublicationMatterFrameEditor({ page, widthMm, heightMm, imageUrl
           <label>{copy.selectFrame}<select aria-label={copy.selectFrame} value={selected?.id ?? ''} onChange={(event) => choose(event.target.value)}><option value="">{labels.base}</option>{frames.map((frame, index) => <option key={frame.id} value={frame.id}>{frame.name || `${copy.frame} ${index + 1}`}</option>)}</select></label>
         </div>
         {error ? <p role="alert">{error}</p> : null}
-        {overflow ? <p role="status">{labels.overflow}</p> : null}
         <label className="omi-matter-zoom">{pageCopy.zoom}<select aria-label={pageCopy.zoom} value={zoom}
           onChange={event => setZoom(event.target.value === 'fit' ? 'fit' : Number(event.target.value))}>
           <option value="fit">{pageCopy.fitPage}</option>

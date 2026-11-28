@@ -126,6 +126,7 @@ interface PublicationPaginationState {
 }
 
 interface PublicationDocumentCanvasProps {
+  active?: boolean;
   style: PublicationStyle;
   onStyleChange?: (style: PublicationStyle) => void;
   viewMode: PublicationDocumentViewMode;
@@ -164,6 +165,7 @@ interface PublicationCanvasCopy {
 }
 
 export function PublicationDocumentCanvas({
+  active = true,
   style,
   onStyleChange,
   viewMode,
@@ -432,15 +434,19 @@ export function PublicationDocumentCanvas({
   const visiblePageEnd = Math.min(pageCount, Math.max(firstVisiblePage + 1, visiblePageRange.end));
 
   useLayoutEffect(() => {
+    if (!active) return;
     const stage = stageRef.current;
     if (!stage) return;
-    const update = () => setStageWidth(stage.clientWidth);
+    const update = () => {
+      // A hidden workspace has no measurable width. Keep the last visible layout.
+      if (stage.clientWidth > 0) setStageWidth(stage.clientWidth);
+    };
     update();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(update);
     observer.observe(stage);
     return () => observer.disconnect();
-  }, []);
+  }, [active]);
 
   const tableBlockIds = useMemo(() => new Set(manuscript.sections.flatMap((section) =>
     section.blocks.filter((block) => block.visual?.kind === 'table').map((block) => block.id),
@@ -450,7 +456,7 @@ export function PublicationDocumentCanvas({
   ), [pagination.flowBreaks, tableBlockIds]);
 
   useLayoutEffect(() => {
-    if (viewMode !== 'print') return;
+    if (!active || viewMode !== 'print') return;
     const stage = stageRef.current;
     const paper = stage?.querySelector<HTMLElement>('.publication-document-paper--print');
     if (!stage || !paper) return;
@@ -484,9 +490,12 @@ export function PublicationDocumentCanvas({
       stage.removeEventListener('scroll', updateVisiblePages);
       cancelAnimationFrame(frame);
     };
-  }, [pageCount, pageStride, styledPages, viewMode]);
+  }, [active, pageCount, pageStride, styledPages, viewMode]);
 
   useLayoutEffect(() => {
+    // Disconnect observers and cancel queued/worker pagination while the cover
+    // workspace owns the screen. Preserve the mounted editor and its history.
+    if (!active) return;
     if (viewMode !== 'print') {
       setPagination((current) => (
         current.preparedManuscriptId === undefined
@@ -960,6 +969,7 @@ export function PublicationDocumentCanvas({
       mutationObserver?.disconnect();
     };
   }, [
+    active,
     canvasId,
     manuscriptId,
     locale,
@@ -1148,6 +1158,7 @@ export function PublicationDocumentCanvas({
     setSelectedThumbnailId(source.id); pendingThumbnailNavigation.current = source.insertionId ? source.id : `study:${source.studyId}`;
   }
   useEffect(() => {
+    if (!active) return;
     const id = pendingThumbnailNavigation.current;
     if (!id) return;
     const index = pagination.thumbnails?.findIndex((item) => id.startsWith('study:') ? item.studyId === id.slice(6) : item.id === id) ?? -1;
@@ -1157,7 +1168,7 @@ export function PublicationDocumentCanvas({
     setVisiblePageRange({ start: Math.max(0, index - 2), end: Math.min(pagination.pageCount, index + 3) });
     const frame = requestAnimationFrame(() => stageRef.current?.querySelector<HTMLElement>(`[data-page-number="${firstPageNumber + index}"]`)?.scrollIntoView({ block: 'center', inline: 'nearest' }));
     return () => cancelAnimationFrame(frame);
-  }, [pagination.thumbnails, pagination.pageCount, firstPageNumber]);
+  }, [active, pagination.thumbnails, pagination.pageCount, firstPageNumber]);
   // Reuse a single navigator in the preview and the desktop side dock.
   // The portal preserves the canvas context without occupying a toolbar row.
   const pageNavigator = viewMode === 'print' ? (
@@ -1417,7 +1428,7 @@ export function PublicationDocumentCanvas({
                     paragraphStyleNextById={paragraphStyleNextById}
                     defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
                     manuscriptLanguage={manuscript.locale}
-                    editable={!previewOnly && !presentation}
+                    editable={active && !previewOnly && !presentation}
                     onProofingSelection={onProofingSelection}
                   />
                 ) : (
@@ -1425,7 +1436,8 @@ export function PublicationDocumentCanvas({
                     <BlockEditor
                       blockId={`omi-publication-document-${manuscript.id}`}
                       blockType="manuscript"
-                      editable={!previewOnly && !presentation}
+                      editable={active && !previewOnly && !presentation}
+                      suspendExternalUpdates={!active}
                       content={document.content}
                       onUpdate={updateDocument}
                       manuscriptLanguage={manuscript.locale}
