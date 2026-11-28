@@ -113,6 +113,7 @@ app.use('/api/publication/validate/jats', requireSession, express.json({ limit: 
 app.use('/api/references/library', requireSession, express.json({ limit: '8mb' }));
 app.use('/api/collaboration/documents', requireSession, express.json({ limit: '140mb' }));
 app.use(['/api/v1/modules/critical-text-edition/transkribus/jobs', '/api/modules/critical-text-edition/transkribus/jobs'], requireSession, express.json({ limit: '28mb' }));
+app.use(['/api/reviews/assigned', '/api/reviews/assignments', '/api/reviews/ojs/assignments'], requireSession, express.json({ limit: '36mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api', (_request, response) => {

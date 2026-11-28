@@ -1,3 +1,5 @@
+import type { ReviewManuscriptSnapshot } from '../../services/reviewManuscriptModel.js';
+import { readDocxReviewAnnotations, type SourceReviewAnnotation } from './docxReviewAnnotations.js';
 import { extractRichDocxNotes } from './docxRichNotes.js';
 import { inflateRawSync } from 'node:zlib';
 
@@ -44,6 +46,8 @@ export interface OjsDocxEndnote {
 
 export interface OjsSourceDocument {
   kind: 'docx';
+  reviewAnnotations?: SourceReviewAnnotation[];
+  reviewSnapshot?: ReviewManuscriptSnapshot;
   fileExternalId: string;
   fileName: string;
   mediaType: string;
@@ -149,6 +153,7 @@ export function parseDocxSource(
 
   return {
     kind: 'docx',
+    reviewAnnotations: readDocxReviewAnnotations(documentXml.toString('utf8'), readZipEntry(buffer, 'word/comments.xml')?.toString('utf8'), readZipEntry(buffer, 'word/commentsExtended.xml')?.toString('utf8')),
     fileExternalId,
     fileName,
     mediaType,

@@ -17,7 +17,7 @@ function createIdentityPrisma() {
     // This optional UI preference must not be included in implicit User
     // projections (including nested session users) before its migration lands.
     // The preference service reads it explicitly with a narrow compatibility fallback.
-    omit: { user: { workflowRole: true } },
+    omit: { user: { workflowRole: true, translationLanguagePairs: true } },
     log:
       process.env.NODE_ENV === 'development'
         ? ['query', 'info', 'warn', 'error']

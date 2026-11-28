@@ -1,3 +1,4 @@
+import { assertReviewDocumentAccess } from '../../services/reviewAccessPolicy.js';
 import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { prisma } from '../../lib/prisma.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
@@ -131,7 +132,8 @@ export async function rememberOjsReviewForm(
     DO UPDATE SET
       form_external_id = EXCLUDED.form_external_id,
       definition = EXCLUDED.definition,
-      responses = EXCLUDED.responses,
+      responses = CASE WHEN ojs_review_form_contexts.form_external_id IS NOT DISTINCT FROM EXCLUDED.form_external_id
+        THEN ojs_review_form_contexts.responses ELSE EXCLUDED.responses END,
       updated_at = CURRENT_TIMESTAMP
   `;
 }
@@ -173,11 +175,15 @@ export async function saveOjsReviewFormResponses(
   for (const [id, response] of normalized) merged.set(id, response);
   const payload = [...merged.values()];
   const json = JSON.stringify(payload);
-  await prisma.$executeRaw`
-    UPDATE ojs_review_form_contexts
-    SET responses = ${json}::jsonb, updated_at = CURRENT_TIMESTAMP
-    WHERE assignment_id = ${assignmentId}::uuid
-  `;
+  await prisma.$transaction(async tx => {
+    const tasks = await tx.$queryRaw<Array<{ assignment_type: string; status: string }>>`
+      SELECT assignment_type, status FROM peer_review_assignments WHERE id = ${assignmentId}::uuid FOR UPDATE
+    `;
+    const task = tasks[0];
+    if (!task) throw new Error('Review assignment not found.');
+    assertReviewDocumentAccess(task.assignment_type, task.status, true);
+    await tx.$executeRaw`UPDATE ojs_review_form_contexts SET responses = ${json}::jsonb, updated_at = CURRENT_TIMESTAMP WHERE assignment_id = ${assignmentId}::uuid`;
+  });
 }
 
 export async function validateOjsReviewFormComplete(assignmentId: string): Promise<void> {

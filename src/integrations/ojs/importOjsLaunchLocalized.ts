@@ -1,3 +1,4 @@
+import { applyOjsReviewAnnotations } from './applyOjsReviewAnnotations';
 import type { OmiManuscript } from '../../types/omi';
 import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../../model/importedDocumentSource';
 import {
@@ -77,9 +78,10 @@ export function createManuscriptFromOjsLaunch(
   const deduplicatedStructured = structurallyImported
     ? removeDuplicateStructuredParagraphs(structurallyImported, launch)
     : null;
-  const manuscript = deduplicatedStructured
+  const sourceManuscript = deduplicatedStructured
     ? applyOjsReferences(deduplicatedStructured, launch)
     : null;
+  const manuscript = sourceManuscript ? applyOjsReviewAnnotations(sourceManuscript, launch) : null;
   const submission = launch.submission as ExtendedOjsSubmission | null | undefined;
 
   if (!manuscript || !submission) return manuscript;

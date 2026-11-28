@@ -38,7 +38,12 @@ export interface ReviewerFeedback {
   updatedAt: string;
 }
 
+export interface ReviewWriteback { status: 'synced' | 'not_applicable' | 'failed' | 'pending'; message?: string; }
+
 export interface ReviewerAssignment {
+  publicationLanguages?: string[];
+  documentTranslationRequired?: boolean;
+  externalWriteback?: ReviewWriteback;
   id: string;
   workspaceId: string;
   manuscriptId: string;
@@ -149,18 +154,40 @@ export interface ReviewBibliographicRecord {
 
 export type ReviewChartType = 'bar' | 'horizontal-bar' | 'stacked-bar' | 'stacked-100' | 'line' | 'area' | 'pie' | 'donut' | 'scatter' | 'radar';
 
-export type ReviewManuscriptBlock =
+export type ReviewManuscriptBlock = (
   | { type: 'heading'; text: string; level?: number; richText?: ReviewInlineSpan[] }
   | { type: 'paragraph'; text: string; richText?: ReviewInlineSpan[] }
   | { type: 'note'; text: string; richText?: ReviewInlineSpan[] }
   | { type: 'list'; text: string; ordered: boolean; listLevel: number; ordinal?: number; richText?: ReviewInlineSpan[] }
   | { type: 'table'; cells: string[][]; headerRows: number }
   | { type: 'image'; src: string; mediaType: string; alt?: string }
-  | { type: 'chart'; cells: string[][]; chartType: ReviewChartType; title?: string };
+  | { type: 'chart'; cells: string[][]; chartType: ReviewChartType; title?: string }) & { id?: string };
 
+export interface ReviewAnnotation {
+  id: string;
+  type: 'comment';
+  targetBlockId: string;
+  targetText: string;
+  targetStart?: number;
+  body: string;
+  visibility: 'author_and_editor' | 'editor_only';
+  status: 'open' | 'resolved';
+  anchorStatus?: 'resolved' | 'unresolved';
+  replyToCommentId?: string;
+  authorName?: string;
+  createdAt?: string;
+  modifiedAt?: string;
+}
+
+export interface AssignmentTranslation {
+  sourceLanguage: string; targetLanguage: string; title: string; abstract: string; keywords: string[]; documentCompleted: boolean;
+}
 export interface ReviewManuscriptSnapshot {
+  translation?: AssignmentTranslation;
   documentKind: 'article';
-  authorIdentity: 'hidden';
+  authorIdentity: 'hidden' | 'visible';
+  authors?: Array<{ name: string }>;
+  annotations?: ReviewAnnotation[];
   title: string;
   subtitle?: string;
   abstract?: string;
@@ -169,7 +196,8 @@ export interface ReviewManuscriptSnapshot {
   bibliographicRecords: ReviewBibliographicRecord[];
 }
 
-interface ReviewResponse { review: ReviewerAssignment; }
+
+interface ReviewResponse { review: ReviewerAssignment; externalWriteback?: ReviewWriteback; ojsWriteback?: ReviewWriteback; }
 interface ReviewListResponse { reviews: ReviewerAssignment[]; }
 interface ManuscriptResponse { manuscript: ReviewManuscriptSnapshot | null; }
 interface OjsReviewLaunchResponse { assignmentId: string; }
@@ -271,10 +299,8 @@ export async function submitAssignedReview(
     ...(recommendation ? { recommendation } : {}),
     ...(recommendationExternalId ? { recommendationExternalId } : {}),
   };
-  return (await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/submit`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  })).review;
+  const response = await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/submit`, { method: 'POST', body: JSON.stringify(body) });
+  return { ...response.review, ...(response.externalWriteback ? { externalWriteback: response.externalWriteback } : {}) };
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -295,8 +321,20 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 async function createApiError(response: Response): Promise<Error> {
   try {
     const payload = (await response.json()) as ErrorResponse;
-    return new Error(payload.error?.message || `Editorial assignment request failed with HTTP ${response.status}.`);
+    return Object.assign(new Error(payload.error?.message || `Editorial assignment request failed with HTTP ${response.status}.`), { code: (payload.error as { code?: string } | undefined)?.code, status: response.status });
   } catch {
     return new Error(`Editorial assignment request failed with HTTP ${response.status}.`);
   }
+}
+
+export async function getAssignedReviewWriteback(id: string): Promise<ReviewWriteback> {
+  return (await request<{ externalWriteback: ReviewWriteback }>(`/api/reviews/assigned/${encodeURIComponent(id)}/writeback`)).externalWriteback;
+}
+export async function retryAssignedReviewWriteback(id: string): Promise<ReviewerAssignment> {
+  const result = await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/writeback`, { method: 'POST', body: '{}' });
+  return { ...result.review, ...(result.externalWriteback ? { externalWriteback: result.externalWriteback } : {}) };
+}
+
+export async function getAssignedTranslationProfile(): Promise<{ pairs: Array<{ sourceLanguage: string; targetLanguage: string }>; setupRequired: boolean }> {
+  return request('/api/reviews/translation-profile');
 }

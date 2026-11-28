@@ -355,6 +355,7 @@ export async function updateCurrentAccount(
 ): Promise<User> {
   const payload = {
     workflowRole: input.workflowRole,
+    translationLanguagePairs: input.translationLanguagePairs,
     fullName: input.fullName,
     affiliation:
       input.affiliation !== undefined

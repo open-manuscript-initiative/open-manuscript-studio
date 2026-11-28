@@ -1,3 +1,5 @@
+import type { ReviewManuscriptSnapshot } from '../../services/peerReviewApi';
+import { applyOjsReviewAnnotations } from './applyOjsReviewAnnotations';
 import { noteBodyPlainText, type NoteJsonNode } from '../../model/noteRichText';
 import { normalizeExternalHref, normalizeInlineLanguageTag } from '../../model/richText';
 import { createSampleManuscript } from '../../document/sampleManuscript';
@@ -90,6 +92,8 @@ interface OjsSourceNote {
 
 export interface OjsSourceDocument {
   kind?: 'docx';
+  reviewSnapshot?: ReviewManuscriptSnapshot;
+  reviewAnnotations?: Array<{ id: string; body: string; paragraphText: string; targetText: string; status: 'open' | 'resolved'; replyToCommentId?: string; createdAt?: string }>;
   fileExternalId?: string;
   fileName?: string;
   mediaType?: string;
@@ -313,7 +317,7 @@ export function createManuscriptFromOjsLaunch(
     now,
   );
 
-  return {
+  return applyOjsReviewAnnotations({
     ...base,
     // An OJS submission is one study, even when its source has many sections.
     documentStructure: createDocumentStructureProfile('study'),
@@ -330,7 +334,7 @@ export function createManuscriptFromOjsLaunch(
     annotations: imported.annotations,
     createdAt: now,
     updatedAt: submission.updatedAt || now,
-  };
+  }, launch);
 }
 
 export function buildSourceContent(

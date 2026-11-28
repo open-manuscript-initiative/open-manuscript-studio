@@ -42,6 +42,7 @@
     "@simplewebauthn/server": "^14.0.3",
     "@xmldom/xmldom": "0.9.12",
     "cors": "^2.8.5",
+    "docx": "9.5.1",
     "dotenv": "^17.0.0",
     "express": "^5.0.0",
     "express-rate-limit": "^8.6.2",

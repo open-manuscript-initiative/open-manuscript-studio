@@ -29,7 +29,9 @@ test('real Prisma account SQL omits the optional column while explicit preferenc
   assert.equal(await identityPrisma.user.findUnique({ where: { email: 'owner@example.test' } }), null);
   assert.equal(queries.length, 1);
   assert.match(queries[0], /password_hash/);
-  assert.doesNotMatch(queries[0], /workflow_role/);
+  assert.doesNotMatch(queries[0], /workflow_role|translation_language_pairs/);
   await identityPrisma.user.findUnique({ where: { id: '00000000-0000-4000-8000-000000000001' }, select: { workflowRole: true } });
   assert.match(queries.at(-1), /workflow_role/);
+  await identityPrisma.user.findUnique({ where: { id: '00000000-0000-4000-8000-000000000001' }, select: { translationLanguagePairs: true } });
+  assert.match(queries.at(-1), /translation_language_pairs/);
 });

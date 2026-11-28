@@ -1,3 +1,6 @@
+import { assertTranslationAssignmentScope, readTranslationLanguagePairs } from './translationAssignmentScope.js';
+import { matchesTranslationPair, normalizePublicationLanguages, requiresDocumentTranslation, validateAssignmentTranslation } from './translationAssignmentPolicy.js';
+import { assertReviewDocumentAccess, writableReviewStatuses } from './reviewAccessPolicy.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 
@@ -32,6 +35,7 @@ export interface CreateAssignmentInput {
   reviewerEmail: string;
   reviewRound: number;
   assignmentType: ReviewAssignmentType;
+  publicationLanguages?: string[];
   sourceLanguage?: string;
   targetLanguage?: string;
   anonymityMode?: ReviewAnonymityMode;
@@ -49,12 +53,12 @@ const assignmentPolicies: Record<ReviewAssignmentType, {
   },
   LANGUAGE_REVIEW: {
     alias: 'Language reviewer',
-    defaultAnonymity: 'DOUBLE_BLIND',
+    defaultAnonymity: 'OPEN',
     requiresRecommendation: false,
   },
   TRANSLATION: {
     alias: 'Translator',
-    defaultAnonymity: 'DOUBLE_BLIND',
+    defaultAnonymity: 'OPEN',
     requiresRecommendation: false,
   },
   EDITORIAL_REVISION: {
@@ -130,10 +134,11 @@ export async function createReviewAssignment(
       assignedByUserId: editorUserId,
       reviewerAlias,
       assignmentType: input.assignmentType,
+      publicationLanguages: normalizePublicationLanguages(input.publicationLanguages ?? []),
       sourceLanguage: normalizeLanguage(input.sourceLanguage),
       targetLanguage: normalizeLanguage(input.targetLanguage),
       reviewRound: input.reviewRound,
-      anonymityMode: input.anonymityMode ?? policy.defaultAnonymity,
+      anonymityMode: policy.defaultAnonymity,
       status: 'INVITED',
     },
     include: reviewInclude,
@@ -183,7 +188,8 @@ export async function listReviewerAssignments(reviewerUserId: string) {
     orderBy: { invitedAt: 'desc' },
   });
 
-  return assignments.map(serializeForReviewer);
+  const pairs = assignments.some(item => item.assignmentType === 'TRANSLATION') ? await readTranslationLanguagePairs(reviewerUserId) : [];
+  return assignments.filter(item => item.assignmentType !== 'TRANSLATION' || matchesTranslationPair(pairs, item.sourceLanguage, item.targetLanguage)).map(serializeForReviewer);
 }
 
 export async function getReviewerAssignment(
@@ -237,19 +243,14 @@ export async function addReviewFeedback(
   body: string,
 ) {
   const assignment = await getOwnedAssignment(reviewerUserId, assignmentId);
-  if (!['ACCEPTED', 'IN_PROGRESS'].includes(assignment.status)) {
-    throw new Error('Feedback can only be added to an accepted assignment.');
-  }
-
-  await prisma.$transaction([
-    prisma.peerReviewFeedback.create({
-      data: { assignmentId, visibility, body: body.trim() },
-    }),
-    prisma.peerReviewAssignment.update({
-      where: { id: assignmentId },
-      data: { status: 'IN_PROGRESS' },
-    }),
-  ]);
+  assertReviewDocumentAccess(assignment.assignmentType, assignment.status, true);
+  await prisma.$transaction(async tx => {
+    const changed = await tx.peerReviewAssignment.updateMany({ where: { id: assignmentId, reviewerUserId,
+      status: { in: writableReviewStatuses(assignment.assignmentType) as Array<'ACCEPTED' | 'IN_PROGRESS' | 'SUBMITTED'> } }, data: { status: 'IN_PROGRESS' } });
+    if (changed.count !== 1) { const error = new Error('The task was closed while adding feedback.'); error.name = 'ForbiddenError'; throw error; }
+    await tx.peerReviewFeedback.create({ data: { assignmentId, visibility, body: body.trim() } });
+    await tx.$executeRaw`UPDATE ojs_review_writeback_contexts SET receipt = NULL, synced_at = NULL, last_error = NULL WHERE assignment_id = ${assignmentId}::uuid`;
+  });
 
   const updated = await getOwnedAssignment(reviewerUserId, assignmentId);
   return serializeForReviewer(updated);
@@ -262,9 +263,9 @@ export async function submitReview(
   recommendationExternalId?: string,
 ) {
   const assignment = await getOwnedAssignment(reviewerUserId, assignmentId);
-  if (!['ACCEPTED', 'IN_PROGRESS'].includes(assignment.status)) {
-    throw new Error('Only an accepted assignment can be submitted.');
-  }
+  if (assignment.status === 'SUBMITTED' && assignment.assignmentType !== 'SCIENTIFIC_REVIEW') return serializeForReviewer(assignment);
+  assertReviewDocumentAccess(assignment.assignmentType, assignment.status, true);
+  validateAssignmentTranslation(assignment);
 
   const policy = assignmentPolicies[assignment.assignmentType];
   const externalStorage = normalizeRecommendationStorage(assignment.externalRecommendationStorage);
@@ -302,15 +303,18 @@ export async function submitReview(
         ? recommendation ?? null
         : null;
 
-  const updated = await prisma.peerReviewAssignment.update({
-    where: { id: assignmentId },
+  const updated = await prisma.$transaction(async tx => {
+    const changed = await tx.peerReviewAssignment.updateMany({
+    where: { id: assignmentId, reviewerUserId, status: { in: ['ACCEPTED', 'IN_PROGRESS'] } },
     data: {
       status: 'SUBMITTED',
       recommendation: recommendationValue,
       ...(hasExternalRecommendations ? { externalRecommendationId: externalRecommendationValue } : {}),
       submittedAt: new Date(),
     },
-    include: reviewInclude,
+    });
+    if (changed.count !== 1) { const error = new Error('The task changed while submitting.'); error.name = 'ForbiddenError'; throw error; }
+    return tx.peerReviewAssignment.findUniqueOrThrow({ where: { id: assignmentId }, include: reviewInclude });
   });
 
   return serializeForReviewer(updated);
@@ -332,10 +336,13 @@ export async function completeReview(
     throw new Error('Only a submitted assignment can be completed.');
   }
 
-  const updated = await prisma.peerReviewAssignment.update({
-    where: { id: assignmentId },
+  const updated = await prisma.$transaction(async tx => {
+    const changed = await tx.peerReviewAssignment.updateMany({
+    where: { id: assignmentId, status: 'SUBMITTED', revisionUpdatedAt: assignment.revisionUpdatedAt },
     data: { status: 'COMPLETED', completedAt: new Date() },
-    include: reviewInclude,
+    });
+    if (changed.count !== 1) throw new Error('The task changed. Review the latest revision before marking it complete.');
+    return tx.peerReviewAssignment.findUniqueOrThrow({ where: { id: assignmentId }, include: reviewInclude });
   });
 
   return serializeForEditor(updated);
@@ -348,6 +355,7 @@ async function getOwnedAssignment(reviewerUserId: string, assignmentId: string) 
   });
 
   if (!assignment) throw notFound();
+  await assertTranslationAssignmentScope(reviewerUserId, assignment);
   return assignment;
 }
 
@@ -390,6 +398,8 @@ function commonReview(assignment: ReviewRecord) {
     manuscriptId: assignment.manuscriptId,
     reviewerAlias: assignment.reviewerAlias,
     assignmentType: assignment.assignmentType.toLowerCase(),
+    publicationLanguages: assignment.publicationLanguages,
+    documentTranslationRequired: assignment.assignmentType === 'TRANSLATION' && requiresDocumentTranslation(assignment.targetLanguage, assignment.publicationLanguages),
     ...(assignment.sourceLanguage ? { sourceLanguage: assignment.sourceLanguage } : {}),
     ...(assignment.targetLanguage ? { targetLanguage: assignment.targetLanguage } : {}),
     reviewRound: assignment.reviewRound,
@@ -412,9 +422,9 @@ function commonReview(assignment: ReviewRecord) {
 function serializeForAuthor(assignment: ReviewRecord) {
   return {
     ...commonReview(assignment),
-    // Identity is deliberately not included here, even for OPEN assignments.
-    // Identity disclosure can be added later as an explicit editorial policy;
-    // omission is the privacy-preserving default.
+    ...(assignment.assignmentType !== 'SCIENTIFIC_REVIEW' ? { reviewer: {
+      fullName: assignment.reviewer.fullName, email: assignment.reviewer.email,
+    } } : {}),
     feedback: assignment.feedback
       .filter((item) => item.visibility === 'AUTHOR_AND_EDITOR')
       .map(serializeFeedback),

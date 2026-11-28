@@ -50,6 +50,7 @@ const resetPasswordSchema = z.object({
 });
 
 const updateProfileSchema = z.object({
+  translationLanguagePairs: z.array(z.object({ sourceLanguage: z.string().min(2).max(32), targetLanguage: z.string().min(2).max(32) })).max(32).optional(),
   workflowRole: z.enum(workflowRolePreferences).optional(),
   fullName: z.string().min(1).max(200).optional(),
   country: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/).nullable().optional(),
@@ -211,6 +212,7 @@ authRouter.patch('/me', async (request, response) => {
 
     const parsed = updateProfileSchema.parse(request.body);
     const input: UpdateUserInput = {
+      ...(parsed.translationLanguagePairs !== undefined ? { translationLanguagePairs: parsed.translationLanguagePairs } : {}),
       ...(parsed.workflowRole !== undefined ? { workflowRole: parsed.workflowRole } : {}),
       ...(parsed.fullName !== undefined ? { fullName: parsed.fullName } : {}),
       ...(parsed.country !== undefined ? { country: parsed.country } : {}),

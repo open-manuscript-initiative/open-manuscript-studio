@@ -298,9 +298,15 @@ integrationRouter.get(
             manuscriptId,
             actorEmail: assignmentContext.actorEmail,
             actorMode,
+            ...(verified.claims.actor?.externalId ? { actorExternalId: verified.claims.actor.externalId } : {}),
+            ...(verified.claims.apiBaseUrl ? { apiBaseUrl: verified.claims.apiBaseUrl } : {}),
           })
         : undefined;
-      const reviewSnapshot = assignmentGrant ? createReviewSnapshotFromOjs(ojsData) : undefined;
+      const reviewSnapshot = assignmentGrant ? { ...createReviewSnapshotFromOjs(ojsData), authors: ojsData.contributors.flatMap(item => {
+        const contributor = item as { name?: { given?: string; family?: string } };
+        const name = [contributor.name?.given, contributor.name?.family].filter(Boolean).join(' ');
+        return name ? [{ name }] : [];
+      }) } : undefined;
 
       const launchData = {
         protocol: 'omi-integration/1',
@@ -323,6 +329,7 @@ integrationRouter.get(
               grant: assignmentGrant,
               candidates: actorMode === 'editor' ? assignmentContext.candidates : [],
               manuscript: reviewSnapshot,
+              publicationLanguages: ((ojsData.submission as { publicationLanguages?: string[] })?.publicationLanguages ?? []),
             }
           : null,
         expiresAt: new Date(verified.claims.exp * 1000).toISOString(),
