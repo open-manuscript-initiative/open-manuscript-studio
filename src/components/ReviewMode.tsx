@@ -333,7 +333,7 @@ export function ReviewMode({ assignmentId }: { assignmentId?: string }) {
           <h2>{copy.tasks}</h2>
           {groups.length ? <label>{translationTaskCopy(locale).pair}<select value={taskGroup} onChange={event => { setTaskGroup(event.target.value); setSelectedId(null); }}>
             {reviews.some(review => review.assignmentType !== 'translation') ? <option value="other">{translationTaskCopy(locale).other}</option> : null}
-            {groups.map(group => <option key={group} value={group}>{group.replace('>', ' → ')}</option>)}
+            {groups.map(group => <option key={group} value={group}>{group.replace(/>/g, ' → ')}</option>)}
           </select></label> : null}
           {visibleReviews.length ? visibleReviews.map((review) => {
             const reviewCopy = reviewCopies[normalizeReviewLocale(review.sourceLanguage)];
