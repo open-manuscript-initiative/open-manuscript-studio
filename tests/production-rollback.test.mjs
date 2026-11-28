@@ -172,7 +172,7 @@ test('modifying approved SQL prevents automatic migration', { skip: !onLinux }, 
   assert.match(snapshot.stderr, /pinned reviewed blob/);
 });
 
-test('an accompanying identity migration always blocks automatic rollout', { skip: !onLinux }, (t) => {
+test('an accompanying unreviewed identity migration blocks automatic rollout', { skip: !onLinux }, (t) => {
   const f = fixture(t);
   reviewedMigration(f);
   const dir = join(f.repo, 'server/prisma/identity/migrations/20261109_unreviewed');
@@ -188,7 +188,7 @@ test('an accompanying identity migration always blocks automatic rollout', { ski
 });
 
 
-function fakePrismaStatus(f, { pending = true, identityPending = false, unknown = false, pendingNames = ['20261109060000_android_closed_test_signups'] } = {}) {
+function fakePrismaStatus(f, { pending = true, identityPending = false, identityPendingNames = ['20261110_unreviewed_identity'], unknown = false, pendingNames = ['20261109060000_android_closed_test_signups'] } = {}) {
   const bin = join(f.repo, 'server', 'node_modules', '.bin');
   mkdirSync(bin, { recursive: true });
   writeFileSync(join(f.repo, 'scripts', 'reviewed-migration-status.mjs'),
@@ -198,7 +198,7 @@ function fakePrismaStatus(f, { pending = true, identityPending = false, unknown 
     'case "$*" in',
     '  *prisma.identity.config.ts*)',
     identityPending
-      ? "    echo 'Following migration have not yet been applied:'; echo '20261110_unreviewed_identity'; exit 1 ;;"
+      ? "    echo 'Following migration have not yet been applied:'; " + identityPendingNames.map((name) => "echo '" + name + "'").join('; ') + "; echo 'To apply migrations in production run prisma migrate deploy.'; exit 1 ;;"
       : "    echo 'Database schema is up to date!'; exit 0 ;;",
     '  *)',
     unknown
@@ -456,5 +456,109 @@ test('an unrelated SQL change bundled with editorial production stays blocked', 
   });
   assert.notEqual(snapshot.status, 0);
   assert.match(snapshot.stderr, /manual migration rollout/);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});
+
+const ojsWritebackMigration = '20261128040000_ojs_role_writeback';
+const translationAssignmentMigration = '20261128050000_translation_assignment_languages';
+const translationIdentityMigration = '20261128050000_translation_profile_languages';
+const studioTranslationMigrations = [ojsWritebackMigration, translationAssignmentMigration];
+
+function installTranslationMigrations(f, { studio = true, identity = true, tamperIdentity = false } = {}) {
+  const paths = [
+    ...(studio ? studioTranslationMigrations.map(name => 'server/prisma/migrations/' + name) : []),
+    ...(identity ? ['server/prisma/identity/migrations/' + translationIdentityMigration] : []),
+  ];
+  for (const dir of paths) {
+    mkdirSync(join(f.repo, dir), { recursive: true });
+    const sql = readFileSync(new URL('../' + dir + '/migration.sql', import.meta.url), 'utf8');
+    writeFileSync(join(f.repo, dir, 'migration.sql'),
+      sql + (tamperIdentity && dir.includes('/identity/') ? '\n-- changed SQL\n' : ''));
+  }
+  git(f.repo, 'add', '.');
+  git(f.repo, '-c', 'user.email=ci@example.invalid', '-c', 'user.name=CI', 'commit', '-qm', 'reviewed translation migrations');
+  return git(f.repo, 'rev-parse', 'HEAD');
+}
+
+function translationStatus(f, overrides = {}) {
+  fakePrismaStatus(f, {
+    pendingNames: studioTranslationMigrations,
+    identityPending: true,
+    identityPendingNames: [translationIdentityMigration],
+    ...overrides,
+  });
+}
+
+test('OJS and translation migrations across both databases require verified backups', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = installTranslationMigrations(f);
+  translationStatus(f);
+  const env = { ...fakePostgres(f), STUDIO_TARGET_SHA: target };
+  const result = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const manifest = JSON.parse(readFileSync(join(f.snapshot, 'database/manifest.json'), 'utf8'));
+  assert.deepEqual(manifest.archives.map(a => a.name), ['studio', 'identity']);
+  assert.ok(existsSync(join(f.snapshot, 'snapshot-complete')));
+  const restore = spawnSync('bash', [join(f.snapshot, 'rollback.sh'), 'restore', f.snapshot], { env, encoding: 'utf8' });
+  assert.equal(restore.status, 0, restore.stderr || restore.stdout);
+  assert.ok(existsSync(join(f.snapshot, 'database/identity.dump')));
+  assert.match(restore.stdout, /does not undo data backfills/);
+});
+
+test('pending reviewed Identity migration alone still requires both backups after manual checkout', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = installTranslationMigrations(f, { studio: false });
+  translationStatus(f, { pending: false });
+  const result = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...fakePostgres(f), STUDIO_PREVIOUS_SHA: target, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /Detected pending reviewed migration/);
+  assert.ok(existsSync(join(f.snapshot, 'database/studio.dump')));
+  assert.ok(existsSync(join(f.snapshot, 'database/identity.dump')));
+});
+
+test('changed approved Identity SQL fails its blob pin even at an unchanged target', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = installTranslationMigrations(f, { tamperIdentity: true });
+  translationStatus(f);
+  const result = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+    env: { ...f.env, STUDIO_PREVIOUS_SHA: target, STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /pinned reviewed blob/);
+  assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
+});
+
+for (const [label, overrides] of [
+  ['unknown Identity migration alongside reviewed one', { identityPendingNames: [translationIdentityMigration, '20261128_unknown'] }],
+  ['Studio migration name reported by Identity', { identityPendingNames: [ojsWritebackMigration] }],
+  ['Identity migration name reported by Studio', { pendingNames: [translationIdentityMigration] }],
+]) {
+  test('translation rollout rejects ' + label, { skip: !onLinux }, (t) => {
+    const f = fixture(t);
+    const target = installTranslationMigrations(f);
+    translationStatus(f, overrides);
+    const result = spawnSync('bash', [script, 'snapshot', f.snapshot], {
+      env: { ...fakePostgres(f), STUDIO_TARGET_SHA: target }, encoding: 'utf8',
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Pending database migration preflight failed/);
+    assert.equal(existsSync(join(f.snapshot, 'database')), false);
+  });
+}
+
+test('reviewed translation rollout blocks if either database backup cannot be verified', { skip: !onLinux }, (t) => {
+  const f = fixture(t);
+  const target = installTranslationMigrations(f);
+  translationStatus(f);
+  const env = { ...fakePostgres(f), STUDIO_TARGET_SHA: target };
+  // Fail only the second dump, after the first archive has been written.
+  const dump = join(f.root, 'bin', 'pg_dump');
+  writeFileSync(dump, readFileSync(dump, 'utf8').replace('test -n "$archive"', 'test -n "$archive"\ncase "$archive" in */identity.dump) exit 1 ;; esac'));
+  const result = spawnSync('bash', [script, 'snapshot', f.snapshot], { env, encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /backup blocked/i);
+  assert.ok(existsSync(join(f.snapshot, 'database/studio.dump')));
   assert.equal(existsSync(join(f.snapshot, 'snapshot-complete')), false);
 });

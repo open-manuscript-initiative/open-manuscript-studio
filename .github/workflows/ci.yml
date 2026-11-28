@@ -311,7 +311,7 @@ jobs:
 
   deploy:
     name: Deploy to Production
-    needs: [build, collaboration-demo]
+    needs: [build, collaboration-demo, integration-state-postgres]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -695,6 +695,6 @@ jobs:
       - run: npm run build
         working-directory: server
       - name: Test migration and cross-process-safe storage contracts
-        run: node --test tests/integration-state.postgres.test.mjs tests/server-registry.postgres.test.mjs tests/editorial-production.postgres.test.mjs
+        run: node --test tests/integration-state.postgres.test.mjs tests/server-registry.postgres.test.mjs tests/editorial-production.postgres.test.mjs tests/translation-migrations.postgres.test.mjs
       - name: Registry security and v1 compatibility
         run: node --test --experimental-test-module-mocks tests/server-registry-routes.test.mjs tests/server-registry-heartbeat.test.mjs tests/server-registry-local.test.mjs

@@ -35,17 +35,23 @@ if [[ "$action" == snapshot ]]; then
   current="${STUDIO_TARGET_SHA:-$(git -C "$repo" rev-parse HEAD)}"
   git -C "$repo" cat-file -e "$current^{commit}"
 
-  # Explicitly reviewed, additive-only SQL. Git blob hashes pin the full SQL bytes.
+  # Explicitly reviewed SQL: additive schema and bounded data backfills. Git blob hashes pin the full SQL bytes.
   # Each deployment also requires verified Studio + Identity DB backups.
   approved_paths=(
     'server/prisma/migrations/20261109060000_android_closed_test_signups/migration.sql'
     'server/prisma/migrations/20261116110000_audit_retention_created_at_indexes/migration.sql'
     'server/prisma/migrations/20261116010000_add_editorial_production/migration.sql'
+    'server/prisma/migrations/20261128040000_ojs_role_writeback/migration.sql'
+    'server/prisma/migrations/20261128050000_translation_assignment_languages/migration.sql'
+    'server/prisma/identity/migrations/20261128050000_translation_profile_languages/migration.sql'
   )
   approved_blobs=(
     'dfc5ee96dc2cbc9bf2d1622ce494bd5b133e0bba'
     '34d086111c77bab71b3725ae99f1a531b703ed66'
     '421438c437b4000c083614b795567fde5813515d'
+    '76737fc25eb0d4d5c95f070c0c5108f8ec9887fd'
+    '31ead232bafec826df6e853d500fc1747ec30115'
+    'b1d5066a58cdc47d0ffa958ec0c27572aa0db0d3'
   )
   migration_changes="$(git -C "$repo" diff --name-status "$previous" "$current" -- server/prisma/migrations server/prisma/identity/migrations)"
   needs_db_backup=false
@@ -65,7 +71,7 @@ if [[ "$action" == snapshot ]]; then
       approved=false
       if [[ "$change" == A && -n "$path" && -z "$rest" ]]; then
         for approved_path in "${approved_paths[@]}"; do
-          if [[ "$path" == "$approved_path" ]]; then approved=true; break; fi
+          if [[ "$path" == "$approved_path" && -f "$repo/$path" ]]; then approved=true; break; fi
         done
       fi
       if [[ "$approved" != true ]]; then
@@ -75,7 +81,7 @@ if [[ "$action" == snapshot ]]; then
       fi
     done <<< "$migration_changes"
     needs_db_backup=true
-    echo 'Pinned additive migration delta verified; requiring PostgreSQL backups.'
+    echo 'Pinned reviewed migration delta verified; requiring PostgreSQL backups.'
   fi
   # A prior manual checkout may have skipped migrations. Check the live Prisma
   # status even when a reviewed migration is in the Git delta. Unapproved
@@ -150,7 +156,7 @@ previous="$(<"$snapshot/previous-sha")"
 
 echo "Restoring Studio production code and web/API assets to $previous."
 if [[ -f "$snapshot/reviewed-migration" ]]; then
-  echo 'A reviewed additive migration may have run. Keeping the PostgreSQL schema and all user data unchanged.'
+  echo 'A reviewed migration may have run. Rollback leaves the resulting PostgreSQL schema and data unchanged; it does not undo data backfills.'
   echo 'Private pre-migration archives are available under the snapshot/database directory for a reviewed restore if ever needed.'
 fi
 # Preserve PostgreSQL, identity records, stored manuscripts, uploaded images,
