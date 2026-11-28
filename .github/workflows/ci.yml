@@ -311,7 +311,7 @@ jobs:
 
   deploy:
     name: Deploy to Production
-    needs: [build, collaboration-demo]
+    needs: [build, collaboration-demo, integration-state-postgres]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
