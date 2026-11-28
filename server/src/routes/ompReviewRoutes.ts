@@ -89,7 +89,7 @@ ompReviewRouter.post(
         typeof nativeStageId !== 'number' ||
         !Number.isInteger(nativeStageId) ||
         nativeAssignment.cancelled ||
-        nativeAssignment.declined
+        nativeAssignment.declined || nativeAssignment.dateCompleted
       ) {
         throw new Error('OMP returned a review context that does not match the signed assignment.');
       }
@@ -147,6 +147,7 @@ ompReviewRouter.post(
         : undefined;
 
       await Promise.all([
+        rememberOjsReviewWritebackEndpoint(assignment.id, verified.claims.apiBaseUrl, verified.installation.baseUrl),
         nativeWritesAvailable
           ? persistReviewerOmpNativeContext({
               assignmentId: assignment.id,

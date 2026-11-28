@@ -355,7 +355,8 @@ function StudioApplication() {
 
           setOjsContributors([]);
           setExternalWorkflowContext(workflowContextFromHandoff(manuscript.id, 'omp', launch.actorMode));
-          setOjsAssignment(null);
+          setOjsAssignment((launch.actorMode === 'editor' || launch.actorMode === 'author') && launch.assignmentContext?.grant
+            ? { actorMode: launch.actorMode, context: { ...launch.assignmentContext, platform: 'omp' } } : null);
           setOmpAuthorAssignment(
             launch.actorMode === 'author' && launch.nativeContext?.actorMode === 'author'
               ? { manuscriptId: manuscript.id, context: launch.nativeContext }

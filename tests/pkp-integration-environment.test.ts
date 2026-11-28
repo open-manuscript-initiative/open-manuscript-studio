@@ -72,10 +72,10 @@ test('OMP -6 uses exact source and locked dependencies rather than falsely relab
   assert.match(composeSource, /OMI_PKP_TARGET_VERSION:/);
 });
 
-test('CI only executes the fixed plugin branch without shared credentials or caches', () => {
+test('CI only executes fixed upstream plugin refs without shared credentials or caches', () => {
   assert.doesNotMatch(workflowSource, /^\s+plugin_ref:/m);
   assert.doesNotMatch(workflowSource, /inputs\.plugin_ref/);
-  assert.match(workflowSource, /^\s+ref:\s*main\s*$/m);
+  assert.match(workflowSource, /ref: \$\{\{ matrix\.target\.platform == 'omp' && 'd86c4895e430ffe6c592c97511b82b10b5e2bd4e' \|\| 'main' \}\}/);
   assert.doesNotMatch(workflowSource, /^\s+cache:\s*npm\s*$/m);
   assert.match(
     workflowSource,

@@ -408,3 +408,5 @@ notice before registration. See [configuration, requests, retention, breach hand
 and conditional regulatory duties](docs/server/privacy-and-legal-operations.md).
 Public notice: `/?privacy=1`; authenticated account overview: Account → Privacy.
 These tools do not certify a deployment or configure its offsite backups.
+
+See [OMP role-specific task return](docs/omp-role-writeback.md) for the unreleased assignment/translation parity workflow and deployment prerequisites.

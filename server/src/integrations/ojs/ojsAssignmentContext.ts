@@ -15,7 +15,7 @@ export interface OjsAssignmentContextData {
 }
 
 export async function loadOjsAssignmentContext(
-  claims: LaunchClaims,
+  claims: Pick<LaunchClaims, 'apiBaseUrl' | 'actorMode' | 'scope'>,
   payload: string,
   signature: string,
   installationBaseUrl: string,

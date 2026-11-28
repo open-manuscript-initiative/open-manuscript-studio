@@ -15,6 +15,10 @@ test('two participants edit the same synthetic room in real time', async ({ brow
   const first = await browser.newPage();
   const second = await browser.newPage();
   try {
+    // Fixed synthetic identities exercise actual caret colors without a random
+    // collision in the finite hue palette. Production UUID generation is unchanged.
+    await first.addInitScript(() => { crypto.randomUUID = () => '10000000-0000-4000-8000-000000000001'; });
+    await second.addInitScript(() => { crypto.randomUUID = () => '10000000-0000-4000-8000-000000000002'; });
     const [firstEditor, secondEditor] = await Promise.all([
       join(first, 'Ada'),
       join(second, 'Grace'),

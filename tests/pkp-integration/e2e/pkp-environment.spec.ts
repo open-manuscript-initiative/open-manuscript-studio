@@ -441,10 +441,22 @@ test('reviewer receives one anonymous article and can return corrections', async
     },
   );
   await expectApiStatus(submitted, 200);
-  await expect(submitted.json()).resolves.toMatchObject({
+  const returned = await submitted.json();
+  expect(returned, JSON.stringify(returned)).toMatchObject({
     review: { status: 'submitted' },
     ojsWriteback: { status: 'synced' },
   });
+  // Scientific submission closes content access while the receipt stays retryable.
+  for (const endpoint of ['manuscript', 'revision', 'review-form']) {
+    const closed = await request.get(`${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/${endpoint}`);
+    await expectApiStatus(closed, 403);
+  }
+  const retry = await request.post(`${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/writeback`, { data: {}, headers: studioMutationHeaders });
+  await expectApiStatus(retry, 200);
+  const retried = await retry.json();
+  expect(retried, JSON.stringify(retried)).toMatchObject({ externalWriteback: { status: 'synced' } });
+  const closedNative = await signedBrowserRequest(page, `${apiBaseUrl}/files`, launch);
+  expect(closedNative.status).toBe(403);
 });
 
 async function loginToPkp(page: Page, user: FixtureUser): Promise<void> {

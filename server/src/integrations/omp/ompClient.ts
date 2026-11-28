@@ -1,3 +1,5 @@
+import { translationDocumentMatchesSourceLanguage } from '../../services/translationAssignmentPolicy.js';
+import { sanitizeReviewManuscript } from '../../services/reviewManuscriptModel.js';
 import { fetchPinnedPublicUrl } from '../../cloud/security/connectionPinnedHttp.js';
 import { applyDirectFormattingHeadingInference } from '../ojs/docxDirectHeading.js';
 import { applyInlineSemantics } from '../ojs/docxInlineSemantics.js';
@@ -199,10 +201,14 @@ async function loadSourceDocument(
   payload: string,
   signature: string,
   componentExternalId?: string,
+  reviewerMode = false,
+  preferredLanguage?: string,
 ): Promise<OjsSourceDocument | undefined> {
   const eligible = files
     .filter((file) => isDocx(file) && file.externalId && file.contentPath)
-    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES);
+    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES)
+    .filter(file => translationDocumentMatchesSourceLanguage(file.name ?? '', preferredLanguage))
+    .filter(file => reviewerMode || [2, 9, 11, 15, 20].includes(Number(file.stage)));
   const componentTagged = eligible.filter((file) => Boolean(fileComponentExternalId(file)));
   const componentScoped = componentExternalId && componentTagged.length
     ? componentTagged.filter((file) => fileComponentExternalId(file) === componentExternalId)
@@ -213,7 +219,7 @@ async function loadSourceDocument(
   }
 
   const candidate = componentScoped
-    .sort(compareSourceFiles)[0];
+    .sort(reviewerMode ? compareSourceFiles : (a, b) => (Date.parse(b.updatedAt ?? '') || 0) - (Date.parse(a.updatedAt ?? '') || 0) || Number(b.externalId) - Number(a.externalId) || compareSourceFiles(a, b))[0];
   if (!candidate?.externalId || !candidate.contentPath) return undefined;
 
   const base = new URL(`${apiBaseUrl.replace(/\/$/, '')}/`);
@@ -254,7 +260,19 @@ async function loadSourceDocument(
   const withStructuredContent = applyStructuredContent(bytes, withInlineSemantics);
   const withLists = applyStyleInheritedLists(bytes, withStructuredContent);
   const withNotes = applyNoteIntegrity(bytes, withLists);
-  return applyReferenceSemantics(bytes, withNotes);
+  const document = applyReferenceSemantics(bytes, withNotes);
+  const sidecar = files.find(file => file.name === candidate.name?.replace(/\.docx$/i, '.omi-review.json') && file.stage === candidate.stage && fileComponentExternalId(file) === fileComponentExternalId(candidate) && file.contentPath);
+  if (sidecar?.contentPath) {
+    const sidecarUrl = new URL(sidecar.contentPath.replace(/^\//, ''), base);
+    if (sidecarUrl.origin !== base.origin) throw new Error('OMP snapshot escaped the registered installation origin.');
+    const response = await fetchWithSameOriginRedirects(sidecarUrl, payload, signature);
+    if (!response.ok) throw new Error(`OMP review snapshot failed with HTTP ${response.status}.`);
+    const raw = await boundedVolumeBody(response, MAX_SOURCE_FILE_BYTES);
+    const envelope = JSON.parse(raw.toString('utf8')) as { protocol?: string; manuscript?: unknown };
+    if (envelope.protocol !== 'omi-review-revision/1') throw new Error('OMP returned an unsupported review snapshot.');
+    document.reviewSnapshot = sanitizeReviewManuscript(envelope.manuscript, !reviewerMode);
+  }
+  return document;
 }
 
 /** Enforce bounds even when an upstream omits Content-Length. */
@@ -496,6 +514,8 @@ export async function loadOmpLaunchData(
         payload,
         signature,
         reviewerMode ? claims.component?.externalId : undefined,
+        reviewerMode,
+        typeof submission.submission?.primaryLocale === 'string' ? submission.submission.primaryLocale : undefined,
       )
     : undefined;
 
